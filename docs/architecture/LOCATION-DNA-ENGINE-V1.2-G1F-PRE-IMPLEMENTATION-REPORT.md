@@ -1,21 +1,28 @@
 # G1f — Writer Consolidation · Pre-Implementation Report
 
 **Gate:** G1f (per §12 of the [G1 Pre-Implementation Report](./LOCATION-DNA-ENGINE-V1.2-G1-PRE-IMPLEMENTATION-REPORT.md))
-**Type:** pre-implementation audit and decision package — **not** an implementation task
-**Status:** **AUDIT ONLY. NO PRODUCTION CODE, TESTS OR CONFIGURATION CHANGED. G1f IS NOT AUTHORIZED AND NOT STARTED.**
+**Type:** pre-implementation audit and decision package — **decisions owner-approved**
+**Status:** **D-G1F-1 … D-G1F-5 APPROVED. ALL FOUR CHARACTERISATION GAPS CLOSED. G1f-1 IS ARCHITECTURE-READY, NOT AUTHORIZED AND NOT STARTED. NO PRODUCTION CODE EXISTS.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · decisions per the
 [G1c Decision Package](./LOCATION-DNA-ENGINE-V1.2-G1C-DECISION-PACKAGE.md) (D-G1-1 … D-G1-7, all **APPROVED** 2026-07-30)
 **Audited at:** `994270a04d9ee83d50b9fe4ebe023ee63603244e`
+**Characterisation delivered:** `b91d5e7a215ea781043d1fd52b4a70fe35b08c9f` — four suites, 35 tests, tests only
+**Decisions approved:** 2026-08-02 · **Approval base commit:** `b91d5e7a2`
 **Branch:** `architecture/location-dna-g1-domain-core`
 **Audit date:** 2026-08-02
 
-> This document decides nothing and implements nothing. It establishes exactly how G1f should be built,
-> what it must not break, and what must be true before it starts. **§20 records a characterisation gap
-> that blocks G1f-2 and later; §23 states the narrow authorization that is safe to grant now.**
+> **Approval of a decision is not authorization to implement it.** G1f-1 still requires its own separate
+> authorization, and every stop condition in §23 remains binding.
+>
+> This document originally decided nothing. It now records five approved owner decisions (§22.2), three
+> reaffirmed constraints that are **not** new decisions (§22.4), and the closure of all four
+> characterisation gaps by executed tests (§20.5). **G1f-1's blocking gap — GAP 2 — is closed, so G1f-1 is
+> unblocked.** It remains unimplemented and unauthorized.
 >
 > Every line number, count and behaviour below was recomputed from the tree at the audited commit. No
 > figure is carried forward from a prior document without rechecking, and where a prior document is
-> **wrong or incomplete** this report says so and gives the measured value.
+> **wrong or incomplete** this report says so and gives the measured value — including, now, two places
+> where **this report itself was wrong** and the characterisation corrected it (§5.2, §6.3).
 
 ---
 
@@ -80,13 +87,26 @@ characterisation work named in §20.
 | F-G1F-3 | All four Hire components double-write the mirrors; correctness rests on statement ordering | §6.2 |
 | F-G1F-4 | Hire Tenant blob writes are gated on `user_type`; seller/landlord records never get one | §6.2 |
 | F-G1F-5 | `zipCodes` is a fourth mirror key, never derived from the blob | §6.3 |
-| F-G1F-6 | The `state` mirror has two mutually incompatible encodings across writers | §6.3 |
+| F-G1F-6 | The `state` mirror has incompatible encodings — **corrected by characterisation to three keys**, one writer emitting two per save | §6.3 |
 | F-G1F-7 | Two edit flows split blob and mirror writes by 400–628 lines | §7.2 |
 | F-G1F-8 | One canonical write path has its transaction commented out | §7.1 |
 | F-G1F-9 | A second tripwire test will fire in G1f and is absent from the authorized change list | §20.4 |
 | F-G1F-10 | The first canonical write is a one-way S1→S2 door per record | §11.3 |
 | F-G1F-11 | The five guard sites of `BuyerOfferListingEdit` were never enumerated; now measured | §6.1 |
 | F-G1F-12 | Two documents cite divergence line numbers that point at comments, not code | §2.3 |
+
+### Status after approval and characterisation (2026-08-02)
+
+| Item | Status |
+|---|---|
+| D-G1F-1 … D-G1F-5 | **ALL APPROVED** — §22.2 |
+| Reaffirmed constraints (not decisions) | 3 recorded — §22.4 |
+| GAP 1 / GAP 2 / GAP 3 / GAP 4 | **ALL CLOSED** — `b91d5e7a2`, 35 tests — §20.5 |
+| G1f-1 | **UNBLOCKED and architecture-ready · NOT AUTHORIZED · NOT STARTED** — §23 |
+| First migration | **`BuyerAgentAuction`**, unchanged — §19 |
+| Provenance persistence before G1f-1 | **Not required**, under §10.5's eight binding restrictions |
+| Defect boundaries | 4 recorded, none authorized for repair — §22.5 |
+| Production code written | **none** |
 
 ---
 
@@ -243,8 +263,17 @@ document's consolidation surface.**
 | `BuyerOfferListingEdit` | `:2828` | `:2424` | `:2425` | — | same — **split, 400 lines apart** |
 | `TenantOfferListing` | `:4386` | `:4377` | `:4379` | `:4378` | same |
 | `TenantOfferListingEdit` | `:3919` | `:3291` | `:3292` | `:3302` | same — **split, 628 lines apart** |
-| `BuyerCriteriaAuctionController` | `:61`, `:433`, `:733` | `:62`, `:434`, `:732` | `:734` | — | **request input**, never the blob |
+| `BuyerCriteriaAuctionController` | `:61`, `:433`, `:733` | `:62`, `:434`, `:732` | `:734` **only**; `:63` and `:435` write **`states`** | — | **request input**, never the blob |
 | `TenantCriteriaAuctionController` | `:54`, `:352` | `:55`, `:353` | `:56`, `:354` | — | **request input**, never the blob |
+
+**Correction to this table, proven by characterisation (`b91d5e7a2`).** As first written, this row recorded
+`:63` and `:435` as `state` writes. **They are `states` — plural.** `BuyerCriteriaAuctionController` writes
+the singular `state` key at `:734` **only**, on the update path. Proven by
+`G1fLegacyCriteriaControllerCharacterisationTest::test_buyer_criteria_update_emits_both_state_keys_in_different_encodings`,
+which stores a record through the real controller and reads back **both** keys: `states` JSON-encoded and
+`state` raw, from one save. The same test establishes that `updateAuction` writes `cities` and `counties`
+twice — at `:433`/`:434` and again at `:733`/`:732` — a controller-level double-write directly analogous to
+F-G1F-3's Livewire one. See §17.5 for the approved disposition of the plural key.
 
 **Consequence.** The mirror is written from **three different sources** across the codebase — the blob, a
 component property, and raw request input — and no writer reconciles them. G1f's mirror projection contract
@@ -328,6 +357,41 @@ This is a live blob/mirror divergence generator that no G1 document names and no
 correct — a seller-side Hire record arguably has no search envelope — is an **owner question**, not
 something G1f should decide silently. It is raised as **D-G1F-3** in §22.
 
+**Now covered, and DECIDED — D-G1F-3 APPROVED: 3-C (2026-08-02).** `G1fHireTenantUserTypeGateCharacterisationTest`
+(`b91d5e7a2`, 7 tests) executes all six `user_type` input classes through the real save path and proves:
+the canonical blob is written for `buyer` and `tenant` **only**; the discrete mirrors are written for **all
+six**; and across two consecutive `seller` saves the mirrors advance twice while a pre-existing blob stands
+completely still (`test_a_pre_existing_blob_goes_stale_while_mirrors_advance_across_two_saves`), with an
+ungated `tenant` control on the identical fixture proving the gate is the cause.
+
+**The approved disposition separates two things the audit had conflated:**
+
+- **The gate is PRESERVED for G1f-2.** Seller/landlord Hire Tenant records may continue to have no canonical
+  Search Areas blob, and consolidation must not begin writing one for them. This records current behaviour
+  for the migration; it does **not** endorse permanent mirror/blob divergence as an ideal design, and the
+  gate may be revisited only under a separately authorized product decision about whether those records
+  should have a search envelope at all.
+- **The partial-write failure is a SEPARATE DEFECT** — see §22.5 defect 1. It is not part of the gate
+  decision and must not be bundled with any future removal of the gate.
+
+### 6.2.1 The partial-write defect the gate concealed
+
+**Discovered by GAP 3's characterisation, not by the audit.** `saveAllMetadata()` builds a role key as
+`$this->user_type . '_specific'` and indexes `$compatibility_preferences` with it
+(`TenantAgentAuction.php:4689`). That array declares exactly four role keys — `tenant_specific`,
+`buyer_specific`, `seller_specific`, `landlord_specific` — so an **empty or unrecognised `user_type` raises
+`Undefined array key`**.
+
+Line 4689 executes **after** the mirror writes at `:4282`-`:4285` and after the gate at `:4290`, and
+`TenantAgentAuction` opens **no transaction**. The mirrors are therefore committed and the remainder of the
+save never happens. Proven by `test_an_unrecognised_user_type_leaves_a_partial_write`, which asserts both
+halves: the mirror holds the new value and the canonical key was never written.
+
+**Partial persistence is proven, not inferred.** This is a concrete instance of §7's finding that atomicity
+is the exception, and it is exactly the failure mode `LocationDnaPersistenceService` must not inherit.
+**G1f must not silently preserve it**; correcting it requires its own scoped authorization, before or within
+the Tenant Hire migration.
+
 ### 6.3 Mirror-key set and encoding
 
 **F-G1F-5 — `zipCodes` is a fourth mirror key.** Written by all four Tenant-family components
@@ -337,12 +401,30 @@ something G1f should decide silently. It is raised as **D-G1F-3** in §22.
 handles `state` and `counties` only. So a user editing ZIP codes in the map widget updates the blob's
 `zip_codes` while the `zipCodes` mirror keeps its old value indefinitely.
 
-**F-G1F-6 — two incompatible `state` encodings.** `TenantCriteriaAuctionController` writes
-`saveMeta("state", json_encode($request->state))` at `:56` and `:354`; every other writer — the trait at
-`:126`, all four Offer components, and `BuyerCriteriaAuctionController:734` — writes the raw string. A
-reader therefore receives `FL` from one path and `"FL"` (with literal quotes) from the other, for the same
-key on the same conceptual record type. Any G1f mirror projection that normalises this **changes observable
-data for existing Tenant Criteria records** and must be treated as a behaviour change, not a tidy-up.
+**F-G1F-5 is now proven.** `G1fZipCodesMirrorCharacterisationTest` (`b91d5e7a2`, 7 tests) establishes all of
+it behaviourally: the mirror holds the component-property value with a divergent blob present; the blob's
+`zip_codes` survives the save untouched; **clearing canonical `zip_codes` leaves the mirror stale**; a save
+with an empty property **destroys** a legacy-only mirror; and the Buyer family writes no `zipCodes` key at
+all. A structural negative asserts that **no** writer derives the mirror from the blob, so the finding
+cannot silently stop being true.
+
+**F-G1F-6 — CORRECTED AND WIDENED by characterisation (`b91d5e7a2`).** As first written, this finding
+recorded *two* incompatible `state` encodings. **There are three keys, not two encodings of one:**
+
+| Key | Encoding | Written by |
+|---|---|---|
+| `state` | raw string | the trait at `:126`, all four Offer components, all four Hire components, and `BuyerCriteriaAuctionController:734` |
+| `state` | JSON-encoded (`"FL"`) | `TenantCriteriaAuctionController:56`, `:354` |
+| **`states`** (plural) | JSON-encoded | `BuyerCriteriaAuctionController:63`, `:435` |
+
+And `BuyerCriteriaAuctionController::updateAuction()` emits **both `states` and `state`, in different
+encodings, within a single save** — proven by
+`test_buyer_criteria_update_emits_both_state_keys_in_different_encodings`. The Tenant double-encoding is
+proven separately by `test_tenant_criteria_double_encodes_the_state_mirror`, which asserts the stored value
+is literally `"FL"` and explicitly **not** `FL`.
+
+No consumer in the G1b matrix reads the plural key. Its approved disposition is **legacy dead write, out of
+scope for G1f-1** — §17.5. The `state` normalisation decision is **D-G1F-4 APPROVED: 4S-i** — §17.3.
 
 ### 6.4 Clear semantics — the measured matrix
 
@@ -583,6 +665,34 @@ left to the implementer.
 **Recommendation.** Authorize G1f-1 without provenance persistence, under the §10.2 constraint, and make
 the constraint a stop condition with a test that proves it (§20.2). Raise a separate decision — **D-G1F-1**
 in §22 — for the persistence design before any repair increment.
+
+### 10.5 D-G1F-1 — APPROVED (2026-08-02)
+
+**The owner approved §10.2's answer verbatim:** provenance persistence is **not** required before writer
+consolidation, **but only under the binding condition** that `LocationDnaPersistenceService` persists solely
+dimensions carried by explicit `DimensionCommand` objects and performs **no legacy repair**.
+
+The approval attaches eight restrictions, all binding on G1f-1:
+
+| # | Restriction |
+|---|---|
+| 1 | Explicit owner `set` / `clear` commands **only** |
+| 2 | **No** legacy repair |
+| 3 | **No** inherited-value promotion |
+| 4 | **No** imported-value promotion |
+| 5 | **No** derived-value promotion |
+| 6 | **No** snapshot restoration |
+| 7 | **No** full-document rewrite |
+| 8 | Provenance remains **transient / inert** for the initial migration |
+
+**The final provenance-storage design remains deferred** until the first separately authorized repair
+increment. §10.4's table is unchanged by this approval: provenance persistence still blocks the first repair
+increment, and still blocks D-G1-6's mirror sunset unconditionally.
+
+**How the condition is proven rather than asserted.** §20.2 test **T4** — *a dimension with no command is
+not written, and its legacy mirror is not rewritten* — is the mechanical proof that restrictions 1, 3, 4, 5
+and 7 hold. It is a binding stop condition of the G1f-1 authorization (§23), and if it cannot be made green
+the approval lapses: G1f-1 would then require D-G1F-1's storage design to be settled first.
 
 ---
 
@@ -830,6 +940,38 @@ approved D-G1-5 name is `LegacyMirrorAdapter` and the G1c inertness guard assert
 that name — thereby tripping the guard immediately — or a distinct name reserving `LegacyMirrorAdapter` for
 the full read+repair adapter, is **D-G1F-2** in §22.
 
+### 17.0 D-G1F-2 — APPROVED: 2-A (2026-08-02)
+
+**The distinct write-side name `LegacyMirrorProjection` is approved. `LegacyMirrorAdapter` is reserved** for
+the later read / fallback / repair responsibility and **remains uncreated and separately
+authorization-gated** — the G1c inertness guard assertion naming it stays in place unchanged.
+
+**`LegacyMirrorProjection` — approved responsibilities, exhaustive:**
+
+| It does | It does **not** |
+|---|---|
+| Is **pure** and **write-side only** | Read existing mirrors |
+| Accept the resulting canonical `LocationDnaDocument` | Perform fallback |
+| Return derived legacy mirror values | Perform repair |
+| — | Determine provenance |
+| — | Write to storage itself |
+
+**Amended interpretation of D-G1-5.** The approved D-G1-5 text says *"legacy compatibility belongs
+exclusively to `LegacyMirrorAdapter`."* That remains true as a statement of **isolation** — legacy
+compatibility stays in one place and stays removable — but it is now read as covering **two deliberately
+separate responsibilities**: write-side projection (`LegacyMirrorProjection`, G1f-1) and future
+read / fallback / repair (`LegacyMirrorAdapter`, unauthorized). This is an interpretation amendment, not a
+reopening of D-G1-5.
+
+**This approval introduces no runtime behaviour change.** It names a component that does not yet exist.
+
+**Evidence that the split is right, not merely convenient.** GAP 2 proved the Livewire family *derives* its
+mirrors from the blob — the trait-derived write wins and the persisted value is blob-sourced. GAP 1 proved
+the criteria controllers do **not**: canonical and mirror travel independently from separate request fields
+and are persisted unreconciled (`test_canonical_and_mirror_values_are_persisted_unreconciled`). A single
+write-side projection must therefore serve two structurally different mirror sources, which is a different
+responsibility from read-side fallback and repair.
+
 ### 17.1 Responsibilities
 
 | Owns | Must not |
@@ -845,26 +987,76 @@ the full read+repair adapter, is **D-G1F-2** in §22.
 | `cities` | `Dimension::Cities` | `json_encode(values)` | `json_encode([])` | **not written** |
 | `counties` | `Dimension::Counties` | `json_encode(values)` | `json_encode([])` | **not written** |
 | `state` | `Dimension::State` | raw string | `''` | **not written** |
-| `zipCodes` | `Dimension::ZipCodes` | **open — D-G1F-4** | open | open |
+| `zipCodes` | — | **NOT MANAGED in G1f-1** — D-G1F-4 (a) | not managed | not managed |
 
 **"Not written on absent" is the key departure from today.** Every current writer writes all its mirror keys
 unconditionally on every save, which is exactly what destroys a legacy mirror on a no-op save. Writing only
 commanded dimensions preserves the legacy mirror until the user actually edits that dimension — which is
 what makes step 4 of §16.4 correct.
 
-### 17.3 The `state` encoding decision
+### 17.3 The `state` encoding decision — D-G1F-4 APPROVED: 4S-i (2026-08-02)
 
-F-G1F-6 leaves two incompatible encodings. The projection must emit **one**. Recommendation: **raw string**,
+F-G1F-6 leaves incompatible encodings. The projection must emit **one**. Recommendation: **raw string**,
 matching eight of the nine writers and both Livewire families. Consequence: Tenant Criteria records written
 through W8/W9 keep their `"FL"` form until next saved, so readers must tolerate both during transition.
 Raised as part of **D-G1F-4**.
 
-### 17.4 `zipCodes`
+**APPROVED — 4S-i, normalise the managed `state` mirror to a raw string.** Recorded terms:
+
+- `LegacyMirrorProjection` **emits `state` as a raw string**.
+- `BuyerAgentAuction` already uses this representation, so **G1f-1 does not change its observable `state`
+  encoding** — the first migration is encoding-neutral.
+- **Readers must tolerate existing JSON-encoded `state` values during transition.**
+- Tenant Criteria records may change to raw-string encoding **only when their own later consolidation stage
+  is separately authorized**.
+- **No bulk migration or backfill is authorized.**
+
+### 17.4 `zipCodes` — D-G1F-4 APPROVED: (a) FOR G1f-1 (2026-08-02)
 
 Three options, none free: (a) leave unmanaged, preserving today's divergence; (b) derive from
 `Dimension::ZipCodes`, which **changes observable data** for four workflows; (c) stop writing it, which
 breaks any reader. **Recommendation: (a) for G1f-1** — out of scope, explicitly recorded — with (b) decided
 separately. Doing (b) inside a consolidation increment would mix a defect fix into a refactor.
+
+**APPROVED — option (a), for G1f-1 only.** Recorded terms:
+
+- `zipCodes` **remains unmanaged** in the first migration; it is outside the managed mirror projection.
+- This **preserves current `BuyerAgentAuction` behaviour** — that component writes no `zipCodes` key, proven
+  by `test_buyer_family_components_write_no_zipcodes_mirror`.
+- **G1f-1 must not introduce a new ZIP mirror write.**
+- **G1f-1 must not remove an existing ZIP mirror write.**
+- The new writer **must not imply that `zipCodes` has been normalised or repaired**.
+
+**Options (b) and (c) are NOT approved.**
+
+**Future decision checkpoint, binding.** Before migrating **any** workflow that currently writes `zipCodes`
+— `TenantOfferListing`, `TenantOfferListingEdit`, `TenantAgentAuction`, `TenantAgentAuctionEdit` — reassess
+whether to approve option (b). **G1f cannot be declared complete without a final managed-mirror decision for
+`zipCodes`.**
+
+The evidence that makes (b) a behaviour change rather than a cleanup is now measured: clearing canonical
+`zip_codes` leaves the mirror stale, and a save with an empty property destroys a legacy-only mirror
+(§6.3). Both would change under (b).
+
+### 17.5 The plural `states` key — LEGACY DEAD WRITE, OUT OF SCOPE FOR G1f-1
+
+Recorded disposition (2026-08-02). `BuyerCriteriaAuctionController` writes a plural `states` key at `:63`
+and `:435`, JSON-encoded, and no consumer in the G1b matrix reads it (§6.3).
+
+**For G1f-1:**
+
+- **do not create it** · **do not normalise it** · **do not delete stored historical values** ·
+  **do not add a reader** · **do not treat it as part of the managed mirror projection**.
+
+**For the later legacy criteria-controller migration (G1f-7):**
+
+- perform a **final reader audit**;
+- if no production reader exists, **retire the write**;
+- **preserve existing stored values** unless a separate cleanup or migration is authorized;
+- **do not keep emitting both `state` and `states`** merely for historical symmetry.
+
+**The unreachable `storeAuction` path (§22.5 defect 2) is not evidence that the plural write is required**
+and must not be read as such.
 
 ---
 
@@ -914,6 +1106,14 @@ the service's contract is wrong. It should be migrated once the service is prove
 
 **Also rejected:** the trait. Converting it first changes four workflows at once, which contradicts
 "one workflow per commit" and makes a parity failure impossible to attribute.
+
+**CONFIRMED after characterisation (`b91d5e7a2`).** `BuyerAgentAuction` **remains the recommended first
+migration**, and the recommendation is now stronger than when it was made: the one unknown it was chosen to
+isolate — the Hire double-write — is measured, so the migration has a real parity baseline rather than a
+structural assumption. Three of the approvals also land in its favour: it is unaffected by the `user_type`
+gate (D-G1F-3, which touches only the Hire Tenant pair), it writes no `zipCodes` key so D-G1F-4 (a) is a
+no-op for it, and it already emits `state` as a raw string so 4S-i changes nothing observable in the first
+migration.
 
 ---
 
@@ -975,9 +1175,45 @@ removes that line by definition, so this test fails. It is a second deliberate t
 identical in purpose to `test_hire_trait_semantics_are_unchanged`, and **it must be added to the authorized
 change list before G1f-3** or a red run will look like an unplanned regression.
 
-### 20.5 STOP — missing characterisation coverage
+### 20.5 The four characterisation gaps — ALL CLOSED (`b91d5e7a2`)
 
-Per the audit instruction, work stopped here. **No test was written.** Four gaps found:
+**As originally written, this section stopped and reported.** No test was written, and the four gaps below
+were declared with the smallest test that would settle each. They were subsequently authorized and closed by
+a tests-only increment.
+
+| Gap | Suite | Tests | Status |
+|---|---|---|---|
+| **GAP 1** — criteria-controller write paths | `tests/Feature/Spatial/G1fLegacyCriteriaControllerCharacterisationTest.php` | 14 | **CLOSED** |
+| **GAP 2** — Hire double-write ordering | `tests/Feature/Spatial/G1fHireDoubleWriteCharacterisationTest.php` | 7 | **CLOSED** |
+| **GAP 3** — `user_type` gate | `tests/Feature/Spatial/G1fHireTenantUserTypeGateCharacterisationTest.php` | 7 | **CLOSED** |
+| **GAP 4** — `zipCodes` mirror | `tests/Feature/Spatial/G1fZipCodesMirrorCharacterisationTest.php` | 7 | **CLOSED** |
+| **Total** | | **35** | all passing |
+
+**GAP 2 was the only gap blocking G1f-1, and it is closed — so G1f-1 is UNBLOCKED.** It remains
+unimplemented and unauthorized; see §23.
+
+**What each closure proved, beyond confirming the prediction:**
+
+- **GAP 2.** Ordering is proven from the **query log**, not from source order: the component-property write
+  executes first, the trait-derived write wins, the persisted value is blob-derived, and no third value
+  appears between them. It additionally proved that `counties` and `state` reach the winning write through a
+  **mutated component property** while `cities` **bypasses the property path entirely** — so a single
+  consolidated writer **cannot uniformly read component state**. A control case with agreeing values is
+  included; `TenantAgentAuctionEdit` is asserted structurally at the documented boundary.
+- **GAP 3.** Confirmed the gate, and **discovered a defect the audit had not seen**: an empty or unknown
+  `user_type` raises after the mirror writes, with no transaction, so **partial persistence is proven**
+  (§6.2.1, §22.5 defect 1).
+- **GAP 4.** Confirmed every F-G1F-5 prediction and added a structural negative proving **no** writer
+  derives the mirror from the blob.
+- **GAP 1.** Confirmed all four controller paths preserve on absent, empty and unparseable payloads — the
+  approved D-G1-2 rule, already in production. It also **corrected this report twice** (`states` plural, and
+  `updateAuction`'s double mirror write) and established that **`storeAuction` cannot reach its own
+  canonical write** against the migrated schema (§22.5 defect 2).
+
+The original gap declarations are preserved below unchanged, so the reasoning that produced them stays
+auditable.
+
+---
 
 ---
 
@@ -1057,8 +1293,12 @@ Per the audit instruction, work stopped here. **No test was written.** Four gaps
 
 ---
 
-**Summary.** **GAP 2 blocks G1f-1.** Gaps 1, 3 and 4 block later increments. None of these tests has been
-written and none is authorized; §23's recommendation sequences GAP 2's closure ahead of any production code.
+**Summary — superseded, retained for lineage.** As authored: *"GAP 2 blocks G1f-1. Gaps 1, 3 and 4 block
+later increments. None of these tests has been written and none is authorized."*
+
+**Current status: all four gaps CLOSED by `b91d5e7a2` — 35 tests, all passing.** GAP 2's closure unblocks
+G1f-1. Gaps 1, 3 and 4 no longer block their later increments on characterisation grounds, though each
+surfaced a defect boundary that does gate its own stage — see §22.5.
 
 ---
 
@@ -1107,7 +1347,7 @@ must follow the precedent already set twice:
 |---|---|
 | `test_no_production_file_outside_the_approved_domain_namespaces_references_it` | add `app/Services/LocationDna/Persistence` to `DOMAIN_DIRS` — one exact entry, no wildcard |
 | `test_the_eight_workflow_components_and_the_trait_do_not_reference_the_core` | narrow to the seven **not yet migrated**; shrink-only, mirroring §21.1 |
-| `test_the_classes_deliberately_not_created_in_this_increment_do_not_exist` | remove `LocationDnaPersistenceService`; **keep `LegacyMirrorAdapter`** unless D-G1F-2 adopts the name |
+| `test_the_classes_deliberately_not_created_in_this_increment_do_not_exist` | remove `LocationDnaPersistenceService` only. **`LegacyMirrorAdapter` is RETAINED in the assertion** — D-G1F-2 approved 2-A, so that class is not created by G1f-1 and stays authorization-gated |
 
 Both prior increments (G1d, G1e) amended this guard by adding exactly one `DOMAIN_DIRS` entry with no
 matching-logic change, and both recorded the amendment in the decision package. G1f-1 should do the same.
@@ -1118,29 +1358,49 @@ matching-logic change, and both recorded the amendment in the decision package. 
 
 ### 22.1 Blockers
 
-| # | Blocker | Blocks | Resolution |
+| # | Blocker | Blocks | Status |
 |---|---|---|---|
-| B1 | **GAP 2** — Hire double-write ordering uncharacterised | **G1f-1** | authorize the two tests in §20.5 GAP 2 |
-| B2 | GAP 1 — criteria controllers uncharacterised | G1f-7 | authorize §20.5 GAP 1 |
-| B3 | GAP 3 — `user_type` gate uncharacterised | G1f-2 | authorize §20.5 GAP 3 |
-| B4 | `test_buyer_offer_components_are_unchanged` absent from the authorized change list | G1f-3 | add it (§20.4) |
-| B5 | v1.2 §4.2 / §4.3 corrections still outstanding | formally, all of G1f | documentation increment |
-| B6 | D-G1-6 branch sequencing (`ux/hire-agent-create-offer-parity`) never decided | G1f-3, G1f-4 | owner decision; that branch touches all four Offer components |
+| B1 | **GAP 2** — Hire double-write ordering uncharacterised | **G1f-1** | **RESOLVED** — `b91d5e7a2`, 7 tests |
+| B2 | GAP 1 — criteria controllers uncharacterised | G1f-7 | **RESOLVED** — `b91d5e7a2`, 14 tests |
+| B3 | GAP 3 — `user_type` gate uncharacterised | G1f-2 | **RESOLVED** — `b91d5e7a2`, 7 tests |
+| B4 | `test_buyer_offer_components_are_unchanged` absent from the authorized change list | G1f-3 | **OPEN** — add it (§20.4) |
+| B5 | v1.2 §4.2 / §4.3 corrections still outstanding | formally, all of G1f | **OPEN** — documentation increment |
+| B6 | D-G1-6 branch sequencing (`ux/hire-agent-create-offer-parity`) never decided | G1f-3, G1f-4 | **OPEN** — owner decision; that branch touches all four Offer components |
 
-### 22.2 Unresolved decisions raised by this audit
+**Blockers remaining before production implementation:** **none for G1f-1.** B4 blocks G1f-3, B6 blocks
+G1f-3/G1f-4, and B5 is a documentation obligation carried from the G1 report §16 step 2. The defect
+boundaries in §22.5 gate their own stages independently.
 
-| # | Decision | Question |
-|---|---|---|
-| **D-G1F-1** | Provenance persistence design | Column on the meta record, separate table, or embedded in the canonical document? Required before any repair increment; **not** required for G1f-1 under §10.2 |
-| **D-G1F-2** | `LegacyMirrorAdapter` naming | Does G1f-1's write-side projection take the approved name — tripping the guard immediately — or a distinct name reserving it for the full read+repair adapter? |
-| **D-G1F-3** | The `user_type` gate | Is a seller/landlord Hire Tenant record *correct* to have no canonical blob, or is this a defect? Determines whether G1f-2 preserves or removes it |
-| **D-G1F-4** | Mirror set and encoding | Is `zipCodes` in or out of the managed mirror set? Is the `state` mirror normalised to raw string, accepting a data change for Tenant Criteria records? |
-| **D-G1F-5** | Criteria controllers in scope | Are W6–W9 part of G1f, or a separate gate? They are canonical writers; leaving them means "sole canonical writer" is false at G1f completion |
+### 22.2 Decisions raised by this audit — ALL FIVE APPROVED (2026-08-02)
 
-**D-G1F-5 is the most consequential.** D-G1-5's approved text says *"`LocationDnaPersistenceService` becomes
-the sole canonical writer."* With W6–W9 excluded, that statement is false at the end of G1f, and the §21
-guard would have to permanently exempt two controllers — turning a shrink-only list into one with a
-permanent floor above one entry.
+The questions are preserved as authored; the approved option and its recorded terms follow each.
+
+| # | Decision | Question | Approved |
+|---|---|---|---|
+| **D-G1F-1** | Provenance persistence design | Column on the meta record, separate table, or embedded in the canonical document? Required before any repair increment; **not** required for G1f-1 under §10.2 | **§10.2 answer, with eight binding restrictions** — see §10.5. Storage design **deferred** to the first authorized repair increment |
+| **D-G1F-2** | `LegacyMirrorAdapter` naming | Does G1f-1's write-side projection take the approved name — tripping the guard immediately — or a distinct name reserving it for the full read+repair adapter? | **2-A** — distinct name `LegacyMirrorProjection`; `LegacyMirrorAdapter` reserved and still uncreated. See §17.0 |
+| **D-G1F-3** | The `user_type` gate | Is a seller/landlord Hire Tenant record *correct* to have no canonical blob, or is this a defect? Determines whether G1f-2 preserves or removes it | **3-C** — gate **preserved** for G1f-2; the partial-write failure treated as a **separate defect**. See §6.2, §6.2.1 |
+| **D-G1F-4** | Mirror set and encoding | Is `zipCodes` in or out of the managed mirror set? Is the `state` mirror normalised to raw string, accepting a data change for Tenant Criteria records? | **`zipCodes`: (a) for G1f-1** — unmanaged, with a binding future checkpoint (§17.4). **`state`: 4S-i** — raw string (§17.3). Plural `states`: legacy dead write (§17.5) |
+| **D-G1F-5** | Criteria controllers in scope | Are W6–W9 part of G1f, or a separate gate? They are canonical writers; leaving them means "sole canonical writer" is false at G1f completion | **APPROVED — all four in scope.** See §22.2.1 |
+
+#### 22.2.1 D-G1F-5 — recorded terms
+
+**All four legacy criteria-controller canonical write paths (W6–W9) are inside the final G1f consolidation
+scope.** Recorded:
+
+- they **may be migrated in a later G1f stage** — G1f-7 in §18's sequence;
+- **G1f cannot be declared complete while they remain independent canonical writers**, so the §21 guard's
+  shrink-only list can reach one entry as designed;
+- the migrated-schema `buyer_id` failure makes **`storeAuction` currently unreachable** (§22.5 defect 2);
+- **that defect must be separately characterized and scoped before migrating the path**, and
+  **must not be silently repaired inside G1f-1**;
+- the controller paths' **existing absent / empty / unparseable preservation behaviour must remain
+  protected** — it is the approved D-G1-2 rule already in production, now pinned by 14 tests.
+
+**Why this was the most consequential of the five.** D-G1-5's approved text says
+*"`LocationDnaPersistenceService` becomes the sole canonical writer."* With W6–W9 excluded, that statement
+would be false at the end of G1f, and the §21 guard would have to permanently exempt two controllers —
+turning a shrink-only list into one with a permanent floor above one entry. The approval keeps D-G1-5 true.
 
 ### 22.3 Risks
 
@@ -1155,13 +1415,57 @@ permanent floor above one entry.
 | Concurrent edits to `ux/hire-agent-create-offer-parity` | medium | D-G1-6 sequencing; that branch has zero mirror-line changes, so the risk is mechanical |
 | `zipCodes` divergence widens during a long G1f | low | out of scope by decision, recorded not hidden |
 
+### 22.4 Reaffirmed constraints — NOT new decisions
+
+Three items were raised alongside the five decisions and are recorded here as **reaffirmations of already-approved
+architecture**, deliberately **not** as new G1f decisions. Recording them as decisions would have created a
+second source of truth for rules that D-G1-2, D-G1-3, D-G1-5 and D-G1-6 already settle — the duplicate-authority
+failure L1 exists to prevent.
+
+**Reaffirmed constraint 1 — explicit commands only.** `LocationDnaPersistenceService` may persist only
+dimensions represented by an explicit `DimensionCommand`, of which there are exactly two — `set` and `clear`.
+**Absence means no operation.** No full-document rewrite from hydrated legacy state. No implicit repair. **No
+inherited, imported, derived or legacy value may become owner-authored merely because another dimension is
+saved.** Source: D-G1-2's approved vocabulary and §5.4 rule 5; mechanised by §10.5 and proven by test T4.
+
+**Reaffirmed constraint 2 — canonical first, mirrors second.** Canonical Location DNA state is written
+**first**. Legacy mirrors are **pure derived outputs** from the resulting canonical document. Canonical and
+mirror writes belong in **one transaction** where the storage model permits. **A mirror may never override a
+present-but-cleared canonical value.** Source: D-G1-5's layer ownership and D-G1-6's approved precedence;
+realised by §16.4 steps 10–13 and §17.
+
+**Reaffirmed carried decision — revision token versus `CriteriaHashService`.** D-G1-3 option **3-C remains
+controlling**: `LocationDnaRevisionToken` stays separate from `CriteriaHashService`; `CriteriaHashService`
+remains **unchanged** in G1f; Bridge cache-key behaviour remains **unchanged** in G1f; and the polygon
+vertex-order and clear-invalidation correction remains a **separate, later compatibility increment**. Source:
+D-G1-3's Carried Condition 1, restated unchanged at G1c, G1d and G1e. See §12.
+
+### 22.5 Defect boundaries — separately identified, none authorized for repair here
+
+Four boundaries are recorded distinctly so that no one of them is silently absorbed into a consolidation
+increment. **None is repaired by this document, and none is authorized for repair.**
+
+| # | Defect boundary | Proven by | Gates |
+|---|---|---|---|
+| **1** | **Empty or unknown Tenant Hire `user_type` causes partial persistence.** Mirrors are written at `:4282`-`:4285`, the save raises at `:4689`, and no transaction protects the operation | `test_an_unrecognised_user_type_leaves_a_partial_write` | G1f-2. Requires its own scoped authorization **before or within** the Tenant Hire migration. **Must not be bundled with removal of the `user_type` gate** |
+| **2** | **`storeAuction` cannot reach its canonical write under the migrated schema** — `buyer_criteria_auctions.buyer_id` is NOT NULL with no default and the controller never sets it | `test_w6_cannot_reach_its_canonical_write_against_the_migrated_schema` | G1f-7. Must be separately characterized and scoped before W6 is migrated. **Must not be silently repaired inside G1f-1**, and must not be assumed operational |
+| **3** | **`updateAuction` emits overlapping `state` / `states` keys in incompatible encodings** within one save | `test_buyer_criteria_update_emits_both_state_keys_in_different_encodings` | G1f-7. Disposition of the plural key is §17.5 |
+| **4** | **`zipCodes` remains outside the G1f-1 managed mirror set**, so its divergence persists by decision | `G1fZipCodesMirrorCharacterisationTest` (7 tests) | The §17.4 checkpoint, binding before any workflow that writes `zipCodes` is migrated |
+
+**Declared boundary on defect 2.** It is measured against the schema **as migrated**, on the SQLite test
+connection — the same class of environment-dependent result as the recorded `ILIKE` and
+`pg_try_advisory_lock` failures. This report cannot determine whether the live PostgreSQL database has
+acquired defaults for those columns outside the migration history. What is proven is narrow and sufficient:
+against the schema this repository declares, W6 is unreachable, so G1f must not be the increment that
+discovers it.
+
 ---
 
 ## 23. Exact implementation authorization recommended for G1f-1
 
 **Recommended authorization — narrow, and staged behind one characterisation increment.**
 
-### Stage A — characterisation only (authorize first)
+### Stage A — characterisation only — **COMPLETE (`b91d5e7a2`)**
 
 - **Authorized:** add `tests/Feature/Spatial/G1fHireDoubleWriteCharacterisationTest.php` implementing
   exactly the two tests in §20.5 GAP 2.
@@ -1169,7 +1473,24 @@ permanent floor above one entry.
 - **Stop condition:** both tests green; zero production files touched.
 - **Rollback:** delete the file.
 
-### Stage B — G1f-1 proper (authorize only after Stage A is green)
+**Delivered, and wider than the minimum by authorization.** All four gaps were closed rather than GAP 2
+alone: four suites, **35 tests**, all passing, zero production files touched, zero existing tests modified.
+**Stop condition met.** See §20.5 and §25.
+
+### Stage B — G1f-1 proper — **UNBLOCKED, NOT AUTHORIZED, NOT STARTED**
+
+Stage A is green, so the precondition on Stage B is discharged. **G1f-1 is architecture-ready:** its five
+governing decisions are approved (§22.2), its blocking characterisation exists (§20.5), and its contracts are
+specified (§16, §17). **It is not authorized by this documentation increment and no production code exists.**
+Authorizing it is a separate act.
+
+**Two terms below are changed by the approvals and supersede the Stage B text as originally written:**
+
+- the mirror projection component is named **`LegacyMirrorProjection`** per D-G1F-2 2-A, and
+  **`LegacyMirrorAdapter` remains uncreated** — so the G1c inertness-guard assertion naming it is **retained,
+  not removed**, contrary to §21.2's third row as first written;
+- the projection manages `cities`, `counties` and `state` only. **`zipCodes` is excluded** per D-G1F-4 (a),
+  and `state` is emitted as a **raw string** per 4S-i.
 
 **Authorized production surfaces — exhaustive:**
 
@@ -1222,13 +1543,27 @@ the record continues to work — but the S1→S2 transition is not rolled back b
 
 ## 24. What this report did not do
 
-No production code, test or configuration was created, modified or deleted. `LocationDnaPersistenceService`
-was not created. `LegacyMirrorAdapter` was not created. No workflow was wired. No snapshot was read or
-written. `CriteriaHashService`, `PublicGeometryProjection` and the retained snapshot were not touched. No
-characterisation test was written for any of the four gaps in §20.5. D-G1-1 … D-G1-7 remain APPROVED and
-unmodified; D-G1F-1 … D-G1F-5 are raised here and remain **open**.
+**As originally authored:** no production code, test or configuration was created, modified or deleted, and
+no characterisation test was written for any of the four gaps in §20.5.
 
-**G1f is not started and is not authorized.**
+**Across both increments — the characterisation commit `b91d5e7a2` and this documentation commit — the
+following remains true:**
+
+- **No production code was created, modified or deleted.** `LocationDnaPersistenceService` was not created.
+  `LegacyMirrorProjection` was not created. **`LegacyMirrorAdapter` was not created** and remains
+  authorization-gated.
+- **No existing test was modified.** The characterisation increment added four new files and changed nothing
+  else; this documentation increment changes one Markdown file and nothing else.
+- No workflow was wired. No trait, controller, model, route, view, migration or configuration changed.
+- No snapshot was read, written, deleted or re-projected. `CriteriaHashService`, `PublicGeometryProjection`
+  and the retained snapshot were not touched, so the D-G1-3 Bridge deferral and the D-G1-7 reader guard both
+  stand.
+- **No defect surfaced by the characterisation was repaired** — all four are recorded in §22.5 and none is
+  authorized for repair.
+- D-G1-1 … D-G1-7 remain **APPROVED and unmodified**; none was reopened. D-G1F-1 … D-G1F-5 are now
+  **APPROVED** (§22.2), and approval is **not** authorization to implement.
+
+**G1f is not started and is not authorized. G1g is not started. No workflow has been migrated.**
 
 ---
 
@@ -1260,4 +1595,50 @@ unrelated to Location DNA:
 - `LazyBridgeImportServiceTest` — 2 of 22: `pg_try_advisory_lock`, same environment class. Recorded as the
   second instance under F-G1B-9.
 
-**This increment adds one documentation file and changes no code, so no test outcome changed.**
+**That increment added one documentation file and changed no code, so no test outcome changed.**
+
+### 25.1 Re-validation after the characterisation increment (`b91d5e7a2`)
+
+The full set was re-executed on the branch after the four G1f suites landed, and again before this
+documentation commit.
+
+| Group | Suites | Tests | Result |
+|---|---|---|---|
+| **G1f characterisation — new** | **4** | **35** | **pass** |
+| G1c contract core | 8 | 128 | pass |
+| G1d capability resolver | 5 | 70 | pass |
+| G1e provenance model | 5 | 88 | pass |
+| G1a characterisation | 5 | 47 | pass |
+| G1b characterisation | 2 | 30 | pass |
+| `CriteriaHashServiceTest` | 1 | 12 | pass |
+| G0.1 public geometry | 3 | 35 | pass |
+| SearchAreas / mirror contract | 7 | 83 | pass |
+| Offer workflow readiness | 1 | 10 | pass |
+| `SearchAreasStateCountyRoundTripTest` | 1 | 4 | **3 pass, 1 fail — pre-existing** |
+| `LazyBridgeImportServiceTest` | 1 | 22 | **20 pass, 2 fail — pre-existing** |
+| **Total** | **43** | **564** | **561 pass, 3 fail** |
+
+**The three failures are unchanged in count, identity and cause** — `near "ILIKE": syntax error` and
+`pg_try_advisory_lock`, both PostgreSQL-only SQL against the SQLite test connection, both reproduced
+identically in the G0.1 control worktree with no G1 file present.
+
+**Per-suite counts for the new increment:** `G1fHireDoubleWriteCharacterisationTest` 7 ·
+`G1fHireTenantUserTypeGateCharacterisationTest` 7 · `G1fZipCodesMirrorCharacterisationTest` 7 ·
+`G1fLegacyCriteriaControllerCharacterisationTest` 14. `php -l` clean on all four; `git diff --check` clean.
+
+**Every pre-existing suite retained its exact prior count**, including the two tripwires that G1f will later
+change by design (`TenantOfferCitiesMirrorTest` 15) and the four inertness guards — so the characterisation
+increment demonstrably wired nothing.
+
+---
+
+## 26. Amendment record
+
+| Amendment | Commit | Change |
+|---|---|---|
+| Original report | `751392600` | Pre-implementation audit as authored. All five decisions open; four characterisation gaps declared with a STOP; no tests written |
+| **Characterisation** | `b91d5e7a2` | Tests only — four suites, 35 tests. Closed all four gaps. Corrected this report twice (`states` plural; `updateAuction`'s double mirror write) and surfaced two defects the audit had not seen (partial persistence on unknown `user_type`; `storeAuction` unreachable) |
+| **Decisions approved** | *this commit* | **D-G1F-1 … D-G1F-5 APPROVED** (§22.2) with recorded terms in §10.5, §17.0, §17.3, §17.4, §17.5, §6.2 and §22.2.1. Three items recorded as **reaffirmed constraints, not new decisions** (§22.4). All four gaps marked **CLOSED** (§20.5); §22.1 blockers B1–B3 marked **RESOLVED**. New **§22.5** records four defect boundaries, none authorized for repair. §23 Stage A marked **COMPLETE** and Stage B marked **UNBLOCKED, NOT AUTHORIZED, NOT STARTED**. §25.1 records re-validation |
+
+**Nothing in either amendment authorises a gate, migrates a workflow, or touches production code.** Every
+approval is a contract term; every closure is backed by a named executed test.
