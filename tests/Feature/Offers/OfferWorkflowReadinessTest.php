@@ -657,6 +657,16 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/LocationDna/Provenance/ProvenanceActor.php',
             'app/Services/LocationDna/Provenance/ProvenanceAuthority.php',
             'app/Services/LocationDna/Provenance/ProvenanceTransition.php',
+            // G1f-1 canonical writer + pure write-side mirror projection
+            'app/Services/LocationDna/Persistence/CanonicalMetaKey.php',
+            'app/Services/LocationDna/Persistence/LegacyMirrorProjection.php',
+            'app/Services/LocationDna/Persistence/LocationDnaCommandBuilder.php',
+            'app/Services/LocationDna/Persistence/LocationDnaPersistenceService.php',
+            'app/Services/LocationDna/Persistence/LocationDnaWritableRecord.php',
+            'app/Services/LocationDna/Persistence/MetaKeyedRecord.php',
+            'app/Services/LocationDna/Persistence/OwnerPrivateLocationDnaWriter.php',
+            'app/Services/LocationDna/Persistence/PatchResult.php',
+            'app/Services/LocationDna/Persistence/PersistenceOutcome.php',
         ];
 
         $unexpected = array_values(array_filter(

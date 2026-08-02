@@ -21,6 +21,15 @@ class G1eProvenanceInertnessGuardTest extends TestCase
 
     private const PROVENANCE_DIR = 'app/Services/LocationDna/Provenance';
 
+    /**
+     * G1f-1's canonical writer — the one approved production consumer.
+     *
+     * It uses provenance ONLY to validate a transition, transiently. It persists none, and
+     * test_no_provenance_is_persisted_by_the_canonical_writer in the G1f-1 suite asserts that
+     * separately, so this exemption widens the reference scan and not the storage rule.
+     */
+    private const PERSISTENCE_DIR = 'app/Services/LocationDna/Persistence';
+
     private function root(): string
     {
         return dirname(__DIR__, 5);
@@ -66,7 +75,9 @@ class G1eProvenanceInertnessGuardTest extends TestCase
 
                 $rel = str_replace($this->root().'/', '', $file->getPathname());
 
-                if (str_starts_with($rel, self::PROVENANCE_DIR)) {
+                // ONE explicit directory, not a wildcard — a future namespace must be added
+                // here under its own authorisation.
+                if (str_starts_with($rel, self::PROVENANCE_DIR) || str_starts_with($rel, self::PERSISTENCE_DIR)) {
                     continue;
                 }
 

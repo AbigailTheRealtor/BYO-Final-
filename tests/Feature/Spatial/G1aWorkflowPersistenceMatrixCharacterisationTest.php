@@ -93,6 +93,11 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
                 'class' => HireBuyerCreate::class, 'model' => 'buyer', 'impl' => 'trait',
                 'load' => 'loadDraft', 'user_type' => null,
                 'save' => 'saveAllMetadata', 'cleared_cities' => 'resurrected',
+                // G1f-1: MIGRATED to LocationDnaPersistenceService. Its LOAD side is unchanged
+                // and is still asserted by every load-side test below. Its SAVE side moved to
+                // the canonical writer by approved decision, so the two save-side tests that
+                // pin pre-consolidation write behaviour skip it — see `migrated_save` below.
+                'migrated_save' => true,
             ],
             'Hire Buyer · edit' => [
                 'class' => HireBuyerEdit::class, 'model' => 'buyer', 'impl' => 'trait',
@@ -369,7 +374,7 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         $covered = 0;
 
         foreach ($this->workflows() as $label => $wf) {
-            if ($wf['save'] === null) {
+            if ($wf['save'] === null || ($wf['migrated_save'] ?? false)) {
                 continue;
             }
 
@@ -399,7 +404,13 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
             $covered++;
         }
 
-        $this->assertSame(6, $covered, 'Six of the eight workflows have an invocable save path.');
+        $this->assertSame(
+            5,
+            $covered,
+            'Five of the eight workflows have an invocable, UNMIGRATED save path. Hire Buyer create '
+            .'was migrated by G1f-1; its post-migration save is covered by '
+            .'G1f1BuyerAgentAuctionMigrationTest.'
+        );
     }
 
     /**
@@ -415,7 +426,7 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         $covered = 0;
 
         foreach ($this->workflows() as $label => $wf) {
-            if ($wf['save'] === null) {
+            if ($wf['save'] === null || ($wf['migrated_save'] ?? false)) {
                 continue;
             }
 
@@ -442,7 +453,11 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
             $covered++;
         }
 
-        $this->assertSame(6, $covered);
+        $this->assertSame(
+            5,
+            $covered,
+            'Five invocable, UNMIGRATED save paths. Hire Buyer create was migrated by G1f-1.'
+        );
     }
 
     // ═════════════════════════════════════════════════════════════════════════

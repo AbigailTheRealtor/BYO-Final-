@@ -15,6 +15,7 @@ use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Services\CityNameNormalizer;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 
 class BuyerAgentAuction extends Component
 {
@@ -1879,6 +1880,26 @@ class BuyerAgentAuction extends Component
         $this->property_items = $this->decodeJsonArray($value);
     }
 
+    /**
+     * G1f-1 — persist Location DNA through the canonical writer.
+     *
+     * This is the whole of this workflow's Location DNA write path. It replaces the former
+     * component-property mirror writes plus `saveSearchAreas()`, and it is the only place in
+     * this component that touches the canonical meta key.
+     *
+     * The bridged payload is passed through as-is. Everything else — presence semantics, command
+     * construction, capability enforcement, transaction and mirror derivation — belongs to the
+     * writer, so this method holds no Location DNA policy of its own.
+     *
+     * Deliberately NOT changed by this migration: `loadSearchAreas()` and the discrete `$state`,
+     * `$counties`, `$cities` host props, which the map partial and the prefill still use.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        (new OwnerPrivateLocationDnaWriter())
+            ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     protected function saveAllMetadata($auction)
     {
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
@@ -1897,15 +1918,23 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('expiration_date', $this->expiration_date);
         $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
-        // Location Information
-        $auction->saveMeta('cities', json_encode($this->cities));
-        $auction->saveMeta('counties', json_encode($this->counties));
-        $auction->saveMeta('state', $this->state);
-
-        // 9D: Search Areas + Important Places. saveSearchAreas() writes the
-        // location_dna_preferences blob and re-mirrors the discrete cities/counties/state
-        // written just above from the blob (the map is now the single editing surface).
-        $this->saveSearchAreas($auction);
+        // Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-1).
+        //
+        // This workflow previously wrote the discrete `cities` / `counties` / `state` mirrors
+        // from its own component properties and then called saveSearchAreas(), which wrote the
+        // canonical blob and RE-wrote the same three mirrors from it. Correctness rested on
+        // statement ordering alone, proven by G1fHireDoubleWriteCharacterisationTest.
+        //
+        // Both halves are replaced by one call. The writer builds explicit set/clear commands
+        // from the submitted payload, persists canonical state first and derives the mirrors
+        // from the result, inside one transaction. A dimension the payload does not state gets
+        // no command and is therefore not written — which is what stops a no-op save from
+        // destroying a legacy-only mirror.
+        //
+        // The trait is deliberately NOT rewired here: loadSearchAreas() and the host props are
+        // unchanged, and the other seven workflows still use saveSearchAreas() untouched.
+        // Consolidating them is G1f-2 and later.
+        $this->persistLocationDna($auction);
         $this->saveImportantPlaces($auction);
 
         // Property Details

@@ -24,6 +24,9 @@ class G1dCapabilityInertnessGuardTest extends TestCase
 
     private const CONTRACT_DIR = 'app/Services/LocationDna/Contract';
 
+    /** G1f-1's canonical writer — the one approved production consumer of the resolver. */
+    private const PERSISTENCE_DIR = 'app/Services/LocationDna/Persistence';
+
     private function root(): string
     {
         return dirname(__DIR__, 5);
@@ -69,7 +72,11 @@ class G1dCapabilityInertnessGuardTest extends TestCase
 
                 $rel = str_replace($this->root().'/', '', $file->getPathname());
 
-                if (str_starts_with($rel, self::CAPABILITY_DIR)) {
+                // G1f-1: the canonical writer resolves and enforces capabilities, so it is an
+                // approved consumer. ONE explicit directory, not a wildcard under
+                // app/Services/LocationDna/ — a future namespace must be added here under its
+                // own authorisation, exactly as the G1c guard's DOMAIN_DIRS requires.
+                if (str_starts_with($rel, self::CAPABILITY_DIR) || str_starts_with($rel, self::PERSISTENCE_DIR)) {
                     continue;
                 }
 

@@ -57,6 +57,7 @@ class G1cContractCoreInertnessGuardTest extends TestCase
         'app/Services/LocationDna/Contract',    // G1c — the contract core itself
         'app/Services/LocationDna/Capability',  // G1d — reuses the G1c Dimension vocabulary
         'app/Services/LocationDna/Provenance',  // G1e — reuses the G1c Dimension vocabulary
+        'app/Services/LocationDna/Persistence', // G1f-1 — the canonical writer applies the contract
     ];
 
     /** Class basenames that would appear in a `use` statement or a fully-qualified reference. */
