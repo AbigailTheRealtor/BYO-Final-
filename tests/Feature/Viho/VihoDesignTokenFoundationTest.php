@@ -256,23 +256,37 @@ class VihoDesignTokenFoundationTest extends TestCase
     }
 
     /**
-     * The two measured disagreements stay deferred rather than silently resolved.
+     * The measured disagreements stay deferred rather than silently resolved.
      *
-     * Landlord defines no `rose` badge tone, and renders its hero status pill teal where the other
-     * three render it green. Promoting either would recolour a live page under cover of a token
-     * extraction. This asserts the foundation declines to decide.
+     * AMENDED IN M2, AND THE AMENDMENT IS THE POINT OF THIS COMMENT. M1 asserted that no
+     * `--viho-status-rose-*` token existed, because Landlord defines no rose badge and three of
+     * four is not common.
+     *
+     * M2's badge contract requires a `danger` variant, and there is no danger tone common to all
+     * four views to build it from. The foundation therefore now defines `--viho-status-danger-*`
+     * carrying rose's values. Renaming rose to danger would be a way to slip past the old
+     * assertion, so it is stated plainly instead: what M1 was protecting was Landlord's PAGE, not
+     * the string "rose". A token in the shared library renders nothing — Landlord's view still
+     * defines no rose class, still emits no danger badge, and is byte-for-byte unaffected.
+     *
+     * What stays genuinely open is the M8 question: when Create Offer migrates, does Landlord gain
+     * a danger badge or keep going without one? Nothing here answers that.
+     *
+     * The hero status pill deferral is untouched and still enforced below.
      */
     public function test_deferred_disagreements_are_not_silently_resolved(): void
     {
         $tokens = $this->tokensIn($this->stylesheet());
 
-        foreach (['--viho-status-rose-bg', '--viho-status-rose-fg', '--viho-status-rose-border'] as $token) {
-            $this->assertArrayNotHasKey(
-                $token,
-                $tokens,
-                'Landlord defines no rose tone, so three-of-four is not common and rose stays deferred.'
-            );
-        }
+        // The danger tone exists, and carries rose's values rather than a newly invented colour.
+        $this->assertSame('#FFF1F2', $tokens['--viho-status-danger-bg'] ?? null);
+        $this->assertSame('#BE123C', $tokens['--viho-status-danger-fg'] ?? null);
+        $this->assertSame('#FECDD3', $tokens['--viho-status-danger-border'] ?? null);
+
+        // Landlord's page is still untouched by it — the thing the M1 deferral actually protected.
+        $landlordSrc = $this->scanner->read(self::CREATE_OFFER_VIEWS['landlord']);
+        $this->assertStringNotContainsString('badge-rose', preg_replace('/\s+/', '', $landlordSrc));
+        $this->assertStringNotContainsString('viho-badge', $landlordSrc, 'Landlord consumes no VIHO badge yet.');
 
         foreach (['--viho-status-pill-bg', '--viho-status-pill-fg', '--viho-status-pill-border'] as $token) {
             $this->assertArrayNotHasKey(
@@ -392,15 +406,24 @@ class VihoDesignTokenFoundationTest extends TestCase
     // ── 6. No rendered output changed ────────────────────────────────────────
 
     /**
-     * The rendered-output argument, stated as the fact it rests on.
+     * Only VIHO-owned files may read a VIHO token.
      *
-     * A stylesheet can only affect a page it reaches. The test above proves nothing reaches this
-     * one. This adds the second, independent leg: the tokens it declares are inert anyway, because
-     * the repository contains no `var(--viho-…)` reference at all. Both legs would have to fail
-     * before a pixel could move.
+     * AMENDED IN M2. M1 asserted that NOTHING anywhere read a `var(--viho-…)`, and said in its own
+     * failure message that this was expected to change "once M3 starts consuming them". That
+     * assumption was wrong about the milestone, not about the rule: first consumption belongs to
+     * M2, where the primitives are authored, because a primitive that hardcoded a literal the
+     * token layer already holds would reintroduce inside VIHO exactly the duplication M8 exists to
+     * remove.
+     *
+     * So the assertion is narrowed rather than dropped. It is deliberately NOT relaxed to a
+     * repository-wide allowance: the interesting property was never "does anyone read a token", it
+     * is "does a PRODUCT read one" — and that must stay false until M3 and M8 respectively. A
+     * blanket allowance would have retired the guard at the exact moment it started mattering.
      */
-    public function test_the_tokens_are_not_consumed_anywhere(): void
+    public function test_only_viho_owned_files_consume_the_tokens(): void
     {
+        $allowedPrefixes = ['resources/views/viho/', 'resources/views/components/viho/'];
+
         $consumers = [];
 
         foreach (['resources/views', 'resources/css', 'public/css'] as $dir) {
@@ -418,23 +441,62 @@ class VihoDesignTokenFoundationTest extends TestCase
                     continue;
                 }
 
-                // Comments are stripped first. The foundation's own header explains that nothing
-                // reads a token yet, and its responsive section shows the `@media (…: var(…))`
-                // form precisely to warn that it does not work — both would otherwise register as
-                // the consumption they are documenting the absence of.
+                // Comments are stripped first. The foundation's own header explains where tokens
+                // may be read, and its responsive section shows the `@media (…: var(…))` form
+                // precisely to warn that it does not work — both would otherwise register as the
+                // consumption they are describing.
                 $body = Scanner::stripComments(file_get_contents($item->getPathname()));
 
-                if (str_contains($body, 'var(--viho')) {
-                    $consumers[] = ltrim(str_replace(base_path() . '/', '', $item->getPathname()), '/');
+                if (! str_contains($body, 'var(--viho')) {
+                    continue;
                 }
+
+                $rel = ltrim(str_replace(base_path() . '/', '', $item->getPathname()), '/');
+
+                foreach ($allowedPrefixes as $prefix) {
+                    if (str_starts_with($rel, $prefix)) {
+                        continue 2;
+                    }
+                }
+
+                $consumers[] = $rel;
             }
         }
 
         $this->assertSame(
             [],
             $consumers,
-            "No page reads a --viho token yet, which is why re-declaring them cannot change rendering. "
-            . "Once M3 starts consuming them this assertion is expected to change:\n" . implode("\n", $consumers)
+            "Only resources/views/viho/** and resources/views/components/viho/** may read a --viho "
+            . "token. Product adoption is M3 (Hire Agent) and M8 (Create Offer):\n" . implode("\n", $consumers)
+        );
+    }
+
+    /**
+     * Neither product reads a token, stated on its own so a failure names the product directly.
+     *
+     * This is the half of the old assertion that carries the zero-render-change guarantee, kept
+     * sharp rather than folded into the scoped check above.
+     */
+    public function test_neither_product_consumes_the_tokens(): void
+    {
+        foreach ([Scanner::ZONE_HIRE_AGENT, Scanner::ZONE_CREATE_OFFER] as $zone) {
+            foreach ($this->scanner->filesInZone($zone) as $file) {
+                $this->assertStringNotContainsString(
+                    'var(--viho',
+                    Scanner::stripComments($this->scanner->read($file)),
+                    "{$file} must not read a VIHO token yet."
+                );
+            }
+        }
+    }
+
+    /** The VIHO primitives really do read the tokens — the positive half of the same contract. */
+    public function test_the_viho_layer_actually_consumes_the_tokens(): void
+    {
+        $this->assertStringContainsString(
+            'var(--viho-',
+            $this->stylesheet(),
+            'M2 primitives are styled from the token layer; if nothing reads a token, M1 was pointless.'
         );
     }
 
@@ -478,12 +540,63 @@ class VihoDesignTokenFoundationTest extends TestCase
         $this->assertSame([], $violations, "M1 must add no forbidden edge:\n" . implode("\n", $violations));
     }
 
-    /** M1 builds no components. That is M2. */
-    public function test_m1_creates_no_shared_components(): void
+    /**
+     * The component directory exists and holds only the eight approved M2 primitives.
+     *
+     * AMENDED IN M2. M1 asserted this directory did NOT exist, as a milestone marker. It now
+     * exists, so the marker becomes a scope contract instead: exactly the approved set, nothing
+     * more. That inversion is what stops the library growing sideways — the deferred composed
+     * components each need a data and interaction contract that has not been mapped yet, and the
+     * cheapest way to skip that work is to quietly add them here.
+     *
+     * @see \Tests\Feature\Viho\VihoPresentationPrimitivesTest for the components' own behaviour
+     */
+    public function test_the_component_directory_holds_only_approved_primitives(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho'),
+            'M2 creates the shared component directory.'
+        );
+
+        $found = array_map(
+            fn ($f) => basename($f, '.blade.php'),
+            $this->scanner->filesInZone(Scanner::ZONE_VIHO)
+        );
+        sort($found);
+
+        $this->assertSame(
+            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'kv', 'section-header', 'stat', 'styles'],
+            $found,
+            'Only the eight approved M2 primitives (plus the M1 stylesheet) may exist in the neutral namespace.'
+        );
+    }
+
+    /**
+     * The deferred composed components do not exist yet.
+     *
+     * Named individually so that adding one fails with its own name rather than as an off-by-one
+     * in a count.
+     */
+    public function test_deferred_composed_components_do_not_exist(): void
+    {
+        foreach ([
+            'page', 'hero', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
+            'section-nav', 'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
+            'divider', 'hero-fact', 'media-placeholder',
+        ] as $deferred) {
+            $this->assertFalse(
+                $this->scanner->exists("resources/views/components/viho/{$deferred}.blade.php"),
+                "x-viho.{$deferred} is deferred to a later milestone and must not exist yet."
+            );
+        }
+    }
+
+    /** M2 adds nothing under app/Support/Viho — PHP presentation support stays deferred. */
+    public function test_m2_adds_no_php_presentation_support(): void
     {
         $this->assertFalse(
-            $this->scanner->exists('resources/views/components/viho'),
-            'Shared Blade components are M2, not M1.'
+            $this->scanner->exists('app/Support/Viho'),
+            'PHP presentation support is deferred until a later milestone proves it necessary.'
         );
     }
 }

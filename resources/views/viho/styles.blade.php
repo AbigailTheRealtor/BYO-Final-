@@ -208,5 +208,455 @@
        all four views. */
     --viho-bp-md: 767.98px;
     --viho-bp-lg: 991.98px;
+
+    /* ── Semantic tone: danger ────────────────────────────────────────────────
+       ADDED IN M2, AND NOT THE RESOLUTION OF THE M1 ROSE DEFERRAL. Read both
+       halves of that sentence.
+
+       M2's badge contract requires a `danger` variant. No danger tone is common
+       to all four Create Offer views: Seller, Buyer and Tenant define a `rose`
+       badge (#fff1f2 / #be123c / #fecdd3) and Landlord does not. M1 therefore
+       declined to promote rose, on the stated grounds that inventing Landlord's
+       copy "would add a tone to a page that has never had one".
+
+       These tokens take rose's values under a semantic name. That does not
+       violate the deferral's concern, because a token in the shared library
+       renders nothing: Landlord's view still defines no rose class, still emits
+       no danger badge, and is byte-for-byte unaffected. What remains genuinely
+       open is the M8 question — when Create Offer migrates, does Landlord gain a
+       danger badge or keep going without one? M2 does not answer that, and
+       naming these tokens `danger` rather than `rose` is meant to keep the two
+       questions apart rather than to slip past the M1 assertion. The M1 test was
+       updated deliberately to say so. */
+    --viho-status-danger-bg:     #FFF1F2;
+    --viho-status-danger-fg:     #BE123C;
+    --viho-status-danger-border: #FECDD3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   M2 — neutral presentation primitives.
+
+   Every rule below is consumed by exactly one `<x-viho.*>` component and styles
+   only its own `.viho-` class. Values come from the token block above rather
+   than from repeated literals, which is the whole reason M1 landed first.
+
+   NOT HERE, DELIBERATELY: page, grid, hero, sidebar, tab and navigation styles.
+   Those are composed surfaces whose data and interaction contracts have not been
+   mapped yet, and building them from the four current copies would bake in
+   decisions that the hero and layout milestones exist to make.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Card ────────────────────────────────────────────────────────────────────
+   Geometry is byte-identical across all four Create Offer views (43 usages), so
+   there was nothing to reconcile. `overflow:hidden` is what lets the header
+   gradient meet the rounded corner. */
+.viho-card {
+    background: var(--viho-card-bg);
+    border: 1px solid var(--viho-border);
+    border-radius: var(--viho-radius-lg);
+    box-shadow: var(--viho-shadow-card);
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+}
+.viho-card-accent {
+    border-color: var(--viho-accent, var(--viho-primary));
+}
+.viho-card-head {
+    background: var(--viho-surface-gradient);
+    border-bottom: 1px solid var(--viho-border);
+    padding: var(--viho-space-lg) var(--viho-space-xl);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--viho-space-md);
+}
+.viho-card-head-main {
+    min-width: 0;
+}
+.viho-card-body {
+    padding: var(--viho-space-xl) var(--viho-space-2xl);
+}
+.viho-card-compact .viho-card-head {
+    padding: var(--viho-space-md) var(--viho-space-lg);
+}
+.viho-card-compact .viho-card-body {
+    padding: var(--viho-space-lg);
+}
+.viho-card-foot {
+    padding: var(--viho-space-md) var(--viho-space-2xl);
+    border-top: 1px solid var(--viho-border-subtle);
+    background: var(--viho-card-bg);
+}
+
+/* ── Section header ──────────────────────────────────────────────────────────
+   Typography matches the Create Offer card header exactly (700 / 1.05rem /
+   -0.01em / #1e293b). The element is chosen by the caller, so this styles a
+   class rather than an `h*` tag — a primitive that hard-coded `h4` would dictate
+   document outline to every page that used it. */
+.viho-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--viho-space-md);
+}
+.viho-section-header-title {
+    font-weight: var(--viho-weight-bold);
+    font-size: var(--viho-font-lg);
+    letter-spacing: var(--viho-tracking-tight);
+    color: var(--viho-text-strong);
+    margin: 0;
+}
+.viho-section-header-desc {
+    font-size: var(--viho-font-md);
+    color: var(--viho-label);
+    margin: var(--viho-space-2xs) 0 0 0;
+}
+.viho-section-header-icon {
+    margin-right: var(--viho-space-xs);
+}
+
+/* ── Key/value row ───────────────────────────────────────────────────────────
+   The single most repeated pattern in either product: ~540 `$row()` calls across
+   Create Offer and ~340 rows in Hire Agent.
+
+   TWO LAYOUTS, BOTH REAL. Create Offer renders a 5/7 two-column grid; Hire Agent
+   renders label and value inline on one full-width line. Neither is a mistake,
+   so `layout` selects between them instead of one being converted to the other.
+   Grid columns use the same 41.666%/58.333% Bootstrap resolves col-md-5/7 to, so
+   the primitive does not require a grid framework to sit inside. */
+.viho-kv {
+    display: block;
+    margin-bottom: 0.65rem;
+}
+.viho-kv-label {
+    color: var(--viho-label);
+    font-weight: var(--viho-weight-semibold);
+}
+.viho-kv-value {
+    color: var(--viho-text-strong);
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+.viho-kv-split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--viho-space-md);
+}
+.viho-kv-split > .viho-kv-label {
+    flex: 0 0 41.666%;
+    max-width: 41.666%;
+}
+.viho-kv-split > .viho-kv-value {
+    flex: 0 0 calc(58.333% - var(--viho-space-md));
+    max-width: calc(58.333% - var(--viho-space-md));
+}
+@media (max-width: 767.98px) {
+    .viho-kv-split > .viho-kv-label,
+    .viho-kv-split > .viho-kv-value {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+.viho-kv-inline .viho-kv-label {
+    font-weight: var(--viho-weight-bold);
+}
+.viho-kv-inline .viho-kv-value {
+    font-weight: 400;
+}
+.viho-kv-emphasized .viho-kv-value {
+    font-weight: var(--viho-weight-bold);
+    color: var(--viho-heading);
+}
+.viho-kv-muted .viho-kv-value {
+    color: var(--viho-text-muted);
+}
+.viho-kv-empty {
+    color: var(--viho-text-muted);
+    font-style: italic;
+}
+.viho-kv-icon {
+    margin-right: var(--viho-space-2xs);
+    color: var(--viho-label);
+}
+
+/* ── Badge / status pill ─────────────────────────────────────────────────────
+   Base geometry is common to all four views.
+
+   PARAMETERISED, NOT STANDARDISED. Seller and Buyer clamp a long badge with
+   `max-width:100%; overflow:hidden; text-overflow:ellipsis`; Landlord and Tenant
+   do not. A two-two split has no majority, so truncation is opt-in via
+   `.viho-badge-truncate` and neither behaviour is imposed.
+
+   The `accent` variant reads caller-supplied custom properties and has no colour
+   of its own — a shared primitive must not know which role is rendering it. */
+.viho-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.73rem;
+    font-weight: var(--viho-weight-semibold);
+    padding: var(--viho-space-2xs) 0.55rem;
+    border-radius: var(--viho-radius-pill);
+    border: 1px solid;
+    white-space: nowrap;
+}
+.viho-badge-truncate {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.viho-badge-pill {
+    font-size: var(--viho-font-sm);
+    font-weight: var(--viho-weight-bold);
+    padding: 0.28rem 0.7rem;
+}
+.viho-badge-neutral {
+    background: var(--viho-surface-subtle);
+    color: var(--viho-text);
+    border-color: var(--viho-border);
+}
+.viho-badge-primary {
+    background: var(--viho-status-blue-bg);
+    color: var(--viho-status-blue-fg);
+    border-color: var(--viho-status-blue-border);
+}
+.viho-badge-success {
+    background: var(--viho-status-green-bg);
+    color: var(--viho-status-green-fg);
+    border-color: var(--viho-status-green-border);
+}
+.viho-badge-warning {
+    background: var(--viho-status-amber-bg);
+    color: var(--viho-status-amber-fg);
+    border-color: var(--viho-status-amber-border);
+}
+.viho-badge-danger {
+    background: var(--viho-status-danger-bg);
+    color: var(--viho-status-danger-fg);
+    border-color: var(--viho-status-danger-border);
+}
+.viho-badge-info {
+    background: var(--viho-status-teal-bg);
+    color: var(--viho-status-teal-fg);
+    border-color: var(--viho-status-teal-border);
+}
+.viho-badge-accent {
+    background: var(--viho-accent-bg, var(--viho-surface-subtle));
+    color: var(--viho-accent-fg, var(--viho-text));
+    border-color: var(--viho-accent-border, var(--viho-border));
+}
+
+/* ── Button ──────────────────────────────────────────────────────────────────
+   Geometry from the Create Offer action button.
+
+   PARAMETERISED, NOT STANDARDISED. Seller, Buyer and Tenant transition
+   `background` and `border-color`; Landlord transitions `background` only. The
+   three-way form is used here because it is the majority AND is a superset — a
+   page that never changes border-colour is unaffected by it being transitionable.
+   Recorded so the choice is visible rather than assumed.
+
+   The focus ring is deliberately not `outline:none`. */
+.viho-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.6rem var(--viho-space-md);
+    font-size: var(--viho-font-md);
+    font-weight: var(--viho-weight-semibold);
+    line-height: var(--viho-leading-normal);
+    border-radius: var(--viho-radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--viho-transition), border-color var(--viho-transition), color var(--viho-transition);
+}
+.viho-btn:focus-visible {
+    outline: 2px solid var(--viho-primary);
+    outline-offset: 2px;
+}
+.viho-btn-block {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+}
+.viho-btn-primary {
+    background: var(--viho-primary);
+    color: #fff;
+    border-color: var(--viho-primary);
+}
+.viho-btn-primary:hover {
+    background: var(--viho-primary-hover);
+    border-color: var(--viho-primary-hover);
+    color: #fff;
+}
+.viho-btn-secondary {
+    background: var(--viho-surface-subtle);
+    color: var(--viho-text);
+    border-color: var(--viho-border);
+}
+.viho-btn-secondary:hover {
+    background: var(--viho-page-bg);
+    color: var(--viho-text-strong);
+}
+.viho-btn-outline {
+    background: var(--viho-card-bg);
+    color: var(--viho-text);
+    border-color: var(--viho-border-strong);
+}
+.viho-btn-outline:hover {
+    background: var(--viho-page-bg);
+    color: var(--viho-text-strong);
+}
+.viho-btn-subtle {
+    background: transparent;
+    color: var(--viho-text);
+    border-color: transparent;
+}
+.viho-btn-subtle:hover {
+    background: var(--viho-surface-subtle);
+}
+.viho-btn-success {
+    background: var(--viho-success);
+    color: #fff;
+    border-color: var(--viho-success);
+}
+.viho-btn-success:hover {
+    background: var(--viho-status-green-fg);
+    border-color: var(--viho-status-green-fg);
+    color: #fff;
+}
+.viho-btn-danger {
+    background: var(--viho-status-danger-fg);
+    color: #fff;
+    border-color: var(--viho-status-danger-fg);
+}
+.viho-btn-danger:hover {
+    filter: brightness(0.94);
+    color: #fff;
+}
+.viho-btn-icon {
+    padding: 0.45rem;
+    gap: 0;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+}
+.viho-btn-disabled,
+.viho-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+}
+.viho-btn-loading {
+    cursor: progress;
+}
+
+/* ── Action tile ─────────────────────────────────────────────────────────────
+   From the Create Offer interaction card, present in all four views. */
+.viho-action-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--viho-space-sm);
+    background: var(--viho-card-bg);
+    border: 1px solid var(--viho-border-strong);
+    border-radius: var(--viho-radius-lg);
+    padding: 1rem 0.85rem var(--viho-space-lg);
+    min-height: 0;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow var(--viho-transition), border-color var(--viho-transition), transform var(--viho-transition);
+}
+.viho-action-tile:focus-visible {
+    outline: 2px solid var(--viho-primary);
+    outline-offset: 2px;
+}
+.viho-action-tile-icon {
+    font-size: var(--viho-font-xl);
+    color: var(--viho-primary);
+}
+.viho-action-tile-label {
+    font-weight: var(--viho-weight-semibold);
+    font-size: var(--viho-font-md);
+    color: var(--viho-text-strong);
+}
+.viho-action-tile-desc {
+    font-size: var(--viho-font-2xs);
+    color: var(--viho-label);
+}
+.viho-action-tile-active {
+    border-color: var(--viho-primary);
+    box-shadow: var(--viho-shadow-raised);
+}
+.viho-action-tile-disabled {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ── Stat item ───────────────────────────────────────────────────────────────
+   From the Create Offer activity row, present in all four views. */
+.viho-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--viho-space-md);
+    padding: 0.18rem 0;
+    border-bottom: 1px solid var(--viho-border-subtle);
+}
+.viho-stat:last-child {
+    border-bottom: none;
+}
+.viho-stat-label {
+    font-size: var(--viho-font-2xs);
+    color: var(--viho-label);
+}
+.viho-stat-value {
+    font-weight: var(--viho-weight-bold);
+    font-size: var(--viho-font-2xs);
+    color: var(--viho-text-muted);
+}
+.viho-stat-support {
+    display: block;
+    font-size: var(--viho-font-3xs);
+    color: var(--viho-text-muted);
+    font-weight: 400;
+}
+.viho-stat-accent .viho-stat-value {
+    color: var(--viho-accent, var(--viho-primary));
+}
+.viho-stat-icon {
+    margin-right: var(--viho-space-2xs);
+    color: var(--viho-label);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────
+   The one primitive here that is a forward-looking contract rather than an
+   extraction. Both products already say "No Record Found!", "No listings found"
+   and "No bids yet on this listing." — but as bare strings with no shared
+   markup, so there was no existing treatment to preserve. Geometry and colour
+   are assembled from tokens only, and nothing renders it yet. */
+.viho-empty-state {
+    text-align: center;
+    padding: var(--viho-space-2xl) var(--viho-space-xl);
+    color: var(--viho-label);
+}
+.viho-empty-state-icon {
+    font-size: var(--viho-font-xl);
+    color: var(--viho-text-muted);
+    margin-bottom: var(--viho-space-md);
+}
+.viho-empty-state-title {
+    font-weight: var(--viho-weight-semibold);
+    font-size: var(--viho-font-md);
+    color: var(--viho-text-strong);
+    margin: 0 0 var(--viho-space-2xs) 0;
+}
+.viho-empty-state-desc {
+    font-size: var(--viho-font-sm);
+    color: var(--viho-label);
+    margin: 0;
+}
+.viho-empty-state-action {
+    margin-top: var(--viho-space-md);
 }
 </style>

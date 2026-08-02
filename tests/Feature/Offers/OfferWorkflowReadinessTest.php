@@ -851,6 +851,21 @@ class OfferWorkflowReadinessTest extends TestCase
             //   anywhere, so it cannot alter rendering. Adoption is M3 (Hire Agent) and M8
             //   (Create Offer). This is the ONLY production path M1 touches.
             'resources/views/viho/styles.blade.php',
+            // Milestone 2 — the eight neutral VIHO presentation primitives, plus the component CSS
+            //   they need appended to the M1 stylesheet above. Listed individually rather than as a
+            //   directory wildcard: the point of the entry is that adding a NINTH component is a
+            //   decision someone has to make explicitly, and a wildcard would wave the deferred
+            //   composed components (hero, gallery, detail shell, quick actions…) straight through.
+            //   Additive and inert: nothing renders any of them, and neither product reads a
+            //   --viho token. Adoption is M3 (Hire Agent) and M8 (Create Offer).
+            'resources/views/components/viho/action-tile.blade.php',
+            'resources/views/components/viho/badge.blade.php',
+            'resources/views/components/viho/button.blade.php',
+            'resources/views/components/viho/card.blade.php',
+            'resources/views/components/viho/empty-state.blade.php',
+            'resources/views/components/viho/kv.blade.php',
+            'resources/views/components/viho/section-header.blade.php',
+            'resources/views/components/viho/stat.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
