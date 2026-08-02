@@ -47,20 +47,30 @@
 
     $allowedKeys = app(\App\Services\Offers\PublicOfferFeedService::class)->allowedTermsFor($role);
 
-    // Only render columns at least one bid actually filled in.
-    $activeKeys = [];
-    foreach ($allowedKeys as $k) {
-        foreach ($bidFeed as $r) {
-            if (array_key_exists($k, $r['terms'] ?? [])) { $activeKeys[] = $k; break; }
-        }
-    }
+    // Single shared formatter for every term cell. Storage conventions and the
+    // $/% unit pairing live there, not in this template.
+    $terms = app(\App\Presenters\OfferTermPresenter::class);
 
+    // Only render columns at least one bid actually filled in; unit companions
+    // ($ / %) fold into the value they qualify rather than taking a column.
+    $activeKeys = $terms->columnKeys($allowedKeys, $bidFeed);
+
+    // Finalized bids stay visible but must read as inactive. Only Submitted and
+    // Countered are live; everything below them is history.
+    //
+    // 'Expired' means this bidder's own response deadline lapsed — it is NOT the
+    // listing's bidding window, which has its own badge in the card header.
     $statusBadge = [
-        'Active'         => 'bg-success',
-        'In Negotiation' => 'bg-warning text-dark',
+        'Submitted'      => 'bg-success',
+        'Countered'      => 'bg-warning text-dark',
         'Accepted'       => 'bg-primary',
+        'Expired'        => 'bg-secondary',
+        'Rejected'       => 'bg-secondary',
+        'Withdrawn'      => 'bg-secondary',
         'Closed'         => 'bg-secondary',
     ];
+
+    $finalizedLabels = ['Expired', 'Rejected', 'Withdrawn', 'Closed'];
 @endphp
 
 <div class="card section-card" id="section-competing-bids">
@@ -109,7 +119,8 @@
                     </thead>
                     <tbody>
                         @foreach($bidFeed as $bid)
-                            <tr>
+                            @php $isFinalized = in_array($bid['status'], $finalizedLabels, true); @endphp
+                            <tr @class(['sol-bid-finalized' => $isFinalized]) @if($isFinalized) style="opacity:.65;" @endif>
                                 <th scope="row" class="fw-semibold">Bidder #{{ $bid['bidder_number'] }}</th>
                                 <td>
                                     <span class="badge {{ $statusBadge[$bid['status']] ?? 'bg-secondary' }}">
@@ -124,7 +135,7 @@
                                     @endif
                                 </td>
                                 @foreach($activeKeys as $k)
-                                    <td>{{ $bid['terms'][$k] ?? '—' }}</td>
+                                    <td>{{ $terms->display($k, $bid['terms'] ?? []) }}</td>
                                 @endforeach
                             </tr>
                         @endforeach

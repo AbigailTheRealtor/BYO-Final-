@@ -538,4 +538,212 @@ class CanonicalBiddingWindowTest extends TestCase
             . 'Any additional call site reintroduces runtime deadline recomputation.'
         );
     }
+
+    // =====================================================================
+    // 10. Containment for surfaces OUTSIDE the offer-listing globs above.
+    //
+    //     Two blind spots were identified in the 2026-07-29 regression
+    //     reopening:
+    //
+    //       a) the duplicate offer-detail surface `/offer/listing/view/{id}`
+    //          (AgentController::offerListingView + agent/offer-listing-view
+    //          .blade.php), which renders a listing detail page but is not
+    //          matched by the offer-listing/* globs; and
+    //
+    //       b) the legacy Hire-an-Agent auction views, a recorded scope
+    //          boundary that still derives deadlines from created_at +
+    //          auction_time and expiration_date.
+    //
+    //     (a) is clean today and is locked clean. (b) is NOT repaired here —
+    //     repairing it is a separate scope decision. It is instead frozen as an
+    //     inventory so no NEW surface can join it unnoticed.
+    // =====================================================================
+
+    /**
+     * Deadline arithmetic of any shape. Broader than the offer-listing patterns
+     * because these files use bare locals rather than the `$_name` convention.
+     */
+    private const BANNED_DEADLINE_PATTERNS = [
+        '/->addDays\(/'       => 'deadline arithmetic (addDays)',
+        '/->addHours\(/'      => 'deadline arithmetic (addHours)',
+        '/->addWeeks\(/'      => 'deadline arithmetic (addWeeks)',
+        '/->addMinutes\(/'    => 'deadline arithmetic (addMinutes)',
+        '/->addMonths\(/'     => 'deadline arithmetic (addMonths)',
+        '/diffInSeconds\(/'   => 'runtime countdown computation',
+        '/diffInDays\(/'      => 'runtime countdown computation',
+    ];
+
+    /**
+     * Scan one file for banned deadline derivations, ignoring prose.
+     *
+     * @return array<int, string>  "relative:line — label"
+     */
+    private function deadlineDerivationsIn(string $absolutePath, string $base): array
+    {
+        if (! is_file($absolutePath)) {
+            return [];
+        }
+
+        $relative   = str_replace($base . '/', '', $absolutePath);
+        $violations = [];
+
+        foreach (file($absolutePath, FILE_IGNORE_NEW_LINES) as $i => $line) {
+            $trimmed = ltrim($line);
+
+            if (str_starts_with($trimmed, '//') || str_starts_with($trimmed, '*')
+                || str_starts_with($trimmed, '/*') || str_starts_with($trimmed, '{{--')) {
+                continue;
+            }
+
+            foreach (self::BANNED_DEADLINE_PATTERNS as $pattern => $label) {
+                if (preg_match($pattern, $line)) {
+                    $violations[] = sprintf('%s:%d — %s', $relative, $i + 1, $label);
+                }
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * The duplicate offer-detail surface must never grow a countdown.
+     *
+     * `/offer/listing/view/{id}` (routes/web.php) renders a listing detail page
+     * from a DIFFERENT table than the repaired `/offer-listing/{role}/view/{id}`
+     * page. It currently displays Expiration Date and Auction Time as static
+     * rows and computes nothing. If a countdown is ever added there it must read
+     * the canonical window like every other surface — never local arithmetic.
+     */
+    public function test_duplicate_offer_detail_surface_derives_no_bidding_deadline(): void
+    {
+        $base = dirname(__DIR__, 3);
+
+        $surfaces = [
+            $base . '/resources/views/agent/offer-listing-view.blade.php',
+            $base . '/app/Http/Controllers/AgentController.php',
+        ];
+
+        $violations = [];
+
+        foreach ($surfaces as $surface) {
+            $this->assertFileExists($surface);
+            $violations = array_merge($violations, $this->deadlineDerivationsIn($surface, $base));
+        }
+
+        $this->assertSame(
+            [],
+            $violations,
+            "The duplicate offer-detail surface has grown a bidding-deadline derivation:\n  "
+            . implode("\n  ", $violations)
+            . "\n\nThis page renders a listing detail view. Any countdown it shows must read the "
+            . "stored offer_auctions.bidding_ends_at via BiddingWindowService — never local "
+            . "arithmetic and never expiration_date (Invariants 3, 4, 5, 9, 10)."
+        );
+    }
+
+    /**
+     * Frozen inventory of legacy Hire-an-Agent surfaces that still self-compute.
+     *
+     * These are a RECORDED SCOPE BOUNDARY, not an oversight: the Hire-an-Agent
+     * auction is a separate product with no OfferAuction linkage, so the
+     * canonical window does not exist for it. They are deliberately NOT repaired
+     * here.
+     *
+     * The risk this test addresses is different: because those files sit on the
+     * same listing rows the repaired offer-listing pages render, a new timed
+     * surface could quietly be added alongside them and inherit the same defect.
+     * Freezing the inventory means:
+     *
+     *   - a NEW file that self-computes a deadline fails this test loudly;
+     *   - REPAIRING one of these fails this test too, prompting the fixer to
+     *     delete its entry rather than leave a stale exemption behind.
+     *
+     * Do not add entries to make a failure go away. A new entry is an
+     * architectural decision requiring the same approval as any other deviation
+     * (Invariants 11 and 12).
+     */
+    private const LEGACY_SELF_COMPUTING_SURFACES = [
+        'resources/views/hire_landlord_agent/search.blade.php',
+        'resources/views/hire_landlord_agent/view.blade.php',
+        'resources/views/hire_seller_agent/search.blade.php',
+        'resources/views/hire_seller_agent/view.blade.php',
+        'resources/views/hire_tenant_agent/search.blade.php',
+        'resources/views/hire_tenant_agent/view.blade.php',
+        'resources/views/search-buyer-agent-auctions.blade.php',
+        'resources/views/search-buyer-criteria-auctions.blade.php',
+        'resources/views/search-seller-agent-auctions.blade.php',
+        'resources/views/search-service-auctions.blade.php',
+    ];
+
+    public function test_no_new_legacy_surface_starts_deriving_a_bidding_deadline(): void
+    {
+        $base = dirname(__DIR__, 3);
+
+        $candidates = array_merge(
+            glob($base . '/resources/views/hire_*/*.blade.php'),
+            glob($base . '/resources/views/search-*-auctions.blade.php'),
+        );
+
+        $this->assertNotEmpty($candidates, 'Expected the legacy auction surfaces to be scannable.');
+
+        $offenders = [];
+
+        foreach ($candidates as $file) {
+            if ($this->deadlineDerivationsIn($file, $base) !== []) {
+                $offenders[] = str_replace($base . '/', '', $file);
+            }
+        }
+
+        sort($offenders);
+        $known = self::LEGACY_SELF_COMPUTING_SURFACES;
+        sort($known);
+
+        $newlyOffending = array_values(array_diff($offenders, $known));
+        $nowClean       = array_values(array_diff($known, $offenders));
+
+        $this->assertSame(
+            [],
+            $newlyOffending,
+            "A legacy surface began deriving a bidding deadline locally:\n  "
+            . implode("\n  ", $newlyOffending)
+            . "\n\nNew timed surfaces must read the canonical persisted window "
+            . "(BiddingWindowService), never created_at + auction_time, never expiration_date, "
+            . "and never ad-hoc duration arithmetic."
+        );
+
+        $this->assertSame(
+            [],
+            $nowClean,
+            "These files no longer self-compute a deadline — good. Remove them from "
+            . "LEGACY_SELF_COMPUTING_SURFACES so the inventory does not carry a stale exemption:\n  "
+            . implode("\n  ", $nowClean)
+        );
+    }
+
+    /**
+     * The canonical timer entry point must stay unreachable from legacy prose.
+     *
+     * A cheap, direct assertion that the repaired offer-listing detail views
+     * still resolve their countdown through the shared service rather than
+     * having quietly reverted to a local computation.
+     */
+    public function test_every_offer_listing_detail_view_reads_the_shared_window_object(): void
+    {
+        $base  = dirname(__DIR__, 3);
+        $views = glob($base . '/resources/views/offer-listing/*/view.blade.php');
+
+        $this->assertCount(4, $views, 'All four role detail views must exist.');
+
+        foreach ($views as $view) {
+            $relative = str_replace($base . '/', '', $view);
+            $source   = file_get_contents($view);
+
+            $this->assertStringContainsString(
+                '$biddingWindow',
+                $source,
+                "{$relative} must resolve its countdown from the shared BiddingWindow object "
+                . 'supplied by the controller.'
+            );
+        }
+    }
 }
