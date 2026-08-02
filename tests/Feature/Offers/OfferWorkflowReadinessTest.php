@@ -843,6 +843,14 @@ class OfferWorkflowReadinessTest extends TestCase
             //   This entry was missing when the component was committed on its own in 5c355846b;
             //   the guard caught it here, which is what it is for.
             'resources/views/components/hire-agent/detail-shell.blade.php',
+            // Milestone 1 — the shared VIHO design-token foundation. One neutral stylesheet of
+            //   CSS custom properties, extracted verbatim from the byte-identical :root block the
+            //   four Create Offer views each already carry, plus the radius/shadow/spacing/
+            //   typography values that occur in all four as literals.
+            //   Additive and inert: nothing includes it, and no page reads a --viho token
+            //   anywhere, so it cannot alter rendering. Adoption is M3 (Hire Agent) and M8
+            //   (Create Offer). This is the ONLY production path M1 touches.
+            'resources/views/viho/styles.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
