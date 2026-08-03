@@ -661,4 +661,208 @@ class HireAgentDetailFrameworkTest extends TestCase
         // It must not claim Create Offer's namespace.
         $this->assertStringNotContainsString('.sol-', $css, 'The Hire Agent framework must not style Create Offer classes.');
     }
+
+    // ── M4 hero redesign — the six-case rendered-DOM matrix ──────────────────
+    //
+    // This matrix stands in for the before/after screenshots the plan originally called for. The
+    // environment has no browser binary, so there is NO automated visual baseline for this change:
+    // layout and CSS regressions — overflow, wrapping, spacing, breakpoint behaviour, stacking
+    // order — are not covered here and rest on manual review. What IS covered is content,
+    // identity, authorization and the uniqueness invariants, across three viewer identities and
+    // two statuses. That limitation is a gap in evidence and was never a reason to assert less.
+
+    private const PILOT_LISTING_ID = 'LAA-TEST1234';
+
+    /** Turn the pilot on for landlord only, exactly as production would. */
+    private function enablePilot(array $roles = ['landlord']): void
+    {
+        config([
+            'hire_agent_hero.redesign_enabled' => true,
+            'hire_agent_hero.redesign_roles'   => $roles,
+        ]);
+    }
+
+    private function makePilotListing(int $ownerId, bool $expired): Model
+    {
+        $listing = $this->makeListing('landlord', $ownerId, [
+            'expiration_date' => $expired
+                ? now()->subDays(5)->toDateTimeString()
+                : now()->addDays(30)->toDateTimeString(),
+        ]);
+
+        $listing->listing_id = self::PILOT_LISTING_ID;
+        $listing->save();
+
+        return $listing->fresh();
+    }
+
+    private function editHref(int $listingId): string
+    {
+        return route('landlord.hire.agent.auction.edit', ['auctionId' => $listingId]);
+    }
+
+    public static function heroMatrix(): array
+    {
+        $out = [];
+        foreach (['owner', 'non-owner', 'guest'] as $viewer) {
+            foreach ([false, true] as $expired) {
+                $label = $viewer . ' / ' . ($expired ? 'Expired' : 'Active');
+                $out[$label] = [$viewer, $expired];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @dataProvider heroMatrix
+     */
+    public function test_the_redesigned_hero_renders_correctly_for_each_viewer_and_status(string $viewer, bool $expired): void
+    {
+        $this->enablePilot();
+
+        $owner   = User::factory()->create();
+        $listing = $this->makePilotListing($owner->id, $expired);
+
+        $request = match ($viewer) {
+            'owner'     => $this->actingAs($owner),
+            'non-owner' => $this->actingAs(User::factory()->create()),
+            'guest'     => $this,
+        };
+
+        $response = $request->get($this->urlFor('landlord', $listing->id));
+        $body     = $response->getContent();
+
+        // A guest may legitimately be redirected; that is an authorization decision this milestone
+        // does not touch. The edit assertion below still has to hold on whatever was returned.
+        if ($viewer !== 'guest') {
+            $response->assertOk();
+        }
+
+        if ($response->isRedirect()) {
+            $this->assertStringNotContainsString($this->editHref($listing->id), (string) $body);
+
+            return;
+        }
+
+        // ── Status: the accessor is the single source of truth ──────────────
+        $expectedStatus = $expired ? 'Expired' : 'Active';
+        $this->assertSame(
+            $expectedStatus,
+            $listing->status,
+            'Control: the model accessor itself must derive the status under test.'
+        );
+        $this->assertStringContainsString(
+            $expectedStatus,
+            $body,
+            "The hero must show the accessor's own label, {$expectedStatus}."
+        );
+
+        // ── Identity ────────────────────────────────────────────────────────
+        $this->assertSame(1, substr_count($body, 'data-viho-hero'), 'Exactly one hero must render.');
+        $this->assertSame(
+            1,
+            substr_count($body, 'Listing ID: ' . self::PILOT_LISTING_ID),
+            'The full alphanumeric listing id must appear exactly once.'
+        );
+        $this->assertStringContainsString(
+            $listing->title,
+            $body,
+            'The listing title must survive as hero title or subtitle.'
+        );
+
+        // ── Authorization: exactly one edit control, and only for the owner ──
+        $this->assertSame(
+            $viewer === 'owner' ? 1 : 0,
+            substr_count($body, $this->editHref($listing->id)),
+            "The edit control must appear " . ($viewer === 'owner' ? 'exactly once' : 'not at all') . " for a {$viewer}."
+        );
+
+        // ── Retired vocabulary stays retired ────────────────────────────────
+        foreach (['data-hla-countdown', 'Bidding Period', 'Remaining'] as $banned) {
+            $this->assertStringNotContainsString($banned, $body, "The hero must not reintroduce {$banned}.");
+        }
+    }
+
+    /**
+     * The single-heading invariant, measured rather than assumed.
+     *
+     * Asserted as a delta as well as an absolute: the redesigned page must carry exactly one h1,
+     * AND must carry exactly one fewer than the legacy page did. The delta is what proves the
+     * duplicate was removed rather than that the layout happened to contain one all along.
+     */
+    public function test_the_redesigned_page_removes_the_duplicate_heading(): void
+    {
+        $owner = User::factory()->create();
+
+        $listing = $this->makePilotListing($owner->id, false);
+        $legacy  = substr_count($this->actingAs($owner)->get($this->urlFor('landlord', $listing->id))->getContent(), '<h1');
+
+        $this->enablePilot();
+        $redesigned = substr_count($this->actingAs($owner)->get($this->urlFor('landlord', $listing->id))->getContent(), '<h1');
+
+        $this->assertSame(2, $legacy, 'Control: the legacy page carried two h1 elements.');
+        $this->assertSame(1, $redesigned, 'The redesigned page must carry exactly one h1.');
+    }
+
+    /** With the flag off, every role renders exactly what it rendered before M4. */
+    public function test_the_flag_defaults_off_and_leaves_all_four_roles_untouched(): void
+    {
+        $this->assertFalse(
+            config('hire_agent_hero.redesign_enabled'),
+            'The pilot flag must default to off so the branch is inert on merge.'
+        );
+
+        foreach (array_keys($this->roles()) as $role) {
+            $this->assertFalse(
+                HireAgentHeroData::redesignEnabledFor($role),
+                "With the master switch off, {$role} must not receive the redesign."
+            );
+        }
+
+        $owner   = User::factory()->create();
+        $listing = $this->makePilotListing($owner->id, false);
+        $body    = $this->actingAs($owner)->get($this->urlFor('landlord', $listing->id))->getContent();
+
+        $this->assertStringContainsString('hla-hero', $body, 'The legacy hero must still render.');
+        $this->assertStringNotContainsString('data-viho-hero', $body, 'The redesigned hero must not render.');
+        $this->assertStringContainsString(
+            'status-pill',
+            $body,
+            'The legacy sidebar identity block must be intact when the flag is off.'
+        );
+    }
+
+    /** The role allowlist is enforced independently of the master switch. */
+    public function test_the_role_allowlist_gates_rollout_independently(): void
+    {
+        $this->enablePilot(['landlord']);
+
+        $this->assertTrue(HireAgentHeroData::redesignEnabledFor('landlord'));
+        foreach (['seller', 'buyer', 'tenant'] as $role) {
+            $this->assertFalse(
+                HireAgentHeroData::redesignEnabledFor($role),
+                "{$role} is not on the pilot allowlist and must not receive the redesign."
+            );
+        }
+
+        // Master switch off overrides an allowlisted role.
+        config(['hire_agent_hero.redesign_enabled' => false]);
+        $this->assertFalse(HireAgentHeroData::redesignEnabledFor('landlord'));
+    }
+
+    /** The unmigrated roles keep the legacy hero while landlord is piloted. */
+    public function test_the_other_roles_still_render_the_legacy_hero_during_the_pilot(): void
+    {
+        $this->enablePilot(['landlord']);
+
+        foreach (['seller', 'buyer', 'tenant'] as $role) {
+            $owner   = User::factory()->create();
+            $listing = $this->makeListing($role, $owner->id);
+            $body    = $this->actingAs($owner)->get($this->urlFor($role, $listing->id))->getContent();
+
+            $this->assertStringContainsString('hla-hero', $body, "{$role} must keep the legacy hero.");
+            $this->assertStringNotContainsString('data-viho-hero', $body, "{$role} must not receive the redesign.");
+        }
+    }
 }

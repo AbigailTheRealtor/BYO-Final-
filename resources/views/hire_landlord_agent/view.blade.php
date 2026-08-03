@@ -1971,6 +1971,29 @@ $auser = $auctionUser::find(@$auction->user_id);
         {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
              Extracting it is Milestone 5B. --}}
         <x-slot name="sidebar">
+    @php
+        // M4 — hoisted out of the identity block below so this assignment happens in BOTH
+        // treatments. Later sidebar code reads $auth_id, and leaving it inside a block that the
+        // redesigned hero suppresses would have silently changed those reads for the pilot role.
+        // The directive emits no output, so hoisting it cannot alter the legacy rendering.
+        $auth_id = auth()->id();
+    @endphp
+
+    {{--
+        M4 — the sidebar identity block.
+
+        Title, listing id, status and Edit Listing move INTO the hero when the redesign is on for
+        this role, so this block renders only when it is off. What is avoided is duplication:
+        without this guard the page would carry two <h1> elements, two status pills and two Edit
+        controls, which is worse than either treatment alone.
+
+        The expiry override that used to live in this block is gone rather than moved. It
+        re-derived a result LandlordAgentAuction::getStatusAttribute() had already produced — the
+        accessor returns 'Expired' from expiration_date itself — so the hero reading $auction->status
+        directly yields the identical label for every state. Nothing about expiry was reimplemented
+        in the presenter; there was nothing left to reimplement.
+    --}}
+    @unless (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('landlord'))
     <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
     @if(@$auction->listing_id)
     <div class="mb-2">
@@ -2025,9 +2048,6 @@ $auser = $auctionUser::find(@$auction->user_id);
     </div>
     @endif
 
-    @php
-        $auth_id = auth()->id();
-    @endphp
     @if($auth_id && $auth_id == @$auction->user_id)
     <div class="mb-2">
         <a href="{{ route('landlord.hire.agent.auction.edit', ['auctionId' => $auction->id]) }}" 
@@ -2037,6 +2057,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         {{-- PDF download button hidden from UI (backend route preserved) --}}
     </div>
     @endif
+    @endunless
     <hr>
 
     {{-- 🏆 Display Winner Information if Listing is Sold --}}
@@ -3591,6 +3612,32 @@ $auser = $auctionUser::find(@$auction->user_id);
     </div>
 </div>
         </x-slot>
+
+        {{--
+            M4 — the Edit Listing control, relocated into the hero for the piloted role.
+
+            THE SLOT ITSELF IS CONDITIONAL, not just its contents. An always-emitted slot would be
+            `isset()` even when empty, and the legacy hero would then render an empty actions
+            wrapper — a DOM change on a page the flag is supposed to leave untouched.
+
+            The authorization test is the one this control has always carried, unchanged:
+            owner-only, by user id. `auth()->id()` is read directly rather than through $auth_id so
+            this does not depend on the sidebar slot having been captured first.
+
+            Route, params, label, icon and classes are identical to the sidebar control it
+            replaces. Message/View Profile are deliberately NOT hoisted: they live in the user
+            review card further down, which this milestone does not touch, and lifting them would
+            create the second copy this change exists to remove.
+        --}}
+        @if (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('landlord')
+            && auth()->id() && auth()->id() == @$auction->user_id)
+        <x-slot name="heroActions">
+            <a href="{{ route('landlord.hire.agent.auction.edit', ['auctionId' => $auction->id]) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
+            </a>
+        </x-slot>
+        @endif
     </x-hire-agent.detail-shell>
 {{-- Milestone 5A: an accidental trailing <hr> stood here, as the last node on the page with
      nothing after it to separate. Removed. Buyer has a superficially similar trailing <hr>

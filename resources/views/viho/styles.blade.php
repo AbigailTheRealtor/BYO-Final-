@@ -659,4 +659,176 @@
 .viho-empty-state-action {
     margin-top: var(--viho-space-md);
 }
+
+/* ── Hero ────────────────────────────────────────────────────────────────────
+   The summary panel at the top of a listing detail page.
+
+   WHERE THE GEOMETRY COMES FROM. The radius, the overlay shadow and the internal
+   rule between identity and detail are the Create Offer hero summary panel's own
+   values, promoted to tokens in M1 and reused here rather than re-measured:
+   `--viho-radius-xl` is its 1rem, `--viho-shadow-overlay` its 0 4px 24px. What is
+   deliberately NOT carried across is the dark inverse backing, which exists there
+   to seat a photograph against. A panel with no media has nothing to seat, and a
+   dark band above an empty column reads as a failed image load.
+
+   THE FIGURE OUTWEIGHS THE TITLE. `--viho-font-2xl` on the figure against a
+   smaller title is the one place this departs from the old text-block treatment.
+   A listing's headline number is what a reader scans for first, and the previous
+   hero set it a quarter-step below the title, which buried it.
+
+   NO STATUS COLOUR IS DECIDED HERE. The pill is `.viho-badge`, painted by the
+   variant the caller passes. Nothing in this block maps a label to a colour. */
+.viho-hero {
+    display: block;
+    background: var(--viho-card-bg);
+    border: 1px solid var(--viho-border);
+    border-radius: var(--viho-radius-xl);
+    box-shadow: var(--viho-shadow-overlay);
+    margin-bottom: var(--viho-space-2xl);
+    overflow: hidden;
+}
+.viho-hero-identity {
+    padding: var(--viho-space-xl) var(--viho-space-2xl);
+}
+.viho-hero-eyebrow {
+    font-size: var(--viho-font-2xs);
+    font-weight: var(--viho-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--viho-label);
+    margin: 0 0 var(--viho-space-2xs) 0;
+}
+.viho-hero-title {
+    font-size: var(--viho-font-xl);
+    font-weight: var(--viho-weight-bold);
+    color: var(--viho-heading);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.viho-hero-subtitle {
+    font-size: var(--viho-font-md);
+    color: var(--viho-text-soft);
+    margin: var(--viho-space-2xs) 0 0 0;
+    overflow-wrap: anywhere;
+}
+.viho-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--viho-space-sm);
+    margin-top: var(--viho-space-md);
+}
+.viho-hero-identifier {
+    font-size: var(--viho-font-2xs);
+    color: var(--viho-label);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+/* The internal rule, and the figure/actions split below it. */
+.viho-hero-detail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--viho-space-lg);
+    padding: var(--viho-space-lg) var(--viho-space-2xl) var(--viho-space-xl);
+    border-top: 1px solid var(--viho-border-subtle);
+}
+.viho-hero-detail-main {
+    min-width: 0;
+    flex: 1 1 20rem;
+}
+.viho-hero-figure {
+    margin-bottom: var(--viho-space-md);
+}
+.viho-hero-figure-label {
+    display: block;
+    font-size: var(--viho-font-2xs);
+    font-weight: var(--viho-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--viho-label);
+    margin-bottom: var(--viho-space-3xs);
+}
+.viho-hero-figure-value {
+    font-size: var(--viho-font-2xl);
+    font-weight: var(--viho-weight-bold);
+    color: var(--viho-accent, var(--viho-heading));
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.viho-hero-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--viho-space-md) var(--viho-space-2xl);
+    margin: 0;
+}
+.viho-hero-fact {
+    min-width: 0;
+}
+.viho-hero-fact-label {
+    font-size: var(--viho-font-3xs);
+    font-weight: var(--viho-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--viho-label);
+    margin: 0;
+}
+.viho-hero-fact-value {
+    font-size: var(--viho-font-md);
+    color: var(--viho-text-strong);
+    margin: var(--viho-space-3xs) 0 0 0;
+    overflow-wrap: anywhere;
+}
+.viho-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--viho-space-sm);
+    flex: 0 1 auto;
+}
+
+/* Nothing may push the page sideways: a long unbroken address or an outsized
+   figure is a content problem, not a licence to introduce a horizontal scrollbar. */
+.viho-hero,
+.viho-hero * {
+    max-width: 100%;
+}
+
+/* Mobile. The panel is already one column above the page body, so the only work
+   is easing the padding, stepping the type down, and letting the action row span
+   the full width instead of crowding against the facts.
+
+   `--viho-bp-md` is a reference value and cannot be used in this condition — the
+   literal is required. See the Responsive constants note above. */
+@media (max-width: 767.98px) {
+    .viho-hero-identity {
+        padding: var(--viho-space-lg) var(--viho-space-xl);
+    }
+    .viho-hero-detail {
+        padding: var(--viho-space-md) var(--viho-space-xl) var(--viho-space-lg);
+        gap: var(--viho-space-md);
+    }
+    .viho-hero-title {
+        font-size: var(--viho-font-lg);
+    }
+    .viho-hero-figure-value {
+        font-size: var(--viho-font-xl);
+    }
+    .viho-hero-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--viho-space-md) var(--viho-space-lg);
+    }
+    .viho-hero-actions {
+        flex: 1 1 100%;
+    }
+    .viho-hero-actions > * {
+        flex: 1 1 100%;
+    }
+}
 </style>

@@ -24,10 +24,46 @@ use Tests\TestCase;
  */
 class VihoPresentationPrimitivesTest extends TestCase
 {
-    /** The eight approved M2 primitives. */
+    /** The eight approved M2 primitives, plus the M4 hero. */
     private const PRIMITIVES = [
         'card', 'section-header', 'kv', 'badge', 'button', 'action-tile', 'stat', 'empty-state',
+        'hero',
     ];
+
+    /**
+     * The ONE shared Hire Agent file permitted to render a VIHO component.
+     *
+     * ── WHAT THIS EXCEPTION IS ───────────────────────────────────────────────────────────────
+     *
+     * Introduced in M4 for the shared Hire Agent hero composition. Before it, VIHO consumption was
+     * confined to the four role views, and every shared Hire Agent file — the detail shell, the
+     * flash, the field and info-card components — was provably VIHO-free. That blanket ban existed
+     * because a VIHO tag in a shared file migrates all four roles at once, with no review of three
+     * of them.
+     *
+     * ── WHY IT IS SAFE HERE ──────────────────────────────────────────────────────────────────
+     *
+     * That risk is now carried by HireAgentHeroData::redesignEnabledFor(), which gates the
+     * redesigned treatment on BOTH a master switch and a per-role allowlist. The shared file may
+     * compose VIHO; it may not decide which roles see it. The two controls are independent and
+     * neither substitutes for the other — widening this constant does not widen the role allowlist,
+     * and widening the role allowlist does not permit a second shared consumer.
+     *
+     * ── WHAT IT DOES NOT AUTHORIZE ───────────────────────────────────────────────────────────
+     *
+     * Create Offer remains completely prohibited from consuming VIHO before M8 — that ban is
+     * untouched by this exception and is asserted separately below. No other shared Hire Agent
+     * shell or component may consume VIHO. The four role views remain the only role-level
+     * consumers.
+     *
+     * ── ADDING A SECOND ENTRY ────────────────────────────────────────────────────────────────
+     *
+     * This is a single named path, deliberately not a directory rule or a wildcard: a second shared
+     * consumer requires an explicit edit here and the architectural review that goes with it. If
+     * you are reaching for this constant to make an unrelated failure go away, the answer is almost
+     * certainly that the composition belongs in a role view instead.
+     */
+    private const APPROVED_SHARED_CONSUMER = 'resources/views/components/hire-agent/hero.blade.php';
 
     /** Root class each primitive must emit, so a page can always find it. */
     private const ROOT_CLASSES = [
@@ -39,6 +75,7 @@ class VihoPresentationPrimitivesTest extends TestCase
         'action-tile'    => 'viho-action-tile',
         'stat'           => 'viho-stat',
         'empty-state'    => 'viho-empty-state',
+        'hero'           => 'viho-hero',
     ];
 
     /** Minimal props that let each primitive render on its own. */
@@ -51,6 +88,7 @@ class VihoPresentationPrimitivesTest extends TestCase
         'action-tile'    => '<x-viho.action-tile label="A" />',
         'stat'           => '<x-viho.stat label="L" value="V" />',
         'empty-state'    => '<x-viho.empty-state title="Nothing here" />',
+        'hero'           => '<x-viho.hero title="T" />',
     ];
 
     private Scanner $scanner;
@@ -481,6 +519,8 @@ class VihoPresentationPrimitivesTest extends TestCase
             '.viho-action-tile'    => 'var(--viho-border-strong)',
             '.viho-stat-label'     => 'var(--viho-font-2xs)',
             '.viho-empty-state'    => 'var(--viho-space-2xl)',
+            '.viho-hero'           => 'var(--viho-radius-xl)',
+            '.viho-hero-figure-value' => 'var(--viho-font-2xl)',
         ] as $selector => $token) {
             $this->assertStringContainsString($selector, $css, "{$selector} must be defined.");
             $this->assertStringContainsString($token, $css, "{$selector} should be styled from {$token}.");
@@ -584,11 +624,16 @@ class VihoPresentationPrimitivesTest extends TestCase
     /**
      * Only the migrated roles render a VIHO component.
      *
-     * AMENDED IN M3, TWICE. It began as "no Hire Agent file consumes VIHO", narrowed to Landlord
-     * when the pilot landed, and narrows again now that Seller has been migrated against the
-     * approved Landlord pattern. Buyer, Tenant and the shared Hire Agent components are still
-     * expected to be clean, and that is where the assertion points. The shared detail shell
-     * matters most — a VIHO tag there would migrate all four roles at once.
+     * AMENDED IN M3, TWICE, AND AGAIN IN M4. It began as "no Hire Agent file consumes VIHO",
+     * narrowed to Landlord when the pilot landed, narrowed again as Seller migrated, and now
+     * carries exactly one shared-file exception: APPROVED_SHARED_CONSUMER, the shared hero
+     * composition. Every other shared Hire Agent file — the detail shell above all — is still held
+     * to the original ban, because a VIHO tag there would migrate all four roles at once.
+     *
+     * The M4 exception governs which FILE may compose VIHO. Which ROLES actually render it is a
+     * separate control, HireAgentHeroData::redesignEnabledFor(), and this amendment is not a
+     * substitute for it. Neither does it authorize Create Offer, whose ban is asserted separately
+     * and is untouched.
      *
      * Each migrated role is confirmed to consume VIHO individually rather than through a combined
      * counter. A single tally greater than zero would stay green if Seller adopted the components
@@ -622,12 +667,22 @@ class VihoPresentationPrimitivesTest extends TestCase
                 continue;
             }
 
+            // AMENDED IN M4. Exactly one shared file is permitted to compose VIHO — the shared
+            // hero. Everything else in this zone is still held to the original ban.
+            if ($file === self::APPROVED_SHARED_CONSUMER) {
+                continue;
+            }
+
             $this->assertStringNotContainsString(
                 '<x-viho.',
                 $src,
-                "{$file} is a SHARED Hire Agent file, not a role view. All four roles have now "
-                . 'migrated, so what this still forbids is hoisting VIHO into the shared shell or '
-                . 'the shared components, which would reach Create Offer ahead of M8.'
+                "{$file} is a SHARED Hire Agent file, not a role view, and is not the one approved "
+                . 'shared consumer (' . self::APPROVED_SHARED_CONSUMER . '). What this forbids is '
+                . 'hoisting VIHO into the shared shell or the other shared components, which would '
+                . 'migrate roles nobody reviewed and would reach Create Offer ahead of M8. '
+                . 'Rollout scope is controlled by HireAgentHeroData::redesignEnabledFor(), not by '
+                . 'this ban — so adding a second shared exception is an architectural change that '
+                . 'requires editing APPROVED_SHARED_CONSUMER deliberately, not a test fix.'
             );
         }
 
@@ -679,18 +734,85 @@ class VihoPresentationPrimitivesTest extends TestCase
 
         sort($consumers);
 
+        $expected = [
+            self::APPROVED_SHARED_CONSUMER,
+            'resources/views/hire_buyer_agent/view.blade.php',
+            'resources/views/hire_landlord_agent/view.blade.php',
+            'resources/views/hire_seller_agent/view.blade.php',
+            'resources/views/hire_tenant_agent/view.blade.php',
+        ];
+        sort($expected);
+
         $this->assertSame(
-            [
-                'resources/views/hire_buyer_agent/view.blade.php',
-                'resources/views/hire_landlord_agent/view.blade.php',
-                'resources/views/hire_seller_agent/view.blade.php',
-                'resources/views/hire_tenant_agent/view.blade.php',
-            ],
+            $expected,
             $consumers,
-            "Only the four Hire Agent role views may render a VIHO component. Anything else here — "
-            . "a layout, the shared shell, or a Create Offer view — would migrate pages that have "
-            . "not been reviewed:\n" . implode("\n", $consumers)
+            "The four Hire Agent role views, plus the single approved shared consumer "
+            . '(' . self::APPROVED_SHARED_CONSUMER . '), are the only files that may render a VIHO '
+            . "component. The shared exception was introduced in M4 for the shared hero "
+            . "composition; rollout scope is controlled by HireAgentHeroData::redesignEnabledFor(), "
+            . "and this exception neither widens that allowlist nor authorizes Create Offer or the "
+            . "broader shared shell to consume VIHO. A second shared exception requires an explicit "
+            . "change to APPROVED_SHARED_CONSUMER and architectural review. Anything else here — a "
+            . "layout, the detail shell, or a Create Offer view — would migrate pages that have not "
+            . "been reviewed:\n" . implode("\n", $consumers)
         );
+    }
+
+    /**
+     * The approved exception is only approved while it is actually used.
+     *
+     * An allowlist entry that outlives the thing it was granted for is a hole nobody notices: the
+     * composition could be moved back into the role views tomorrow and this constant would sit
+     * there permitting a shared consumer that no longer exists. Asserting the usage is present
+     * makes the exception self-retiring — remove the composition and this fails, which is the
+     * prompt to remove the entry.
+     */
+    public function test_the_approved_shared_exception_is_actually_used(): void
+    {
+        $src = Scanner::stripComments($this->scanner->read(self::APPROVED_SHARED_CONSUMER));
+
+        $this->assertStringContainsString(
+            '<x-viho.hero',
+            $src,
+            self::APPROVED_SHARED_CONSUMER . ' is allowlisted as the one shared VIHO consumer but no '
+            . 'longer composes the hero. If the composition moved into the role views, delete '
+            . 'APPROVED_SHARED_CONSUMER and restore the blanket ban rather than leaving a standing '
+            . 'exception for something that is not there.'
+        );
+    }
+
+    /**
+     * The exception is one path, not a directory rule.
+     *
+     * The amended guard skips a single filename. If it had been written against the directory —
+     * or against any file whose name contains "hero" — a second shared component could adopt VIHO
+     * silently. This proves the ban still bites for a sibling in the very same directory, which is
+     * the case a directory-shaped exception would have let through.
+     */
+    public function test_another_shared_component_consuming_viho_would_still_fail(): void
+    {
+        $siblings = array_values(array_filter(
+            $this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT),
+            fn ($f) => str_starts_with($f, 'resources/views/components/hire-agent/')
+                && $f !== self::APPROVED_SHARED_CONSUMER
+        ));
+
+        $this->assertNotEmpty($siblings, 'Control: there must be sibling shared components to police.');
+
+        foreach ($siblings as $sibling) {
+            $this->assertNotSame(
+                self::APPROVED_SHARED_CONSUMER,
+                $sibling,
+                'Only the hero composition is exempt.'
+            );
+
+            $this->assertStringNotContainsString(
+                '<x-viho.',
+                $this->scanner->read($sibling),
+                "{$sibling} sits beside the approved exception but is NOT covered by it. The "
+                . 'exception is a single named path, not a directory rule.'
+            );
+        }
     }
 
     /** Create Offer is untouched by the pilot, stated on its own so a failure names it directly. */

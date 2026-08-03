@@ -594,13 +594,18 @@ class VihoDesignTokenFoundationTest extends TestCase
     }
 
     /**
-     * The component directory exists and holds only the eight approved M2 primitives.
+     * The component directory exists and holds only the approved primitives.
      *
      * AMENDED IN M2. M1 asserted this directory did NOT exist, as a milestone marker. It now
      * exists, so the marker becomes a scope contract instead: exactly the approved set, nothing
      * more. That inversion is what stops the library growing sideways — the deferred composed
      * components each need a data and interaction contract that has not been mapped yet, and the
      * cheapest way to skip that work is to quietly add them here.
+     *
+     * AMENDED IN M4, BY EXACTLY ONE ENTRY: `hero`. See
+     * test_deferred_composed_components_do_not_exist for why that single deferral was lifted. The
+     * rule itself is unchanged — still an exact list, still no directory pattern or wildcard — so
+     * a tenth file appearing here fails as loudly as a ninth did before.
      *
      * @see \Tests\Feature\Viho\VihoPresentationPrimitivesTest for the components' own behaviour
      */
@@ -618,9 +623,10 @@ class VihoDesignTokenFoundationTest extends TestCase
         sort($found);
 
         $this->assertSame(
-            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'kv', 'section-header', 'stat', 'styles'],
+            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'section-header', 'stat', 'styles'],
             $found,
-            'Only the eight approved M2 primitives (plus the M1 stylesheet) may exist in the neutral namespace.'
+            'Only the eight approved M2 primitives, the M4 hero, and the M1 stylesheet may exist in '
+            . 'the neutral namespace.'
         );
     }
 
@@ -629,17 +635,106 @@ class VihoDesignTokenFoundationTest extends TestCase
      *
      * Named individually so that adding one fails with its own name rather than as an off-by-one
      * in a count.
+     *
+     * ── `hero` WAS RELEASED FROM THIS LIST IN M4 ─────────────────────────────────────────────
+     *
+     * It is the only entry ever removed, and the release was deliberate rather than a convenience.
+     * What this list was protecting is stated in the sibling docblock above: a composed component
+     * needs a data and interaction contract that has been mapped, and the cheap way to skip that
+     * work is to quietly add the file. M4 did the work instead:
+     *
+     *   · The prop contract is FROZEN and scalar — eyebrow, title, subtitle, identifier, status,
+     *     figure, facts, actions. Every value arrives pre-resolved and pre-formatted; the
+     *     component resolves, computes and formats nothing.
+     *   · The guard tests prohibit role inference, authentication, routing, config reads, model or
+     *     query access, and currency/date/number formatting inside the primitive — enforced by
+     *     source scanning, not by convention.
+     *   · The component is introduced behind the Hire Agent redesign feature flag
+     *     (HireAgentHeroData::redesignEnabledFor()), so it reaches no page until a role is
+     *     explicitly allowlisted.
+     *
+     * ── WHAT THIS DOES NOT DO ────────────────────────────────────────────────────────────────
+     *
+     * It does not accelerate or authorize any remaining deferred component. `hero-gallery`,
+     * `hero-fact`, `media-placeholder`, `detail-shell`, `sidebar`, `page` and the rest are
+     * untouched and still forbidden — including the three whose names resemble the released one.
+     * Each would need its own contract, its own guards and its own milestone decision. Removing a
+     * second name from this list is an architectural change, not a test fix.
      */
     public function test_deferred_composed_components_do_not_exist(): void
     {
         foreach ([
-            'page', 'hero', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
+            'page', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
             'section-nav', 'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
             'divider', 'hero-fact', 'media-placeholder',
         ] as $deferred) {
             $this->assertFalse(
                 $this->scanner->exists("resources/views/components/viho/{$deferred}.blade.php"),
-                "x-viho.{$deferred} is deferred to a later milestone and must not exist yet."
+                "x-viho.{$deferred} is deferred to a later milestone and must not exist yet. M4 "
+                . 'released `hero` from this list and nothing else; a second release requires its '
+                . 'own frozen contract, its own guards and an explicit milestone decision.'
+            );
+        }
+    }
+
+    /**
+     * The released component is actually present, approved, and out of the deferred set.
+     *
+     * The three halves are asserted together because each covers a different way the M4 amendment
+     * could rot: the file being deleted while the allowlist entry remains, the allowlist entry
+     * being dropped while the file remains, and `hero` being re-added to the deferred list while
+     * the file still sits in the approved directory. Any one of those is a contradiction between
+     * two lists that would otherwise each look internally consistent.
+     */
+    public function test_the_hero_is_released_from_deferral_and_registered(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho/hero.blade.php'),
+            'x-viho.hero was released from deferral in M4 and must exist.'
+        );
+
+        $found = array_map(
+            fn ($f) => basename($f, '.blade.php'),
+            $this->scanner->filesInZone(Scanner::ZONE_VIHO)
+        );
+
+        $this->assertContains('hero', $found, 'x-viho.hero must be registered in the approved set.');
+
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $deferredBlock = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        $this->assertStringNotContainsString(
+            "'hero',",
+            $deferredBlock,
+            'x-viho.hero must not be listed as deferred while it exists in the approved directory.'
+        );
+    }
+
+    /**
+     * A still-deferred name would be caught if it were introduced.
+     *
+     * The deferral guard keys on file existence, so fifteen assertions that a file is absent would
+     * pass identically against a predicate that always returned false. Proving the same predicate
+     * returns true for a component that IS present is what makes those assertions mean something —
+     * and it is the control that the M4 release did not quietly soften the mechanism while
+     * removing one entry from the list it drives.
+     */
+    public function test_a_still_deferred_component_would_be_caught_if_introduced(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho/hero.blade.php'),
+            'Control: exists() must detect a component that is genuinely present.'
+        );
+
+        foreach (['hero-gallery', 'hero-fact', 'media-placeholder', 'detail-shell', 'sidebar', 'page'] as $stillDeferred) {
+            $this->assertFalse(
+                $this->scanner->exists("resources/views/components/viho/{$stillDeferred}.blade.php"),
+                "x-viho.{$stillDeferred} remains deferred. The M4 release covered `hero` alone, and "
+                . 'a name resembling it is not covered by it.'
             );
         }
     }

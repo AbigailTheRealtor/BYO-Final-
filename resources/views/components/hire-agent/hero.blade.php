@@ -15,6 +15,23 @@
     Actions are optional and passed in by the role view, so the hero never invents a control that
     has no backend behind it.
 
+    ── M4: TWO TREATMENTS, ONE GATE ─────────────────────────────────────────────────────────────
+
+    This file is the ONE shared Hire Agent file permitted to render a VIHO component. That
+    exception is named explicitly in VihoPresentationPrimitivesTest and is not a general licence:
+    no other shared component or shell may consume VIHO, and Create Offer may not consume it at
+    all before M8.
+
+    WHICH TREATMENT RENDERS IS NOT DECIDED HERE. HireAgentHeroData::redesignEnabledFor() is the
+    single reader of the pilot flag, and it requires both the master switch and the role
+    allowlist. The boundary exception granted to this file governs which FILE may compose VIHO;
+    it does not widen which ROLES render it, and it is not a substitute for that allowlist.
+
+    THE LEGACY BRANCH IS PRESERVED VERBATIM. With the flag off — which is the default, and the
+    state every unmigrated role is in — the markup below the @else is byte-for-byte what this
+    component emitted before M4. That is what makes this change inert on merge and reversible by
+    an environment variable rather than a revert.
+
     @param string $role     one of seller|buyer|landlord|tenant
     @param mixed  $auction  the role's auction model
     @param slot   $actions  optional; save/share/message controls supplied by the role view
@@ -22,9 +39,39 @@
 @props(['role', 'auction'])
 
 @php
-    $hero = \App\Support\HireAgent\HireAgentHeroData::for($role, $auction);
+    $hero       = \App\Support\HireAgent\HireAgentHeroData::for($role, $auction);
+    $redesigned = \App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor($role);
+
+    $heroStatus = $hero['status'] === null ? null : [
+        'label' => $hero['status'],
+        'tone'  => $hero['statusTone'],
+        'icon'  => $hero['statusIcon'],
+    ];
+
+    // Pre-formatted here rather than in the primitive, which must not learn what a listing id is.
+    // The value is alphanumeric and passes through untouched.
+    $heroIdentifier = $hero['listingId'] === null ? null : 'Listing ID: ' . $hero['listingId'];
+
+    $heroEyebrow = 'Hire Agent · ' . ucfirst($role);
 @endphp
 
+@if ($redesigned)
+    <x-viho.hero
+        :eyebrow="$heroEyebrow"
+        :title="$hero['title']"
+        :subtitle="$hero['subtitle']"
+        :identifier="$heroIdentifier"
+        :status="$heroStatus"
+        :figure="$hero['figure']"
+        :facts="$hero['facts']"
+        data-hla-hero
+        data-hla-role="{{ $role }}"
+    >
+        @isset($actions)
+            <x-slot name="actions">{{ $actions }}</x-slot>
+        @endisset
+    </x-viho.hero>
+@else
 <div class="hla-hero" data-hla-hero data-hla-role="{{ $role }}">
     <div class="row align-items-start g-3">
         <div class="col-12 col-md-8">
@@ -78,3 +125,4 @@
         </div>
     </div>
 </div>
+@endif

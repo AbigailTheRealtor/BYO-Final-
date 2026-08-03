@@ -44,29 +44,82 @@ final class HireAgentHeroData
     private const RETIRED_TYPE_LABELS = ['bidding period', 'auction (timer)'];
 
     /**
+     * Status labels the accessor can return, mapped to a presentation tone and icon.
+     *
+     * The MAPPING lives here; the LABEL does not. Every label below is produced by the role
+     * model's own `status` accessor — this class never decides that a listing is expired, it only
+     * decides what colour "Expired" is drawn in. An unrecognised label falls back to a neutral
+     * tone rather than being suppressed, so a new status still renders its own text.
+     */
+    private const STATUS_PRESENTATION = [
+        'Active'      => ['tone' => 'success', 'icon' => 'fa-solid fa-circle-check'],
+        'Pending'     => ['tone' => 'warning', 'icon' => 'fa-solid fa-clock'],
+        'Hired Agent' => ['tone' => 'primary', 'icon' => 'fa-solid fa-user'],
+        'Expired'     => ['tone' => 'neutral', 'icon' => 'fa-solid fa-circle-xmark'],
+        'Draft'       => ['tone' => 'neutral', 'icon' => 'fa-solid fa-pen-to-square'],
+    ];
+
+    /**
+     * The single reader of the pilot flag.
+     *
+     * Both halves are required: the master switch, and the role allowlist. Centralised here so
+     * that the component, the role view and the tests cannot disagree about what "enabled" means,
+     * and so that enabling a further role is a config change reviewed in one place.
+     *
+     * This is the ONLY place in the application permitted to read `config('hire_agent_hero.*')`.
+     */
+    public static function redesignEnabledFor(string $role): bool
+    {
+        if (! config('hire_agent_hero.redesign_enabled', false)) {
+            return false;
+        }
+
+        return in_array($role, (array) config('hire_agent_hero.redesign_roles', []), true);
+    }
+
+    /**
      * @return array{
      *     title: string,
      *     subtitle: ?string,
+     *     listingId: ?string,
      *     figure: ?array{label: string, value: string},
      *     facts: array<int, array{label: string, value: string}>,
      *     status: ?string,
+     *     statusTone: ?string,
+     *     statusIcon: ?string,
      *     posted: ?string,
      *     listingType: ?string
      * }
      */
     public static function for(string $role, $auction): array
     {
-        $meta = $auction->get ?? null;
+        $meta   = $auction->get ?? null;
+        $status = self::str($auction->status ?? null);
 
         return [
             'title'       => self::title($role, $auction, $meta),
             'subtitle'    => self::subtitle($role, $auction, $meta),
+            'listingId'   => self::listingId($auction),
             'figure'      => self::figure($role, $meta),
             'facts'       => self::facts($role, $meta),
-            'status'      => self::str($auction->status ?? null),
+            'status'      => $status,
+            'statusTone'  => $status === null ? null : (self::STATUS_PRESENTATION[$status]['tone'] ?? 'neutral'),
+            'statusIcon'  => $status === null ? null : (self::STATUS_PRESENTATION[$status]['icon'] ?? 'fa-solid fa-circle-info'),
             'posted'      => self::postedDate($auction),
             'listingType' => self::listingType($meta),
         ];
+    }
+
+    /**
+     * The listing's own public identifier, passed through untouched.
+     *
+     * `listing_id` is a native column on every role table and holds an ALPHANUMERIC value
+     * (`LAA-PI6P1GNN`), not an integer. It is never cast, truncated, zero-padded or reformatted —
+     * it is the string the owner sees quoted back to them in correspondence.
+     */
+    private static function listingId($auction): ?string
+    {
+        return self::str($auction->listing_id ?? null);
     }
 
     // ── title / subtitle ─────────────────────────────────────────────────────
@@ -74,12 +127,27 @@ final class HireAgentHeroData
     /**
      * Seller and Landlord describe a property, so the address leads and the listing title backs
      * it up. Buyer and Tenant describe a need, which has no address — their title leads.
+     *
+     * LANDLORD HAS NO `address` COLUMN. `landlord_agent_auctions` stores address in EAV meta, so
+     * `$auction->address` is unconditionally null there and the effective chain has always been
+     * meta address -> meta listing_title -> title. Landlord is listed separately below to say that
+     * outright rather than leave a candidate that can never match. This is a statement of existing
+     * behaviour, not a change to it: removing an always-null first candidate cannot alter which
+     * value wins. Seller keeps `$auction->address` first, because Seller does have that column.
      */
     private static function title(string $role, $auction, $meta): string
     {
-        $candidates = in_array($role, ['seller', 'landlord'], true)
-            ? [self::str($auction->address ?? null), self::str($meta->address ?? null), self::str($meta->listing_title ?? null), self::str($auction->title ?? null)]
-            : [self::str($meta->listing_title ?? null), self::str($auction->title ?? null)];
+        if ($role === 'landlord') {
+            $candidates = [
+                self::str($meta->address ?? null),
+                self::str($meta->listing_title ?? null),
+                self::str($auction->title ?? null),
+            ];
+        } else {
+            $candidates = $role === 'seller'
+                ? [self::str($auction->address ?? null), self::str($meta->address ?? null), self::str($meta->listing_title ?? null), self::str($auction->title ?? null)]
+                : [self::str($meta->listing_title ?? null), self::str($auction->title ?? null)];
+        }
 
         foreach ($candidates as $c) {
             if ($c !== null) {

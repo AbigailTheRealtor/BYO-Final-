@@ -26,9 +26,16 @@
 
     @param string $role     seller|buyer|landlord|tenant — passed to the hero, never branched on
     @param mixed  $auction  the role's auction model, for the hero's display fields only
-    @param slot   $main      main-column content (role-specific)
-    @param slot   $sidebar   sidebar-column content (role-specific, untouched by this milestone)
-    @param slot   $afterGrid optional content that belongs inside the container but AFTER the row
+    @param slot   $main        main-column content (role-specific)
+    @param slot   $sidebar     sidebar-column content (role-specific, untouched by this milestone)
+    @param slot   $afterGrid   optional content that belongs inside the container but AFTER the row
+    @param slot   $heroActions optional controls for the hero; forwarded, never inspected
+
+    ON heroActions. The hero has always declared an `actions` slot and nothing could ever reach
+    it, because this shell invoked the hero with no slot at all — the control was dead markup.
+    Forwarding it is what lets a role view move an existing control into the hero instead of
+    duplicating one. The shell does not decide what an action is, whether the viewer may see it,
+    or where it points; it passes the slot through untouched.
 --}}
 @props(['role', 'auction'])
 
@@ -44,7 +51,11 @@
 <x-hire-agent.flash />
 
 <div class="container">
-    <x-hire-agent.hero :role="$role" :auction="$auction" />
+    <x-hire-agent.hero :role="$role" :auction="$auction">
+        @isset($heroActions)
+            <x-slot name="actions">{{ $heroActions }}</x-slot>
+        @endisset
+    </x-hire-agent.hero>
 </div>
 
 <div class="container listingDescription"
