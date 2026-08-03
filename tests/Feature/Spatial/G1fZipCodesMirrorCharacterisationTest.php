@@ -74,8 +74,13 @@ class G1fZipCodesMirrorCharacterisationTest extends TestCase
      */
     private function behaviouralWriters(): array
     {
+        // NARROWED BY G1f-4. `Tenant Offer · create` left this list when it migrated: its
+        // `zipCodes` mirror is now DERIVED from the canonical `zip_codes` dimension, so the
+        // property-sourced characterisations below no longer describe it. What it does instead is
+        // asserted positively by test_migrated_tenant_offer_derives_zipcodes_from_canonical_state()
+        // and by G1f4TenantOfferMigrationTest. The Hire writer is unmigrated and still pins the
+        // original behaviour.
         return [
-            'Tenant Offer · create' => ['class' => TenantOfferCreate::class, 'user_type' => 'tenant'],
             'Hire Tenant · create'  => ['class' => HireTenantCreate::class,  'user_type' => 'tenant'],
         ];
     }
@@ -188,7 +193,7 @@ class G1fZipCodesMirrorCharacterisationTest extends TestCase
             $covered++;
         }
 
-        $this->assertSame(2, $covered, 'Two Tenant-family writers expose an invocable save path.');
+        $this->assertSame(1, $covered, 'One UNMIGRATED Tenant-family writer exposes an invocable save path.');
     }
 
     /**
@@ -339,20 +344,83 @@ class G1fZipCodesMirrorCharacterisationTest extends TestCase
      * the structural form is only that these components still perform it from the same
      * source.
      */
-    public function test_the_two_edit_writers_carry_the_same_property_sourced_write(): void
+    public function test_the_unmigrated_edit_writer_still_carries_the_property_sourced_write(): void
     {
-        foreach ([
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
-            'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        ] as $relative) {
-            $source = file_get_contents(base_path($relative));
+        // NARROWED BY G1f-4. `TenantOfferListingEdit` migrated and no longer carries this write;
+        // its replacement is pinned by G1f4MigrationBoundaryGuardTest. The Hire edit sibling is
+        // still unmigrated and must be unchanged.
+        $relative = 'app/Http/Livewire/TenantAgentAuctionEdit.php';
 
-            $this->assertStringContainsString(
-                "\$auction->saveMeta('zipCodes', json_encode(\$this->zipCodes));",
-                $source,
-                "{$relative}: must still write the zipCodes mirror from the component property."
-            );
-        }
+        $this->assertStringContainsString(
+            "\$auction->saveMeta('zipCodes', json_encode(\$this->zipCodes));",
+            file_get_contents(base_path($relative)),
+            "{$relative}: must still write the zipCodes mirror from the component property."
+        );
+
+        $this->assertStringNotContainsString(
+            "\$auction->saveMeta('zipCodes', json_encode(\$this->zipCodes));",
+            file_get_contents(base_path('app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php')),
+            'the migrated Tenant Offer edit copy must no longer write zipCodes inline'
+        );
+    }
+
+    /**
+     * MIGRATED (G1f-4) · the Tenant Offer pair derives `zipCodes` from canonical state.
+     *
+     * The positive counterpart to the characterisations above, and the reason `Tenant Offer ·
+     * create` left `behaviouralWriters()`. The three defects this suite pinned for that workflow —
+     * the mirror ignoring the blob, a clear not reaching the mirror, and a legacy-only value being
+     * destroyed by an unconditional write — are all closed by the migration, so each is asserted
+     * here in its corrected form.
+     */
+    public function test_migrated_tenant_offer_derives_zipcodes_from_canonical_state(): void
+    {
+        $owner = $this->owner();
+
+        // 1 · the blob wins over the component property — the derivation now exists.
+        $auction   = $this->tenantRecord($owner);
+        $component = $this->makeComponent(
+            ['class' => TenantOfferCreate::class, 'user_type' => 'tenant'],
+            self::PROP_ZIPS,
+            ['zip_codes' => self::BLOB_ZIPS]
+        );
+        $this->invokeSave(TenantOfferCreate::class, $component, $auction);
+
+        $this->assertSame(
+            json_encode(self::BLOB_ZIPS),
+            (string) $this->rereadTenant($auction)->info('zipCodes'),
+            'the migrated writer derives the mirror from canonical zip_codes, not the property'
+        );
+
+        // 2 · a canonical clear now reaches the mirror.
+        $cleared   = $this->tenantRecord($owner, ['zipCodes' => json_encode(self::PROP_ZIPS)]);
+        $component = $this->makeComponent(
+            ['class' => TenantOfferCreate::class, 'user_type' => 'tenant'],
+            self::PROP_ZIPS,
+            ['zip_codes' => []]
+        );
+        $this->invokeSave(TenantOfferCreate::class, $component, $auction = $cleared);
+
+        $this->assertSame(
+            '[]',
+            (string) $this->rereadTenant($cleared)->info('zipCodes'),
+            'a cleared canonical ZIP set now clears the mirror instead of leaving it stale'
+        );
+
+        // 3 · a legacy-only mirror survives a save that states no ZIPs.
+        $legacy    = $this->tenantRecord($owner, ['zipCodes' => json_encode(['34698', '34677'])]);
+        $component = $this->makeComponent(
+            ['class' => TenantOfferCreate::class, 'user_type' => 'tenant'],
+            [],
+            ['cities' => ['Tampa']]
+        );
+        $this->invokeSave(TenantOfferCreate::class, $component, $legacy);
+
+        $this->assertSame(
+            json_encode(['34698', '34677']),
+            (string) $this->rereadTenant($legacy)->info('zipCodes'),
+            'an absent zip_codes dimension no longer destroys a legacy-only mirror'
+        );
     }
 
     /**
@@ -364,10 +432,10 @@ class G1fZipCodesMirrorCharacterisationTest extends TestCase
      */
     public function test_no_writer_derives_the_zipcodes_mirror_from_the_blob(): void
     {
+        // NARROWED BY G1f-4: the migrated Tenant Offer pair derives the mirror through the
+        // canonical writer by design. These are the writers that still must not.
         foreach ([
             'app/Http/Livewire/Concerns/HasSearchAreas.php',
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
             'app/Http/Livewire/TenantAgentAuction.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $relative) {

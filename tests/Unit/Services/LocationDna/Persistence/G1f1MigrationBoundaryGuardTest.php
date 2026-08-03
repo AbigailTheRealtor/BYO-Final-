@@ -49,8 +49,6 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
     private const UNMIGRATED_WORKFLOWS = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
 
     private function root(): string
@@ -292,7 +290,9 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
                 || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php'
                 || $relative === 'app/Http/Livewire/TenantAgentAuction.php'
                 || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php'
-                || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php') {
+                || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php'
+                || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php'
+                || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php') {
                 continue;
             }
 

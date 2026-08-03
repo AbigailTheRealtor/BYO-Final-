@@ -19,6 +19,8 @@ use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
 use App\Services\WizardEventService;
+use App\Services\LocationDna\Persistence\LegacyMirrorProjection;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 
@@ -3191,6 +3193,29 @@ class TenantOfferListingEdit extends Component
         }
     }
 
+    /**
+     * G1f-4 — persist Location DNA through the canonical writer.
+     *
+     * The single Location DNA write path for this workflow, replacing three separate inline sites
+     * inside `update()`. Presence semantics, command construction, capability enforcement, the
+     * transaction and mirror derivation all belong to the writer.
+     *
+     * MANAGED MIRRORS: the three defaults PLUS `zipCodes`, matching what this component has always
+     * written. The opt-in is surface-scoped, so the Buyer workflows migrated in G1f-1 and G1f-3 do
+     * not begin emitting a `zipCodes` mirror they have never written.
+     *
+     * DELIBERATELY NOT CHANGED: the PRE-VALIDATION `hydrateDiscreteLocationFromBlob()` call earlier
+     * in `update()`. It populates `$this->state` / `$this->counties` for the `required` rules after
+     * 9B-3 removed the discrete inputs, and is a validation concern, not a write concern. Only the
+     * WRITE-SIDE call that sat immediately before the old mirror writes was removed.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        OwnerPrivateLocationDnaWriter::managingMirrors(
+            [...LegacyMirrorProjection::MANAGED_KEYS, 'zipCodes']
+        )->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     public function update()
 
     {
@@ -3282,14 +3307,24 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
             $auction->saveMeta('number_of_unit', $this->number_of_unit);
 
-            // Location Information
-            // 9B-2 write-back: mirror the Search Areas blob's state / counties into the
-            // discrete meta (read by Ask AI, public views, the match engine). Non-empty
-            // guards keep this backward compatible — an empty blob value never wipes an
-            // existing discrete value (the discrete UI was removed in 9B-3).
-            $this->hydrateDiscreteLocationFromBlob();
-            $auction->saveMeta('counties', json_encode($this->counties));
-            $auction->saveMeta('state', $this->state);
+            // ── Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-4) ────────
+            //
+            // CONSOLIDATION POINT. This workflow previously spread its Location DNA writes across
+            // THREE sites in this method: `counties` / `state` here, `zipCodes` ten lines below,
+            // and the canonical blob plus `cities` more than six hundred lines further down, after
+            // unrelated metadata. Four mirrors, four value sources, no single point of failure and
+            // no way to reason about partial state.
+            //
+            // They are consolidated HERE, which is the earliest point at which every Location DNA
+            // input has reached its final value: `location_dna_preferences_json` is a
+            // `wire:model.defer` property and is therefore final when `update()` is entered, and
+            // nothing between entry and this line mutates it or `$this->zipCodes`.
+            //
+            // THE TRANSACTION IS NOT WIDENED. `update()` already opens one, and every write this
+            // replaced was already inside it, so consolidating here changes nothing about its
+            // scope. Photo and video handling and all unrelated metadata stay exactly where they
+            // were, outside this call.
+            $this->persistLocationDna($auction);
 
             // 9C Important Places — additive, separate meta key; commute fields untouched.
             $this->saveImportantPlaces($auction);
@@ -3299,7 +3334,10 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('property_zip', $this->property_zip);
             $auction->saveMeta('property_county', $this->property_county);
 
-            $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
+            // `zipCodes` moved to the consolidated Location DNA write above (G1f-4). It is now
+            // derived from the canonical `zip_codes` dimension rather than from a component
+            // property the blob never fed, so a cleared ZIP set finally takes effect and an
+            // unstated one is left alone.
 
             // Property Details
             $auction->saveMeta('property_type', $this->property_type);
@@ -3910,13 +3948,10 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('current_status', $this->current_status);
             $auction->saveMeta('video_link', $this->video_link);
             $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
-            $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
-            // FINDING 2B-3 · keep the discrete `cities` meta in sync with the blob.
-            // Read by Ask AI, the match engine, filtering and public display. Derived
-            // from the blob, which is authoritative — see the hydration invariant in
-            // loadAuctionData(). An empty blob array intentionally mirrors as `[]`.
-            $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
-            $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
+            // The canonical blob and the `cities` mirror moved to the consolidated Location DNA
+            // write above (G1f-4). They were the tail of a three-site write path; both are now
+            // issued by the writer, in one transaction, alongside `counties`, `state` and
+            // `zipCodes`.
 
             if ($this->photo instanceof TemporaryUploadedFile) {
                 $extensionPhoto = $this->photo->getClientOriginalExtension();

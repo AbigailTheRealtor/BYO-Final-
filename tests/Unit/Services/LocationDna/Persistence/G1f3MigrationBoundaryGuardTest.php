@@ -12,9 +12,10 @@ use RecursiveIteratorIterator;
  * WHAT IT PROTECTS
  * ----------------
  * G1f-3 authorized migrating exactly TWO further workflows — the Buyer Offer pair, together.
- * This suite is the standing proof that it migrated both and stopped there: the four remaining
- * workflows are untouched, the direct-writer list shrank by exactly the two inline writers, and
- * every deferred concern is still deferred.
+ * This suite is the standing proof that it migrated both and stopped there. Its shrink-only lists
+ * are shared across stages, so G1f-4 updated them in place when the Tenant Offer pair migrated:
+ * two workflows remain untouched, the direct-writer list shrank by exactly the two inline writers
+ * each stage removed, and every deferred concern is still deferred.
  *
  * WHY THE COUNTS ARE ASSERTED EXPLICITLY
  * --------------------------------------
@@ -27,34 +28,35 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
 {
     private const CANONICAL_WRITE = "saveMeta('location_dna_preferences'";
 
-    /** The four workflow components migrated after G1f-3. */
+    /** The six workflow components migrated after G1f-4. */
     private const MIGRATED = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
         'app/Http/Livewire/TenantAgentAuction.php',
+        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
 
-    /** The four workflow implementations G1f-3 must leave completely alone. */
+    /** The two workflow implementations still untouched after G1f-4 — both Hire EDIT siblings. */
     private const UNMIGRATED = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
 
     /**
-     * Files still permitted to write the canonical key directly, after G1f-3.
+     * Files still permitted to write the canonical key directly, after G1f-4.
      *
-     * SHRINK-ONLY, and this is the FIRST stage that shortened it: seven → five. The two Buyer
-     * Offer copies wrote the canonical key inline rather than through the trait, so migrating
-     * them removed two entries. G1f-1 and G1f-2 could not shorten it because both of their
+     * SHRINK-ONLY. G1f-3 was the first stage to shorten it, seven → five, by migrating the two
+     * Buyer Offer copies, which wrote the canonical key inline rather than through the trait.
+     * G1f-4 shortens it again, five → three, by migrating the two Tenant Offer copies, which wrote
+     * it inline for the same reason. G1f-1 and G1f-2 could not shorten it because both of their
      * targets reached the key through `HasSearchAreas`, which is itself one entry.
+     *
+     * The two legacy criteria controllers remain by design — D-G1F-5 governs them, not G1f-4.
      */
     private const AUTHORIZED_WRITERS = [
         'app/Http/Livewire/Concerns/HasSearchAreas.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Controllers/BuyerCriteriaAuctionController.php',
         'app/Http/Controllers/TenantCriteriaAuctionController.php',
     ];
@@ -184,8 +186,8 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         $this->assertTrue($create, 'and after G1f-3 both are migrated');
     }
 
-    /** Exactly four workflow components are wired to the writer — no more. */
-    public function test_exactly_four_workflow_components_are_wired(): void
+    /** Exactly six workflow components are wired to the writer — no more. */
+    public function test_exactly_six_workflow_components_are_wired(): void
     {
         $wired = [];
 
@@ -201,14 +203,14 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             $wired,
-            'Exactly four workflow components may reference the persistence namespace after G1f-3.'
+            'Exactly six workflow components may reference the persistence namespace after G1f-4.'
         );
     }
 
     /** The four unmigrated workflows are untouched. */
     public function test_the_four_unmigrated_workflows_are_untouched(): void
     {
-        $this->assertCount(4, self::UNMIGRATED);
+        $this->assertCount(2, self::UNMIGRATED);
 
         foreach (self::UNMIGRATED as $relative) {
             $code = $this->codeOnly($this->read($relative));
@@ -252,9 +254,9 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         );
 
         $this->assertCount(
-            5,
+            3,
             self::AUTHORIZED_WRITERS,
-            'Five direct writers remain after G1f-3 — down from seven. This list may only SHRINK; '
+            'Three direct writers remain after G1f-4 — down from five. This list may only SHRINK; '
             .'reaching one entry is G1f\'s completion condition.'
         );
     }

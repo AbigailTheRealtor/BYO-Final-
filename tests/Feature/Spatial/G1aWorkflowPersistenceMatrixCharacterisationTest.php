@@ -138,11 +138,18 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
                 'class' => TenantOfferCreate::class, 'model' => 'tenant', 'impl' => 'inline-divergent',
                 'load' => 'loadDraft', 'user_type' => 'tenant',
                 'save' => 'saveAllMetadata', 'cleared_cities' => 'preserved',
+                // G1f-4: MIGRATED to LocationDnaPersistenceService, together with the edit copy
+                // below, and opted into the `zipCodes` mirror. Load side unchanged and still
+                // asserted by every load-side test.
+                'migrated_save' => true,
             ],
             'Tenant Offer · edit' => [
                 'class' => TenantOfferEdit::class, 'model' => 'tenant', 'impl' => 'inline-divergent',
                 'load' => 'loadAuctionData', 'user_type' => 'tenant',
                 'save' => null, 'cleared_cities' => 'preserved',
+                // G1f-4: MIGRATED. Its three separate Location DNA write sites inside update()
+                // are consolidated into one call, inside the transaction update() already opened.
+                'migrated_save' => true,
             ],
         ];
     }
@@ -415,11 +422,12 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         }
 
         $this->assertSame(
-            2,
+            1,
             $covered,
-            'Two of the eight workflows have an invocable, UNMIGRATED save path. Hire Buyer create '
-            .'was migrated by G1f-1, Hire Tenant create by G1f-2, and both Buyer Offer copies by '
-            .'G1f-3; their post-migration saves are covered by their own migration suites.'
+            'One of the eight workflows has an invocable, UNMIGRATED save path. Hire Buyer create '
+            .'was migrated by G1f-1, Hire Tenant create by G1f-2, both Buyer Offer copies by G1f-3 '
+            .'and both Tenant Offer copies by G1f-4; their post-migration saves are covered by '
+            .'their own migration suites.'
         );
     }
 
@@ -464,10 +472,10 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         }
 
         $this->assertSame(
-            2,
+            1,
             $covered,
-            'Two invocable, UNMIGRATED save paths remain: Hire Buyer edit and Tenant Offer create. '
-            .'G1f-1, G1f-2 and G1f-3 migrated the other four.'
+            'One invocable, UNMIGRATED save path remains: Hire Buyer edit. G1f-1 through G1f-4 '
+            .'migrated the other six.'
         );
     }
 
@@ -488,9 +496,12 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
      */
     public function test_update_based_edit_flows_carry_the_blob_and_mirror_writes(): void
     {
+        // NARROWED BY G1f-4: `Tenant Offer · edit` migrated, so its inline blob and mirror writes
+        // are gone by design. Its replacement — one consolidated writer call inside the existing
+        // transaction — is pinned by G1f4MigrationBoundaryGuardTest. The Hire edit sibling remains
+        // unmigrated and still carries the original construct.
         $files = [
             'Hire Tenant · edit'  => 'app/Http/Livewire/TenantAgentAuctionEdit.php',
-            'Tenant Offer · edit' => 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ];
 
         foreach ($files as $label => $file) {

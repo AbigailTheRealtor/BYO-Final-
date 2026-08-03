@@ -285,16 +285,29 @@ class TenantOfferCitiesMirrorTest extends TestCase
         $this->assertSame('[]', $this->reread($auction)->info('cities'));
     }
 
-    /** A blob with no cities key mirrors as `[]`. */
-    public function test_create_flow_mirrors_missing_cities_key_as_empty_array(): void
+    /**
+     * A blob with no cities key writes NO cities mirror at all.
+     *
+     * CHANGED BY G1f-4, deliberately. The inline path decoded the blob and wrote
+     * `$ldnaDecoded['cities'] ?? []`, so an ABSENT cities key mirrored as `[]` — indistinguishable
+     * from an explicit clear, and the mechanism by which a no-op save destroyed a legacy-only
+     * mirror. The canonical writer issues no command for an absent dimension, so nothing is
+     * written and any existing legacy value survives. Present-empty still clears; see the test
+     * below. This is the defect being fixed, not a regression.
+     */
+    public function test_create_flow_writes_no_cities_mirror_when_the_key_is_absent(): void
     {
-        $auction   = $this->auction();
+        $auction   = $this->auction(['cities' => json_encode(['Tampa'])]);
         $component = new TenantOfferListing();
         $component->location_dna_preferences_json = json_encode(['state' => 'FL']);
 
         $this->saveViaCreateFlow($component, $auction);
 
-        $this->assertSame('[]', $this->reread($auction)->info('cities'));
+        $this->assertSame(
+            json_encode(['Tampa']),
+            $this->reread($auction)->info('cities'),
+            'an absent cities key must leave the legacy mirror untouched, not overwrite it with []'
+        );
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -347,15 +360,25 @@ class TenantOfferCitiesMirrorTest extends TestCase
      *
      * Recorded as a known weaker assertion rather than presented as equivalent.
      */
-    public function test_edit_flow_update_contains_the_mirror_write(): void
+    public function test_edit_flow_update_reaches_the_cities_mirror_through_the_writer(): void
     {
         $source = file_get_contents(
             base_path('app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php')
         );
 
-        $this->assertStringContainsString(
+        // CONVERTED BY G1f-4. This was an inline-write tripwire: it asserted that `update()`
+        // still wrote the cities mirror from the decoded blob. G1f-4 removes that line by
+        // definition, so the assertion is inverted into the boundary that replaced it — the
+        // mirror is still reached on this path, now through the canonical writer.
+        $this->assertStringNotContainsString(
             "\$auction->saveMeta('cities', json_encode(\$ldnaDecoded['cities'] ?? []));",
-            $source
+            $source,
+            'the inline cities mirror write must be gone — G1f-4 migrated it'
+        );
+        $this->assertSame(
+            1,
+            substr_count($source, '$this->persistLocationDna($auction);'),
+            'exactly one canonical writer call site in the edit flow'
         );
     }
 
@@ -400,7 +423,7 @@ class TenantOfferCitiesMirrorTest extends TestCase
      * that quietly re-adds an inline canonical or mirror write, or that drags a further workflow
      * across without its own authorization, still fails here.
      */
-    public function test_buyer_offer_components_are_migrated_and_the_boundary_held(): void
+    public function test_offer_components_are_migrated_and_the_boundary_held(): void
     {
         foreach ([
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
@@ -435,27 +458,35 @@ class TenantOfferCitiesMirrorTest extends TestCase
             );
         }
 
-        // The boundary held: the Tenant Offer pair is NOT migrated by this increment and still
-        // carries both its own canonical write and its divergence construct.
+        // CONVERTED BY G1f-4. This block previously asserted that the Tenant Offer pair was NOT
+        // migrated — correct for G1f-3, and false by definition once G1f-4 migrated it. It is now
+        // the positive boundary: the pair is migrated, together, with no inline writes left.
         foreach ([
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ] as $file) {
             $source = file_get_contents(base_path($file));
 
-            $this->assertStringContainsString(
+            $this->assertStringNotContainsString(
                 "saveMeta('location_dna_preferences'",
                 $source,
-                "{$file}: Tenant Offer is NOT in G1f-3's scope and must still write canonically."
+                "{$file}: the inline canonical write must be gone — G1f-4 migrated it."
             );
-            $this->assertStringNotContainsString(
-                'persistLocationDna',
-                $source,
-                "{$file}: no Tenant Offer workflow may be migrated by the G1f-3 authorization."
+            $this->assertSame(
+                1,
+                substr_count($source, '$this->persistLocationDna($auction);'),
+                "{$file}: exactly one canonical writer call site."
             );
+            foreach (['cities', 'counties', 'state', 'zipCodes'] as $mirror) {
+                $this->assertStringNotContainsString(
+                    "\$auction->saveMeta('{$mirror}',",
+                    $source,
+                    "{$file}: the inline {$mirror} mirror write must be gone."
+                );
+            }
         }
 
-        // And neither Hire edit workflow was dragged along either.
+        // And neither Hire edit workflow was dragged along — the two that remain unmigrated.
         foreach ([
             'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
@@ -463,7 +494,7 @@ class TenantOfferCitiesMirrorTest extends TestCase
             $this->assertStringNotContainsString(
                 'persistLocationDna',
                 file_get_contents(base_path($file)),
-                "{$file}: no Hire edit workflow may be migrated by the G1f-3 authorization."
+                "{$file}: no Hire edit workflow may be migrated by the G1f-4 authorization."
             );
         }
     }

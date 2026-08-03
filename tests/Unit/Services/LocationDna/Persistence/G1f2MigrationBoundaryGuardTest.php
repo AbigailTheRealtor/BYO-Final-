@@ -36,18 +36,19 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/TenantAgentAuction.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
+        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
 
     /**
      * The workflow implementations that must be left completely alone.
      *
-     * SHRINK-ONLY. The two Buyer Offer copies left this list at G1f-3 together; four remain.
+     * SHRINK-ONLY. The two Buyer Offer copies left at G1f-3 and the two Tenant Offer copies left
+     * at G1f-4, each pair together; the two Hire EDIT siblings remain.
      */
     private const UNMIGRATED_WORKFLOWS = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
 
     private function root(): string
@@ -106,7 +107,7 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
      * Exactly the migrated workflow components reference the persistence namespace.
      *
      * The count is the point: it fails if a further workflow is wired, whether deliberately or
-     * by a copy-paste that looked harmless. Four after G1f-3.
+     * by a copy-paste that looked harmless. Six after G1f-4.
      */
     public function test_exactly_the_migrated_workflow_components_are_wired_to_the_writer(): void
     {
@@ -143,14 +144,14 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             array_values(array_unique($wired)),
-            'Exactly four workflow components may be wired to the canonical writer after G1f-3.'
+            'Exactly six workflow components may be wired to the canonical writer after G1f-4.'
         );
     }
 
     /** The remaining unmigrated workflows are untouched. */
     public function test_the_remaining_unmigrated_workflows_are_untouched(): void
     {
-        $this->assertCount(4, self::UNMIGRATED_WORKFLOWS);
+        $this->assertCount(2, self::UNMIGRATED_WORKFLOWS);
 
         foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
             $code = $this->codeOnly($this->read($relative));

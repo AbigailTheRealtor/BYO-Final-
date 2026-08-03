@@ -334,18 +334,17 @@ class SearchAreasWidgetContractTest extends TestCase
      *
      * The protective value is preserved rather than dropped: each implementation
      * is asserted against the mechanism it actually uses, so removing the mirror
-     * write from ANY of the five still fails here.
+     * write from ANY of the five still fails here — one inline, four through the writer.
      *
      * @see \Tests\Feature\Spatial\TenantOfferCitiesMirrorTest for the behavioural proof
      * @see \Tests\Feature\Spatial\G1f3BuyerOfferMigrationTest for the migrated pair's proof
      */
     public function test_finding_2b3_all_implementations_write_the_cities_mirror(): void
     {
-        // UNMIGRATED — still write the mirror inline, from their own decoded blob.
+        // UNMIGRATED — still writes the mirror inline, from its own decoded blob. The Tenant
+        // Offer pair left this list at G1f-4; the trait remains, and D-G1F-5 governs it.
         foreach ([
             'app/Http/Livewire/Concerns/HasSearchAreas.php',
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ] as $file) {
             $this->assertStringContainsString(
                 "saveMeta('cities'",
@@ -354,12 +353,14 @@ class SearchAreasWidgetContractTest extends TestCase
             );
         }
 
-        // MIGRATED (G1f-3) — reach the same mirror through the canonical writer, whose
+        // MIGRATED (G1f-3, then G1f-4) — reach the same mirror through the canonical writer, whose
         // projection emits `cities` for every present dimension. Removing the seam here
         // would stop the mirror being written just as surely as deleting an inline call.
         foreach ([
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ] as $file) {
             $this->assertStringContainsString(
                 '$this->persistLocationDna($auction);',

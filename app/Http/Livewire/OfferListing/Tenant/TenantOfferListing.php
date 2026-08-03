@@ -25,6 +25,8 @@ use App\Support\Google\GoogleCredential;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 use App\Services\WizardEventService;
+use App\Services\LocationDna\Persistence\LegacyMirrorProjection;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class TenantOfferListing extends Component
@@ -4334,6 +4336,36 @@ class TenantOfferListing extends Component
         }
     }
 
+    /**
+     * G1f-4 — persist Location DNA through the canonical writer.
+     *
+     * This is the whole of this workflow's Location DNA write path. It replaces the inline
+     * hydrate-then-mirror-then-blob sequence, and it is the only place in this component that
+     * touches the canonical meta key or any managed mirror.
+     *
+     * The bridged payload is passed through as-is. Presence semantics, command construction,
+     * capability enforcement, the transaction and mirror derivation all belong to the writer, so
+     * this method holds no Location DNA policy of its own.
+     *
+     * MANAGED MIRRORS: the three defaults PLUS `zipCodes`. The Tenant Offer pair has always
+     * written that key, so it opts in through the surface-scoped support added by the G1f-4
+     * prerequisite rather than through a global change that would have made the Buyer workflows
+     * start emitting a mirror they have never written.
+     *
+     * DELIBERATELY NOT CHANGED: the PRE-VALIDATION `hydrateDiscreteLocationFromBlob()` call in
+     * `store()`. That call populates `$this->state` / `$this->counties` for the `required` rules,
+     * because the discrete Acceptable State/Counties inputs were removed in 9B-3. It is a
+     * validation concern that merely shares a method name with the write concern removed below.
+     * Removing it would break submit for every listing whose location comes only from the map.
+     * `loadDraft()` and the method definition are likewise untouched.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        OwnerPrivateLocationDnaWriter::managingMirrors(
+            [...LegacyMirrorProjection::MANAGED_KEYS, 'zipCodes']
+        )->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     protected function saveAllMetadata($auction)
     {
         $this->normalizeOtherInArray($this->non_negotiable_amenities, $this->other_non_negotiable_amenities);
@@ -4368,22 +4400,27 @@ class TenantOfferListing extends Component
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
 
-        // Location Information
-        // 9B-2 write-back: mirror the Search Areas blob's state / counties into the
-        // discrete meta (read by Ask AI, public views, the match engine). Non-empty
-        // guards keep this backward compatible — an empty blob value never wipes an
-        // existing discrete value (the discrete UI was removed in 9B-3).
-        $this->hydrateDiscreteLocationFromBlob();
-        $auction->saveMeta('counties', json_encode($this->counties));
-        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
-        $auction->saveMeta('state', $this->state);
-        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
-        // FINDING 2B-3 · keep the discrete `cities` meta in sync with the blob. Read
-        // by Ask AI, the match engine, filtering and public display. Derived from the
-        // blob, which is authoritative — see the hydration invariant in loadDraft().
-        // An empty blob array intentionally mirrors as `[]`.
-        $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
-        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
+        // ── Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-4) ────────────
+        //
+        // This workflow previously hydrated `$this->state` / `$this->counties` from the blob, wrote
+        // those two mirrors from the mutated props, wrote `zipCodes` from a component property the
+        // blob never feeds, wrote the canonical blob verbatim, and finally wrote `cities` from the
+        // decoded blob — five statements, four different value sources, and no transaction. A
+        // cleared `counties`, `state` or `zipCodes` kept its stale value while a cleared `cities`
+        // did not, which is F-G1-4's split; an unmounted editor overwrote the authoritative blob
+        // with an empty string.
+        //
+        // All of it is replaced by one call. The writer builds explicit set/clear commands from the
+        // submitted payload, persists canonical state first and derives all four managed mirrors
+        // from the result, inside one transaction. A dimension the payload does not state gets no
+        // command and is therefore not written, so a no-op save can no longer destroy a legacy-only
+        // mirror — which is what makes adopting `zipCodes` lossless here.
+        //
+        // `zipCodes` IS managed for this workflow, unlike the Buyer family: the Tenant Offer pair
+        // has always written that key, so it opts in explicitly (D-G1F-4 (a), resolved). It is
+        // projected from the canonical `zip_codes` dimension and never inferred from cities,
+        // counties or state.
+        $this->persistLocationDna($auction);
 
         // 9C Important Places — additive, separate meta key; commute fields untouched.
         $this->saveImportantPlaces($auction);
