@@ -1,24 +1,25 @@
 # G1f — Writer Consolidation · Pre-Implementation Report
 
 **Gate:** G1f (per §12 of the [G1 Pre-Implementation Report](./LOCATION-DNA-ENGINE-V1.2-G1-PRE-IMPLEMENTATION-REPORT.md))
-**Type:** pre-implementation audit, decision package and implementation record — **G1f-1 implemented**
-**Status:** **D-G1F-1 … D-G1F-5 APPROVED. ALL FOUR CHARACTERISATION GAPS CLOSED. G1f-1 (`BuyerAgentAuction`) IMPLEMENTED — `5c38fc574`. G1f-2 AND LATER: NOT STARTED. G1g: NOT STARTED.**
+**Type:** pre-implementation audit, decision package and implementation record — **G1f-1 and G1f-2 implemented**
+**Status:** **D-G1F-1 … D-G1F-5 APPROVED. ALL FOUR CHARACTERISATION GAPS CLOSED. G1f-1 (`BuyerAgentAuction`) IMPLEMENTED — `5c38fc574`. G1f-2 (`TenantAgentAuction`) IMPLEMENTED — `d3123fb94`. G1f-3 AND LATER: NOT STARTED. G1g: NOT STARTED.**
 **Governed by:** [`LOCATION-DNA-ENGINE-V1.2.md`](./LOCATION-DNA-ENGINE-V1.2.md) · decisions per the
 [G1c Decision Package](./LOCATION-DNA-ENGINE-V1.2-G1C-DECISION-PACKAGE.md) (D-G1-1 … D-G1-7, all **APPROVED** 2026-07-30)
 **Audited at:** `994270a04d9ee83d50b9fe4ebe023ee63603244e`
 **Characterisation delivered:** `b91d5e7a215ea781043d1fd52b4a70fe35b08c9f` — four suites, 35 tests, tests only
 **Decisions approved:** 2026-08-02 · **Approval base commit:** `b91d5e7a2`
 **G1f-1 implemented:** `5c38fc5745d2b6a7ee63e7c6f0b048e6acc61a69` — `feat(location-dna): migrate BuyerAgentAuction writer`
+**G1f-2 implemented:** `d3123fb94d530411a9422c2eef57875b21ec041d` — `feat(location-dna): migrate TenantAgentAuction writer`
 **Branch:** `architecture/location-dna-g1-domain-core`
 **Audit date:** 2026-08-02
 
-> **Approval of a decision is not authorization to implement it.** G1f-1 still requires its own separate
-> authorization, and every stop condition in §23 remains binding.
+> **Approval of a decision is not authorization to implement it.** Each stage requires its own separate
+> authorization, and every stop condition in §23 remains binding. G1f-1 and G1f-2 were each authorized
+> individually; G1f-3 has not been.
 >
 > This document originally decided nothing. It now records five approved owner decisions (§22.2), three
-> reaffirmed constraints that are **not** new decisions (§22.4), and the closure of all four
-> characterisation gaps by executed tests (§20.5). **G1f-1's blocking gap — GAP 2 — is closed, so G1f-1 is
-> unblocked.** It remains unimplemented and unauthorized.
+> reaffirmed constraints that are **not** new decisions (§22.4), the closure of all four
+> characterisation gaps by executed tests (§20.5), and two executed workflow migrations (§27, §28).
 >
 > Every line number, count and behaviour below was recomputed from the tree at the audited commit. No
 > figure is carried forward from a prior document without rechecking, and where a prior document is
@@ -96,7 +97,7 @@ characterisation work named in §20.
 | F-G1F-11 | The five guard sites of `BuyerOfferListingEdit` were never enumerated; now measured | §6.1 |
 | F-G1F-12 | Two documents cite divergence line numbers that point at comments, not code | §2.3 |
 
-### Status after approval and characterisation (2026-08-02)
+### Status after approval, characterisation and two migrations (2026-08-03)
 
 | Item | Status |
 |---|---|
@@ -104,12 +105,13 @@ characterisation work named in §20.
 | Reaffirmed constraints (not decisions) | 3 recorded — §22.4 |
 | GAP 1 / GAP 2 / GAP 3 / GAP 4 | **ALL CLOSED** — `b91d5e7a2`, 35 tests — §20.5 |
 | **G1f-1 · `BuyerAgentAuction`** | **IMPLEMENTED** — `5c38fc574` — §27 |
-| **G1f-2 and later** | **NOT STARTED** |
+| **G1f-2 · `TenantAgentAuction`** | **IMPLEMENTED** — `d3123fb94` — §28 |
+| **G1f-3 and later** | **NOT STARTED** |
 | **G1g** | **NOT STARTED** |
-| Only migrated workflow | **`BuyerAgentAuction`** — one of eight; the other seven write as before |
-| Provenance persistence | **Still not required**, under §10.5's eight binding restrictions — §27.6 |
-| Defect boundaries | 4 recorded, none authorized for repair — §22.5 |
-| Production code written | **9 new classes + 1 existing file** — §27.1 |
+| Migrated workflows | **`BuyerAgentAuction`, `TenantAgentAuction`** — two of eight; the other six write as before |
+| Provenance persistence | **Still not required**, under §10.5's eight binding restrictions — §27.6, §28.6 |
+| Defect boundaries | 4 recorded; **boundary 1 CLOSED by G1f-2** (§28.3). Three remain, none authorized for repair — §22.5 |
+| Production code written | **9 new classes + 2 existing files** — §27.1, §28.1 |
 
 ---
 
@@ -1075,7 +1077,7 @@ and must not be read as such.
 | Increment | Scope | Stop condition | Rollback |
 |---|---|---|---|
 | **G1f-1** — **IMPLEMENTED (`5c38fc574`)** | Create `LocationDnaPersistenceService` + `LegacyMirrorProjection`. Migrate **one** workflow (§19). No provenance, no repair, no token gating. | **Met.** The migrated workflow's characterisation holds except the assertions D-G1-4 intentionally changes; the other seven workflows' characterisation **unchanged**; line 130 clear-mirroring not regressed. See §27 | revert the single commit |
-| **G1f-2** | Migrate the second Hire create flow (`TenantAgentAuction`), **conditional on the §20 characterisation gap being closed** | as above, plus the `user_type` gate behaviour explicitly preserved or explicitly changed by decision | revert |
+| **G1f-2** — **IMPLEMENTED (`d3123fb94`)** | Migrate the second Hire create flow (`TenantAgentAuction`). Reuse the G1f-1 boundary; add no production class | **Met.** GAP 3 was closed at `b91d5e7a2`; the `user_type` gate is **explicitly preserved** per D-G1F-3 3-C, and defect boundary 1 is closed as a separate ordering repair. The six unmigrated workflows' characterisation is **unchanged**. See §28 | revert the single commit |
 | **G1f-3** | Migrate both Buyer Offer inline copies; delete their inline guard sites | both copies' 12 G1a tests reconciled; `test_buyer_offer_components_are_unchanged` updated as authorized change | revert |
 | **G1f-4** | Migrate both Tenant Offer copies | **the two correct workflows' clear tests must not change** — the binding acceptance test | revert |
 | **G1f-5** | Convert the trait to a delegating shim (D-G1-5's 5-C); the four Hire hosts converge without edit | `test_hire_trait_semantics_are_unchanged` updated as authorized change; Hire double-write removed | revert |
@@ -1372,7 +1374,7 @@ matching-logic change, and both recorded the amendment in the decision package. 
 |---|---|---|---|
 | B1 | **GAP 2** — Hire double-write ordering uncharacterised | **G1f-1** | **RESOLVED** — `b91d5e7a2`, 7 tests |
 | B2 | GAP 1 — criteria controllers uncharacterised | G1f-7 | **RESOLVED** — `b91d5e7a2`, 14 tests |
-| B3 | GAP 3 — `user_type` gate uncharacterised | G1f-2 | **RESOLVED** — `b91d5e7a2`, 7 tests |
+| B3 | GAP 3 — `user_type` gate uncharacterised | G1f-2 | **RESOLVED** — `b91d5e7a2`, 7 tests. G1f-2 subsequently **implemented** against that baseline (`d3123fb94`, §28) |
 | B4 | `test_buyer_offer_components_are_unchanged` absent from the authorized change list | G1f-3 | **OPEN** — add it (§20.4) |
 | B5 | v1.2 §4.2 / §4.3 corrections still outstanding | formally, all of G1f | **OPEN** — documentation increment |
 | B6 | D-G1-6 branch sequencing (`ux/hire-agent-create-offer-parity`) never decided | G1f-3, G1f-4 | **OPEN** — owner decision; that branch touches all four Offer components |
@@ -1457,10 +1459,15 @@ increment. **None is repaired by this document, and none is authorized for repai
 
 | # | Defect boundary | Proven by | Gates |
 |---|---|---|---|
-| **1** | **Empty or unknown Tenant Hire `user_type` causes partial persistence.** Mirrors are written at `:4282`-`:4285`, the save raises at `:4689`, and no transaction protects the operation | `test_an_unrecognised_user_type_leaves_a_partial_write` | G1f-2. Requires its own scoped authorization **before or within** the Tenant Hire migration. **Must not be bundled with removal of the `user_type` gate** |
+| **1** | ~~**Empty or unknown Tenant Hire `user_type` causes partial persistence.** Mirrors are written at `:4282`-`:4285`, the save raises at `:4689`, and no transaction protects the operation~~ · **CLOSED by G1f-2 (`d3123fb94`)** | was `test_an_unrecognised_user_type_leaves_a_partial_write`; now `test_an_unrecognised_user_type_writes_no_location_dna_at_all` plus `G1f2TenantAgentAuctionMigrationTest::test_an_unsupported_user_type_issues_zero_location_dna_writes` | **Closed within** the Tenant Hire migration, under that increment's own scoped authorization, and **not bundled** with removal of the `user_type` gate — the gate is preserved verbatim. See §28.3 |
 | **2** | **`storeAuction` cannot reach its canonical write under the migrated schema** — `buyer_criteria_auctions.buyer_id` is NOT NULL with no default and the controller never sets it | `test_w6_cannot_reach_its_canonical_write_against_the_migrated_schema` | G1f-7. Must be separately characterized and scoped before W6 is migrated. **Must not be silently repaired inside G1f-1**, and must not be assumed operational |
 | **3** | **`updateAuction` emits overlapping `state` / `states` keys in incompatible encodings** within one save | `test_buyer_criteria_update_emits_both_state_keys_in_different_encodings` | G1f-7. Disposition of the plural key is §17.5 |
 | **4** | **`zipCodes` remains outside the G1f-1 managed mirror set**, so its divergence persists by decision | `G1fZipCodesMirrorCharacterisationTest` (7 tests) | The §17.4 checkpoint, binding before any workflow that writes `zipCodes` is migrated |
+
+**Status after G1f-2.** One of the four is closed. Boundaries **2**, **3** and **4** remain open and none is
+authorized for repair: 2 and 3 gate G1f-7, and 4 — `zipCodes` outside the managed mirror set — is the §17.4
+checkpoint, which G1f-2 explicitly declined to decide (§28.4) and which remains **required before G1f can be
+declared complete**.
 
 **Declared boundary on defect 2.** It is measured against the schema **as migrated**, on the SQLite test
 connection — the same class of environment-dependent result as the recorded `ILIKE` and
@@ -1693,6 +1700,54 @@ it from a known state rather than rediscovering it. It also raises the count of 
 the one `ILIKE` defect to **three**, which strengthens the case for treating that defect as environment
 work rather than per-suite noise.
 
+### 25.3 Re-validation after the G1f-2 implementation (`d3123fb94`)
+
+| Group | Tests | Result |
+|---|---|---|
+| **New G1f-2 suites** | **33** | pass |
+| G1f-1 suites | 57 | pass |
+| G1f characterisation (4 suites) | 37 | pass |
+| G1a characterisation | 47 | pass |
+| G1b characterisation | 30 | pass |
+| `tests/Unit/Services/LocationDna` (G1c 128 · G1d 70 · G1e 88 · persistence · guards) | 925 | pass |
+| `CriteriaHashServiceTest` | 12 | pass |
+| Offer workflow readiness | 10 | pass |
+| `HireSearchAreasParityTest` | 9 | pass |
+| SearchAreas / mirror contract | 63 | pass |
+| G0.1 public geometry | 35 | pass |
+
+**G1f characterisation is 37 rather than 36** because `G1fHireDoubleWriteCharacterisationTest` gained the
+positive assertion that `TenantAgentAuction`'s duplicate write is gone, replacing the behavioural row that
+component no longer needs — the same trade G1f-1 made for `BuyerAgentAuction` (§28.8).
+
+**`HireSearchAreasParityTest` is listed separately and passes UNMODIFIED.** It is on §20.1's must-not-change
+list and it exercises this component tree, so it was the sharpest available check. Its two write-back tests
+drive `TenantAgentAuctionEdit` — which G1f-2 did not migrate — and its three `TenantAgentAuction` tests are
+render-only, so the migration is correctly invisible to it.
+
+**`G1f1BuyerAgentAuctionMigrationTest` — 13 tests, unmodified, passing.** The first migration is unaffected
+by the second, which is the property the one-workflow-per-commit sequence exists to preserve.
+
+#### Known pre-existing failures — unchanged
+
+- `SearchAreasStateCountyRoundTripTest` — 1 of 4, SQLite `ILIKE`.
+- `ImportantPlacesRoundTripTest` — 4 of 5, the same SQLite `ILIKE` defect.
+- `LazyBridgeImportServiceTest` — 2 of 22, PostgreSQL `pg_try_advisory_lock` unavailable in SQLite.
+
+#### Newly measured, and also pre-existing — added to the standing baseline
+
+**`PropertyLocationPoiVersionColumnsTest` — 2 of 2 fail.** Measured for the first time during G1f-2 because
+the whole `tests/Unit/Services/LocationDna` directory was run rather than named suites.
+
+- Failure is `SQLSTATE[HY000]: General error: 1 no such table: property_location_pois`, raised from the
+  suite's own `setUp()`, which queries the table without `RefreshDatabase` or `DatabaseMigrations`.
+- **It fails in isolation**, with none of G1f-2's changed files loaded.
+- It concerns the POI table; **G1f-2 introduced no migration and touched no model or schema**.
+- **It is not caused by this migration.**
+
+**Added to the standing regression baseline**, bringing the standing set to four suites. It is a database
+setup dependency rather than an `ILIKE` instance, so it is recorded as its own class.
+
 ---
 
 ## 26. Amendment record
@@ -1704,11 +1759,14 @@ work rather than per-suite noise.
 | **Decisions approved** | `8295bb42d` | **D-G1F-1 … D-G1F-5 APPROVED** (§22.2) with recorded terms in §10.5, §17.0, §17.3, §17.4, §17.5, §6.2 and §22.2.1. Three items recorded as **reaffirmed constraints, not new decisions** (§22.4). All four gaps marked **CLOSED** (§20.5); §22.1 blockers B1–B3 marked **RESOLVED**. New **§22.5** records four defect boundaries, none authorized for repair. §23 Stage A marked **COMPLETE** and Stage B marked **UNBLOCKED, NOT AUTHORIZED, NOT STARTED**. §25.1 records re-validation |
 
 | **G1f-1 implementation** | `5c38fc574` | **First workflow migrated.** Nine new production classes in `App\Services\LocationDna\Persistence`, one existing production file changed (`BuyerAgentAuction`), four new test suites (57 tests), six existing tests narrowly amended. See §27 |
-| **G1f-1 reconciliation** | *this commit* | Documentation only. Records the implementation (§27), amends **F-G1F-10** into its post-implementation form (§27.7) and narrows it, updates the rollout status table, and adds `ImportantPlacesRoundTripTest` to the standing pre-existing-failure baseline (§25.2) |
+| **G1f-1 reconciliation** | `4c1dea947` | Documentation only. Records the implementation (§27), amends **F-G1F-10** into its post-implementation form (§27.7) and narrows it, updates the rollout status table, and adds `ImportantPlacesRoundTripTest` to the standing pre-existing-failure baseline (§25.2) |
+| **G1f-2 implementation** | `d3123fb94` | **Second workflow migrated.** **No new production class**; one existing production file changed (`TenantAgentAuction`), reusing the G1f-1 boundary unmodified. Two new test suites (33 tests), four existing tests narrowly amended. Closes defect boundary 1. See §28 |
+| **G1f-2 reconciliation** | *this commit* | Documentation only. Records the implementation (§28), marks defect boundary 1 **CLOSED** (§22.5), updates §18 and the rollout status table, adds `PropertyLocationPoiVersionColumnsTest` to the standing pre-existing-failure baseline (§25.3), and marks §27 as historical rather than rewriting it |
 
 **The first three amendments authorise no gate, migrate no workflow and touch no production code.** The
-fourth — `5c38fc574` — is the first that does, and it migrates exactly one workflow under §23's authorization.
-Every approval is a contract term; every closure is backed by a named executed test.
+fourth — `5c38fc574` — is the first that does, and it migrates exactly one workflow under §23's authorization;
+`d3123fb94` migrates exactly one more under its own. Every approval is a contract term; every closure is
+backed by a named executed test.
 
 ---
 
@@ -1721,11 +1779,18 @@ Every approval is a contract term; every closure is backed by a named executed t
 | Scope | Status |
 |---|---|
 | **G1f-1 · `BuyerAgentAuction` migration** | **IMPLEMENTED** |
-| G1f-2 and every later stage | **NOT STARTED** |
+| G1f-2 and every later stage | **NOT STARTED** *(as at `5c38fc574`; G1f-2 has since been implemented — §28)* |
 | G1g adapter contract | **NOT STARTED** |
 
-**`BuyerAgentAuction` is the only migrated workflow.** The other seven canonical writers are unchanged and
-write exactly as they did before, which `G1f1MigrationBoundaryGuardTest` asserts as a standing invariant.
+> **Read this section as of `5c38fc574`.** It is the record of the FIRST migration and is deliberately not
+> rewritten by later increments. Where it says `BuyerAgentAuction` is the only migrated workflow, or counts
+> seven unmigrated ones, that was true at this commit; **§28 supersedes those counts**. Everything else here
+> — the service contract, the projection contract, the no-op and promotion boundaries, F-G1F-10 — is still
+> current, and G1f-2 changed none of it.
+
+**`BuyerAgentAuction` was the only migrated workflow at this commit.** The other seven canonical writers were
+unchanged and wrote exactly as they did before, which `G1f1MigrationBoundaryGuardTest` asserts as a standing
+invariant — a shrink-only invariant that G1f-2 narrowed by one entry rather than weakened.
 
 ### 27.1 Exact production scope
 
@@ -1942,19 +2007,300 @@ namespace must still be added under its own authorization.
 migrated and skipped from the pre-consolidation save-side characterisation; every load-side assertion still
 runs against all eight workflows.
 
-### 27.9 Rollout status
+### 27.9 Rollout status — as at `5c38fc574`, superseded by §28.10
 
 | Stage | Status |
 |---|---|
 | G1f audit and decisions | **COMPLETE** |
 | G1f characterisation gaps | **CLOSED** |
 | **G1f-1 · `BuyerAgentAuction`** | **IMPLEMENTED** — `5c38fc574` |
-| G1f-2 | **NOT STARTED** |
+| G1f-2 | **NOT STARTED** *(implemented since — §28)* |
 | G1f-3 | **NOT STARTED** |
 | G1f-4 | **NOT STARTED** |
 | Legacy criteria-controller migration | **NOT STARTED** |
 | Direct-writer guard closeout | **NOT STARTED** |
 | G1g | **NOT STARTED** |
 
-**`BuyerAgentAuction` is the only migrated workflow.** The §21 direct-writer guard now lists **seven**
-remaining direct writers; the list is shrink-only and reaching one entry is G1f's completion condition.
+**`BuyerAgentAuction` was the only migrated workflow at this commit.** The §21 direct-writer guard listed
+**seven** remaining direct writers; the list is shrink-only and reaching one entry is G1f's completion
+condition. **The current rollout table is §28.10.**
+
+---
+
+## 28. G1f-2 implementation record
+
+**Implementation commit:** `d3123fb94d530411a9422c2eef57875b21ec041d`
+**Subject:** `feat(location-dna): migrate TenantAgentAuction writer`
+**Date:** 2026-08-03 · **Parent:** `9716eb885`
+
+| Scope | Status |
+|---|---|
+| **G1f-2 · `TenantAgentAuction` migration** | **IMPLEMENTED** |
+| G1f-3 and every later stage | **NOT STARTED** |
+| G1g adapter contract | **NOT STARTED** |
+
+**Two workflows are now migrated — `BuyerAgentAuction` and `TenantAgentAuction`.** The remaining six
+canonical write paths are unchanged and write exactly as they did before.
+
+**Parent note.** `9716eb885` is an unrelated workspace-preservation commit (`.replit` and a 2B-3 cities
+audit script) that landed on this branch after the G1f-1 reconciliation. It changed no Location DNA
+production file, test or document — verified by an empty `git diff` over `app/Services/LocationDna`,
+`BuyerAgentAuction.php`, `tests/Feature/Spatial`, `tests/Unit/Services/LocationDna` and this report — so
+the G1f-1 baseline G1f-2 builds on is `4c1dea947`'s tree unmodified.
+
+### 28.1 Exact production scope
+
+**One existing production file changed. No new production class.**
+
+| File | Change |
+|---|---|
+| `app/Http/Livewire/TenantAgentAuction.php` | +122 / −11 — one import, two new protected methods, the Location Information block rewritten |
+
+**The `App\Services\LocationDna\Persistence` namespace is byte-identical to G1f-1's.** No class was added,
+removed or edited, proven by an empty `git diff 9716eb885 d3123fb94 -- app/Services/LocationDna/`. This was
+the intended shape: G1f-1 built the boundary and G1f-2 is the first evidence that it generalises to a second
+workflow **without needing to change**. A boundary that had to be widened for its second consumer would have
+been a finding; it was not.
+
+**What was added to the component:**
+
+- `SUPPORTED_USER_TYPES` — a private constant naming the four roles the component is built for. Not a
+  Location DNA concept; it is the vocabulary `loadDraft()`, every `match ($this->user_type)` model map and
+  the four `*_specific` compatibility keys already depend on.
+- `assertLocationDnaUserTypeIsSupported()` — the Location DNA write path's precondition (§28.3).
+- `persistLocationDna($auction)` — the same one-line seam onto `OwnerPrivateLocationDnaWriter` that
+  `BuyerAgentAuction` carries. The component names one class and holds no Location DNA policy: no
+  `Dimension`, no `DimensionCommand`, no capability resolution, asserted by
+  `G1f2MigrationBoundaryGuardTest::test_the_migrated_component_touches_no_deferred_seam`.
+
+**Nothing else in production was touched.** No config, route, view, controller, model or migration.
+
+### 28.2 `user_type` behaviour — D-G1F-3 option 3-C, as implemented
+
+**The gate is preserved verbatim.** `in_array($this->user_type, ['buyer', 'tenant'])` is textually
+unchanged and remains the only route to the canonical writer.
+
+| `user_type` | Canonical document | Managed mirrors | Notes |
+|---|---|---|---|
+| `buyer` | **written** | derived from the resulting canonical document | one write per managed key |
+| `tenant` | **written** | derived from the resulting canonical document | one write per managed key |
+| `seller` | **never written** | property-sourced, unchanged | no promotion, no canonicalisation |
+| `landlord` | **never written** | property-sourced, unchanged | no promotion, no canonicalisation |
+| empty | **rejected before any write** | none | `InvalidArgumentException` |
+| unknown | **rejected before any write** | none | `InvalidArgumentException` |
+
+**`buyer` / `tenant`.** The canonical document is written **first**; `cities`, `counties` and `state` are
+projected from the RESULTING document by `LegacyMirrorProjection` and written second; both halves are inside
+one transaction. Exactly one write per managed key — the double-write is gone.
+
+**`seller` / `landlord`.** The existing canonical-write gate is preserved, so no canonical blob is created,
+no existing blob is promoted or canonicalised, and the property-sourced mirrors these roles have always
+written remain supported. **These three mirror writes are not the double-write G1f removes**: with the gate
+closed the trait never ran, so they are the only mirror writes this branch has ever performed. Removing them
+would have silently stopped mirroring location for two of the four roles.
+
+> **This preserves current behaviour. It is not a declaration that blob/mirror divergence for gated roles is
+> architecturally ideal forever.** D-G1F-3 3-C's terms are unchanged: the gate may only be removed under a
+> separate product/workflow authorization, and F-G1F-4's divergence finding stands.
+
+**empty / unknown.** Rejected with `InvalidArgumentException`, before any Location DNA write. No canonical,
+`cities`, `counties`, `state` or `zipCodes` write occurs and every stored value remains byte-identical. The
+value is **not** coerced into `buyer`, `tenant`, `seller` or `landlord` — guessing a role would attach one
+record's Location DNA to another role's semantics and make the gate act on a value the user never supplied.
+
+### 28.3 Defect boundary 1 — CLOSED
+
+**The defect, as characterised.** `saveAllMetadata()` wrote the discrete `cities` / `counties` / `zipCodes` /
+`state` mirrors, then reached the `$this->user_type . '_specific'` role-key lookup, which is undefined for
+any value outside the four declared roles and raised there. No transaction protected the earlier writes, so
+those mirrors were committed and the remainder of the save never happened. **Partial persistence was
+therefore possible on every empty or unrecognised `user_type`.**
+
+**The correction.** `user_type` validation was moved **above** the Location Information write block. An
+invalid or unsupported value now fails before any Location DNA persistence, while every Location DNA key
+still holds its stored value. Nothing is written, so nothing can be left half-written.
+
+**How it was proven.** Both statement forms and both record states were measured, because neither alone is
+decisive:
+
+| Case | Fixture | What a write would look like | Result |
+|---|---|---|---|
+| A | record with no Location DNA meta | INSERT — binds the meta **key** | zero writes for all five keys |
+| B | record with all five keys populated | UPDATE — binds only the new **value** | zero writes; all five values byte-identical afterwards |
+
+**This is an ordering repair, not a gate change.** The `buyer` / `tenant` gate is untouched; what moved is
+where the role is validated. The two concerns were deliberately not merged, so that "the gate changed" and
+"the ordering changed" remain distinguishable in the history.
+
+### 28.4 `zipCodes` — unchanged, and still outside the managed set
+
+**D-G1F-4 option (a) is carried forward unchanged.** `zipCodes` remains outside `LegacyMirrorProjection`:
+
+- still **property-sourced**, from `$this->zipCodes`;
+- still written for supported roles according to the existing workflow behaviour;
+- **never** derived from `Dimension::ZipCodes`;
+- still absent from `LegacyMirrorProjection::MANAGED_KEYS`, which remains `['cities', 'counties', 'state']`;
+- a canonical ZIP clear still does **not** clear the mirror;
+- **no normalization and no repair was introduced.**
+
+**The strongest evidence is a null result: all seven tests in `G1fZipCodesMirrorCharacterisationTest` pass
+UNMODIFIED.** That suite pins the pre-migration behaviour of this exact component, so its silence means the
+behaviour was preserved rather than re-specified around the migration.
+
+**One ordering improvement, no behaviour change.** The `zipCodes` write now occurs **after** the canonical
+block rather than before it. A failure inside the canonical write therefore aborts before `zipCodes` can be
+advanced, so the writer's all-or-nothing guarantee is not undermined by an unmanaged mirror write that
+already landed. An invalid `user_type` produces no `zipCodes` write at all. The written value, its source and
+its reach are identical.
+
+**The final managed-mirror decision for `zipCodes` remains DEFERRED.** The §17.4 checkpoint is unchanged and
+still **binding before G1f can be declared complete**. G1f-2 was the first increment to migrate a workflow
+that writes the key, and it declined to decide it — recorded, not overlooked. It remains defect boundary 4.
+
+### 28.5 Persistence and transaction behaviour
+
+**`TenantAgentAuction` reuses the G1f-1 boundary. No persistence class changed.**
+
+For `buyer` / `tenant`, through `OwnerPrivateLocationDnaWriter` → `LocationDnaCommandBuilder` →
+`LocationDnaPersistenceService`:
+
+- explicit per-dimension commands are built from the submitted payload;
+- **absence remains no operation** — a key absent from the payload gets no command;
+- a present non-empty value becomes **set**;
+- a present empty value becomes **clear**;
+- the canonical document is written **first**;
+- `cities` / `counties` / `state` are projected from the **resulting** canonical document, never from a
+  stored mirror;
+- all of it occurs in **one transaction**.
+
+**Rollback proof.** The record is passed as a proxy that forwards to the real model but raises on the `state`
+mirror write — the LAST managed key the projection emits, so `cities` and `counties` have already been
+written inside the transaction when it fires. Afterwards the canonical document, `cities` and `counties` are
+all absent: the batch applies wholly or not at all, and no partial managed state remains.
+
+**The `seller` / `landlord` gated paths do not invoke the canonical persistence service at all.** They never
+construct a command, never open the writer's transaction and never reach the projection.
+
+### 28.6 No-op and promotion guarantees
+
+Every G1f-1 guarantee holds unchanged for the second workflow. An **absent payload**:
+
+- preserves the canonical document **byte for byte**;
+- preserves every managed mirror;
+- **creates no canonical blob for a legacy-only record**;
+- performs **no repair**;
+- performs **no inherited, imported, derived or legacy promotion**;
+- **persists no provenance** — the actor is still transient, validated and discarded.
+
+A **semantic no-op** — a present payload stating what the document already means — issues **no write at
+all**; the revision-token comparison suppresses it.
+
+**The gated `seller` / `landlord` path also promotes nothing.** A record whose location lives only in the
+discrete mirrors does not have those values read back and written out as an authored canonical document,
+which is the §10.3 hazard D-G1F-1's constraint exists to prevent.
+
+### 28.7 Schema-version behaviour
+
+- The first **semantic** `buyer` / `tenant` write stamps **`schema_version: 2`**.
+- Deterministic canonical key ordering is emitted.
+- A **no-command save does not canonicalise** — a legacy document keeps its exact bytes.
+- A **semantic no-op issues no write**, so it cannot canonicalise either.
+- The **`seller` / `landlord` gated path does not canonicalise**: no write means no rewrite.
+
+**Consumers and tests were surveyed before implementation**, per §27.7's stop condition for G1f-2. No
+production consumer of `location_dna_preferences` depends on byte-identical serialisation — every reader
+decodes the JSON and reads keys semantically, and `CriteriaHashService` hashes a canonical payload array
+rather than the stored string. Three test assertions in `G1fHireTenantUserTypeGateCharacterisationTest`
+compared the stored blob byte-for-byte; they were narrowly converted to semantic comparisons (§28.8).
+`HireSearchAreasParityTest`'s byte-identity assertion drives `TenantAgentAuctionEdit`, which is unmigrated,
+and was therefore not affected.
+
+**F-G1F-10 is carried forward unchanged in principle:**
+
+- **semantic equality governs**;
+- **byte identity is not guaranteed** after a semantic write;
+- **no bulk rewrite or backfill is authorized**;
+- the stop condition renews itself: **before migrating the next workflow, verify that ITS consumers and tests
+  do not depend on byte-identical serialisation.**
+
+### 28.8 Test and guard changes
+
+**Two new test files, 33 tests, all passing:**
+
+| Suite | Tests |
+|---|---|
+| `tests/Feature/Spatial/G1f2TenantAgentAuctionMigrationTest.php` | 22 |
+| `tests/Unit/Services/LocationDna/Persistence/G1f2MigrationBoundaryGuardTest.php` | 11 |
+
+**Four existing tests modified, each narrowly:**
+
+| Test | Change |
+|---|---|
+| `G1fHireTenantUserTypeGateCharacterisationTest` | The old **partial-write expectation is inverted to prove zero writes**, and renamed accordingly. Two byte-identity blob comparisons became semantic. The "mirrors written for every `user_type`" row now asserts absence for the two unsupported roles. The gate's entry point is asserted per component |
+| `G1fHireDoubleWriteCharacterisationTest` | **`TenantAgentAuction` removed from the double-write behavioural set** (2 → 1) and replaced with a positive assertion that its duplicate write is gone — the same trade G1f-1 made. The remaining component is exercised exactly as before |
+| `G1aWorkflowPersistenceMatrixCharacterisationTest` | **`TenantAgentAuction` marked migrated on the SAVE side only.** The two save-side counts move 5 → 4. **All eight load-side entries remain covered** |
+| `G1f1MigrationBoundaryGuardTest` | **Unmigrated workflow count 7 → 6**; **trait-host count 3 → 2**; one persistence-namespace exemption added |
+
+**No other existing test required modification.** In particular:
+
+- **Offer workflow readiness required no update** — `TenantAgentAuction.php` was already allow-listed and
+  G1f-2 added no production file.
+- **The G1c, G1d and G1e inertness guards required no update** — G1f-2 introduced no namespace, so the
+  explicit `Persistence` exemptions G1f-1 added remain exactly as they were. No wildcard exists in any of
+  them and none was added.
+
+### 28.9 Non-vacuity probes
+
+Six probes were run against the implementation and removed. **Three found genuine vacuity in the new tests**,
+which were strengthened and re-probed — recorded because the finding is the useful part.
+
+| # | Probe | Result |
+|---|---|---|
+| 1 | Move `user_type` validation below the mirror writes | **Initially exposed a vacuous key-only write counter** — `updateOrCreate` binds the meta key only on INSERT, so an UPDATE was invisible to it. The test was rewritten to detect both INSERT and UPDATE forms; the probe then failed it |
+| 2 | Remove the persistence-service call | **9 tests fail** |
+| 3 | Restore the duplicate mirror writes | **Initially exposed a second vacuous key-based assertion**, for the same reason on a fresh-record fixture. The test was rewritten to count by VALUE on a pre-seeded record; the probe then failed **6 tests** |
+| 4 | Remove the `DB::transaction` | Rollback tests fail in **both** the G1f-1 and G1f-2 suites |
+| 5 | Permit legacy-mirror → canonical promotion | **1 G1f-2 and 2 G1f-1 tests fail.** The first form tried — hydrate-then-rewrite of an unchanged document — was suppressed by the revision token and failed nothing, so the probe was retargeted at the actual §10.3 hazard |
+| 6 | Open the gate to `seller` / `landlord` | **Initially passed two source-level gate assertions** — the gate literal occurs several times in this 5,300-line component for unrelated guards, so a whole-file search proved nothing. Both were narrowed to the gate NEAREST the writer call; the probe then failed **6 tests** |
+
+**After the probes:** all removed; **SHA-256 restoration verified** against pre-probe baselines for all three
+touched files; no probe residue anywhere in `app/` or the suites; and the persistence classes confirmed
+**byte-identical** to their committed form.
+
+**What probes 1, 3 and 6 are really worth.** Each of the three vacuous assertions would have passed forever
+while proving nothing, and none was detectable by reading the test. Two shared one root cause — assuming a
+meta write always binds its key — which is now stated explicitly in the suite's helper docblock so the next
+migration does not rediscover it.
+
+### 28.10 Rollout status — current
+
+| Stage | Status |
+|---|---|
+| G1f audit and decisions | **COMPLETE** |
+| G1f characterisation gaps | **CLOSED** |
+| **G1f-1 · `BuyerAgentAuction`** | **IMPLEMENTED** — `5c38fc574` |
+| **G1f-2 · `TenantAgentAuction`** | **IMPLEMENTED** — `d3123fb94` |
+| G1f-3 | **NOT STARTED** |
+| G1f-4 | **NOT STARTED** |
+| Legacy criteria-controller migration | **NOT STARTED** |
+| Trait / shim closeout | **NOT STARTED** |
+| Direct-writer guard closeout | **NOT STARTED** |
+| G1g | **NOT STARTED** |
+
+**Counts, each measured rather than carried forward:**
+
+| Measure | Value |
+|---|---|
+| Workflows migrated | **2** — `BuyerAgentAuction`, `TenantAgentAuction` |
+| Workflow implementations unmigrated | **6** |
+| Remaining direct canonical writer sites (§21 guard) | **7 — unchanged** |
+| `HasSearchAreas` hosts still calling the trait save | **2** — `BuyerAgentAuctionEdit`, `TenantAgentAuctionEdit` |
+| `LegacyMirrorAdapter` | **absent** |
+
+**Why the direct-writer count did not fall.** The §21 guard lists files containing a literal
+`saveMeta('location_dna_preferences'`. `TenantAgentAuction` never had one — it reached the canonical key
+**through the trait**, which is itself one of the seven entries. So migrating it removes a canonical writer
+without shortening that list. The list falls when the inline copies migrate (G1f-3, G1f-4), and reaches one
+entry only when the trait is converted and the criteria controllers are migrated. **A flat count here is the
+expected result of this particular migration, not a stalled one** — the measure that did move is the
+trait-host count, 3 → 2.
