@@ -340,38 +340,44 @@ class VihoDesignTokenFoundationTest extends TestCase
     // ── 4/5. Not yet consumed ────────────────────────────────────────────────
 
     /**
-     * The Landlord pilot loads the stylesheet exactly once; no other role loads it at all.
+     * The migrated roles load the stylesheet exactly once each; the unmigrated roles never load it.
      *
-     * AMENDED IN M3. "Exactly once" is the load-bearing word. The obvious place to put the include
-     * was the shared detail shell — and that would have been wrong, because the shell renders for
-     * all four roles and would have enrolled Seller, Buyer and Tenant in a pilot they are not part
-     * of. Counting occurrences is what distinguishes the correct placement from the convenient one.
+     * AMENDED IN M3, TWICE — Landlord first, Seller alongside it once the Landlord appearance was
+     * approved. "Exactly once" is still the load-bearing phrase, and it is now doing more work
+     * than it was with a single role. The obvious place to put the second include was the shared
+     * detail shell, which renders for all four roles: that would have satisfied any test asking
+     * merely whether Landlord and Seller load it, while silently enrolling Buyer and Tenant too.
+     * Counting per-file occurrences is what distinguishes the correct placement from the
+     * convenient one, and it is the reason both roles carry their own include.
      */
-    public function test_only_the_landlord_pilot_includes_the_stylesheet(): void
+    public function test_only_the_migrated_roles_include_the_stylesheet(): void
     {
-        $landlord = $this->scanner->read('resources/views/hire_landlord_agent/view.blade.php');
-
-        $this->assertSame(
-            1,
-            substr_count(Scanner::stripComments($landlord), "@include('viho.styles')"),
-            'The Landlord pilot must include the shared stylesheet exactly once.'
-        );
+        foreach ([
+            'resources/views/hire_landlord_agent/view.blade.php',
+            'resources/views/hire_seller_agent/view.blade.php',
+        ] as $view) {
+            $this->assertSame(
+                1,
+                substr_count(Scanner::stripComments($this->scanner->read($view)), "@include('viho.styles')"),
+                "{$view} is a migrated role and must include the shared stylesheet exactly once — "
+                . 'not zero times, and not twice via a shared partial.'
+            );
+        }
 
         foreach ([
-            'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_tenant_agent/view.blade.php',
         ] as $view) {
             $this->assertStringNotContainsString(
                 'viho.styles',
                 $this->scanner->read($view),
-                "{$view} is not part of the M3 pilot."
+                "{$view} has not been migrated and must load the shared foundation zero times."
             );
         }
 
         // The shared shell in particular: putting the include there would silently migrate all four.
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
-            if (str_contains($file, 'hire_landlord_agent')) {
+            if (str_contains($file, 'hire_landlord_agent') || str_contains($file, 'hire_seller_agent')) {
                 continue;
             }
 
@@ -396,13 +402,19 @@ class VihoDesignTokenFoundationTest extends TestCase
     }
 
     /**
-     * The Landlord pilot is the ONLY file in the application that includes it.
+     * The two migrated roles are the ONLY files in the application that include it.
      *
-     * AMENDED IN M3 from "nothing includes it". Enumerating every Blade file rather than checking
-     * the known views is the point: a layout or a shared partial pulling this in would migrate
-     * every page at once, and neither is somewhere anyone would think to look.
+     * AMENDED IN M3, TWICE — from "nothing includes it", to Landlord alone, to Landlord and
+     * Seller. Enumerating every Blade file rather than checking the known views is the point: a
+     * layout or a shared partial pulling this in would migrate every page at once, and neither is
+     * somewhere anyone would think to look.
+     *
+     * The result is sorted before comparison. RecursiveDirectoryIterator returns entries in
+     * filesystem order, which is not guaranteed and not alphabetical; with a single expected
+     * entry that never showed, and with two it would have turned a real contract into a test that
+     * passes or fails depending on inode order.
      */
-    public function test_only_the_landlord_pilot_includes_the_stylesheet_application_wide(): void
+    public function test_only_the_migrated_roles_include_the_stylesheet_application_wide(): void
     {
         $referencing = [];
 
@@ -425,11 +437,16 @@ class VihoDesignTokenFoundationTest extends TestCase
             }
         }
 
+        sort($referencing);
+
         $this->assertSame(
-            ['resources/views/hire_landlord_agent/view.blade.php'],
+            [
+                'resources/views/hire_landlord_agent/view.blade.php',
+                'resources/views/hire_seller_agent/view.blade.php',
+            ],
             $referencing,
-            'The Landlord pilot must be the only consumer of the shared stylesheet. Anything else '
-            . "here — a layout especially — would migrate pages that are not in the pilot:\n"
+            'The migrated roles must be the only consumers of the shared stylesheet. Anything else '
+            . "here — a layout especially — would migrate pages that have not been reviewed:\n"
             . implode("\n", $referencing)
         );
     }

@@ -582,23 +582,39 @@ class VihoPresentationPrimitivesTest extends TestCase
     // ── 8/9 + 19/20/21. Not yet consumed ─────────────────────────────────────
 
     /**
-     * Only the Landlord pilot renders a VIHO component.
+     * Only the migrated roles render a VIHO component.
      *
-     * AMENDED IN M3. Previously "no Hire Agent file consumes VIHO". Landlord is the approved
-     * pilot; the other three roles and the shared Hire Agent components are still expected to be
-     * clean, and that is where the assertion now points. The shared detail shell matters most —
-     * a VIHO tag there would migrate all four roles at once.
+     * AMENDED IN M3, TWICE. It began as "no Hire Agent file consumes VIHO", narrowed to Landlord
+     * when the pilot landed, and narrows again now that Seller has been migrated against the
+     * approved Landlord pattern. Buyer, Tenant and the shared Hire Agent components are still
+     * expected to be clean, and that is where the assertion points. The shared detail shell
+     * matters most — a VIHO tag there would migrate all four roles at once.
+     *
+     * Each migrated role is confirmed to consume VIHO individually rather than through a combined
+     * counter. A single tally greater than zero would stay green if Seller adopted the components
+     * and Landlord silently lost them.
      */
-    public function test_only_the_landlord_pilot_consumes_the_components(): void
+    public function test_only_the_migrated_roles_consume_the_components(): void
     {
-        $landlordFiles = 0;
+        $migrated = [
+            'hire_landlord_agent' => 0,
+            'hire_seller_agent'   => 0,
+        ];
 
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
             $src = $this->scanner->read($file);
 
-            if (str_contains($file, 'hire_landlord_agent')) {
+            $role = null;
+            foreach (array_keys($migrated) as $candidate) {
+                if (str_contains($file, $candidate)) {
+                    $role = $candidate;
+                    break;
+                }
+            }
+
+            if ($role !== null) {
                 if (str_contains($src, '<x-viho.')) {
-                    $landlordFiles++;
+                    $migrated[$role]++;
                 }
 
                 continue;
@@ -607,11 +623,13 @@ class VihoPresentationPrimitivesTest extends TestCase
             $this->assertStringNotContainsString(
                 '<x-viho.',
                 $src,
-                "{$file} is outside the M3 pilot — Seller, Buyer and Tenant migrate only after review."
+                "{$file} has not been migrated — Buyer and Tenant adopt VIHO only after review."
             );
         }
 
-        $this->assertGreaterThan(0, $landlordFiles, 'The Landlord pilot must actually consume VIHO.');
+        foreach ($migrated as $role => $count) {
+            $this->assertGreaterThan(0, $count, "{$role} is a migrated role and must actually consume VIHO.");
+        }
     }
 
     /** No Create Offer file renders a VIHO component. */
@@ -623,12 +641,16 @@ class VihoPresentationPrimitivesTest extends TestCase
     }
 
     /**
-     * The Landlord pilot is the only file in the application that renders one.
+     * The two migrated roles are the only files in the application that render one.
      *
-     * AMENDED IN M3 from "nothing consumes them". Enumerating every Blade file is the point: a
-     * layout or shared partial adopting VIHO would migrate pages nobody put in the pilot.
+     * AMENDED IN M3, TWICE — from "nothing consumes them", to Landlord alone, to Landlord and
+     * Seller. Enumerating every Blade file is the point: a layout or shared partial adopting VIHO
+     * would migrate pages nobody reviewed.
+     *
+     * Sorted before comparison, for the same reason as the stylesheet equivalent: the iterator
+     * returns filesystem order, so a two-entry expectation would otherwise be inode-dependent.
      */
-    public function test_only_the_landlord_pilot_consumes_the_components_application_wide(): void
+    public function test_only_the_migrated_roles_consume_the_components_application_wide(): void
     {
         $consumers = [];
 
@@ -651,11 +673,16 @@ class VihoPresentationPrimitivesTest extends TestCase
             }
         }
 
+        sort($consumers);
+
         $this->assertSame(
-            ['resources/views/hire_landlord_agent/view.blade.php'],
+            [
+                'resources/views/hire_landlord_agent/view.blade.php',
+                'resources/views/hire_seller_agent/view.blade.php',
+            ],
             $consumers,
-            "Only the M3 Landlord pilot may render a VIHO component. Anything else here — a layout "
-            . "especially — would migrate pages that are not in the pilot:\n" . implode("\n", $consumers)
+            "Only the migrated roles may render a VIHO component. Anything else here — a layout "
+            . "especially — would migrate pages that have not been reviewed:\n" . implode("\n", $consumers)
         );
     }
 

@@ -31,6 +31,21 @@
 {{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
      byte-identical across all four detail views now live in one place. --}}
 
+{{--
+    Milestone 3 — the shared VIHO foundation, extended from the approved Landlord pilot.
+
+    Included HERE rather than in the shared detail shell, and that placement is the whole point:
+    the shell is rendered by all four roles, so putting it there would have enrolled Buyer and
+    Tenant in a migration they are not part of. Landlord and Seller are the only roles that have
+    migrated, so they are the only two files that load it. Buyer and Tenant keep rendering
+    exactly as they do today.
+
+    It arrives AFTER the framework stylesheet, which matters: where the two define the same
+    property for an element that carries both class families, VIHO wins. That is the intended
+    direction of the migration and the reason this page now looks like Create Offer.
+--}}
+@include('viho.styles')
+
 {{-- Residual Seller-only rules. These LOOK shared but are not: they differ
      between roles in colour, !important or comment text, so moving them into the shared
      partial would have changed what this page renders. Left in place deliberately. --}}
@@ -137,11 +152,19 @@
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="seller" :auction="$auction">
         <x-slot name="main">
-                <div class="card description">
-                    <div class="card-header section-header">
-                        <h4 class="section-title">Listing Details:</h4>
-                    </div>
-                    <div class="card-body">
+            {{--
+                M3. Was `div.card.description` wrapping `card-header.section-header` + an
+                `h4.section-title` + `card-body`. The heading level stays h4: typography is
+                migrating, the document outline is not.
+
+                This is one card containing twelve sub-sections, not twelve sibling cards — the
+                rendered DOM has exactly two children under leftCol, this and the review card.
+                The sub-headings below therefore become x-viho.section-header rather than more
+                cards, which is what keeps the section order and nesting identical. Blade source
+                could not settle that question, because @if branches make div-counting
+                unreliable; it was resolved by rendering the page and reading real DOM.
+            --}}
+            <x-viho.card title="Listing Details:" title-tag="h4">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">Listing Title
@@ -194,9 +217,8 @@
 
                         </div>
                           <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Property Details:</h4>
-                        </div>
+                        {{-- M3: sub-section header inside the single Listing Details card. --}}
+                        <x-viho.section-header title="Property Details:" tag="h4" />
 
                         <div class="row" style="flex-wrap: wrap;">
 
@@ -679,9 +701,7 @@
                                 @if (!empty($assetItems))
                                 </div>
                                 <hr>
-                                <div class="card-header section-header">
-                                    <h4 class="section-title">Business/Property Assets</h4>
-                                </div>
+                                <x-viho.section-header title="Business/Property Assets" tag="h4" />
                                 <div class="row" style="flex-wrap: wrap;">
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Included Property or Business Assets:
@@ -712,9 +732,7 @@
                                 @if ($hasNOI || $hasCapRate)
                                 </div>
                                 <hr>
-                                <div class="card-header section-header">
-                                    <h4 class="section-title">Income & Investment Metrics</h4>
-                                </div>
+                                <x-viho.section-header title="Income & Investment Metrics" tag="h4" />
                                 <div class="row" style="flex-wrap: wrap;">
                                     @if ($hasNOI)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -811,9 +829,7 @@
 
                         </div>
                         <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Sale Terms</h4>
-                        </div>
+                        <x-viho.section-header title="Sale Terms" tag="h4" />
 
                         @php
                             $spRaw = @$auction->get->sale_provision;
@@ -937,9 +953,7 @@
                         @endphp
                         @if (!empty($financingPills))
                             <hr>
-                            <div class="card-header section-header">
-                                <h4 class="section-title">Financing Details</h4>
-                            </div>
+                            <x-viho.section-header title="Financing Details" tag="h4" />
                             <div class="row">
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1168,9 +1182,13 @@
                         @endphp
 
                         @if ($hasServices)
-                        <div class="card-header section-header services-section-header">
-                            <h4 class="section-title">Services:</h4>
-                        </div>
+                        {{-- The dropped `services-section-header` contributed one rule,
+                             `margin-top: 0.75rem !important`, overriding the framework's
+                             section-header top margin for this one heading. VIHO owns section
+                             spacing now, so carrying it would have re-introduced an override
+                             against the system being adopted. Landlord's pilot dropped it here
+                             too; this keeps the two roles identical. --}}
+                        <x-viho.section-header title="Services:" tag="h4" />
 
                         @php
                         // Define seller service categories based on property type
@@ -1696,9 +1714,7 @@
 
                         <hr>
                         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
-                            <div class="card-header section-header">
-                                <h4 class="section-title">Additional Details:</h4>
-                            </div>
+                            <x-viho.section-header title="Additional Details:" tag="h4" />
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details: <span
@@ -1760,9 +1776,9 @@
 
                         @if (!empty($repRows))
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
-                        </div>
+                        {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
+                             rendered text is unchanged. Passing &amp; here would double-escape it. --}}
+                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
                         @foreach ($repRows as $repRow)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             {{ $repRow['label'] }}:
@@ -1784,9 +1800,7 @@
                         @endphp
                         @if ($hasSellerBrokerCompData)
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
-                        </div>
+                        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms" tag="h4" />
 
                         <div class="broker-compensation-section">
 
@@ -2142,9 +2156,7 @@
                         @endphp
                         @if ($referralPctDisplay !== '')
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Referral & Cooperation Terms</h4>
-                        </div>
+                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Referral Fee:
                             <span class="removeBold">{{ $referralPctDisplay }}</span>
@@ -2152,9 +2164,15 @@
                         @endif
 
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">{{ ($auction->user && $auction->user->user_type === 'agent') ? "Agent's Info" : "Seller Info" }}</h4>
-                        </div>
+                        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is
+                             not parseable by Blade's attribute compiler. Same expression, same two
+                             outcomes. --}}
+                        @php
+                            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+                                ? "Agent's Info"
+                                : "Seller Info";
+                        @endphp
+                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
 
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
@@ -2267,8 +2285,8 @@
                                 @endif
                             @endif
                         </div>
-                    </div>
-                </div>
+            {{-- M3: the former card-body close is gone with its opening tag; the card closes here. --}}
+            </x-viho.card>
                 @inject('auctionUser', 'App\Models\User')
                 @php
                     $auser = $auctionUser::find(@$auction->user_id);

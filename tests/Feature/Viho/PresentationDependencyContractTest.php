@@ -206,30 +206,33 @@ class PresentationDependencyContractTest extends TestCase
     // ── Current-state protection (contract items 10–14) ──────────────────────
 
     /**
-     * 10. Hire Agent's presentation is as Milestone 5A left it, except for the M3 Landlord pilot.
+     * 10. Hire Agent's presentation is as Milestone 5A left it, except for the migrated roles.
      *
-     * AMENDED IN M3. This previously asserted that no Hire Agent view consumed VIHO at all. The
-     * Landlord view is now the approved pilot, so the assertion narrows to the three roles that
-     * have NOT migrated — which is the half that still carries information. Widening it to "any
-     * Hire Agent view may consume VIHO" would have retired the guard at the moment it started
-     * mattering: the pilot's whole purpose is that Seller, Buyer and Tenant stay untouched while
-     * Landlord is reviewed.
+     * AMENDED IN M3, TWICE. It first asserted that no Hire Agent view consumed VIHO at all; the
+     * Landlord pilot narrowed it to the three unmigrated roles. Seller has now been migrated
+     * against the approved Landlord pattern, so the guard narrows again — to Buyer and Tenant,
+     * which is the half that still carries information.
      *
-     * All four still use the shared detail shell; the pilot changed presentation inside the main
-     * column, not the page skeleton.
+     * The list is enumerated rather than expressed as "any migrated role may consume VIHO",
+     * because the second form would retire the guard at the moment it starts mattering: the
+     * whole point is that Buyer and Tenant stay untouched until they are approved in turn. A new
+     * role appearing here has to be added deliberately, by someone who looked at the result.
+     *
+     * All four still use the shared detail shell; the migration changed presentation inside the
+     * main column, not the page skeleton.
      */
-    public function test_hire_agent_presentation_is_unchanged_outside_the_landlord_pilot(): void
+    public function test_hire_agent_presentation_is_unchanged_outside_the_migrated_roles(): void
     {
         foreach (self::HIRE_AGENT_VIEWS as $view) {
             $src = $this->scanner->read($view);
 
             $this->assertStringContainsString('<x-hire-agent.detail-shell', $src, $view);
 
-            if (str_contains($view, 'hire_landlord_agent')) {
+            if (str_contains($view, 'hire_landlord_agent') || str_contains($view, 'hire_seller_agent')) {
                 $this->assertStringContainsString(
                     '<x-viho.',
                     $src,
-                    'Landlord is the approved M3 pilot and is expected to consume VIHO.'
+                    "{$view} is a migrated role and is expected to consume VIHO."
                 );
 
                 continue;
@@ -238,8 +241,8 @@ class PresentationDependencyContractTest extends TestCase
             $this->assertStringNotContainsString(
                 'x-viho.',
                 $src,
-                "{$view} is not part of the M3 pilot — Seller, Buyer and Tenant migrate only after "
-                . 'the Landlord appearance is approved.'
+                "{$view} has not been migrated — Buyer and Tenant adopt VIHO only after they are "
+                . 'reviewed and approved in their own right.'
             );
         }
 
