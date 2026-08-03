@@ -42,6 +42,26 @@ final class OwnerPrivateLocationDnaWriter
     }
 
     /**
+     * The same owner-private seam, managing an explicitly named set of legacy mirror keys.
+     *
+     * For surfaces that ALREADY write a legacy mirror outside the default managed set — today that
+     * is `zipCodes`, which the Tenant and Landlord/Seller families write and the Buyer family never
+     * has. Naming the keys here keeps the decision at the call site: the projection stays generic
+     * and the default {@see LegacyMirrorProjection::MANAGED_KEYS} is untouched, so no already
+     * migrated workflow starts emitting a mirror it did not emit before.
+     *
+     * @param  list<string>  $managedMirrorKeys  the FULL set this surface manages, not an addition
+     */
+    public static function managingMirrors(array $managedMirrorKeys): self
+    {
+        return new self(
+            service: new LocationDnaPersistenceService(
+                mirrors: new LegacyMirrorProjection($managedMirrorKeys),
+            ),
+        );
+    }
+
+    /**
      * Persist the Location DNA a mounted owner editor submitted.
      *
      * @param  object  $model    any auction model exposing info()/saveMeta()

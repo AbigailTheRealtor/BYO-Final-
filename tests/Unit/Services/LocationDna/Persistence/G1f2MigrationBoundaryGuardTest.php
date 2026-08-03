@@ -2,6 +2,11 @@
 
 namespace Tests\Unit\Services\LocationDna\Persistence;
 
+use App\Services\LocationDna\Contract\Dimension;
+use App\Services\LocationDna\Contract\DimensionCommand;
+use App\Services\LocationDna\Contract\DimensionCommandApplier;
+use App\Services\LocationDna\Contract\LocationDnaDocument;
+use App\Services\LocationDna\Persistence\LegacyMirrorProjection;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -228,20 +233,35 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         );
     }
 
-    /** D-G1F-4 (a) · `zipCodes` is still unmanaged and still property-sourced. */
-    public function test_zipcodes_is_still_outside_the_managed_mirror_set(): void
+    /**
+     * D-G1F-4 (a) · `zipCodes` is still unmanaged BY DEFAULT and still property-sourced here.
+     *
+     * SUPERSEDED CLAUSE, DELIBERATELY REPLACED
+     * ----------------------------------------
+     * This test used to assert that the projection contained no `zipCodes` string at all. The
+     * G1f-4 prerequisite (approved) makes `zipCodes` a SURFACE-SCOPED OPT-IN key, so the projection
+     * legitimately names it now. What the §17.4 checkpoint actually protects is not the absence of
+     * a string but the absence of a behaviour change, so the guarantee is asserted behaviourally:
+     * the DEFAULT projection must still emit nothing, even when canonical ZIPs are present-cleared,
+     * which is the exact shape every Buyer blob carries.
+     */
+    public function test_zipcodes_is_still_outside_the_default_managed_mirror_set(): void
     {
-        $projection = $this->read('app/Services/LocationDna/Persistence/LegacyMirrorProjection.php');
-
         $this->assertStringContainsString(
             "public const MANAGED_KEYS = ['cities', 'counties', 'state'];",
-            $projection,
-            'the managed set must not have grown — the §17.4 checkpoint governs zipCodes'
+            $this->read('app/Services/LocationDna/Persistence/LegacyMirrorProjection.php'),
+            'the DEFAULT managed set must not have grown'
         );
-        $this->assertStringNotContainsString(
+
+        $document = (new DimensionCommandApplier())->apply(LocationDnaDocument::emptyDocument(), [
+            DimensionCommand::set(Dimension::Cities, ['Tampa']),
+            DimensionCommand::clear(Dimension::ZipCodes),
+        ]);
+
+        $this->assertArrayNotHasKey(
             'zipCodes',
-            $this->codeOnly($projection),
-            'and the projection must hold no ZIP logic at all'
+            (new LegacyMirrorProjection())->project($document),
+            'the default projection must still emit no zipCodes mirror'
         );
 
         $this->assertStringContainsString(
@@ -251,14 +271,19 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         );
     }
 
-    /** No writer, migrated or not, derives the `zipCodes` mirror from the blob. */
-    public function test_no_writer_derives_zipcodes_from_the_canonical_document(): void
+    /**
+     * No LIVEWIRE writer derives the `zipCodes` mirror from the blob.
+     *
+     * The projection is excluded from this list by the G1f-4 prerequisite: deriving `zipCodes` from
+     * canonical state is now precisely its job when a surface opts in. The components below have
+     * not opted in and must still be property-sourced.
+     */
+    public function test_no_livewire_writer_derives_zipcodes_from_the_canonical_document(): void
     {
         foreach ([
             'app/Http/Livewire/Concerns/HasSearchAreas.php',
             'app/Http/Livewire/TenantAgentAuction.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
-            'app/Services/LocationDna/Persistence/LegacyMirrorProjection.php',
         ] as $relative) {
             $code = $this->codeOnly($this->read($relative));
 
