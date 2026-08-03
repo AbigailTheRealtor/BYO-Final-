@@ -666,6 +666,11 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
             'resources/views/partials/offer-listing/publish-submit-gate.blade.php',
             'tests/Feature/Offers/PublishSubmitGateTest.php',
+            // Pending-banner copy fix: the offer-detail banner called every pending
+            // offer a counteroffer. Offer::isCounterOffer() makes parent_offer_id the
+            // single discriminator; show.blade.php (already allow-listed above) picks
+            // the copy from it. See tests/Feature/Offers/PendingOfferBannerTest.php.
+            'app/Models/Offer.php',
         ];
 
         $unexpected = array_values(array_filter(

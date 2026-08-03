@@ -46,6 +46,23 @@ class Offer extends Model
         return $this->hasMany(Offer::class, 'parent_offer_id');
     }
 
+    /**
+     * Is this offer a counteroffer rather than an original submission?
+     *
+     * The parent link is the single source of truth. OfferCounterService writes
+     * `parent_offer_id` on the child it creates and on nothing else, so a row
+     * carrying one is a counter and a row without one is an original.
+     *
+     * Status is NOT a discriminator. When A counters B, the SERVICE sets B's own
+     * status to 'countered' while leaving B's parent_offer_id null — B remains an
+     * original that happens to have been countered. Reading 'countered' as "this
+     * is a counteroffer" mislabels every such original.
+     */
+    public function isCounterOffer(): bool
+    {
+        return $this->parent_offer_id !== null;
+    }
+
     public function metas()
     {
         return $this->hasMany(OfferMeta::class);
