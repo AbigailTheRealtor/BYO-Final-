@@ -208,43 +208,33 @@ class PresentationDependencyContractTest extends TestCase
     /**
      * 10. Hire Agent's presentation is as Milestone 5A left it, except for the migrated roles.
      *
-     * AMENDED IN M3, THREE TIMES. It first asserted that no Hire Agent view consumed VIHO at all;
-     * the Landlord pilot narrowed it to the three unmigrated roles; Seller narrowed it to two.
-     * Buyer has now been migrated against the same approved pattern, so the guard narrows again —
-     * to Tenant, which is the only role left that still carries information.
+     * AMENDED IN M3, FOUR TIMES. It first asserted that no Hire Agent view consumed VIHO at all;
+     * the Landlord pilot narrowed it to three unmigrated roles, Seller to two, Buyer to one, and
+     * Tenant to none. Every role view is now expected to consume VIHO.
      *
-     * The list is enumerated rather than expressed as "any migrated role may consume VIHO",
-     * because the second form would retire the guard at the moment it starts mattering: the
-     * whole point is that Tenant stays untouched until it is approved in turn. A new role
-     * appearing here has to be added deliberately, by someone who looked at the result.
-     *
-     * All four still use the shared detail shell; the migration changed presentation inside the
-     * main column, not the page skeleton.
+     * What this test still asserts, and why it is not vacuous: each of the four is checked
+     * INDIVIDUALLY, so a role silently losing VIHO in a later refactor fails here by name; and
+     * every one of them must still render the shared detail shell, which is the guarantee that
+     * the migration changed presentation inside the main column and not the page skeleton. The
+     * "must not consume" half now lives where the risk moved to — the shared Hire Agent files and
+     * Create Offer — and is asserted in VihoPresentationPrimitivesTest and its Create Offer twin.
      */
-    public function test_hire_agent_presentation_is_unchanged_outside_the_migrated_roles(): void
+    public function test_every_hire_agent_role_view_consumes_viho_and_keeps_the_shared_shell(): void
     {
         foreach (self::HIRE_AGENT_VIEWS as $view) {
             $src = $this->scanner->read($view);
 
-            $this->assertStringContainsString('<x-hire-agent.detail-shell', $src, $view);
-
-            if (str_contains($view, 'hire_landlord_agent')
-                || str_contains($view, 'hire_seller_agent')
-                || str_contains($view, 'hire_buyer_agent')) {
-                $this->assertStringContainsString(
-                    '<x-viho.',
-                    $src,
-                    "{$view} is a migrated role and is expected to consume VIHO."
-                );
-
-                continue;
-            }
-
-            $this->assertStringNotContainsString(
-                'x-viho.',
+            $this->assertStringContainsString(
+                '<x-hire-agent.detail-shell',
                 $src,
-                "{$view} has not been migrated — Tenant adopts VIHO only after it is reviewed and "
-                . 'approved in its own right.'
+                "{$view} must still render the shared detail shell — the migration was presentation "
+                . 'inside the main column, not a change to the page skeleton.'
+            );
+
+            $this->assertStringContainsString(
+                '<x-viho.',
+                $src,
+                "{$view} is a migrated role and is expected to consume VIHO."
             );
         }
 

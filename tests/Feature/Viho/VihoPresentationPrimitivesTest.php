@@ -600,6 +600,7 @@ class VihoPresentationPrimitivesTest extends TestCase
             'hire_landlord_agent' => 0,
             'hire_seller_agent'   => 0,
             'hire_buyer_agent'    => 0,
+            'hire_tenant_agent'   => 0,
         ];
 
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
@@ -624,7 +625,9 @@ class VihoPresentationPrimitivesTest extends TestCase
             $this->assertStringNotContainsString(
                 '<x-viho.',
                 $src,
-                "{$file} has not been migrated — Tenant adopts VIHO only after review."
+                "{$file} is a SHARED Hire Agent file, not a role view. All four roles have now "
+                . 'migrated, so what this still forbids is hoisting VIHO into the shared shell or '
+                . 'the shared components, which would reach Create Offer ahead of M8.'
             );
         }
 
@@ -681,10 +684,12 @@ class VihoPresentationPrimitivesTest extends TestCase
                 'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
                 'resources/views/hire_seller_agent/view.blade.php',
+                'resources/views/hire_tenant_agent/view.blade.php',
             ],
             $consumers,
-            "Only the migrated roles may render a VIHO component. Anything else here — a layout "
-            . "especially — would migrate pages that have not been reviewed:\n" . implode("\n", $consumers)
+            "Only the four Hire Agent role views may render a VIHO component. Anything else here — "
+            . "a layout, the shared shell, or a Create Offer view — would migrate pages that have "
+            . "not been reviewed:\n" . implode("\n", $consumers)
         );
     }
 

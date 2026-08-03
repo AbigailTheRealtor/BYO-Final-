@@ -340,53 +340,51 @@ class VihoDesignTokenFoundationTest extends TestCase
     // ── 4/5. Not yet consumed ────────────────────────────────────────────────
 
     /**
-     * The migrated roles load the stylesheet exactly once each; the unmigrated roles never load it.
+     * All four Hire Agent role views load the stylesheet exactly once each. Nothing else does.
      *
-     * AMENDED IN M3, THREE TIMES — Landlord, then Seller, then Buyer, each after the previous
-     * appearance was approved. "Exactly once" is still the load-bearing phrase, and it does more
-     * work with every role added. The obvious place to put the second and third include was the
-     * shared detail shell, which renders for all four roles: that would have satisfied any test
-     * asking merely whether the migrated roles load it, while silently enrolling Tenant too.
-     * Counting per-file occurrences is what distinguishes the correct placement from the
-     * convenient one, and it is the reason each role carries its own include.
+     * AMENDED IN M3, FOUR TIMES — Landlord, Seller, Buyer, Tenant, each after the previous
+     * appearance was approved. With the fourth role migrated the "don't enrol the others" half of
+     * this test has no roles left to protect, so the assertion's centre of gravity moves: what it
+     * now defends is that the four includes stay FOUR SEPARATE INCLUDES.
+     *
+     * "Exactly once, per file" is doing all the work. The obvious tidy-up now available is to
+     * delete the four includes and put one in the shared detail shell. That would still render
+     * correctly and would still leave every role loading the stylesheet — so a test that only
+     * asked "does each role load it?" would pass. It is rejected because the shell is also the
+     * seam Create Offer is expected to adopt at M8, and a stylesheet reaching pages through a
+     * shared partial is exactly how M8 would arrive early and unreviewed. Each role therefore
+     * keeps its own include, and the shared Hire Agent files must keep none.
      */
-    public function test_only_the_migrated_roles_include_the_stylesheet(): void
+    public function test_all_four_role_views_include_the_stylesheet_exactly_once(): void
     {
-        foreach ([
+        $roleViews = [
             'resources/views/hire_landlord_agent/view.blade.php',
             'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/hire_buyer_agent/view.blade.php',
-        ] as $view) {
+            'resources/views/hire_tenant_agent/view.blade.php',
+        ];
+
+        foreach ($roleViews as $view) {
             $this->assertSame(
                 1,
                 substr_count(Scanner::stripComments($this->scanner->read($view)), "@include('viho.styles')"),
-                "{$view} is a migrated role and must include the shared stylesheet exactly once — "
-                . 'not zero times, and not twice via a shared partial.'
+                "{$view} must include the shared stylesheet exactly once — not zero times, and not "
+                . 'twice via a shared partial.'
             );
         }
 
-        foreach ([
-            'resources/views/hire_tenant_agent/view.blade.php',
-        ] as $view) {
-            $this->assertStringNotContainsString(
-                'viho.styles',
-                $this->scanner->read($view),
-                "{$view} has not been migrated and must load the shared foundation zero times."
-            );
-        }
-
-        // The shared shell in particular: putting the include there would silently migrate all four.
+        // Everything else in the Hire Agent zone — the shared detail shell above all — must carry
+        // none. Consolidating the four includes into the shell is the change this forbids.
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
-            if (str_contains($file, 'hire_landlord_agent')
-                || str_contains($file, 'hire_seller_agent')
-                || str_contains($file, 'hire_buyer_agent')) {
+            if (in_array($file, $roleViews, true)) {
                 continue;
             }
 
             $this->assertStringNotContainsString(
                 'viho.styles',
                 Scanner::stripComments($this->scanner->read($file)),
-                "{$file} must not pull the shared foundation in for every role."
+                "{$file} must not pull the shared foundation in for every role. The four role "
+                . 'views each carry their own include; the shared shell carries none.'
             );
         }
     }
@@ -404,19 +402,21 @@ class VihoDesignTokenFoundationTest extends TestCase
     }
 
     /**
-     * The two migrated roles are the ONLY files in the application that include it.
+     * The four role views are the ONLY files in the application that include it.
      *
-     * AMENDED IN M3, TWICE — from "nothing includes it", to Landlord alone, to Landlord and
-     * Seller. Enumerating every Blade file rather than checking the known views is the point: a
-     * layout or a shared partial pulling this in would migrate every page at once, and neither is
-     * somewhere anyone would think to look.
+     * AMENDED IN M3, FOUR TIMES — from "nothing includes it", to Landlord, to Landlord+Seller, to
+     * those plus Buyer, and now all four. Enumerating every Blade file rather than checking the
+     * known views is the point, and it is the assertion that still has teeth now that no Hire
+     * Agent role is left to protect: a layout or a shared partial pulling this in would migrate
+     * every page in the application — Create Offer included, whose adoption is M8 — and neither
+     * is somewhere anyone would think to look.
      *
      * The result is sorted before comparison. RecursiveDirectoryIterator returns entries in
      * filesystem order, which is not guaranteed and not alphabetical; with a single expected
-     * entry that never showed, and with two it would have turned a real contract into a test that
-     * passes or fails depending on inode order.
+     * entry that never showed, and with four it would have turned a real contract into a test
+     * that passes or fails depending on inode order.
      */
-    public function test_only_the_migrated_roles_include_the_stylesheet_application_wide(): void
+    public function test_only_the_four_role_views_include_the_stylesheet_application_wide(): void
     {
         $referencing = [];
 
@@ -446,10 +446,12 @@ class VihoDesignTokenFoundationTest extends TestCase
                 'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
                 'resources/views/hire_seller_agent/view.blade.php',
+                'resources/views/hire_tenant_agent/view.blade.php',
             ],
             $referencing,
-            'The migrated roles must be the only consumers of the shared stylesheet. Anything else '
-            . "here — a layout especially — would migrate pages that have not been reviewed:\n"
+            'The four Hire Agent role views must be the only consumers of the shared stylesheet. '
+            . "Anything else here — a layout or Create Offer especially — would migrate pages that "
+            . "have not been reviewed:\n"
             . implode("\n", $referencing)
         );
     }
