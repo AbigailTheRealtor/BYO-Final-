@@ -342,19 +342,20 @@ class VihoDesignTokenFoundationTest extends TestCase
     /**
      * The migrated roles load the stylesheet exactly once each; the unmigrated roles never load it.
      *
-     * AMENDED IN M3, TWICE — Landlord first, Seller alongside it once the Landlord appearance was
-     * approved. "Exactly once" is still the load-bearing phrase, and it is now doing more work
-     * than it was with a single role. The obvious place to put the second include was the shared
-     * detail shell, which renders for all four roles: that would have satisfied any test asking
-     * merely whether Landlord and Seller load it, while silently enrolling Buyer and Tenant too.
+     * AMENDED IN M3, THREE TIMES — Landlord, then Seller, then Buyer, each after the previous
+     * appearance was approved. "Exactly once" is still the load-bearing phrase, and it does more
+     * work with every role added. The obvious place to put the second and third include was the
+     * shared detail shell, which renders for all four roles: that would have satisfied any test
+     * asking merely whether the migrated roles load it, while silently enrolling Tenant too.
      * Counting per-file occurrences is what distinguishes the correct placement from the
-     * convenient one, and it is the reason both roles carry their own include.
+     * convenient one, and it is the reason each role carries its own include.
      */
     public function test_only_the_migrated_roles_include_the_stylesheet(): void
     {
         foreach ([
             'resources/views/hire_landlord_agent/view.blade.php',
             'resources/views/hire_seller_agent/view.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
         ] as $view) {
             $this->assertSame(
                 1,
@@ -365,7 +366,6 @@ class VihoDesignTokenFoundationTest extends TestCase
         }
 
         foreach ([
-            'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_tenant_agent/view.blade.php',
         ] as $view) {
             $this->assertStringNotContainsString(
@@ -377,7 +377,9 @@ class VihoDesignTokenFoundationTest extends TestCase
 
         // The shared shell in particular: putting the include there would silently migrate all four.
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
-            if (str_contains($file, 'hire_landlord_agent') || str_contains($file, 'hire_seller_agent')) {
+            if (str_contains($file, 'hire_landlord_agent')
+                || str_contains($file, 'hire_seller_agent')
+                || str_contains($file, 'hire_buyer_agent')) {
                 continue;
             }
 
@@ -441,6 +443,7 @@ class VihoDesignTokenFoundationTest extends TestCase
 
         $this->assertSame(
             [
+                'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
                 'resources/views/hire_seller_agent/view.blade.php',
             ],

@@ -208,15 +208,15 @@ class PresentationDependencyContractTest extends TestCase
     /**
      * 10. Hire Agent's presentation is as Milestone 5A left it, except for the migrated roles.
      *
-     * AMENDED IN M3, TWICE. It first asserted that no Hire Agent view consumed VIHO at all; the
-     * Landlord pilot narrowed it to the three unmigrated roles. Seller has now been migrated
-     * against the approved Landlord pattern, so the guard narrows again — to Buyer and Tenant,
-     * which is the half that still carries information.
+     * AMENDED IN M3, THREE TIMES. It first asserted that no Hire Agent view consumed VIHO at all;
+     * the Landlord pilot narrowed it to the three unmigrated roles; Seller narrowed it to two.
+     * Buyer has now been migrated against the same approved pattern, so the guard narrows again —
+     * to Tenant, which is the only role left that still carries information.
      *
      * The list is enumerated rather than expressed as "any migrated role may consume VIHO",
      * because the second form would retire the guard at the moment it starts mattering: the
-     * whole point is that Buyer and Tenant stay untouched until they are approved in turn. A new
-     * role appearing here has to be added deliberately, by someone who looked at the result.
+     * whole point is that Tenant stays untouched until it is approved in turn. A new role
+     * appearing here has to be added deliberately, by someone who looked at the result.
      *
      * All four still use the shared detail shell; the migration changed presentation inside the
      * main column, not the page skeleton.
@@ -228,7 +228,9 @@ class PresentationDependencyContractTest extends TestCase
 
             $this->assertStringContainsString('<x-hire-agent.detail-shell', $src, $view);
 
-            if (str_contains($view, 'hire_landlord_agent') || str_contains($view, 'hire_seller_agent')) {
+            if (str_contains($view, 'hire_landlord_agent')
+                || str_contains($view, 'hire_seller_agent')
+                || str_contains($view, 'hire_buyer_agent')) {
                 $this->assertStringContainsString(
                     '<x-viho.',
                     $src,
@@ -241,8 +243,8 @@ class PresentationDependencyContractTest extends TestCase
             $this->assertStringNotContainsString(
                 'x-viho.',
                 $src,
-                "{$view} has not been migrated — Buyer and Tenant adopt VIHO only after they are "
-                . 'reviewed and approved in their own right.'
+                "{$view} has not been migrated — Tenant adopts VIHO only after it is reviewed and "
+                . 'approved in its own right.'
             );
         }
 

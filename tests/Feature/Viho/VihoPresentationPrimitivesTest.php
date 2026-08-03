@@ -599,6 +599,7 @@ class VihoPresentationPrimitivesTest extends TestCase
         $migrated = [
             'hire_landlord_agent' => 0,
             'hire_seller_agent'   => 0,
+            'hire_buyer_agent'    => 0,
         ];
 
         foreach ($this->scanner->filesInZone(Scanner::ZONE_HIRE_AGENT) as $file) {
@@ -623,7 +624,7 @@ class VihoPresentationPrimitivesTest extends TestCase
             $this->assertStringNotContainsString(
                 '<x-viho.',
                 $src,
-                "{$file} has not been migrated — Buyer and Tenant adopt VIHO only after review."
+                "{$file} has not been migrated — Tenant adopts VIHO only after review."
             );
         }
 
@@ -677,6 +678,7 @@ class VihoPresentationPrimitivesTest extends TestCase
 
         $this->assertSame(
             [
+                'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
                 'resources/views/hire_seller_agent/view.blade.php',
             ],

@@ -35,6 +35,21 @@
 {{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
      byte-identical across all four detail views now live in one place. --}}
 
+{{--
+    Milestone 3 — the shared VIHO foundation, extended from the approved Landlord pilot and the
+    approved Seller migration.
+
+    Included HERE rather than in the shared detail shell, and that placement is the whole point:
+    the shell is rendered by all four roles, so putting it there would have enrolled Tenant in a
+    migration it is not part of. Landlord, Seller and Buyer are the migrated roles, so they are
+    the only three files that load it. Tenant keeps rendering exactly as it does today.
+
+    It arrives AFTER the framework stylesheet, which matters: where the two define the same
+    property for an element that carries both class families, VIHO wins. That is the intended
+    direction of the migration and the reason this page now looks like Create Offer.
+--}}
+@include('viho.styles')
+
 {{-- Residual Buyer-only rules. These LOOK shared but are not: they differ
      between roles in colour, !important or comment text, so moving them into the shared
      partial would have changed what this page renders. Left in place deliberately. --}}
@@ -140,10 +155,26 @@
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="buyer" :auction="$auction">
         <x-slot name="main">
-                <div class="card description">
-                    <div class="card-header section-header">
-                        <h4 class="section-title">Listing Details:</h4>
-                    </div>
+            {{--
+                M3. Was `div.card.description` wrapping `card-header.section-header` + an
+                `h4.section-title`. The heading level stays h4: typography is migrating, the
+                document outline is not.
+
+                THE INNER `div.card-body` BELOW IS DELIBERATELY LEFT IN PLACE, and this is the one
+                point where Buyer departs from Seller. Seller's card-body wrapped the whole card,
+                so it could be dropped and `viho-card-body` took its place one-for-one. Buyer's
+                does not: rendered DOM shows it closing early — the parser rebalances a stray
+                closer around the broker-compensation block — leaving three sections and one field
+                row as direct children of the card, outside it.
+
+                That matters because the Buyer-only rule `.card-body .col-md-12.fw-bold` styles
+                field rows through it. Dropping the wrapper would unstyle all 13 rows inside it;
+                re-pointing the rule at `.viho-card-body` would instead pull in the 1 row that sits
+                outside it today. Keeping it changes no field row at all, which is the requirement.
+                The cost is one extra nesting level and Buyer's existing ragged left edge, both of
+                which are preserved exactly as they render today.
+            --}}
+            <x-viho.card title="Listing Details:" title-tag="h4">
                     <div class="card-body">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
@@ -201,9 +232,8 @@
 
                         </div>
                           <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Property Preferences:</h4>
-                        </div>
+                        {{-- M3: sub-section header inside the single Listing Details card. --}}
+                        <x-viho.section-header title="Property Preferences:" tag="h4" />
 
                         <div class="row" style="flex-wrap: wrap;">
 
@@ -565,9 +595,7 @@
 
                         @if ($buyerHasAssets || $buyerHasRealEstate)
                         <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Required Property or Business Assets</h4>
-                        </div>
+                        <x-viho.section-header title="Required Property or Business Assets" tag="h4" />
                         <div class="row" style="flex-wrap: wrap;">
                             @if ($buyerHasRealEstate)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -644,9 +672,7 @@
                         </div>
                         @endif
                         <hr>
-                            <div class="card-header section-header">
-                                <h4 class="section-title">Purchasing Terms:</h4>
-                            </div>
+                            <x-viho.section-header title="Purchasing Terms:" tag="h4" />
 
                             <!-- Special Sale Provisions -->
                             @php
@@ -769,9 +795,7 @@
                             @if($hasAnyFinancingDetails || @$auction->get->offered_financing != null)
                                 <hr>
                                 <div class="col-12">
-                                    <div class="card-header section-header">
-                                        <h4 class="section-title">Financing Details:</h4>
-                                    </div>
+                                    <x-viho.section-header title="Financing Details:" tag="h4" />
                                 </div>
                             @endif
 
@@ -1388,9 +1412,13 @@
                         @endphp
 
                         @if ($hasServices)
-                        <div class="card-header section-header services-section-header">
-                            <h4 class="section-title">Services:</h4>
-                        </div>
+                        {{-- The dropped `services-section-header` contributed one rule,
+                             `margin-top: 0.75rem !important`, overriding the framework's
+                             section-header top margin for this one heading. VIHO owns section
+                             spacing now, so carrying it would have re-introduced an override
+                             against the system being adopted. Landlord and Seller dropped it here
+                             too; this keeps the three migrated roles identical. --}}
+                        <x-viho.section-header title="Services:" tag="h4" />
 
                         @php
                         // Use ServicesFormatter to order services according to canonical order
@@ -1479,9 +1507,7 @@
                         @endif
                         <hr>
                         @if (@$auction->get->additional_details != null)
-                            <div class="card-header section-header">
-                                <h4 class="section-title">Additional Details:</h4>
-                            </div>
+                            <x-viho.section-header title="Additional Details:" tag="h4" />
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details: <span
@@ -1534,9 +1560,9 @@
 
                         @if (!empty($repRows))
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
-                        </div>
+                        {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
+                             rendered text is unchanged. Passing &amp; here would double-escape it. --}}
+                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
                         @foreach ($repRows as $repRow)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             {{ $repRow['label'] }}:
@@ -1561,9 +1587,9 @@
                         @endphp
                         @if ($hasBrokerCompData)
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>
-                        </div>
+                        {{-- Trailing colon retained: Buyer's heading text differs from Seller's and
+                             Landlord's here, and normalising it would be a copy change. --}}
+                        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms:" tag="h4" />
                         @endif
 
                         @auth
@@ -1800,18 +1826,22 @@
                         @endphp
                         @if ($referralPctDisplay !== '')
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Referral & Cooperation Terms</h4>
-                        </div>
+                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Referral Fee:
                             <span class="removeBold">{{ $referralPctDisplay }}</span>
                         </div>
                         @endif
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">{{ ($auction->user && $auction->user->user_type === 'agent') ? "Agent's Info" : "Buyer's Info" }}</h4>
-                        </div>
+                        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is
+                             not parseable by Blade's attribute compiler. Same expression, same two
+                             outcomes. --}}
+                        @php
+                            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+                                ? "Agent's Info"
+                                : "Buyer's Info";
+                        @endphp
+                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
                                 Name:
@@ -1920,7 +1950,10 @@
                             @endif
 
                         </div>
-                    </div>
+            {{-- M3: this closed `div.card.description`; the card closes here instead. The closer
+                 above it still ends the final row, and the inner card-body keeps whatever closer
+                 the parser already pairs it with — neither is touched. --}}
+            </x-viho.card>
                 {{-- Milestone 5A.2-B: a third </div> closed .leftCol here, before the review card
                      below. That made "card review" a direct child of the .row despite having no
                      col-* class, and left the row's own closer to land before .rightCol — so the
