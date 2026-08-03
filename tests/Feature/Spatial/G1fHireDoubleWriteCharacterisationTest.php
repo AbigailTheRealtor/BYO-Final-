@@ -100,15 +100,16 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
     /**
      * The Hire components that STILL carry the double-write and whose save path is invocable.
      *
-     * NARROWED BY G1f-1. `BuyerAgentAuction` (Hire Buyer · create) was the first workflow migrated
-     * to `LocationDnaPersistenceService`, so it no longer has a double-write to characterise: its
-     * component-property mirror writes were removed and `saveSearchAreas()` is no longer called
-     * from it. Its post-migration behaviour is covered by
-     * {@see G1f1BuyerAgentAuctionMigrationTest} instead.
+     * NARROWED BY G1f-1, THEN AGAIN BY G1f-2. `BuyerAgentAuction` (Hire Buyer · create) was the
+     * first workflow migrated to `LocationDnaPersistenceService` and `TenantAgentAuction`
+     * (Hire Tenant · create) the second, so neither has a double-write left to characterise: in
+     * both, the component-property mirror writes were removed and `saveSearchAreas()` is no longer
+     * called. Their post-migration behaviour is covered by
+     * {@see G1f1BuyerAgentAuctionMigrationTest} and {@see G1f2TenantAgentAuctionMigrationTest}.
      *
-     * The narrowing is deliberately confined to that one entry. The remaining two components are
-     * exercised exactly as before, so this suite still protects the unmigrated workflows — which
-     * is the coverage G1f-2 and later will need.
+     * Each narrowing is confined to the one entry its increment migrated. The remaining component
+     * is exercised exactly as before, so this suite still protects the unmigrated workflows —
+     * which is the coverage G1f-3 and later will need.
      *
      * `TenantAgentAuctionEdit` remains absent for the boundary reason in the class docblock.
      *
@@ -119,9 +120,6 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
         return [
             'Hire Buyer · edit' => [
                 'class' => HireBuyerEdit::class, 'model' => 'buyer', 'user_type' => null,
-            ],
-            'Hire Tenant · create' => [
-                'class' => HireTenantCreate::class, 'model' => 'tenant', 'user_type' => 'tenant',
             ],
         ];
     }
@@ -292,10 +290,11 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
         }
 
         $this->assertSame(
-            2,
+            1,
             $covered,
-            'Two UNMIGRATED Hire components expose an invocable save path. BuyerAgentAuction was '
-            .'migrated by G1f-1 and is covered by G1f1BuyerAgentAuctionMigrationTest.'
+            'One UNMIGRATED Hire component exposes an invocable save path. BuyerAgentAuction was '
+            .'migrated by G1f-1 and TenantAgentAuction by G1f-2; both are covered by their own '
+            .'migration suites.'
         );
     }
 
@@ -343,7 +342,7 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
             $covered++;
         }
 
-        $this->assertSame(2, $covered);
+        $this->assertSame(1, $covered);
     }
 
     /**
@@ -570,6 +569,73 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
         $this->assertSame(
             'App\\Http\\Livewire\\HireBuyerAgent\\BuyerAgentAuction',
             HireBuyerCreate::class,
+            'The narrowing in behaviouralComponents() refers to this component.'
+        );
+    }
+
+    /**
+     * G1f-2 · `TenantAgentAuction` no longer carries the double-write.
+     *
+     * The assertion that replaces its behavioural row, in the same form G1f-1 established for
+     * `BuyerAgentAuction`: the component-property mirror writes are gone from the ungated path,
+     * the trait's save is no longer called, and one canonical writer call stands in their place.
+     *
+     * TWO THINGS THAT DELIBERATELY DID NOT CHANGE are asserted alongside, because this component
+     * — unlike the first migration — carries them:
+     *
+     *   - the `user_type` gate, still textually identical (D-G1F-3 3-C);
+     *   - the property-sourced `zipCodes` mirror write (D-G1F-4 (a)).
+     *
+     * Asserting them HERE, in the suite that documents what a double-write is, means an attempt to
+     * fold either of them into a future consolidation fails the characterisation rather than
+     * passing quietly.
+     */
+    public function test_tenant_agent_auction_no_longer_carries_the_double_write(): void
+    {
+        $source = file_get_contents(base_path('app/Http/Livewire/TenantAgentAuction.php'));
+
+        $this->assertStringNotContainsString(
+            '$this->saveSearchAreas($auction);',
+            $source,
+            'TenantAgentAuction must no longer call the trait save — its buyer/tenant path writes '
+            .'through LocationDnaPersistenceService now.'
+        );
+        $this->assertStringContainsString(
+            '$this->persistLocationDna($auction);',
+            $source,
+            'It must call the canonical writer seam exactly once.'
+        );
+        $this->assertSame(
+            1,
+            substr_count($source, '$this->persistLocationDna($auction);'),
+            'Exactly one canonical writer call site — a second would reintroduce a double-write of '
+            .'a new kind.'
+        );
+
+        // PRESERVED · the gate, unchanged and still the only route to the canonical writer.
+        $this->assertStringContainsString(
+            "in_array(\$this->user_type, ['buyer', 'tenant'])",
+            $source,
+            'The user_type gate must survive G1f-2 verbatim — D-G1F-3, option 3-C.'
+        );
+
+        // PRESERVED · zipCodes, still property-sourced and still unmanaged.
+        $this->assertStringContainsString(
+            "\$auction->saveMeta('zipCodes', json_encode(\$this->zipCodes));",
+            $source,
+            'The zipCodes mirror write must be unchanged — D-G1F-4 (a) keeps it out of scope.'
+        );
+
+        // The trait itself is untouched, and the two remaining hosts still use it.
+        $this->assertStringContainsString(
+            "empty(\$ldna['cities'] ?? [])",
+            file_get_contents(base_path('app/Http/Livewire/Concerns/HasSearchAreas.php')),
+            'HasSearchAreas must be unchanged by G1f-2 — it still serves the unmigrated hosts.'
+        );
+
+        $this->assertSame(
+            'App\\Http\\Livewire\\TenantAgentAuction',
+            HireTenantCreate::class,
             'The narrowing in behaviouralComponents() refers to this component.'
         );
     }

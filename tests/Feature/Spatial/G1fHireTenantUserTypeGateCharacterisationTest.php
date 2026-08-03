@@ -61,14 +61,18 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
      * Both columns record OBSERVED behaviour, not desired behaviour.
      *
      * `raises` is a SECOND, independent failure mode discovered while closing this gap
-     * and unrelated to the gate itself. `saveAllMetadata()` builds a role key as
-     * `$this->user_type . '_specific'` and indexes `$compatibility_preferences` with it
-     * (`TenantAgentAuction.php:4689`). That array declares exactly four role keys —
-     * `tenant_specific`, `buyer_specific`, `seller_specific`, `landlord_specific` — so an
-     * empty or unrecognised `user_type` raises `Undefined array key`. It is recorded here
-     * because line 4689 executes AFTER the mirror writes at :4282-:4285 and after the
-     * gate at :4290, and `TenantAgentAuction` opens no transaction — so the raise leaves a
-     * PARTIAL save behind. See test_an_unrecognised_user_type_leaves_a_partial_write.
+     * and unrelated to the gate itself. Before G1f-2, `saveAllMetadata()` built a role key
+     * as `$this->user_type . '_specific'` and indexed `$compatibility_preferences` with it.
+     * That array declares exactly four role keys — `tenant_specific`, `buyer_specific`,
+     * `seller_specific`, `landlord_specific` — so an empty or unrecognised `user_type`
+     * raised `Undefined array key`, but only AFTER the mirror writes had already run, with
+     * no transaction anywhere: a PARTIAL save.
+     *
+     * UPDATED BY G1f-2. The raise still happens for those two input classes — the gate's
+     * shape is unchanged and no value is coerced into a role — but it now happens BEFORE
+     * any Location DNA write, so nothing is left half-written. The column therefore still
+     * reads `true`; what changed is where the failure occurs and what it leaves behind.
+     * See test_an_unrecognised_user_type_writes_no_location_dna_at_all.
      *
      * @return array<string, array{user_type: mixed, expected_blob_write: bool, raises: bool}>
      */
@@ -106,6 +110,28 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
     }
 
     /**
+     * True when the stored canonical document carries `self::BLOB`'s MEANING.
+     *
+     * SEMANTIC, NOT BYTE-IDENTICAL — and that is a G1f-2 change, recorded rather than hidden.
+     * Before the migration this component wrote the submitted string through verbatim, so a
+     * byte comparison was a fair test of "the blob was written". The canonical writer
+     * serialises deterministically and stamps `schema_version: 2` (F-G1F-10, §27.7), so the
+     * stored bytes legitimately differ from the submitted ones while the meaning does not.
+     *
+     * §5.3 withdrew the byte-compatibility guarantee in favour of semantic equality, so this
+     * helper asserts what the contract actually promises. A byte comparison here would now
+     * fail for a correct write, which is precisely the false alarm §27.7 warns about.
+     */
+    private function storesTheBlobMeaning(mixed $stored): bool
+    {
+        $decoded = is_string($stored) ? json_decode($stored, true) : null;
+
+        return is_array($decoded)
+            && ($decoded['cities'] ?? null) === ['Orlando']
+            && ($decoded['state'] ?? null) === 'GA';
+    }
+
+    /**
      * Invoke the real save path for a given `user_type`.
      *
      * Returns the Throwable when the save path raises for that `user_type` rather than
@@ -136,6 +162,31 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
         return null;
     }
 
+    /**
+     * The `user_type` gate that most closely guards a given statement.
+     *
+     * Both components use `in_array($this->user_type, [...])` for several unrelated guards, so
+     * asserting the literal against the whole file proves nothing about the gate the canonical
+     * writer actually sits behind. This returns the LAST such test before the entry point,
+     * which is that gate.
+     */
+    private function gateGuarding(string $source, string $entryPoint): string
+    {
+        $at = strpos($source, $entryPoint);
+
+        $this->assertNotFalse($at, "entry point `{$entryPoint}` not found");
+
+        preg_match_all(
+            '/in_array\(\$this->user_type, \[[^\]]*\]\)/',
+            substr($source, 0, $at),
+            $matches
+        );
+
+        $this->assertNotEmpty($matches[0], "no user_type gate precedes `{$entryPoint}`");
+
+        return (string) end($matches[0]);
+    }
+
     // ═════════════════════════════════════════════════════════════════════════
     // THE GATE · which user_types reach the canonical write
     // ═════════════════════════════════════════════════════════════════════════
@@ -160,7 +211,7 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
             $written = $stored->info('location_dna_preferences');
 
             $observed[$label] = [
-                'blob_written' => $written === self::BLOB,
+                'blob_written' => $this->storesTheBlobMeaning($written),
                 'raised'       => $error !== null,
             ];
 
@@ -169,7 +220,7 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
                 $observed[$label]['blob_written'],
                 "user_type '{$label}': expected the RECORDED CURRENT behaviour "
                 .($case['expected_blob_write'] ? 'blob written' : 'NO blob write')
-                .'. If this fails, the gate at TenantAgentAuction.php:4290 has changed.'
+                .'. If this fails, the user_type gate has changed — D-G1F-3 option 3-C keeps it.'
             );
         }
 
@@ -181,13 +232,19 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
     }
 
     /**
-     * CHARACTERISED · the discrete mirrors ARE written for every `user_type`, including
-     * the four that never reach the canonical writer.
+     * CHARACTERISED · the discrete mirrors are written for every SUPPORTED `user_type`,
+     * including the two that never reach the canonical writer — and for neither of the
+     * two unsupported ones.
      *
      * This is what makes the gate a divergence generator rather than a simple skip: the
-     * mirrors move for all six input classes while the blob moves for only two.
+     * mirrors still move for all four supported roles while the blob moves for only two.
+     *
+     * UPDATED BY G1f-2, in one direction only. Before the migration the mirrors moved for
+     * all SIX input classes, including the two the component cannot process — that was the
+     * partial write, not a feature. The four supported rows are unchanged; the two
+     * unsupported rows now assert the absence the repair introduced.
      */
-    public function test_discrete_mirrors_are_written_for_every_user_type(): void
+    public function test_discrete_mirrors_are_written_for_every_supported_user_type(): void
     {
         foreach ($this->userTypes() as $label => $case) {
             $owner   = $this->owner();
@@ -206,6 +263,20 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
             );
 
             $stored = $this->reread($auction);
+
+            if ($case['raises']) {
+                $this->assertFalse(
+                    $stored->info('cities'),
+                    "user_type '{$label}': an unsupported user_type must write NO mirror. `info()` "
+                    .'returns false for an unwritten meta key.'
+                );
+                $this->assertFalse(
+                    $stored->info('state'),
+                    "user_type '{$label}': an unsupported user_type must write no `state` mirror."
+                );
+
+                continue;
+            }
 
             $this->assertNotFalse(
                 $stored->info('cities'),
@@ -257,51 +328,86 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
     }
 
     /**
-     * CHARACTERISED · an empty or unrecognised `user_type` raises mid-save and leaves a
-     * PARTIAL write behind, because there is no transaction.
+     * REPAIRED BY G1f-2 · an empty or unrecognised `user_type` still raises, and now
+     * writes NO Location DNA at all.
      *
-     * Discovered while closing GAP 3, and independent of the gate itself. The role key
-     * `$this->user_type . '_specific'` (`TenantAgentAuction.php:4689`) is undefined for
-     * any value outside the four declared roles, so the save raises — but only after the
-     * discrete mirrors have already been written at :4282-:4285. `TenantAgentAuction`
-     * opens no transaction, so those writes are committed and the remainder of the save
-     * never happens.
+     * THE DEFECT THIS REPLACES, RECORDED SO THE CHANGE IS LEGIBLE.
+     * ------------------------------------------------------------
+     * This test previously asserted the opposite outcome, under the name
+     * `test_an_unrecognised_user_type_leaves_a_partial_write`. The role key
+     * `$this->user_type . '_specific'` is undefined for any value outside the four declared
+     * roles, so the save raised — but only after the discrete mirrors had already been
+     * written, with no transaction anywhere in between. Those mirror writes were committed
+     * and the remainder of the save never happened. That was defect boundary 1: a concrete
+     * instance of the report's §7 finding that atomicity is the exception, and the failure
+     * mode `LocationDnaPersistenceService` must not inherit.
      *
-     * This matters to G1f beyond the gate: it is a concrete instance of the report's §7
-     * finding that atomicity is the exception, and it is the failure mode
-     * `LocationDnaPersistenceService` must not inherit.
+     * WHAT G1f-2 CHANGED, AND WHAT IT DID NOT.
+     * ----------------------------------------
+     * Changed: `user_type` is validated BEFORE the Location Information block, so the
+     * rejection lands while every Location DNA key still holds its stored value.
+     *
+     * NOT changed: the value is still rejected rather than repaired. No unrecognised
+     * `user_type` is coerced into `buyer`, `tenant`, `seller` or `landlord`, so the gate
+     * never acts on a role the user did not supply.
      */
-    public function test_an_unrecognised_user_type_leaves_a_partial_write(): void
+    public function test_an_unrecognised_user_type_writes_no_location_dna_at_all(): void
     {
         foreach (['' => 'missing', 'nonsense' => 'invalid'] as $userType => $label) {
-            $owner   = $this->owner();
-            $auction = $this->record($owner);
+            $owner = $this->owner();
+
+            // Pre-existing Location DNA state, so this proves PRESERVATION and not merely
+            // that an empty record stayed empty — which would pass vacuously.
+            $auction = $this->record($owner, [
+                'location_dna_preferences' => '{"cities":["Sarasota"],"state":"FL"}',
+                'cities'                   => json_encode(['Sarasota']),
+                'counties'                 => json_encode(['Sarasota County']),
+                'state'                    => 'FL',
+                'zipCodes'                 => json_encode(['34236']),
+            ]);
 
             $error = $this->attemptSave((string) $userType, $auction, self::BLOB);
 
             $this->assertNotNull(
                 $error,
-                "user_type '{$label}': expected the save path to raise."
+                "user_type '{$label}': expected the save path to raise — an unsupported role is "
+                .'rejected, never guessed at.'
             );
             $this->assertStringContainsString(
-                '_specific',
+                'Location DNA cannot be persisted for user_type',
                 $error->getMessage(),
-                "user_type '{$label}': expected the undefined role-key error at :4689, not some "
-                .'other failure.'
+                "user_type '{$label}': expected the Location DNA precondition failure, not the "
+                .'former undefined role-key error that fired far too late.'
             );
 
             $stored = $this->reread($auction);
 
             $this->assertSame(
-                json_encode(['Tampa']),
-                (string) $stored->info('cities'),
-                "user_type '{$label}': the discrete mirror written BEFORE the raise is committed — "
-                .'a partial save, because no transaction wraps this path.'
+                '{"cities":["Sarasota"],"state":"FL"}',
+                (string) $stored->info('location_dna_preferences'),
+                "user_type '{$label}': the canonical document must be untouched, byte for byte."
             );
-            $this->assertFalse(
-                $stored->info('location_dna_preferences'),
-                "user_type '{$label}': the canonical blob is never written — the gate excluded it "
-                .'before the raise occurred.'
+            $this->assertSame(
+                json_encode(['Sarasota']),
+                (string) $stored->info('cities'),
+                "user_type '{$label}': the `cities` mirror must NOT have advanced. This is the "
+                .'assertion that inverted: it used to hold the new value, committed by a partial save.'
+            );
+            $this->assertSame(
+                json_encode(['Sarasota County']),
+                (string) $stored->info('counties'),
+                "user_type '{$label}': the `counties` mirror must not have advanced."
+            );
+            $this->assertSame(
+                'FL',
+                (string) $stored->info('state'),
+                "user_type '{$label}': the `state` mirror must not have advanced."
+            );
+            $this->assertSame(
+                json_encode(['34236']),
+                (string) $stored->info('zipCodes'),
+                "user_type '{$label}': the unmanaged `zipCodes` mirror must not have advanced "
+                .'either — the rejection precedes it too.'
             );
         }
     }
@@ -395,9 +501,8 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
         $error = $this->attemptSave('tenant', $auction, self::BLOB);
         $this->assertNull($error, 'the tenant save path must complete');
 
-        $this->assertSame(
-            self::BLOB,
-            (string) $this->reread($auction)->info('location_dna_preferences'),
+        $this->assertTrue(
+            $this->storesTheBlobMeaning($this->reread($auction)->info('location_dna_preferences')),
             'With an ungated user_type the canonical blob is written, on the identical fixture.'
         );
     }
@@ -415,31 +520,51 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
      * `G1fHireDoubleWriteCharacterisationTest` and established by the G1a suites.
      *
      * The "only call site" half is the load-bearing part and is exact: if a second,
-     * ungated call to `saveSearchAreas()` were ever added, the gate would stop being
+     * ungated call to the canonical writer were ever added, the gate would stop being
      * total and this assertion would fail.
+     *
+     * UPDATED BY G1f-2 · the two components now reach the canonical writer by different
+     * routes, so the entry point is asserted per component rather than as one string.
+     * `TenantAgentAuction` calls `persistLocationDna()`; `TenantAgentAuctionEdit` still
+     * calls the trait's `saveSearchAreas()`, unmigrated. The property under test — exactly
+     * one call site, inside the gate — is identical for both, and is what a future
+     * increment must not weaken.
      */
     public function test_the_gate_is_the_only_path_to_the_canonical_writer_in_both_components(): void
     {
         foreach ([
-            'app/Http/Livewire/TenantAgentAuction.php',
-            'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        ] as $relative) {
+            // component => the single statement that reaches the canonical writer
+            'app/Http/Livewire/TenantAgentAuction.php'     => '$this->persistLocationDna($auction);',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php' => '$this->saveSearchAreas($auction);',
+        ] as $relative => $entryPoint) {
             $source = file_get_contents(base_path($relative));
 
-            $this->assertStringContainsString(
+            // The literal appears several times in each file for unrelated guards, so a
+            // whole-file search would pass even if THIS gate were widened. The decisive
+            // question is which gate the writer sits behind, so the nearest preceding one is
+            // the one asserted. (Found by non-vacuity probe 6.)
+            $this->assertSame(
                 "in_array(\$this->user_type, ['buyer', 'tenant'])",
-                $source,
-                "{$relative}: the user_type gate must still be present."
+                $this->gateGuarding($source, $entryPoint),
+                "{$relative}: the gate immediately guarding the canonical writer must still admit "
+                .'buyer and tenant only — D-G1F-3, option 3-C.'
             );
 
-            $callSites = substr_count($source, '$this->saveSearchAreas($auction);');
+            $callSites = substr_count($source, $entryPoint);
 
             $this->assertSame(
                 1,
                 $callSites,
-                "{$relative}: saveSearchAreas() must have exactly ONE call site, inside the gate. "
+                "{$relative}: `{$entryPoint}` must have exactly ONE call site, inside the gate. "
                 .'A second call site would make the gate non-total and change the characterisation.'
             );
         }
+
+        // The migrated component must not retain BOTH routes — that would be a new double-write.
+        $this->assertStringNotContainsString(
+            '$this->saveSearchAreas($auction);',
+            file_get_contents(base_path('app/Http/Livewire/TenantAgentAuction.php')),
+            'TenantAgentAuction is migrated; the trait save must be gone, not merely accompanied.'
+        );
     }
 }

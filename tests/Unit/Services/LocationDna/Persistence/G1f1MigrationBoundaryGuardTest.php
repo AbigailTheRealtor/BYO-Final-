@@ -41,10 +41,15 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         'app/Http/Controllers/TenantCriteriaAuctionController.php',
     ];
 
-    /** The seven workflow implementations G1f-1 must leave completely alone. */
+    /**
+     * The workflow implementations that must stay completely alone.
+     *
+     * SHRINK-ONLY, like `AUTHORIZED_WRITERS`. `TenantAgentAuction` left this list at G1f-2, which
+     * migrated it; its post-migration boundary is asserted by `G1f2MigrationBoundaryGuardTest`.
+     * Six remain.
+     */
     private const UNMIGRATED_WORKFLOWS = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
-        'app/Http/Livewire/TenantAgentAuction.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
@@ -157,7 +162,7 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         );
     }
 
-    /** The seven unmigrated workflows still write their mirrors the old way. */
+    /** The remaining unmigrated workflows still write their mirrors the old way. */
     public function test_the_seven_unmigrated_workflows_are_untouched(): void
     {
         foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
@@ -176,7 +181,7 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         }
     }
 
-    /** The trait is not globally rewired; the three remaining hosts still use it unchanged. */
+    /** The trait is not globally rewired; the remaining hosts still use it unchanged. */
     public function test_has_search_areas_is_not_globally_wired(): void
     {
         $trait = $this->read('app/Http/Livewire/Concerns/HasSearchAreas.php');
@@ -195,7 +200,6 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
 
         foreach ([
             'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
-            'app/Http/Livewire/TenantAgentAuction.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $host) {
             $this->assertStringContainsString(
@@ -288,7 +292,8 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
 
         foreach ($this->productionFiles() as $relative) {
             if (str_starts_with($relative, 'app/Services/LocationDna/Persistence')
-                || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php') {
+                || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php'
+                || $relative === 'app/Http/Livewire/TenantAgentAuction.php') {
                 continue;
             }
 
@@ -300,7 +305,7 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'Only BuyerAgentAuction may reference the persistence namespace in G1f-1. Found: '
+            'Only the two migrated workflow components may reference the persistence namespace. Found: '
             .implode(', ', $offenders)
         );
     }

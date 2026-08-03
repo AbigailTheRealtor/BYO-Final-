@@ -22,6 +22,7 @@ use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Services\CityNameNormalizer;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 use App\Support\TenantServicesCatalog;
 
 class TenantAgentAuction extends Component
@@ -4243,6 +4244,76 @@ class TenantAgentAuction extends Component
         }
     }
 
+    /**
+     * The four roles this shared component is built for.
+     *
+     * Not a Location DNA concept — it is the component's own role vocabulary, already relied on
+     * by `loadDraft()` (`$validUserTypes`), by every `match ($this->user_type)` model map, and by
+     * the four `*_specific` keys of `$compatibility_preferences`. It is named here so the Location
+     * DNA write path can REJECT anything outside it instead of persisting against it.
+     */
+    private const SUPPORTED_USER_TYPES = ['buyer', 'tenant', 'seller', 'landlord'];
+
+    /**
+     * G1f-2 — fail before any Location DNA write when `user_type` is empty or unrecognised.
+     *
+     * DEFECT BOUNDARY 1, CLOSED BY ORDERING.
+     * --------------------------------------
+     * `saveAllMetadata()` used to write the discrete `cities` / `counties` / `zipCodes` / `state`
+     * mirrors first and only fail later, at the `$this->user_type . '_specific'` role-key lookup,
+     * with no transaction anywhere in between. An empty or unrecognised `user_type` therefore
+     * committed advanced mirrors and abandoned the rest of the save. That was measured before the
+     * repair, and the same test now asserts the inverse:
+     * `G1fHireTenantUserTypeGateCharacterisationTest::test_an_unrecognised_user_type_writes_no_location_dna_at_all`.
+     *
+     * Validating HERE, before the Location Information block, means the rejection happens while
+     * every Location DNA key still holds its stored value. Nothing is written, so nothing can be
+     * left half-written.
+     *
+     * IT REJECTS; IT NEVER REPAIRS.
+     * -----------------------------
+     * An unrecognised value is not coerced to `buyer`, `tenant`, `seller` or `landlord`. Guessing
+     * a role would silently attach one record's Location DNA to another role's semantics, and the
+     * gate below would then act on a value the user never supplied.
+     *
+     * SCOPE. This is the Location DNA write path's precondition, not a new global guard: the meta
+     * writes above it are unrelated and are deliberately left exactly as they were.
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function assertLocationDnaUserTypeIsSupported(): void
+    {
+        if (in_array($this->user_type, self::SUPPORTED_USER_TYPES, true)) {
+            return;
+        }
+
+        throw new \InvalidArgumentException(sprintf(
+            'Location DNA cannot be persisted for user_type [%s]; expected one of: %s.',
+            is_scalar($this->user_type) ? (string) $this->user_type : gettype($this->user_type),
+            implode(', ', self::SUPPORTED_USER_TYPES)
+        ));
+    }
+
+    /**
+     * G1f-2 — persist Location DNA through the canonical writer.
+     *
+     * Identical seam to the one G1f-1 established on `BuyerAgentAuction`: the component hands the
+     * bridged payload to `OwnerPrivateLocationDnaWriter` and holds no Location DNA policy of its
+     * own. Presence semantics, command construction, capability enforcement, the transaction and
+     * the managed mirror derivation all belong to the writer.
+     *
+     * Reached only from the `buyer` / `tenant` branch of the preserved gate, so a `seller` or
+     * `landlord` record never enters the canonical writer.
+     *
+     * Deliberately NOT changed by this migration: `loadSearchAreas()` and the discrete `$state`,
+     * `$counties`, `$cities` host props, which the map partial and the prefill still use.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        (new OwnerPrivateLocationDnaWriter())
+            ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     protected function saveAllMetadata($auction)
     {
         $this->normalizeOtherInArray($this->non_negotiable_amenities, $this->other_non_negotiable_amenities);
@@ -4278,19 +4349,59 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
 
-        // Location Information
-        $auction->saveMeta('cities', json_encode($this->cities));
-        $auction->saveMeta('counties', json_encode($this->counties));
-        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
-        $auction->saveMeta('state', $this->state);
+        // ── Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-2) ──────────────
+        //
+        // Validation comes FIRST, before any Location DNA key is touched. That ordering is the
+        // repair of defect boundary 1: an empty or unrecognised `user_type` used to advance the
+        // discrete mirrors here and only fail hundreds of statements later, leaving a partial
+        // save behind. See assertLocationDnaUserTypeIsSupported().
+        $this->assertLocationDnaUserTypeIsSupported();
 
-        // 9D: Search Areas + Important Places (Buyer/Tenant only). saveSearchAreas() writes
-        // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
-        // written just above from the blob (the map is now the single editing surface).
+        // The gate is PRESERVED, unchanged — D-G1F-3, option 3-C. Only `buyer` and `tenant`
+        // records carry a canonical Location DNA document; `seller` and `landlord` records do NOT
+        // start receiving one here. The gate is not endorsed as the ideal architecture and it is
+        // not a defect being fixed in passing — removing it needs its own product authorization.
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
-            $this->saveSearchAreas($auction);
+            // This workflow previously wrote the discrete `cities` / `counties` / `state` mirrors
+            // from its own component properties and then called saveSearchAreas(), which wrote the
+            // canonical blob and RE-wrote the same three mirrors from it. Correctness rested on
+            // statement ordering alone, proven by G1fHireDoubleWriteCharacterisationTest.
+            //
+            // Both halves are replaced by one call. The writer builds explicit set/clear commands
+            // from the submitted payload, persists canonical state first and derives the managed
+            // mirrors from the result, inside one transaction. A dimension the payload does not
+            // state gets no command and is therefore not written — which is what stops a no-op
+            // save from destroying a legacy-only mirror.
+            //
+            // The trait is deliberately NOT rewired: loadSearchAreas() and the host props are
+            // unchanged, and the six unmigrated workflows still use saveSearchAreas() untouched.
+            $this->persistLocationDna($auction);
             $this->saveImportantPlaces($auction);
+        } else {
+            // seller / landlord — the gated path, behaviour unchanged.
+            //
+            // These three writes are NOT the double-write G1f removes: with the gate closed the
+            // trait never ran, so they are the ONLY mirror writes this branch has ever performed
+            // and they remain property-sourced and uncorrected by any blob. Removing them would
+            // silently stop mirroring location for two of the four roles, which is a behaviour
+            // change this migration is not authorized to make.
+            $auction->saveMeta('cities', json_encode($this->cities));
+            $auction->saveMeta('counties', json_encode($this->counties));
+            $auction->saveMeta('state', $this->state);
         }
+
+        // `zipCodes` — DELIBERATELY OUTSIDE THE MANAGED MIRROR SET (D-G1F-4, option (a)).
+        //
+        // Unchanged in source, in value and in reach: still written for every supported role,
+        // still sourced from the component property, still never derived from the canonical
+        // `zip_codes` dimension, and still absent from LegacyMirrorProjection::MANAGED_KEYS. The
+        // §17.4 checkpoint governs whether it ever joins the managed set; this increment does not
+        // decide it, normalize it, repair it, or clear it when canonical ZIPs are absent.
+        //
+        // It is issued AFTER the canonical block on purpose. A failure inside the canonical write
+        // now aborts before this line, so the transaction's all-or-nothing guarantee is not
+        // undermined by a mirror write that already landed.
+        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
 
         $auction->saveMeta('property_city', $this->property_city);
         $auction->saveMeta('property_state', $this->property_state);
