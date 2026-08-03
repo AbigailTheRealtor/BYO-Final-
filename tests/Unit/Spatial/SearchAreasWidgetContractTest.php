@@ -318,25 +318,63 @@ class SearchAreasWidgetContractTest extends TestCase
      * It now asserts the opposite, so a regression that removes either write
      * fails here rather than silently reopening the defect.
      *
+     * AMENDED BY G1f-3 — THE FINDING HOLDS, ITS SOURCE-LEVEL FORM DID NOT.
+     * --------------------------------------------------------------------
+     * This assertion searched all five implementations for the literal
+     * `saveMeta('cities'`. G1f-3 migrated the two Buyer Offer copies to
+     * `LocationDnaPersistenceService`, which removes that literal from them — so
+     * the tripwire fired even though FINDING 2B-3 is not regressed: those two
+     * components still write the `cities` mirror on every save, now derived from
+     * canonical state by `LegacyMirrorProjection` instead of from a locally
+     * decoded blob.
+     *
+     * It is the ninth tripwire of this shape, after the one
+     * `TenantOfferCitiesMirrorTest` carried (blocker B4). Both assert "this file
+     * still contains the inline write", which any migration necessarily breaks.
+     *
+     * The protective value is preserved rather than dropped: each implementation
+     * is asserted against the mechanism it actually uses, so removing the mirror
+     * write from ANY of the five still fails here.
+     *
      * @see \Tests\Feature\Spatial\TenantOfferCitiesMirrorTest for the behavioural proof
+     * @see \Tests\Feature\Spatial\G1f3BuyerOfferMigrationTest for the migrated pair's proof
      */
     public function test_finding_2b3_all_implementations_write_the_cities_mirror(): void
     {
-        $writes = "saveMeta('cities'";
-
+        // UNMIGRATED — still write the mirror inline, from their own decoded blob.
         foreach ([
             'app/Http/Livewire/Concerns/HasSearchAreas.php',
-            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
-            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ] as $file) {
             $this->assertStringContainsString(
-                $writes,
+                "saveMeta('cities'",
                 $this->source($file),
                 "{$file} no longer writes the cities mirror — FINDING 2B-3 has regressed."
             );
         }
+
+        // MIGRATED (G1f-3) — reach the same mirror through the canonical writer, whose
+        // projection emits `cities` for every present dimension. Removing the seam here
+        // would stop the mirror being written just as surely as deleting an inline call.
+        foreach ([
+            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
+        ] as $file) {
+            $this->assertStringContainsString(
+                '$this->persistLocationDna($auction);',
+                $this->source($file),
+                "{$file} no longer reaches the cities mirror through the canonical writer — "
+                .'FINDING 2B-3 has regressed.'
+            );
+        }
+
+        // And `cities` is still a managed mirror key, which is what makes the seam equivalent.
+        $this->assertStringContainsString(
+            "public const MANAGED_KEYS = ['cities', 'counties', 'state'];",
+            $this->source('app/Services/LocationDna/Persistence/LegacyMirrorProjection.php'),
+            'the cities mirror must remain in the managed set'
+        );
     }
 
     /**

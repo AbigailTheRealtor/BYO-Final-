@@ -33,8 +33,6 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
      */
     private const AUTHORIZED_WRITERS = [
         'app/Http/Livewire/Concerns/HasSearchAreas.php',
-        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
-        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Controllers/BuyerCriteriaAuctionController.php',
@@ -44,15 +42,13 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
     /**
      * The workflow implementations that must stay completely alone.
      *
-     * SHRINK-ONLY, like `AUTHORIZED_WRITERS`. `TenantAgentAuction` left this list at G1f-2, which
-     * migrated it; its post-migration boundary is asserted by `G1f2MigrationBoundaryGuardTest`.
-     * Six remain.
+     * SHRINK-ONLY, like `AUTHORIZED_WRITERS`. `TenantAgentAuction` left this list at G1f-2 and
+     * both Buyer Offer copies left it at G1f-3; their post-migration boundaries are asserted by
+     * `G1f2MigrationBoundaryGuardTest` and `G1f3MigrationBoundaryGuardTest`. Four remain.
      */
     private const UNMIGRATED_WORKFLOWS = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
-        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
@@ -155,10 +151,11 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         );
 
         $this->assertCount(
-            7,
+            5,
             self::AUTHORIZED_WRITERS,
-            'Seven direct writers remain after G1f-1. This list may only SHRINK; reaching one entry '
-            .'is G1f\'s completion condition.'
+            'Five direct writers remain after G1f-3 — the first stage to shorten this list, because '
+            .'the two Buyer Offer copies wrote the canonical key inline rather than through the '
+            .'trait. This list may only SHRINK; reaching one entry is G1f\'s completion condition.'
         );
     }
 
@@ -293,7 +290,9 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         foreach ($this->productionFiles() as $relative) {
             if (str_starts_with($relative, 'app/Services/LocationDna/Persistence')
                 || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php'
-                || $relative === 'app/Http/Livewire/TenantAgentAuction.php') {
+                || $relative === 'app/Http/Livewire/TenantAgentAuction.php'
+                || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php'
+                || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php') {
                 continue;
             }
 

@@ -304,15 +304,27 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * CHARACTERISED DEFECT · create flow — one save records a cleared dimension
-     * three different ways.
+     * REPAIRED BY G1f-3 · create flow — one save now records a cleared dimension
+     * ONE way.
      *
-     * F-G1-4, reproduced on the Buyer Offer inline copy rather than on the trait:
-     * `cities` honours the clear, `counties` and `state` keep their previous
-     * values. Confirms the defect is a property of all three implementations, not
-     * of the shared trait alone — so G1f's single writer must serve all three.
+     * THE DEFECT THIS REPLACES, RECORDED SO THE CHANGE IS LEGIBLE.
+     * -----------------------------------------------------------
+     * This test previously asserted F-G1-4's three-way split on the Buyer Offer
+     * inline copy: `cities` honoured the clear while `counties` and `state` kept
+     * their previous values, because the three dimensions did not share a code
+     * path. It confirmed the defect was a property of all three implementations,
+     * not of the shared trait alone — which is precisely why G1f's single writer
+     * had to serve all three.
+     *
+     * G1f-3 made this workflow one of the writer's callers, so all three
+     * dimensions are now projected from the same canonical document and a clear
+     * takes effect uniformly. This is D-G1-4 option 4-A, arriving here.
+     *
+     * The component props still carry the stale values, deliberately: they must
+     * NOT influence the persisted mirrors any more, and asserting against them is
+     * what proves it.
      */
-    public function test_create_flow_records_cleared_dimensions_three_different_ways(): void
+    public function test_create_flow_records_a_cleared_dimension_one_way(): void
     {
         $owner   = $this->owner();
         $auction = $this->auction($owner);
@@ -331,12 +343,20 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
         $fresh = $this->reread($auction);
 
         $this->assertSame('[]', $fresh->info('cities'), 'cities honours the clear');
-        $this->assertSame('["Pinellas"]', $fresh->info('counties'), 'counties ignores the clear');
-        $this->assertSame('Georgia', $fresh->info('state'), 'state ignores the clear');
+        $this->assertSame(
+            '[]',
+            $fresh->info('counties'),
+            'counties now honours the clear too — it used to keep the stale ["Pinellas"]'
+        );
+        $this->assertSame(
+            '',
+            $fresh->info('state'),
+            'state now honours the clear too — it used to keep the stale "Georgia"'
+        );
     }
 
-    /** CHARACTERISED DEFECT · edit flow — the identical three-way split. */
-    public function test_edit_flow_records_cleared_dimensions_three_different_ways(): void
+    /** REPAIRED BY G1f-3 · edit flow — the identical uniform clear. */
+    public function test_edit_flow_records_a_cleared_dimension_one_way(): void
     {
         $owner   = $this->owner();
         $auction = $this->auction($owner);
@@ -355,8 +375,8 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
         $fresh = $this->reread($auction);
 
         $this->assertSame('[]', $fresh->info('cities'));
-        $this->assertSame('["Pinellas"]', $fresh->info('counties'));
-        $this->assertSame('Georgia', $fresh->info('state'));
+        $this->assertSame('[]', $fresh->info('counties'));
+        $this->assertSame('', $fresh->info('state'));
     }
 
     /** A populated blob mirrors correctly on both flows — the control. */
@@ -389,14 +409,22 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Geometry survives a save → load → save cycle through both inline copies
-     * byte-identically.
+     * Geometry survives a save → load → save cycle through both flows without loss.
      *
      * The trait's equivalent is `SearchAreasPersistenceCharacterisationTest`; this
      * establishes the same property for the two implementations that suite never
      * touches.
+     *
+     * SEMANTIC AFTER G1f-3, BYTE-IDENTICAL BEFORE IT. The canonical writer
+     * serialises deterministically and stamps `schema_version: 2` (F-G1F-10), so
+     * the stored bytes legitimately differ from the submitted ones while the
+     * meaning does not. §5.3 withdrew the byte guarantee in favour of semantic
+     * equality, so that is what is asserted — dimension by dimension, plus the
+     * float precision, vertex count and unicode a byte comparison used to cover
+     * incidentally. Those are the properties that actually protect geometry; byte
+     * identity only ever protected them by accident.
      */
-    public function test_geometry_round_trips_byte_identically_on_both_flows(): void
+    public function test_geometry_round_trips_without_loss_on_both_flows(): void
     {
         $owner   = $this->owner();
         $encoded = json_encode([
@@ -417,6 +445,8 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
             'location_notes'  => 'Near the river — walkable. 東京 🏖',
         ]);
 
+        $submitted = json_decode($encoded, true);
+
         foreach ([BuyerOfferListing::class, BuyerOfferListingEdit::class] as $class) {
             $auction = $this->auction($owner);
 
@@ -424,34 +454,59 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
             $first->location_dna_preferences_json = $encoded;
             $this->save($first, $auction);
 
-            $this->assertSame(
-                $encoded,
-                (string) $this->reread($auction)->info('location_dna_preferences'),
-                "{$class}: first write must be byte-identical"
-            );
+            $afterFirst = (string) $this->reread($auction)->info('location_dna_preferences');
+            $decoded    = json_decode($afterFirst, true);
 
-            // Re-save the stored value unchanged; it must not drift.
+            foreach (['cities', 'state', 'counties', 'polygons', 'radius_searches', 'location_notes'] as $dimension) {
+                $this->assertSame(
+                    $submitted[$dimension],
+                    $decoded[$dimension] ?? null,
+                    "{$class}: `{$dimension}` must survive the first write unchanged in meaning"
+                );
+            }
+
+            // Re-save the stored value unchanged; its MEANING must not drift.
             $second = new $class();
-            $second->location_dna_preferences_json = (string) $this->reread($auction)->info('location_dna_preferences');
+            $second->location_dna_preferences_json = $afterFirst;
             $this->save($second, $auction);
 
-            $stored = (string) $this->reread($auction)->info('location_dna_preferences');
+            $stored   = (string) $this->reread($auction)->info('location_dna_preferences');
+            $reparsed = json_decode($stored, true);
 
-            $this->assertSame($encoded, $stored, "{$class}: blob drifted across a re-save");
-            $this->assertCount(3, json_decode($stored, true)['polygons'][0]['path'], $class);
-            $this->assertSame(3.5, json_decode($stored, true)['radius_searches'][0]['radius_miles'], $class);
+            $this->assertSame(
+                $afterFirst,
+                $stored,
+                "{$class}: a re-save of identical meaning must not rewrite the bytes at all — the "
+                .'revision token suppresses the write'
+            );
+
+            foreach (['cities', 'state', 'counties', 'polygons', 'radius_searches', 'location_notes'] as $dimension) {
+                $this->assertSame($submitted[$dimension], $reparsed[$dimension] ?? null, "{$class}: {$dimension} drifted");
+            }
+
+            $this->assertCount(3, $reparsed['polygons'][0]['path'], $class);
+            $this->assertSame(3.5, $reparsed['radius_searches'][0]['radius_miles'], "{$class}: float precision lost");
+            $this->assertStringContainsString('東京', $stored, "{$class}: unicode mangled");
+            $this->assertStringContainsString('🏖', $stored, "{$class}: astral-plane character mangled");
         }
     }
 
     /**
-     * CHARACTERISED DEFECT · an unmounted editor destroys saved geometry through
-     * both inline copies.
+     * REPAIRED BY G1f-3 · an unmounted editor now PRESERVES saved geometry through
+     * both flows.
      *
-     * F-G1-7 reproduced on the real components. The empty payload is written
-     * straight over the authoritative blob, and the `cities` mirror is emptied in
-     * the same save. The G0 guard — client-side JavaScript — is the only defence.
+     * THE DEFECT THIS REPLACES. F-G1-7, reproduced on the real components: an empty
+     * payload was written straight over the authoritative blob and the `cities`
+     * mirror was emptied in the same save. The G0 guard — client-side JavaScript —
+     * was the only defence, so anything that reached the save path with an
+     * unmounted editor destroyed the record's geometry server-side.
+     *
+     * G1f-3 removed the defence's need. An empty payload states nothing, produces
+     * no command, and the writer returns before reading or writing anything. This
+     * is D-G1-2 option 2-A at the workflow level, and it is the single most
+     * user-visible repair in the increment.
      */
-    public function test_unmounted_editor_destroys_geometry_on_both_flows(): void
+    public function test_unmounted_editor_preserves_geometry_on_both_flows(): void
     {
         $owner = $this->owner();
 
@@ -471,6 +526,8 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
                 "{$class}: precondition — geometry stored"
             );
 
+            $seeded = (string) $this->reread($auction)->info('location_dna_preferences');
+
             $unmounted = new $class();
             $unmounted->location_dna_preferences_json = '';
             $this->save($unmounted, $auction);
@@ -478,11 +535,21 @@ class G1aBuyerOfferInlineCharacterisationTest extends TestCase
             $fresh = $this->reread($auction);
 
             $this->assertSame(
-                '',
+                $seeded,
                 (string) $fresh->info('location_dna_preferences'),
-                "{$class}: CHARACTERISATION — the blob was overwritten with an empty string."
+                "{$class}: the blob must be preserved BYTE FOR BYTE. It used to be overwritten "
+                .'with an empty string.'
             );
-            $this->assertSame('[]', $fresh->info('cities'), "{$class}: mirror emptied in the same save");
+            $this->assertStringContainsString(
+                'Drawn area 1',
+                (string) $fresh->info('location_dna_preferences'),
+                "{$class}: the geometry specifically must survive"
+            );
+            $this->assertSame(
+                '["Tampa"]',
+                $fresh->info('cities'),
+                "{$class}: and the mirror with it — it used to be emptied in the same save"
+            );
         }
     }
 

@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 
@@ -2402,6 +2403,33 @@ class BuyerOfferListingEdit extends Component
         }
     }
 
+    /**
+     * G1f-3 — persist Location DNA through the canonical writer.
+     *
+     * This is the whole of this workflow's Location DNA write path. It replaces BOTH halves of
+     * the former split: the hydrate-and-mirror block near the top of `saveAllMetadata()` and the
+     * canonical-blob-plus-`cities` write ~400 lines later.
+     *
+     * WHY COLLAPSING THE SPLIT IS THE POINT.
+     * --------------------------------------
+     * Those two halves were separated by 400 lines and 315 intervening `saveMeta` calls with no
+     * transaction anywhere between them (F-G1F-7). Any failure inside that window committed
+     * mirrors that disagreed with the blob, permanently. Bringing both halves into one call
+     * inside the writer's transaction closes the window: canonical state and all three managed
+     * mirrors now succeed or fail together.
+     *
+     * DELIBERATELY NOT CHANGED: the PRE-VALIDATION `hydrateDiscreteLocationFromBlob()` call in
+     * `update()`. That call populates `$this->state` / `$this->counties` for the `required`
+     * rules, because the discrete Acceptable State/Counties inputs were removed in 9B-3. It is a
+     * validation concern that merely shares a method name with the write concern removed here
+     * (F-G1F-14). `loadAuctionData()` and the method definition are likewise untouched.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        (new OwnerPrivateLocationDnaWriter())
+            ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     protected function saveAllMetadata($auction)
     {
         $auction->saveMeta('workflow_type', 'offer_listing');
@@ -2415,14 +2443,18 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('expiration_date', $this->expiration_date);
         $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
-        // Location Information
-        // 9B-2 write-back: mirror the Search Areas blob's state / counties into the
-        // discrete meta (read by Ask AI, public views, the match engine). Non-empty
-        // guards keep this backward compatible — an empty blob value never wipes an
-        // existing discrete value (the discrete UI was removed in 9B-3).
-        $this->hydrateDiscreteLocationFromBlob();
-        $auction->saveMeta('counties', json_encode($this->counties));
-        $auction->saveMeta('state', $this->state);
+        // ── Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-3) ─────────────
+        //
+        // One call replaces the former two-part write: the hydrate-and-mirror block that stood
+        // here, and the canonical blob plus `cities` write that stood ~400 lines below. The
+        // writer builds explicit set/clear commands from the submitted payload, persists
+        // canonical state first and derives all three managed mirrors from the result, inside one
+        // transaction — which is what closes the non-atomic window. A dimension the payload does
+        // not state gets no command and is therefore not written.
+        //
+        // `zipCodes` is not written here and is not introduced: the Buyer family has never
+        // written that key.
+        $this->persistLocationDna($auction);
 
         // 9C Important Places — additive, separate meta key; commute fields untouched.
         $this->saveImportantPlaces($auction);
@@ -2822,10 +2854,10 @@ class BuyerOfferListingEdit extends Component
         }
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
-        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
-        // Keep `cities` meta in sync with the LDNA blob.
-        $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
-        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
+        // G1f-3: the canonical blob and `cities` mirror writes that stood here were the second
+        // half of this workflow's split Location DNA write. Both moved into persistLocationDna()
+        // near the top of this method, so they now execute inside the writer's transaction
+        // alongside `counties` and `state` rather than 400 lines and 315 saveMeta calls away.
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {

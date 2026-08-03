@@ -380,7 +380,27 @@ class TenantOfferCitiesMirrorTest extends TestCase
     }
 
     /** Both Buyer Offer components keep their original mirror write, underived from this change. */
-    public function test_buyer_offer_components_are_unchanged(): void
+    /**
+     * B4 · RESOLVED BY G1f-3 — converted from "unchanged" to a positive migrated boundary.
+     *
+     * WHAT THIS GUARD USED TO SAY, AND WHY IT CHANGED.
+     * ------------------------------------------------
+     * It asserted that both Buyer Offer components still contained the exact inline mirror-write
+     * line `saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []))`. That was a deliberate
+     * tripwire: it existed so that any edit to the Buyer Offer copies — including the Tenant
+     * Offer divergence being copied across — would fail loudly here.
+     *
+     * G1f-3 removes that line from both files by definition, so the tripwire fires. It was
+     * recorded as blocker B4 and named in the G1f-3 authorization in advance, which is why this
+     * change is an expected update and not a regression.
+     *
+     * The guard is NOT deleted. It is inverted into the assertion that carries the same
+     * protective value after the migration: both files reach the canonical key through the writer
+     * seam and through nothing else, and the migration stopped exactly there. A future increment
+     * that quietly re-adds an inline canonical or mirror write, or that drags a further workflow
+     * across without its own authorization, still fails here.
+     */
+    public function test_buyer_offer_components_are_migrated_and_the_boundary_held(): void
     {
         foreach ([
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
@@ -388,11 +408,63 @@ class TenantOfferCitiesMirrorTest extends TestCase
         ] as $file) {
             $source = file_get_contents(base_path($file));
 
-            $this->assertStringContainsString(
+            // MIGRATED — the inline writes are gone and one writer seam stands in their place.
+            $this->assertStringNotContainsString(
                 "\$auction->saveMeta('cities', json_encode(\$ldnaDecoded['cities'] ?? []));",
-                $source
+                $source,
+                "{$file}: the inline cities mirror write must be gone — G1f-3 migrated it."
             );
+            $this->assertStringNotContainsString(
+                "\$auction->saveMeta('location_dna_preferences', \$this->location_dna_preferences_json);",
+                $source,
+                "{$file}: the inline canonical write must be gone."
+            );
+            $this->assertSame(
+                1,
+                substr_count($source, '$this->persistLocationDna($auction);'),
+                "{$file}: exactly one canonical writer call site."
+            );
+
+            // UNCHANGED — the Tenant divergence construct was never copied here, and the
+            // never-introduce marker still must not appear.
             $this->assertStringNotContainsString('FINDING 2B-3', $source);
+            $this->assertStringNotContainsString(
+                "array_key_exists('cities'",
+                $source,
+                "{$file}: the Tenant Offer divergence construct must still not appear here."
+            );
+        }
+
+        // The boundary held: the Tenant Offer pair is NOT migrated by this increment and still
+        // carries both its own canonical write and its divergence construct.
+        foreach ([
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+        ] as $file) {
+            $source = file_get_contents(base_path($file));
+
+            $this->assertStringContainsString(
+                "saveMeta('location_dna_preferences'",
+                $source,
+                "{$file}: Tenant Offer is NOT in G1f-3's scope and must still write canonically."
+            );
+            $this->assertStringNotContainsString(
+                'persistLocationDna',
+                $source,
+                "{$file}: no Tenant Offer workflow may be migrated by the G1f-3 authorization."
+            );
+        }
+
+        // And neither Hire edit workflow was dragged along either.
+        foreach ([
+            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php',
+        ] as $file) {
+            $this->assertStringNotContainsString(
+                'persistLocationDna',
+                file_get_contents(base_path($file)),
+                "{$file}: no Hire edit workflow may be migrated by the G1f-3 authorization."
+            );
         }
     }
 }

@@ -122,11 +122,17 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
                 'class' => BuyerOfferCreate::class, 'model' => 'buyer', 'impl' => 'inline',
                 'load' => 'loadDraft', 'user_type' => null,
                 'save' => 'saveAllMetadata', 'cleared_cities' => 'resurrected',
+                // G1f-3: MIGRATED to LocationDnaPersistenceService, together with the edit copy
+                // below. Load side unchanged and still asserted by every load-side test.
+                'migrated_save' => true,
             ],
             'Buyer Offer · edit' => [
                 'class' => BuyerOfferEdit::class, 'model' => 'buyer', 'impl' => 'inline',
                 'load' => 'loadAuctionData', 'user_type' => null,
                 'save' => 'saveAllMetadata', 'cleared_cities' => 'resurrected',
+                // G1f-3: MIGRATED. Its former 400-line, 315-call untransacted window between the
+                // mirror writes and the canonical write is closed.
+                'migrated_save' => true,
             ],
             'Tenant Offer · create' => [
                 'class' => TenantOfferCreate::class, 'model' => 'tenant', 'impl' => 'inline-divergent',
@@ -409,11 +415,11 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         }
 
         $this->assertSame(
-            4,
+            2,
             $covered,
-            'Four of the eight workflows have an invocable, UNMIGRATED save path. Hire Buyer create '
-            .'was migrated by G1f-1 and Hire Tenant create by G1f-2; their post-migration saves are '
-            .'covered by G1f1BuyerAgentAuctionMigrationTest and G1f2TenantAgentAuctionMigrationTest.'
+            'Two of the eight workflows have an invocable, UNMIGRATED save path. Hire Buyer create '
+            .'was migrated by G1f-1, Hire Tenant create by G1f-2, and both Buyer Offer copies by '
+            .'G1f-3; their post-migration saves are covered by their own migration suites.'
         );
     }
 
@@ -458,10 +464,10 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         }
 
         $this->assertSame(
-            4,
+            2,
             $covered,
-            'Four invocable, UNMIGRATED save paths. Hire Buyer create was migrated by G1f-1 and '
-            .'Hire Tenant create by G1f-2.'
+            'Two invocable, UNMIGRATED save paths remain: Hire Buyer edit and Tenant Offer create. '
+            .'G1f-1, G1f-2 and G1f-3 migrated the other four.'
         );
     }
 

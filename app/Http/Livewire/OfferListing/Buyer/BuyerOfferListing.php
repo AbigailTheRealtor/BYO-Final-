@@ -16,6 +16,7 @@ use App\Models\UsCity;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
 use App\Services\WizardEventService;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class BuyerOfferListing extends Component
@@ -2442,6 +2443,30 @@ class BuyerOfferListing extends Component
         }
     }
 
+    /**
+     * G1f-3 — persist Location DNA through the canonical writer.
+     *
+     * This is the whole of this workflow's Location DNA write path. It replaces the inline
+     * hydrate-then-mirror-then-blob sequence, and it is the only place in this component that
+     * touches the canonical meta key.
+     *
+     * The bridged payload is passed through as-is. Presence semantics, command construction,
+     * capability enforcement, the transaction and mirror derivation all belong to the writer, so
+     * this method holds no Location DNA policy of its own.
+     *
+     * DELIBERATELY NOT CHANGED: the PRE-VALIDATION `hydrateDiscreteLocationFromBlob()` call in
+     * `store()`. That call populates `$this->state` / `$this->counties` for the `required` rules,
+     * because the discrete Acceptable State/Counties inputs were removed in 9B-3. It is a
+     * validation concern that merely shares a method name with the write concern removed below
+     * (F-G1F-14). Removing it would break submit for every listing whose location comes only from
+     * the map. `loadDraft()` and the method definition are likewise untouched.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        (new OwnerPrivateLocationDnaWriter())
+            ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     protected function saveAllMetadata($auction)
     {
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
@@ -2456,18 +2481,24 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('expiration_date', $this->expiration_date);
         $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
-        // Location Information
-        // 9B-2 write-back: the Search Areas partial is the editing surface for state /
-        // counties. Mirror its blob into the discrete meta (read by Ask AI, public views,
-        // the match engine). Non-empty guards preserve backward compatibility.
-        $this->hydrateDiscreteLocationFromBlob();
-        $auction->saveMeta('counties', json_encode($this->counties));
-        $auction->saveMeta('state', $this->state);
-        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
-        // Keep `cities` meta in sync with the LDNA blob so the loader fallback
-        // and the Clear All path stay consistent across saves.
-        $ldnaDecoded = json_decode($this->location_dna_preferences_json, true);
-        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
+        // ── Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-3) ─────────────
+        //
+        // This workflow previously hydrated `$this->state` / `$this->counties` from the blob,
+        // wrote those two mirrors from the mutated props, wrote the canonical blob verbatim, and
+        // finally wrote `cities` from the decoded blob — four statements, three different value
+        // sources, and no transaction. A cleared `counties` or `state` kept its stale value while
+        // a cleared `cities` did not, which is F-G1-4's three-way split; an unmounted editor
+        // overwrote the authoritative blob with an empty string.
+        //
+        // All of it is replaced by one call. The writer builds explicit set/clear commands from
+        // the submitted payload, persists canonical state first and derives all three managed
+        // mirrors from the result, inside one transaction. A dimension the payload does not state
+        // gets no command and is therefore not written, so a no-op save can no longer destroy a
+        // legacy-only mirror.
+        //
+        // `zipCodes` is not written here and is not introduced: the Buyer family has never
+        // written that key, so D-G1F-4 and the §17.4 checkpoint are inert for this workflow.
+        $this->persistLocationDna($auction);
 
         // 9C Important Places — additive, separate meta key; commute fields untouched.
         $this->saveImportantPlaces($auction);

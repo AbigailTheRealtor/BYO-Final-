@@ -3,6 +3,8 @@
 namespace Tests\Unit\Services\LocationDna\Persistence;
 
 use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 /**
  * G1f-2 — the migration boundary guard.
@@ -27,14 +29,18 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
     private const MIGRATED = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php',
         'app/Http/Livewire/TenantAgentAuction.php',
+        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
+        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
     ];
 
-    /** The six workflow implementations G1f-2 must leave completely alone. */
+    /**
+     * The workflow implementations that must be left completely alone.
+     *
+     * SHRINK-ONLY. The two Buyer Offer copies left this list at G1f-3 together; four remain.
+     */
     private const UNMIGRATED_WORKFLOWS = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
-        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
@@ -92,27 +98,34 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
     }
 
     /**
-     * Exactly two workflow components reference the persistence namespace.
+     * Exactly the migrated workflow components reference the persistence namespace.
      *
-     * The count is the point: it fails if a third workflow is wired, whether deliberately or
-     * by a copy-paste that looked harmless.
+     * The count is the point: it fails if a further workflow is wired, whether deliberately or
+     * by a copy-paste that looked harmless. Four after G1f-3.
      */
-    public function test_exactly_two_workflow_components_are_wired_to_the_writer(): void
+    public function test_exactly_the_migrated_workflow_components_are_wired_to_the_writer(): void
     {
         $wired = [];
 
-        foreach (glob($this->root().'/app/Http/Livewire/**/*.php') ?: [] as $file) {
-            $relative = str_replace($this->root().'/', '', $file);
+        // RECURSIVE, deliberately. This scan originally used `glob('…/Livewire/**/*.php')` plus a
+        // one-level glob. PHP's `glob()` does NOT recurse on `**` — it behaves as a single `*` —
+        // so the two-level-deep `OfferListing/Buyer/…` and `OfferListing/Tenant/…` components
+        // were never scanned at all. The guard would have reported "exactly two wired" no matter
+        // what those four files contained. Caught when G1f-3 migrated two of them and the count
+        // did not move. Use a real recursive iterator, as `G1f1MigrationBoundaryGuardTest` does.
+        /** @var iterable<\SplFileInfo> $it */
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($this->root().'/app/Http/Livewire')
+        );
 
-            if (str_contains($this->codeOnly((string) file_get_contents($file)), 'LocationDna\\Persistence')) {
-                $wired[] = $relative;
+        foreach ($it as $file) {
+            if ($file->isDir() || $file->getExtension() !== 'php') {
+                continue;
             }
-        }
 
-        foreach (glob($this->root().'/app/Http/Livewire/*.php') ?: [] as $file) {
-            $relative = str_replace($this->root().'/', '', $file);
+            $relative = str_replace($this->root().'/', '', $file->getPathname());
 
-            if (str_contains($this->codeOnly((string) file_get_contents($file)), 'LocationDna\\Persistence')) {
+            if (str_contains($this->codeOnly((string) file_get_contents($file->getPathname())), 'LocationDna\\Persistence')) {
                 $wired[] = $relative;
             }
         }
@@ -125,14 +138,14 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             array_values(array_unique($wired)),
-            'Exactly two workflow components may be wired to the canonical writer after G1f-2.'
+            'Exactly four workflow components may be wired to the canonical writer after G1f-3.'
         );
     }
 
-    /** The six unmigrated workflows are untouched by this increment. */
-    public function test_the_six_unmigrated_workflows_are_untouched(): void
+    /** The remaining unmigrated workflows are untouched. */
+    public function test_the_remaining_unmigrated_workflows_are_untouched(): void
     {
-        $this->assertCount(6, self::UNMIGRATED_WORKFLOWS);
+        $this->assertCount(4, self::UNMIGRATED_WORKFLOWS);
 
         foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
             $code = $this->codeOnly($this->read($relative));
