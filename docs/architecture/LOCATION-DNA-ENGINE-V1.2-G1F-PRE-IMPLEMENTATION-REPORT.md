@@ -96,6 +96,8 @@ characterisation work named in §20.
 | F-G1F-10 | **First authored write canonicalizes serialization** — retitled and amended after implementation | §11.3, **§27.7** |
 | F-G1F-11 | The five guard sites of `BuyerOfferListingEdit` were never enumerated; now measured | §6.1 |
 | F-G1F-12 | Two documents cite divergence line numbers that point at comments, not code | §2.3 |
+| F-G1F-13 | **An eighth test changes by design in G1f-3 and is on no authorized-change list** — `SearchAreasStateCountyRoundTripTest::test_empty_blob_state_does_not_wipe_discrete_state` | §29.4 |
+| F-G1F-14 | **The Buyer Offer components call `hydrateDiscreteLocationFromBlob()` TWICE**, and one call is a pre-validation dependency G1f-3 must not remove | §29.1 |
 
 ### Status after approval, characterisation and two migrations (2026-08-03)
 
@@ -2304,3 +2306,379 @@ without shortening that list. The list falls when the inline copies migrate (G1f
 entry only when the trait is converted and the criteria controllers are migrated. **A flat count here is the
 expected result of this particular migration, not a stalled one** — the measure that did move is the
 trait-host count, 3 → 2.
+
+---
+
+## 29. G1f-3 readiness — Buyer Offer
+
+**Type:** planning and read-only audit. **Nothing here is implemented and nothing here is authorized.**
+**Audited at:** `6d4289a46857b171e952c246a1d40a99e8067a30` · **Audit date:** 2026-08-03
+**Target:** `BuyerOfferListing` (create) and `BuyerOfferListingEdit` (edit) — §18's G1f-3 stage.
+
+> **Status: NOT STARTED, NOT AUTHORIZED.** No production file, test or persistence class was modified by
+> this section. Every line number and count below was measured at the audited commit.
+
+### 29.1 Buyer Offer write inventory
+
+| Property | `BuyerOfferListing` (create) | `BuyerOfferListingEdit` (edit) |
+|---|---|---|
+| File | `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php` | `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php` |
+| Lines | 3,081 | 2,937 |
+| Implementation | **inline**, not the trait | **inline**, not the trait |
+| `HasSearchAreas` | **not used** | **not used** |
+| Save method | `saveAllMetadata($auction)` @ `:2445` | `saveAllMetadata($auction)` @ `:2405` |
+| Save invocable in isolation | **yes** | **yes** |
+| Load method | `loadDraft()` — blob read @ `:1932` | `loadAuctionData()` — blob read @ `:1858` |
+| Canonical blob write | `:2466` | `:2825` |
+| `counties` mirror | `:2464`, from the mutated prop | `:2424`, from the mutated prop |
+| `state` mirror | `:2465`, from the mutated prop, **raw string** | `:2425`, from the mutated prop, **raw string** |
+| `cities` mirror | `:2470`, **derived from the blob** | `:2828`, **derived from the blob** |
+| `zipCodes` | **never written** | **never written** |
+| Plural `states` | **never written** | **never written** |
+| Transaction | **none** — zero `DB::transaction` in the file | **none** — zero in the file |
+| Blob ↔ mirror distance | **contiguous, `:2464`-`:2470`** | **`:2425` → `:2825` — 400 lines, 315 intervening `saveMeta` calls** |
+| Save-path callers | `:1796`, `:1840`, `:3004` | `:1750`, `:1810`, `:2904` |
+| Authorization boundary | `ResolvesOwnedAuction` | `ResolvesOwnedAuction`, **owner-only, no assigned-agent allowance** (`:1335`) |
+
+**Mirror source asymmetry, unchanged from G1a.** `cities` is the ONLY dimension already derived from the
+blob (`json_decode(...)['cities'] ?? []`). `counties` and `state` reach storage through the component props,
+which `hydrateDiscreteLocationFromBlob()` overwrites from the blob a few statements earlier. So the three
+dimensions do not share a code path here either — the same shape F-G1-4 records for the trait.
+
+**F-G1F-14 — `hydrateDiscreteLocationFromBlob()` is called TWICE per flow, and only ONE call is a write
+concern.**
+
+| Call site | Purpose | G1f-3 disposition |
+|---|---|---|
+| `BuyerOfferListing:2463` / `BuyerOfferListingEdit:2423` — inside `saveAllMetadata()` | mutates the props immediately before the mirror writes | **REMOVED** with the mirror writes it feeds |
+| `BuyerOfferListing:2962` — inside `store()` · `BuyerOfferListingEdit:2870` — inside `update()` | populates `$this->state` / `$this->counties` **before `$this->validate()`**, because the discrete Acceptable State/Counties inputs were removed in 9B-3 | **MUST REMAIN, UNCHANGED** |
+
+**This is a new integration constraint, absent from both prior migrations.** Neither `BuyerAgentAuction` nor
+`TenantAgentAuction` had a pre-validation hydrate call — in the Hire family the method has no direct call
+site at all and is reached only through `saveSearchAreas()`. Removing the Buyer Offer pre-validation call
+would break `counties => required|array|min:1` and `state => required|string` for every listing whose
+location is supplied only through the map, which
+`SearchAreasStateCountyRoundTripTest::test_submit_succeeds_with_state_and_counties_supplied_only_by_blob`
+pins. **The two concerns share a method name and nothing else; G1f-3 must separate them by call site.**
+
+**The inline method itself is duplicated.** `hydrateDiscreteLocationFromBlob()` is defined locally in each
+file — `:2428` (create) and `:2388` (edit) — byte-identical to each other, and near-identical to
+`HasSearchAreas::hydrateDiscreteLocationFromBlob()`. G1f-3 removes neither definition: the surviving
+pre-validation call still needs it. **Deleting the method is trait/shim-stage work, not G1f-3 work.**
+
+### 29.2 Create vs edit — the semantic differences
+
+| Dimension of difference | Assessment |
+|---|---|
+| **Write ordering** | **The only material difference.** Create writes all four keys contiguously; edit writes `counties`/`state` at `:2424`-`:2425` and the canonical blob + `cities` at `:2825`-`:2828`. Edit's 400-line, 315-call, untransacted window is F-G1F-7, and it is the single largest atomicity defect in the eight-workflow set |
+| **Mirror semantics** | **Identical.** Same sources, same encodings, same guards |
+| **`hydrateDiscreteLocationFromBlob()`** | **Identical** definitions; identical two-call-site structure |
+| **Load side** | Equivalent — same legacy-`cities` merge with the same `empty()` guard, same 9B-2 prefill. Edit reads `$this->state` from meta at `:1857` before the blob; create's prefill runs after its property load. Ordering only |
+| **`user_type` gate** | **Neither has one.** Nothing analogous to D-G1F-3 applies |
+| **`zipCodes`** | **Neither writes it.** D-G1F-4 and the §17.4 checkpoint are inert for this stage |
+| **`state` encoding** | Both already raw string. **4S-i is a no-op here**, exactly as it was for `BuyerAgentAuction` |
+| **Save invocability** | Both invocable. Unlike G1f-4's targets, neither is behind an `update()`-only boundary |
+| **Publish-path callers** | Create's third call site is `store()`; edit's is `update()`. Both call `saveAllMetadata()` and then continue — the UX branch inserts after exactly those two calls (§29.3) |
+
+**Consequence for sequencing: they should migrate TOGETHER, in one commit.** The reasons are specific, not
+stylistic:
+
+1. **The characterisation is written as pairs.** Nine of the twelve tests in
+   `G1aBuyerOfferInlineCharacterisationTest` loop over `[BuyerOfferListing::class, BuyerOfferListingEdit::class]`
+   in a single test body. Migrating one would force each of those tests to grow a per-class branch, and then
+   force it back out again one commit later — churn in the exact suite whose stability is the parity signal.
+2. **`test_buyer_offer_components_are_unchanged` (B4) names both files in one loop.** It fails the moment
+   either is migrated, so the tripwire cannot be retired incrementally.
+3. **The two files are the same implementation.** F-G1-1's equivalence finding, re-proven by
+   `test_buyer_offer_copies_are_defective_like_the_trait_not_divergent_like_tenant`, is that these are one
+   implementation copied twice. Splitting them buys no isolation — a defect in one is a defect in both.
+
+**The counter-argument, recorded and rejected.** "One workflow per commit" is §18's rule, and edit carries a
+much larger atomicity defect than create. But the risk that rule manages is *attribution* — being unable to
+tell which workflow a parity failure came from. Here every behavioural test already reports the class name in
+its failure message, so attribution survives. **The recommendation is one commit covering both, with
+per-class assertions in the new suite so a failure still names the flow.**
+
+### 29.3 B6 — branch sequencing evidence
+
+#### Topology, measured
+
+| Item | Value |
+|---|---|
+| `architecture/location-dna-g1-domain-core` HEAD | `6d4289a46857b171e952c246a1d40a99e8067a30` |
+| `ux/hire-agent-create-offer-parity` HEAD | `f590b356531fcde364d9ba2def678243226f1a5b` |
+| Merge base | `10037715adca1daa0b59f381ffb6c23d2e01fbf1` |
+| G1 ahead of UX | **46 commits** |
+| UX ahead of G1 | **38 commits** |
+| UX remote tracking branch | **none — the branch is local only** |
+
+**Environment note, correcting §2.2.** `/home/runner/worktrees/` **exists again**. §2.2 recorded that tree as
+destroyed and its six registrations pruned; that is no longer true. Four worktrees are registered and all
+four exist on disk, including `/home/runner/worktrees/ux-hire-agent-create-offer-parity`, which has the UX
+branch checked out and **four uncommitted paths** (`resources/views/hire_buyer_agent/view.blade.php` and
+three `tests/Feature/Viho/*` files). Its tip commit is 2026-08-03 02:48 — recent, and unrelated to Location
+DNA. **None of the uncommitted paths is a Buyer Offer writer**, so the working state adds no overlap. No lock
+file or in-progress operation was present in any worktree.
+
+#### Exact Buyer Offer files the UX branch changes
+
+Both target files are touched, **+7 lines each, in two hunks per file**:
+
+| File | Hunk | Location | Content |
+|---|---|---|---|
+| `BuyerOfferListing.php` | A | class body, **`:22`** | `use …\StampsBiddingActivation;` |
+| | B | inside `store()`, **after `$this->saveAllMetadata($auction);` at `:3005`** | 6 lines calling `stampBiddingActivationAuto($auction)` |
+| `BuyerOfferListingEdit.php` | A | class body, **`:18`** | the same trait `use` |
+| | B | inside `update()`, **after `$this->saveAllMetadata($auction);` at `:2905`** | the same 6-line call |
+
+#### Overlap with the G1f-3 write regions
+
+| G1f-3 region | Nearest UX hunk | Separation |
+|---|---|---|
+| `BuyerOfferListing` `:2459`-`:2470` (inside `saveAllMetadata`) | hunk B at `:3005` | **~535 lines, different method** |
+| `BuyerOfferListingEdit` `:2418`-`:2425` and `:2825`-`:2828` | hunk B at `:2905` | **77 lines, different method** |
+| top-of-file `use` block — `:19` (create) / `:15` (edit) | hunk A at `:22` / `:18` | **2–3 lines, but distinct insertion points** |
+
+**No region overlaps.** The only near-adjacency is the import block: G1f-3 would add one `use` line at the
+end of the file-level import list, while UX adds a trait `use` inside the class body two lines later. These
+are different lines, and a three-way merge conflicts only on the *same* lines — so this auto-merges.
+
+#### Did Location DNA logic itself change?
+
+**No.** Measured across the 38 UX commits:
+
+- `git diff --stat 10037715a..ux -- app/Services/LocationDna/` — **empty**;
+- `... -- app/Http/Livewire/Concerns/HasSearchAreas.php` — **empty**;
+- no canonical write, no mirror write, no `hydrateDiscreteLocationFromBlob` call, no `location_dna_*` key
+  anywhere in the Buyer Offer hunks.
+
+The UX branch's Offer-Listing work is bidding activation and publish gating (`StampsBiddingActivation`,
+`GuidesPublishValidation`) plus Viho presentation. It is orthogonal to the Location DNA write path.
+
+#### Mechanical or semantic?
+
+**Mechanical.** Two independent reasons:
+
+1. **The G1 branch has never touched either Buyer Offer file.** `git diff 10037715a..architecture/… --` over
+   both files is **empty**. Every hunk in a future merge is therefore one-sided, and git takes it verbatim.
+2. **The changes are disjoint in both position and meaning.** UX edits `store()`/`update()` call sites and
+   the class `use` block; G1f-3 edits the `saveAllMetadata()` body. Neither reads or writes what the other
+   touches.
+
+**The one thing to re-check at integration time, not now:** UX hunk B runs `stampBiddingActivationAuto()`
+immediately **after** `saveAllMetadata()`. Post-G1f-3, `saveAllMetadata()` opens and closes a transaction
+internally (inside the writer). The stamping call sits outside it, exactly as it sits outside today's
+untransacted writes. **Nesting is therefore unchanged** — but this should be re-confirmed against the merged
+tree rather than assumed from two diffs read separately.
+
+#### Recommendation: **option B — proceed with G1f-3 now; the UX branch rebases afterward**
+
+| Option | Assessment |
+|---|---|
+| **A. Wait for the UX branch to land** | **Rejected.** UX is 38 commits of styling and bidding work with uncommitted WIP in its worktree and no remote tracking branch. There is no landing date, and G1f-3 is not blocked on anything it contains. This converts a mechanical merge into an indefinite hold |
+| **B. Proceed now; UX rebases afterward** | **RECOMMENDED.** Both files are one-sided on the G1 side, the hunks are disjoint, and no Location DNA logic changed. UX's rebase is a verbatim replay of two small hunks per file |
+| **C. Fresh integration branch** | **Rejected.** It adds a merge point and a third branch to keep current without removing the eventual rebase. Justified when both sides edit the same logic; neither does |
+| **D. Split — migrate create now, edit after UX lands** | **Rejected.** It is the pair-splitting §29.2 argues against, and it would not help: edit is the file where UX's hunk B is *closest* (77 lines), so deferring edit keeps the only near-adjacency open longer |
+
+**Additional evidence for B, from the two completed stages.** G1f-1 and G1f-2 each changed exactly one
+component and left the branch mergeable; the same shape applies here. The original B6 wording — *"that branch
+has zero mirror-line changes, so the risk is mechanical"* — is **confirmed and refined**: the branch is not
+zero-change on these files, it is +7 lines each, but **zero of those lines is a mirror line or any Location
+DNA line**.
+
+**B6 is a recommendation, not a decision.** It remains an **owner decision** and is unresolved until recorded
+as one.
+
+### 29.4 Byte-serialization stop condition — result
+
+**No production consumer requires byte-identical `location_dna_preferences` serialization. The stop
+condition is NOT triggered.**
+
+| Consumer reachable from a Buyer Offer record | Read | Byte-dependent? |
+|---|---|---|
+| `BuyerOfferListingController:112` | `json_decode(...)` | no |
+| `Stellar\BuyerOfferListingCriteriaLoader:126` | decoded, keys read | no |
+| `Stellar\BuyerCriteriaLoader:112` | `json_decode(...) ?? []` | no |
+| `BuyerAcceptedBidSummaryService:468` | null/empty guard, then decoded | no |
+| `ComputeCompatibilityScore:398` | decoded | no |
+| `BackfillLocationSnapshots:134` | `data_get(...)`, then decoded | no |
+| `CriteriaHashService` | hashes a canonical **payload array**, never the stored string | no |
+| Load side of both components (`:1932`, `:1858`) | `json_decode(...) ?? []` | no |
+
+**Therefore, for G1f-3:**
+
+- the first semantic write **may** stamp `schema_version: 2` — permitted;
+- deterministic canonical key ordering **is** acceptable — permitted;
+- a **no-command save and a semantic no-op must preserve bytes** — required, and already guaranteed by the
+  writer's empty-batch return and revision-token comparison;
+- **no bulk rewrite or backfill is authorized**, per F-G1F-10.
+
+**Tests that compare raw bytes, and their disposition:**
+
+| Test | Comparison | Disposition |
+|---|---|---|
+| `G1aBuyerOfferInlineCharacterisationTest::test_geometry_round_trips_byte_identically_on_both_flows` | `assertSame($encoded, $stored)` on both flows | **Authorized change** — becomes a semantic/geometry-fidelity assertion. The property that must survive is that geometry, unicode and float precision round-trip losslessly, not that the bytes are unchanged |
+| `G1aWorkflowPersistenceMatrixCharacterisationTest::test_geometry_persists_byte_identically_through_every_invocable_save_path` | same, across the workflow set | **Established mechanism** — add `'migrated_save' => true` to both Buyer Offer rows; counts move 4 → 2 |
+| `SearchAreasPersistenceCharacterisationTest` (`:105`, `:165`) | byte + `strlen` | **Unaffected — must not change.** It drives a synthetic `SearchAreasPersistenceHost` that mixes in `HasSearchAreas` directly, not any Buyer Offer component. It becomes relevant only at the trait/shim stage |
+| `HireSearchAreasParityTest:204` | `assertEquals($blob, ...)` | **Unaffected** — drives `TenantAgentAuctionEdit`, unmigrated |
+
+**F-G1F-13 — an eighth authorized-change entry exists, on no list.**
+
+```php
+// SearchAreasStateCountyRoundTripTest::test_empty_blob_state_does_not_wipe_discrete_state
+->test(BuyerOfferListingEdit::class, ['auctionId' => $auction->id])
+->set('location_dna_preferences_json', json_encode(['cities' => [], 'state' => '']))
+->call('saveDraftOnly');
+$this->assertEquals('Georgia', $auction->fresh()->info('state'));
+```
+
+It **currently passes** (verified: 3 of 4 pass; the one failure is the unrelated `ILIKE` defect). Post-G1f-3
+a present-empty `state` becomes an explicit **clear**, the projection emits `''`, and the discrete `state`
+is legitimately wiped — the assertion inverts. It is a backward-compatibility guard written against the
+defect D-G1-4 4-A repeals, in a suite that appears on **no** G1f list: not §20.1's must-not-change set, not
+§20.4's authorized-change list, and not the G1c package's six entries. **Structurally identical in purpose
+to F-G1F-9's discovery**, and it must be added to the authorized-change list **before** G1f-3 or a red run
+will look like an unplanned regression.
+
+### 29.5 Proposed implementation scope
+
+**Migrate both writers in ONE commit** (§29.2).
+
+**The existing persistence classes are sufficient. No new class is expected, and no Buyer Offer-specific
+seam is needed.** G1f-2 already demonstrated the boundary generalising to a second workflow without
+modification; the Buyer Offer components need strictly less than `TenantAgentAuction` did — no role gate, no
+`zipCodes`, no unsupported-input rejection. `OwnerPrivateLocationDnaWriter` is the correct seam: the surface
+is owner-private editing in both flows.
+
+**Expected production changes — exactly two existing files, no new file:**
+
+| File | Expected change |
+|---|---|
+| `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php` | one import; one `persistLocationDna()` method; `:2463`-`:2470` replaced by one call |
+| `app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php` | one import; one `persistLocationDna()` method; `:2423`-`:2425` **and** `:2825`-`:2828` replaced by one call at a single site |
+
+**Behaviour the migration is expected to produce, all inherited from the existing boundary:**
+
+- **Transaction boundary** — canonical write and the three managed mirror writes inside the writer's single
+  `DB::transaction`. For the edit flow this **closes F-G1F-7's 400-line, 315-call untransacted window**,
+  which is the largest single correctness gain available in G1f.
+- **Command building** — `LocationDnaCommandBuilder` from the submitted payload only. Key absent → no
+  command → preserve. Key present non-empty → `set`. Key present empty → `clear`. No full-document rewrite.
+- **Capability context** — `OwnerPrivateEdit` / `Owner` / `Edit`, authenticated, resolved by
+  `LocationDnaCapabilityResolver`. Unchanged from G1f-1.
+- **Provenance actor** — `ProvenanceActor::ExplicitOwner`, **transient**: used to validate the transition,
+  never stored. No provenance persistence.
+- **Mirror projection** — `cities`, `counties`, `state` derived from the RESULTING canonical document.
+  Present-but-cleared produces a cleared mirror; absent produces no write.
+- **`zipCodes`** — **no decision required and none to be taken.** Neither component writes the key. D-G1F-4
+  (a) and the §17.4 checkpoint remain untouched by this stage.
+- **`state`** — raw string. 4S-i is already satisfied; **no data change is expected for any Buyer Offer
+  record.**
+- **No-op and promotion guarantees** — absent payload preserves canonical bytes and all mirrors; no blob is
+  created for a legacy-only record; no repair; no inherited/imported/derived/legacy promotion; a semantic
+  no-op issues no write.
+- **Deliberately NOT changed** — both load paths, both pre-validation `hydrateDiscreteLocationFromBlob()`
+  call sites (F-G1F-14), both inline method definitions, `HasSearchAreas`, and the six unmigrated workflows.
+
+**Explicitly out of scope for G1f-3:** deleting the duplicated inline `hydrateDiscreteLocationFromBlob()`
+definitions; converting the trait to a shim; the Tenant Offer pair; the criteria controllers; any provenance,
+snapshot, Bridge, `CriteriaHashService` or public-projection change; any migration or schema change.
+
+### 29.6 Test plan
+
+**New suite — `tests/Feature/Spatial/G1f3BuyerOfferMigrationTest.php`**, asserted per class so a failure
+names the flow:
+
+| Group | Assertions |
+|---|---|
+| Write path | canonical written through the boundary on both flows; mirrors equal `LegacyMirrorProjection` output; exactly one canonical write and one write per managed key; canonical before mirrors |
+| Clear | explicit clear propagates to `cities`, `counties` **and** `state` on both flows — the assertion that inverts the three-way split |
+| Absence / no-op | absent payload preserves canonical bytes and every mirror; legacy-only record gets no blob; semantic no-op issues no statement |
+| Schema | first semantic write stamps `schema_version: 2`; no-command save and semantic no-op preserve bytes exactly |
+| Atomicity | **the edit flow specifically** — induced managed-mirror failure rolls back the canonical write and the earlier mirrors together, proving the 400-line window is closed |
+| Preservation | `zipCodes` still never written by either component; pre-validation hydrate still populates `$this->state` / `$this->counties` before `validate()`; unrelated metadata still persists; load side unchanged |
+
+**New structural guard — `tests/Unit/Services/LocationDna/Persistence/G1f3MigrationBoundaryGuardTest.php`:**
+exactly four workflow components wired to the writer; the four remaining unmigrated ones untouched;
+`HasSearchAreas` not globally wired and still serving two hosts; the Tenant Offer divergence construct
+intact; `LegacyMirrorAdapter` still absent; no new persistence class; no migration; no provenance
+persistence; `CriteriaHashService`, Bridge and `PublicGeometryProjection` untouched.
+
+**Existing tests expected to require narrow updates — the full forecast:**
+
+| Test | Expected change | Certainty |
+|---|---|---|
+| `G1aBuyerOfferInlineCharacterisationTest::test_create_flow_records_cleared_dimensions_three_different_ways` | clear now propagates to all three | **certain** |
+| `…::test_edit_flow_records_cleared_dimensions_three_different_ways` | same | **certain** |
+| `…::test_geometry_round_trips_byte_identically_on_both_flows` | byte → semantic | **certain** |
+| `…::test_unmounted_editor_destroys_geometry_on_both_flows` | absence now **preserves**; the defect it pins is repealed | **certain** |
+| `G1aWorkflowPersistenceMatrixCharacterisationTest` | `'migrated_save' => true` on both Buyer Offer rows; two save-side counts 4 → 2 | **certain** |
+| `TenantOfferCitiesMirrorTest::test_buyer_offer_components_are_unchanged` | **B4's tripwire** — the asserted inline mirror line is removed | **certain** |
+| `SearchAreasStateCountyRoundTripTest::test_empty_blob_state_does_not_wipe_discrete_state` | **F-G1F-13** — clear now wipes, by design | **certain** |
+| `G1f1MigrationBoundaryGuardTest` / `G1f2MigrationBoundaryGuardTest` | unmigrated list 6 → 4; wired-component count 2 → 4; `AUTHORIZED_WRITERS` **7 → 5** — the first stage that shortens it | **certain** |
+| `G1aBuyerOfferInlineCharacterisationTest::test_populated_blob_mirrors_correctly_on_both_flows` | none — populated values project identically | expected green |
+| `…::test_buyer_offer_copies_are_defective_like_the_trait_not_divergent_like_tenant` | none — it asserts the **load-side** `empty()` branch, which G1f-3 does not touch | expected green |
+| The suite's seven load-side tests | none — G1f-3 migrates the write path only | expected green |
+| `SearchAreasPersistenceCharacterisationTest`, `HireSearchAreasParityTest`, G1b, G0.1 public geometry, readiness, G1c/G1d/G1e inertness guards | **none** | expected green |
+
+**Eight existing tests are expected to change — more than either prior stage, and the count is itself the
+finding.** G1f-1 amended six and G1f-2 four; G1f-3 repeals three characterised defects at once (resurrection
+on clear, the three-way split, unmounted-editor destruction) across two components. **If more than these
+eight require modification, that is a stop-and-report condition.**
+
+**Mutation probes required** — at minimum, and each must be shown to fail a named test before removal:
+
+1. Remove the persistence-service call from one flow → that flow's migration tests fail.
+2. Restore the inline mirror writes → per-key write-count tests fail. **Count by VALUE on a pre-seeded
+   record**, per §28.9's finding — a key-only counter is invisible to an `UPDATE`.
+3. Remove the writer's transaction → the edit-flow rollback test fails.
+4. Permit legacy-mirror → canonical promotion → the no-op/legacy-only tests fail.
+5. Remove the **pre-validation** hydrate call → `test_submit_succeeds_with_state_and_counties_supplied_only_by_blob`
+   fails. **New for this stage** — it guards F-G1F-14.
+6. Migrate only one of the two components → the structural guard's count assertion fails.
+
+All probes removed before commit, with SHA-256 restoration verified.
+
+### 29.7 Blocker re-evaluation
+
+| # | Blocker | Status | Must resolve BEFORE authorization, or MAY resolve INSIDE it |
+|---|---|---|---|
+| **B4** | `test_buyer_offer_components_are_unchanged` absent from the authorized-change list | **OPEN — and now unavoidable.** It names both target files in one loop and asserts the exact inline mirror line G1f-3 deletes | **MAY be resolved inside the G1f-3 authorization**, by naming it explicitly in that authorization's change list. It is a test-expectation update, not an investigation. **It must be named in advance** — an unnamed red tripwire is indistinguishable from a regression |
+| **B5** | v1.2 §4.2 / §4.3 corrections outstanding | **OPEN**, carried since the G1 report §16 step 2. §4.2's "4 byte-identical inline copies" and its four-guard-site count, §4.3's F-C1 consumer count, plus this report's own §5 and §6.3 corrections | **MAY be resolved inside**, or deferred again — but it is now **three stages overdue** and the governing document is drifting further from measured reality with each migration. Recommended as its own documentation increment **before** G1f-4, not as a G1f-3 sub-task |
+| **B6** | UX branch sequencing | **OPEN — owner decision.** Evidence complete (§29.3); recommendation is **option B** | **MUST be decided BEFORE implementation.** It is the only one of the three that changes what is done rather than what is written down. Everything needed to decide it is in §29.3 |
+
+**Also carried, and unaffected by G1f-3:** defect boundaries 2 and 3 gate G1f-7; boundary 4 (`zipCodes`) is
+inert for this stage but still required before G1f completion.
+
+### 29.8 Exact authorization recommended next
+
+**Recommended: a single, narrow G1f-3 authorization covering both Buyer Offer writers, conditional on B6.**
+
+**Prerequisite, outside the implementation authorization:**
+
+- **Record the B6 decision.** Recommended: option B.
+
+**Then authorize, in one commit:**
+
+1. Migrate `BuyerOfferListing` and `BuyerOfferListingEdit` to `OwnerPrivateLocationDnaWriter`, replacing the
+   in-`saveAllMetadata()` hydrate call and all four mirror/canonical writes per file with one call each.
+2. **Preserve** both pre-validation `hydrateDiscreteLocationFromBlob()` call sites and both method
+   definitions.
+3. Add `G1f3BuyerOfferMigrationTest` and `G1f3MigrationBoundaryGuardTest`.
+4. Amend exactly the **eight** existing tests forecast in §29.6 — **including B4's tripwire and F-G1F-13**,
+   both named in the authorization in advance.
+5. Add no production class, no migration, no config, no provenance persistence; change no persistence class,
+   no controller, model, route or view.
+
+**Binding stop conditions for that increment:**
+
+- stop if more than the eight forecast tests require modification;
+- stop if any persistence class must materially change;
+- stop if the pre-validation hydrate call cannot be preserved;
+- stop if a Buyer Offer consumer is found to require byte-identical serialization;
+- stop if closing the edit flow's untransacted window requires nesting inside a caller's transaction that
+  does not exist today;
+- stop if another session modifies the workspace or the UX worktree's Buyer Offer files.
+
+**Not authorized by this section, and not to be started:** G1f-3 itself, G1f-4, the trait/shim conversion,
+the criteria controllers, and G1g. **This section is planning only.**
