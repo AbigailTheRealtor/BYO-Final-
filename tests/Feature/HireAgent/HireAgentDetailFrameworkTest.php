@@ -94,6 +94,11 @@ class HireAgentDetailFrameworkTest extends TestCase
         $meta = array_merge([
             'listing_title'        => ucfirst($role) . ' listing title',
             'budget'               => '654321',
+            // M5.0a — landlord rent lives here, not in `budget`, and carries its own frequency.
+            // Seeded for every role because only landlord reads it; the others ignore it, and a
+            // shared fixture that quietly differed by role would hide exactly this kind of defect.
+            'desired_rental_amount'  => '4250',
+            'lease_amount_frequency' => 'Monthly',
             'property_type'        => 'Residential Property',
             'commission_structure' => 'Percentage of Sale Price',
             'purchase_fee_type'    => 'Flat Fee',
@@ -250,29 +255,127 @@ class HireAgentDetailFrameworkTest extends TestCase
 
     // ── 3-6. role-specific hero content ──────────────────────────────────────
 
-    /** 3. Seller: listing price + broker compensation. */
-    public function test_seller_hero_shows_listing_price_and_broker_compensation(): void
+    /**
+     * 3. Seller: listing price, and NO compensation.
+     *
+     * AMENDED IN M5.0b — A PRODUCT-RULE CHANGE, NOT A TEST ADJUSTMENT. This test previously
+     * asserted the seller hero SHOWED "Broker Compensation". The product decision is that Hire
+     * Agent listings must not publicly display agent compensation, so the assertion is inverted
+     * rather than deleted: the old expectation is now the thing we forbid. See
+     * HireAgentHeroData::facts() for why the removal lives in the presenter.
+     */
+    public function test_seller_hero_shows_listing_price_and_no_compensation(): void
     {
         $hero = HireAgentHeroData::for('seller', $this->makeListing('seller', User::factory()->create()->id));
 
         $this->assertSame('Listing Price', $hero['figure']['label']);
         $this->assertStringContainsString('654,321', $hero['figure']['value']);
-        $this->assertContains(
-            ['label' => 'Broker Compensation', 'value' => 'Percentage of Sale Price'],
-            $hero['facts']
-        );
+
+        $labels = array_column($hero['facts'], 'label');
+        $this->assertNotContains('Broker Compensation', $labels);
+        $this->assertSame(['Property Type'], $labels, 'Nothing was substituted for the removed row.');
     }
 
-    /** 4. Landlord: monthly rent + leasing compensation. */
-    public function test_landlord_hero_shows_monthly_rent_and_leasing_compensation(): void
+    /**
+     * 4. Landlord: rent from the correct key, labelled by frequency, and NO compensation.
+     *
+     * AMENDED IN M5.0a AND M5.0b. The figure assertion changed because the presenter read
+     * `budget`, which landlord never writes — the rent is in `desired_rental_amount`, so the
+     * headline figure was dead on every real listing. The compensation assertion is inverted for
+     * the product-rule reason given above.
+     */
+    public function test_landlord_hero_shows_rent_from_the_landlord_field_and_no_compensation(): void
     {
         $hero = HireAgentHeroData::for('landlord', $this->makeListing('landlord', User::factory()->create()->id));
 
         $this->assertSame('Monthly Rent', $hero['figure']['label']);
-        $this->assertStringContainsString('654,321', $hero['figure']['value']);
+        $this->assertStringContainsString('4,250', $hero['figure']['value']);
 
         $labels = array_column($hero['facts'], 'label');
-        $this->assertContains('Leasing Compensation', $labels);
+        $this->assertNotContains('Leasing Compensation', $labels);
+        $this->assertSame(['Property Type'], $labels, 'Nothing was substituted for the removed row.');
+    }
+
+    /**
+     * The landlord figure is labelled from the STORED frequency, not a hard-coded "Monthly".
+     *
+     * Real listings carry Annually and Seasonal as well as Monthly. Labelling an annual amount
+     * "Monthly Rent" misstates the figure, which is worse than omitting the label, so an
+     * unrecognised or absent frequency degrades to the unqualified "Rent".
+     */
+    public function test_landlord_rent_label_follows_the_stored_frequency(): void
+    {
+        $cases = [
+            'Monthly'   => 'Monthly Rent',
+            'Annually'  => 'Annual Rent',
+            'Seasonal'  => 'Seasonal Rent',
+            'annually'  => 'Annual Rent',
+            ''          => 'Rent',
+            'Fortnight' => 'Rent',
+        ];
+
+        foreach ($cases as $stored => $expected) {
+            $listing = $this->makeListing('landlord', User::factory()->create()->id, [
+                'lease_amount_frequency' => $stored,
+            ]);
+
+            $this->assertSame(
+                $expected,
+                HireAgentHeroData::for('landlord', $listing)['figure']['label'],
+                "Stored frequency '{$stored}' must label the figure '{$expected}'."
+            );
+        }
+    }
+
+    /**
+     * The landlord figure is absent when the landlord field is absent — `budget` must not revive it.
+     *
+     * A regression guard for the M5.0a fix specifically: were the old key reinstated as a fallback,
+     * this listing would produce a figure from a value landlord storage never populates.
+     */
+    public function test_landlord_figure_does_not_fall_back_to_the_wrong_key(): void
+    {
+        $listing = $this->makeListing('landlord', User::factory()->create()->id, [
+            'desired_rental_amount' => '',
+            'budget'                => '654321',
+        ]);
+
+        $this->assertNull(HireAgentHeroData::for('landlord', $listing)['figure']);
+    }
+
+    /**
+     * REGRESSION — agent compensation must not reach the public hero, for any role, from any key.
+     *
+     * The four keys below are the exact fallback chain the removed compensationSummary() walked.
+     * Each is seeded with a recognisable value and the whole hero payload is searched, so this
+     * fails if any future change surfaces one under any label, in any slot — fact, figure,
+     * subtitle or title.
+     */
+    public function test_no_role_exposes_agent_compensation_in_the_hero(): void
+    {
+        $sentinels = [
+            'commission_structure'   => 'SENTINEL-COMMISSION-STRUCTURE',
+            'purchase_fee_type'      => 'SENTINEL-PURCHASE-FEE',
+            'lease_fee_type'         => 'SENTINEL-LEASE-FEE',
+            'brokerage_relationship' => 'SENTINEL-BROKERAGE-RELATIONSHIP',
+        ];
+
+        foreach (array_keys(self::VIEWS) as $role) {
+            $listing = $this->makeListing($role, User::factory()->create()->id, $sentinels);
+            $payload = json_encode(HireAgentHeroData::for($role, $listing));
+
+            foreach ($sentinels as $key => $value) {
+                $this->assertStringNotContainsString(
+                    $value,
+                    $payload,
+                    "{$role} hero exposes `{$key}`. Agent compensation is not public — see "
+                    . 'HireAgentHeroData::facts(). Reversing this needs a product decision, not a '
+                    . 'test change.'
+                );
+            }
+
+            $this->assertStringNotContainsString('Compensation', $payload, "{$role} hero must carry no compensation label.");
+        }
     }
 
     /** 5. Buyer: purchase budget + preferred area. */
@@ -303,8 +406,14 @@ class HireAgentDetailFrameworkTest extends TestCase
 
     /**
      * The role contract is a real contract: a property role must NOT be given a client-brief
-     * field and vice versa. Without this, all four could quietly collapse to the same fields and
-     * the per-role tests above would still pass.
+     * field. Without this, all four could quietly collapse to the same fields and the per-role
+     * tests above would still pass.
+     *
+     * AMENDED IN M5.0b. The second half used to be the mirror of the first — client roles must not
+     * receive a property role's compensation fact. Compensation is no longer given to ANY role, so
+     * that half no longer discriminates between them and is kept only as a cheap regression guard;
+     * test_no_role_exposes_agent_compensation_in_the_hero is the assertion that actually holds the
+     * product rule.
      */
     public function test_property_roles_and_client_roles_get_different_secondary_facts(): void
     {
