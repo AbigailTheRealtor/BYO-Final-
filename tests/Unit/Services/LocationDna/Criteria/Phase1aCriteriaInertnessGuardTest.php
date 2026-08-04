@@ -210,18 +210,39 @@ class Phase1aCriteriaInertnessGuardTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * No production file outside the namespace references it.
+     * No production file outside the namespace references it, EXCEPT the flag-scoped wiring
+     * Phase 1c slice 1 was authorized to add.
      *
-     * Phase 1a adds a foundation, not a feature. A reference from a controller, view, Livewire
-     * component, route or provider would mean a surface was wired in the same increment that
-     * created the thing it wires — which is what the phase split exists to prevent.
+     * WHY THIS ASSERTION CHANGED, AND WHAT DID NOT
+     * --------------------------------------------
+     * Phase 1a asserted an absolute: referenced by nothing. That was correct for a foundation
+     * increment and is not correct for a phase whose whole purpose is to wire it in. Slice 1
+     * converts the absolute into a bounded allowlist and changes NOTHING else in this file —
+     * the write ban, the persistence-boundary assertions, the frozen criteria controllers and
+     * the flag-ships-off check are all untouched, because the authorization for this slice
+     * covers wiring only.
+     *
+     * The allowlist is what keeps this a boundary rather than a hole. It is short on purpose:
+     * one Livewire trait, one container binding. Every later slice reuses the same two files,
+     * so this list should not grow as the rollout widens — if it does, something has taken a
+     * shortcut around the trait.
+     *
+     * {@see \Tests\Unit\Services\LocationDna\Criteria\Phase1cHireBuyerCascadeScopeGuardTest}
+     * supplies the upper bound the allowlist itself cannot: that the wiring reaches exactly one
+     * workflow, and that it ships disabled.
      */
+    private const CASCADE_WIRING = [
+        'app/Http/Livewire/Concerns/HasGeographyCascade.php',
+        'app/Providers/AppServiceProvider.php',
+    ];
+
     public function test_no_production_file_references_the_namespace(): void
     {
         $offenders = [];
 
         foreach ($this->filesUnder(['app', 'routes', 'database', 'config']) as $relative) {
-            if (str_starts_with($relative, self::NAMESPACE_DIR)) {
+            if (str_starts_with($relative, self::NAMESPACE_DIR)
+                || in_array($relative, self::CASCADE_WIRING, true)) {
                 continue;
             }
 
@@ -233,17 +254,33 @@ class Phase1aCriteriaInertnessGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'Phase 1a must be referenced by nothing. Wiring it is Phase 1c. Found: '
+            'Only the authorized cascade wiring may reference the namespace. Found: '
             .implode(', ', $offenders)
         );
     }
 
-    /** No Blade view references it either. */
+    /**
+     * No Blade view references the namespace or its flag, except the cascade partial and the one
+     * tab that hosts it.
+     *
+     * The partial names no class — it reads component properties and calls component methods —
+     * so the namespace itself is still invisible to the view layer. What is allowed here is the
+     * `geo-cascade` markup and the tab's opt-in, and nothing else.
+     */
     public function test_no_view_references_the_namespace(): void
     {
+        $allowed = [
+            'resources/views/partials/location-dna/geography-cascade.blade.php',
+            'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php',
+        ];
+
         $offenders = [];
 
         foreach ($this->filesUnder(['resources/views'], 'php') as $relative) {
+            if (in_array($relative, $allowed, true)) {
+                continue;
+            }
+
             $source = $this->read($relative);
 
             if (str_contains($source, 'LocationDna\\Criteria')
@@ -256,8 +293,18 @@ class Phase1aCriteriaInertnessGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'No view may reference the Phase 1a namespace or its flag. Found: '
+            'No view outside the cascade surface may reference the namespace or its flag. Found: '
             .implode(', ', $offenders)
+        );
+    }
+
+    /** The allowlist stays small: a growing list means something bypassed the shared trait. */
+    public function test_the_cascade_wiring_allowlist_is_bounded(): void
+    {
+        $this->assertLessThanOrEqual(
+            2,
+            count(self::CASCADE_WIRING),
+            'Widening the wiring allowlist is a design decision, not a rollout step.'
         );
     }
 

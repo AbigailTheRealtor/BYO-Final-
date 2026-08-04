@@ -58,6 +58,21 @@
      pages that reuse this partial are unaffected. */
   $enableImportantPlaces = $enableImportantPlaces ?? false;
   $ldnaImportantPlaces   = $existingImportantPlaces ?? [];
+
+  /* Phase 1c — geography cascade opt-in. DEFAULTS OFF, so every host that says nothing keeps
+     the four tier inputs below and the place-autocomplete that drives them, byte-unchanged.
+
+     A host that opts in renders partials/location-dna/geography-cascade instead, and this
+     partial suppresses ONLY its own four tier inputs — the map, the draw tools, the boundary
+     overlays and Important Places are unaffected either way.
+
+     WHY SUPPRESSING THE INPUTS IS SAFE FOR THE SERIALISED BLOB: ldnaState is seeded
+     server-side from the stored document above and the tier keys are mutated only by the tag
+     handlers attached to these inputs. With the inputs absent nothing mutates them, so
+     ldnaSerialize() emits the stored values untouched rather than empty arrays — and the host
+     merges the cascade's own projection over them immediately before persisting. The state
+     input is read behind an `if (stateEl)` guard for the same reason. */
+  $ldnaGeographyCascade = $ldnaGeographyCascade ?? false;
   $ldnaIpTypes           = \App\Services\Offers\ImportantPlacesService::TYPES;
   $ldnaIpModes           = \App\Services\Offers\ImportantPlacesService::TRAVEL_MODES;
 @endphp
@@ -112,11 +127,16 @@
     <i class="fa-solid fa-map-location-dot" style="color:#0369a1;font-size:1.1rem;"></i>
     <h5>Search Areas
       <span style="font-weight:400;font-size:.85rem;color:#64748b;">
-        Choose where the property search should focus — add cities, ZIP codes, counties, custom map areas, or a radius.
+        @if ($ldnaGeographyCascade)
+          Refine the areas you chose above — draw custom map areas or set a radius.
+        @else
+          Choose where the property search should focus — add cities, ZIP codes, counties, custom map areas, or a radius.
+        @endif
       </span>
     </h5>
   </div>
 
+@if (! $ldnaGeographyCascade)
   {{-- ── Tag inputs row 1: cities, ZIP codes ── --}}
   <div class="row g-3 mb-3">
 
@@ -202,6 +222,7 @@
       </datalist>
     </div>
   </div>
+@endif
 
   {{-- ── Map toolbar ── --}}
   <label class="fw-bold" style="font-size:.88rem;">Draw Custom Areas on Map

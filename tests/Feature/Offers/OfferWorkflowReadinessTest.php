@@ -700,6 +700,34 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/LocationDna/Criteria/Rules/GeographyValidationResult.php',
             'app/Services/LocationDna/Criteria/Rules/GeographyViolation.php',
             'app/Services/LocationDna/Criteria/Rules/SelectionResolution.php',
+            // Criteria Location DNA Phase 1c, SLICE 1 — the first workflow wired to that read
+            // layer: Hire Buyer, behind `criteria_location_dna.geography_cascade_enabled` +
+            // `geography_cascade_workflows`, both of which ship OFF/`hire_buyer`. This is the
+            // increment where the Phase 1a/1b foundation stops being inert, so the two guards
+            // that asserted "referenced by nothing" are relaxed to a flag-scoped ALLOWLIST —
+            // and nothing else in them moves: the write ban, the persistence-boundary hashes and
+            // the frozen criteria controllers are untouched.
+            //
+            // NO PERSISTENCE CHANGE. The cascade projects its id-carried selection back into the
+            // same four canonical keys, in the same `Pinellas County, FL` label format the
+            // previous editor wrote, and hands them to the SAME canonical writer with the SAME
+            // default mirror set. No meta key, no mirror, no migration and no schema changed.
+            // Hire Buyer still emits no `zipCodes` mirror.
+            //
+            // Stored labels the reference corpus cannot resolve are PRESERVED VERBATIM and
+            // projected back out on save, so editing a legacy record cannot silently delete a
+            // location the user never touched. That is the load-bearing behaviour of the phase.
+            //
+            // Scope is pinned by Phase1cHireBuyerCascadeScopeGuardTest: one tab partial opts in,
+            // seven other hosts of the shared widget keep their own inputs and their own place
+            // autocomplete, and Seller/Landlord are untouched.
+            'app/Services/LocationDna/Criteria/Projection/GeographyLabelProjector.php',
+            'app/Services/LocationDna/Criteria/Projection/GeographySelectionHydrator.php',
+            'app/Services/LocationDna/Criteria/Projection/HydratedGeography.php',
+            'app/Services/LocationDna/Criteria/Projection/PreservedGeographyLabels.php',
+            'app/Http/Livewire/Concerns/HasGeographyCascade.php',
+            'app/Providers/AppServiceProvider.php',
+            'resources/views/partials/location-dna/geography-cascade.blade.php',
         ];
 
         $unexpected = array_values(array_filter(

@@ -36,6 +36,9 @@ use App\Services\AskAi\AskAiFinalResponseBuilderService;
 use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
+use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\EloquentCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\FakeCriteriaGeographyRepository;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
 use App\Contracts\CommuteTimeAdapterInterface;
@@ -95,6 +98,17 @@ class AppServiceProvider extends ServiceProvider
         // Laravel's auto-wiring would also resolve this correctly today, but explicit DI is
         // safer: it is immune to future constructor changes in those dependencies and makes
         // the intent clear to anyone reading the service graph.
+        // Criteria geography cascade (Phase 1c). Read-only enumeration over the `us_*`
+        // reference tables, behind a config-selected implementation so a test or a demo can
+        // compose the in-memory fixture without a database. The binding is unconditional —
+        // it costs nothing to register and the CASCADE, not the repository, is what the
+        // feature flag gates. See config/criteria_location_dna.php.
+        $this->app->bind(CriteriaGeographyRepository::class, function () {
+            return config('criteria_location_dna.geography_source') === 'fake'
+                ? new FakeCriteriaGeographyRepository()
+                : new EloquentCriteriaGeographyRepository();
+        });
+
         $this->app->bind(BoundaryAdapterInterface::class, CensusTigerBoundaryAdapter::class);
         $this->app->bind(FloodZoneAdapterInterface::class, FemaFloodZoneAdapter::class);
         $this->app->bind(SchoolDistrictAdapterInterface::class, CensusSchoolDistrictAdapter::class);

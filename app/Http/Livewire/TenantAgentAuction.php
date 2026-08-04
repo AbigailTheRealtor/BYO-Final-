@@ -33,6 +33,31 @@ class TenantAgentAuction extends Component
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
 
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+
+    /**
+     * Phase 1c — the cascade workflow key for the role this component is currently serving.
+     *
+     * WHY A MAP AND NOT A CONSTANT
+     * ----------------------------
+     * This class is one component serving four roles, so unlike the dedicated Hire Buyer pair it
+     * cannot name a single workflow. The map is the role gate: `seller` and `landlord` resolve to
+     * NULL, which disables the cascade by the type of the argument rather than by the contents of
+     * a config file. No value of CRITERIA_LDNA_CASCADE_WORKFLOWS can switch it on for them.
+     *
+     * The keys match the dedicated components' own, so `/buyer/add-auction` and
+     * `/hire/agent/auction/buyer` are governed by ONE entry in the scope list and cannot drift
+     * apart — which is the whole point of wiring this class.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return match ($this->user_type) {
+            'buyer'  => 'hire_buyer',
+            'tenant' => 'hire_tenant',
+            default  => null,
+        };
+    }
+
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
 
@@ -1815,6 +1840,10 @@ class TenantAgentAuction extends Component
         // Set user_type from route parameter, or default to 'tenant'
         $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
+        // Phase 1c — decide whether the cascade runs, now that the role is known. Seller and
+        // landlord resolve to a null workflow and are disabled outright.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
         $this->initializeFeeStructure();
         $this->addService();
 
@@ -3061,6 +3090,14 @@ class TenantAgentAuction extends Component
             // discrete cities/counties/state loads above so the blob prefill guards see them.
             if (in_array($this->user_type, ['buyer', 'tenant'])) {
                 $this->loadSearchAreas($auction);
+
+                // Phase 1c — hydrate the cascade from the SAME decoded document loadSearchAreas()
+                // just produced. Booted here as well as in mount() because the loaded record's
+                // user_type is the authoritative one. Inert unless this role's workflow is in
+                // scope; anything the corpus cannot match is preserved, never dropped.
+                $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+                $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
                 $this->loadImportantPlaces($auction);
             }
 
@@ -4310,6 +4347,14 @@ class TenantAgentAuction extends Component
      */
     protected function persistLocationDna($auction): void
     {
+        // Phase 1c — merge the cascade's four geography keys into the bridged payload, in the same
+        // label format the previous editor produced. Inert unless the cascade is enabled for this
+        // role, and a MERGE rather than a rebuild so the widget's polygons, radius searches,
+        // flexible flag and notes survive untouched. The write below is unchanged: same writer,
+        // same default mirror set, same single argument. The `zipCodes` mirror on the line after
+        // the caller is likewise untouched for Hire Buyer — see HasGeographyCascade.
+        $this->applyGeographyCascadeToPayload();
+
         (new OwnerPrivateLocationDnaWriter())
             ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
     }

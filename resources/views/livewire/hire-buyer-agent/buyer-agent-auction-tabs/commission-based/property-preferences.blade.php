@@ -131,6 +131,34 @@
 </div>
 
 
+{{-- Phase 1c slice 1 — the geography cascade, for THIS workflow only.
+
+     When the cascade is enabled for `hire_buyer` it renders the four geography tiers from
+     the `us_*` reference corpus, and the shared widget below suppresses its own tier inputs
+     (and therefore the place-autocomplete that drives them) so the two editors never both
+     write the same blob keys. Every other surface that includes the same widget is
+     untouched — the opt-in defaults off. See config/criteria_location_dna.php.
+
+     Disabled, this renders nothing and the widget behaves exactly as it always has.
+
+     WHY THE NULL COALESCE IS LOAD-BEARING AND NOT DEFENSIVE CLUTTER
+     ---------------------------------------------------------------
+     This tab is included by TWO different component trees:
+
+       - App\Http\Livewire\HireBuyerAgent\BuyerAgentAuction (+Edit), reached at /add-auction,
+         which carries the cascade trait; and
+       - App\Http\Livewire\TenantAgentAuction (+Edit), the catch-all at
+         /hire/agent/auction/{user_type}, which serves all four roles from one component and
+         does NOT carry the trait in this slice.
+
+     The second host declares no $geoCascadeEnabled at all. Defaulting it to false here is what
+     keeps that host rendering exactly what it rendered before, rather than fataling on an
+     undefined variable — and it is why enabling the flag cannot leak the cascade into the
+     seller or landlord views the catch-all also serves. --}}
+@if ($geoCascadeEnabled ?? false)
+    @include('partials.location-dna.geography-cascade')
+@endif
+
 {{-- 9D: Search Areas — single editing surface (replaces the legacy Acceptable
      Cities/Counties/State inputs). Preferred Cities/ZIP/Counties/State live in the
      location_dna_preferences blob; discrete state/counties/cities meta are mirrored
@@ -140,6 +168,7 @@
     'mapPanelId'              => 'ldna-map-hire-buyer',
     'enableImportantPlaces'   => true,
     'existingImportantPlaces' => $existingImportantPlaces ?? [],
+    'ldnaGeographyCascade'    => $geoCascadeEnabled ?? false,
 ])
 @include('partials.location-dna.search-areas-bridge')
 

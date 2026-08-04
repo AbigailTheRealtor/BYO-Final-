@@ -266,18 +266,33 @@ class Phase1bCriteriaRulesInertnessGuardTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Nothing outside the Criteria namespace references the rules layer.
+     * The Livewire trait Phase 1c slice 1 was authorized to add, and nothing else, may reach the
+     * rules layer from outside the namespace.
      *
-     * The whole Phase 1a namespace is skipped, not just the Rules subdirectory: GeographyOption's
-     * docblock legitimately points at the selection DTO to explain why option identity and
-     * selection identity differ, and a docblock wires nothing.
+     * WHY ONE FILE AND NOT TWO
+     * ------------------------
+     * The Phase 1a allowlist also names the container binding, which resolves the read repository.
+     * The RULES layer needs no binding — the resolver and the validator are constructed directly
+     * from that repository — so exactly one production file outside the namespace names it. That
+     * asymmetry is worth keeping: the day a second file appears here, a component has started
+     * re-implementing cascade logic instead of calling the trait, which is the failure mode the
+     * rules layer exists to prevent.
+     *
+     * Everything else in this file is unchanged, including the frozen-file hashes and the ban on
+     * the rules layer reaching a framework surface. The relaxation is one-directional: the trait
+     * may reach the rules; the rules still may not reach anything.
      */
+    private const CASCADE_WIRING = [
+        'app/Http/Livewire/Concerns/HasGeographyCascade.php',
+    ];
+
     public function test_nothing_outside_the_namespace_references_the_rules_layer(): void
     {
         $offenders = [];
 
         foreach ($this->phpFilesUnder(['app', 'routes', 'database', 'config', 'resources/views']) as $relative) {
-            if (str_starts_with($relative, self::CRITERIA_DIR)) {
+            if (str_starts_with($relative, self::CRITERIA_DIR)
+                || in_array($relative, self::CASCADE_WIRING, true)) {
                 continue;
             }
 
@@ -289,8 +304,17 @@ class Phase1bCriteriaRulesInertnessGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'Phase 1b must be referenced by nothing. Wiring it is Phase 1c. Found: '
+            'Only the authorized cascade trait may reference the rules layer. Found: '
             .implode(', ', $offenders)
+        );
+    }
+
+    /** Exactly one production file outside the namespace reaches the rules. See above. */
+    public function test_only_the_cascade_trait_reaches_the_rules_layer(): void
+    {
+        $this->assertSame(
+            ['app/Http/Livewire/Concerns/HasGeographyCascade.php'],
+            self::CASCADE_WIRING,
         );
     }
 

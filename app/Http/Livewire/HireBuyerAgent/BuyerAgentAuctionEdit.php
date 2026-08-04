@@ -18,8 +18,16 @@ class BuyerAgentAuctionEdit extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
 
+    /**
+     * Phase 1c slice 1 — the key this workflow registers under in the cascade scope list.
+     *
+     * Must match BuyerAgentAuction's. Create and edit are one workflow to a user, and a cascade
+     * that appeared on one and not the other would be worse than one that appeared on neither.
+     */
+    private const GEOGRAPHY_CASCADE_WORKFLOW = 'hire_buyer';
 
     // Livewire properties for form fields
     public $hasDrafts = false;
@@ -1208,7 +1216,10 @@ class BuyerAgentAuctionEdit extends Component
    
     public function mount($auctionId = null)
     {
-       
+        // Phase 1c slice 1 — decide whether the cascade runs, before loadAuctionData() below
+        // hydrates it from the stored document. One boolean while the flag is off.
+        $this->bootGeographyCascade(self::GEOGRAPHY_CASCADE_WORKFLOW);
+
         if ($auctionId) {
             $this->auctionId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
@@ -1318,6 +1329,13 @@ class BuyerAgentAuctionEdit extends Component
             // 9D: Search Areas + Important Places. Runs after the discrete cities/counties/state
             // loads above so the blob prefill guards see them.
             $this->loadSearchAreas($auction);
+
+            // Phase 1c — hydrate the cascade from the SAME decoded document loadSearchAreas()
+            // just produced. Inert while the flag is off. Anything the reference corpus cannot
+            // match is carried as preserved history rather than dropped, so editing a legacy
+            // record cannot quietly delete a location the user never touched.
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
             $this->loadImportantPlaces($auction);
 
             // Property details
@@ -1764,6 +1782,13 @@ class BuyerAgentAuctionEdit extends Component
      */
     protected function persistLocationDna($auction): void
     {
+        // Phase 1c — merge the cascade's four geography keys into the bridged payload, in the
+        // same label format the previous editor produced. Inert while the flag is off, and a
+        // MERGE rather than a rebuild so the widget's polygons, radius searches, flexible flag
+        // and notes survive untouched. The write below is unchanged: same writer, same default
+        // mirror set, same single argument.
+        $this->applyGeographyCascadeToPayload();
+
         (new OwnerPrivateLocationDnaWriter())
             ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
     }
