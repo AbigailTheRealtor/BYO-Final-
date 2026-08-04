@@ -896,6 +896,23 @@ class OfferWorkflowReadinessTest extends TestCase
             //   so the two rollouts must be able to move independently.
             'config/hire_agent_detail.php',
             'app/Support/HireAgent/HireAgentDetailRedesign.php',
+            // M5.2 — the VIHO section navigation primitive. The TENTH component, and the second
+            //   release from the deferred composed list after the M4 hero.
+            //   Registered as one exact path, deliberately. The M2 entry above refuses a directory
+            //   wildcard precisely so that a new component is a decision somebody made and wrote
+            //   down, and this line is that decision for `section-nav`. A wildcard here would also
+            //   wave through the composed components still deferred — gallery, quick actions,
+            //   modal, sidebar — which have not been reviewed.
+            //   It qualifies as a primitive in the strict sense the guard tests enforce: no
+            //   script, no business logic, no authorization, escaped output, and no `id` of its
+            //   own. It renders the array it is handed and marks whichever entry the caller names
+            //   as current. That matters most for a nav specifically — an entry for a section the
+            //   viewer cannot see would leak both the section's existence and its name, and the
+            //   primitive cannot make that mistake because it cannot see the viewer. Deciding
+            //   which entries exist stays with the product.
+            //   Inert until a caller passes it items. The only caller is the landlord detail view,
+            //   and that call sits behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
+            'resources/views/components/viho/section-nav.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

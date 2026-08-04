@@ -144,6 +144,41 @@
         box-shadow: none;
     }
 </style>
+
+{{-- M5.2b — the product half of the section navigation. Flag-gated, so with the redesign off this
+     page pushes no additional CSS at all. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabled())
+<style>
+/* THE STICKY OFFSET, SUPPLIED BY THE CONSUMER.
+   x-viho.section-nav declares `position: sticky` but deliberately leaves `top` unset, because the
+   only correct value is the height of whatever fixed chrome the host page puts above the bar —
+   which the primitive cannot know and must not guess. This page is that host, so this page answers.
+
+   Desktop has no fixed header above the reading column, so the bar sticks to the viewport top: 0.
+   Below the lg breakpoint the mobile header bar occupies 104px, so the nav must clear it.
+
+   ONE variable does both jobs: the bar sticks below the chrome, and .viho-section-nav-target uses
+   the same value for scroll-margin-top so an anchored heading never lands underneath the bar it
+   was reached from. Two variables would drift, and the symptom is easy to miss. */
+:root {
+    --viho-section-nav-offset: 0px;
+}
+@media (max-width: 991.98px) {
+    :root {
+        --viho-section-nav-offset: 104px;
+    }
+}
+
+/* Smooth scrolling is CSS here, not script. The nav emits real hrefs, so the browser performs the
+   scroll itself and honours the reader's motion preference — reimplementing it in JS would mean
+   reimplementing that too, and getting it wrong for anyone who asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+</style>
+@endif
 @endpush
 
 
@@ -256,10 +291,69 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
         @endphp
 
+@php
+    /*
+     | M5.2b — SECTION NAVIGATION.
+     |
+     | The nav entries are built HERE, from the guards M5.2a hoisted, and each entry repeats its
+     | section's condition CHARACTER FOR CHARACTER. That duplication is the point and the reason
+     | M5.2a happened first: the alternative is a second, looser expression that means roughly the
+     | same thing, and "roughly" is how a nav ends up linking to a section that did not render.
+     | Anything changing a section's visibility must change the matching line below, and
+     | HireAgentSectionNavTest asserts the two agree for every viewer it can construct.
+     |
+     | THE COMPENSATION ENTRY CARRIES ITS Auth::check() TOO. Its section sits inside that wrapper,
+     | so the entry must sit inside the same check — a nav entry reading "Broker Compensation"
+     | leaks both the existence and the name of a section an anonymous visitor is never shown, and
+     | it would leak it in the one place on the page guaranteed to be visible. This is the specific
+     | mistake the primitive is built to be incapable of making on its own: it cannot see the
+     | viewer, so the decision has to be made, and be correct, right here.
+     |
+     | Property Details and Leasing Terms are unconditional — they render for every viewer — so
+     | they are added without a guard rather than behind a condition that is always true.
+     |
+     | Everything is behind the flag: with HIRE_AGENT_DETAIL_REDESIGN_ENABLED off the array stays
+     | empty, no nav renders, no anchors are emitted and no script is pushed.
+     */
+    $hlaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabled();
+
+    $hlaNavSections = [];
+
+    if ($hlaDetailRedesign) {
+        $hlaNavSections[] = ['id' => 'hla-section-property-details', 'label' => 'Property Details'];
+        $hlaNavSections[] = ['id' => 'hla-section-leasing-terms', 'label' => 'Leasing Terms'];
+
+        if ($hasServices) {
+            $hlaNavSections[] = ['id' => 'hla-section-services', 'label' => 'Services'];
+        }
+
+        if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null') {
+            $hlaNavSections[] = ['id' => 'hla-section-additional-details', 'label' => 'Additional Details'];
+        }
+
+        if (!empty($repRows)) {
+            $hlaNavSections[] = ['id' => 'hla-section-representation', 'label' => 'Representation Preferences'];
+        }
+
+        if (Auth::check() && $hasLandlordBrokerCompData) {
+            $hlaNavSections[] = ['id' => 'hla-section-compensation', 'label' => 'Broker Compensation'];
+        }
+
+        if ($referralPctDisplay !== '') {
+            $hlaNavSections[] = ['id' => 'hla-section-referral', 'label' => 'Referral & Cooperation'];
+        }
+    }
+@endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="landlord" :auction="$auction">
         <x-slot name="main">
+            {{-- M5.2b. Outside the card and above it, so the bar spans the column and sticks to the
+                 top of the reading area rather than to the inside of a card. --}}
+            @if ($hlaDetailRedesign)
+                <x-viho.section-nav :items="$hlaNavSections" ariaLabel="Listing sections" />
+            @endif
             {{--
                 M3 pilot. Was `div.card.description` wrapping a bare `card-header` + inline-styled
                 `h4` + `card-body`. The heading level stays h4: typography is migrating, the
@@ -325,6 +419,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     <hr>
                     {{-- M3 pilot: sub-section header inside the single Listing Details card. --}}
+                    @if ($hlaDetailRedesign)<span id="hla-section-property-details" class="viho-section-nav-target"></span>@endif
                     <x-viho.section-header title="Property Details:" tag="h4" />
 
                     <div class="row" style="flex-wrap: wrap;">
@@ -788,6 +883,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         </div>
         <hr>
+        @if ($hlaDetailRedesign)<span id="hla-section-leasing-terms" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Leasing Terms:" tag="h4" />
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
         <div class="row" style="flex-wrap: wrap;">
@@ -1156,6 +1252,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if ($hasServices)
+        @if ($hlaDetailRedesign)<span id="hla-section-services" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Services:" tag="h4" />
 
         @php
@@ -1390,6 +1487,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         <hr>
         @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
+        @if ($hlaDetailRedesign)<span id="hla-section-additional-details" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Additional Details:" tag="h4" />
 
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1406,6 +1504,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <hr />
         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
              text is unchanged. Passing &amp; here would double-escape it. --}}
+        @if ($hlaDetailRedesign)<span id="hla-section-representation" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
         @foreach ($repRows as $repRow)
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1418,6 +1517,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
         @if ($hasLandlordBrokerCompData)
         <hr />
+        {{-- Inside BOTH guards — Auth::check() above and $hasLandlordBrokerCompData — so the anchor
+             exists exactly when the section does, and the nav entry's matching pair of conditions
+             is what keeps the link from pointing at nothing. --}}
+        @if ($hlaDetailRedesign)<span id="hla-section-compensation" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Broker Compensation & Agency Agreement Terms" tag="h4" />
 
         <div class="broker-compensation-section">
@@ -1854,6 +1957,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif {{-- /Auth::check() broker compensation --}}
         @if ($referralPctDisplay !== '')
         <hr />
+        @if ($hlaDetailRedesign)<span id="hla-section-referral" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Referral Fee:
@@ -3712,4 +3816,85 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
     });
 });
 </script>
+
+{{-- M5.2b — active section highlighting. Flag-gated: with the redesign off this page pushes no
+     additional script, so there is no new behaviour to regress. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabled())
+<script>
+/*
+    The behaviour half of the section navigation, and the reason x-viho.section-nav ships without
+    a script of its own: "which section am I reading" is a product question, and a primitive that
+    answered it would be answering it for every page that ever adopted the bar.
+
+    SCROLLING IS NOT HERE. The links are real hrefs and `scroll-behavior: smooth` is in the
+    stylesheet above, so the browser does the scrolling and respects prefers-reduced-motion. This
+    file only decides which link is marked current.
+
+    It reads --viho-section-nav-offset rather than repeating 0/104: the breakpoint lives in CSS,
+    where it can be seen next to the rule it belongs to, and a media query is the wrong thing to
+    duplicate in JavaScript.
+*/
+(function () {
+    var nav = document.querySelector('[data-viho-section-nav]');
+    if (!nav) { return; }
+
+    // Pair each link with the element it points at. A link whose target is missing is dropped
+    // rather than tracked — it cannot become current, and the nav is built so it cannot happen.
+    var pairs = [];
+    Array.prototype.forEach.call(nav.querySelectorAll('[data-viho-section-nav-link]'), function (link) {
+        var id = (link.getAttribute('href') || '').slice(1);
+        var el = id ? document.getElementById(id) : null;
+        if (el) { pairs.push({ link: link, el: el }); }
+    });
+
+    if (!pairs.length) { return; }
+
+    // The line a heading has to cross to count as "the section being read": the fixed chrome the
+    // page declares, plus the bar itself, which sits directly below it.
+    function readingLine() {
+        var declared = parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue('--viho-section-nav-offset')
+        );
+        return (isNaN(declared) ? 0 : declared) + nav.offsetHeight + 1;
+    }
+
+    function sync() {
+        ticking = false;
+
+        var line = readingLine();
+        var currentIndex = 0;
+
+        for (var i = 0; i < pairs.length; i++) {
+            if (pairs[i].el.getBoundingClientRect().top <= line) { currentIndex = i; }
+        }
+
+        // At the bottom of the document the last sections may be too short to ever reach the
+        // line, so the final entry would never light up. Award it explicitly at the end.
+        if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 2) {
+            currentIndex = pairs.length - 1;
+        }
+
+        for (var j = 0; j < pairs.length; j++) {
+            if (j === currentIndex) {
+                pairs[j].link.setAttribute('aria-current', 'true');
+            } else {
+                pairs[j].link.removeAttribute('aria-current');
+            }
+        }
+    }
+
+    // Scroll fires far more often than the page can repaint; coalesce to one update per frame.
+    var ticking = false;
+    function request() {
+        if (ticking) { return; }
+        ticking = true;
+        window.requestAnimationFrame(sync);
+    }
+
+    window.addEventListener('scroll', request, { passive: true });
+    window.addEventListener('resize', request);
+    sync();
+}());
+</script>
+@endif
 @endpush

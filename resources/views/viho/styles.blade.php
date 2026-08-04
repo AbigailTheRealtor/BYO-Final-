@@ -315,6 +315,91 @@
     margin-right: var(--viho-space-xs);
 }
 
+/* ── Section navigation ──────────────────────────────────────────────────────
+   M5.2. A horizontal bar of in-page links for a long document.
+
+   STICKY IS DECLARED HERE, OFFSET IS NOT. `top` is left to the consumer as
+   --viho-section-nav-offset, because the correct offset is the height of
+   whatever fixed chrome the host page has above it — a value this layer cannot
+   know and must not guess. It defaults to 0, which is correct for a page with no
+   fixed header and visibly wrong rather than subtly wrong for one that has.
+
+   ONE variable, used twice: the bar sticks below the chrome, and anchored
+   sections clear the same distance. Two variables would inevitably drift apart
+   and the symptom — headings landing just under the bar — is easy to miss.
+
+   The list scrolls horizontally rather than wrapping: a wrapped nav changes
+   height as sections appear and disappear, and a sticky element that changes
+   height shifts the content beneath it on every page. */
+.viho-section-nav {
+    position: sticky;
+    top: var(--viho-section-nav-offset, 0px);
+    z-index: 20;
+    background: var(--viho-card-bg);
+    border-bottom: 1px solid var(--viho-border);
+    box-shadow: var(--viho-shadow-card);
+    margin-bottom: var(--viho-space-2xl);
+}
+.viho-section-nav-list {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.viho-section-nav-list::-webkit-scrollbar {
+    display: none;
+}
+.viho-section-nav-item {
+    padding: 0;
+    margin: 0;
+}
+/* MARKER SUPPRESSION, TWO WAYS. `list-style: none` on the list above is NOT enough, and this is
+   not theoretical — it is what the Hire Agent detail page did to this bar. list-style-type only
+   chooses the DEFAULT marker; a host that sets ::marker `content` directly still paints one. The
+   landlord page carries exactly such a legacy rule
+   (.hla-detail-page ul:not(.services) li::marker { content: "\f101"; font-family: FontAwesome })
+   which rendered the bar as "» Property Details » Leasing Terms »  …".
+
+   Order could not fix it: that selector is more specific than a single class, so it wins wherever
+   this stylesheet is loaded. The primary fix is therefore `display: block` — a box that is not a
+   list-item generates no marker at all, so there is nothing for a host rule to style. The ::marker
+   reset stays as a second line of defence for a host that forces display back, and is written with
+   enough specificity to actually outrank the rule above rather than merely look like a fix.
+
+   No `!important` anywhere in this file, deliberately, and this rule is not the place to start. */
+.viho-section-nav-list .viho-section-nav-item {
+    display: block;
+}
+.viho-section-nav .viho-section-nav-list .viho-section-nav-item::marker {
+    content: none;
+}
+.viho-section-nav-link {
+    display: block;
+    padding: var(--viho-space-md) var(--viho-space-xl);
+    font-size: var(--viho-font-md);
+    font-weight: var(--viho-weight-semibold);
+    color: var(--viho-label);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+}
+.viho-section-nav-link:hover,
+.viho-section-nav-link:focus-visible,
+.viho-section-nav-link[aria-current="true"] {
+    color: var(--viho-primary);
+    border-bottom-color: var(--viho-primary);
+}
+/* Anchored sections must not land under the sticky bar. The consumer sets the
+   same offset it gave --viho-section-nav-offset. */
+.viho-section-nav-target {
+    scroll-margin-top: var(--viho-section-nav-offset, 0px);
+}
+
 /* ── Key/value row ───────────────────────────────────────────────────────────
    The single most repeated pattern in either product: ~540 `$row()` calls across
    Create Offer and ~340 rows in Hire Agent.

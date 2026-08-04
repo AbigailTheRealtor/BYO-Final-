@@ -125,8 +125,21 @@ class HireAgentDetailRedesignFlagTest extends TestCase
         );
     }
 
-    /** M5.0 ships the switch and nothing else — no role view may consult it yet. */
-    public function test_no_view_consumes_the_flag_yet(): void
+    /**
+     * Exactly one view consults the flag, and it is the landlord detail view.
+     *
+     * M5.0 shipped the switch with no consumer and this test asserted the list was empty, with a
+     * note that the list changing is a signal to update the test deliberately. M5.2b is that
+     * change: the landlord view gained the section navigation the flag gates. The test stays,
+     * inverted — an EXACT list rather than an empty one — because the property worth protecting
+     * was never "nobody reads it", it was "the set of readers is known".
+     *
+     * The flag has no role allowlist, so role scope is enforced entirely by which files consult
+     * it. That makes this assertion the actual scoping mechanism for the pilot: if Seller, Buyer
+     * or Tenant starts reading the flag, the redesign has silently widened past landlord and this
+     * is what says so.
+     */
+    public function test_the_landlord_detail_view_is_the_only_consumer_of_the_flag(): void
     {
         $consumers = [];
 
@@ -140,11 +153,14 @@ class HireAgentDetailRedesignFlagTest extends TestCase
             }
         }
 
+        sort($consumers);
+
         $this->assertSame(
-            [],
+            ['resources/views/hire_landlord_agent/view.blade.php'],
             $consumers,
-            'M5.0 adds the flag only. The first consumer arrives with the markup it gates, in a '
-            . 'later milestone — so this list changing is a signal to update this test deliberately.'
+            'The M5 detail redesign is a landlord pilot and the flag carries no role allowlist, so '
+            . 'the set of views reading it IS the role scope. Another role appearing here means the '
+            . 'pilot widened without that being decided.'
         );
     }
 }

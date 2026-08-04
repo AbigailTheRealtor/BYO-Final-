@@ -703,10 +703,10 @@ class VihoDesignTokenFoundationTest extends TestCase
      * components each need a data and interaction contract that has not been mapped yet, and the
      * cheapest way to skip that work is to quietly add them here.
      *
-     * AMENDED IN M4, BY EXACTLY ONE ENTRY: `hero`. See
-     * test_deferred_composed_components_do_not_exist for why that single deferral was lifted. The
-     * rule itself is unchanged — still an exact list, still no directory pattern or wildcard — so
-     * a tenth file appearing here fails as loudly as a ninth did before.
+     * AMENDED IN M4, BY EXACTLY ONE ENTRY: `hero`. AMENDED AGAIN IN M5.2, BY EXACTLY ONE ENTRY:
+     * `section-nav`. See test_deferred_composed_components_do_not_exist for why each deferral was
+     * lifted. The rule itself is unchanged — still an exact list, still no directory pattern or
+     * wildcard — so an eleventh file appearing here fails as loudly as a ninth did before.
      *
      * @see \Tests\Feature\Viho\VihoPresentationPrimitivesTest for the components' own behaviour
      */
@@ -724,10 +724,10 @@ class VihoDesignTokenFoundationTest extends TestCase
         sort($found);
 
         $this->assertSame(
-            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'section-header', 'stat', 'styles'],
+            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'section-header', 'section-nav', 'stat', 'styles'],
             $found,
-            'Only the eight approved M2 primitives, the M4 hero, and the M1 stylesheet may exist in '
-            . 'the neutral namespace.'
+            'Only the eight approved M2 primitives, the M4 hero, the M5.2 section-nav, and the M1 '
+            . 'stylesheet may exist in the neutral namespace.'
         );
     }
 
@@ -754,19 +754,38 @@ class VihoDesignTokenFoundationTest extends TestCase
      *     (HireAgentHeroData::redesignEnabledFor()), so it reaches no page until a role is
      *     explicitly allowlisted.
      *
+     * ── `section-nav` WAS RELEASED FROM THIS LIST IN M5.2 ────────────────────────────────────
+     *
+     * The second release, and it followed the same discipline rather than citing the first as
+     * precedent. The M4 note above says removing a second name is an architectural change; this
+     * is that change, made deliberately:
+     *
+     *   · The prop contract is FROZEN and scalar — items (id + label), current, ariaLabel.
+     *     Nothing is resolved, formatted or decided inside the component.
+     *   · It contains NO JAVASCRIPT, which is the whole reason a nav can be a primitive at all.
+     *     Sticky offset, smooth scrolling and current-section tracking are behaviour and stay
+     *     with the product; the component emits a `data-viho-section-nav` hook and nothing else.
+     *     The existing guards forbidding `<script>`, `document.` and `window.` enforce this.
+     *   · It emits no `id` of its own and hard-codes no section id, so two navs on one page
+     *     cannot collide and no product's id scheme leaks into the neutral layer.
+     *   · A nav is where an authorization mistake becomes visible — an entry for a section the
+     *     viewer cannot see leaks that section's existence and its name. The component cannot
+     *     make that mistake because it cannot see the viewer; the caller filters the array.
+     *   · It reaches no page until HIRE_AGENT_DETAIL_REDESIGN_ENABLED is on, which defaults off.
+     *
      * ── WHAT THIS DOES NOT DO ────────────────────────────────────────────────────────────────
      *
      * It does not accelerate or authorize any remaining deferred component. `hero-gallery`,
      * `hero-fact`, `media-placeholder`, `detail-shell`, `sidebar`, `page` and the rest are
-     * untouched and still forbidden — including the three whose names resemble the released one.
+     * untouched and still forbidden — including the ones whose names resemble the released two.
      * Each would need its own contract, its own guards and its own milestone decision. Removing a
-     * second name from this list is an architectural change, not a test fix.
+     * third name from this list is an architectural change, not a test fix.
      */
     public function test_deferred_composed_components_do_not_exist(): void
     {
         foreach ([
             'page', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
-            'section-nav', 'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
+            'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
             'divider', 'hero-fact', 'media-placeholder',
         ] as $deferred) {
             $this->assertFalse(
@@ -813,6 +832,70 @@ class VihoDesignTokenFoundationTest extends TestCase
             $deferredBlock,
             'x-viho.hero must not be listed as deferred while it exists in the approved directory.'
         );
+    }
+
+    /**
+     * The M5.2 release is registered and out of the deferred set — the same three-way check.
+     *
+     * Written as its own test rather than folded into the hero's, so a failure names which
+     * release rotted. The two lists must agree about `section-nav` in both directions.
+     */
+    public function test_the_section_nav_is_released_from_deferral_and_registered(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho/section-nav.blade.php'),
+            'x-viho.section-nav was released from deferral in M5.2 and must exist.'
+        );
+
+        $found = array_map(
+            fn ($f) => basename($f, '.blade.php'),
+            $this->scanner->filesInZone(Scanner::ZONE_VIHO)
+        );
+
+        $this->assertContains('section-nav', $found, 'x-viho.section-nav must be registered in the approved set.');
+
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $deferredBlock = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        $this->assertStringNotContainsString(
+            "'section-nav',",
+            $deferredBlock,
+            'x-viho.section-nav must not be listed as deferred while it exists in the approved directory.'
+        );
+    }
+
+    /**
+     * Exactly two components have ever been released, and the rest of the deferred list is intact.
+     *
+     * Two releases is where "we did it before" starts to feel like precedent. This pins the count
+     * and the remaining names, so a third release has to change this assertion by hand and say so.
+     */
+    public function test_only_two_components_have_been_released_from_deferral(): void
+    {
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $block  = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        foreach ([
+            'page', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
+            'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
+            'divider', 'hero-fact', 'media-placeholder',
+        ] as $stillDeferred) {
+            $this->assertStringContainsString(
+                "'{$stillDeferred}',",
+                $block,
+                "'{$stillDeferred}' must remain deferred. M4 released `hero` and M5.2 released "
+                . '`section-nav`; nothing else has been reviewed, and two releases are not a licence '
+                . 'for a third.'
+            );
+        }
     }
 
     /**
