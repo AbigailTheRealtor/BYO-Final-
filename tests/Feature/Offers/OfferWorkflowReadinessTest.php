@@ -866,6 +866,15 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/components/viho/kv.blade.php',
             'resources/views/components/viho/section-header.blade.php',
             'resources/views/components/viho/stat.blade.php',
+            // Milestone 4 — the Hire Agent hero redesign, landlord pilot. Two production paths:
+            //   the feature-flag config that gates the redesign (nothing reads these keys except
+            //   HireAgentHeroData::redesignEnabledFor(), and both the master switch and the role
+            //   allowlist default to off/landlord), and the neutral VIHO hero primitive — the
+            //   ninth component, promoted from the deferred composed list that the M2 entry above
+            //   deliberately refused to wave through with a wildcard. Promoting it was an explicit
+            //   decision, so it earns an explicit entry here.
+            'config/hire_agent_hero.php',
+            'resources/views/components/viho/hero.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
