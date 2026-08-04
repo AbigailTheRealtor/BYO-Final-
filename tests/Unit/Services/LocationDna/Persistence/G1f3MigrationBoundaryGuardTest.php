@@ -61,7 +61,6 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
      * The two legacy criteria controllers remain by design — D-G1F-5 governs them, not G1f-4.
      */
     private const AUTHORIZED_WRITERS = [
-        'app/Http/Livewire/Concerns/HasSearchAreas.php',
         'app/Http/Controllers/BuyerCriteriaAuctionController.php',
         'app/Http/Controllers/TenantCriteriaAuctionController.php',
     ];
@@ -268,7 +267,7 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         );
 
         $this->assertCount(
-            3,
+            2,
             self::AUTHORIZED_WRITERS,
             'Three direct writers remain after G1f-4 — down from five. This list may only SHRINK; '
             .'reaching one entry is G1f\'s completion condition.'
@@ -333,10 +332,22 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         $trait = $this->read('app/Http/Livewire/Concerns/HasSearchAreas.php');
 
         $this->assertStringNotContainsString('LocationDna\\Persistence', $this->codeOnly($trait));
-        $this->assertStringContainsString(
-            "\$auction->saveMeta('location_dna_preferences', \$this->location_dna_preferences_json);",
+        // CLOSEOUT: the canonical write is GONE from the trait. This is what removes it from the
+        // §21 direct-writer list and makes the persistence service the sole writer of this key.
+        $this->assertStringNotContainsString(
+            self::CANONICAL_WRITE,
+            $this->codeOnly($trait),
+            'the trait must no longer contain a canonical write — the closeout removed it'
+        );
+        $this->assertStringNotContainsString(
+            'function saveSearchAreas',
             $trait,
-            'the trait still performs its own canonical write for the unmigrated hosts'
+            'and the dead save method itself must be gone'
+        );
+        $this->assertStringContainsString(
+            'function loadSearchAreas',
+            $trait,
+            'the load side is retained and unchanged — it is why the trait still exists'
         );
 
         // INVERTED BY G1f-6: the trait's save side now has zero callers. It is retained as dead

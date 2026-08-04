@@ -341,26 +341,35 @@ class SearchAreasWidgetContractTest extends TestCase
      */
     public function test_finding_2b3_all_implementations_write_the_cities_mirror(): void
     {
-        // UNMIGRATED — still writes the mirror inline, from its own decoded blob. The Tenant
-        // Offer pair left this list at G1f-4; the trait remains, and D-G1F-5 governs it.
-        foreach ([
-            'app/Http/Livewire/Concerns/HasSearchAreas.php',
-        ] as $file) {
-            $this->assertStringContainsString(
-                "saveMeta('cities'",
-                $this->source($file),
-                "{$file} no longer writes the cities mirror — FINDING 2B-3 has regressed."
-            );
-        }
+        // AMENDED AGAIN BY THE CLOSEOUT — the last inline implementation is gone.
+        //
+        // `HasSearchAreas` was the final entry asserted against the literal `saveMeta('cities'`.
+        // The closeout deleted its dead `saveSearchAreas()`, so the trait no longer writes ANY
+        // mirror — it is load-only. It is therefore removed from this assertion rather than
+        // failing it: a load-only trait not writing a mirror is the intended end state, not a
+        // regression of FINDING 2B-3.
+        //
+        // The finding itself is now stronger, not weaker. Every workflow that writes the mirror
+        // does so through ONE mechanism, so all EIGHT are asserted against the seam below and the
+        // "five implementations" this suite was built to track have collapsed to one writer.
+        $this->assertStringNotContainsString(
+            "saveMeta('cities'",
+            $this->source('app/Http/Livewire/Concerns/HasSearchAreas.php'),
+            'HasSearchAreas is load-only after the closeout and must write no mirror at all.'
+        );
 
-        // MIGRATED (G1f-3, then G1f-4) — reach the same mirror through the canonical writer, whose
-        // projection emits `cities` for every present dimension. Removing the seam here
-        // would stop the mirror being written just as surely as deleting an inline call.
+        // ALL EIGHT workflow components reach the mirror through the canonical writer, whose
+        // projection emits `cities` for every present dimension. Removing the seam from any of
+        // them would stop the mirror being written just as surely as deleting an inline call.
         foreach ([
+            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php',
+            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+            'app/Http/Livewire/TenantAgentAuction.php',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $file) {
             $this->assertStringContainsString(
                 '$this->persistLocationDna($auction);',

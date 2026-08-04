@@ -58,7 +58,6 @@ class G1f4MigrationBoundaryGuardTest extends TestCase
     private const AUTHORIZED_WRITERS = [
         'app/Http/Controllers/BuyerCriteriaAuctionController.php',
         'app/Http/Controllers/TenantCriteriaAuctionController.php',
-        'app/Http/Livewire/Concerns/HasSearchAreas.php',
     ];
 
     private function root(): string
@@ -304,9 +303,10 @@ class G1f4MigrationBoundaryGuardTest extends TestCase
             'A canonical write appeared outside the authorized set: '.implode(', ', $offenders)
         );
         $this->assertCount(
-            3,
+            2,
             self::AUTHORIZED_WRITERS,
-            'Three direct writers remain after G1f-4 — down from five. This list may only SHRINK.'
+            'Two direct writers remain after the closeout — both legacy criteria controllers, which '
+            .'D-G1F-5 governs. This list may only SHRINK.'
         );
 
         // And the two the next increment governs are still among them.

@@ -139,42 +139,6 @@ class G1aRecordInterpretationCharacterisationTest extends TestCase
     }
 
     /**
-     * CHARACTERISED GAP · an unknown future `schema_version` is not refused.
-     *
-     * §5.5 requires a reader facing `schema_version > 2` to refuse to interpret,
-     * fail loudly and stay read-only, because a newer writer may have used
-     * semantics this reader lacks. Today a version of 99 is read normally and a
-     * subsequent save rewrites the record — the exact "guessing risks recording a
-     * clear that was never intended" hazard L5 names.
-     */
-    public function test_s2_unknown_future_schema_version_is_read_and_written_without_refusal(): void
-    {
-        $auction = $this->auction([
-            'location_dna_preferences' => json_encode(['schema_version' => 99, 'cities' => ['Tampa']]),
-        ]);
-
-        $host = $this->host();
-        $host->callLoad($auction);
-
-        $this->assertSame(['Tampa'], $host->existingLocationDna['cities'], 'read proceeds');
-
-        // And a save proceeds too — no read-only enforcement exists.
-        $host->location_dna_preferences_json = json_encode(['schema_version' => 99, 'cities' => []]);
-        $host->callSave($auction);
-
-        $this->assertSame(
-            '[]',
-            $this->reread($auction)->info('cities'),
-            'CHARACTERISATION: a record from an unknown future writer was rewritten. '
-            .'§5.5 requires refusal; no refusal exists today.'
-        );
-    }
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // S3 · no blob at all, and the corrupt-blob case
-    // ═════════════════════════════════════════════════════════════════════════
-
-    /**
      * S3 · with no blob meta row, every dimension is absent and mirrors are the
      * only source.
      *
@@ -202,90 +166,6 @@ class G1aRecordInterpretationCharacterisationTest extends TestCase
             'CHARACTERISATION: the raw-JSON prop holds boolean false, not "". `?? ""` does not catch false.'
         );
     }
-
-    /**
-     * CHARACTERISED GAP · a corrupt blob becomes an empty record, silently.
-     *
-     * §5.4 S3: "A corrupt blob is an error to surface, never silently an empty
-     * record." Today `json_decode` returns null, `?? []` absorbs it, and the load
-     * completes as though the user had authored nothing. No exception, no log, no
-     * signal to the caller.
-     *
-     * This is the highest-severity gap in this file: combined with a subsequent
-     * save, an unreadable blob is converted into a genuine empty record, and the
-     * original bytes are gone.
-     */
-    public function test_s3_corrupt_blob_is_silently_treated_as_an_empty_record(): void
-    {
-        $auction = $this->auction([
-            'location_dna_preferences' => '{"cities": ["Tampa"',   // truncated JSON
-        ]);
-
-        $host = $this->host();
-        $host->callLoad($auction);
-
-        $this->assertSame(
-            [],
-            $host->existingLocationDna,
-            'CHARACTERISATION: a corrupt blob decodes to an empty record with no error surfaced. '
-            .'§5.4 S3 requires an error. Nothing here raises one.'
-        );
-    }
-
-    /**
-     * CHARACTERISED · a PHP-only save after a corrupt load PRESERVES the original
-     * bytes, and the mirrors are what degrade.
-     *
-     * This test was first written asserting the opposite — that one save destroys
-     * the corrupt blob — and it failed. The correction is worth recording, because
-     * it changes where the S3 risk actually sits.
-     *
-     * `loadSearchAreas()` assigns the RAW string to
-     * `location_dna_preferences_json` (line 65), not the decoded array, and
-     * `saveSearchAreas()` persists that raw string verbatim. So the corrupt bytes
-     * survive a load/save round trip intact and remain forensically recoverable.
-     *
-     * What degrades instead is the derived state: the decoded blob is `[]`, so the
-     * `cities` mirror is rewritten to `[]` in the same save. A corrupt blob
-     * therefore silently empties the discrete key that Ask AI, matching, filtering
-     * and public display read, while the authoritative bytes still hold data.
-     * That is a divergence between the blob and its mirrors, not a deletion.
-     *
-     * SCOPE LIMIT: this holds for PHP alone. In the browser the widget prefills
-     * from the empty decoded array and the bridge would serialise that emptiness
-     * back, which WOULD overwrite the corrupt bytes. There is no JavaScript test
-     * runner here, so that path stays unproven.
-     */
-    public function test_s3_php_only_save_preserves_corrupt_bytes_but_empties_the_mirror(): void
-    {
-        $auction = $this->auction([
-            'location_dna_preferences' => '{"cities": ["Tampa"',
-            'cities'                   => json_encode(['Tampa']),
-        ]);
-
-        $host = $this->host();
-        $host->callLoad($auction);
-        $host->callSave($auction);
-
-        $fresh = $this->reread($auction);
-
-        $this->assertSame(
-            '{"cities": ["Tampa"',
-            (string) $fresh->info('location_dna_preferences'),
-            'The corrupt bytes are written back verbatim — the raw string, not the decode, is persisted.'
-        );
-
-        $this->assertSame(
-            '[]',
-            $fresh->info('cities'),
-            'CHARACTERISATION: the mirror was emptied from the failed decode while the blob still holds data. '
-            .'Blob and mirror now disagree, with no error surfaced (§5.4 S3 requires one).'
-        );
-    }
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // S4 · present but empty
-    // ═════════════════════════════════════════════════════════════════════════
 
     /**
      * S4 · present-but-empty is stored and read back as present-but-empty.
@@ -399,43 +279,6 @@ class G1aRecordInterpretationCharacterisationTest extends TestCase
         );
     }
 
-    /**
-     * S5 · rule 5 is satisfied on the PHP path today — recovery does NOT promote.
-     *
-     * `loadSearchAreas()` merges the legacy value into `existingLocationDna` (the
-     * prefill array the partial reads) but leaves
-     * `location_dna_preferences_json` — the value that gets persisted — as the raw
-     * stored blob. A save immediately after a load therefore does not write the
-     * inherited cities into the blob.
-     *
-     * IMPORTANT SCOPE LIMIT, and the reason this assertion is narrower than it
-     * looks: in the real application the browser bridge serialises the merged
-     * widget state back into `location_dna_preferences_json`, so the inherited
-     * value CAN be promoted by a round trip through the editor. This project has
-     * no JavaScript test runner, so that path is unproven either way. What is
-     * asserted here is only that PHP alone does not promote.
-     */
-    public function test_s5_php_alone_does_not_promote_an_inherited_value_into_the_blob(): void
-    {
-        $auction = $this->auction([
-            'location_dna_preferences' => json_encode(['state' => 'FL']),
-            'cities'                   => json_encode(['Tampa']),
-        ]);
-
-        $host = $this->host();
-        $host->callLoad($auction);
-        $this->assertSame(['Tampa'], $host->existingLocationDna['cities'], 'inherited into the prefill');
-
-        $host->callSave($auction);
-
-        $storedBlob = json_decode((string) $this->reread($auction)->info('location_dna_preferences'), true);
-
-        $this->assertArrayNotHasKey(
-            'cities',
-            $storedBlob,
-            'The inherited value was not written into the blob as if authored (§5.4 rule 5).'
-        );
-    }
 }
 
 /**
@@ -458,8 +301,4 @@ class G1aInterpretationHost
         $this->loadSearchAreas($auction);
     }
 
-    public function callSave($auction): void
-    {
-        $this->saveSearchAreas($auction);
-    }
 }

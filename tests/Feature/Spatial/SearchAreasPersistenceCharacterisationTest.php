@@ -100,7 +100,7 @@ class SearchAreasPersistenceCharacterisationTest extends TestCase
 
         $host = $this->host();
         $host->location_dna_preferences_json = $encoded;
-        $host->callSave($auction);
+        $host->storeBlob($auction);
 
         $stored = $this->reread($auction)->info('location_dna_preferences');
 
@@ -121,11 +121,11 @@ class SearchAreasPersistenceCharacterisationTest extends TestCase
 
         $host = $this->host();
         $host->location_dna_preferences_json = $encoded;
-        $host->callSave($auction);
+        $host->storeBlob($auction);
 
         $second = $this->host();
         $second->callLoad($this->reread($auction));
-        $second->callSave($auction);
+        $second->storeBlob($auction);
 
         $this->assertSame(
             $encoded,
@@ -158,7 +158,7 @@ class SearchAreasPersistenceCharacterisationTest extends TestCase
 
         $host = $this->host();
         $host->location_dna_preferences_json = $encoded;
-        $host->callSave($auction);
+        $host->storeBlob($auction);
 
         $stored = $this->reread($auction)->info('location_dna_preferences');
 
@@ -179,7 +179,7 @@ class SearchAreasPersistenceCharacterisationTest extends TestCase
 
         $host = $this->host();
         $host->location_dna_preferences_json = $encoded;
-        $host->callSave($auction);
+        $host->storeBlob($auction);
 
         $stored = $this->reread($auction)->info('location_dna_preferences');
 
@@ -201,36 +201,19 @@ class SearchAreasPersistenceCharacterisationTest extends TestCase
      * read. Naming each one explicitly means a renamed key fails here rather
      * than silently degrading a consumer that this suite never loads.
      */
-    public function test_discrete_mirrors_are_written_to_their_own_meta_keys(): void
-    {
-        $auction = $this->auction();
-
-        $host = $this->host();
-        $host->location_dna_preferences_json = json_encode([
-            'state'    => 'FL',
-            'counties' => ['Pinellas', 'Hillsborough'],
-            'cities'   => ['Tampa'],
-        ]);
-        $host->callSave($auction);
-
-        $fresh = $this->reread($auction);
-
-        $this->assertSame('FL', $fresh->info('state'));
-        $this->assertSame('["Pinellas","Hillsborough"]', $fresh->info('counties'));
-        $this->assertSame('["Tampa"]', $fresh->info('cities'));
-    }
-
-    /** Saving twice updates the mirror rows in place rather than duplicating them. */
+    /**
+     * REPOINTED · this is `saveMeta()`'s updateOrCreate semantics, not the removed method's.
+     *
+     * It previously reached the meta row through `saveSearchAreas()`'s mirror derivation. The
+     * property under test — that a second write to the same key UPDATES rather than appending a
+     * duplicate row — belongs to the EAV surface and is asserted directly now.
+     */
     public function test_repeated_saves_update_meta_rows_in_place(): void
     {
         $auction = $this->auction();
 
-        $host = $this->host();
-        $host->location_dna_preferences_json = json_encode(['cities' => ['Tampa']]);
-        $host->callSave($auction);
-
-        $host->location_dna_preferences_json = json_encode(['cities' => ['Orlando']]);
-        $host->callSave($auction);
+        $auction->saveMeta('cities', json_encode(['Tampa']));
+        $auction->saveMeta('cities', json_encode(['Orlando']));
 
         $fresh = $this->reread($auction);
 
@@ -284,30 +267,6 @@ class SearchAreasPersistenceCharacterisationTest extends TestCase
      *
      * Characterised, not fixed. 2B is characterisation-only.
      */
-    public function test_finding_2b1_absent_blob_persists_a_non_array_value(): void
-    {
-        $auction = $this->auction();
-
-        $host = $this->host();
-        $host->callLoad($this->reread($auction)); // no blob meta exists
-        $host->callSave($auction);
-
-        $stored = $this->reread($auction)->info('location_dna_preferences');
-
-        $this->assertIsNotArray(
-            json_decode((string) $stored, true),
-            'Characterisation: the persisted value does not decode to the blob array consumers expect.'
-        );
-        // The cities mirror still lands correctly, because json_decode(false)
-        // is null and the `?? []` fallback catches it.
-        $this->assertSame('[]', $this->reread($auction)->info('cities'));
-    }
-
-    /**
-     * `info()` returns boolean FALSE — not null — for a key that was never
-     * written. Asserted directly, because the trait's behaviour under a missing
-     * key only makes sense once this is on record.
-     */
     public function test_info_returns_false_for_an_absent_meta_key(): void
     {
         $fresh = $this->reread($this->auction());
@@ -336,8 +295,17 @@ class SearchAreasPersistenceHost
         $this->loadSearchAreas($auction);
     }
 
-    public function callSave($auction): void
+    /**
+     * Write the blob straight to storage.
+     *
+     * REPOINTED BY THE G1f CLOSEOUT. This used to call `saveSearchAreas()`. That method is
+     * gone — every workflow writes through the canonical writer now — but the properties this
+     * suite characterises are properties of the STORAGE, not of the removed method: whether a
+     * 1,200-point polygon survives the `meta_value` column, whether unicode round-trips,
+     * whether Eloquent mangles the value. The vehicle changed; the assertions did not.
+     */
+    public function storeBlob($auction): void
     {
-        $this->saveSearchAreas($auction);
+        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
     }
 }

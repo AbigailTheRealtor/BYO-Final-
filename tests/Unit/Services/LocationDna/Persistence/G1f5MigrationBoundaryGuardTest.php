@@ -66,7 +66,6 @@ class G1f5MigrationBoundaryGuardTest extends TestCase
      * SHRINK; reaching one entry is G1f's completion condition.
      */
     private const AUTHORIZED_WRITERS = [
-        'app/Http/Livewire/Concerns/HasSearchAreas.php',
         'app/Http/Controllers/BuyerCriteriaAuctionController.php',
         'app/Http/Controllers/TenantCriteriaAuctionController.php',
     ];
@@ -333,10 +332,22 @@ class G1f5MigrationBoundaryGuardTest extends TestCase
             $trait,
             'the trait keeps its pre-consolidation presence semantics for its remaining host'
         );
-        $this->assertStringContainsString(
-            "\$auction->saveMeta('location_dna_preferences', \$this->location_dna_preferences_json);",
+        // CLOSEOUT: the canonical write is GONE from the trait. This is what removes it from the
+        // §21 direct-writer list and makes the persistence service the sole writer of this key.
+        $this->assertStringNotContainsString(
+            self::CANONICAL_WRITE,
+            $this->codeOnly($trait),
+            'the trait must no longer contain a canonical write — the closeout removed it'
+        );
+        $this->assertStringNotContainsString(
+            'function saveSearchAreas',
             $trait,
-            'and still performs its own canonical write'
+            'and the dead save method itself must be gone'
+        );
+        $this->assertStringContainsString(
+            'function loadSearchAreas',
+            $trait,
+            'the load side is retained and unchanged — it is why the trait still exists'
         );
 
         // INVERTED BY G1f-6 · the trait's save side now has ZERO callers.
@@ -454,7 +465,7 @@ class G1f5MigrationBoundaryGuardTest extends TestCase
         // G1f-5 migrated a TRAIT host, so the trait itself remains a direct writer for its last
         // host and the count is unchanged. This increment shortens the migration list, not this one.
         $this->assertCount(
-            3,
+            2,
             self::AUTHORIZED_WRITERS,
             'Three direct writers remain after G1f-5, unchanged — the target reached the canonical '
             .'key through the trait, so migrating it removes a HOST, not a writer.'

@@ -3,27 +3,52 @@
 namespace App\Http\Livewire\Concerns;
 
 /**
- * Phase 9D — Search Areas (Buyer / Tenant "Location Preferences" blob).
+ * Phase 9D — Search Areas (Buyer / Tenant "Location Preferences" blob). LOAD-SIDE ONLY.
  *
- * Shared load / persist / discrete-mirror plumbing for the Search Areas map widget,
- * extracted from the Create Buyer/Tenant Offer components (BuyerOfferListing etc.) so
- * the Hire Buyer/Tenant Agent components can reuse the *identical* behaviour instead of
- * forking a second implementation.
+ * Shared load / prefill plumbing for the Search Areas map widget, used by the four Hire
+ * Buyer/Tenant Agent components. The four Offer components deliberately do NOT use this
+ * trait — they carry their own inline copies (FINDING 2B-2, still open).
  *
- * Storage (unchanged from the Create-Offer side):
- *   - `location_dna_preferences` meta — the full Search Areas / Location DNA JSON blob
- *     (cities, zip_codes, neighborhoods, counties, state, polygons, radius_searches,
- *     flexible_location, location_notes). The map widget is the single editing surface.
- *   - Discrete `state` / `counties` / `cities` meta — MIRRORED out of the blob on save so
- *     Ask AI, the match engine, filtering, and public listing display keep working. The
- *     map blob is authoritative; the discrete keys are derived.
+ * THE SAVE SIDE IS GONE — REMOVED BY THE G1f CLOSEOUT
+ * ---------------------------------------------------
+ * This trait used to carry `saveSearchAreas()`, which wrote the `location_dna_preferences`
+ * blob verbatim and mirrored the discrete `state` / `counties` / `cities` meta out of it.
+ * G1f-1 … G1f-6 migrated all eight workflow components to
+ * {@see \App\Services\LocationDna\Persistence\LocationDnaPersistenceService}, after which
+ * that method had ZERO callers and was dead code that still contained a canonical write.
  *
- * Host contract: the consuming component must declare the public `$state`, `$counties`,
- * and `$cities` props (all four Hire components + the four Offer components do). Reads are
- * `property_exists`-guarded so the trait is safe to mix into components that omit one.
+ * It is removed rather than left in place, because a dead method holding a canonical write
+ * kept this file counted as a §21 direct writer and gave a future component an easy way to
+ * silently reacquire the pre-consolidation semantics. All Location DNA WRITING now happens
+ * through the canonical writer, and only there.
  *
- * Pairs with {@see \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces} (the
- * additive Important Places rows, stored in their own `important_places_json` meta key).
+ * The behaviour it used to have was defective in ways the canonical writer fixes, and those
+ * defects were characterised before the migration so parity could be proved. Their corrected
+ * counterparts live in the G1f migration suites and in
+ * `G1f1LocationDnaPersistenceServiceTest`; the obsolete characterisations were retired with
+ * the method.
+ *
+ * WHAT REMAINS, AND WHY
+ * ---------------------
+ *   - `loadSearchAreas()` — UNCHANGED, and still live: four production call sites, one per
+ *     Hire component. This is why the trait is retained rather than deleted.
+ *   - `hydrateDiscreteLocationFromBlob()` — UNCHANGED and deliberately KEPT even though the
+ *     trait no longer calls it. It is the reference implementation the four inline Offer
+ *     copies are compared against by
+ *     {@see \Tests\Unit\Spatial\SearchAreasWidgetContractTest} (FINDING 2B-2, the open 5→1
+ *     consolidation). Removing it would silently close an unresolved finding, which is a
+ *     separate decision from retiring a dead writer.
+ *
+ * Storage read on the load side:
+ *   - `location_dna_preferences` meta — the full Search Areas / Location DNA JSON blob.
+ *   - Legacy discrete `state` / `counties` / `cities` meta — merged into the in-memory blob
+ *     for prefill only. The DB is never written here.
+ *
+ * Host contract: the consuming component must declare the public `$state`, `$counties`, and
+ * `$cities` props. Reads are `property_exists`-guarded so the trait is safe to mix into
+ * components that omit one.
+ *
+ * Pairs with {@see \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces}.
  */
 trait HasSearchAreas
 {
@@ -108,25 +133,4 @@ trait HasSearchAreas
         }
     }
 
-    /**
-     * Persist the Search Areas blob and mirror the discrete `state` / `counties` / `cities`
-     * meta out of it (read by Ask AI, matching, filtering, public display). Runs on both the
-     * draft and submit paths.
-     */
-    protected function saveSearchAreas($auction): void
-    {
-        $this->hydrateDiscreteLocationFromBlob();
-
-        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
-
-        if (property_exists($this, 'counties')) {
-            $auction->saveMeta('counties', json_encode($this->counties));
-        }
-        if (property_exists($this, 'state')) {
-            $auction->saveMeta('state', $this->state);
-        }
-
-        $ldnaDecoded = json_decode($this->location_dna_preferences_json ?? '', true);
-        $auction->saveMeta('cities', json_encode($ldnaDecoded['cities'] ?? []));
-    }
 }

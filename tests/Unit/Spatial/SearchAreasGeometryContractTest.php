@@ -80,37 +80,6 @@ class SearchAreasGeometryContractTest extends TestCase
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * saveSearchAreas() writes `$location_dna_preferences_json` through to meta
-     * VERBATIM — it never decodes and re-encodes the blob it persists.
-     *
-     * This is the single most important fact for Phase 2C. Because PHP never
-     * re-serialises the geometry, byte-identity across the PHP layer is
-     * structural rather than lucky: no float can be truncated, no key can be
-     * reordered, no unicode escape can change form, because nothing parses it.
-     *
-     * The corollary matters just as much: criterion #7's real risk lives
-     * ENTIRELY on the JavaScript side, which this suite cannot execute.
-     */
-    public function test_save_path_writes_the_blob_verbatim_without_reencoding(): void
-    {
-        $auction = new SearchAreasContractFakeAuction();
-        $host    = $this->host();
-
-        // Key order here is deliberately NOT the order fullBlob() declares, and
-        // the spacing is non-canonical. A decode/re-encode would normalise both.
-        $raw = '{"state":"FL","polygons":[{"label":"a","path":[{"lat":27.76761234567,"lng":-82.63980987654}]}],  "cities":["Tampa"]}';
-
-        $host->location_dna_preferences_json = $raw;
-        $host->callSave($auction);
-
-        $this->assertSame(
-            $raw,
-            $auction->meta['location_dna_preferences'],
-            'The blob was altered on the save path. It must be persisted byte-for-byte.'
-        );
-    }
-
-    /**
      * All nine keys survive a full load → save cycle byte-identically.
      *
      * Asserted on the encoded string, not on a decoded array, because a decoded
@@ -126,7 +95,7 @@ class SearchAreasGeometryContractTest extends TestCase
 
         $host = $this->host();
         $host->callLoad($auction);
-        $host->callSave($auction);
+        $host->storeBlob($auction);
 
         $this->assertSame($encoded, $auction->meta['location_dna_preferences']);
 
@@ -154,7 +123,7 @@ class SearchAreasGeometryContractTest extends TestCase
 
         $host = $this->host();
         $host->callLoad($auction);
-        $host->callSave($auction);
+        $host->storeBlob($auction);
 
         $out = json_decode($auction->meta['location_dna_preferences'], true);
 
@@ -173,31 +142,6 @@ class SearchAreasGeometryContractTest extends TestCase
     // ─────────────────────────────────────────────────────────────────────────
     // Discrete mirrors
     // ─────────────────────────────────────────────────────────────────────────
-
-    /** The `cities` mirror is derived from the blob, not from `$this->cities`. */
-    public function test_cities_mirror_is_derived_from_the_blob(): void
-    {
-        $auction = new SearchAreasContractFakeAuction();
-        $host    = $this->host();
-
-        $host->cities = ['STALE — should not be written'];
-        $host->location_dna_preferences_json = json_encode(['cities' => ['Tampa', 'Orlando']]);
-        $host->callSave($auction);
-
-        $this->assertSame('["Tampa","Orlando"]', $auction->meta['cities']);
-    }
-
-    /** A blob with no `cities` key mirrors an empty array, not null. */
-    public function test_missing_cities_key_mirrors_an_empty_json_array(): void
-    {
-        $auction = new SearchAreasContractFakeAuction();
-        $host    = $this->host();
-
-        $host->location_dna_preferences_json = json_encode(['state' => 'FL']);
-        $host->callSave($auction);
-
-        $this->assertSame('[]', $auction->meta['cities']);
-    }
 
     /** state and counties are hydrated out of the blob onto the host props. */
     public function test_state_and_counties_hydrate_from_the_blob(): void
@@ -358,32 +302,12 @@ class SearchAreasGeometryContractTest extends TestCase
     }
 
     /**
-     * FINDING 2B-1, continued — what that `false` does on the very next save.
+     * NARROWED BY THE G1f CLOSEOUT · the trait is safe on a host declaring none of the props.
      *
-     * saveSearchAreas() persists the property unchanged, so a load-then-save of
-     * a record that never had a blob writes boolean `false` into the meta value
-     * rather than an empty string or a JSON literal. Through the real Eloquent
-     * path this is cast by the database layer; through this fake it is observed
-     * directly. The `cities` mirror still writes `[]`, because json_decode(false)
-     * is null and the `?? []` fallback catches it.
-     */
-    public function test_finding_2b1_false_blob_is_persisted_unchanged(): void
-    {
-        $auction = new SearchAreasContractFakeAuction();
-        $host    = $this->host();
-
-        $host->callLoad($auction);
-        $host->callSave($auction);
-
-        $this->assertFalse($auction->meta['location_dna_preferences']);
-        $this->assertSame('[]', $auction->meta['cities']);
-    }
-
-    /**
-     * The `property_exists` guards make the trait safe on a host that omits a
-     * prop — the documented "host contract" escape hatch. Asserted because an
-     * ungated read would be a fatal error, and "it would have crashed" is not
-     * evidence that it does not.
+     * This used to exercise the save path's `property_exists` guards as well. That path is gone,
+     * so what remains is the LOAD side's guards — still real, still the reason the trait can be
+     * mixed into a component that omits a prop, and still the only thing standing between a
+     * minimal host and an undefined-property error.
      */
     public function test_trait_is_safe_on_a_host_missing_the_discrete_props(): void
     {
@@ -393,13 +317,13 @@ class SearchAreasGeometryContractTest extends TestCase
 
         $host = new SearchAreasContractMinimalHost();
         $host->callLoad($auction);
-        $host->callSave($auction);
 
-        // Only the blob and the cities mirror are written; state/counties are skipped.
-        $this->assertArrayHasKey('location_dna_preferences', $auction->meta);
-        $this->assertArrayHasKey('cities', $auction->meta);
-        $this->assertArrayNotHasKey('state', $auction->meta);
-        $this->assertArrayNotHasKey('counties', $auction->meta);
+        // The load completed without touching the undeclared props, and prefill still populated.
+        $this->assertSame(['Tampa'], $host->existingLocationDna['cities']);
+        $this->assertSame('FL', $host->existingLocationDna['state']);
+
+        // And it wrote nothing at all — the trait is read-only now.
+        $this->assertSame([], $auction->writes, 'the load side must perform no writes');
     }
 }
 
@@ -425,9 +349,17 @@ class SearchAreasContractHost
         $this->hydrateDiscreteLocationFromBlob();
     }
 
-    public function callSave($auction): void
+    /**
+     * Write the blob straight to the fake's meta surface.
+     *
+     * REPOINTED BY THE G1f CLOSEOUT: this used to call `saveSearchAreas()`, which is gone.
+     * The retained tests characterise the BLOB's fidelity through a store/reload cycle —
+     * key order, spacing, float precision — which is a property of the payload and the meta
+     * surface, not of the removed method.
+     */
+    public function storeBlob($auction): void
     {
-        $this->saveSearchAreas($auction);
+        $auction->saveMeta('location_dna_preferences', $this->location_dna_preferences_json);
     }
 }
 
@@ -439,11 +371,6 @@ class SearchAreasContractMinimalHost
     public function callLoad($auction): void
     {
         $this->loadSearchAreas($auction);
-    }
-
-    public function callSave($auction): void
-    {
-        $this->saveSearchAreas($auction);
     }
 }
 

@@ -32,7 +32,6 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
      * D-G1-5's "sole canonical writer" is true and G1f can be declared complete.
      */
     private const AUTHORIZED_WRITERS = [
-        'app/Http/Livewire/Concerns/HasSearchAreas.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Controllers/BuyerCriteriaAuctionController.php',
@@ -149,11 +148,11 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         );
 
         $this->assertCount(
-            5,
+            4,
             self::AUTHORIZED_WRITERS,
-            'Five direct writers remain after G1f-3 — the first stage to shorten this list, because '
-            .'the two Buyer Offer copies wrote the canonical key inline rather than through the '
-            .'trait. This list may only SHRINK; reaching one entry is G1f\'s completion condition.'
+            'Four direct writers remain. The closeout removed HasSearchAreas by deleting its dead save '
+            .'method — the write went with it. This list may only SHRINK; the two legacy criteria '
+            .'controllers D-G1F-5 governs are the last workflow-independent entries.'
         );
     }
 
@@ -217,10 +216,22 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
             $trait,
             'the trait keeps its pre-consolidation semantics, unchanged'
         );
-        $this->assertStringContainsString(
-            "\$auction->saveMeta('location_dna_preferences', \$this->location_dna_preferences_json);",
+        // CLOSEOUT: the canonical write is GONE from the trait. This is what removes it from the
+        // §21 direct-writer list and makes the persistence service the sole writer of this key.
+        $this->assertStringNotContainsString(
+            self::CANONICAL_WRITE,
+            $this->codeOnly($trait),
+            'the trait must no longer contain a canonical write — the closeout removed it'
+        );
+        $this->assertStringNotContainsString(
+            'function saveSearchAreas',
             $trait,
-            'and still contains its own canonical write, which is why it still counts as a direct writer'
+            'and the dead save method itself must be gone'
+        );
+        $this->assertStringContainsString(
+            'function loadSearchAreas',
+            $trait,
+            'the load side is retained and unchanged — it is why the trait still exists'
         );
 
         // ZERO callers of the save side, anywhere.
