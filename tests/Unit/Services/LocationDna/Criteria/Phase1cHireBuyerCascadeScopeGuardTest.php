@@ -39,6 +39,7 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
     private const ENABLED_TABS = [
         'hire_buyer'  => 'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php',
         'hire_tenant' => 'resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php',
+        'create_tenant' => 'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php',
     ];
 
     /** The shared widget's opt-in parameter. Absent ⇒ legacy behaviour. */
@@ -47,12 +48,11 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
     /**
      * Every OTHER surface that includes the shared widget. None may opt in during slice 1.
      *
-     * Two are Livewire tabs on the rollout list for later slices — Create Tenant and Create
-     * Buyer; four are the legacy criteria forms, which are frozen by the Phase 1b hash pin and
-     * are not on the rollout list at all.
+     * One is the Create Buyer tab, the last slice on the rollout list; four are the legacy
+     * criteria forms, which are frozen by the Phase 1b hash pin and are not on the rollout list
+     * at all.
      */
     private const UNTOUCHED_WIDGET_HOSTS = [
-        'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php',
         'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php',
         'resources/views/buyer_criteria/add.blade.php',
         'resources/views/buyer_criteria/edit.blade.php',
@@ -92,8 +92,6 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php',
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
     ];
@@ -142,12 +140,12 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
      * environment variable cannot widen the rollout by accident. Create Tenant and Create Buyer
      * are later slices and must not appear here until their tabs render the cascade.
      */
-    public function test_the_cascade_scope_is_the_shipped_hire_workflows(): void
+    public function test_the_cascade_scope_is_the_shipped_workflows(): void
     {
         $config = require $this->root().'/config/criteria_location_dna.php';
 
         $this->assertSame(
-            ['hire_buyer', 'hire_tenant'],
+            ['hire_buyer', 'hire_tenant', 'create_tenant'],
             $config['geography_cascade_workflows'],
             'Widening this is a rollout decision, and requires the workflow tab to opt in first.'
         );
@@ -311,7 +309,7 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
      * Seller and landlord are served by the same catch-all class and are excluded by its workflow
      * map returning null, which is asserted separately below.
      */
-    public function test_exactly_the_four_hire_buyer_surfaces_use_the_cascade_trait(): void
+    public function test_exactly_the_six_wired_surfaces_use_the_cascade_trait(): void
     {
         $users = [];
 
@@ -328,6 +326,8 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
             [
                 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php',
                 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
+                'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+                'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
                 'app/Http/Livewire/TenantAgentAuction.php',
                 'app/Http/Livewire/TenantAgentAuctionEdit.php',
             ],

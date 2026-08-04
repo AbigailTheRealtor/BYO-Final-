@@ -81,6 +81,30 @@
 </div> --}}
 
 
+{{-- Phase 1c slice 3 — the geography cascade for Create Tenant.
+
+     Identical in shape to the Hire Buyer and Hire Tenant tabs, and deliberately so: all three
+     render the same partial from the same trait, so the workflows cannot drift into different
+     geography experiences. When the cascade is enabled for `create_tenant` it renders the four
+     tiers from the `us_*` reference corpus, and the shared widget below suppresses its own tier
+     inputs — and the place-autocomplete that drives them — so the two editors never both write
+     the same blob keys.
+
+     WHY THE NULL COALESCE IS LOAD-BEARING HERE TOO
+     ----------------------------------------------
+     This tab is included by FIVE root blades. Only two belong to a component that carries the
+     cascade trait — TenantOfferListing and TenantOfferListingEdit. The other three are the
+     Buyer, Landlord and Seller Offer Listing blades, which include it from an
+     `@if ($user_type === 'tenant')` branch that is unreachable because each of those components
+     pins $user_type to its own role. They carry no trait and declare no $geoCascadeEnabled, so
+     defaulting it to false is what keeps them rendering exactly what they rendered before rather
+     than fataling on an undefined variable.
+
+     Disabled, this renders nothing and the widget behaves exactly as it always has. --}}
+@if ($geoCascadeEnabled ?? false)
+    @include('partials.location-dna.geography-cascade')
+@endif
+
 {{-- 9D: Search Areas — single editing surface (replaces the legacy discrete
      Acceptable Counties / Acceptable State inputs, matching the approved Hire
      Agent flow). Preferred Cities/ZIP/Counties/State now live in the
@@ -93,6 +117,7 @@
     'mapPanelId'             => 'ldna-map-tenant',
     'enableImportantPlaces'  => true,
     'existingImportantPlaces'=> $existingImportantPlaces ?? [],
+    'ldnaGeographyCascade'   => $geoCascadeEnabled ?? false,
 ])
 <input type="hidden" id="ldna-livewire-bridge" wire:model.defer="location_dna_preferences_json">
 <input type="hidden" id="ldna-ip-livewire-bridge" wire:model.defer="important_places_json">

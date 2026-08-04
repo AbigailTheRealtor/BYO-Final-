@@ -30,6 +30,20 @@ class TenantOfferListingEdit extends Component
     use ResolvesOwnedAuction;
     use HasImportantPlaces;
 
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+
+    /**
+     * Phase 1c slice 3 — the cascade workflow key for the role this component is serving.
+     *
+     * Must match TenantOfferListing's exactly. Create and edit are one workflow to a user, and a
+     * cascade that appeared on one and vanished on the other would be worse than one that
+     * appeared on neither. Every role but tenant resolves to NULL.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return $this->user_type === 'tenant' ? 'create_tenant' : null;
+    }
+
     public $isLoadingData = false;
     private bool $_isDraftSave = false;
 
@@ -2480,6 +2494,13 @@ class TenantOfferListingEdit extends Component
         $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
         $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+        // Phase 1c — hydrate the cascade from the document just decoded above. Booted here because
+        // the LOADED record's user_type is authoritative: the route may supply one, but the stored
+        // value decides which workflow this listing belongs to. Inert unless the tenant role's
+        // workflow is in scope; unmatched labels are preserved, never dropped.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+        $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
         // ── FINDING 2B-3 · legacy `cities` → blob, HYDRATION ONLY ───────────────
         //
         // INVARIANT: `location_dna_preferences.cities` is the SINGLE SOURCE OF
@@ -3211,6 +3232,17 @@ class TenantOfferListingEdit extends Component
      */
     protected function persistLocationDna($auction): void
     {
+        // Phase 1c — merge the cascade's four geography keys into the bridged payload, in the same
+        // label format the previous editor produced. Inert unless the cascade is enabled for this
+        // role, and a MERGE rather than a rebuild so the widget's polygons, radius searches,
+        // flexible flag and notes survive untouched.
+        //
+        // The write below is UNCHANGED, including its `managingMirrors` opt-in. This family
+        // derives the legacy `zipCodes` mirror from canonical state, so a cascade ZIP selection
+        // reaches it through the canonical `zip_codes` dimension automatically — which is why
+        // `create_tenant` is deliberately NOT a member of ZIP_MIRROR_WORKFLOWS.
+        $this->applyGeographyCascadeToPayload();
+
         OwnerPrivateLocationDnaWriter::managingMirrors(
             [...LegacyMirrorProjection::MANAGED_KEYS, 'zipCodes']
         )->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
@@ -3221,6 +3253,12 @@ class TenantOfferListingEdit extends Component
     {
 
         try {
+            // Phase 1c — project the cascade into the bridged payload BEFORE the pre-validation
+            // hydrate below, so the discrete `$state` / `$counties` the required-field gate reads
+            // are the ones the user actually chose rather than the stored values the widget's
+            // server-seeded blob still carries. Idempotent, and inert while the cascade is off.
+            $this->applyGeographyCascadeToPayload();
+
             // 9B-3: hydrate state/counties from the Search Areas blob before validation,
             // since the discrete Acceptable State/Counties inputs were removed.
             $this->hydrateDiscreteLocationFromBlob();
