@@ -383,6 +383,48 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     $hlaListingUrl = route('landlord.agent.auction.view', $auction->id);
 @endphp
 
+@php
+    /*
+     | M5.4 — ONE ANSWER TO "IS THIS VIEWER THE OWNER", AND IT IS NOT THIS FILE'S.
+     |
+     | The view had TWO local definitions of $isListingOwner, both loose:
+     |
+     |     $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+     |     $isListingOwner = data_get($auction, 'user_id') == $auth_id;
+     |
+     | $auth_id is 0 for a guest, `landlord_agent_auctions.user_id` IS nullable, and in PHP
+     | `0 == null` is true. So on a listing with a null owner every anonymous visitor satisfied
+     | the view's own ownership test. No such row exists today — the column is nullable and the
+     | table holds zero nulls — so this was latent rather than live, and the proposals those
+     | gates wrap were already withheld server-side. It was still the wrong test.
+     |
+     | HireAgentProposalAccess::isListingOwner() has always done this correctly: it refuses a
+     | null viewer, refuses a null owner, and compares as integers. The fix is to ASK IT rather
+     | than to copy it — a second correct implementation is still a second implementation, and
+     | the reason this file had two subtly different copies is that copies are what happens.
+     |
+     | This is applied unconditionally, not behind the redesign flag: it only ever narrows who
+     | counts as the owner, and a flag would mean the legacy page kept the weaker test.
+     */
+    $hlaIsListingOwner = app(\App\Services\HireAgent\HireAgentProposalAccess::class)
+        ->isListingOwner(auth()->id(), $auction);
+
+    /*
+     | M5.4 — ORPHANED SEPARATORS.
+     |
+     | Two bare <hr> rules sit at the top of the sidebar, each separating a block that is
+     | frequently absent. The first follows the identity/Edit Listing block, which M4 moved into
+     | the hero — so with the hero flag on it separates nothing, which is the state this
+     | environment already runs in. The second follows the "Agent Selected" winner alert, which
+     | renders only for a sold listing, so it separates nothing on every live listing.
+     |
+     | Browser verification found them as the only remaining children of an otherwise empty
+     | guest sidebar: two 1px rules and a button. Each is now tied to the block it belongs to.
+     | Flag-gated, like the stranded icon button, because they are visible today.
+     */
+    $hlaSidebarIdentityShown = ! \App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('landlord');
+@endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="landlord" :auction="$auction">
@@ -2307,7 +2349,10 @@ $auser = $auctionUser::find(@$auction->user_id);
     </div>
     @endif
     @endunless
+    {{-- M5.4: only separates the identity block when that block actually rendered. --}}
+    @if (! $hlaDetailRedesign || $hlaSidebarIdentityShown)
     <hr>
+    @endif
 
     {{-- 🏆 Display Winner Information if Listing is Sold --}}
     @php
@@ -2354,7 +2399,10 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
     </div>
     @endif
+    {{-- M5.4: only separates the winner alert when the listing is actually sold. --}}
+    @if (! $hlaDetailRedesign || ($auction->is_sold && ($acceptedBid || $acceptedCounterBid)))
     <hr>
+    @endif
     @inject('carbon', 'Carbon\Carbon')
 
     @php
@@ -2434,11 +2482,61 @@ $auser = $auctionUser::find(@$auction->user_id);
         @endphp
 
 
-        {{-- 🔹 Bid Button --}}
-        @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
-            @if (!$isExpired && !$isSold && !$isPending && $auction->status !== 'Hired Agent')
-                @if ($userHasBid)
-                {{-- User already placed a bid --}}
+        {{-- 🔹 Bid CTA.
+
+             M5.4. The redesigned branch decides STATE FIRST, THEN VIEWER — hired, pending,
+             expired, owner, then the agent/non-agent/guest cases. The legacy branch below asks
+             "are you an agent?" first, and everything else is nested inside that answer, which is
+             why a guest on an expired listing is still invited to "Login to Bid": the expiry
+             notice lives inside a branch a guest never reaches.
+        --}}
+        @if ($hlaDetailRedesign)
+            @php
+                /*
+                 | THE OWNER IS EXCLUDED FROM THE CTA ENTIRELY — no button, and no disabled state
+                 | either. This is a correctness fix, not a preference. The legacy gate asks only
+                 | whether the viewer is an agent, and listing creation carries no role middleware
+                 | (routes/web.php: `middleware('landlordAuth')` is commented out under a comment
+                 | claiming the opposite), so an `agent` user can own a landlord listing. Today
+                 | that owner is shown "Bid Now" and the server then refuses the submission —
+                 | LandlordAgentAuctionBid::…(BYA-H2 Rule B1) flashes "You cannot submit an agent
+                 | bid on your own listing." and redirects. The CTA was offering an action the
+                 | server had already decided to reject.
+                 |
+                 | An owner who is NOT an agent fares no better today: they fall through to the
+                 | catch-all and are told "Only agents can place bids" about their own listing,
+                 | which is both wrong and confusing. Neither viewer is offered a CTA now.
+                 |
+                 | Ownership is answered by HireAgentProposalAccess rather than re-derived here.
+                 | See the M5.4 note where $hlaIsListingOwner is computed.
+                 */
+                $hlaViewerIsAgent = $auth_id && optional(auth()->user())->user_type === 'agent';
+                $hlaListingHired  = $isSold || $auction->status === 'Hired Agent';
+            @endphp
+
+            @if ($hlaListingHired)
+                <div class="alert alert-success text-center mb-2">
+                    <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
+                </div>
+                <div class="status-pill status-hired w-100 d-flex justify-content-center">
+                    <i class="fa-solid fa-trophy me-2"></i>Hired Agent
+                </div>
+            @elseif ($isPending)
+                <div class="alert alert-warning text-center mb-2">
+                    <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+                </div>
+                <div class="status-pill status-pending w-100 d-flex justify-content-center">
+                    <i class="fa-solid fa-pause-circle me-2"></i>Pending
+                </div>
+            @elseif ($isExpired)
+                <div class="alert alert-secondary text-center mb-2">
+                    <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                </div>
+            @elseif ($hlaIsListingOwner)
+                {{-- Deliberately nothing. See the note above: not a button, not a disabled
+                     control, and not an explanatory alert — the owner has no bid workflow, so the
+                     slot is empty rather than occupied by something inert. --}}
+            @elseif ($hlaViewerIsAgent && $userHasBid)
                 <div class="alert alert-info text-center mb-2">
                     <i class="fa-solid fa-circle-check"></i> You have already placed a bid
                 </div>
@@ -2446,56 +2544,86 @@ $auser = $auctionUser::find(@$auction->user_id);
                     <span>Bid Already Placed</span>
                     <span style="font-weight:normal;font-size:.85em;">${{ @$auction->get->budget }}</span>
                 </div>
-                @else
-                {{-- User can place a bid --}}
-                <button class="btn w-100 bid-btn"
-                    onclick="window.location='{{ route('agent.landlord.agent.auction.bid', @$auction->id) }}';">
-                    <span class="bid">Bid Now</span>
-                    <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
-                </button>
-                @endif
-            @elseif($auction->status === 'Hired Agent' || $isSold)
-                <div class="alert alert-success text-center mb-2">
-                    <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
-                </div>
-                <div class="status-pill status-hired w-100 d-flex justify-content-center">
-                    <i class="fa-solid fa-trophy me-2"></i>Hired Agent
-                </div>
-            @elseif($isPending)
-                <div class="alert alert-warning text-center mb-2">
-                    <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
-                </div>
-                <div class="status-pill status-pending w-100 d-flex justify-content-center">
-                    <i class="fa-solid fa-pause-circle me-2"></i>Pending
+            @elseif ($hlaViewerIsAgent)
+                {{-- Route unchanged: agent.landlord.agent.auction.bid, still behind AgentAuth. --}}
+                <x-viho.button
+                    :href="route('agent.landlord.agent.auction.bid', $auction->id)"
+                    variant="primary"
+                    :block="true"
+                    icon="fa-solid fa-gavel">Bid Now</x-viho.button>
+            @elseif ($auth_id)
+                <div class="alert alert-secondary text-center mb-0">
+                    Only agents can place bids
                 </div>
             @else
-            {{-- Expiry catch-all. Milestone 3: this used to branch on listing type, suppressing
-                 the notice for Bidding Period listings because the retired timer block had
-                 already rendered "Bidding Ended". With the timer gone there is one expiry state
-                 and one notice, driven by expiration_date. --}}
-                <div class="alert alert-secondary text-center mb-2">
-                    <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                <x-viho.button
+                    :href="route('login')"
+                    variant="primary"
+                    :block="true"
+                    icon="fa-solid fa-right-to-bracket">Log in to bid</x-viho.button>
+            @endif
+        @else
+            {{-- 🔹 Bid Button --}}
+            @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
+                @if (!$isExpired && !$isSold && !$isPending && $auction->status !== 'Hired Agent')
+                    @if ($userHasBid)
+                    {{-- User already placed a bid --}}
+                    <div class="alert alert-info text-center mb-2">
+                        <i class="fa-solid fa-circle-check"></i> You have already placed a bid
+                    </div>
+                    <div class="status-pill status-disabled w-100 d-flex justify-content-between">
+                        <span>Bid Already Placed</span>
+                        <span style="font-weight:normal;font-size:.85em;">${{ @$auction->get->budget }}</span>
+                    </div>
+                    @else
+                    {{-- User can place a bid --}}
+                    <button class="btn w-100 bid-btn"
+                        onclick="window.location='{{ route('agent.landlord.agent.auction.bid', @$auction->id) }}';">
+                        <span class="bid">Bid Now</span>
+                        <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
+                    </button>
+                    @endif
+                @elseif($auction->status === 'Hired Agent' || $isSold)
+                    <div class="alert alert-success text-center mb-2">
+                        <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
+                    </div>
+                    <div class="status-pill status-hired w-100 d-flex justify-content-center">
+                        <i class="fa-solid fa-trophy me-2"></i>Hired Agent
+                    </div>
+                @elseif($isPending)
+                    <div class="alert alert-warning text-center mb-2">
+                        <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+                    </div>
+                    <div class="status-pill status-pending w-100 d-flex justify-content-center">
+                        <i class="fa-solid fa-pause-circle me-2"></i>Pending
+                    </div>
+                @else
+                {{-- Expiry catch-all. Milestone 3: this used to branch on listing type, suppressing
+                     the notice for Bidding Period listings because the retired timer block had
+                     already rendered "Bidding Ended". With the timer gone there is one expiry state
+                     and one notice, driven by expiration_date. --}}
+                    <div class="alert alert-secondary text-center mb-2">
+                        <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                    </div>
+                @endif
+
+            @elseif(!$auth_id)
+                <a href="{{ route('login') }}">
+                    <button class="btn w-100">
+                        <span class="bid m-0">Login to Bid</span>
+                        <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
+                    </button>
+                </a>
+            @else
+                <div class="alert alert-secondary text-center">
+                    Only agents can place bids
                 </div>
             @endif
-
-            @if (@$auction->sold)
-            <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
-            @endif
-        @elseif(!$auth_id)
-            <a href="{{ route('login') }}">
-                <button class="btn w-100">
-                    <span class="bid m-0">Login to Bid</span>
-                    <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
-                </button>
-            </a>
-        @else
-            <div class="alert alert-secondary text-center">
-                Only agents can place bids
-            </div>
         @endif
 
         @php
-            $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+            // M5.4: delegated to HireAgentProposalAccess — see the note near the top of this file.
+            $isListingOwner = $hlaIsListingOwner;
             $userHasBid = $auction->bids->where('user_id', $auth_id)->isNotEmpty();
             // Build a stable per-agent alias map keyed by user_id.
             // Sort by created_at asc, id asc, user_id asc; first bid per unique agent sets that agent's alias.
@@ -3032,7 +3160,8 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     $ownerId = data_get($auction, 'user_id');
 
                                     // Add access control for counter bids
-                                    $isListingOwner = data_get($auction, 'user_id') == $auth_id;
+                                    // M5.4: delegated to HireAgentProposalAccess (see top of file).
+                                    $isListingOwner = $hlaIsListingOwner;
                                     $isBidOwner = data_get($bid, 'user_id') == $auth_id;
                                     $showCounterBids = $isListingOwner || $isBidOwner;
 
@@ -3830,9 +3959,18 @@ $auser = $auctionUser::find(@$auction->user_id);
             </div>
         </div>
 </div>
+{{-- M5.4: a full-width button carrying a single user icon — no label, no handler, no
+     destination, and no accessible name. It predates M5 and renders for every viewer. It is
+     removed only behind the redesign flag: it is visible today, so deleting it outright would
+     change the legacy page for everyone, and "it looks like a mistake" is not the same standard
+     as "it can never render" (which is why the dead legacy `sold` branch above WAS removed
+     unconditionally — no such column or accessor exists, so it emitted nothing either way).
+     M5.3 made this one conspicuous by suppressing the share card that used to sit beneath it. --}}
+@unless ($hlaDetailRedesign)
 <button class="btn w-100 mt-0">
     <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>
+@endunless
 {{-- M5.3: the sidebar share card is suppressed when the redesign is on — Share Listing and Copy
      Link both live in the Quick Actions band above the grid. The QR code goes with it; it has no
      tile because a QR image is listing INFORMATION rather than an action, and re-siting it is a

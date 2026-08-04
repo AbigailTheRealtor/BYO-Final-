@@ -1,11 +1,13 @@
-# Carried-forward items from Hire Agent M5.2 / M5.3
+# Carried-forward items from Hire Agent M5.2 / M5.3 / M5.4
 
-**Status:** OPEN, unowned. Recorded deliberately; **none of these is in scope for M5.3.**
-**Recorded:** 2026-08-04, at the close of M5.3 (Quick Actions).
+**Status:** OPEN, unowned. Recorded deliberately; **none of these is in scope for the
+milestone that found it.**
+**Recorded:** 2026-08-04, at the close of M5.3 (Quick Actions); extended at the close of M5.4
+(bid CTA and sidebar action rail).
 
 Each item below was found during M5 work, reviewed, and explicitly deferred rather than fixed in
-passing. They are written down because all four are the kind of thing that is obvious on the day
-and invisible three milestones later.
+passing. They are written down because each is the kind of thing that is obvious on the day and
+invisible three milestones later.
 
 ---
 
@@ -113,6 +115,63 @@ With the redesign flag on, M5.3 suppresses the sidebar share card, which leaves 
 adjacent to the bid CTA with nothing around it, so it reads as broken rather than as filler. It was
 not removed here because the sidebar is M5.4's subject and deleting a control is a UX decision, not
 a cleanup.
+
+---
+
+## 6. Empty proposal-console card for viewers with no visible proposals
+
+**Class:** visual residue, **deferred to M5.5** (proposal console).
+
+`<div class="card higestBider">` wraps the whole proposal area and renders unconditionally. For any
+viewer the access layer hands zero proposals — guest, unrelated authenticated user, agent who has
+not bid — it renders as an empty ~30px card. M5.3 and M5.4 made it conspicuous by removing
+everything else that used to sit around it: on a guest page the sidebar is now that empty card and
+one button.
+
+**Why M5.4 did not fix it.** The obvious guard — render the card only when the viewer can review
+all proposals or has at least one visible proposal — cannot be applied by wrapping the element,
+because `@php` blocks *inside* the card compute values (the match-score baseline among them) that
+later markup outside it reads. Making the wrap safe means moving those computations first, which is
+a change to the console, and M5.4 is explicitly the action rail only.
+
+The correct fix belongs with the console redesign, alongside the owner-only empty state
+(`No agents have submitted a bid yet.`) that is already gated on `canReviewAllProposals`.
+
+---
+
+## 7. Markup gates independently hide proposal data
+
+**Class:** observation, no action. Recorded because it changes how a future test should be read.
+
+Removing `restrictLoadedProposals()` from `LandlordAgentAuctionController::view()` — verified by
+mutation during M5.4 — fails **only** the collection-level assertion. Every rendered-HTML privacy
+test still passes, because the per-card `@if ($isListingOwner || $isBidOwner)` gates hide the extra
+rows on their own.
+
+That is defence in depth and it is good. It also means **HTML assertions alone cannot prove the
+server-side rule holds.** `HireAgentBidCtaTest::test_the_view_is_handed_only_authorized_proposals`
+asserts against the collection the view is handed, and it is the test that actually enforces
+"authorization happens before data reaches the view". Anyone trimming that suite should keep it.
+
+---
+
+## 8. Budget visibility — a future cross-platform privacy decision
+
+**Class:** open product decision, **deliberately not acted on.** Reviewed and settled for M5.4.
+
+`$auction->get->budget` is printed to anonymous visitors in the bid CTA. Audited during M5.4: it is
+**already public** by a wider route. `search/hire/landlord/agent/auctions` carries only the `web`
+middleware and `LandlordAgentAuctionController::search()` applies no auth check — only
+approved / non-draft / non-archived filters — so `search.blade.php` prints the same value for every
+listing to every visitor.
+
+**Decision: preserve the guest budget display.** Removing it from the CTA alone would produce
+inconsistent privacy behaviour and would not make the budget private, because the public search
+surface would continue to show it. It would look like a protection without being one.
+
+If budgets should become private, that is **one cross-platform decision**, not a UI change: it
+spans the public search page, all four role detail views, the CTA, and any API or export that reads
+the same meta key. Record it here rather than solving a tenth of it in a milestone about sidebars.
 
 ---
 
