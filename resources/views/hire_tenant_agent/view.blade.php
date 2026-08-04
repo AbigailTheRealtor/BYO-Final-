@@ -130,7 +130,7 @@
         height: auto;
     }
 /* Bid action buttons - matched sizing for Edit/Withdraw */
-    .bid-action-btn {
+    .hla-bid-action-btn {
         min-width: 140px;
         height: 38px;
         display: inline-flex;
@@ -1824,7 +1824,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                             
                             <!-- A) Card Header - Clickable to expand/collapse (using custom JS toggle) -->
-                            <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header" 
+                            <div class="card-header d-flex justify-content-between align-items-center hla-bid-accordion-header"
                                  style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
                                  data-target="bidCollapse-{{ data_get($bid, 'id') }}"
                                  aria-expanded="false">
@@ -2048,7 +2048,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @if ($canEditWithdraw)
                                 <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
                                     <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
-                                       class="btn btn-primary bid-action-btn">
+                                       class="btn btn-primary hla-bid-action-btn">
                                         <i class="fa-solid fa-pen-to-square me-1"></i> Edit Bid
                                     </a>
                                     <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
@@ -2056,7 +2056,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                           class="d-inline">
                                         @csrf
                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                        <button type="submit" class="btn btn-danger bid-action-btn">
+                                        <button type="submit" class="btn btn-danger hla-bid-action-btn">
                                             <i class="fa-solid fa-circle-xmark me-1"></i> Withdraw Bid
                                         </button>
                                     </form>
@@ -3632,7 +3632,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             style="display: none;"
                                             aria-labelledby="counterBidsHeading{{ data_get($bid, 'id') }}">
                                             <div
-                                                class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
+                                                class="accordion-body p-3 border border-top-0 rounded-bottom hla-counter-font">
                                                 @foreach ($counterBids as $counterBid)
                                                 @php
                                                 // Roles - use Auth::id() directly to ensure correct scope
@@ -4407,7 +4407,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @else
                                                         <div
-                                                            class="alert alert-danger mb-0 py-1 alert-font">
+                                                            class="alert alert-danger mb-0 py-1 hla-alert-font">
                                                             ❌
                                                             {{ trim($actorFirst . ' ' . $actorLast) }}
                                                             rejected the counter bid.
@@ -4502,7 +4502,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 {{-- Custom Bid Accordion Toggle (bypasses Bootstrap to avoid double-toggle conflicts) --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
+    document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) {
         header.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();

@@ -28,8 +28,18 @@
     @param mixed  $auction  the role's auction model, for the hero's display fields only
     @param slot   $main        main-column content (role-specific)
     @param slot   $sidebar     sidebar-column content (role-specific, untouched by this milestone)
+    @param slot   $beforeGrid  optional full-width content inside the container but BEFORE the row
     @param slot   $afterGrid   optional content that belongs inside the container but AFTER the row
     @param slot   $heroActions optional controls for the hero; forwarded, never inspected
+
+    ON beforeGrid. M5.3. The counterpart to afterGrid, added for the Quick Actions band, which is
+    full-width above the two columns in Create Offer and has to be able to be full-width here for
+    the same reason: it is page-level, not main-column content, and putting it inside `main` would
+    make it column-width and imply it belongs to the listing detail rather than to the page.
+    It is OPTIONAL and emits nothing when unused, so the three roles that do not pass it render
+    byte-identically to before — the same guarantee heroActions and afterGrid already carry. Like
+    both of those, the shell does not inspect what it is given, does not decide whether the viewer
+    may see it, and adds no wrapper element of its own.
 
     ON heroActions. The hero has always declared an `actions` slot and nothing could ever reach
     it, because this shell invoked the hero with no slot at all — the control was dead markup.
@@ -48,6 +58,23 @@
     @include('hire_agent.framework.styles')
 @endpush
 
+{{--
+    M5.1 — the scope root.
+
+    The framework stylesheet is pushed into the document's style stack, so every rule it declared
+    without an .hla- prefix applied to the WHOLE page: the site header, the off-canvas mobile
+    navigation and the footer included. Measured on a live landlord page, the bare `ul` rules were
+    styling 19 list items in the mobile nav alone.
+
+    This wrapper is what those rules are now scoped to. It carries no styling of its own and adds
+    no layout: it exists solely so `.hla-detail-page ul` can mean "a list on a Hire Agent detail
+    page" rather than "every list in the document".
+
+    It wraps the flash block as well as the containers, because the flash is part of this page and
+    was in range of the old unscoped rules too.
+--}}
+<div class="hla-detail-page">
+
 <x-hire-agent.flash />
 
 <div class="container">
@@ -61,6 +88,10 @@
 <div class="container listingDescription"
      data-hire-agent-detail-shell
      data-hire-agent-role="{{ $role }}">
+    {{-- Bare, like afterGrid below and for the same reason: a wrapper introduced only to hang a
+         marker on would change the DOM for the test's benefit rather than the page's. --}}
+    {{ $beforeGrid ?? '' }}
+
     <div class="row">
         <div class="col-sm-12 col-md-8 col-lg-8 leftCol" data-hire-agent-main>
             {{ $main }}
@@ -79,3 +110,5 @@
     --}}
     {{ $afterGrid ?? '' }}
 </div>
+
+</div>{{-- .hla-detail-page --}}

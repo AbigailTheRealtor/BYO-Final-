@@ -888,6 +888,59 @@ class OfferWorkflowReadinessTest extends TestCase
             //   decision, so it earns an explicit entry here.
             'config/hire_agent_hero.php',
             'resources/views/components/viho/hero.blade.php',
+            // M5.0 — the detail-page redesign flag. Two production paths and no behaviour: a
+            //   config file holding one default-false key, and the single class permitted to read
+            //   it. Nothing consumes the flag yet; the first consumer arrives with the markup it
+            //   gates. Kept separate from config/hire_agent_hero.php above on purpose — the hero
+            //   flag is enabled in a live environment while this rebuild is still being written,
+            //   so the two rollouts must be able to move independently.
+            'config/hire_agent_detail.php',
+            'app/Support/HireAgent/HireAgentDetailRedesign.php',
+            // M5.2 — the VIHO section navigation primitive. The TENTH component, and the second
+            //   release from the deferred composed list after the M4 hero.
+            //   Registered as one exact path, deliberately. The M2 entry above refuses a directory
+            //   wildcard precisely so that a new component is a decision somebody made and wrote
+            //   down, and this line is that decision for `section-nav`. A wildcard here would also
+            //   wave through the composed components still deferred — gallery, quick actions,
+            //   modal, sidebar — which have not been reviewed.
+            //   It qualifies as a primitive in the strict sense the guard tests enforce: no
+            //   script, no business logic, no authorization, escaped output, and no `id` of its
+            //   own. It renders the array it is handed and marks whichever entry the caller names
+            //   as current. That matters most for a nav specifically — an entry for a section the
+            //   viewer cannot see would leak both the section's existence and its name, and the
+            //   primitive cannot make that mistake because it cannot see the viewer. Deciding
+            //   which entries exist stays with the product.
+            //   Inert until a caller passes it items. The only caller is the landlord detail view,
+            //   and that call sits behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
+            'resources/views/components/viho/section-nav.blade.php',
+            // M5.3 — the VIHO quick actions band. The eleventh component and the third release
+            //   from the deferred composed list. One exact path again, for the reason the M2 entry
+            //   gives: each component is a decision somebody made and wrote down.
+            //   NOT `interaction-hub`, which stays deferred. Create Offer's hub bundles actions
+            //   with activity counts and listing facts; this is only the action band, and the
+            //   bundled data contract has not been mapped.
+            //   It is a container: tiles arrive through its slot as x-viho.action-tile children,
+            //   already built and ordered by the caller, so it holds no script, no business logic,
+            //   no authorization and no route names. That matters most for an action band — a tile
+            //   advertises that a workflow exists and what it is called, which is a disclosure
+            //   even when the route behind it is protected. The component cannot make that mistake
+            //   because it cannot see the viewer; the product classifies every tile as public,
+            //   authenticated, agent-only or listing-owner-only, and the last two are kept out.
+            //   Inert until a caller passes it tiles. The only caller is the landlord detail view,
+            //   behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
+            'resources/views/components/viho/quick-actions.blade.php',
+            // M5.5 — the landlord proposal card, extracted.
+            //   NOT a new component and NOT a new shared surface. This is 1,288 lines that were
+            //   already inside hire_landlord_agent/view.blade.php — a path this guard has covered
+            //   since M3 — moved into a partial of that same role view. Verified as a faithful
+            //   move: with the redesign flag off, the rendered page is identical for the owner, a
+            //   submitting agent, an unrelated user and a guest.
+            //   It is registered as its own line rather than covered by a directory wildcard for
+            //   the reason the M2 entry gives: the next partial someone adds under this role
+            //   should be a decision somebody made and wrote down. It is also why no VIHO
+            //   component is registered here — M5.5 released none. The card's chrome reuses
+            //   badge and empty-state, both already on this list since M2.
+            'resources/views/hire_landlord_agent/partials/proposal_card.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

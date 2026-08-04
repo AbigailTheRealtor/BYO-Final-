@@ -11,25 +11,52 @@
     several rules differ only in !important or comment punctuation. Normalising those would be a
     visual change wearing the costume of a refactor, so each view keeps its own residual block.
 
-    SCOPING. Everything new here is prefixed .hla- (Hire Listing Agent) and every override is
-    nested under .hla-hero or an existing Hire Agent container. Nothing in this file selects a
-    bare element or a Bootstrap class globally, so it cannot reach Create Offer, which owns its
-    own separate .sol- namespace and shares no file, class or partial with this framework.
+    ── M5.1: SCOPING, AND A CORRECTION ──────────────────────────────────────────────────────────
+
+    The header here used to claim: "Nothing in this file selects a bare element or a Bootstrap
+    class globally." THAT WAS FALSE. It selected `hr`, `ul`, `ul li`, `input[type=number]`,
+    `.card-body`, `.form-select` and `.fa-percent` with no scope at all, and this file is pushed
+    into the document's style stack, so those rules applied to the WHOLE PAGE — including the site
+    header, the off-canvas mobile navigation and the footer, none of which belong to Hire Agent.
+
+    Measured before the fix, on a live landlord page: the bare `ul` and `ul li` rules were styling
+    19 list items outside the page containers, all of them in the mobile navigation menu.
+
+    Every rule that is not already `.hla-` prefixed is now scoped under `.hla-detail-page`, which
+    the detail shell puts on its wrapper. Two consequences, both intended:
+
+      · The mobile navigation stops inheriting Hire Agent list styling. That is a VISUAL CHANGE,
+        not a no-op refactor, and it is the point of the milestone rather than a side effect.
+      · Bootstrap and app-wide class NAMES are kept (`.card-body`, `.form-select`, `.field-label`)
+        because the markup uses those names. Scoping is what makes them safe; renaming them would
+        be a much larger change to no additional benefit.
+
+    ── M5.1: VIHO TOKENS ────────────────────────────────────────────────────────────────────────
+
+    This is the ONE Hire Agent file permitted to read `var(--viho-*)`. That exception is named
+    explicitly in VihoDesignTokenFoundationTest and is not a general licence: no other Hire Agent
+    file may read a token, and Create Offer may not read one at all before M8.
+
+    Only EXACT value matches were substituted. #e2e8f0 becomes var(--viho-border) because the token
+    is #E2E8F0; #34465c, #0f1a24 and #049399 stay literal because no token holds them, and
+    inventing near-matches would be a visual change disguised as an alignment. Anything still
+    hard-coded below is hard-coded because the shared scale genuinely does not contain it.
 --}}
 <style>
-    /* ── Shared rules, previously duplicated verbatim in all four detail views ───────── */
+    /* ── Shared rules, previously duplicated verbatim in all four detail views ─────────
+       All scoped to .hla-detail-page as of M5.1. See the header for why. */
     /* Chrome, Safari, Edge, Opera */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
+        .hla-detail-page input::-webkit-outer-spin-button,
+        .hla-detail-page input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
     /* Firefox */
-        input[type=number] {
+        .hla-detail-page input[type=number] {
             -moz-appearance: textfield;
         }
-    .fa-dollar-sign,
-        .fa-percent {
+    .hla-detail-page .fa-dollar-sign,
+        .hla-detail-page .fa-percent {
             padding: 0 20px;
             background: #facd34;
             color: #fff;
@@ -40,8 +67,8 @@
             z-index: 1;
             border-radius: 3px 0 0 3px;
         }
-    .form-control,
-        .form-select {
+    .hla-detail-page .form-control,
+        .hla-detail-page .form-select {
             border-radius: 0.25rem;
             box-shadow: inset 0 1px 2px 0 rgb(66 71 112 / 12%);
             border-radius: 0.25rem;
@@ -49,70 +76,70 @@
             margin-bottom: 15px;
         }
     /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
-        .card-header h4,
-        .section-title {
+        .hla-detail-page .card-header h4,
+        .hla-detail-page .section-title {
             font-size: 1.5rem !important;
             font-weight: 700 !important;
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
+            margin-top: var(--viho-space-2xl);
+            margin-bottom: var(--viho-space-md);
             color: #0f1a24;
         }
     /* Services section - extra breathing room before header */
-        .services-section-header {
-            margin-top: 0.75rem !important;
+        .hla-detail-page .services-section-header {
+            margin-top: var(--viho-space-md) !important;
         }
-    hr {
-            margin-top: 1.25rem;
+    .hla-detail-page hr {
+            margin-top: var(--viho-space-xl);
             margin-bottom: 0.5rem;
         }
     /* Field row styling - improved line-height for scan-readability */
-        .col-md-12.col-12.pt-2.fw-bold {
+        .hla-detail-page .col-md-12.col-12.pt-2.fw-bold {
             line-height: 1.6;
             padding-top: 0.6rem !important;
             padding-bottom: 0.2rem;
         }
-    .field-row {
+    .hla-detail-page .field-row {
             padding: 0.5rem 0;
             font-size: 0.95rem;
             line-height: 1.6;
         }
-    .field-label {
+    .hla-detail-page .field-label {
             font-weight: 600;
             color: #34465c;
         }
-    .field-value {
+    .hla-detail-page .field-value {
             font-weight: normal;
             color: #34465c;
         }
     /* Broker Compensation subsection headers - breathing room */
-        h5.mt-3.mb-2 {
-            padding-top: 0.75rem;
+        .hla-detail-page h5.mt-3.mb-2 {
+            padding-top: var(--viho-space-md);
             margin-top: 1rem !important;
         }
     /* Fix blank space under section headers - reduce gap to first content */
-        .card-body {
+        .hla-detail-page .card-body {
             padding-top: 12px !important;
         }
-    .card-body > :first-child {
+    .hla-detail-page .card-body > :first-child {
             margin-top: 0 !important;
         }
     /* Broker Compensation section text - match other section text color */
-        .broker-compensation-section,
-        .broker-compensation-section p,
-        .broker-compensation-section .col-md-12,
-        .broker-compensation-section .fw-bold {
+        .hla-detail-page .broker-compensation-section,
+        .hla-detail-page .broker-compensation-section p,
+        .hla-detail-page .broker-compensation-section .col-md-12,
+        .hla-detail-page .broker-compensation-section .fw-bold {
             color: #34465c !important;
         }
-    ul {
+    .hla-detail-page ul {
             --icon-size: 1em;
             --gutter: .5em;
             padding: 0 0 0 calc(var(--icon-size) + 2em);
         }
-    ul li {
+    .hla-detail-page ul li {
             padding-left: var(--gutter);
             color: #34465c;
         }
-    ul:not(.services) li::marker {
+    .hla-detail-page ul:not(.services) li::marker {
             content: "\f101";
             /* FontAwesome Unicode */
             font-family: FontAwesome;
@@ -121,13 +148,13 @@
             color: #11b7cf;
         }
     /* Services section - Tighter spacing and indentation */
-        ul.services {
+        .hla-detail-page ul.services {
             list-style: none !important;
             padding-left: 1.2em;
-            margin-top: 0.35rem;
+            margin-top: var(--viho-space-xs);
             margin-bottom: 0.5rem;
         }
-    ul.services li {
+    .hla-detail-page ul.services li {
             padding: 0.15rem 0;
             color: #34465c;
             position: relative;
@@ -135,75 +162,86 @@
             list-style: none !important;
             line-height: 1.4;
         }
-    ul.services li::marker {
+    .hla-detail-page ul.services li::marker {
             content: none !important;
         }
-    ul.services li::before {
+    .hla-detail-page ul.services li::before {
             content: "•";
             position: absolute;
             left: -0.9em;
             color: #34465c;
             font-size: 1.1em;
         }
-    .removeBold {
+    .hla-detail-page .removeBold {
             font-weight: normal;
         }
-    .biding-btn {
+    /* M5.1 renamed from .biding-btn. NOTE: no markup in any Hire Agent view carries this class —
+       the rule is dead. Renamed rather than deleted so this milestone stays a rename, not a
+       removal; deleting it is a separate decision. */
+    .hla-detail-page .hla-bid-btn {
             width: 31.5%;
         }
-    .view-btn {
+    .hla-detail-page .view-btn {
             padding: 6px !important;
         }
-    .services-offered {
+    .hla-detail-page .services-offered {
             padding: 23px !important;
         }
     @media screen and (max-width: 800px) {
-            .accordion-body-padding {
+            /* M5.1 renamed from .accordion-body-padding. Also dead — no markup carries it. */
+            .hla-detail-page .hla-accordion-body-padding {
                 padding: 7px !important;
             }
-    
-            .alert-font {
+
+            .hla-detail-page .hla-alert-font {
                 font-size: 10px;
             }
-    
-            .counter-font {
+
+            .hla-detail-page .hla-counter-font {
                 font-size: 15px;
             }
         }
-    /* Bid card accordion chevron rotation (custom JS toggle) */
-        .bid-accordion-header .bid-chevron {
+    /* Bid card accordion chevron rotation (custom JS toggle).
+       M5.1: renamed from .bid-accordion-header. The class is also a JAVASCRIPT selector in all
+       four role views (`document.querySelectorAll('.bid-accordion-header')`), so the rename was
+       applied to the scripts in the same commit — a CSS-only rename would have silently detached
+       the toggle from its styling. */
+        .hla-detail-page .hla-bid-accordion-header .bid-chevron {
             transition: transform 0.3s ease;
         }
-    .bid-accordion-header:hover {
+    .hla-detail-page .hla-bid-accordion-header:hover {
             background-color: #f8f9fa !important;
         }
-    .bid-action-btn:hover {
+    .hla-detail-page .hla-bid-action-btn:hover {
             opacity: 0.9;
         }
     /* ── Hire Agent shared hero ──────────────────────────────────────────────────────
        New in Milestone 4. There was no hero before: each page opened straight into a
        "Listing Details:" card, and the title/status sat at the top of the right column.
        Deliberately absent: any countdown, any remaining-time element, any competing-proposal
-       count. The hero shows what the listing IS, never how long is left to act on it. */
+       count. The hero shows what the listing IS, never how long is left to act on it.
+
+       Left unscoped in M5.1: .hla- is already a unique namespace, so these rules cannot collide
+       with anything outside Hire Agent. Prefixing them again would add noise without safety. */
     .hla-hero {
-        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, var(--viho-page-bg) 0%, var(--viho-card-bg) 100%);
+        border: 1px solid var(--viho-border);
         border-radius: 10px;
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 1.25rem;
+        padding: var(--viho-space-xl) var(--viho-space-2xl);
+        margin-bottom: var(--viho-space-xl);
     }
     .hla-hero-title {
         font-size: 1.6rem;
         font-weight: 700;
         color: #0f1a24;
         line-height: 1.25;
-        margin: 0 0 0.35rem 0;
+        margin: 0 0 var(--viho-space-xs) 0;
         overflow-wrap: anywhere;
     }
     .hla-hero-subtitle {
         font-size: 0.95rem;
-        color: #475569;
-        margin: 0 0 0.75rem 0;
+        color: var(--viho-text-soft);
+        margin: 0 0 var(--viho-space-md) 0;
         overflow-wrap: anywhere;
     }
     .hla-hero-figure {
@@ -219,13 +257,13 @@
         font-weight: 600;
         letter-spacing: 0.02em;
         text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.1rem;
+        color: var(--viho-label);
+        margin-bottom: var(--viho-space-3xs);
     }
     .hla-hero-facts {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem 1.5rem;
+        gap: 0.5rem var(--viho-space-2xl);
         margin-top: 0.85rem;
     }
     .hla-hero-fact {
@@ -233,11 +271,11 @@
     }
     .hla-hero-fact-label {
         display: block;
-        font-size: 0.75rem;
+        font-size: var(--viho-font-xs);
         font-weight: 600;
         letter-spacing: 0.02em;
         text-transform: uppercase;
-        color: #64748b;
+        color: var(--viho-label);
     }
     .hla-hero-fact-value {
         font-size: 0.95rem;
@@ -254,19 +292,19 @@
     .hla-hero-chip {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-        background: #f1f5f9;
-        border: 1px solid #e2e8f0;
+        gap: var(--viho-space-xs);
+        background: var(--viho-surface-subtle);
+        border: 1px solid var(--viho-border);
         border-radius: 999px;
         padding: 0.2rem 0.7rem;
         font-size: 0.8rem;
-        color: #334155;
+        color: var(--viho-text);
     }
     .hla-hero-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
-        margin-top: 0.9rem;
+        margin-top: var(--viho-space-lg);
     }
 
     /* ── Mobile stacking ─────────────────────────────────────────────────────────────
@@ -282,7 +320,7 @@
             font-size: 1.3rem;
         }
         .hla-hero-figure {
-            font-size: 1.45rem;
+            font-size: var(--viho-font-xl);
         }
         .hla-hero-facts {
             gap: 0.5rem 1rem;
@@ -294,5 +332,66 @@
     .hla-hero,
     .hla-hero * {
         max-width: 100%;
+    }
+
+    /* ── M5.3: Quick Actions, the product half ───────────────────────────────────────────────
+       Two rules the VIHO band cannot own. A share row is a list of THIS product's share targets,
+       and the copy confirmation is the visible half of the landlord view's copy handler; neither
+       is general enough for the neutral layer.
+
+       THEY LIVE HERE RATHER THAN IN THE ROLE VIEW because this is the one Hire Agent file
+       permitted to read `var(--viho-*)`, and expressing them without tokens would mean copying
+       spacing and colour values that already have names. The trade is that they ship to all four
+       roles and to every viewer regardless of HIRE_AGENT_DETAIL_REDESIGN_ENABLED — inert, because
+       no page emits `.hla-quick-share` markup unless the flag is on. That is the same bargain the
+       VIHO stylesheet itself already makes: rules ship, markup is what is gated. The flag's real
+       guarantee is over markup and behaviour, and the tests assert it there. */
+    .hla-detail-page .hla-quick-share {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--viho-space-md);
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    /* The same ::marker defence x-viho.section-nav needs, against the same rule: this file gives
+       every `.hla-detail-page ul:not(.services) li` a FontAwesome chevron, and `list-style: none`
+       does not suppress a marker whose content is set explicitly. A share row IS such a list. */
+    .hla-detail-page ul.hla-quick-share > li {
+        display: block;
+    }
+    /* `ul.` rather than a bare descendant: the legacy rule is
+       `.hla-detail-page ul:not(.services) li::marker`, which is two classes and two elements. A
+       selector one element short of that loses the cascade and the "second line of defence" would
+       be decorative — display:block would be carrying it alone. Matching the specificity and
+       landing later in the same file is what makes this rule actually apply. */
+    .hla-detail-page ul.hla-quick-share > li::marker {
+        content: none;
+    }
+    .hla-detail-page .hla-quick-share a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid var(--viho-border-strong);
+        border-radius: var(--viho-radius-md);
+        color: var(--viho-label);
+        text-decoration: none;
+        transition: color var(--viho-transition), border-color var(--viho-transition);
+    }
+    .hla-detail-page .hla-quick-share a:hover,
+    .hla-detail-page .hla-quick-share a:focus-visible {
+        color: var(--viho-primary);
+        border-color: var(--viho-primary);
+    }
+    /* Reserves its line whether or not it has text, so confirming a copy does not reflow the tile. */
+    .hla-detail-page .hla-quick-copy-status {
+        display: block;
+        margin-top: var(--viho-space-xs);
+        min-height: 1em;
+        font-size: var(--viho-font-3xs);
+        color: var(--viho-primary);
     }
 </style>

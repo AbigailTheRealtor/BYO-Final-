@@ -44,6 +44,33 @@ class VihoDesignTokenFoundationTest extends TestCase
         'resources/views/hire_tenant_agent/view.blade.php',
     ];
 
+    /**
+     * The ONE product file permitted to read a VIHO token. Added in M5.1.
+     *
+     * ── WHY THE BAN WAS LIFTED FOR EXACTLY ONE FILE ──────────────────────────────────────────
+     *
+     * The original rule said neither product may read a token "yet", and it was carrying the
+     * zero-render-change guarantee for M1: a foundation nothing consumes cannot alter a pixel.
+     * That guarantee has done its job. M5.1 aligns the Hire Agent framework stylesheet to the
+     * shared scale, which is the adoption the token layer existed for.
+     *
+     * It is a NAMED FILE, not a prefix and not a directory. `resources/views/hire_agent/` would
+     * have been easier to write and would have let every future file in that directory read
+     * tokens without anyone deciding it should. The whole point of the M1 contract is that
+     * adoption is a decision per file, so a wildcard here would dissolve the rule it is amending.
+     *
+     * What this does NOT permit:
+     *   · Create Offer. Still barred entirely until M8 — asserted separately below.
+     *   · Any other Hire Agent file. The role views, the shared components and the shell are all
+     *     still held to the original ban.
+     *   · Token DECLARATION. This file may read `var(--viho-*)`; it may not declare one. The
+     *     neutral stylesheet remains the single source of the values.
+     *
+     * Adding a second entry here is an architectural change requiring its own milestone decision,
+     * exactly as VihoPresentationPrimitivesTest::APPROVED_SHARED_CONSUMER is for components.
+     */
+    private const APPROVED_TOKEN_CONSUMER = 'resources/views/hire_agent/framework/styles.blade.php';
+
     /** The thirteen tokens the four Create Offer views already declare, verbatim. */
     private const DECLARED_TOKENS = [
         '--viho-primary'       => '#2563EB',
@@ -506,6 +533,12 @@ class VihoDesignTokenFoundationTest extends TestCase
 
                 $rel = ltrim(str_replace(base_path() . '/', '', $item->getPathname()), '/');
 
+                // M5.1 — one named file, matched exactly rather than by prefix, so it cannot
+                // widen into a directory. See APPROVED_TOKEN_CONSUMER.
+                if ($rel === self::APPROVED_TOKEN_CONSUMER) {
+                    continue;
+                }
+
                 foreach ($allowedPrefixes as $prefix) {
                     if (str_starts_with($rel, $prefix)) {
                         continue 2;
@@ -527,20 +560,88 @@ class VihoDesignTokenFoundationTest extends TestCase
     /**
      * Neither product reads a token, stated on its own so a failure names the product directly.
      *
-     * This is the half of the old assertion that carries the zero-render-change guarantee, kept
-     * sharp rather than folded into the scoped check above.
+     * AMENDED IN M5.1, BY EXACTLY ONE FILE. This carried M1's zero-render-change guarantee — a
+     * foundation nothing consumes cannot alter a pixel — and that guarantee has served its
+     * purpose. The Hire Agent framework stylesheet now reads the shared scale; see
+     * APPROVED_TOKEN_CONSUMER for why the exception is a named file rather than a directory.
+     *
+     * CREATE OFFER IS UNCHANGED and still barred in full, which is the half of this assertion
+     * that still carries a guarantee. The loop deliberately keeps both zones rather than dropping
+     * Hire Agent, so a second Hire Agent file reading a token fails here by name.
      */
     public function test_neither_product_consumes_the_tokens(): void
     {
         foreach ([Scanner::ZONE_HIRE_AGENT, Scanner::ZONE_CREATE_OFFER] as $zone) {
             foreach ($this->scanner->filesInZone($zone) as $file) {
+                if ($file === self::APPROVED_TOKEN_CONSUMER) {
+                    continue;
+                }
+
                 $this->assertStringNotContainsString(
                     'var(--viho',
                     Scanner::stripComments($this->scanner->read($file)),
-                    "{$file} must not read a VIHO token yet."
+                    "{$file} must not read a VIHO token. M5.1 lifted this for exactly one file — "
+                    . self::APPROVED_TOKEN_CONSUMER . ' — and a second consumer is an architectural '
+                    . 'change requiring its own milestone decision, not a test edit.'
                 );
             }
         }
+    }
+
+    /**
+     * Create Offer specifically reads no token, asserted on its own.
+     *
+     * The amendment above put a conditional inside a loop covering both products. That is exactly
+     * the shape of change that later gets "simplified" into skipping more than it should, so the
+     * Create Offer half is restated here where no exception exists to widen.
+     */
+    public function test_create_offer_still_reads_no_token(): void
+    {
+        foreach ($this->scanner->filesInZone(Scanner::ZONE_CREATE_OFFER) as $file) {
+            $this->assertStringNotContainsString(
+                'var(--viho',
+                Scanner::stripComments($this->scanner->read($file)),
+                "{$file} is Create Offer, which may not read a VIHO token before M8. The M5.1 "
+                . 'exception is a Hire Agent file and does not extend here.'
+            );
+        }
+    }
+
+    /**
+     * The approved consumer is real, is the only one, and is a file rather than a pattern.
+     *
+     * Three ways the M5.1 amendment could rot: the constant naming a file that no longer exists,
+     * the file existing but never actually reading a token (leaving a granted exception nobody
+     * uses, which invites someone to reuse it for something else), and the constant quietly
+     * becoming a directory prefix.
+     */
+    public function test_the_token_exception_is_a_single_real_file_that_uses_it(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists(self::APPROVED_TOKEN_CONSUMER),
+            'The approved token consumer must exist.'
+        );
+
+        $this->assertStringContainsString(
+            'var(--viho',
+            Scanner::stripComments($this->scanner->read(self::APPROVED_TOKEN_CONSUMER)),
+            'The exception is granted for adoption. A file that reads no token should not hold one.'
+        );
+
+        $this->assertStringEndsWith(
+            '.blade.php',
+            self::APPROVED_TOKEN_CONSUMER,
+            'The exception must name one file. A directory or prefix would let future files inherit '
+            . 'an exception nobody decided to grant them.'
+        );
+
+        // The exception must not have quietly become a second way into the neutral zone: reading
+        // tokens is permitted, declaring them is not.
+        $this->assertStringNotContainsString(
+            '--viho-primary:',
+            $this->scanner->read(self::APPROVED_TOKEN_CONSUMER),
+            'Tokens are declared once, in the neutral stylesheet. The consumer may only read them.'
+        );
     }
 
     /** The VIHO primitives really do read the tokens — the positive half of the same contract. */
@@ -602,10 +703,11 @@ class VihoDesignTokenFoundationTest extends TestCase
      * components each need a data and interaction contract that has not been mapped yet, and the
      * cheapest way to skip that work is to quietly add them here.
      *
-     * AMENDED IN M4, BY EXACTLY ONE ENTRY: `hero`. See
-     * test_deferred_composed_components_do_not_exist for why that single deferral was lifted. The
-     * rule itself is unchanged — still an exact list, still no directory pattern or wildcard — so
-     * a tenth file appearing here fails as loudly as a ninth did before.
+     * AMENDED IN M4, BY EXACTLY ONE ENTRY: `hero`. AMENDED AGAIN IN M5.2, BY EXACTLY ONE ENTRY:
+     * `section-nav`. AMENDED AGAIN IN M5.3, BY EXACTLY ONE ENTRY: `quick-actions`. See
+     * test_deferred_composed_components_do_not_exist for why each deferral was lifted. The rule
+     * itself is unchanged — still an exact list, still no directory pattern or wildcard — so a
+     * twelfth file appearing here fails as loudly as a ninth did before.
      *
      * @see \Tests\Feature\Viho\VihoPresentationPrimitivesTest for the components' own behaviour
      */
@@ -623,10 +725,10 @@ class VihoDesignTokenFoundationTest extends TestCase
         sort($found);
 
         $this->assertSame(
-            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'section-header', 'stat', 'styles'],
+            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'quick-actions', 'section-header', 'section-nav', 'stat', 'styles'],
             $found,
-            'Only the eight approved M2 primitives, the M4 hero, and the M1 stylesheet may exist in '
-            . 'the neutral namespace.'
+            'Only the eight approved M2 primitives, the M4 hero, the M5.2 section-nav, the M5.3 '
+            . 'quick-actions, and the M1 stylesheet may exist in the neutral namespace.'
         );
     }
 
@@ -653,26 +755,72 @@ class VihoDesignTokenFoundationTest extends TestCase
      *     (HireAgentHeroData::redesignEnabledFor()), so it reaches no page until a role is
      *     explicitly allowlisted.
      *
+     * ── `section-nav` WAS RELEASED FROM THIS LIST IN M5.2 ────────────────────────────────────
+     *
+     * The second release, and it followed the same discipline rather than citing the first as
+     * precedent. The M4 note above says removing a second name is an architectural change; this
+     * is that change, made deliberately:
+     *
+     *   · The prop contract is FROZEN and scalar — items (id + label), current, ariaLabel.
+     *     Nothing is resolved, formatted or decided inside the component.
+     *   · It contains NO JAVASCRIPT, which is the whole reason a nav can be a primitive at all.
+     *     Sticky offset, smooth scrolling and current-section tracking are behaviour and stay
+     *     with the product; the component emits a `data-viho-section-nav` hook and nothing else.
+     *     The existing guards forbidding `<script>`, `document.` and `window.` enforce this.
+     *   · It emits no `id` of its own and hard-codes no section id, so two navs on one page
+     *     cannot collide and no product's id scheme leaks into the neutral layer.
+     *   · A nav is where an authorization mistake becomes visible — an entry for a section the
+     *     viewer cannot see leaks that section's existence and its name. The component cannot
+     *     make that mistake because it cannot see the viewer; the caller filters the array.
+     *   · It reaches no page until HIRE_AGENT_DETAIL_REDESIGN_ENABLED is on, which defaults off.
+     *
+     * ── `quick-actions` WAS RELEASED FROM THIS LIST IN M5.3 ──────────────────────────────────
+     *
+     * The third release, held to the same bar. Note what it is NOT: `interaction-hub` remains
+     * deferred and is a different thing — Create Offer's hub bundles actions, activity counts and
+     * listing facts into one panel, and that data contract has still not been mapped. This
+     * component is only the action band.
+     *
+     *   · The prop contract is FROZEN and scalar — label, icon, ariaLabel. The tiles arrive
+     *     through the default slot as x-viho.action-tile children, already built and ordered by
+     *     the caller, so no vocabulary for forms, modals or multi-CTA tiles leaks inward.
+     *   · It contains NO JAVASCRIPT. Copy-to-clipboard and share behaviour stay with the product,
+     *     enforced by the same guards forbidding `<script>`, `document.` and `window.`.
+     *   · It declares no column count. The grid is auto-fit, so the caller cannot hard-code a
+     *     track count that is wrong at every width but their own.
+     *   · An action band is where an authorization mistake becomes VISIBLE: a tile advertises
+     *     that a workflow exists and what it is called, which is a disclosure even when the route
+     *     behind it is protected. The component cannot make that mistake because it cannot see
+     *     the viewer. The product is required to classify every tile — public, authenticated,
+     *     agent-only, listing-owner-only — and owner-only and agent-only workflows are kept out
+     *     of the band entirely. That rule is why the landlord pilot ships three public and
+     *     authenticated tiles and no proposal, bid or edit action.
+     *   · It renders nothing at all for an empty slot, so a viewer offered no tiles sees no band
+     *     rather than an empty heading.
+     *   · It reaches no page until HIRE_AGENT_DETAIL_REDESIGN_ENABLED is on, which defaults off.
+     *
      * ── WHAT THIS DOES NOT DO ────────────────────────────────────────────────────────────────
      *
      * It does not accelerate or authorize any remaining deferred component. `hero-gallery`,
      * `hero-fact`, `media-placeholder`, `detail-shell`, `sidebar`, `page` and the rest are
-     * untouched and still forbidden — including the three whose names resemble the released one.
-     * Each would need its own contract, its own guards and its own milestone decision. Removing a
-     * second name from this list is an architectural change, not a test fix.
+     * untouched and still forbidden — including the ones whose names resemble the released three,
+     * `interaction-hub` most of all. Each would need its own contract, its own guards and its own
+     * milestone decision. Removing a fourth name from this list is an architectural change, not a
+     * test fix.
      */
     public function test_deferred_composed_components_do_not_exist(): void
     {
         foreach ([
-            'page', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
-            'section-nav', 'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
+            'page', 'hero-gallery', 'interaction-hub', 'mobile-bar',
+            'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
             'divider', 'hero-fact', 'media-placeholder',
         ] as $deferred) {
             $this->assertFalse(
                 $this->scanner->exists("resources/views/components/viho/{$deferred}.blade.php"),
                 "x-viho.{$deferred} is deferred to a later milestone and must not exist yet. M4 "
-                . 'released `hero` from this list and nothing else; a second release requires its '
-                . 'own frozen contract, its own guards and an explicit milestone decision.'
+                . 'released `hero`, M5.2 released `section-nav` and M5.3 released `quick-actions`; '
+                . 'each further release requires its own frozen contract, its own guards and an '
+                . 'explicit milestone decision.'
             );
         }
     }
@@ -712,6 +860,120 @@ class VihoDesignTokenFoundationTest extends TestCase
             $deferredBlock,
             'x-viho.hero must not be listed as deferred while it exists in the approved directory.'
         );
+    }
+
+    /**
+     * The M5.2 release is registered and out of the deferred set — the same three-way check.
+     *
+     * Written as its own test rather than folded into the hero's, so a failure names which
+     * release rotted. The two lists must agree about `section-nav` in both directions.
+     */
+    public function test_the_section_nav_is_released_from_deferral_and_registered(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho/section-nav.blade.php'),
+            'x-viho.section-nav was released from deferral in M5.2 and must exist.'
+        );
+
+        $found = array_map(
+            fn ($f) => basename($f, '.blade.php'),
+            $this->scanner->filesInZone(Scanner::ZONE_VIHO)
+        );
+
+        $this->assertContains('section-nav', $found, 'x-viho.section-nav must be registered in the approved set.');
+
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $deferredBlock = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        $this->assertStringNotContainsString(
+            "'section-nav',",
+            $deferredBlock,
+            'x-viho.section-nav must not be listed as deferred while it exists in the approved directory.'
+        );
+    }
+
+    /**
+     * The M5.3 release is registered and out of the deferred set — the same three-way check.
+     *
+     * Its own test, again, so a failure names the release that rotted. It additionally pins that
+     * `interaction-hub` stayed deferred: the two names are close enough that releasing one and
+     * quietly treating the other as covered is the realistic mistake, and they are genuinely
+     * different components — the hub bundles actions with activity counts and listing facts,
+     * whose data contract has not been mapped.
+     */
+    public function test_the_quick_actions_is_released_from_deferral_and_registered(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho/quick-actions.blade.php'),
+            'x-viho.quick-actions was released from deferral in M5.3 and must exist.'
+        );
+
+        $found = array_map(
+            fn ($f) => basename($f, '.blade.php'),
+            $this->scanner->filesInZone(Scanner::ZONE_VIHO)
+        );
+
+        $this->assertContains('quick-actions', $found, 'x-viho.quick-actions must be registered in the approved set.');
+
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $deferredBlock = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        $this->assertStringNotContainsString(
+            "'quick-actions',",
+            $deferredBlock,
+            'x-viho.quick-actions must not be listed as deferred while it exists in the approved directory.'
+        );
+
+        $this->assertStringContainsString(
+            "'interaction-hub',",
+            $deferredBlock,
+            'x-viho.interaction-hub is a different component and must remain deferred.'
+        );
+
+        $this->assertFalse(
+            $this->scanner->exists('resources/views/components/viho/interaction-hub.blade.php'),
+            'Releasing quick-actions must not have brought interaction-hub with it.'
+        );
+    }
+
+    /**
+     * Exactly three components have ever been released, and the rest of the deferred list is
+     * intact.
+     *
+     * Three releases is well past where "we did it before" starts to feel like precedent, which is
+     * exactly why the count is pinned rather than the pattern. A fourth release has to change this
+     * assertion by hand and say so.
+     */
+    public function test_only_three_components_have_been_released_from_deferral(): void
+    {
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $block  = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        foreach ([
+            'page', 'hero-gallery', 'interaction-hub', 'mobile-bar',
+            'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
+            'divider', 'hero-fact', 'media-placeholder',
+        ] as $stillDeferred) {
+            $this->assertStringContainsString(
+                "'{$stillDeferred}',",
+                $block,
+                "'{$stillDeferred}' must remain deferred. M4 released `hero`, M5.2 released "
+                . '`section-nav` and M5.3 released `quick-actions`; nothing else has been reviewed, '
+                . 'and three releases are not a licence for a fourth.'
+            );
+        }
     }
 
     /**

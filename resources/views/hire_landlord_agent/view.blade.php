@@ -131,7 +131,7 @@
         background-color: #0b5ed7 !important;
     }
 /* Bid action buttons - matched sizing for Edit bid */
-    .bid-action-btn {
+    .hla-bid-action-btn {
         min-width: 140px;
         height: 38px;
         display: inline-flex;
@@ -144,6 +144,42 @@
         box-shadow: none;
     }
 </style>
+
+{{-- M5.2b — the product half of the section navigation. Flag-gated, so with the redesign off this
+     page pushes no additional CSS at all. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabled())
+<style>
+/* THE STICKY OFFSET, SUPPLIED BY THE CONSUMER.
+   x-viho.section-nav declares `position: sticky` but deliberately leaves `top` unset, because the
+   only correct value is the height of whatever fixed chrome the host page puts above the bar —
+   which the primitive cannot know and must not guess. This page is that host, so this page answers.
+
+   Desktop has no fixed header above the reading column, so the bar sticks to the viewport top: 0.
+   Below the lg breakpoint the mobile header bar occupies 104px, so the nav must clear it.
+
+   ONE variable does both jobs: the bar sticks below the chrome, and .viho-section-nav-target uses
+   the same value for scroll-margin-top so an anchored heading never lands underneath the bar it
+   was reached from. Two variables would drift, and the symptom is easy to miss. */
+:root {
+    --viho-section-nav-offset: 0px;
+}
+@media (max-width: 991.98px) {
+    :root {
+        --viho-section-nav-offset: 104px;
+    }
+}
+
+/* Smooth scrolling is CSS here, not script. The nav emits real hrefs, so the browser performs the
+   scroll itself and honours the reader's motion preference — reimplementing it in JS would mean
+   reimplementing that too, and getting it wrong for anyone who asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+</style>
+@endif
 @endpush
 
 
@@ -151,10 +187,322 @@
 @php
 $auth_id = auth()->user() ? auth()->user()->id : 0;
 @endphp
+
+@php
+    /*
+     | M5.2a — SECTION VISIBILITY GUARDS, HOISTED.
+     |
+     | These five conditions decide whether their sections render. They used to be computed
+     | immediately above each section, hundreds of lines apart and hundreds of lines below
+     | the top of the page — which is fine while the only consumer is the section itself,
+     | and impossible once anything above needs the same answer.
+     |
+     | M5.2b adds a section navigation bar at the top of the page. A nav entry for a section
+     | that did not render would be a link to nothing, and — for the compensation section —
+     | would leak the existence and name of a section the viewer is not shown. Re-deriving
+     | these conditions up here would have been the obvious shortcut and the wrong one: the
+     | copy and the original drift, and the drift is invisible until someone reports a dead
+     | link. So the conditions move; nothing is duplicated.
+     |
+     | The expressions are reproduced verbatim and in their original order. This commit
+     | changes WHERE they are evaluated and nothing else — no condition altered, no
+     | authorization changed, no output changed.
+     |
+     | ON THE COMPENSATION GUARD: only the computation moved. `@if (Auth::check())` still
+     | wraps the section exactly where it did. Computing the flag for an anonymous visitor
+     | reveals nothing — it emits no markup — and the section remains as unreachable to them
+     | as before. Whether authenticated-but-unrelated viewers should see compensation at all
+     | is an open product question, recorded in
+     | docs/investigations/hire-agent-compensation-visibility-decision.md and deliberately
+     | untouched here.
+     */
+
+    // Services — moved from just above the Services section.
+    $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
+
+    // Additional Details — moved from just above the Additional Details section.
+    $additionalDetailsRaw = @$auction->get->additional_details ?? null;
+    $additionalDetailsStr = is_string($additionalDetailsRaw) ? trim($additionalDetailsRaw) : null;
+@endphp
+
+{{-- Representation Preferences — moved verbatim from above its section. --}}
+        @php
+            $rawCompatView = $auction->info('compatibility_preferences');
+            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+                ? (json_decode($rawCompatView, true) ?? [])
+                : [];
+            $llView = $compatView['landlord_specific'] ?? [];
+
+            $repResolve = function(string $val, string $otherVal): string {
+                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
+            };
+            $repResolveArr = function(array $vals, string $otherVal): array {
+                return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+                }, $vals)));
+            };
+            $repRows = [];
+            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
+                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
+            };
+
+            $repAdd('Primary Leasing Goal', $llView['primary_leasing_goal'] ?? '', $llView['primary_leasing_goal_other'] ?? '');
+            $repAdd('Preferred Tenant Type', $llView['tenant_type_preference'] ?? '', $llView['tenant_type_preference_other'] ?? '');
+            $repAdd('Preferred Lease Duration', $llView['lease_duration_preference'] ?? '', '');
+            $repAdd('Level of Involvement in Day-to-Day Management', $llView['property_management_involvement'] ?? '', '');
+            $repAdd('Preferred Communication Style', $llView['communication_style'] ?? '', '');
+            $repAdd('Preferred Contact Frequency', $llView['preferred_contact_method'] ?? '', '');
+            $repAdd('Expected Agent Response Time', $llView['response_time_expectation'] ?? '', '');
+            $repAdd('Preferred Agent Working Style', $llView['preferred_agent_working_style'] ?? '', '');
+            $repAdd('Negotiation Style', $llView['negotiation_style'] ?? '', '');
+            $repAdd('Representation Priorities', $llView['representation_priorities'] ?? [], '');
+            $repAdd('Risk Tolerance', $llView['risk_tolerance'] ?? '', '');
+            $repAdd('Willingness to Offer Concessions', $llView['concessions_willingness'] ?? '', '');
+            $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
+            $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
+        @endphp
+
+@php
+    // Broker Compensation — moved from inside the Auth::check() wrapper, which stays put.
+    $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
+        || !empty(@$auction->get->tenant_broker_commission_structure)
+        || !empty(@$auction->get->broker_fee_timing)
+        || !empty(@$auction->get->renewal_fee_type)
+        || !empty(@$auction->get->protection_period)
+        || !empty(@$auction->get->agency_agreement_timeframe)
+        || !empty(@$auction->get->early_termination_fee_option)
+        || !empty(@$auction->get->interested_in_selling)
+        || !empty(@$auction->get->interested_lease_option_agreement)
+        || !empty(@$auction->get->interested_in_property_management);
+@endphp
+
+{{-- Referral & Cooperation — moved verbatim from above its section. Note it issues a query;
+     hoisting moves that query earlier in the request, it does not add one. --}}
+        @php
+            $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+            if ($referralPct === '') {
+                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+                if ($_firstBid) {
+                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
+                }
+                unset($_firstBid);
+            }
+            $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+        @endphp
+
+@php
+    /*
+     | M5.2b — SECTION NAVIGATION.
+     |
+     | The nav entries are built HERE, from the guards M5.2a hoisted, and each entry repeats its
+     | section's condition CHARACTER FOR CHARACTER. That duplication is the point and the reason
+     | M5.2a happened first: the alternative is a second, looser expression that means roughly the
+     | same thing, and "roughly" is how a nav ends up linking to a section that did not render.
+     | Anything changing a section's visibility must change the matching line below, and
+     | HireAgentSectionNavTest asserts the two agree for every viewer it can construct.
+     |
+     | THE COMPENSATION ENTRY CARRIES ITS Auth::check() TOO. Its section sits inside that wrapper,
+     | so the entry must sit inside the same check — a nav entry reading "Broker Compensation"
+     | leaks both the existence and the name of a section an anonymous visitor is never shown, and
+     | it would leak it in the one place on the page guaranteed to be visible. This is the specific
+     | mistake the primitive is built to be incapable of making on its own: it cannot see the
+     | viewer, so the decision has to be made, and be correct, right here.
+     |
+     | Property Details and Leasing Terms are unconditional — they render for every viewer — so
+     | they are added without a guard rather than behind a condition that is always true.
+     |
+     | Everything is behind the flag: with HIRE_AGENT_DETAIL_REDESIGN_ENABLED off the array stays
+     | empty, no nav renders, no anchors are emitted and no script is pushed.
+     */
+    $hlaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabled();
+
+    $hlaNavSections = [];
+
+    if ($hlaDetailRedesign) {
+        $hlaNavSections[] = ['id' => 'hla-section-property-details', 'label' => 'Property Details'];
+        $hlaNavSections[] = ['id' => 'hla-section-leasing-terms', 'label' => 'Leasing Terms'];
+
+        if ($hasServices) {
+            $hlaNavSections[] = ['id' => 'hla-section-services', 'label' => 'Services'];
+        }
+
+        if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null') {
+            $hlaNavSections[] = ['id' => 'hla-section-additional-details', 'label' => 'Additional Details'];
+        }
+
+        if (!empty($repRows)) {
+            $hlaNavSections[] = ['id' => 'hla-section-representation', 'label' => 'Representation Preferences'];
+        }
+
+        if (Auth::check() && $hasLandlordBrokerCompData) {
+            $hlaNavSections[] = ['id' => 'hla-section-compensation', 'label' => 'Broker Compensation'];
+        }
+
+        if ($referralPctDisplay !== '') {
+            $hlaNavSections[] = ['id' => 'hla-section-referral', 'label' => 'Referral & Cooperation'];
+        }
+    }
+@endphp
+
+@php
+    /*
+     | M5.3 — QUICK ACTIONS.
+     |
+     | EVERY TILE IS CLASSIFIED BEFORE IT IS ADDED. The four classes are: public action,
+     | authenticated user action, agent-only action, listing-owner-only action. Owner-only and
+     | agent-only workflows DO NOT GO IN THIS BAND. The band is page-level and public, so a tile
+     | advertises both that a workflow exists and what it is called — which is a disclosure in its
+     | own right, independent of whether the underlying route is protected.
+     |
+     | That rule is why "View Proposals" is not here. Proposals are owner-only: competing agents
+     | are walled off from them by HireAgentProposalAccess, and a public tile naming the workflow
+     | would tell a rival agent, and a passing guest, that proposals exist on this listing and can
+     | be opened. The route being protected would not undo that. It is deferred as its own
+     | decision, not folded into a UI milestone.
+     |
+     | Also deliberately absent: the Bid CTA (agent-only, and a five-branch state machine that
+     | belongs with the sidebar in M5.4) and Edit Listing (listing-owner-only, and already owned by
+     | the M4 hero — a second copy here would be exactly the two-opinions bug the single flag
+     | reader exists to prevent).
+     |
+     | THE THREE TILES, AND THEIR CLASSES:
+     |   1. Send Message  — AUTHENTICATED USER ACTION. Rendered exactly as the sidebar button it
+     |      replaces: unconditionally. That is preserved on purpose. The route enforces the class
+     |      (Authenticate + EnsureEmailIsVerified + NoAdminAuth), so a guest who clicks it is sent
+     |      to login — a dead end, but a PRE-EXISTING one. Changing who sees the control is an
+     |      authorization and UX decision wearing a UI change's clothes, and is not this milestone.
+     |   2. Share Listing — PUBLIC ACTION. The listing URL is already public; these are the same
+     |      share targets the sidebar block carried.
+     |   3. Copy Link     — PUBLIC ACTION. Same URL, same reasoning.
+     |
+     | NOTHING IS DUPLICATED. With the flag on, the sidebar's Send Message button and the sidebar
+     | share card are suppressed, so each of these actions exists in exactly one place on the page.
+     */
+    $hlaListingUrl = route('landlord.agent.auction.view', $auction->id);
+@endphp
+
+@php
+    /*
+     | M5.4 — ONE ANSWER TO "IS THIS VIEWER THE OWNER", AND IT IS NOT THIS FILE'S.
+     |
+     | The view had TWO local definitions of $isListingOwner, both loose:
+     |
+     |     $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+     |     $isListingOwner = data_get($auction, 'user_id') == $auth_id;
+     |
+     | $auth_id is 0 for a guest, `landlord_agent_auctions.user_id` IS nullable, and in PHP
+     | `0 == null` is true. So on a listing with a null owner every anonymous visitor satisfied
+     | the view's own ownership test. No such row exists today — the column is nullable and the
+     | table holds zero nulls — so this was latent rather than live, and the proposals those
+     | gates wrap were already withheld server-side. It was still the wrong test.
+     |
+     | HireAgentProposalAccess::isListingOwner() has always done this correctly: it refuses a
+     | null viewer, refuses a null owner, and compares as integers. The fix is to ASK IT rather
+     | than to copy it — a second correct implementation is still a second implementation, and
+     | the reason this file had two subtly different copies is that copies are what happens.
+     |
+     | This is applied unconditionally, not behind the redesign flag: it only ever narrows who
+     | counts as the owner, and a flag would mean the legacy page kept the weaker test.
+     */
+    $hlaIsListingOwner = app(\App\Services\HireAgent\HireAgentProposalAccess::class)
+        ->isListingOwner(auth()->id(), $auction);
+
+    /*
+     | M5.4 — ORPHANED SEPARATORS.
+     |
+     | Two bare <hr> rules sit at the top of the sidebar, each separating a block that is
+     | frequently absent. The first follows the identity/Edit Listing block, which M4 moved into
+     | the hero — so with the hero flag on it separates nothing, which is the state this
+     | environment already runs in. The second follows the "Agent Selected" winner alert, which
+     | renders only for a sold listing, so it separates nothing on every live listing.
+     |
+     | Browser verification found them as the only remaining children of an otherwise empty
+     | guest sidebar: two 1px rules and a button. Each is now tied to the block it belongs to.
+     | Flag-gated, like the stranded icon button, because they are visible today.
+     */
+    $hlaSidebarIdentityShown = ! \App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('landlord');
+@endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="landlord" :auction="$auction">
+        @if ($hlaDetailRedesign)
+        {{-- M5.3. Full-width, above the grid — page-level actions, not main-column content. The
+             shell's beforeGrid slot exists for this and emits nothing for the roles not using it. --}}
+        <x-slot name="beforeGrid">
+            <x-viho.quick-actions label="Quick Actions" icon="fa-solid fa-bolt" ariaLabel="Quick actions">
+
+                {{-- 1. Send Message — authenticated user action; route enforces it. --}}
+                <x-viho.action-tile
+                    :href="route('auction-chat', ['landlord-agent', $auction->id])"
+                    icon="fa-solid fa-paper-plane"
+                    label="Send Message"
+                    description="Message the listing contact about this listing." />
+
+                {{-- 2. Share Listing — public action. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-share-nodes"
+                    label="Share Listing"
+                    description="Share this listing with agents or your network.">
+                    <x-slot name="action">
+                        <ul class="hla-quick-share">
+                            <li>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Facebook">
+                                    <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/intent/tweet?url={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on X">
+                                    <i class="fa-brands fa-twitter" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://pinterest.com/pin/create/button/?url={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Pinterest">
+                                    <i class="fa-brands fa-pinterest" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on LinkedIn">
+                                    <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </x-slot>
+                </x-viho.action-tile>
+
+                {{-- 3. Copy Link — public action.
+                     The sidebar's legacy Copy button carries a `js-copy-link` class that NOTHING
+                     in the repository binds a handler to — it is dead in this view and in roughly
+                     ten others. This one is wired, so the control does what it says. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-link"
+                    label="Copy Link"
+                    description="Copy a direct link to this listing.">
+                    <x-slot name="action">
+                        <x-viho.button
+                            variant="outline"
+                            icon="fa-solid fa-link"
+                            data-hla-copy-link="{{ $hlaListingUrl }}">Copy Link</x-viho.button>
+                        <span class="hla-quick-copy-status" data-hla-copy-status role="status" aria-live="polite"></span>
+                    </x-slot>
+                </x-viho.action-tile>
+
+            </x-viho.quick-actions>
+        </x-slot>
+        @endif
+
         <x-slot name="main">
+            {{-- M5.2b. Outside the card and above it, so the bar spans the column and sticks to the
+                 top of the reading area rather than to the inside of a card. --}}
+            @if ($hlaDetailRedesign)
+                <x-viho.section-nav :items="$hlaNavSections" ariaLabel="Listing sections" />
+            @endif
             {{--
                 M3 pilot. Was `div.card.description` wrapping a bare `card-header` + inline-styled
                 `h4` + `card-body`. The heading level stays h4: typography is migrating, the
@@ -220,6 +568,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     <hr>
                     {{-- M3 pilot: sub-section header inside the single Listing Details card. --}}
+                    @if ($hlaDetailRedesign)<span id="hla-section-property-details" class="viho-section-nav-target"></span>@endif
                     <x-viho.section-header title="Property Details:" tag="h4" />
 
                     <div class="row" style="flex-wrap: wrap;">
@@ -683,6 +1032,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         </div>
         <hr>
+        @if ($hlaDetailRedesign)<span id="hla-section-leasing-terms" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Leasing Terms:" tag="h4" />
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
         <div class="row" style="flex-wrap: wrap;">
@@ -1034,9 +1384,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <hr>
 
         @php
-        // Check if services exist before showing the section
-        $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
-
         // Photo enhancements data — needed inside the services loop
         $rawPhotoEnhancements = $auction->get->photo_enhancements ?? null;
         $photoEnhancements = is_string($rawPhotoEnhancements)
@@ -1054,6 +1401,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if ($hasServices)
+        @if ($hlaDetailRedesign)<span id="hla-section-services" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Services:" tag="h4" />
 
         @php
@@ -1287,11 +1635,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         <hr>
-        @php
-            $additionalDetailsRaw = @$auction->get->additional_details ?? null;
-            $additionalDetailsStr = is_string($additionalDetailsRaw) ? trim($additionalDetailsRaw) : null;
-        @endphp
         @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
+        @if ($hlaDetailRedesign)<span id="hla-section-additional-details" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Additional Details:" tag="h4" />
 
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1303,48 +1648,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @include('partials.listing-photos-tours-documents')
 
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
-        @php
-            $rawCompatView = $auction->info('compatibility_preferences');
-            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
-                ? (json_decode($rawCompatView, true) ?? [])
-                : [];
-            $llView = $compatView['landlord_specific'] ?? [];
-
-            $repResolve = function(string $val, string $otherVal): string {
-                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
-            };
-            $repResolveArr = function(array $vals, string $otherVal): array {
-                return array_values(array_filter(array_map(function($v) use ($otherVal) {
-                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
-                }, $vals)));
-            };
-            $repRows = [];
-            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
-                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
-                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
-                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
-            };
-
-            $repAdd('Primary Leasing Goal', $llView['primary_leasing_goal'] ?? '', $llView['primary_leasing_goal_other'] ?? '');
-            $repAdd('Preferred Tenant Type', $llView['tenant_type_preference'] ?? '', $llView['tenant_type_preference_other'] ?? '');
-            $repAdd('Preferred Lease Duration', $llView['lease_duration_preference'] ?? '', '');
-            $repAdd('Level of Involvement in Day-to-Day Management', $llView['property_management_involvement'] ?? '', '');
-            $repAdd('Preferred Communication Style', $llView['communication_style'] ?? '', '');
-            $repAdd('Preferred Contact Frequency', $llView['preferred_contact_method'] ?? '', '');
-            $repAdd('Expected Agent Response Time', $llView['response_time_expectation'] ?? '', '');
-            $repAdd('Preferred Agent Working Style', $llView['preferred_agent_working_style'] ?? '', '');
-            $repAdd('Negotiation Style', $llView['negotiation_style'] ?? '', '');
-            $repAdd('Representation Priorities', $llView['representation_priorities'] ?? [], '');
-            $repAdd('Risk Tolerance', $llView['risk_tolerance'] ?? '', '');
-            $repAdd('Willingness to Offer Concessions', $llView['concessions_willingness'] ?? '', '');
-            $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
-            $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
-        @endphp
 
         @if (!empty($repRows))
         <hr />
         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
              text is unchanged. Passing &amp; here would double-escape it. --}}
+        @if ($hlaDetailRedesign)<span id="hla-section-representation" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
         @foreach ($repRows as $repRow)
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1355,20 +1664,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
-        @php
-            $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
-                || !empty(@$auction->get->tenant_broker_commission_structure)
-                || !empty(@$auction->get->broker_fee_timing)
-                || !empty(@$auction->get->renewal_fee_type)
-                || !empty(@$auction->get->protection_period)
-                || !empty(@$auction->get->agency_agreement_timeframe)
-                || !empty(@$auction->get->early_termination_fee_option)
-                || !empty(@$auction->get->interested_in_selling)
-                || !empty(@$auction->get->interested_lease_option_agreement)
-                || !empty(@$auction->get->interested_in_property_management);
-        @endphp
         @if ($hasLandlordBrokerCompData)
         <hr />
+        {{-- Inside BOTH guards — Auth::check() above and $hasLandlordBrokerCompData — so the anchor
+             exists exactly when the section does, and the nav entry's matching pair of conditions
+             is what keeps the link from pointing at nothing. --}}
+        @if ($hlaDetailRedesign)<span id="hla-section-compensation" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Broker Compensation & Agency Agreement Terms" tag="h4" />
 
         <div class="broker-compensation-section">
@@ -1803,19 +2104,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div> <!-- end broker-compensation-section -->
         @endif
         @endif {{-- /Auth::check() broker compensation --}}
-        @php
-            $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
-            if ($referralPct === '') {
-                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
-                if ($_firstBid) {
-                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
-                }
-                unset($_firstBid);
-            }
-            $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
-        @endphp
         @if ($referralPctDisplay !== '')
         <hr />
+        @if ($hlaDetailRedesign)<span id="hla-section-referral" class="viho-section-nav-target"></span>@endif
         <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Referral Fee:
@@ -2058,7 +2349,10 @@ $auser = $auctionUser::find(@$auction->user_id);
     </div>
     @endif
     @endunless
+    {{-- M5.4: only separates the identity block when that block actually rendered. --}}
+    @if (! $hlaDetailRedesign || $hlaSidebarIdentityShown)
     <hr>
+    @endif
 
     {{-- 🏆 Display Winner Information if Listing is Sold --}}
     @php
@@ -2105,7 +2399,10 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
     </div>
     @endif
+    {{-- M5.4: only separates the winner alert when the listing is actually sold. --}}
+    @if (! $hlaDetailRedesign || ($auction->is_sold && ($acceptedBid || $acceptedCounterBid)))
     <hr>
+    @endif
     @inject('carbon', 'Carbon\Carbon')
 
     @php
@@ -2152,10 +2449,16 @@ $auser = $auctionUser::find(@$auction->user_id);
         @endphp
 
 
-        {{-- 📩 Message Button --}}
+        {{-- 📩 Message Button.
+             M5.3: suppressed when the redesign is on, because the Quick Actions band above the
+             grid now carries this action. Suppressed rather than moved — the band's tile is a
+             new control with the same route and the same (unconditional) rendering, and leaving
+             this one in place would put the same action on the page twice. --}}
+        @unless ($hlaDetailRedesign)
         <a href="{{ route('auction-chat', ['landlord-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
+        @endunless
 
 
         {{--
@@ -2179,11 +2482,61 @@ $auser = $auctionUser::find(@$auction->user_id);
         @endphp
 
 
-        {{-- 🔹 Bid Button --}}
-        @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
-            @if (!$isExpired && !$isSold && !$isPending && $auction->status !== 'Hired Agent')
-                @if ($userHasBid)
-                {{-- User already placed a bid --}}
+        {{-- 🔹 Bid CTA.
+
+             M5.4. The redesigned branch decides STATE FIRST, THEN VIEWER — hired, pending,
+             expired, owner, then the agent/non-agent/guest cases. The legacy branch below asks
+             "are you an agent?" first, and everything else is nested inside that answer, which is
+             why a guest on an expired listing is still invited to "Login to Bid": the expiry
+             notice lives inside a branch a guest never reaches.
+        --}}
+        @if ($hlaDetailRedesign)
+            @php
+                /*
+                 | THE OWNER IS EXCLUDED FROM THE CTA ENTIRELY — no button, and no disabled state
+                 | either. This is a correctness fix, not a preference. The legacy gate asks only
+                 | whether the viewer is an agent, and listing creation carries no role middleware
+                 | (routes/web.php: `middleware('landlordAuth')` is commented out under a comment
+                 | claiming the opposite), so an `agent` user can own a landlord listing. Today
+                 | that owner is shown "Bid Now" and the server then refuses the submission —
+                 | LandlordAgentAuctionBid::…(BYA-H2 Rule B1) flashes "You cannot submit an agent
+                 | bid on your own listing." and redirects. The CTA was offering an action the
+                 | server had already decided to reject.
+                 |
+                 | An owner who is NOT an agent fares no better today: they fall through to the
+                 | catch-all and are told "Only agents can place bids" about their own listing,
+                 | which is both wrong and confusing. Neither viewer is offered a CTA now.
+                 |
+                 | Ownership is answered by HireAgentProposalAccess rather than re-derived here.
+                 | See the M5.4 note where $hlaIsListingOwner is computed.
+                 */
+                $hlaViewerIsAgent = $auth_id && optional(auth()->user())->user_type === 'agent';
+                $hlaListingHired  = $isSold || $auction->status === 'Hired Agent';
+            @endphp
+
+            @if ($hlaListingHired)
+                <div class="alert alert-success text-center mb-2">
+                    <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
+                </div>
+                <div class="status-pill status-hired w-100 d-flex justify-content-center">
+                    <i class="fa-solid fa-trophy me-2"></i>Hired Agent
+                </div>
+            @elseif ($isPending)
+                <div class="alert alert-warning text-center mb-2">
+                    <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+                </div>
+                <div class="status-pill status-pending w-100 d-flex justify-content-center">
+                    <i class="fa-solid fa-pause-circle me-2"></i>Pending
+                </div>
+            @elseif ($isExpired)
+                <div class="alert alert-secondary text-center mb-2">
+                    <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                </div>
+            @elseif ($hlaIsListingOwner)
+                {{-- Deliberately nothing. See the note above: not a button, not a disabled
+                     control, and not an explanatory alert — the owner has no bid workflow, so the
+                     slot is empty rather than occupied by something inert. --}}
+            @elseif ($hlaViewerIsAgent && $userHasBid)
                 <div class="alert alert-info text-center mb-2">
                     <i class="fa-solid fa-circle-check"></i> You have already placed a bid
                 </div>
@@ -2191,56 +2544,86 @@ $auser = $auctionUser::find(@$auction->user_id);
                     <span>Bid Already Placed</span>
                     <span style="font-weight:normal;font-size:.85em;">${{ @$auction->get->budget }}</span>
                 </div>
-                @else
-                {{-- User can place a bid --}}
-                <button class="btn w-100 bid-btn"
-                    onclick="window.location='{{ route('agent.landlord.agent.auction.bid', @$auction->id) }}';">
-                    <span class="bid">Bid Now</span>
-                    <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
-                </button>
-                @endif
-            @elseif($auction->status === 'Hired Agent' || $isSold)
-                <div class="alert alert-success text-center mb-2">
-                    <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
-                </div>
-                <div class="status-pill status-hired w-100 d-flex justify-content-center">
-                    <i class="fa-solid fa-trophy me-2"></i>Hired Agent
-                </div>
-            @elseif($isPending)
-                <div class="alert alert-warning text-center mb-2">
-                    <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
-                </div>
-                <div class="status-pill status-pending w-100 d-flex justify-content-center">
-                    <i class="fa-solid fa-pause-circle me-2"></i>Pending
+            @elseif ($hlaViewerIsAgent)
+                {{-- Route unchanged: agent.landlord.agent.auction.bid, still behind AgentAuth. --}}
+                <x-viho.button
+                    :href="route('agent.landlord.agent.auction.bid', $auction->id)"
+                    variant="primary"
+                    :block="true"
+                    icon="fa-solid fa-gavel">Bid Now</x-viho.button>
+            @elseif ($auth_id)
+                <div class="alert alert-secondary text-center mb-0">
+                    Only agents can place bids
                 </div>
             @else
-            {{-- Expiry catch-all. Milestone 3: this used to branch on listing type, suppressing
-                 the notice for Bidding Period listings because the retired timer block had
-                 already rendered "Bidding Ended". With the timer gone there is one expiry state
-                 and one notice, driven by expiration_date. --}}
-                <div class="alert alert-secondary text-center mb-2">
-                    <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                <x-viho.button
+                    :href="route('login')"
+                    variant="primary"
+                    :block="true"
+                    icon="fa-solid fa-right-to-bracket">Log in to bid</x-viho.button>
+            @endif
+        @else
+            {{-- 🔹 Bid Button --}}
+            @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
+                @if (!$isExpired && !$isSold && !$isPending && $auction->status !== 'Hired Agent')
+                    @if ($userHasBid)
+                    {{-- User already placed a bid --}}
+                    <div class="alert alert-info text-center mb-2">
+                        <i class="fa-solid fa-circle-check"></i> You have already placed a bid
+                    </div>
+                    <div class="status-pill status-disabled w-100 d-flex justify-content-between">
+                        <span>Bid Already Placed</span>
+                        <span style="font-weight:normal;font-size:.85em;">${{ @$auction->get->budget }}</span>
+                    </div>
+                    @else
+                    {{-- User can place a bid --}}
+                    <button class="btn w-100 bid-btn"
+                        onclick="window.location='{{ route('agent.landlord.agent.auction.bid', @$auction->id) }}';">
+                        <span class="bid">Bid Now</span>
+                        <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
+                    </button>
+                    @endif
+                @elseif($auction->status === 'Hired Agent' || $isSold)
+                    <div class="alert alert-success text-center mb-2">
+                        <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
+                    </div>
+                    <div class="status-pill status-hired w-100 d-flex justify-content-center">
+                        <i class="fa-solid fa-trophy me-2"></i>Hired Agent
+                    </div>
+                @elseif($isPending)
+                    <div class="alert alert-warning text-center mb-2">
+                        <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+                    </div>
+                    <div class="status-pill status-pending w-100 d-flex justify-content-center">
+                        <i class="fa-solid fa-pause-circle me-2"></i>Pending
+                    </div>
+                @else
+                {{-- Expiry catch-all. Milestone 3: this used to branch on listing type, suppressing
+                     the notice for Bidding Period listings because the retired timer block had
+                     already rendered "Bidding Ended". With the timer gone there is one expiry state
+                     and one notice, driven by expiration_date. --}}
+                    <div class="alert alert-secondary text-center mb-2">
+                        <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                    </div>
+                @endif
+
+            @elseif(!$auth_id)
+                <a href="{{ route('login') }}">
+                    <button class="btn w-100">
+                        <span class="bid m-0">Login to Bid</span>
+                        <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
+                    </button>
+                </a>
+            @else
+                <div class="alert alert-secondary text-center">
+                    Only agents can place bids
                 </div>
             @endif
-
-            @if (@$auction->sold)
-            <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
-            @endif
-        @elseif(!$auth_id)
-            <a href="{{ route('login') }}">
-                <button class="btn w-100">
-                    <span class="bid m-0">Login to Bid</span>
-                    <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
-                </button>
-            </a>
-        @else
-            <div class="alert alert-secondary text-center">
-                Only agents can place bids
-            </div>
         @endif
 
         @php
-            $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+            // M5.4: delegated to HireAgentProposalAccess — see the note near the top of this file.
+            $isListingOwner = $hlaIsListingOwner;
             $userHasBid = $auction->bids->where('user_id', $auth_id)->isNotEmpty();
             // Build a stable per-agent alias map keyed by user_id.
             // Sort by created_at asc, id asc, user_id asc; first bid per unique agent sets that agent's alias.
@@ -2255,8 +2638,43 @@ $auser = $auctionUser::find(@$auction->user_id);
                     $agentNumberMap[$orderedBid->user_id] = count($agentNumberMap) + 1;
                 }
             }
+
+            /*
+             | M5.5 — THE PROPOSAL CONSOLE EXISTS ONLY FOR VIEWERS WHO HAVE A PROPOSAL TO SEE.
+             |
+             | `<div class="card higestBider">` rendered unconditionally. For every viewer the
+             | access layer hands zero proposals — a guest, a competing agent, an agent who has not
+             | bid, an unrelated authenticated user, an administrator — it produced an empty ~30px
+             | card. M5.3 and M5.4 made that conspicuous by removing everything that used to sit
+             | around it: on a guest page the sidebar had become that empty card and one button.
+             |
+             | THE CONDITION IS ASKED OF THE SERVER-SIDE DECISION, NOT RE-DERIVED. Two allow
+             | branches, matching HireAgentProposalAccess exactly:
+             |
+             |   · $canReviewAllProposals — the owner, who may review the whole set and must still
+             |     get the console (and its empty state) when nobody has bid yet;
+             |   · $auction->bids->isNotEmpty() — a submitting agent. That collection was ALREADY
+             |     narrowed by restrictLoadedProposals() in the controller, so "non-empty" here
+             |     means "this viewer is authorized to see at least one proposal" and cannot mean
+             |     anything else. Asking the narrowed collection is what keeps this a presentation
+             |     guard rather than a second opinion about authorization.
+             |
+             | THIS IS NOT THE PRIVACY MECHANISM AND MUST NOT BE MISTAKEN FOR ONE. Withholding
+             | still happens server-side, before the view runs; the per-card gates are still there;
+             | this only stops an empty container from being drawn. If this guard were deleted
+             | tomorrow no proposal data would leak — which is precisely why it is safe to make it
+             | a display decision, and why HireAgentBidCtaTest::test_the_view_is_handed_only
+             | _authorized_proposals remains the test that proves the real rule.
+             |
+             | Flag-gated, like every other M5 change that alters what renders today. The empty
+             | card is visible on the live page, so removing it unconditionally would change the
+             | legacy page for everyone with no browser coverage to catch a regression.
+             */
+            $hlaProposalConsoleVisible = ($canReviewAllProposals ?? false)
+                || $auction->bids->isNotEmpty();
         @endphp
 
+        @if (! $hlaDetailRedesign || $hlaProposalConsoleVisible)
         <div class="card higestBider">
             <div class="card-body card-body-padding">
                 {{--
@@ -2264,9 +2682,20 @@ $auser = $auctionUser::find(@$auction->user_id);
                     not restored in any form. The empty state it shared an @if with is retained,
                     but gated on the server-side owner decision: a bid count is itself a
                     disclosure, so this message is owner-only rather than public.
+
+                    M5.5 — the redesigned treatment moves it onto x-viho.empty-state. The GATE is
+                    untouched and the sentence is unchanged, so the disclosure rule and the copy
+                    both survive the swap; only the markup differs.
                 --}}
                 @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
-                <p>No agents have submitted a bid yet.</p>
+                    @if ($hlaDetailRedesign)
+                    <x-viho.empty-state
+                        icon="fa-solid fa-inbox"
+                        title="No agents have submitted a bid yet."
+                        description="Proposals will appear here as agents respond to your listing." />
+                    @else
+                    <p>No agents have submitted a bid yet.</p>
+                    @endif
                 @endif
                 @php
                     // ── Match Score Baseline (Landlord listing request as the reference) ──────
@@ -2280,1294 +2709,28 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                         @foreach (@$auction->bids as $bid)
                         @php
-                            $agentNumber = $agentNumberMap[$bid->user_id] ?? $loop->iteration;
-                            $rawState = data_get($bid, 'accepted', '0');
-                            // 'accepted' column stores 'no' for undecided bids. Treat anything non-terminal as '0'.
-                            $_isTerminalCard = in_array((string)$rawState, ['accepted', 'rejected'], true);
-                            $state = $_isTerminalCard ? (string) $rawState : '0';
-                            $isOwnerRow = $isListingOwner;
-                            $hasAcceptedCounterBid = false;
-
-                            // Get counter bids for this bid
-                            $counterBids = \App\Models\LandlordCounterTerm::with('meta', 'user')
-                                ->where('landlord_agent_auction_id', data_get($bid, 'id'))
-                                ->orderBy('created_at', 'desc')
-                                ->get();
-
-                            // Check if this bid has any accepted counter bid
-                            $acceptedCounterBidForThisBid = $counterBids->where('status', 'accepted')->first();
-                            $hasAcceptedCounterBid = $acceptedCounterBidForThisBid ? true : false;
-                            $bidIsAccepted = $state === 'accepted' || $hasAcceptedCounterBid;
-
-                            // Parity vars
-                            $hasCounterBids = $counterBids->isNotEmpty();
-                            $bidStatusLabel = match($state) {
-                                'accepted' => 'Accepted',
-                                'rejected' => 'Rejected',
-                                'countered' => 'Countered',
-                                default => $hasCounterBids ? 'Countered' : 'Active',
-                            };
-                            $bidStatusColor = match($state) {
-                                'accepted' => '#28a745',
-                                'rejected' => '#dc3545',
-                                'countered' => '#ffc107',
-                                default => $hasCounterBids ? '#ffc107' : '#1a4a6e',
-                            };
-                            $servicesList = (array) data_get($bid,'get.services',[]);
-                            $additionalServices = (array) data_get($bid,'get.other_services',[]);
-                            $totalServicesCount = count(array_filter($servicesList, fn($s) => $s !== 'Other')) + count($additionalServices);
-                            $isBidOwner = (data_get($bid, 'user_id') == $auth_id);
-                            $bidAccepted = data_get($bid, 'accepted');
-                            $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
-                            $isAgent = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                            // Milestone 2 — competing-agent proposal privacy.
-                            // $auction->bids was narrowed by HireAgentProposalAccess in the
-                            // controller. This guard is defence-in-depth with the opposite
-                            // default to the one it replaced: skip anything that is not the
-                            // owner's to review or the viewer's own.
-                            if (! $isListingOwner && ! $isBidOwner) { continue; }
-
-                            // ── Resolved Landlord Broker Lease Fee display (matching Tenant's commissionFeeDisplay) ──
-                            $landlordFeeType = data_get($bid, 'get.purchase_fee_type', '');
-                            $landlordFeeDisplay = '—';
-                            if ($landlordFeeType === 'Flat Fee' && data_get($bid,'get.purchase_fee_flat')) {
-                                $landlordFeeDisplay = $fmtMoney(data_get($bid,'get.purchase_fee_flat'));
-                            } elseif ($landlordFeeType === 'Percentage of the Rent Due Each Rental Period' && data_get($bid,'get.purchase_fee_rental_period')) {
-                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_rental_period')) . " $rentalPeriodSuffix";
-                            } elseif ($landlordFeeType === 'Percentage of the Gross Lease Value' && data_get($bid,'get.purchase_fee_percentage_combo')) {
-                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_percentage_combo')) . ' of Gross Lease Value';
-                            } elseif ($landlordFeeType === "Percentage of the First Month's Rent" && data_get($bid,'get.purchase_fee_flat_combo')) {
-                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_flat_combo')) . " of First Month's Rent";
-                            } elseif ($landlordFeeType === 'Percentage of the Net Aggregate Rent' && data_get($bid,'get.purchase_fee_net_aggregate')) {
-                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_net_aggregate')) . ' of Net Aggregate Rent';
-                            } elseif ($landlordFeeType === 'Percentage of the Gross Rent' && data_get($bid,'get.purchase_fee_gross_rent')) {
-                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_gross_rent')) . ' of Gross Rent';
-                            } elseif ($landlordFeeType === "Percentage of Month's Rent" && data_get($bid,'get.purchase_fee_monthly_percentage')) {
-                                $_d = $fmtPercent(data_get($bid,'get.purchase_fee_monthly_percentage')) . " of Month's Rent";
-                                if (data_get($bid,'get.purchase_fee_months')) $_d .= ' x ' . data_get($bid,'get.purchase_fee_months') . ' Months';
-                                $landlordFeeDisplay = $_d;
-                            } elseif (strtolower($landlordFeeType) === 'other') {
-                                $landlordFeeDisplay = data_get($bid,'get.purchase_fee_other') ?? data_get($bid,'get.purchase_fee_other_commercial') ?? '—';
-                            } elseif ($landlordFeeType) {
-                                $landlordFeeDisplay = $landlordFeeType;
-                            }
-
-                            // ── Tenant Broker structure preview (Residential only) ──────
-                            $bidTenantBrokerStructure = data_get($bid,'get.tenant_broker_commission_structure','');
-                            $bidTenantBrokerStructureDisplay = '';
-                            if ($isResidential && $bidTenantBrokerStructure
-                                && $bidTenantBrokerStructure !== 'no_compensation'
-                                && $bidTenantBrokerStructure !== "No Compensation Offered to the Tenant's Broker") {
-                                $bidTenantBrokerStructureDisplay = $bidTenantBrokerStructure;
-                                // Resolve fee sub-value
-                                $_tbs = data_get($bid,'get.tenant_broker_fee_structure','');
-                                if ($_tbs === 'Percentage of the Rent Due Each Rental Period' && data_get($bid,'get.tenant_broker_percentage')) {
-                                    $bidTenantBrokerStructureDisplay .= ' – ' . $fmtPercent(data_get($bid,'get.tenant_broker_percentage')) . ' of Rent Due Each Rental Period';
-                                } elseif ($_tbs === 'Percentage of the Gross Lease Value' && data_get($bid,'get.tenant_broker_gross_lease')) {
-                                    $bidTenantBrokerStructureDisplay .= ' – ' . $fmtPercent(data_get($bid,'get.tenant_broker_gross_lease')) . ' of Gross Lease Value';
-                                } elseif ($_tbs === "Percentage of the First Month's Rent" && data_get($bid,'get.tenant_broker_first_month_rent')) {
-                                    $bidTenantBrokerStructureDisplay .= ' – ' . $fmtPercent(data_get($bid,'get.tenant_broker_first_month_rent')) . " of First Month's Rent";
-                                } elseif ($_tbs === 'Flat Fee' && data_get($bid,'get.tenant_broker_flat_fee')) {
-                                    $bidTenantBrokerStructureDisplay .= ' – ' . $fmtMoney(data_get($bid,'get.tenant_broker_flat_fee')) . ' Flat Fee';
-                                } elseif ($_tbs === 'other' && data_get($bid,'get.tenant_broker_other')) {
-                                    $bidTenantBrokerStructureDisplay .= ' – Other: ' . data_get($bid,'get.tenant_broker_other');
-                                }
-                            }
-
-                            // ── Match Score ────────────────────────────────────────────
-                            $currentBidData = json_decode(json_encode(data_get($bid, 'get', [])), true) ?: [];
-                            // Card score ALWAYS uses original listing baseline to ensure a consistent
-                            // denominator across all bids on the same listing.
-                            $originalScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
-                                $landlordBaselineData, $currentBidData, null, $auctionPropType
-                            );
-                            // Use the most recently submitted non-terminal counter as the active baseline.
-                            // Exclude accepted/rejected records so stale terminal counters are never used as baseline.
-                            $latestActiveCounter = $counterBids->filter(fn($c) => !in_array((string)$c->status, ['accepted', 'rejected'], true))->first();
-                            // Detect whether any counter exists for this bid (bid-scoped).
-                            // This is used exclusively by the footer state machine to determine the 'countered' state.
-                            $latestOwnerCounter = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', data_get($bid, 'id'))
-                                ->orderBy('created_at', 'desc')
-                                ->first();
-                            if ($latestActiveCounter && $latestActiveCounter->meta->count()) {
-                                $counterBaselineData = $latestActiveCounter->meta->pluck('meta_value', 'meta_key')->toArray();
-                                $latestCounterScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
-                                    $counterBaselineData, $currentBidData, null, $auctionPropType
-                                );
-                                $showDualScore = true;
-                            } else {
-                                $latestCounterScore = null;
-                                $showDualScore = false;
-                            }
-                            // Card display always uses original listing baseline score
-                            $matchScore = $originalScore;
-                            $totalScore       = $matchScore['overall_percent'];
-                            $totalScoreColor  = $getScoreColor($totalScore);
-                            $servicesScore    = $matchScore['services_match_percent'];
-                            $servicesMatched  = $matchScore['services_matched_count'];
-                            $servicesTotal    = $matchScore['services_baseline_total'];
-                            $servicesMissingCount = $matchScore['services_missing_count'];
-                            $servicesExtraCount   = $matchScore['services_extra_count'];
-                            $brokerScore      = $matchScore['terms_match_percent'];
-                            $brokerMatched    = $matchScore['terms_matched_count'];
-                            $brokerTotal      = $matchScore['terms_baseline_total'];
-                            $brokerMismatches = $matchScore['changed_terms'];
-                            $termsChangedCount = $matchScore['terms_changed_count'];
-                            $termsAddedCount   = $matchScore['terms_added_count'];
-                            $baselineLabel     = "Landlord's Original Listing";
-                            /**
-                             * ZERO-BASELINE / NO-DATA GUARD
-                             *
-                             * If there is no comparable baseline match data, do not display 100%.
-                             * Render "No match data available" instead.
-                             *
-                             * This behavior is locked by QA baseline documentation.
-                             * Reference: qa_reports/QA_LOCK_BidComparison_v1.md
+                            /*
+                             | M5.5 — THE GUARD STAYS IN THE LOOP, deliberately.
+                             |
+                             | `continue` cannot cross into an included view. Blade compiles each
+                             | view to its own function, so a `continue` inside the partial is a
+                             | fatal "Cannot break/continue 1 level" rather than a skipped card.
+                             | Keeping it here is also the stronger arrangement: an unauthorized
+                             | row never reaches the partial at all, instead of being included and
+                             | then abandoned.
+                             |
+                             | Milestone 2 — competing-agent proposal privacy. $auction->bids was
+                             | already narrowed by HireAgentProposalAccess in the controller. This
+                             | is defence in depth, with the opposite default to the gate it
+                             | replaced: skip anything that is not the owner's to review or the
+                             | viewer's own.
                              */
-                            $hasAnyBaseline    = ($brokerTotal > 0 || $servicesTotal > 0);
+                            $isBidOwner  = (data_get($bid, 'user_id') == $auth_id);
+                            $agentNumber = $agentNumberMap[$bid->user_id] ?? $loop->iteration;
+
+                            if (! $isListingOwner && ! $isBidOwner) { continue; }
                         @endphp
-
-                        <!-- Bid Card - Collapsible with custom JS toggle -->
-                        <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                            <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header"
-                                 style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
-                                 data-target="bidCollapse-{{ data_get($bid, 'id') }}"
-                                 aria-expanded="false">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="fa-solid fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
-                                    <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
-                                </div>
-                                <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
-                            </div>
-
-                            <!-- Collapsible Content - Default collapsed -->
-                            <div class="bid-collapse-content" id="bidCollapse-{{ data_get($bid, 'id') }}" style="display: none;">
-                            <div class="card-body" style="padding: 20px;">
-
-                                @if($isListingOwner || $isBidOwner)
-                                <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
-
-                                {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
-                                @if ($latestOwnerCounter && ($isListingOwner || $isBidOwner))
-                                @php $latestOwnerCounterFromLandlord = ($latestOwnerCounter->user_id == data_get($auction, 'user_id')); @endphp
-                                <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
-                                     style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
-                                    <i class="fa-solid fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
-                                    <div>
-                                        @if ($isListingOwner && $latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Sent.</strong>
-                                        @elseif ($isListingOwner && !$latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Received.</strong>
-                                        @elseif ($isBidOwner && $latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Received.</strong>
-                                        @elseif ($isBidOwner && !$latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Sent.</strong>
-                                        @endif
-                                    </div>
-                                </div>
-                                @endif
-
-                                {{-- ── Counter action row — directly on bid card ── --}}
-                                @if ($latestOwnerCounter && ($isListingOwner || $isBidOwner) && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
-                                @php $bidCardViewerSentLatestLandlord = ($isListingOwner && $latestOwnerCounterFromLandlord) || ($isBidOwner && !$latestOwnerCounterFromLandlord); @endphp
-                                @if ($bidCardViewerSentLatestLandlord)
-                                {{-- WAITING: single row — View CT + Edit CT --}}
-                                <div class="d-flex gap-2 align-items-center mb-2">
-                                    <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa-solid fa-eye me-1"></i> View Counter Terms
-                                    </a>
-                                    @if ($isListingOwner)
-                                    <a href="{{ route('landlord.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
-                                    </a>
-                                    @else
-                                    <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
-                                    </a>
-                                    @endif
-                                </div>
-                                @else
-                                {{-- RESPONSE: View CT only — Accept/Counter Back/Reject are on View Counter Terms page --}}
-                                <div class="d-flex align-items-center mb-2">
-                                    <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa-solid fa-eye me-1"></i> View Counter Terms
-                                    </a>
-                                </div>
-                                @endif
-                                @endif
-
-                                <!-- Offered Services Count Row -->
-                                <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
-                                    <span style="font-weight: 600;">Offered Services:</span>
-                                    <span style="color: #28a745; font-weight: 600;">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal : 'No services requested' }}</span>{{ $servicesTotal > 0 ? ' matched' : '' }}
-                                    @if ($servicesTotal > 0 && $servicesExtraCount > 0)
-                                    <span class="text-muted ms-2">&bull; {{ $servicesExtraCount }} extra</span>
-                                    @endif
-                                    @if ($servicesTotal > 0 && $servicesMissingCount > 0)
-                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $servicesMissingCount }} missing</span>
-                                    @endif
-                                </p>
-                                @if ($servicesExtraCount > 0)
-                                <div class="mt-2 d-flex align-items-center flex-wrap" style="gap: 4px 6px;">
-                                    <span style="font-size: 0.9rem; line-height: 1.4;">&#11088;</span>
-                                    <span style="font-weight: 500; color: #856404; font-size: 0.95rem;" title="Extra services were included by the Agent beyond the Landlord&#39;s original request. These do not increase the match score but may provide additional value.">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
-                                    <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
-                                </div>
-                                @endif
-
-                                <!-- Terms Match Row -->
-                                @if ($hasAnyBaseline && $brokerTotal > 0)
-                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
-                                    <span style="font-weight: 600;">Terms Match:</span>
-                                    <span style="color: #28a745; font-weight: 600;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</span>
-                                    @if ($termsChangedCount > 0)
-                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $termsChangedCount }} changed</span>
-                                    @endif
-                                    @if ($termsAddedCount > 0)
-                                    <span class="text-muted ms-2">&bull; {{ $termsAddedCount }} added</span>
-                                    @endif
-                                    @php $termsMissingCount = max(0, $brokerTotal - $brokerMatched - $termsChangedCount); @endphp
-                                    @if ($termsMissingCount > 0)
-                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $termsMissingCount }} missing</span>
-                                    @endif
-                                </p>
-                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
-                                @elseif ($hasAnyBaseline && $brokerTotal === 0)
-                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
-                                    <span style="font-weight: 600;">Terms Match:</span>
-                                    <span class="text-muted">&mdash;</span>
-                                </p>
-                                @endif
-
-                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
-
-                                <!-- Match Score Summary (Compact Display on Bid Card) -->
-                                {{-- Milestone 2: the third disjunct — Bidding Period + any agent who had
-                                     bid — showed a competitor's match score. Owner review and the
-                                     bidder's own score only. --}}
-                                @php $showMatchScoreOnCard = $isListingOwner || $isBidOwner; @endphp
-                                @if ($showMatchScoreOnCard && $hasAnyBaseline)
-                                <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
-                                    @if ($showDualScore && $originalScore && $latestCounterScore)
-                                    {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
-                                    <div class="mb-2">
-                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
-                                        </span>
-                                    </div>
-                                    <div class="row g-2 mb-2">
-                                        {{-- Original Match --}}
-                                        @php
-                                            $osColor = $getScoreColor($originalScore['overall_percent']);
-                                        @endphp
-                                        <div class="col-6">
-                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
-                                                    <span class="badge" style="background: {{ $osColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
-                                                </div>
-                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Landlord's Original Request</div>
-                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
-                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {{-- Latest Counter Match --}}
-                                        @php
-                                            $lcColor2 = $getScoreColor($latestCounterScore['overall_percent']);
-                                        @endphp
-                                        <div class="col-6">
-                                            <div class="p-2 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColor2 }};">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
-                                                    <span class="badge" style="background: {{ $lcColor2 }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
-                                                </div>
-                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
-                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
-                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
-                                    </div>
-                                    @else
-                                    {{-- SINGLE SCORE fallback --}}
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Score
-                                        </span>
-                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
-                                            {{ $totalScore }}%
-                                        </span>
-                                    </div>
-                                    <div class="row g-2 small">
-                                        <div class="col-6">
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Services Match:</span>
-                                                <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.8rem;">
-                                                {{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
-                                                @if ($servicesTotal > 0 && $servicesExtraCount > 0) &bull; Extra: {{ $servicesExtraCount }}@endif
-                                                @if ($servicesTotal > 0 && $servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Terms Match:</span>
-                                                <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.8rem;">
-                                                {{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
-                                                @if ($brokerTotal > 0 && $termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
-                                                @if ($brokerTotal > 0 && $termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 small text-muted">
-                                        <i class="fa-solid fa-circle-info me-1"></i>Compared to: {{ $baselineLabel }}
-                                    </div>
-                                    <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
-                                        Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.
-                                    </div>
-                                    @endif
-                                </div>
-                                @endif
-
-                                <!-- View Full Bid link -->
-                                @if ($isListingOwner || $isBidOwner)
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
-                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
-                                    View Full Bid
-                                </a>
-                                @else
-                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                    <i class="fa-solid fa-lock me-1"></i> Full bid details are private
-                                </span>
-                                @endif
-                                <!-- Edit Bid button for bid owner -->
-                                @if ($canEditWithdraw)
-                                <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
-                                    <a href="{{ route('agent.landlord.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}"
-                                       class="btn btn-primary bid-action-btn">
-                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Bid
-                                    </a>
-                                </div>
-                                @elseif ($isBidOwner && $isExpired)
-                                <div class="mt-3">
-                                    <span class="text-muted small">
-                                        <i class="fa-solid fa-clock me-1"></i> Bidding has ended - edit unavailable
-                                    </span>
-                                </div>
-                                @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
-                                <div class="mt-3">
-                                    <span class="text-muted small">
-                                        <i class="fa-solid fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
-                                    </span>
-                                </div>
-                                @endif
-                                    <!-- Private Data Section - visible to listing owner or bid owner -->
-                                    @if ($isListingOwner || $isBidOwner)
-                                    <!-- Private Data Modal -->
-                                    <div class="modal fade"
-                                        id="privateDataModal{{ data_get($bid, 'id') }}"
-                                        tabindex="-1"
-                                        aria-labelledby="privateDataModalLabel{{ data_get($bid, 'id') }}"
-                                        aria-hidden="true">
-                                        <div class="modal-dialog modal-lg">
-                                            <div class="modal-content"
-                                                style="border-radius: 10px; border: none;">
-                                                <div class="modal-header text-white"
-                                                    style="background: #049399; border-bottom: none; padding: 20px;">
-                                                    <h5 class="modal-title"
-                                                        id="privateDataModalLabel{{ data_get($bid, 'id') }}"
-                                                        style="font-weight: 600;">
-                                                        <i class="fa-solid fa-lock me-2"></i> Private
-                                                        Compensation & Agreement Terms
-                                                    </h5>
-                                                </div>
-                                                <div class="modal-body"
-                                                    style="background: #fafafa; padding: 25px;">
-                                                    @include('partials.bid_detail_body.landlord')
-                                                </div>
-                                                @php
-                                                    // Compute modal-footer state — uses $latestOwnerCounter (owner-scoped) for countered detection
-                                                    $_mfRawL    = data_get($bid, 'accepted', '0');
-                                                    $_mfTermL   = in_array((string)$_mfRawL, ['accepted', 'rejected'], true);
-                                                    $_mfActiveL = isset($latestOwnerCounter) && $latestOwnerCounter !== null;
-                                                    // 'accepted' column stores 'no' for undecided bids (not false/'0'/null).
-                                                    // Treat anything that is not a terminal state as '0' (undecided).
-                                                    $mfStateL   = (!$_mfTermL && $_mfActiveL)
-                                                        ? 'countered'
-                                                        : ($_mfTermL ? (string)$_mfRawL : '0');
-                                                    $mfOwnerIdL    = data_get($auction, 'user_id');
-                                                    $mfOwnerFirstL = data_get($auction, 'user.first_name', '');
-                                                    $mfOwnerLastL  = data_get($auction, 'user.last_name', '');
-                                                    $mfAgentFirstL = data_get($bid, 'user.first_name', '');
-                                                    $mfAgentLastL  = data_get($bid, 'user.last_name', '');
-                                                    $mfIsOwnerL    = ((int)$auth_id === (int)$mfOwnerIdL);
-                                                @endphp
-                                                <div class="modal-footer"
-                                                    style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px; flex-wrap: wrap; gap: 12px;">
-
-                                                    {{-- Confidential notice --}}
-                                                    <div class="w-100 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                                                        <i class="fa-solid fa-shield-halved me-2"></i>
-                                                        <strong>Confidential:</strong> This information is private and only visible to you.
-                                                    </div>
-
-                                                    {{-- ── Bid action row (shared partial) ── --}}
-                                                    @include('hire_landlord_agent.partials.bid_action_row', [
-                                                        'bid'                  => $bid,
-                                                        'auction'              => $auction,
-                                                        'isOwner'              => $mfIsOwnerL,
-                                                        'state'                => $mfStateL,
-                                                        'isSold'               => in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true),
-                                                        'isExpired'            => $isExpired,
-                                                        'latestOwnerCounter'   => $latestOwnerCounter,
-                                                        'ownerFirst'           => $mfOwnerFirstL,
-                                                        'ownerLast'            => $mfOwnerLastL,
-                                                        'agentFirst'           => $mfAgentFirstL,
-                                                        'agentLast'            => $mfAgentLastL,
-                                                    ])
-
-                                                    {{-- ── Close button ── --}}
-                                                    <div class="w-100 d-flex justify-content-end mt-2">
-                                                        <button type="button" class="btn btn-secondary"
-                                                            data-bs-dismiss="modal"
-                                                            style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endif
-
-                                    <!-- Counter Bids -->
-
-                                    @php
-                                    $counterBids = \App\Models\LandlordCounterTerm::with(
-                                    'meta',
-                                    'user',
-                                    )
-                                    ->where('landlord_agent_auction_id', data_get($bid, 'id'))
-                                    ->orderBy('created_at', 'desc')
-                                    ->get();
-                                    @endphp
-
-                                    @php
-                                    $rawState = data_get($bid, 'accepted', '0');
-                                    $_isTerminalLandlord = in_array((string)$rawState, ['accepted', 'rejected'], true);
-                                    $_hasLandlordCounterRecords = $counterBids->count() > 0;
-                                    // 'accepted' column stores 'no' for undecided bids. Treat anything non-terminal as '0'.
-                                    $state = (!$_isTerminalLandlord && $_hasLandlordCounterRecords)
-                                        ? 'countered'
-                                        : ($_isTerminalLandlord ? (string)$rawState : '0');
-                                    $isOwnerRow = data_get($auction, 'user_id') == $auth_id;
-
-                                    $ownerFirst = data_get($auction, 'user.first_name', '');
-                                    $ownerLast = data_get($auction, 'user.last_name', '');
-                                    $agentFirst = data_get($bid, 'user.first_name', '');
-                                    $agentLast = data_get($bid, 'user.last_name', '');
-
-                                    $ownerId = data_get($auction, 'user_id');
-
-                                    // Add access control for counter bids
-                                    $isListingOwner = data_get($auction, 'user_id') == $auth_id;
-                                    $isBidOwner = data_get($bid, 'user_id') == $auth_id;
-                                    $showCounterBids = $isListingOwner || $isBidOwner;
-
-                                    // Check if any counter bid is accepted for this main bid
-                                    $hasAcceptedCounterBid = $counterBids->contains('status', 'accepted');
-                                    @endphp
-
-                                    {{-- Counter Bidding Section - Only visible to listing owner and bidding agent --}}
-                                    @if ($showCounterBids && $counterBids->count() > 0)
-                                    <div class="counter-bids-section mt-4" id="counter-section-{{ data_get($bid, 'id') }}">
-                                        <!-- Counter Bids Toggle Header (plain JS, no Bootstrap collapse — avoids flash from outer accordion interference) -->
-                                        <div class="counter-bids-toggle"
-                                            style="cursor: pointer;"
-                                            onclick="event.stopPropagation(); var target = document.getElementById('counterBids{{ data_get($bid, 'id') }}'); var arrow = this.querySelector('.counter-arrow'); if(target.style.display === 'none' || target.style.display === '') { target.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; } else { target.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; }">
-                                            <div
-                                                class="d-flex justify-content-between align-items-center flex-wrap p-2 border rounded">
-                                                <h5 class="mb-0" style="color: #2c3e50;">Counter
-                                                    Bidding History</h5>
-                                                <div class="d-flex align-items-center">
-                                                    <span
-                                                        class="badge bg-secondary me-2">{{ $counterBids->count() }}
-                                                        counter offers</span>
-                                                    <span class="counter-arrow" style="transition: transform 0.3s;">↓</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Counter Bids Content -->
-                                        <div id="counterBids{{ data_get($bid, 'id') }}"
-                                            class="counter-bids-content"
-                                            style="display: none;"
-                                            aria-labelledby="counterBidsHeading{{ data_get($bid, 'id') }}">
-                                            <div
-                                                class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
-                                                @foreach ($counterBids as $counterBid)
-                                                @php
-                                                // Roles
-                                                $isOwner =
-                                                data_get($auction, 'user_id') ==
-                                                $auth_id;
-                                                $isAgent =
-                                                data_get($bid, 'user_id') == $auth_id;
-                                                $isCounterFromOwner =
-                                                $counterBid->user_id ==
-                                                data_get($auction, 'user_id');
-                                                $isCounterFromAgent =
-                                                $counterBid->user_id ==
-                                                data_get($bid, 'user_id');
-
-                                                // States
-                                                $rawBidState = data_get(
-                                                $bid,
-                                                'accepted',
-                                                '0',
-                                                );
-                                                $bidState = in_array(
-                                                $rawBidState,
-                                                [null, 0, '0', 'no', 'pending', false],
-                                                true,
-                                                )
-                                                ? '0'
-                                                : (string) $rawBidState;
-
-                                                $rawCounterState = data_get(
-                                                $counterBid,
-                                                'status',
-                                                '0',
-                                                );
-                                                $counterState = in_array(
-                                                $rawCounterState,
-                                                [null, 0, '0', 'pending'],
-                                                true,
-                                                )
-                                                ? '0'
-                                                : (string) $rawCounterState;
-
-                                                // Actions visibility (other party, both pending)
-                                                $showCounterActions = false;
-                                                if (
-                                                $bidState === '0' &&
-                                                $counterState === '0' &&
-                                                !$hasAcceptedCounterBid &&
-                                                !$bidIsAccepted &&
-                                                !$isSold &&
-                                                !$isExpired
-                                                ) {
-                                                if ($isOwner && $isCounterFromAgent) {
-                                                $showCounterActions = true;
-                                                }
-                                                if ($isAgent && $isCounterFromOwner) {
-                                                $showCounterActions = true;
-                                                }
-                                                }
-
-                                                // Names
-                                                $ownerFirst = data_get(
-                                                $auction,
-                                                'user.first_name',
-                                                '',
-                                                );
-                                                $ownerLast = data_get(
-                                                $auction,
-                                                'user.last_name',
-                                                '',
-                                                );
-                                                $agentFirst = data_get(
-                                                $bid,
-                                                'user.first_name',
-                                                '',
-                                                );
-                                                $agentLast = data_get(
-                                                $bid,
-                                                'user.last_name',
-                                                '',
-                                                );
-
-                                                // For counter accepted/rejected: actor is ALWAYS the other party (not the creator)
-                                                $actorUserId = $isCounterFromOwner
-                                                ? data_get($bid, 'user_id')
-                                                : data_get($auction, 'user_id');
-                                                $actorFirst = $isCounterFromOwner
-                                                ? $agentFirst
-                                                : $ownerFirst;
-                                                $actorLast = $isCounterFromOwner
-                                                ? $agentLast
-                                                : $ownerLast;
-
-                                                // Creator names (for "pending" other-party view)
-                                                $creatorFirst = data_get(
-                                                $counterBid,
-                                                'user.first_name',
-                                                '',
-                                                );
-                                                $creatorLast = data_get(
-                                                $counterBid,
-                                                'user.last_name',
-                                                '',
-                                                );
-                                                @endphp
-
-                                                <div
-                                                    class="counter-bid-card mb-3 p-3 border rounded mt-2">
-                                                    <div
-                                                        class="d-flex justify-content-between align-items-center flex-wrap mb-2">
-                                                        <h6 class="mb-0">
-                                                            @if ($counterBid->user_id == Auth::id())
-                                                            Your Counter Offer
-                                                            @else
-                                                            Counter Offer from
-                                                            {{ data_get($counterBid, 'user.first_name') }}
-                                                            {{ data_get($counterBid, 'user.last_name') }}
-                                                            @endif
-                                                        </h6>
-                                                        <small
-                                                            class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
-                                                    </div>
-
-                                                    @php
-                                                        $allMeta = $counterBid->getAllMeta();
-
-                                                        // ── A) Lease Fee composite display ──
-                                                        $ctLeaseFeeType = $allMeta['purchase_fee_type'] ?? '';
-                                                        $ctLeaseFeeDisplay = $ctLeaseFeeType;
-                                                        if ($ctLeaseFeeType === 'Flat Fee') {
-                                                            $lf = $allMeta['purchase_fee_flat'] ?? ($allMeta['purchase_fee_flat_commercial'] ?? null);
-                                                            if ($lf) $ctLeaseFeeDisplay = '$'.number_format((float)$lf,2).' Flat Fee';
-                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Rent Due Each Rental Period') {
-                                                            $pct = $allMeta['purchase_fee_rental_period'] ?? null;
-                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Rent Due Each Rental Period';
-                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Gross Lease Value') {
-                                                            $pct = $allMeta['purchase_fee_percentage_combo'] ?? null;
-                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Gross Lease Value';
-                                                        } elseif ($canon($ctLeaseFeeType) === "Percentage of the First Month's Rent") {
-                                                            $pct = $allMeta['purchase_fee_flat_combo'] ?? null;
-                                                            if ($pct) $ctLeaseFeeDisplay = $pct."% of First Month's Rent";
-                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Net Aggregate Rent') {
-                                                            $pct = $allMeta['purchase_fee_net_aggregate'] ?? null;
-                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Net Aggregate Rent';
-                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Gross Rent') {
-                                                            $pct = $allMeta['purchase_fee_gross_rent'] ?? null;
-                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Gross Rent';
-                                                        } elseif ($canon($ctLeaseFeeType) === "Percentage of Month's Rent") {
-                                                            $pct    = $allMeta['purchase_fee_monthly_percentage'] ?? null;
-                                                            $months = $allMeta['purchase_fee_months'] ?? null;
-                                                            if ($pct) $ctLeaseFeeDisplay = $pct."% of Month's Rent".($months ? " × $months months" : '');
-                                                        } elseif ($ctLeaseFeeType === 'other') {
-                                                            $oth = $allMeta['purchase_fee_other'] ?? ($allMeta['purchase_fee_other_commercial'] ?? null);
-                                                            $ctLeaseFeeDisplay = 'Other: '.($oth ?: 'See details');
-                                                        }
-
-                                                        // ── A) Payment Timing composite display ──
-                                                        $ctFeeTimingRaw = $allMeta['broker_fee_timing'] ?? '';
-                                                        $ctFeeTimingDisplay = match($ctFeeTimingRaw) {
-                                                            'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
-                                                            default => $ctFeeTimingRaw,
-                                                        };
-                                                        if ($ctFeeTimingRaw === 'Deducted from Rent Collected') {
-                                                            $d = $allMeta['broker_fee_days_from_rent'] ?? null;
-                                                            if ($d) $ctFeeTimingDisplay .= " ($d calendar days)";
-                                                        } elseif ($ctFeeTimingRaw === 'Paid Within Calendar Days After Executed Lease') {
-                                                            $d = $allMeta['broker_fee_days_after_lease'] ?? null;
-                                                            if ($d) $ctFeeTimingDisplay = "Within $d days after executed lease";
-                                                        } elseif ($ctFeeTimingRaw === 'Paid Within Calendar Days of Tenant Rent Payment') {
-                                                            $d = $allMeta['broker_fee_days_after_rent'] ?? null;
-                                                            if ($d) $ctFeeTimingDisplay = "Within $d days of tenant rent payment";
-                                                        } elseif ($ctFeeTimingRaw === 'other') {
-                                                            $oth = $allMeta['broker_fee_timing_other'] ?? null;
-                                                            $ctFeeTimingDisplay = $oth ?: 'Custom arrangement';
-                                                        } elseif (in_array($ctFeeTimingRaw, ['50% due upon execution, 50% due upon commencement of agreement','50% due upon execution, 50% due upon occupancy of premises'])) {
-                                                            $d2 = $allMeta['broker_fee_days_after_due_event'] ?? null;
-                                                            if ($d2) $ctFeeTimingDisplay .= " (second installment within $d2 days)";
-                                                        }
-
-                                                        // ── A) Renewal Fee composite display ──
-                                                        $ctRenewalFeeType = $allMeta['renewal_fee_type'] ?? '';
-                                                        $ctRenewalFeeDisplay = $ctRenewalFeeType;
-                                                        if ($ctRenewalFeeType === 'Flat Fee') {
-                                                            $flat = $allMeta['renewal_fee_flat_free'] ?? null;
-                                                            if ($flat) $ctRenewalFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
-                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Rent Due Each Rental Period') {
-                                                            $pct = $allMeta['renewal_fee_percentage'] ?? null;
-                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Rent Due Each Rental Period';
-                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Gross Lease Value') {
-                                                            $pct = $allMeta['renewal_fee_lease_value'] ?? null;
-                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Gross Lease Value';
-                                                        } elseif ($canon($ctRenewalFeeType) === "Percentage of the First Month's Rent") {
-                                                            $pct = $allMeta['renewal_fee_first_month'] ?? null;
-                                                            if ($pct) $ctRenewalFeeDisplay = $pct."% of First Month's Rent";
-                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Net Aggregate Rent') {
-                                                            $pct = $allMeta['renewal_fee_percentage'] ?? null;
-                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Net Aggregate Rent';
-                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Gross Rent') {
-                                                            $pct = $allMeta['renewal_fee_lease_value'] ?? null;
-                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Gross Rent';
-                                                        } elseif ($canon($ctRenewalFeeType) === "Percentage of Month's Rent") {
-                                                            $pct    = $allMeta['renewal_fee_first_month'] ?? null;
-                                                            $months = $allMeta['renewal_fee_no_of_months'] ?? null;
-                                                            if ($pct) $ctRenewalFeeDisplay = $pct."% of Month's Rent".($months ? " × $months months" : '');
-                                                        } elseif ($ctRenewalFeeType === 'other') {
-                                                            $oth = $allMeta['renewal_fee_custom'] ?? null;
-                                                            $ctRenewalFeeDisplay = 'Other: '.($oth ?: 'See details');
-                                                        }
-
-                                                        // ── B) Tenant Broker — structure and fee SEPARATELY ──
-                                                        $ctTenantBrokerStructure  = $allMeta['tenant_broker_commission_structure'] ?? '';
-                                                        $ctTenantBrokerFeeDisplay = '';
-                                                        $ctTbs = $allMeta['tenant_broker_fee_structure'] ?? '';
-                                                        if ($ctTenantBrokerStructure && $ctTbs) {
-                                                            if ($ctTbs === 'Percentage of the Rent Due Each Rental Period') {
-                                                                $pct = $allMeta['tenant_broker_percentage'] ?? null;
-                                                                if ($pct) $ctTenantBrokerFeeDisplay = $pct.'% of Rent Due Each Rental Period';
-                                                            } elseif ($ctTbs === 'Percentage of the Gross Lease Value') {
-                                                                $pct = $allMeta['tenant_broker_gross_lease'] ?? null;
-                                                                if ($pct) $ctTenantBrokerFeeDisplay = $pct.'% of Gross Lease Value';
-                                                            } elseif ($ctTbs === "Percentage of the First Month's Rent") {
-                                                                $pct = $allMeta['tenant_broker_first_month_rent'] ?? null;
-                                                                if ($pct) $ctTenantBrokerFeeDisplay = $pct."% of First Month's Rent";
-                                                            } elseif ($ctTbs === 'Flat Fee') {
-                                                                $flat = $allMeta['tenant_broker_flat_fee'] ?? null;
-                                                                if ($flat) $ctTenantBrokerFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
-                                                            } elseif ($ctTbs === 'other') {
-                                                                $oth = $allMeta['tenant_broker_other'] ?? null;
-                                                                if ($oth) $ctTenantBrokerFeeDisplay = 'Other: '.$oth;
-                                                            }
-                                                        }
-                                                        // Combined display for counter-term comparison
-                                                        $ctTenantBrokerDisplay = $ctTenantBrokerStructure . ($ctTenantBrokerFeeDisplay ? ' – '.$ctTenantBrokerFeeDisplay : '');
-
-                                                        // ── C) Lease-Option composite displays ──
-                                                        $ctLeaseOptInterest = $allMeta['interested_lease_option_agreement'] ?? '';
-                                                        $ctLeaseOptionCreatedDisplay   = '-';
-                                                        $ctLeaseOptionExercisedDisplay = '-';
-                                                        if ($ctLeaseOptInterest === 'Yes') {
-                                                            $lt = $allMeta['lease_type'] ?? null;
-                                                            $lv = $allMeta['lease_value'] ?? null;
-                                                            if ($lt && $lv) {
-                                                                $ctLeaseOptionCreatedDisplay = ($lt === 'percent')
-                                                                    ? ($fmtPercent($lv) ? $fmtPercent($lv).' of Total Purchase Price' : '-')
-                                                                    : ($fmtMoney($lv) ?? '-');
-                                                            }
-                                                            $pt = $allMeta['purchase_type'] ?? null;
-                                                            $pv = $allMeta['purchase_value'] ?? null;
-                                                            if ($pt && $pv) {
-                                                                $ctLeaseOptionExercisedDisplay = ($pt === 'percent')
-                                                                    ? ($fmtPercent($pv) ? $fmtPercent($pv).' of Total Purchase Price' : '-')
-                                                                    : ($fmtMoney($pv) ?? '-');
-                                                            }
-                                                        }
-
-                                                        // ── D) Purchase Fee composite display ──
-                                                        $ctSellingInterest  = $allMeta['interested_in_selling'] ?? '';
-                                                        $ctPurchaseFeeDisplay = '-';
-                                                        if ($ctSellingInterest === 'Yes') {
-                                                            $ist = $allMeta['interested_in_selling_type'] ?? '';
-                                                            if ($ist === 'Percentage of the Total Purchase Price') {
-                                                                $pct = $allMeta['landlord_broker_purchase_price'] ?? null;
-                                                                $ctPurchaseFeeDisplay = $pct ? $fmtPercent($pct).' of Total Purchase Price' : $ist;
-                                                            } elseif ($ist === 'Percentage of the Total Purchase Price + Flat Fee') {
-                                                                $pct  = $allMeta['landlord_broker_percentage_price'] ?? null;
-                                                                $flat = $allMeta['landlord_broker_dollar_price'] ?? null;
-                                                                $ctPurchaseFeeDisplay = trim(($pct ? $fmtPercent($pct).' of Total Purchase Price' : '').($pct && $flat ? ' + ' : '').($flat ? $fmtMoney($flat) : ''));
-                                                                if (!$ctPurchaseFeeDisplay) $ctPurchaseFeeDisplay = $ist;
-                                                            } elseif ($ist === 'Flat Fee') {
-                                                                $flat = $allMeta['landlord_broker_flate_fee'] ?? null;
-                                                                $ctPurchaseFeeDisplay = $flat ? '$'.number_format((float)$flat,2).' Flat Fee' : $ist;
-                                                            } elseif ($ist === 'Other') {
-                                                                $oth = $allMeta['landlord_broker_other'] ?? null;
-                                                                $ctPurchaseFeeDisplay = $oth ? 'Other: '.$oth : 'Other';
-                                                            } else {
-                                                                $ctPurchaseFeeDisplay = $ist ?: '-';
-                                                            }
-                                                        }
-
-                                                        // ── E) Agency Agreement Timeframe display ──
-                                                        $ctAgencyTimeframe = $allMeta['agency_agreement_timeframe'] ?? '';
-                                                        $ctAgencyTimeframeDisplay = (strtolower(trim($ctAgencyTimeframe)) === 'other')
-                                                            ? ($allMeta['agency_agreement_custom'] ?? 'Other')
-                                                            : $ctAgencyTimeframe;
-
-                                                        // ── E) Property Management Fee composite display ──
-                                                        $ctPmFeeDisplay = '-';
-                                                        if (($allMeta['interested_in_property_management'] ?? '') === 'yes') {
-                                                            $pmFeeType = $allMeta['interested_in_property_management_fee'] ?? '';
-                                                            $ctPmFeeDisplay = $pmFeeType;
-                                                            if ($pmFeeType === 'Percentage of the Gross Lease Value') {
-                                                                $pct = $allMeta['interested_in_property_management_fee_gross_lease'] ?? null;
-                                                                if ($pct) $ctPmFeeDisplay = $pct.'% of Gross Lease Value';
-                                                            } elseif ($pmFeeType === 'Percentage of the Rent Due Each Rental Period') {
-                                                                $pct = $allMeta['interested_in_property_management_fee_rental_periord'] ?? null;
-                                                                if ($pct) $ctPmFeeDisplay = $pct.'% of Rent Due Each Rental Period';
-                                                            } elseif ($pmFeeType === 'Flat Fee') {
-                                                                $flat = $allMeta['interested_in_property_management_fee_flate_free'] ?? null;
-                                                                if ($flat) $ctPmFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
-                                                            } elseif ($pmFeeType === 'Other') {
-                                                                $oth = $allMeta['interested_in_property_management_fee_other'] ?? null;
-                                                                if ($oth) $ctPmFeeDisplay = 'Other: '.$oth;
-                                                            }
-                                                        }
-
-                                                        $ctHasBrokerComp = !empty($ctLeaseFeeType) || !empty($ctFeeTimingRaw) || !empty($ctRenewalFeeType)
-                                                            || !empty($allMeta['expansion_commission_percentage'])
-                                                            || !empty($ctTenantBrokerStructure)
-                                                            || !empty($ctLeaseOptInterest)
-                                                            || !empty($ctSellingInterest)
-                                                            || !empty($allMeta['protection_period'])
-                                                            || !empty($allMeta['early_termination_fee_option'])
-                                                            || !empty($ctAgencyTimeframe)
-                                                            || !empty($allMeta['interested_in_property_management'])
-                                                            || !empty($allMeta['brokerage_relationship'])
-                                                            || !empty($allMeta['additional_details_broker'])
-                                                            || !empty($allMeta['additional_details']);
-
-                                                        // === Diff helpers: counter vs original bid ===
-                                                        // Compare two composite display strings (normalized)
-                                                        $ctCompositeChanged = function(string $cDisplay, string $oDisplay): bool {
-                                                            $norm = fn($v) => preg_replace('/[\s$,]/', '', strtolower(trim($v)));
-                                                            return $norm($cDisplay) !== $norm($oDisplay);
-                                                        };
-                                                        // Compare a single raw meta key to the original bid's stored value
-                                                        $ctIsChanged = function($counterVal, string $origKey) use ($bid): bool {
-                                                            $origVal = data_get($bid, 'get.' . $origKey, null);
-                                                            $norm = fn($v) => preg_replace('/[\s$,%]/', '', strtolower(trim((string)($v ?? ''))));
-                                                            return $norm($counterVal) !== $norm($origVal);
-                                                        };
-                                                        $ctChangedStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
-                                                        $ctChangedBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; vertical-align: middle;">Changed</span>';
-
-                                                        // Services diff: counter services vs ORIGINAL BID services
-                                                        $origBidSvcsRaw = data_get($bid, 'get.services', []);
-                                                        if (is_string($origBidSvcsRaw)) $origBidSvcsRaw = json_decode($origBidSvcsRaw, true) ?: [];
-                                                        $origBidSvcsNorm = array_values(array_map(
-                                                            fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$s),
-                                                            array_filter((array)$origBidSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other')
-                                                        ));
-                                                        $origBidOtherRaw = data_get($bid, 'get.other_services', []);
-                                                        if (is_string($origBidOtherRaw)) $origBidOtherRaw = json_decode($origBidOtherRaw, true) ?: [];
-                                                        $origBidOtherNorm = array_values(array_filter(array_map(
-                                                            fn($s) => strtolower(trim((string)$s)),
-                                                            array_filter((array)$origBidOtherRaw, fn($s) => is_string($s) && trim($s) !== '')
-                                                        )));
-                                                    @endphp
-
-                                                    @if ($ctHasBrokerComp)
-                                                    <div class="mb-4">
-                                                        <h6 class="mb-3" style="font-weight: 600; color: #049399; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
-                                                        </h6>
-
-                                                        {{-- A) Landlord's Broker Lease Fee --}}
-                                                        @if (!empty($ctLeaseFeeType) || !empty($ctFeeTimingRaw) || !empty($ctRenewalFeeType) || !empty($allMeta['expansion_commission_percentage']))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">A) Landlord's Broker Lease Fee</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @if (!empty($ctLeaseFeeType))
-                                                                @php $ctLeaseFeeChg = $ctCompositeChanged($ctLeaseFeeDisplay, $leaseFeeDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctLeaseFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Landlord's Broker Lease Fee:</span> {{ $ctLeaseFeeDisplay }}{!! $ctLeaseFeeChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (!empty($ctFeeTimingRaw))
-                                                                @php $ctFeeTimingChg = $ctCompositeChanged($ctFeeTimingDisplay, $feeTimingDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctFeeTimingChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $ctFeeTimingDisplay }}{!! $ctFeeTimingChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (!empty($ctRenewalFeeType))
-                                                                @php $ctRenewalFeeChg = $ctCompositeChanged($ctRenewalFeeDisplay, $renewalFeeDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctRenewalFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Lease Renewal/Extension Fee:</span> {{ $ctRenewalFeeDisplay }}{!! $ctRenewalFeeChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (!empty($allMeta['expansion_commission_percentage']))
-                                                                @php $ctExpChg = $ctIsChanged($allMeta['expansion_commission_percentage'], 'expansion_commission_percentage'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctExpChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Expansion Commission for Lease Amendment:</span> {{ $allMeta['expansion_commission_percentage'] }}% of original commission{!! $ctExpChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- B) Tenant's Broker Compensation --}}
-                                                        @if (!empty($ctTenantBrokerStructure))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">B) Tenant's Broker Compensation</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctTenantBrokerStructureChg = $ctIsChanged($ctTenantBrokerStructure, 'tenant_broker_commission_structure'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctTenantBrokerStructureChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $ctTenantBrokerStructure }}{!! $ctTenantBrokerStructureChg ? $ctChangedBadge : '' !!}</li>
-                                                                @if ($ctTenantBrokerFeeDisplay)
-                                                                @php $ctTenantBrokerFeeChg = $ctCompositeChanged($ctTenantBrokerFeeDisplay, $tenantBrokerFeeDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctTenantBrokerFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $ctTenantBrokerFeeDisplay }}{!! $ctTenantBrokerFeeChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- C) Lease-Option Details --}}
-                                                        @if (!empty($ctLeaseOptInterest))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">C) Lease-Option Details</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctLeaseOptChg = $ctIsChanged($ctLeaseOptInterest, 'interested_lease_option_agreement'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctLeaseOptChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Interested in Offering a Lease-Option Agreement:</span> {{ $ctLeaseOptInterest }}{!! $ctLeaseOptChg ? $ctChangedBadge : '' !!}</li>
-                                                                @if ($ctLeaseOptInterest === 'Yes')
-                                                                    @if ($ctLeaseOptionCreatedDisplay !== '-')
-                                                                    @php $ctLeaseCreatedChg = $ctCompositeChanged($ctLeaseOptionCreatedDisplay, $leaseOptionCreatedDisplay ?? ''); @endphp
-                                                                    <li class="mb-1" style="font-size: 12px; {{ $ctLeaseCreatedChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $ctLeaseOptionCreatedDisplay }}{!! $ctLeaseCreatedChg ? $ctChangedBadge : '' !!}</li>
-                                                                    @endif
-                                                                    @if ($ctLeaseOptionExercisedDisplay !== '-')
-                                                                    @php $ctLeaseExercisedChg = $ctCompositeChanged($ctLeaseOptionExercisedDisplay, $leaseOptionExercisedDisplay ?? ''); @endphp
-                                                                    <li class="mb-1" style="font-size: 12px; {{ $ctLeaseExercisedChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $ctLeaseOptionExercisedDisplay }}{!! $ctLeaseExercisedChg ? $ctChangedBadge : '' !!}</li>
-                                                                    @endif
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- D) Purchase Fee Details --}}
-                                                        @if (!empty($ctSellingInterest))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">D) Purchase Fee Details</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctSellingChg = $ctIsChanged($ctSellingInterest, 'interested_in_selling'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctSellingChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Interested in Selling the Property:</span> {{ $ctSellingInterest }}{!! $ctSellingChg ? $ctChangedBadge : '' !!}</li>
-                                                                @if ($ctSellingInterest === 'Yes' && $ctPurchaseFeeDisplay !== '-')
-                                                                @php $ctPurchaseFeeChg = $ctCompositeChanged($ctPurchaseFeeDisplay, $purchaseFeeDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctPurchaseFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Purchase Fee:</span> {{ $ctPurchaseFeeDisplay }}{!! $ctPurchaseFeeChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- E) Legal Terms --}}
-                                                        @if (!empty($allMeta['protection_period']) || !empty($allMeta['early_termination_fee_option']) || !empty($ctAgencyTimeframe) || !empty($allMeta['interested_in_property_management']))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">E) Legal Terms</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @if (!empty($allMeta['protection_period']))
-                                                                @php $ctProtChg = $ctIsChanged($allMeta['protection_period'], 'protection_period'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctProtChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days{!! $ctProtChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (!empty($allMeta['early_termination_fee_option']))
-                                                                @php $ctEtfChg = $ctIsChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctEtfChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] === 'yes' ? 'Yes' : 'No' }}{!! $ctEtfChg ? $ctChangedBadge : '' !!}</li>
-                                                                @if ($allMeta['early_termination_fee_option'] === 'yes' && !empty($allMeta['early_termination_fee_amount']))
-                                                                @php $ctEtfAmtChg = $ctIsChanged($allMeta['early_termination_fee_amount'], 'early_termination_fee_amount'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctEtfAmtChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($allMeta['early_termination_fee_amount']) ?? ('$'.$allMeta['early_termination_fee_amount']) }}{!! $ctEtfAmtChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @endif
-                                                                @if (!empty($ctAgencyTimeframe))
-                                                                @php $ctAgencyTfChg = $ctCompositeChanged($ctAgencyTimeframeDisplay, $agencyTimeframeDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctAgencyTfChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Landlord Agency Agreement Timeframe:</span> {{ $ctAgencyTimeframeDisplay }}{!! $ctAgencyTfChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (!empty($allMeta['interested_in_property_management']))
-                                                                @php $ctPmChg = $ctIsChanged($allMeta['interested_in_property_management'], 'interested_in_property_management'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctPmChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Interested in Property Management:</span> {{ ($allMeta['interested_in_property_management'] === 'yes') ? 'Yes' : 'No' }}{!! $ctPmChg ? $ctChangedBadge : '' !!}</li>
-                                                                @if (($allMeta['interested_in_property_management'] === 'yes') && $ctPmFeeDisplay !== '-')
-                                                                @php $ctPmFeeChg = $ctCompositeChanged($ctPmFeeDisplay, $pmFeeDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctPmFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Property Management Fee:</span> {{ $ctPmFeeDisplay }}{!! $ctPmFeeChg ? $ctChangedBadge : '' !!}</li>
-                                                                @endif
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- F) Brokerage Relationship --}}
-                                                        @if (!empty($allMeta['brokerage_relationship']))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Brokerage Relationship</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctBrokerRelChg = $ctIsChanged($allMeta['brokerage_relationship'], 'brokerage_relationship'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctBrokerRelChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}{!! $ctBrokerRelChg ? $ctChangedBadge : '' !!}</li>
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- G) Additional Terms --}}
-                                                        @if (!empty($allMeta['additional_details_broker']))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Additional Terms</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctAddTermsChg = $ctIsChanged($allMeta['additional_details_broker'], 'additional_details_broker'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctAddTermsChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}{!! $ctAddTermsChg ? $ctChangedBadge : '' !!}</li>
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- H) Referral Fee --}}
-                                                        @if ($auction->isCreatedByAgent() && !empty($allMeta['referral_fee_percent']))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">H) Referral Fee</div>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctRefFeeChg = $ctIsChanged($allMeta['referral_fee_percent'], 'referral_fee_percent'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctRefFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Referral Fee (%):</span> {{ $allMeta['referral_fee_percent'] }}%{!! $ctRefFeeChg ? $ctChangedBadge : '' !!}</li>
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                    </div>
-                                                    @endif
-
-                                                    {{-- Additional Details --}}
-                                                    @if (!empty($allMeta['additional_details']))
-                                                    <div class="mb-3">
-                                                        <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa-solid fa-circle-info me-1"></i>Additional Details</div>
-                                                        @php $ctAddDetailsChg = $ctIsChanged($allMeta['additional_details'], 'additional_details'); @endphp
-                                                        <div class="ps-3" style="font-size: 12px; {{ $ctAddDetailsChg ? $ctChangedStyle : '' }}">{{ $allMeta['additional_details'] }}{!! $ctAddDetailsChg ? $ctChangedBadge : '' !!}</div>
-                                                    </div>
-                                                    @endif
-
-
-
-                                                    <!-- Services Offered (diff: counter vs original bid) -->
-                                                    @php
-                                                    $ctSvcsRaw = $allMeta['services'] ?? [];
-                                                    if (is_string($ctSvcsRaw) && !empty($ctSvcsRaw)) {
-                                                        $ctSvcsParsed = json_decode($ctSvcsRaw, true) ?: [];
-                                                    } else {
-                                                        $ctSvcsParsed = is_array($ctSvcsRaw) ? $ctSvcsRaw : [];
-                                                    }
-                                                    $ctSvcsParsed = array_values(array_filter($ctSvcsParsed, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'));
-
-                                                    $ctOtherRaw = $allMeta['other_services'] ?? [];
-                                                    if (is_string($ctOtherRaw) && !empty($ctOtherRaw)) {
-                                                        $ctOtherParsed = json_decode($ctOtherRaw, true) ?: [];
-                                                    } else {
-                                                        $ctOtherParsed = is_array($ctOtherRaw) ? $ctOtherRaw : [];
-                                                    }
-                                                    $ctOtherParsed = array_values(array_filter($ctOtherParsed, fn($s) => is_string($s) && trim($s) !== ''));
-
-                                                    // Normalize counter services for diff
-                                                    $ctSvcsNorm = array_map(
-                                                        fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$s),
-                                                        $ctSvcsParsed
-                                                    );
-
-                                                    // Determine added services (in counter but not in original bid)
-                                                    $ctSvcIsAdded = fn(string $svc): bool =>
-                                                        !in_array(\App\Helpers\LandlordBidMatchScoreHelper::normalizeService($svc), $origBidSvcsNorm, true);
-
-                                                    // Build removed services list (in original bid but not in counter)
-                                                    $ctRemovedSvcs = array_filter($origBidSvcsNorm, fn($n) => !in_array($n, $ctSvcsNorm, true));
-                                                    // Map back to display text from original bid raw
-                                                    $origBidSvcsDisplay = array_values(array_filter(
-                                                        is_string(data_get($bid, 'get.services', [])) ? json_decode(data_get($bid, 'get.services', '[]'), true) ?? [] : (array)data_get($bid, 'get.services', []),
-                                                        fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'
-                                                    ));
-                                                    $ctRemovedDisplay = array_values(array_filter($origBidSvcsDisplay, fn($s) =>
-                                                        in_array(\App\Helpers\LandlordBidMatchScoreHelper::normalizeService($s), $ctRemovedSvcs, true)
-                                                    ));
-
-                                                    // Other services diff
-                                                    $ctOtherIsAdded = fn(string $s): bool =>
-                                                        !in_array(strtolower(trim($s)), $origBidOtherNorm, true);
-                                                    $ctOtherRemovedDisplay = array_values(array_filter(
-                                                        is_string(data_get($bid, 'get.other_services', [])) ? json_decode(data_get($bid, 'get.other_services', '[]'), true) ?? [] : (array)data_get($bid, 'get.other_services', []),
-                                                        fn($s) => is_string($s) && trim($s) !== '' && !in_array(strtolower(trim($s)), array_map(fn($x) => strtolower(trim($x)), $ctOtherParsed), true)
-                                                    ));
-
-                                                    $hasCtSvcs = !empty($ctSvcsParsed) || !empty($ctOtherParsed);
-
-                                                    // Normalizer for category-membership matching (handles smart quotes / Unicode escapes)
-                                                    $normForCat = function(string $s): string {
-                                                        $s = mb_strtolower(trim($s));
-                                                        $s = str_replace(["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}"], ["'", "'", '"', '"'], $s);
-                                                        $s = str_replace(['\\u2019', '\\u2018', '\\u201c', '\\u201d', '\\u201C', '\\u201D'], ["'", "'", '"', '"', '"', '"'], $s);
-                                                        $s = str_replace(["\u{2014}", '\\u2014'], ['-', '-'], $s);
-                                                        $s = preg_replace('/\s+/', ' ', $s);
-                                                        return trim($s);
-                                                    };
-
-                                                    // Category map for grouping services — mirrors the bid-detail partial
-                                                    $modalCats = $isCommercial ? $landlordCommercialCategories : $landlordResidentialCategories;
-                                                    @endphp
-
-                                                    <div class="mb-4" style="margin-top: 20px;">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
-                                                        </h6>
-
-                                                        @if ($hasCtSvcs)
-                                                            @foreach ($modalCats as $catName => $catSvcs)
-                                                                @php
-                                                                    $normCatKeys = array_map($normForCat, $catSvcs);
-                                                                    $inCat = array_filter($ctSvcsParsed, fn($svc) => in_array($normForCat($svc), $normCatKeys));
-                                                                @endphp
-                                                                @if (!empty($inCat))
-                                                                <div class="mb-3">
-                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
-                                                                        @foreach ($inCat as $svc)
-                                                                            @php $svcAdded = $ctSvcIsAdded($svc); @endphp
-                                                                            @if ($svcAdded)
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                                <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $svc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
-                                                                            </li>
-                                                                            @else
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
-                                                                            @endif
-                                                                            @if (strtolower(trim($svc)) === 'provide digital photo enhancements')
-                                                                            @php
-                                                                                $ctPhotoEnhRaw = $allMeta['photo_enhancements'] ?? [];
-                                                                                if (is_string($ctPhotoEnhRaw)) $ctPhotoEnhRaw = json_decode($ctPhotoEnhRaw, true) ?: [];
-                                                                                $ctCustomEnh = $allMeta['custom_enhancement'] ?? '';
-                                                                                $ctEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
-                                                                            @endphp
-                                                                            @if (!empty($ctPhotoEnhRaw))
-                                                                            <ul style="padding-left: 1.5rem; margin: 4px 0; list-style: disc;">
-                                                                                @foreach ($ctEnhOrder as $ctEnh)
-                                                                                    @if (in_array($ctEnh, $ctPhotoEnhRaw))
-                                                                                        @if ($ctEnh === 'Other' && !empty($ctCustomEnh))
-                                                                                            <li style="font-size: 0.85rem;">{{ $ctCustomEnh }}</li>
-                                                                                        @elseif ($ctEnh !== 'Other')
-                                                                                            <li style="font-size: 0.85rem;">{{ $ctEnh }}</li>
-                                                                                        @endif
-                                                                                    @endif
-                                                                                @endforeach
-                                                                            </ul>
-                                                                            @endif
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </ul>
-                                                                </div>
-                                                                @endif
-                                                            @endforeach
-
-                                                            @if (!empty($ctOtherParsed))
-                                                            <div class="mb-3">
-                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
-                                                                    @foreach ($ctOtherParsed as $otherSvc)
-                                                                        @php $otherAdded = $ctOtherIsAdded($otherSvc); @endphp
-                                                                        @if ($otherAdded)
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                            <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherSvc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
-                                                                        </li>
-                                                                        @else
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherSvc }}</li>
-                                                                        @endif
-                                                                    @endforeach
-                                                                </ul>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (!empty($ctRemovedDisplay) || !empty($ctOtherRemovedDisplay))
-                                                            <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
-                                                                <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
-                                                                    <i class="fa-solid fa-minus-circle me-1"></i>Removed Services
-                                                                </div>
-                                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
-                                                                    @foreach ($ctRemovedDisplay as $rSvc)
-                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
-                                                                    </li>
-                                                                    @endforeach
-                                                                    @foreach ($ctOtherRemovedDisplay as $rSvc)
-                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
-                                                                    </li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            </div>
-                                                            @endif
-                                                        @else
-                                                        <div class="text-muted" style="font-style: italic;">No services selected for this counter.</div>
-                                                        @endif
-                                                    </div>
-
-                                                    <!-- Counter actions (only when both pending & viewer is the other party & no counter bid is accepted) -->
-                                                    @inject('carbon', 'Carbon\Carbon')
-
-
-                                                    @php
-                                                        // Milestone 3: this inner block recomputed $expiration from auction_time
-                                                        // (created_at + "10 Days"), SHADOWING the page-level value from inside the
-                                                        // bid loop — so counter actions were gated by their own synthesised timer
-                                                        // even after the page-level one was retired. expiration_date is the only
-                                                        // source now, matching the page-level rule exactly.
-                                                        $expirationDate = data_get($auction->get, 'expiration_date');
-                                                        $expiration = !empty($expirationDate)
-                                                            ? $carbon::parse($expirationDate)
-                                                            : null;
-
-                                                        $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
-                                                    @endphp
-
-                                                    {{-- Step 6: Display Actions or Expired Message --}}
-                                                    @if ($showCounterActions)
-                                                    <div class="mt-3 pt-3 border-top">
-                                                        {{-- Actions are on View Counter Terms page only --}}
-                                                        <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                            <i class="fa-solid fa-eye me-1"></i> View Counter Terms
-                                                        </a>
-                                                    </div>
-                                                    @endif
-
-                                                    <!-- Counter footer status -->
-                                                    <div class="mt-3 pt-3 border-top">
-                                                        @if ($counterState === 'accepted')
-                                                        @if (Auth::id() == $actorUserId)
-                                                        <div class="alert alert-success mb-0 py-1 small">
-                                                            ✅ This counter bid has been accepted.
-                                                        </div>
-                                                        @else
-                                                        <div class="alert alert-success mb-0 py-1 small">
-                                                            ✅ {{ trim($actorFirst . ' ' . $actorLast) }} accepted the counter bid.
-                                                        </div>
-                                                        @endif
-                                                        @elseif ($counterState === 'rejected')
-                                                        @if (Auth::id() == $actorUserId)
-                                                        <div class="alert alert-danger mb-0 py-1 small">
-                                                            ❌ This counter bid has been rejected.
-                                                        </div>
-                                                        @else
-                                                        <div class="alert alert-danger mb-0 py-1 alert-font">
-                                                            ❌ {{ trim($actorFirst . ' ' . $actorLast) }} rejected the counter bid.
-                                                        </div>
-                                                        @endif
-                                                        @elseif ($counterState === '0')
-                                                        @if ($counterBid->user_id == Auth::id())
-                                                        <div class="alert alert-secondary mb-0 py-1 small">
-                                                            ⏳ Waiting for response from
-                                                            {{ $isCounterFromOwner ? trim($agentFirst . ' ' . $agentLast) : trim($ownerFirst . ' ' . $ownerLast) }}...
-                                                        </div>
-                                                        @else
-                                                        <div class="alert alert-light mb-0 py-1 small"
-                                                            style="font-size:13px;">
-                                                            ⏳ Counter bid from
-                                                            {{ trim($creatorFirst . ' ' . $creatorLast) }}
-                                                            is pending.
-                                                        </div>
-                                                        @endif
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endif
-
-                                {{--
-                                    Milestone 2 — the COMPETITOR SUMMARY @else branch was removed
-                                    here. It rendered a competing agent's Offered Services and
-                                    Terms Match counts plus a full Original/Counter match-score
-                                    breakdown to any other agent viewing that bid. With the bid
-                                    set now narrowed server-side the branch was already
-                                    unreachable, but an unreachable competitor-disclosure branch
-                                    is exactly the fragility this milestone exists to remove.
-                                --}}
-                                @endif
-                                {{-- End 3-branch card body --}}
-
-                            </div>
-                            </div>
-                        </div>
-
-
+                        @include('hire_landlord_agent.partials.proposal_card')
                     @endforeach
 
 
@@ -3575,9 +2738,24 @@ $auser = $auctionUser::find(@$auction->user_id);
             </div>
         </div>
 </div>
+@endif{{-- M5.5 proposal console --}}
+{{-- M5.4: a full-width button carrying a single user icon — no label, no handler, no
+     destination, and no accessible name. It predates M5 and renders for every viewer. It is
+     removed only behind the redesign flag: it is visible today, so deleting it outright would
+     change the legacy page for everyone, and "it looks like a mistake" is not the same standard
+     as "it can never render" (which is why the dead legacy `sold` branch above WAS removed
+     unconditionally — no such column or accessor exists, so it emitted nothing either way).
+     M5.3 made this one conspicuous by suppressing the share card that used to sit beneath it. --}}
+@unless ($hlaDetailRedesign)
 <button class="btn w-100 mt-0">
     <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>
+@endunless
+{{-- M5.3: the sidebar share card is suppressed when the redesign is on — Share Listing and Copy
+     Link both live in the Quick Actions band above the grid. The QR code goes with it; it has no
+     tile because a QR image is listing INFORMATION rather than an action, and re-siting it is a
+     sidebar question, which is M5.4. --}}
+@unless ($hlaDetailRedesign)
 <div class="p-4 card">
     <p class="text-600">Share this link via</p>
     <div class="qr-code" style="width: 100%; height:200px;">
@@ -3611,6 +2789,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
     </div>
 </div>
+@endunless
         </x-slot>
 
         {{--
@@ -3656,7 +2835,7 @@ $auser = $auctionUser::find(@$auction->user_id);
     any more, and the library is no longer loaded at all.
 --}}
 <script>
-document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
+document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) {
     header.addEventListener('click', function() {
         var targetId = this.getAttribute('data-target');
         var target = document.getElementById(targetId);
@@ -3674,4 +2853,149 @@ document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
     });
 });
 </script>
+
+{{-- M5.2b — active section highlighting. Flag-gated: with the redesign off this page pushes no
+     additional script, so there is no new behaviour to regress. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabled())
+<script>
+/*
+    The behaviour half of the section navigation, and the reason x-viho.section-nav ships without
+    a script of its own: "which section am I reading" is a product question, and a primitive that
+    answered it would be answering it for every page that ever adopted the bar.
+
+    SCROLLING IS NOT HERE. The links are real hrefs and `scroll-behavior: smooth` is in the
+    stylesheet above, so the browser does the scrolling and respects prefers-reduced-motion. This
+    file only decides which link is marked current.
+
+    It reads --viho-section-nav-offset rather than repeating 0/104: the breakpoint lives in CSS,
+    where it can be seen next to the rule it belongs to, and a media query is the wrong thing to
+    duplicate in JavaScript.
+*/
+(function () {
+    var nav = document.querySelector('[data-viho-section-nav]');
+    if (!nav) { return; }
+
+    // Pair each link with the element it points at. A link whose target is missing is dropped
+    // rather than tracked — it cannot become current, and the nav is built so it cannot happen.
+    var pairs = [];
+    Array.prototype.forEach.call(nav.querySelectorAll('[data-viho-section-nav-link]'), function (link) {
+        var id = (link.getAttribute('href') || '').slice(1);
+        var el = id ? document.getElementById(id) : null;
+        if (el) { pairs.push({ link: link, el: el }); }
+    });
+
+    if (!pairs.length) { return; }
+
+    // The line a heading has to cross to count as "the section being read": the fixed chrome the
+    // page declares, plus the bar itself, which sits directly below it.
+    function readingLine() {
+        var declared = parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue('--viho-section-nav-offset')
+        );
+        return (isNaN(declared) ? 0 : declared) + nav.offsetHeight + 1;
+    }
+
+    function sync() {
+        ticking = false;
+
+        var line = readingLine();
+        var currentIndex = 0;
+
+        for (var i = 0; i < pairs.length; i++) {
+            if (pairs[i].el.getBoundingClientRect().top <= line) { currentIndex = i; }
+        }
+
+        // At the bottom of the document the last sections may be too short to ever reach the
+        // line, so the final entry would never light up. Award it explicitly at the end.
+        if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 2) {
+            currentIndex = pairs.length - 1;
+        }
+
+        for (var j = 0; j < pairs.length; j++) {
+            if (j === currentIndex) {
+                pairs[j].link.setAttribute('aria-current', 'true');
+            } else {
+                pairs[j].link.removeAttribute('aria-current');
+            }
+        }
+    }
+
+    // Scroll fires far more often than the page can repaint; coalesce to one update per frame.
+    var ticking = false;
+    function request() {
+        if (ticking) { return; }
+        ticking = true;
+        window.requestAnimationFrame(sync);
+    }
+
+    window.addEventListener('scroll', request, { passive: true });
+    window.addEventListener('resize', request);
+    sync();
+}());
+</script>
+
+<script>
+/*
+    M5.3 — Copy Link.
+
+    The behaviour half of the Quick Actions band. x-viho.quick-actions and x-viho.action-tile ship
+    no script by contract, so a caller that wants a control to DO something wires it here.
+
+    This is a new handler rather than a reuse: the sidebar's legacy Copy button carries a hook
+    class that nothing in the repository binds to. It is dead markup in this view and in about ten
+    others. Fixing all of them is not this milestone's scope, so this control gets its own working
+    handler and the legacy one is left exactly as it was.
+
+    Two paths, because the modern one is not always available: navigator.clipboard requires a
+    secure context, so it is absent on any environment served over plain HTTP. The textarea +
+    execCommand fallback is the same shape dashboard.blade.php already uses.
+*/
+(function () {
+    var buttons = document.querySelectorAll('[data-hla-copy-link]');
+    if (!buttons.length) { return; }
+
+    function confirmCopy(button, ok) {
+        var tile = button.closest('.viho-action-tile');
+        var status = tile ? tile.querySelector('[data-hla-copy-status]') : null;
+        if (!status) { return; }
+        status.textContent = ok ? 'Link copied' : 'Press Ctrl+C to copy';
+        window.setTimeout(function () { status.textContent = ''; }, 2500);
+    }
+
+    function legacyCopy(text) {
+        var field = document.createElement('textarea');
+        field.value = text;
+        // Kept in the viewport but visually inert: a field positioned off-screen is not always
+        // selectable, and display:none never is.
+        field.setAttribute('readonly', 'readonly');
+        field.style.position = 'fixed';
+        field.style.top = '0';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(field);
+        return ok;
+    }
+
+    Array.prototype.forEach.call(buttons, function (button) {
+        button.addEventListener('click', function () {
+            var url = button.getAttribute('data-hla-copy-link');
+            if (!url) { return; }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(
+                    function () { confirmCopy(button, true); },
+                    function () { confirmCopy(button, legacyCopy(url)); }
+                );
+                return;
+            }
+
+            confirmCopy(button, legacyCopy(url));
+        });
+    });
+}());
+</script>
+@endif
 @endpush

@@ -132,7 +132,7 @@
             font-size: 12px;
         }
 /* Bid action buttons - matched sizing for Edit bid */
-        .bid-action-btn {
+        .hla-bid-action-btn {
             min-width: 140px;
             height: 38px;
             display: inline-flex;
@@ -2328,7 +2328,7 @@
                                     <!-- Bid Card - Collapsible Accordion Design -->
                                     <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                                     <!-- A) Card Header - Clickable to expand/collapse (using custom JS toggle) -->
-                                    <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header"
+                                    <div class="card-header d-flex justify-content-between align-items-center hla-bid-accordion-header"
                                         style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
                                         data-target="bidCollapse-{{ $bidId }}"
                                         aria-expanded="false">
@@ -2601,7 +2601,7 @@
                                             <!-- E) Edit Actions for Bid Owner - Same row, matched sizing -->
                                             @if ($canEditWithdraw)
                                             <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
-                                                <a href="{{ route('agent.buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
+                                                <a href="{{ route('agent.buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary hla-bid-action-btn">
                                                     <i class="fa-solid fa-pen-to-square me-1"></i> Edit Bid
                                                 </a>
                                             </div>
@@ -2899,7 +2899,7 @@
                                                             class="counter-bids-content"
                                                             style="display: none;">
                                                             <div
-                                                                class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
+                                                                class="accordion-body p-3 border border-top-0 rounded-bottom hla-counter-font">
                                                                     @foreach ($counterBids as $counterBid)
                                                                         @php
                                                                             // Roles
@@ -3769,7 +3769,7 @@
                                                                                         </div>
                                                                                     @else
                                                                                         <div
-                                                                                            class="alert alert-danger mb-0 py-1 alert-font">
+                                                                                            class="alert alert-danger mb-0 py-1 hla-alert-font">
                                                                                             ❌
                                                                                             {{ trim($actorFirst . ' ' . $actorLast) }}
                                                                                             rejected the counter bid.
@@ -3995,7 +3995,7 @@
     initialised on this page any more, and the library is no longer loaded at all.
 --}}
 <script>
-document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
+document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) {
     header.addEventListener('click', function() {
         var targetId = this.getAttribute('data-target');
         var target = document.getElementById(targetId);

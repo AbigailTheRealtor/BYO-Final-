@@ -315,6 +315,91 @@
     margin-right: var(--viho-space-xs);
 }
 
+/* ── Section navigation ──────────────────────────────────────────────────────
+   M5.2. A horizontal bar of in-page links for a long document.
+
+   STICKY IS DECLARED HERE, OFFSET IS NOT. `top` is left to the consumer as
+   --viho-section-nav-offset, because the correct offset is the height of
+   whatever fixed chrome the host page has above it — a value this layer cannot
+   know and must not guess. It defaults to 0, which is correct for a page with no
+   fixed header and visibly wrong rather than subtly wrong for one that has.
+
+   ONE variable, used twice: the bar sticks below the chrome, and anchored
+   sections clear the same distance. Two variables would inevitably drift apart
+   and the symptom — headings landing just under the bar — is easy to miss.
+
+   The list scrolls horizontally rather than wrapping: a wrapped nav changes
+   height as sections appear and disappear, and a sticky element that changes
+   height shifts the content beneath it on every page. */
+.viho-section-nav {
+    position: sticky;
+    top: var(--viho-section-nav-offset, 0px);
+    z-index: 20;
+    background: var(--viho-card-bg);
+    border-bottom: 1px solid var(--viho-border);
+    box-shadow: var(--viho-shadow-card);
+    margin-bottom: var(--viho-space-2xl);
+}
+.viho-section-nav-list {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.viho-section-nav-list::-webkit-scrollbar {
+    display: none;
+}
+.viho-section-nav-item {
+    padding: 0;
+    margin: 0;
+}
+/* MARKER SUPPRESSION, TWO WAYS. `list-style: none` on the list above is NOT enough, and this is
+   not theoretical — it is what the Hire Agent detail page did to this bar. list-style-type only
+   chooses the DEFAULT marker; a host that sets ::marker `content` directly still paints one. The
+   landlord page carries exactly such a legacy rule
+   (.hla-detail-page ul:not(.services) li::marker { content: "\f101"; font-family: FontAwesome })
+   which rendered the bar as "» Property Details » Leasing Terms »  …".
+
+   Order could not fix it: that selector is more specific than a single class, so it wins wherever
+   this stylesheet is loaded. The primary fix is therefore `display: block` — a box that is not a
+   list-item generates no marker at all, so there is nothing for a host rule to style. The ::marker
+   reset stays as a second line of defence for a host that forces display back, and is written with
+   enough specificity to actually outrank the rule above rather than merely look like a fix.
+
+   No `!important` anywhere in this file, deliberately, and this rule is not the place to start. */
+.viho-section-nav-list .viho-section-nav-item {
+    display: block;
+}
+.viho-section-nav .viho-section-nav-list .viho-section-nav-item::marker {
+    content: none;
+}
+.viho-section-nav-link {
+    display: block;
+    padding: var(--viho-space-md) var(--viho-space-xl);
+    font-size: var(--viho-font-md);
+    font-weight: var(--viho-weight-semibold);
+    color: var(--viho-label);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+}
+.viho-section-nav-link:hover,
+.viho-section-nav-link:focus-visible,
+.viho-section-nav-link[aria-current="true"] {
+    color: var(--viho-primary);
+    border-bottom-color: var(--viho-primary);
+}
+/* Anchored sections must not land under the sticky bar. The consumer sets the
+   same offset it gave --viho-section-nav-offset. */
+.viho-section-nav-target {
+    scroll-margin-top: var(--viho-section-nav-offset, 0px);
+}
+
 /* ── Key/value row ───────────────────────────────────────────────────────────
    The single most repeated pattern in either product: ~540 `$row()` calls across
    Create Offer and ~340 rows in Hire Agent.
@@ -591,6 +676,56 @@
     opacity: 0.6;
     cursor: default;
     pointer-events: none;
+}
+
+/* ── Quick actions ───────────────────────────────────────────────────────────
+   M5.3. The labelled band that holds the tiles above — Create Offer's interaction hub.
+
+   AUTO-FIT RATHER THAN A COLUMN COUNT. The track count follows the width the host page gives the
+   band, so the same markup is a single row on a wide page and a single column on a phone with no
+   breakpoint list to keep in sync. Create Offer hard-codes 6/3/2/1 at three media queries; that
+   is four numbers to maintain and they are wrong the moment the band is placed anywhere narrower
+   than the page.
+
+   `minmax(0, …)` on the low end, not `minmax(13rem, …)`: a grid track's automatic minimum is its
+   content, so a long tile label would otherwise force the track wider than the container and push
+   the band into horizontal overflow. The 13rem lives in the max half where it shapes the layout
+   without being able to overflow it. */
+.viho-quick-actions {
+    margin-bottom: var(--viho-space-2xl);
+}
+.viho-quick-actions-label {
+    display: flex;
+    align-items: center;
+    gap: var(--viho-space-xs);
+    margin: 0 0 var(--viho-space-md);
+    font-size: var(--viho-font-2xs);
+    font-weight: var(--viho-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--viho-label);
+}
+.viho-quick-actions-label-icon {
+    color: var(--viho-primary);
+}
+.viho-quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: var(--viho-space-lg);
+    align-items: stretch;
+}
+/* The tiles are grid items here, so they stretch to a shared row height and their own margin
+   collapse rules stop applying. Nothing else about the tile changes. */
+.viho-quick-actions-grid > .viho-action-tile {
+    height: 100%;
+    margin: 0;
+}
+/* Same defence the section nav needs, for the same reason: a host page that sets ::marker content
+   directly still paints a marker, and a tile rendered inside a list on such a page would inherit
+   it. The band is a section of divs and anchors, never a list, so this is belt-and-braces against
+   a caller composing tiles into one. */
+.viho-quick-actions-grid > li {
+    display: block;
 }
 
 /* ── Stat item ───────────────────────────────────────────────────────────────

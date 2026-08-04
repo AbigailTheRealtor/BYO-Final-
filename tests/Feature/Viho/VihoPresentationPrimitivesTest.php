@@ -27,7 +27,7 @@ class VihoPresentationPrimitivesTest extends TestCase
     /** The eight approved M2 primitives, plus the M4 hero. */
     private const PRIMITIVES = [
         'card', 'section-header', 'kv', 'badge', 'button', 'action-tile', 'stat', 'empty-state',
-        'hero',
+        'hero', 'section-nav', 'quick-actions',
     ];
 
     /**
@@ -76,6 +76,8 @@ class VihoPresentationPrimitivesTest extends TestCase
         'stat'           => 'viho-stat',
         'empty-state'    => 'viho-empty-state',
         'hero'           => 'viho-hero',
+        'section-nav'    => 'viho-section-nav',
+        'quick-actions'  => 'viho-quick-actions',
     ];
 
     /** Minimal props that let each primitive render on its own. */
@@ -89,6 +91,12 @@ class VihoPresentationPrimitivesTest extends TestCase
         'stat'           => '<x-viho.stat label="L" value="V" />',
         'empty-state'    => '<x-viho.empty-state title="Nothing here" />',
         'hero'           => '<x-viho.hero title="T" />',
+        // section-nav renders nothing without items, by design — an empty bar would be worse than
+        // no bar — so its minimal case must supply one.
+        'section-nav'    => '<x-viho.section-nav :items="[[\'id\' => \'s\', \'label\' => \'S\']]" />',
+        // quick-actions renders nothing without tiles, by design — a heading over an empty band
+        // reads as a section that failed to load — so its minimal case must supply one.
+        'quick-actions'  => '<x-viho.quick-actions><x-viho.action-tile label="L" /></x-viho.quick-actions>',
     ];
 
     private Scanner $scanner;
@@ -738,6 +746,17 @@ class VihoPresentationPrimitivesTest extends TestCase
             self::APPROVED_SHARED_CONSUMER,
             'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_landlord_agent/view.blade.php',
+            // M5.5. NOT a new shared exception, and it must not be read as one. The landlord
+            // proposal card was 1,288 lines inlined in hire_landlord_agent/view.blade.php — a file
+            // already on this list — and M5.5 moved it into a partial of that same role view. The
+            // consumer is the landlord role, exactly as before; only the file boundary changed.
+            //
+            // The line this list draws is "a role view that has been reviewed" versus "a layout or
+            // shared partial that would migrate pages nobody reviewed". A role-owned partial under
+            // hire_landlord_agent/ is on the reviewed side of it. A partial under views/partials/
+            // or views/components/ would NOT be, and would still need the architectural review
+            // APPROVED_SHARED_CONSUMER describes.
+            'resources/views/hire_landlord_agent/partials/proposal_card.blade.php',
             'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/hire_tenant_agent/view.blade.php',
         ];
