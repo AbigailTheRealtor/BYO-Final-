@@ -224,6 +224,7 @@
   </div>
 @endif
 
+@if (! $ldnaGeographyCascade)
   {{-- ── Map toolbar ── --}}
   <label class="fw-bold" style="font-size:.88rem;">Draw Custom Areas on Map
     <small class="text-muted">(polygon = custom shape, circle = two-click radius)</small>
@@ -299,6 +300,43 @@
       <i class="fa-solid fa-location-crosshairs"></i> Add Radius Search
     </button>
   </div>
+@endif
+
+@if ($ldnaGeographyCascade && (count($ldnaPolygons) || count($ldnaRadii)))
+  {{-- ── Retained geometry notice (cascade mode only) ────────────────────────
+       The draw tools and the map are gone here, but a record saved before this
+       workflow migrated may still carry custom polygons or radius searches. They
+       remain part of the listing and still influence matching, so they are stated
+       rather than left invisible — and they are NEVER cleared automatically.
+
+       WHY THEY SURVIVE A SAVE WITHOUT ANY EXTRA WORK
+       ----------------------------------------------
+       `ldnaSerialize()` rebuilds geometry only when `ldnaGeometryHydrated` is true,
+       and that flag is set solely inside `ldnaInitMap()`. With no map panel the map
+       never initialises, so the two keys keep the values the server seeded and
+       round-trip untouched. Removing them is therefore an explicit act, below.  --}}
+  <div class="alert alert-secondary py-2 px-3 mt-2 d-flex justify-content-between align-items-start"
+       style="font-size:.85rem;" id="ldna-retained-geometry">
+    <div>
+      <i class="fa-solid fa-draw-polygon me-1 text-muted"></i>
+      <strong>Custom map areas saved earlier are still active.</strong>
+      <div class="text-muted mt-1" style="font-size:.8rem;">
+        This listing carries
+        @if (count($ldnaPolygons))
+          {{ count($ldnaPolygons) }} custom {{ \Illuminate\Support\Str::plural('area', count($ldnaPolygons)) }}@if (count($ldnaRadii)) and @endif
+        @endif
+        @if (count($ldnaRadii))
+          {{ count($ldnaRadii) }} radius {{ \Illuminate\Support\Str::plural('search', count($ldnaRadii)) }}
+        @endif
+        drawn on the old map editor. They still count toward matching. The drawing
+        tools have been replaced by the location selector above, so they can no
+        longer be edited here — only kept or removed.
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm ms-3 flex-shrink-0"
+            onclick="ldnaClearRetainedGeometry()">Remove</button>
+  </div>
+@endif
 
 @if($enableImportantPlaces)
   {{-- ── Important Places (9C — repeatable rows; own additive `important_places_json` key) ── --}}
@@ -449,6 +487,11 @@
      which overlays are empty while the renderer claims to be ready.
   ------------------------------------------------------------------------------ */
   var ldnaGeometryHydrated = false;
+
+  /* Cascade mode: the map panel and the draw/radius controls are not rendered.
+     Nothing may attempt to initialise a map — `ldnaTryInit()` polls every 200ms
+     for a container that will never appear, and that branch has no timeout. */
+  var ldnaCascadeMode = {{ $ldnaGeographyCascade ? 'true' : 'false' }};
 
   /* ldnaOverlays: [{type, overlay, label, data?}] — null = deleted */
   var ldnaOverlays       = [];
@@ -705,7 +748,16 @@
     var addrEl  = row.querySelector('.ldna-ip-address');
     var address = addrEl ? addrEl.value.trim() : '';
     if (!address) return;
-    if (!ldnaMap) { ldnaRequestInit(); setTimeout(function () { window.ldnaIpGeocodeRow(el); }, 600); return; }
+    /* MAP-INDEPENDENT (Phase 1c). Geocoding needs `google.maps.Geocoder`, not a
+       map, so it no longer waits for one — in cascade mode a map never arrives and
+       the old retry loop meant an address never resolved at all.
+
+       Legacy hosts are unaffected: `ldnaRequestInit()` still brings their map up,
+       `ldnaIpDrawOverlay()` below is null-guarded, and `ldnaInitMap()` calls
+       `ldnaIpRenderAllOverlays()` on completion — so any pin skipped because the
+       geocode finished first is drawn the moment the map is ready. */
+    if (!ldnaMap) { ldnaRequestInit(); }
+
     var geocoder = new google.maps.Geocoder();
     geocoder.geocode({ address: address, componentRestrictions: { country: 'us' } }, function (results, status) {
       if (status !== 'OK' || !results.length) return;
@@ -1620,6 +1672,10 @@
 
   /* ── Visibility-aware init (for tabs/hidden panels) ──────────────────────── */
   function ldnaTryInit() {
+    /* No panel exists in cascade mode. Returning here is what prevents the
+       unbounded 200ms retry loop further down, which has no timeout guard. */
+    if (ldnaCascadeMode) return;
+
     if (ldnaMapInitialized || ldnaMapGaveUp) return;
 
     if (window.byoMapsAuthFailed === true) { ldnaShowMapUnavailable('auth'); return; }
@@ -1700,6 +1756,24 @@
       if (inp) inp.focus();
     });
   });
+
+  /* ── Retained geometry: explicit removal (cascade mode) ───────────────────
+     Writes ONLY the two existing blob keys. Present-but-empty is the canonical
+     "cleared" state the command builder already understands, so this reuses the
+     established write path and introduces no new one.
+
+     Safe despite the serializer's geometry guard: that guard SKIPS the rebuild
+     when the editor was never hydrated, which means the empty arrays assigned
+     here survive into the serialized blob rather than being overwritten. */
+  window.ldnaClearRetainedGeometry = function () {
+    ldnaState.polygons        = [];
+    ldnaState.radius_searches = [];
+
+    ldnaSerialize();
+
+    var notice = document.getElementById('ldna-retained-geometry');
+    if (notice) notice.remove();
+  };
 
   /* ── Boot ────────────────────────────────────────────────────────────────── */
   function ldnaBoot() {
