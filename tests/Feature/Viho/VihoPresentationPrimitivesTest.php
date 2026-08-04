@@ -27,7 +27,7 @@ class VihoPresentationPrimitivesTest extends TestCase
     /** The eight approved M2 primitives, plus the M4 hero. */
     private const PRIMITIVES = [
         'card', 'section-header', 'kv', 'badge', 'button', 'action-tile', 'stat', 'empty-state',
-        'hero', 'section-nav',
+        'hero', 'section-nav', 'quick-actions',
     ];
 
     /**
@@ -77,6 +77,7 @@ class VihoPresentationPrimitivesTest extends TestCase
         'empty-state'    => 'viho-empty-state',
         'hero'           => 'viho-hero',
         'section-nav'    => 'viho-section-nav',
+        'quick-actions'  => 'viho-quick-actions',
     ];
 
     /** Minimal props that let each primitive render on its own. */
@@ -93,6 +94,9 @@ class VihoPresentationPrimitivesTest extends TestCase
         // section-nav renders nothing without items, by design — an empty bar would be worse than
         // no bar — so its minimal case must supply one.
         'section-nav'    => '<x-viho.section-nav :items="[[\'id\' => \'s\', \'label\' => \'S\']]" />',
+        // quick-actions renders nothing without tiles, by design — a heading over an empty band
+        // reads as a section that failed to load — so its minimal case must supply one.
+        'quick-actions'  => '<x-viho.quick-actions><x-viho.action-tile label="L" /></x-viho.quick-actions>',
     ];
 
     private Scanner $scanner;

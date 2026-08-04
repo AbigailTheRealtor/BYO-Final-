@@ -333,4 +333,65 @@
     .hla-hero * {
         max-width: 100%;
     }
+
+    /* ── M5.3: Quick Actions, the product half ───────────────────────────────────────────────
+       Two rules the VIHO band cannot own. A share row is a list of THIS product's share targets,
+       and the copy confirmation is the visible half of the landlord view's copy handler; neither
+       is general enough for the neutral layer.
+
+       THEY LIVE HERE RATHER THAN IN THE ROLE VIEW because this is the one Hire Agent file
+       permitted to read `var(--viho-*)`, and expressing them without tokens would mean copying
+       spacing and colour values that already have names. The trade is that they ship to all four
+       roles and to every viewer regardless of HIRE_AGENT_DETAIL_REDESIGN_ENABLED — inert, because
+       no page emits `.hla-quick-share` markup unless the flag is on. That is the same bargain the
+       VIHO stylesheet itself already makes: rules ship, markup is what is gated. The flag's real
+       guarantee is over markup and behaviour, and the tests assert it there. */
+    .hla-detail-page .hla-quick-share {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--viho-space-md);
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    /* The same ::marker defence x-viho.section-nav needs, against the same rule: this file gives
+       every `.hla-detail-page ul:not(.services) li` a FontAwesome chevron, and `list-style: none`
+       does not suppress a marker whose content is set explicitly. A share row IS such a list. */
+    .hla-detail-page ul.hla-quick-share > li {
+        display: block;
+    }
+    /* `ul.` rather than a bare descendant: the legacy rule is
+       `.hla-detail-page ul:not(.services) li::marker`, which is two classes and two elements. A
+       selector one element short of that loses the cascade and the "second line of defence" would
+       be decorative — display:block would be carrying it alone. Matching the specificity and
+       landing later in the same file is what makes this rule actually apply. */
+    .hla-detail-page ul.hla-quick-share > li::marker {
+        content: none;
+    }
+    .hla-detail-page .hla-quick-share a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid var(--viho-border-strong);
+        border-radius: var(--viho-radius-md);
+        color: var(--viho-label);
+        text-decoration: none;
+        transition: color var(--viho-transition), border-color var(--viho-transition);
+    }
+    .hla-detail-page .hla-quick-share a:hover,
+    .hla-detail-page .hla-quick-share a:focus-visible {
+        color: var(--viho-primary);
+        border-color: var(--viho-primary);
+    }
+    /* Reserves its line whether or not it has text, so confirming a copy does not reflow the tile. */
+    .hla-detail-page .hla-quick-copy-status {
+        display: block;
+        margin-top: var(--viho-space-xs);
+        min-height: 1em;
+        font-size: var(--viho-font-3xs);
+        color: var(--viho-primary);
+    }
 </style>

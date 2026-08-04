@@ -704,9 +704,10 @@ class VihoDesignTokenFoundationTest extends TestCase
      * cheapest way to skip that work is to quietly add them here.
      *
      * AMENDED IN M4, BY EXACTLY ONE ENTRY: `hero`. AMENDED AGAIN IN M5.2, BY EXACTLY ONE ENTRY:
-     * `section-nav`. See test_deferred_composed_components_do_not_exist for why each deferral was
-     * lifted. The rule itself is unchanged — still an exact list, still no directory pattern or
-     * wildcard — so an eleventh file appearing here fails as loudly as a ninth did before.
+     * `section-nav`. AMENDED AGAIN IN M5.3, BY EXACTLY ONE ENTRY: `quick-actions`. See
+     * test_deferred_composed_components_do_not_exist for why each deferral was lifted. The rule
+     * itself is unchanged — still an exact list, still no directory pattern or wildcard — so a
+     * twelfth file appearing here fails as loudly as a ninth did before.
      *
      * @see \Tests\Feature\Viho\VihoPresentationPrimitivesTest for the components' own behaviour
      */
@@ -724,10 +725,10 @@ class VihoDesignTokenFoundationTest extends TestCase
         sort($found);
 
         $this->assertSame(
-            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'section-header', 'section-nav', 'stat', 'styles'],
+            ['action-tile', 'badge', 'button', 'card', 'empty-state', 'hero', 'kv', 'quick-actions', 'section-header', 'section-nav', 'stat', 'styles'],
             $found,
-            'Only the eight approved M2 primitives, the M4 hero, the M5.2 section-nav, and the M1 '
-            . 'stylesheet may exist in the neutral namespace.'
+            'Only the eight approved M2 primitives, the M4 hero, the M5.2 section-nav, the M5.3 '
+            . 'quick-actions, and the M1 stylesheet may exist in the neutral namespace.'
         );
     }
 
@@ -773,26 +774,53 @@ class VihoDesignTokenFoundationTest extends TestCase
      *     make that mistake because it cannot see the viewer; the caller filters the array.
      *   · It reaches no page until HIRE_AGENT_DETAIL_REDESIGN_ENABLED is on, which defaults off.
      *
+     * ── `quick-actions` WAS RELEASED FROM THIS LIST IN M5.3 ──────────────────────────────────
+     *
+     * The third release, held to the same bar. Note what it is NOT: `interaction-hub` remains
+     * deferred and is a different thing — Create Offer's hub bundles actions, activity counts and
+     * listing facts into one panel, and that data contract has still not been mapped. This
+     * component is only the action band.
+     *
+     *   · The prop contract is FROZEN and scalar — label, icon, ariaLabel. The tiles arrive
+     *     through the default slot as x-viho.action-tile children, already built and ordered by
+     *     the caller, so no vocabulary for forms, modals or multi-CTA tiles leaks inward.
+     *   · It contains NO JAVASCRIPT. Copy-to-clipboard and share behaviour stay with the product,
+     *     enforced by the same guards forbidding `<script>`, `document.` and `window.`.
+     *   · It declares no column count. The grid is auto-fit, so the caller cannot hard-code a
+     *     track count that is wrong at every width but their own.
+     *   · An action band is where an authorization mistake becomes VISIBLE: a tile advertises
+     *     that a workflow exists and what it is called, which is a disclosure even when the route
+     *     behind it is protected. The component cannot make that mistake because it cannot see
+     *     the viewer. The product is required to classify every tile — public, authenticated,
+     *     agent-only, listing-owner-only — and owner-only and agent-only workflows are kept out
+     *     of the band entirely. That rule is why the landlord pilot ships three public and
+     *     authenticated tiles and no proposal, bid or edit action.
+     *   · It renders nothing at all for an empty slot, so a viewer offered no tiles sees no band
+     *     rather than an empty heading.
+     *   · It reaches no page until HIRE_AGENT_DETAIL_REDESIGN_ENABLED is on, which defaults off.
+     *
      * ── WHAT THIS DOES NOT DO ────────────────────────────────────────────────────────────────
      *
      * It does not accelerate or authorize any remaining deferred component. `hero-gallery`,
      * `hero-fact`, `media-placeholder`, `detail-shell`, `sidebar`, `page` and the rest are
-     * untouched and still forbidden — including the ones whose names resemble the released two.
-     * Each would need its own contract, its own guards and its own milestone decision. Removing a
-     * third name from this list is an architectural change, not a test fix.
+     * untouched and still forbidden — including the ones whose names resemble the released three,
+     * `interaction-hub` most of all. Each would need its own contract, its own guards and its own
+     * milestone decision. Removing a fourth name from this list is an architectural change, not a
+     * test fix.
      */
     public function test_deferred_composed_components_do_not_exist(): void
     {
         foreach ([
-            'page', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
+            'page', 'hero-gallery', 'interaction-hub', 'mobile-bar',
             'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
             'divider', 'hero-fact', 'media-placeholder',
         ] as $deferred) {
             $this->assertFalse(
                 $this->scanner->exists("resources/views/components/viho/{$deferred}.blade.php"),
                 "x-viho.{$deferred} is deferred to a later milestone and must not exist yet. M4 "
-                . 'released `hero` from this list and nothing else; a second release requires its '
-                . 'own frozen contract, its own guards and an explicit milestone decision.'
+                . 'released `hero`, M5.2 released `section-nav` and M5.3 released `quick-actions`; '
+                . 'each further release requires its own frozen contract, its own guards and an '
+                . 'explicit milestone decision.'
             );
         }
     }
@@ -869,12 +897,62 @@ class VihoDesignTokenFoundationTest extends TestCase
     }
 
     /**
-     * Exactly two components have ever been released, and the rest of the deferred list is intact.
+     * The M5.3 release is registered and out of the deferred set — the same three-way check.
      *
-     * Two releases is where "we did it before" starts to feel like precedent. This pins the count
-     * and the remaining names, so a third release has to change this assertion by hand and say so.
+     * Its own test, again, so a failure names the release that rotted. It additionally pins that
+     * `interaction-hub` stayed deferred: the two names are close enough that releasing one and
+     * quietly treating the other as covered is the realistic mistake, and they are genuinely
+     * different components — the hub bundles actions with activity counts and listing facts,
+     * whose data contract has not been mapped.
      */
-    public function test_only_two_components_have_been_released_from_deferral(): void
+    public function test_the_quick_actions_is_released_from_deferral_and_registered(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists('resources/views/components/viho/quick-actions.blade.php'),
+            'x-viho.quick-actions was released from deferral in M5.3 and must exist.'
+        );
+
+        $found = array_map(
+            fn ($f) => basename($f, '.blade.php'),
+            $this->scanner->filesInZone(Scanner::ZONE_VIHO)
+        );
+
+        $this->assertContains('quick-actions', $found, 'x-viho.quick-actions must be registered in the approved set.');
+
+        $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
+        $deferredBlock = substr(
+            $source,
+            (int) strpos($source, 'public function test_deferred_composed_components_do_not_exist'),
+            600
+        );
+
+        $this->assertStringNotContainsString(
+            "'quick-actions',",
+            $deferredBlock,
+            'x-viho.quick-actions must not be listed as deferred while it exists in the approved directory.'
+        );
+
+        $this->assertStringContainsString(
+            "'interaction-hub',",
+            $deferredBlock,
+            'x-viho.interaction-hub is a different component and must remain deferred.'
+        );
+
+        $this->assertFalse(
+            $this->scanner->exists('resources/views/components/viho/interaction-hub.blade.php'),
+            'Releasing quick-actions must not have brought interaction-hub with it.'
+        );
+    }
+
+    /**
+     * Exactly three components have ever been released, and the rest of the deferred list is
+     * intact.
+     *
+     * Three releases is well past where "we did it before" starts to feel like precedent, which is
+     * exactly why the count is pinned rather than the pattern. A fourth release has to change this
+     * assertion by hand and say so.
+     */
+    public function test_only_three_components_have_been_released_from_deferral(): void
     {
         $source = $this->scanner->read('tests/Feature/Viho/VihoDesignTokenFoundationTest.php');
         $block  = substr(
@@ -884,16 +962,16 @@ class VihoDesignTokenFoundationTest extends TestCase
         );
 
         foreach ([
-            'page', 'hero-gallery', 'interaction-hub', 'quick-actions', 'mobile-bar',
+            'page', 'hero-gallery', 'interaction-hub', 'mobile-bar',
             'modal', 'doc-item', 'contact-cta-row', 'detail-shell', 'sidebar',
             'divider', 'hero-fact', 'media-placeholder',
         ] as $stillDeferred) {
             $this->assertStringContainsString(
                 "'{$stillDeferred}',",
                 $block,
-                "'{$stillDeferred}' must remain deferred. M4 released `hero` and M5.2 released "
-                . '`section-nav`; nothing else has been reviewed, and two releases are not a licence '
-                . 'for a third.'
+                "'{$stillDeferred}' must remain deferred. M4 released `hero`, M5.2 released "
+                . '`section-nav` and M5.3 released `quick-actions`; nothing else has been reviewed, '
+                . 'and three releases are not a licence for a fourth.'
             );
         }
     }

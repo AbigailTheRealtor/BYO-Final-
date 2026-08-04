@@ -177,6 +177,7 @@
         scroll-behavior: smooth;
     }
 }
+
 </style>
 @endif
 @endpush
@@ -345,9 +346,115 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     }
 @endphp
 
+@php
+    /*
+     | M5.3 — QUICK ACTIONS.
+     |
+     | EVERY TILE IS CLASSIFIED BEFORE IT IS ADDED. The four classes are: public action,
+     | authenticated user action, agent-only action, listing-owner-only action. Owner-only and
+     | agent-only workflows DO NOT GO IN THIS BAND. The band is page-level and public, so a tile
+     | advertises both that a workflow exists and what it is called — which is a disclosure in its
+     | own right, independent of whether the underlying route is protected.
+     |
+     | That rule is why "View Proposals" is not here. Proposals are owner-only: competing agents
+     | are walled off from them by HireAgentProposalAccess, and a public tile naming the workflow
+     | would tell a rival agent, and a passing guest, that proposals exist on this listing and can
+     | be opened. The route being protected would not undo that. It is deferred as its own
+     | decision, not folded into a UI milestone.
+     |
+     | Also deliberately absent: the Bid CTA (agent-only, and a five-branch state machine that
+     | belongs with the sidebar in M5.4) and Edit Listing (listing-owner-only, and already owned by
+     | the M4 hero — a second copy here would be exactly the two-opinions bug the single flag
+     | reader exists to prevent).
+     |
+     | THE THREE TILES, AND THEIR CLASSES:
+     |   1. Send Message  — AUTHENTICATED USER ACTION. Rendered exactly as the sidebar button it
+     |      replaces: unconditionally. That is preserved on purpose. The route enforces the class
+     |      (Authenticate + EnsureEmailIsVerified + NoAdminAuth), so a guest who clicks it is sent
+     |      to login — a dead end, but a PRE-EXISTING one. Changing who sees the control is an
+     |      authorization and UX decision wearing a UI change's clothes, and is not this milestone.
+     |   2. Share Listing — PUBLIC ACTION. The listing URL is already public; these are the same
+     |      share targets the sidebar block carried.
+     |   3. Copy Link     — PUBLIC ACTION. Same URL, same reasoning.
+     |
+     | NOTHING IS DUPLICATED. With the flag on, the sidebar's Send Message button and the sidebar
+     | share card are suppressed, so each of these actions exists in exactly one place on the page.
+     */
+    $hlaListingUrl = route('landlord.agent.auction.view', $auction->id);
+@endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="landlord" :auction="$auction">
+        @if ($hlaDetailRedesign)
+        {{-- M5.3. Full-width, above the grid — page-level actions, not main-column content. The
+             shell's beforeGrid slot exists for this and emits nothing for the roles not using it. --}}
+        <x-slot name="beforeGrid">
+            <x-viho.quick-actions label="Quick Actions" icon="fa-solid fa-bolt" ariaLabel="Quick actions">
+
+                {{-- 1. Send Message — authenticated user action; route enforces it. --}}
+                <x-viho.action-tile
+                    :href="route('auction-chat', ['landlord-agent', $auction->id])"
+                    icon="fa-solid fa-paper-plane"
+                    label="Send Message"
+                    description="Message the listing contact about this listing." />
+
+                {{-- 2. Share Listing — public action. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-share-nodes"
+                    label="Share Listing"
+                    description="Share this listing with agents or your network.">
+                    <x-slot name="action">
+                        <ul class="hla-quick-share">
+                            <li>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Facebook">
+                                    <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/intent/tweet?url={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on X">
+                                    <i class="fa-brands fa-twitter" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://pinterest.com/pin/create/button/?url={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Pinterest">
+                                    <i class="fa-brands fa-pinterest" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($hlaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on LinkedIn">
+                                    <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </x-slot>
+                </x-viho.action-tile>
+
+                {{-- 3. Copy Link — public action.
+                     The sidebar's legacy Copy button carries a `js-copy-link` class that NOTHING
+                     in the repository binds a handler to — it is dead in this view and in roughly
+                     ten others. This one is wired, so the control does what it says. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-link"
+                    label="Copy Link"
+                    description="Copy a direct link to this listing.">
+                    <x-slot name="action">
+                        <x-viho.button
+                            variant="outline"
+                            icon="fa-solid fa-link"
+                            data-hla-copy-link="{{ $hlaListingUrl }}">Copy Link</x-viho.button>
+                        <span class="hla-quick-copy-status" data-hla-copy-status role="status" aria-live="polite"></span>
+                    </x-slot>
+                </x-viho.action-tile>
+
+            </x-viho.quick-actions>
+        </x-slot>
+        @endif
+
         <x-slot name="main">
             {{-- M5.2b. Outside the card and above it, so the bar spans the column and sticks to the
                  top of the reading area rather than to the inside of a card. --}}
@@ -2294,10 +2401,16 @@ $auser = $auctionUser::find(@$auction->user_id);
         @endphp
 
 
-        {{-- 📩 Message Button --}}
+        {{-- 📩 Message Button.
+             M5.3: suppressed when the redesign is on, because the Quick Actions band above the
+             grid now carries this action. Suppressed rather than moved — the band's tile is a
+             new control with the same route and the same (unconditional) rendering, and leaving
+             this one in place would put the same action on the page twice. --}}
+        @unless ($hlaDetailRedesign)
         <a href="{{ route('auction-chat', ['landlord-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
+        @endunless
 
 
         {{--
@@ -3720,6 +3833,11 @@ $auser = $auctionUser::find(@$auction->user_id);
 <button class="btn w-100 mt-0">
     <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>
+{{-- M5.3: the sidebar share card is suppressed when the redesign is on — Share Listing and Copy
+     Link both live in the Quick Actions band above the grid. The QR code goes with it; it has no
+     tile because a QR image is listing INFORMATION rather than an action, and re-siting it is a
+     sidebar question, which is M5.4. --}}
+@unless ($hlaDetailRedesign)
 <div class="p-4 card">
     <p class="text-600">Share this link via</p>
     <div class="qr-code" style="width: 100%; height:200px;">
@@ -3753,6 +3871,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
     </div>
 </div>
+@endunless
         </x-slot>
 
         {{--
@@ -3894,6 +4013,70 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
     window.addEventListener('scroll', request, { passive: true });
     window.addEventListener('resize', request);
     sync();
+}());
+</script>
+
+<script>
+/*
+    M5.3 — Copy Link.
+
+    The behaviour half of the Quick Actions band. x-viho.quick-actions and x-viho.action-tile ship
+    no script by contract, so a caller that wants a control to DO something wires it here.
+
+    This is a new handler rather than a reuse: the sidebar's legacy Copy button carries a hook
+    class that nothing in the repository binds to. It is dead markup in this view and in about ten
+    others. Fixing all of them is not this milestone's scope, so this control gets its own working
+    handler and the legacy one is left exactly as it was.
+
+    Two paths, because the modern one is not always available: navigator.clipboard requires a
+    secure context, so it is absent on any environment served over plain HTTP. The textarea +
+    execCommand fallback is the same shape dashboard.blade.php already uses.
+*/
+(function () {
+    var buttons = document.querySelectorAll('[data-hla-copy-link]');
+    if (!buttons.length) { return; }
+
+    function confirmCopy(button, ok) {
+        var tile = button.closest('.viho-action-tile');
+        var status = tile ? tile.querySelector('[data-hla-copy-status]') : null;
+        if (!status) { return; }
+        status.textContent = ok ? 'Link copied' : 'Press Ctrl+C to copy';
+        window.setTimeout(function () { status.textContent = ''; }, 2500);
+    }
+
+    function legacyCopy(text) {
+        var field = document.createElement('textarea');
+        field.value = text;
+        // Kept in the viewport but visually inert: a field positioned off-screen is not always
+        // selectable, and display:none never is.
+        field.setAttribute('readonly', 'readonly');
+        field.style.position = 'fixed';
+        field.style.top = '0';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(field);
+        return ok;
+    }
+
+    Array.prototype.forEach.call(buttons, function (button) {
+        button.addEventListener('click', function () {
+            var url = button.getAttribute('data-hla-copy-link');
+            if (!url) { return; }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(
+                    function () { confirmCopy(button, true); },
+                    function () { confirmCopy(button, legacyCopy(url)); }
+                );
+                return;
+            }
+
+            confirmCopy(button, legacyCopy(url));
+        });
+    });
 }());
 </script>
 @endif

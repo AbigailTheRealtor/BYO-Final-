@@ -913,6 +913,22 @@ class OfferWorkflowReadinessTest extends TestCase
             //   Inert until a caller passes it items. The only caller is the landlord detail view,
             //   and that call sits behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
             'resources/views/components/viho/section-nav.blade.php',
+            // M5.3 — the VIHO quick actions band. The eleventh component and the third release
+            //   from the deferred composed list. One exact path again, for the reason the M2 entry
+            //   gives: each component is a decision somebody made and wrote down.
+            //   NOT `interaction-hub`, which stays deferred. Create Offer's hub bundles actions
+            //   with activity counts and listing facts; this is only the action band, and the
+            //   bundled data contract has not been mapped.
+            //   It is a container: tiles arrive through its slot as x-viho.action-tile children,
+            //   already built and ordered by the caller, so it holds no script, no business logic,
+            //   no authorization and no route names. That matters most for an action band — a tile
+            //   advertises that a workflow exists and what it is called, which is a disclosure
+            //   even when the route behind it is protected. The component cannot make that mistake
+            //   because it cannot see the viewer; the product classifies every tile as public,
+            //   authenticated, agent-only or listing-owner-only, and the last two are kept out.
+            //   Inert until a caller passes it tiles. The only caller is the landlord detail view,
+            //   behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
+            'resources/views/components/viho/quick-actions.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

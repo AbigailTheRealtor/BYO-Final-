@@ -678,6 +678,56 @@
     pointer-events: none;
 }
 
+/* ── Quick actions ───────────────────────────────────────────────────────────
+   M5.3. The labelled band that holds the tiles above — Create Offer's interaction hub.
+
+   AUTO-FIT RATHER THAN A COLUMN COUNT. The track count follows the width the host page gives the
+   band, so the same markup is a single row on a wide page and a single column on a phone with no
+   breakpoint list to keep in sync. Create Offer hard-codes 6/3/2/1 at three media queries; that
+   is four numbers to maintain and they are wrong the moment the band is placed anywhere narrower
+   than the page.
+
+   `minmax(0, …)` on the low end, not `minmax(13rem, …)`: a grid track's automatic minimum is its
+   content, so a long tile label would otherwise force the track wider than the container and push
+   the band into horizontal overflow. The 13rem lives in the max half where it shapes the layout
+   without being able to overflow it. */
+.viho-quick-actions {
+    margin-bottom: var(--viho-space-2xl);
+}
+.viho-quick-actions-label {
+    display: flex;
+    align-items: center;
+    gap: var(--viho-space-xs);
+    margin: 0 0 var(--viho-space-md);
+    font-size: var(--viho-font-2xs);
+    font-weight: var(--viho-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--viho-label);
+}
+.viho-quick-actions-label-icon {
+    color: var(--viho-primary);
+}
+.viho-quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: var(--viho-space-lg);
+    align-items: stretch;
+}
+/* The tiles are grid items here, so they stretch to a shared row height and their own margin
+   collapse rules stop applying. Nothing else about the tile changes. */
+.viho-quick-actions-grid > .viho-action-tile {
+    height: 100%;
+    margin: 0;
+}
+/* Same defence the section nav needs, for the same reason: a host page that sets ::marker content
+   directly still paints a marker, and a tile rendered inside a list on such a page would inherit
+   it. The band is a section of divs and anchors, never a list, so this is belt-and-braces against
+   a caller composing tiles into one. */
+.viho-quick-actions-grid > li {
+    display: block;
+}
+
 /* ── Stat item ───────────────────────────────────────────────────────────────
    From the Create Offer activity row, present in all four views. */
 .viho-stat {
