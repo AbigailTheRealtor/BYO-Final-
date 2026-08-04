@@ -120,7 +120,23 @@ a cleanup.
 
 ## 6. Empty proposal-console card for viewers with no visible proposals
 
-**Class:** visual residue, **deferred to M5.5** (proposal console).
+**Class:** visual residue. **CLOSED by M5.5.**
+
+> **Closed 2026-08-04 by M5.5.** The console is now wrapped in
+> `($canReviewAllProposals ?? false) || $auction->bids->isNotEmpty()`, flag-gated behind
+> `HIRE_AGENT_DETAIL_REDESIGN_ENABLED`, so it exists in the DOM only for the listing owner and for
+> an agent with a proposal of their own.
+>
+> **The stated blocker below turned out not to hold, and that is worth recording.** The note says
+> the wrap could not be applied because `@php` blocks *inside* the card compute values that later
+> markup *outside* it reads. Checked against the M5.4 tree before writing any code: every variable
+> defined inside the card (`$landlordBaselineData`, `$getScoreColor`, `$auctionPropType`, and all
+> loop-scoped ones) has **zero** references after the card closes, and the values read outside it
+> — `$my_bid`, `$userHasBid`, `$agentNumberMap`, `$isListingOwner` — are all computed *before* it.
+> Nothing had to move. The claim was probably true of an earlier arrangement and was carried
+> forward without being re-checked; a deferred blocker is worth re-testing rather than inheriting.
+
+**Class (original note):** visual residue, **deferred to M5.5** (proposal console).
 
 `<div class="card higestBider">` wraps the whole proposal area and renders unconditionally. For any
 viewer the access layer hands zero proposals — guest, unrelated authenticated user, agent who has
@@ -172,6 +188,66 @@ surface would continue to show it. It would look like a protection without being
 If budgets should become private, that is **one cross-platform decision**, not a UI change: it
 spans the public search page, all four role detail views, the CTA, and any API or export that reads
 the same meta key. Record it here rather than solving a tenth of it in a milestone about sidebars.
+
+---
+
+---
+
+## 9. Counter-terms form routes have no authorization on GET
+
+**Class:** suspected IDOR, **outside the detail page**. Found during M5.5 discovery. **Not fixed —
+a permission change does not ship inside a UI milestone.** Needs its own change and its own tests.
+
+`LandlordCounteredTermsController::add()` and `::edit()` load an arbitrary bid by id:
+
+```php
+$pab = LandlordAgentAuctionBid::whereId($id)->first();   // add()
+$pab = LandlordAgentAuctionBid::findOrFail($id);         // edit()
+```
+
+and hand it to `LandlordAgentAuctionCounterTerm`, whose `mount()` prefills **the agent's proposed
+services** from that bid and **the other party's latest counter terms**. Only `store()` and
+`update()` carry an `abort_unless`; the GET form renders carry none.
+
+- Routes: `/landlord/counter-terms/{bid_id}` (`landlord.counter-terms`) and
+  `/landlord/edit-counter-terms/{bid_id}` (`landlord.edit-counter-terms`) — `routes/web.php:700,702`.
+- Middleware on the enclosing group: `auth` + `verified` + `noAdmin`. **No ownership test, no
+  authorship test, no role test.**
+- Reachable by any authenticated non-admin who can guess or enumerate a bid id.
+
+Two things to settle, not one:
+
+1. The missing GET authorization above.
+2. The write-side check is *"the listing owner **or any agent who has bid on this listing**"* —
+   broader than *"the author of **this** bid"*. Whether that is deliberate has not been
+   established.
+
+This is the same class of defect `HireAgentProposalAccess` was built to remove, one route away
+from the surface it protects. The natural fix is to ask that service rather than to write a fourth
+inline comparison.
+
+---
+
+## 10. `$leaseFeeDisplay` is never defined, so a counter-term diff always reads "Changed"
+
+**Class:** pre-existing display defect. Found while extracting the card. **Not fixed** — M5.5 is
+scoped out of counter logic, and the card body was moved verbatim.
+
+In the counter-history block, the lease-fee "Changed" badge compares against a variable that does
+not exist anywhere in the file:
+
+```blade
+@php $ctLeaseFeeChg = $ctCompositeChanged($ctLeaseFeeDisplay, $leaseFeeDisplay ?? ''); @endphp
+```
+
+`$leaseFeeDisplay` has exactly one occurrence in the view, and it is this read. The `?? ''` makes
+it silent rather than fatal: the comparison is always against an empty string, so the badge marks
+the landlord's broker lease fee as changed on every counter offer whether or not it changed. The
+neighbouring rows (`$feeTimingDisplay`, `$renewalFeeDisplay`, `$tenantBrokerFeeDisplay`) read the
+same way and want the same check.
+
+Fixing it means deciding what the counter is supposed to be compared *against* — the original bid,
+or the listing — which is a product question about the diff, not a rename.
 
 ---
 

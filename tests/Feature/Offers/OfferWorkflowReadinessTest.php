@@ -929,6 +929,18 @@ class OfferWorkflowReadinessTest extends TestCase
             //   Inert until a caller passes it tiles. The only caller is the landlord detail view,
             //   behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
             'resources/views/components/viho/quick-actions.blade.php',
+            // M5.5 — the landlord proposal card, extracted.
+            //   NOT a new component and NOT a new shared surface. This is 1,288 lines that were
+            //   already inside hire_landlord_agent/view.blade.php — a path this guard has covered
+            //   since M3 — moved into a partial of that same role view. Verified as a faithful
+            //   move: with the redesign flag off, the rendered page is identical for the owner, a
+            //   submitting agent, an unrelated user and a guest.
+            //   It is registered as its own line rather than covered by a directory wildcard for
+            //   the reason the M2 entry gives: the next partial someone adds under this role
+            //   should be a decision somebody made and wrote down. It is also why no VIHO
+            //   component is registered here — M5.5 released none. The card's chrome reuses
+            //   badge and empty-state, both already on this list since M2.
+            'resources/views/hire_landlord_agent/partials/proposal_card.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
