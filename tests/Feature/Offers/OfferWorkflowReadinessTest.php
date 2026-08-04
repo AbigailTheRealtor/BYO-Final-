@@ -679,6 +679,27 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/LocationDna/Criteria/FakeCriteriaGeographyRepository.php',
             'app/Services/LocationDna/Criteria/GeographyOption.php',
             'config/criteria_location_dna.php',
+            // Criteria Location DNA Phase 1b — the resolution and validation rules over that read
+            // layer: state (required) → counties (required) → ZIPs and cities (optional), plus the
+            // dependency clearing that keeps a selection consistent as the cascade changes. Still
+            // INERT: it is referenced by no controller, view, route or Livewire component, adds no
+            // migration, and its flag ships OFF. It reaches the read repository and nothing else —
+            // no persistence, no mirror projection, no contract layer (D2 kept the tier vocabulary
+            // separate on purpose). Cities are cleared by CONTAINMENT (us_cities.county_id is a
+            // real FK); ZIPs are cleared by ASSOCIATION (a ZIP survives while ANY selected county
+            // is associated with it) — the two are deliberately not symmetric. Wiring this to a UI
+            // is Phase 1c and writing through the canonical writer is Phase 2, both separately
+            // authorised. Enforced by Phase1bCriteriaRulesInertnessGuardTest, which also pins the
+            // four files this phase was forbidden to touch by content hash.
+            'app/Services/LocationDna/Criteria/Rules/ClearedSelection.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographyRule.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographySelection.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographySelectionResolver.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographySelectionValidator.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographyTier.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographyValidationResult.php',
+            'app/Services/LocationDna/Criteria/Rules/GeographyViolation.php',
+            'app/Services/LocationDna/Criteria/Rules/SelectionResolution.php',
         ];
 
         $unexpected = array_values(array_filter(

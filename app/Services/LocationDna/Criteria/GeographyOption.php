@@ -93,6 +93,44 @@ final class GeographyOption
         return new self(self::KIND_ZIP, $zip, $zip, $zip, $countyId);
     }
 
+    /**
+     * Phase 1b (D6) — is this option of the given kind?
+     *
+     * Additive convenience over the `kind` property, so consumers filtering an enumerated list read
+     * as `$option->is(self::KIND_CITY)` rather than repeating the comparison at every call site.
+     */
+    public function is(string $kind): bool
+    {
+        return $this->kind === $kind;
+    }
+
+    /**
+     * Phase 1b (D6) — are these the same option?
+     *
+     * IDENTITY IS THE TRIPLE (kind, id, parentId), AND THAT IS NOT THE OBVIOUS ANSWER
+     * ------------------------------------------------------------------------------
+     * For states, counties and cities the id alone would do. For ZIPs it will not: the same ZIP is
+     * emitted once per associated county, so two options carrying id "11001" under two different
+     * counties are genuinely DIFFERENT options, not a duplicate to be collapsed. Writing that down
+     * here is the point of this method — a reader who assumes id-equality would be entitled to
+     * deduplicate one of those rows away and destroy the association that lets a shared ZIP survive
+     * the removal of one of its counties.
+     *
+     * The display name and the external code are deliberately excluded. A selection is never
+     * carried by a display name; free-text names are what made the legacy criteria data unsafe to
+     * convert in the first place.
+     *
+     * Note that SELECTION identity is a different question and deliberately has a different answer:
+     * {@see \App\Services\LocationDna\Criteria\Rules\GeographySelection} keys ZIPs on the code
+     * alone, because a selected ZIP is satisfied by ANY of its counties.
+     */
+    public function matches(self $other): bool
+    {
+        return $this->kind === $other->kind
+            && $this->id === $other->id
+            && $this->parentId === $other->parentId;
+    }
+
     /** @return array<string, string|null> */
     public function toArray(): array
     {
