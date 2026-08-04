@@ -37,12 +37,17 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/TenantAgentAuction.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+        'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
     /** The one workflow implementation still untouched after G1f-5 — the Hire Tenant EDIT sibling. */
-    private const UNMIGRATED = [
-        'app/Http/Livewire/TenantAgentAuctionEdit.php',
-    ];
+    /**
+     * COMPLETE AS OF G1f-6 — empty. All eight workflow components reach the canonical writer.
+     *
+     * Retained rather than deleted so a NEW unmigrated write path has somewhere to surface, and so
+     * the emptiness is asserted rather than assumed.
+     */
+    private const UNMIGRATED = [];
 
     /**
      * Files still permitted to write the canonical key directly, after G1f-4.
@@ -203,14 +208,23 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             $wired,
-            'Exactly seven workflow components may reference the persistence namespace after G1f-5.'
+            'Exactly eight workflow components may reference the persistence namespace after G1f-6.'
         );
     }
 
-    /** The one remaining unmigrated workflow is untouched. */
+    /** No unmigrated workflow remains; the migrated set is verified positively instead. */
     public function test_the_four_unmigrated_workflows_are_untouched(): void
     {
-        $this->assertCount(1, self::UNMIGRATED);
+        $this->assertSame([], self::UNMIGRATED, 'all eight are migrated as of G1f-6');
+
+        foreach (self::MIGRATED as $relative) {
+            $this->assertStringContainsString(
+                'persistLocationDna',
+                $this->codeOnly($this->read($relative)),
+                "{$relative} must carry the canonical writer seam."
+            );
+        }
+
 
         foreach (self::UNMIGRATED as $relative) {
             $code = $this->codeOnly($this->read($relative));
@@ -325,15 +339,22 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
             'the trait still performs its own canonical write for the unmigrated hosts'
         );
 
-        foreach ([
-            'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        ] as $host) {
-            $this->assertStringContainsString(
-                '$this->saveSearchAreas($auction);',
-                $this->read($host),
-                "{$host} must still call the trait save."
-            );
+        // INVERTED BY G1f-6: the trait's save side now has zero callers. It is retained as dead
+        // code — retiring it is the closeout increment — so what is asserted is that it still
+        // EXISTS and is unchanged, while nothing calls it.
+        $callers = [];
+
+        foreach ($this->filesUnder(['app']) as $relative) {
+            if ($relative === 'app/Http/Livewire/Concerns/HasSearchAreas.php') {
+                continue;
+            }
+
+            if (str_contains($this->codeOnly($this->read($relative)), '$this->saveSearchAreas(')) {
+                $callers[] = $relative;
+            }
         }
+
+        $this->assertSame([], $callers, 'saveSearchAreas() must have no callers after G1f-6.');
     }
 
     /** The Tenant Offer divergence construct is untouched — G1f-4's target, not G1f-3's. */

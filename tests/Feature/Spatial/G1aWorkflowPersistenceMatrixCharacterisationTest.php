@@ -597,13 +597,23 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
      */
     public function test_update_based_edit_flows_carry_the_blob_and_mirror_writes(): void
     {
-        // NARROWED BY G1f-4: `Tenant Offer · edit` migrated, so its inline blob and mirror writes
-        // are gone by design. Its replacement — one consolidated writer call inside the existing
-        // transaction — is pinned by G1f4MigrationBoundaryGuardTest. The Hire edit sibling remains
-        // unmigrated and still carries the original construct.
+        // INVERTED BY G1f-6, RATHER THAN EMPTIED.
+        //
+        // G1f-4 narrowed this list to one entry when `Tenant Offer · edit` migrated. G1f-6 migrates
+        // the last entry, `Hire Tenant · edit`, so narrowing again would leave `$files` empty and
+        // this test would iterate nothing.
+        //
+        // Both update()-based edit flows are now migrated, so the property is restated in its
+        // post-migration form and BOTH are exercised again: the write still lives inside `update()`
+        // — that boundary is unchanged and is why these two are asserted structurally at all — and
+        // it now reaches the canonical writer through exactly one consolidated call rather than
+        // through the trait or an inline canonical write.
         $files = [
             'Hire Tenant · edit'  => 'app/Http/Livewire/TenantAgentAuctionEdit.php',
+            'Tenant Offer · edit' => 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ];
+
+        $covered = 0;
 
         foreach ($files as $label => $file) {
             $source = file_get_contents(base_path($file));
@@ -611,15 +621,34 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
             $this->assertStringContainsString(
                 'public function update()',
                 $source,
-                "{$label}: the write lives inside update()"
+                "{$label}: the write still lives inside update() — the boundary is unchanged"
             );
 
-            $this->assertTrue(
-                str_contains($source, "saveMeta('location_dna_preferences'")
-                    || str_contains($source, 'saveSearchAreas($auction)'),
-                "{$label}: must persist the blob, either directly or via the trait"
+            $this->assertSame(
+                1,
+                substr_count($source, '$this->persistLocationDna($auction);'),
+                "{$label}: exactly one consolidated canonical writer call"
             );
+            $this->assertStringNotContainsString(
+                '$this->saveSearchAreas($auction);',
+                $source,
+                "{$label}: the trait save must be gone"
+            );
+            $this->assertStringNotContainsString(
+                "saveMeta('location_dna_preferences'",
+                $source,
+                "{$label}: and the canonical key must not be written inline either"
+            );
+
+            $covered++;
         }
+
+        $this->assertSame(
+            2,
+            $covered,
+            'Both update()-based edit flows are exercised. A falling count means one stopped being '
+            .'asserted rather than that anything was fixed.'
+        );
     }
 
     /**

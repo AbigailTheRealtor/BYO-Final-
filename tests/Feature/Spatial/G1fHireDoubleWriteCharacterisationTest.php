@@ -64,9 +64,14 @@ use Tests\TestCase;
  * -----------------------------------------------------------------------------------
  * All three Hire components with an invocable `saveAllMetadata()` have now been migrated to
  * `LocationDnaPersistenceService`: `BuyerAgentAuction` by G1f-1, `TenantAgentAuction` by G1f-2
- * and `BuyerAgentAuctionEdit` by G1f-5. **No invocable save path carries the double-write any
- * more.** The one component that still does is `TenantAgentAuctionEdit`, whose write lives inside
- * `update()` and is asserted structurally for the boundary reason below.
+ * and `BuyerAgentAuctionEdit` by G1f-5. G1f-6 then migrated `TenantAgentAuctionEdit`, the last
+ * component of any kind that carried it.
+ *
+ * **The double-write this suite documents no longer exists anywhere in the application.** That is
+ * the terminal state, and it is asserted rather than assumed: each migrated component has a
+ * structural test below proving it does not carry the construct, and the Hire Tenant edit test
+ * additionally pins that its surviving property write moved INTO the seller/landlord else branch
+ * rather than simply remaining where it was.
  *
  * This suite therefore no longer characterises a LIVE double-write behaviourally, and does not
  * claim to. What it does instead — deliberately, rather than by emptying its fixture set and
@@ -788,26 +793,41 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
      * the trait executing the winning write is shared code — so what rests on this
      * structural assertion is only that this component still calls it, in that order.
      */
-    public function test_hire_tenant_edit_carries_the_same_double_write_structurally(): void
+    public function test_hire_tenant_edit_no_longer_carries_the_double_write(): void
     {
         $source = file_get_contents(base_path('app/Http/Livewire/TenantAgentAuctionEdit.php'));
 
+        $writerCall    = strpos($source, '$this->persistLocationDna($auction);');
         $propertyWrite = strpos($source, "\$auction->saveMeta('cities', json_encode(\$this->cities));");
-        $traitCall     = strpos($source, '$this->saveSearchAreas($auction);');
 
         $this->assertNotFalse(
-            $propertyWrite,
-            'TenantAgentAuctionEdit must still carry the component-property cities mirror write.'
+            $writerCall,
+            'TenantAgentAuctionEdit must reach the canonical writer — G1f-6 migrated it.'
         );
+        $this->assertStringNotContainsString(
+            '$this->saveSearchAreas($auction);',
+            $source,
+            'and must no longer call the trait save. With this gone, NO component in the '
+            .'application performs the double-write this suite documents.'
+        );
+
+        // THE ORDERING ASSERTION, INVERTED — and it is the precise evidence of the restructure.
+        //
+        // Before: the property write stood ABOVE the gate and therefore BEFORE the trait call,
+        // which is what made it the losing half of a double-write for buyer/tenant.
+        // After: the property write survives only in the seller/landlord ELSE branch, so it must
+        // now come AFTER the writer call in the if-branch. A migration that left it above the gate
+        // would keep writing property-sourced mirrors for buyer/tenant and this would fail.
         $this->assertNotFalse(
-            $traitCall,
-            'TenantAgentAuctionEdit must still call saveSearchAreas().'
-        );
-        $this->assertLessThan(
-            $traitCall,
             $propertyWrite,
-            'The component-property write must still precede the trait call, matching the three '
-            .'components proven behaviourally in this suite.'
+            'The component-property cities write must SURVIVE — seller and landlord have no '
+            .'canonical document, so it is their only mirror write.'
+        );
+        $this->assertGreaterThan(
+            $writerCall,
+            $propertyWrite,
+            'The surviving property write must sit in the seller/landlord else branch, AFTER the '
+            .'gated writer call — not above the gate where it used to run for all four roles.'
         );
     }
 }

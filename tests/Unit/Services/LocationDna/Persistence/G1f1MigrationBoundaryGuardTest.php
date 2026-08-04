@@ -40,16 +40,16 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
     ];
 
     /**
-     * The workflow implementations that must stay completely alone.
+     * COMPLETE AS OF G1f-6 — no workflow component writes Location DNA the old way.
      *
-     * SHRINK-ONLY, like `AUTHORIZED_WRITERS`. `TenantAgentAuction` left this list at G1f-2, both
-     * Buyer Offer copies at G1f-3, both Tenant Offer copies at G1f-4 and `BuyerAgentAuctionEdit`
-     * at G1f-5; their post-migration boundaries are asserted by their own guard suites. One
-     * remains — `TenantAgentAuctionEdit`, the only workflow still writing the old way.
+     * SHRINK-ONLY, and now empty. `TenantAgentAuction` left at G1f-2, both Buyer Offer copies at
+     * G1f-3, both Tenant Offer copies at G1f-4, `BuyerAgentAuctionEdit` at G1f-5 and
+     * `TenantAgentAuctionEdit` at G1f-6. All eight workflow components reach the canonical writer.
+     *
+     * The list is kept rather than deleted so a NEW unmigrated write path re-entering the codebase
+     * has somewhere to show up, and so the emptiness itself is asserted rather than assumed.
      */
-    private const UNMIGRATED_WORKFLOWS = [
-        'app/Http/Livewire/TenantAgentAuctionEdit.php',
-    ];
+    private const UNMIGRATED_WORKFLOWS = [];
 
     private function root(): string
     {
@@ -157,13 +157,14 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         );
     }
 
-    /** The one remaining unmigrated workflow still writes its mirrors the old way. */
-    public function test_the_remaining_unmigrated_workflow_is_untouched(): void
+    /** No unmigrated workflow remains — the emptiness is asserted, not assumed. */
+    public function test_no_unmigrated_workflow_remains(): void
     {
-        $this->assertCount(
-            1,
+        $this->assertSame(
+            [],
             self::UNMIGRATED_WORKFLOWS,
-            'One workflow remains unmigrated after G1f-5. This list may only SHRINK.'
+            'All eight workflow components are migrated as of G1f-6. A name reappearing here means '
+            .'an unmigrated Location DNA write path re-entered the codebase.'
         );
 
         foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
@@ -182,32 +183,78 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         }
     }
 
-    /** The trait is not globally rewired; the remaining hosts still use it unchanged. */
-    public function test_has_search_areas_is_not_globally_wired(): void
+    /**
+     * `HasSearchAreas` is neither retired nor rewired, and its save side is now DEAD CODE.
+     *
+     * INVERTED BY G1f-6. This test used to name the hosts that still called `saveSearchAreas()`
+     * and assert they did. `TenantAgentAuctionEdit` was the last of them, so that list is empty and
+     * asserting over it would iterate nothing.
+     *
+     * The property that replaces it is stronger and is the actual post-migration invariant: the
+     * trait still EXISTS and is UNCHANGED — G1f-6 was not authorized to retire it — while its save
+     * side has ZERO callers anywhere in the application. Both halves matter. A silent deletion
+     * would fail the first; a workflow quietly reacquiring the old write path would fail the
+     * second. Retiring `saveSearchAreas()` is the closeout increment, with its own authorization.
+     *
+     * Its LOAD side is deliberately still live and still used, so the trait cannot simply go.
+     */
+    public function test_has_search_areas_is_not_retired_and_its_save_side_is_dead_code(): void
     {
+        $this->assertFileExists(
+            $this->root().'/app/Http/Livewire/Concerns/HasSearchAreas.php',
+            'HasSearchAreas must not be deleted — retiring it is a separate increment.'
+        );
+
         $trait = $this->read('app/Http/Livewire/Concerns/HasSearchAreas.php');
 
-        $this->assertStringNotContainsString('LocationDna\\Persistence', $this->codeOnly($trait));
+        $this->assertStringNotContainsString(
+            'LocationDna\\Persistence',
+            $this->codeOnly($trait),
+            'the trait must not be rewired to the canonical writer'
+        );
         $this->assertStringContainsString(
             "empty(\$ldna['cities'] ?? [])",
             $trait,
-            'the trait keeps its pre-consolidation semantics for the unmigrated hosts'
+            'the trait keeps its pre-consolidation semantics, unchanged'
         );
         $this->assertStringContainsString(
             "\$auction->saveMeta('location_dna_preferences', \$this->location_dna_preferences_json);",
             $trait,
-            'and still performs its own canonical write'
+            'and still contains its own canonical write, which is why it still counts as a direct writer'
         );
 
-        foreach ([
-            'app/Http/Livewire/TenantAgentAuctionEdit.php',
-        ] as $host) {
-            $this->assertStringContainsString(
-                '$this->saveSearchAreas($auction);',
-                $this->read($host),
-                "{$host} must still call the trait save."
-            );
+        // ZERO callers of the save side, anywhere.
+        $callers = [];
+
+        foreach ($this->productionFiles() as $relative) {
+            if ($relative === 'app/Http/Livewire/Concerns/HasSearchAreas.php') {
+                continue;
+            }
+
+            if (str_contains($this->codeOnly($this->read($relative)), '$this->saveSearchAreas(')) {
+                $callers[] = $relative;
+            }
         }
+
+        $this->assertSame(
+            [],
+            $callers,
+            'saveSearchAreas() must have no callers after G1f-6. Found: '.implode(', ', $callers)
+        );
+
+        // The LOAD side is still live — this is why the trait cannot simply be deleted.
+        $loaders = [];
+
+        foreach ($this->productionFiles() as $relative) {
+            if (str_contains($this->codeOnly($this->read($relative)), '$this->loadSearchAreas(')) {
+                $loaders[] = $relative;
+            }
+        }
+
+        $this->assertNotEmpty(
+            $loaders,
+            'loadSearchAreas() must still have callers — the trait is retained for its load side.'
+        );
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -298,7 +345,8 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
                 || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php'
                 || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php'
                 || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php'
-                || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php') {
+                || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php'
+                || $relative === 'app/Http/Livewire/TenantAgentAuctionEdit.php') {
                 continue;
             }
 
@@ -310,7 +358,7 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'Only the seven migrated workflow components may reference the persistence namespace. Found: '
+            'Only the eight migrated workflow components may reference the persistence namespace. Found: '
             .implode(', ', $offenders)
         );
     }

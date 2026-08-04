@@ -492,14 +492,28 @@ class TenantOfferCitiesMirrorTest extends TestCase
         // boundary is pinned by G1f5MigrationBoundaryGuardTest and its behaviour by
         // G1f5BuyerAgentAuctionEditMigrationTest.
         //
-        // `TenantAgentAuctionEdit` remains, and remains unmigrated by any authorization so far.
+        // INVERTED BY G1f-6. `TenantAgentAuctionEdit` was the last workflow this assertion held
+        // back, and it too has now been migrated under its own authorization. With the list empty
+        // the loop would assert nothing, so the property is restated positively: both Hire edit
+        // workflows are migrated, and each reaches the writer exactly once.
+        //
+        // The point the original assertion made still stands and is still recorded — G1f-4's scope
+        // could not reach either of them; each needed its own increment.
         foreach ([
+            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $file) {
+            $source = file_get_contents(base_path($file));
+
+            $this->assertSame(
+                1,
+                substr_count($source, '$this->persistLocationDna($auction);'),
+                "{$file}: migrated under its own authorization, with exactly one writer call."
+            );
             $this->assertStringNotContainsString(
-                'persistLocationDna',
-                file_get_contents(base_path($file)),
-                "{$file}: no Hire edit workflow may be migrated without its own authorization."
+                '$this->saveSearchAreas($auction);',
+                $source,
+                "{$file}: the trait save must be gone."
             );
         }
     }

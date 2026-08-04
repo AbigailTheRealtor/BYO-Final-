@@ -201,7 +201,28 @@ class HireSearchAreasParityTest extends TestCase
             ->call('saveDraftOnly');
 
         $fresh = $auction->fresh();
-        $this->assertEquals($blob, $fresh->info('location_dna_preferences'));
+
+        // MIGRATED BY G1f-6 · the canonical document is no longer the submitted bytes.
+        //
+        // This assertion used to compare the stored string to `$blob` verbatim, which held while
+        // the trait wrote the bridged property straight through. The canonical writer hydrates,
+        // applies commands and RE-SERIALISES: keys are sorted at every level and `schema_version`
+        // is stamped. `LocationDnaSerializer` states the rule outright — byte-compatibility is
+        // withdrawn, determinism is what is guaranteed — so comparing bytes would assert a promise
+        // the design deliberately dropped.
+        //
+        // What matters to this test is that every submitted dimension survives the round trip, so
+        // it is asserted per dimension against the decoded document instead.
+        $canonical = json_decode((string) $fresh->info('location_dna_preferences'), true);
+        $this->assertIsArray($canonical);
+        $this->assertEquals(['Tampa, FL'], $canonical['cities']);
+        $this->assertEquals('Florida', $canonical['state']);
+        $this->assertEquals(
+            ['Pinellas County, FL', 'Hillsborough County, FL'],
+            $canonical['counties']
+        );
+        $this->assertArrayHasKey('schema_version', $canonical);
+
         $this->assertEquals('Florida', $fresh->info('state'));
 
         $counties = json_decode($fresh->info('counties'), true) ?? [];
@@ -217,9 +238,26 @@ class HireSearchAreasParityTest extends TestCase
         $this->assertEquals('minutes', $savedIp[0]['distance_pref']);
     }
 
-    /** Empty blob state must never wipe an existing discrete state (backward-compat guard). */
-    public function test_empty_blob_state_does_not_wipe_discrete_state(): void
+    /**
+     * INVERTED BY G1f-6 · a PRESENT-but-empty state is an explicit clear and now takes effect.
+     *
+     * This test used to assert that submitting `state: ''` left an existing discrete `Georgia`
+     * standing. That was F-G1-4, not a guarantee: the trait's non-empty guards meant a user who
+     * deliberately cleared the field silently kept the old value, while clearing `cities` on the
+     * same save DID take effect. D-G1-4 4-A resolved the split in favour of honouring the clear,
+     * and G1f-6 is where this component adopts it.
+     *
+     * The backward-compatibility concern the test was really protecting is NOT lost — it is the
+     * ABSENT case, asserted directly below. Present-empty and absent are now distinct, which is
+     * the whole point of the presence rule; before the migration this component could not tell
+     * them apart.
+     *
+     * Both halves run through the real Livewire entry point, so this is end-to-end evidence
+     * through `saveDraftOnly()` → `update()`, not a reflection shortcut.
+     */
+    public function test_empty_blob_state_clears_discrete_state_while_an_absent_key_preserves_it(): void
     {
+        // PRESENT-but-empty → the clear propagates.
         $owner   = $this->makeUser('buyer');
         $auction = $this->makeBuyerAuction($owner, ['state' => 'Georgia']);
 
@@ -228,7 +266,26 @@ class HireSearchAreasParityTest extends TestCase
             ->set('location_dna_preferences_json', json_encode(['cities' => [], 'state' => '']))
             ->call('saveDraftOnly');
 
-        $this->assertEquals('Georgia', $auction->fresh()->info('state'));
+        $this->assertEquals(
+            '',
+            $auction->fresh()->info('state'),
+            'a deliberate clear must now take effect — D-G1-4 4-A'
+        );
+
+        // ABSENT → the legacy value is preserved. This is the backward-compat guarantee.
+        $owner2   = $this->makeUser('buyer');
+        $auction2 = $this->makeBuyerAuction($owner2, ['state' => 'Georgia']);
+
+        Livewire::actingAs($owner2)
+            ->test(HireLiveEdit::class, ['auctionId' => $auction2->id, 'user_type' => 'buyer'])
+            ->set('location_dna_preferences_json', json_encode(['cities' => ['Tampa, FL']]))
+            ->call('saveDraftOnly');
+
+        $this->assertEquals(
+            'Georgia',
+            $auction2->fresh()->info('state'),
+            'a dimension the payload does not state must keep its existing value'
+        );
     }
 
     // ── Submit guard: an incomplete Important Place row blocks the full submit ──

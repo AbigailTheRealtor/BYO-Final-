@@ -19,6 +19,7 @@ use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
 use App\Support\TenantServicesCatalog;
+use App\Services\LocationDna\Persistence\OwnerPrivateLocationDnaWriter;
 
 
 class TenantAgentAuctionEdit extends Component
@@ -3343,6 +3344,32 @@ class TenantAgentAuctionEdit extends Component
         $this->property_items = $this->decodeJsonArray($value);
     }
 
+    /**
+     * G1f-6 — persist Location DNA through the canonical writer.
+     *
+     * Identical seam to the one G1f-1 established on `BuyerAgentAuction` and G1f-2 carried to this
+     * component's create sibling `TenantAgentAuction`: the component hands the bridged payload to
+     * `OwnerPrivateLocationDnaWriter` and holds no Location DNA policy of its own. Presence
+     * semantics, command construction, capability enforcement, the transaction and the managed
+     * mirror derivation all belong to the writer.
+     *
+     * The DEFAULT managed mirror set is used, matching the create sibling exactly. `zipCodes` is
+     * NOT managed here: the Hire family has always written it as an ungated, property-sourced
+     * mirror, and the surface-scoped opt-in G1f-4 added for the Tenant OFFER copies is deliberately
+     * not adopted (D-G1F-4; the §17.4 checkpoint governs the family as a whole).
+     *
+     * Reached only from the `buyer` / `tenant` branch of the preserved gate, so a `seller` or
+     * `landlord` record never enters the canonical writer.
+     *
+     * Deliberately NOT changed by this migration: `loadSearchAreas()` and the discrete `$state`,
+     * `$counties`, `$cities` host props, which the map partial and the prefill still use.
+     */
+    protected function persistLocationDna($auction): void
+    {
+        (new OwnerPrivateLocationDnaWriter())
+            ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
+    }
+
     public function update()
 
     {
@@ -3445,17 +3472,54 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
             $auction->saveMeta('number_of_unit', $this->number_of_unit);
 
-            // Location Information
-            $auction->saveMeta('cities', json_encode($this->cities));
-            $auction->saveMeta('counties', json_encode($this->counties));
-            $auction->saveMeta('state', $this->state);
-
-            // 9D: Search Areas + Important Places (Buyer/Tenant only). saveSearchAreas() writes
-            // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
-            // written just above from the blob (the map is now the single editing surface).
+            // Location Information — MIGRATED TO THE CANONICAL WRITER (G1f-6).
+            //
+            // THE GATE IS PRESERVED, UNCHANGED — D-G1F-3, option 3-C. Only `buyer` and `tenant`
+            // records carry a canonical Location DNA document; `seller` and `landlord` records do
+            // NOT start receiving one here. The gate is not endorsed as the ideal architecture and
+            // it is not a defect being fixed in passing — removing it needs its own product
+            // authorization.
+            //
+            // WHAT CHANGED STRUCTURALLY, AND WHY IT HAD TO
+            // --------------------------------------------
+            // The three discrete mirror writes used to stand ABOVE the gate and therefore ran for
+            // ALL FOUR roles, while `saveSearchAreas()` ran for only two. That split is why this
+            // migration is an if/else rather than a straight substitution: for `buyer`/`tenant` the
+            // inline writes were the losing half of a double-write, but for `seller`/`landlord`
+            // they were the ONLY mirror writes those roles have ever had, uncorrected by any blob
+            // because the trait never ran for them. Replacing them unconditionally would have
+            // silently stopped mirroring location for half the supported roles.
+            //
+            // This is the same shape G1f-2 established on the create sibling, for the same reason.
             if (in_array($this->user_type, ['buyer', 'tenant'])) {
-                $this->saveSearchAreas($auction);
+                // This workflow previously wrote the discrete `cities` / `counties` / `state`
+                // mirrors from its own component properties and then called saveSearchAreas(),
+                // which wrote the canonical blob and RE-wrote the same three mirrors from it.
+                // Correctness rested on statement ordering alone, proven structurally by
+                // G1fHireDoubleWriteCharacterisationTest — this was the LAST live double-write.
+                //
+                // Both halves are replaced by one call. The writer builds explicit set/clear
+                // commands from the submitted payload, persists canonical state first and derives
+                // the managed mirrors from the result, inside one transaction. A dimension the
+                // payload does not state gets no command and is therefore not written — which is
+                // what stops a no-op save from destroying a legacy-only mirror.
+                //
+                // The trait is deliberately NOT rewired or retired: loadSearchAreas() is still
+                // called on the load side of this very component, and saveSearchAreas() is left in
+                // place. Retiring it is a separate increment with its own authorization.
+                $this->persistLocationDna($auction);
                 $this->saveImportantPlaces($auction);
+            } else {
+                // seller / landlord — the gated path, behaviour unchanged.
+                //
+                // These three writes are NOT the double-write G1f removes: with the gate closed the
+                // trait never ran, so they are the ONLY mirror writes this branch has ever
+                // performed and they remain property-sourced and uncorrected by any blob. Removing
+                // them would silently stop mirroring location for two of the four roles, which is a
+                // behaviour change this migration is not authorized to make.
+                $auction->saveMeta('cities', json_encode($this->cities));
+                $auction->saveMeta('counties', json_encode($this->counties));
+                $auction->saveMeta('state', $this->state);
             }
 
             $auction->saveMeta('property_city', $this->property_city);
@@ -3463,6 +3527,20 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('property_zip', $this->property_zip);
             $auction->saveMeta('property_county', $this->property_county);
 
+            // `zipCodes` — DELIBERATELY OUTSIDE THE MANAGED MIRROR SET (D-G1F-4, option (a)).
+            //
+            // Unchanged in source, in value, in serialization and in reach: still written for every
+            // supported role, still sourced from the component property, still never derived from
+            // the canonical `zip_codes` dimension, and still absent from
+            // LegacyMirrorProjection::MANAGED_KEYS. This matches the create sibling exactly and
+            // deliberately does NOT adopt the surface-scoped opt-in G1f-4 introduced for the Tenant
+            // OFFER copies — the Hire family has never managed this key, and the §17.4 checkpoint
+            // governs whether it ever joins the managed set. This increment does not decide it,
+            // normalize it, repair it, or clear it when canonical ZIPs are absent.
+            //
+            // It remains AFTER the canonical block on purpose. A failure inside the canonical write
+            // aborts before this line, so the transaction's all-or-nothing guarantee is not
+            // undermined by a mirror write that already landed.
             $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
 
             // Property Details

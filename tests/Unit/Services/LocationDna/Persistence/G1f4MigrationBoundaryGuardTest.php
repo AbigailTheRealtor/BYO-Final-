@@ -38,12 +38,17 @@ class G1f4MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Livewire/TenantAgentAuction.php',
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
+        'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
     /** The two that remain — both Hire EDIT siblings. */
-    private const UNMIGRATED = [
-        'app/Http/Livewire/TenantAgentAuctionEdit.php',
-    ];
+    /**
+     * COMPLETE AS OF G1f-6 — empty. All eight workflow components reach the canonical writer.
+     *
+     * Retained rather than deleted so a NEW unmigrated write path has somewhere to surface, and so
+     * the emptiness is asserted rather than assumed.
+     */
+    private const UNMIGRATED = [];
 
     /**
      * Files still permitted to write the canonical key directly, after G1f-4. Five → three.
@@ -258,19 +263,20 @@ class G1f4MigrationBoundaryGuardTest extends TestCase
         sort($expected);
 
         $this->assertSame($expected, array_values(array_unique($wired)));
-        $this->assertCount(7, self::MIGRATED);
+        $this->assertCount(8, self::MIGRATED);
     }
 
-    /** The one remaining workflow is untouched. */
+    /** No workflow remains unmigrated; the migrated set is verified positively instead. */
     public function test_the_two_remaining_workflows_are_untouched(): void
     {
-        $this->assertCount(1, self::UNMIGRATED);
+        $this->assertSame([], self::UNMIGRATED, 'all eight are migrated as of G1f-6');
 
-        foreach (self::UNMIGRATED as $relative) {
-            $code = $this->codeOnly($this->read($relative));
-
-            $this->assertStringNotContainsString('OwnerPrivateLocationDnaWriter', $code, $relative);
-            $this->assertStringNotContainsString('LocationDna\\Persistence', $code, $relative);
+        foreach (self::MIGRATED as $relative) {
+            $this->assertStringContainsString(
+                'OwnerPrivateLocationDnaWriter',
+                $this->codeOnly($this->read($relative)),
+                "{$relative} must be wired to the canonical writer."
+            );
         }
     }
 

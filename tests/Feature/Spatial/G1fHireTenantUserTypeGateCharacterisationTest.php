@@ -523,19 +523,26 @@ class G1fHireTenantUserTypeGateCharacterisationTest extends TestCase
      * ungated call to the canonical writer were ever added, the gate would stop being
      * total and this assertion would fail.
      *
-     * UPDATED BY G1f-2 · the two components now reach the canonical writer by different
-     * routes, so the entry point is asserted per component rather than as one string.
-     * `TenantAgentAuction` calls `persistLocationDna()`; `TenantAgentAuctionEdit` still
-     * calls the trait's `saveSearchAreas()`, unmigrated. The property under test — exactly
-     * one call site, inside the gate — is identical for both, and is what a future
-     * increment must not weaken.
+     * UPDATED BY G1f-2, THEN CONVERGED BY G1f-6 · the two components briefly reached the
+     * canonical writer by different routes — `TenantAgentAuction` through
+     * `persistLocationDna()` and `TenantAgentAuctionEdit` still through the trait's
+     * `saveSearchAreas()` — so the entry point was asserted per component rather than as
+     * one string. G1f-6 migrated the edit copy, so both now reach it the same way and the
+     * per-component map holds the same value twice.
+     *
+     * The map is KEPT rather than collapsed to a single string: it is what makes a future
+     * divergence visible at the point it is introduced, and it is the structure that let
+     * this suite survive the two components being out of step for four increments.
+     *
+     * The property under test is unchanged and is what no increment may weaken: exactly
+     * one call site, sitting behind a gate that admits buyer and tenant only.
      */
     public function test_the_gate_is_the_only_path_to_the_canonical_writer_in_both_components(): void
     {
         foreach ([
             // component => the single statement that reaches the canonical writer
             'app/Http/Livewire/TenantAgentAuction.php'     => '$this->persistLocationDna($auction);',
-            'app/Http/Livewire/TenantAgentAuctionEdit.php' => '$this->saveSearchAreas($auction);',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php' => '$this->persistLocationDna($auction);',
         ] as $relative => $entryPoint) {
             $source = file_get_contents(base_path($relative));
 

@@ -78,8 +78,13 @@ class G1fZipCodesMirrorCharacterisationTest extends TestCase
         // `zipCodes` mirror is now DERIVED from the canonical `zip_codes` dimension, so the
         // property-sourced characterisations below no longer describe it. What it does instead is
         // asserted positively by test_migrated_tenant_offer_derives_zipcodes_from_canonical_state()
-        // and by G1f4TenantOfferMigrationTest. The Hire writer is unmigrated and still pins the
-        // original behaviour.
+        // and by G1f4TenantOfferMigrationTest.
+        //
+        // CLARIFIED BY G1f-6: the Hire writer that remains here is MIGRATED (G1f-2) — it is not
+        // listed because it is unmigrated, but because migrating it did not change `zipCodes`. The
+        // Hire family deliberately keeps the mirror property-sourced and unmanaged, so the
+        // property-sourced characterisations below still describe it exactly. That is the family
+        // split recorded in test_the_hire_family_keeps_the_property_sourced_write_after_migrating().
         return [
             'Hire Tenant · create'  => ['class' => HireTenantCreate::class,  'user_type' => 'tenant'],
         ];
@@ -336,25 +341,46 @@ class G1fZipCodesMirrorCharacterisationTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * CHARACTERISED STRUCTURALLY · both Tenant-family edit components write `zipCodes`
-     * from the component property, inside `update()`.
+     * THE FAMILY SPLIT, RECORDED · the Hire family keeps `zipCodes` property-sourced even
+     * after migrating; the Offer family manages it.
      *
-     * KNOWN WEAKER ASSERTION, for the boundary reason documented in the class docblock.
-     * The write is byte-identical to the two proven behaviourally above, so what rests on
-     * the structural form is only that these components still perform it from the same
-     * source.
+     * RETITLED BY G1f-6, because "unmigrated" stopped being the reason. `TenantAgentAuctionEdit`
+     * is now migrated, and it STILL writes `zipCodes` from the component property — that is a
+     * decision, not a leftover, and it is the decision this assertion now records.
+     *
+     * The two families diverge deliberately:
+     *
+     *   Hire  (`TenantAgentAuction`, `TenantAgentAuctionEdit`)  → property-sourced, UNMANAGED,
+     *          written for every supported role, never derived from canonical `zip_codes`.
+     *   Offer (`TenantOfferListing`, `TenantOfferListingEdit`)  → managed via the surface-scoped
+     *          opt-in G1f-4 added, derived from canonical state.
+     *
+     * G1f-6 was explicitly scoped NOT to adopt the Offer behaviour, so the Hire pair matches its
+     * own create sibling rather than the newer Offer treatment. The §17.4 checkpoint governs
+     * whether the family ever converges; until then this asymmetry is intentional and asserting it
+     * is what stops it being "tidied up" without that authorization.
      */
-    public function test_the_unmigrated_edit_writer_still_carries_the_property_sourced_write(): void
+    public function test_the_hire_family_keeps_the_property_sourced_write_after_migrating(): void
     {
-        // NARROWED BY G1f-4. `TenantOfferListingEdit` migrated and no longer carries this write;
-        // its replacement is pinned by G1f4MigrationBoundaryGuardTest. The Hire edit sibling is
-        // still unmigrated and must be unchanged.
         $relative = 'app/Http/Livewire/TenantAgentAuctionEdit.php';
+        $source   = file_get_contents(base_path($relative));
 
         $this->assertStringContainsString(
             "\$auction->saveMeta('zipCodes', json_encode(\$this->zipCodes));",
-            file_get_contents(base_path($relative)),
+            $source,
             "{$relative}: must still write the zipCodes mirror from the component property."
+        );
+
+        // Migrated, yet deliberately not managing the mirror — the two facts together are the point.
+        $this->assertStringContainsString(
+            '$this->persistLocationDna($auction);',
+            $source,
+            "{$relative}: is migrated as of G1f-6 …"
+        );
+        $this->assertStringNotContainsString(
+            'managingMirrors(',
+            $source,
+            "{$relative}: … and must NOT adopt the Offer family's managed zipCodes opt-in."
         );
 
         $this->assertStringNotContainsString(

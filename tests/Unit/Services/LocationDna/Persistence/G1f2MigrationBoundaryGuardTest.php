@@ -39,17 +39,16 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
+        'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
     /**
-     * The workflow implementations that must be left completely alone.
+     * COMPLETE AS OF G1f-6 — empty. All eight workflow components reach the canonical writer.
      *
-     * SHRINK-ONLY. The two Buyer Offer copies left at G1f-3, the two Tenant Offer copies at
-     * G1f-4 and `BuyerAgentAuctionEdit` at G1f-5; only `TenantAgentAuctionEdit` remains.
+     * Retained rather than deleted so a NEW unmigrated write path has somewhere to surface, and so
+     * the emptiness is asserted rather than assumed.
      */
-    private const UNMIGRATED_WORKFLOWS = [
-        'app/Http/Livewire/TenantAgentAuctionEdit.php',
-    ];
+    private const UNMIGRATED_WORKFLOWS = [];
 
     private function root(): string
     {
@@ -144,29 +143,30 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             array_values(array_unique($wired)),
-            'Exactly seven workflow components may be wired to the canonical writer after G1f-5.'
+            'Exactly eight workflow components may be wired to the canonical writer after G1f-6.'
         );
     }
 
-    /** The remaining unmigrated workflow is untouched. */
-    public function test_the_remaining_unmigrated_workflows_are_untouched(): void
+    /** No unmigrated workflow remains, and every migrated one is actually wired. */
+    public function test_no_unmigrated_workflow_remains(): void
     {
-        $this->assertCount(1, self::UNMIGRATED_WORKFLOWS);
+        $this->assertSame(
+            [],
+            self::UNMIGRATED_WORKFLOWS,
+            'All eight workflow components are migrated as of G1f-6.'
+        );
 
-        foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
-            $code = $this->codeOnly($this->read($relative));
-
-            $this->assertStringNotContainsString(
+        // Non-vacuous counterpart: the migrated set is verified positively, so this test still
+        // exercises every workflow rather than iterating an empty list.
+        foreach (self::MIGRATED as $relative) {
+            $this->assertStringContainsString(
                 'OwnerPrivateLocationDnaWriter',
-                $code,
-                "{$relative} must NOT be wired to the canonical writer — that is a later increment."
-            );
-            $this->assertStringNotContainsString(
-                'LocationDna\\Persistence',
-                $code,
-                "{$relative} must not reference the persistence namespace."
+                $this->codeOnly($this->read($relative)),
+                "{$relative} must be wired to the canonical writer."
             );
         }
+
+        $this->assertCount(8, self::MIGRATED);
     }
 
     /**
@@ -177,24 +177,33 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
      * migrated "while we are in there": it shares the gate, the zipCodes write and most of
      * the save body with the component G1f-2 did migrate.
      */
-    public function test_the_tenant_edit_sibling_still_writes_the_old_way(): void
+    public function test_the_tenant_edit_sibling_is_migrated_and_kept_its_gate(): void
     {
         $source = $this->read('app/Http/Livewire/TenantAgentAuctionEdit.php');
 
+        // MIGRATED BY G1f-6. This test used to assert the sibling still wrote the old way, and was
+        // the guard against migrating it "while we are in there". It has since been migrated under
+        // its own authorization, so the assertion is inverted to pin the post-migration shape.
         $this->assertStringContainsString(
             "in_array(\$this->user_type, ['buyer', 'tenant'])",
             $source,
-            'the gate is still there'
+            'the gate is still there — D-G1F-3 3-C, preserved through the migration'
         );
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             '$this->saveSearchAreas($auction);',
             $source,
-            'and it still reaches the canonical key through the trait'
+            'and it no longer reaches the canonical key through the trait'
+        );
+        $this->assertStringContainsString(
+            '$this->persistLocationDna($auction);',
+            $source,
+            'it reaches the canonical writer instead'
         );
         $this->assertStringContainsString(
             "\$auction->saveMeta('cities', json_encode(\$this->cities));",
             $source,
-            'and still carries its component-property mirror write — the last surviving double-write'
+            'and the seller/landlord else branch KEEPS its property-sourced mirror write — those '
+            .'two roles never had a blob, so removing it would stop mirroring location for them'
         );
     }
 
