@@ -151,6 +151,111 @@
 @php
 $auth_id = auth()->user() ? auth()->user()->id : 0;
 @endphp
+
+@php
+    /*
+     | M5.2a — SECTION VISIBILITY GUARDS, HOISTED.
+     |
+     | These five conditions decide whether their sections render. They used to be computed
+     | immediately above each section, hundreds of lines apart and hundreds of lines below
+     | the top of the page — which is fine while the only consumer is the section itself,
+     | and impossible once anything above needs the same answer.
+     |
+     | M5.2b adds a section navigation bar at the top of the page. A nav entry for a section
+     | that did not render would be a link to nothing, and — for the compensation section —
+     | would leak the existence and name of a section the viewer is not shown. Re-deriving
+     | these conditions up here would have been the obvious shortcut and the wrong one: the
+     | copy and the original drift, and the drift is invisible until someone reports a dead
+     | link. So the conditions move; nothing is duplicated.
+     |
+     | The expressions are reproduced verbatim and in their original order. This commit
+     | changes WHERE they are evaluated and nothing else — no condition altered, no
+     | authorization changed, no output changed.
+     |
+     | ON THE COMPENSATION GUARD: only the computation moved. `@if (Auth::check())` still
+     | wraps the section exactly where it did. Computing the flag for an anonymous visitor
+     | reveals nothing — it emits no markup — and the section remains as unreachable to them
+     | as before. Whether authenticated-but-unrelated viewers should see compensation at all
+     | is an open product question, recorded in
+     | docs/investigations/hire-agent-compensation-visibility-decision.md and deliberately
+     | untouched here.
+     */
+
+    // Services — moved from just above the Services section.
+    $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
+
+    // Additional Details — moved from just above the Additional Details section.
+    $additionalDetailsRaw = @$auction->get->additional_details ?? null;
+    $additionalDetailsStr = is_string($additionalDetailsRaw) ? trim($additionalDetailsRaw) : null;
+@endphp
+
+{{-- Representation Preferences — moved verbatim from above its section. --}}
+        @php
+            $rawCompatView = $auction->info('compatibility_preferences');
+            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+                ? (json_decode($rawCompatView, true) ?? [])
+                : [];
+            $llView = $compatView['landlord_specific'] ?? [];
+
+            $repResolve = function(string $val, string $otherVal): string {
+                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
+            };
+            $repResolveArr = function(array $vals, string $otherVal): array {
+                return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+                }, $vals)));
+            };
+            $repRows = [];
+            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
+                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
+            };
+
+            $repAdd('Primary Leasing Goal', $llView['primary_leasing_goal'] ?? '', $llView['primary_leasing_goal_other'] ?? '');
+            $repAdd('Preferred Tenant Type', $llView['tenant_type_preference'] ?? '', $llView['tenant_type_preference_other'] ?? '');
+            $repAdd('Preferred Lease Duration', $llView['lease_duration_preference'] ?? '', '');
+            $repAdd('Level of Involvement in Day-to-Day Management', $llView['property_management_involvement'] ?? '', '');
+            $repAdd('Preferred Communication Style', $llView['communication_style'] ?? '', '');
+            $repAdd('Preferred Contact Frequency', $llView['preferred_contact_method'] ?? '', '');
+            $repAdd('Expected Agent Response Time', $llView['response_time_expectation'] ?? '', '');
+            $repAdd('Preferred Agent Working Style', $llView['preferred_agent_working_style'] ?? '', '');
+            $repAdd('Negotiation Style', $llView['negotiation_style'] ?? '', '');
+            $repAdd('Representation Priorities', $llView['representation_priorities'] ?? [], '');
+            $repAdd('Risk Tolerance', $llView['risk_tolerance'] ?? '', '');
+            $repAdd('Willingness to Offer Concessions', $llView['concessions_willingness'] ?? '', '');
+            $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
+            $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
+        @endphp
+
+@php
+    // Broker Compensation — moved from inside the Auth::check() wrapper, which stays put.
+    $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
+        || !empty(@$auction->get->tenant_broker_commission_structure)
+        || !empty(@$auction->get->broker_fee_timing)
+        || !empty(@$auction->get->renewal_fee_type)
+        || !empty(@$auction->get->protection_period)
+        || !empty(@$auction->get->agency_agreement_timeframe)
+        || !empty(@$auction->get->early_termination_fee_option)
+        || !empty(@$auction->get->interested_in_selling)
+        || !empty(@$auction->get->interested_lease_option_agreement)
+        || !empty(@$auction->get->interested_in_property_management);
+@endphp
+
+{{-- Referral & Cooperation — moved verbatim from above its section. Note it issues a query;
+     hoisting moves that query earlier in the request, it does not add one. --}}
+        @php
+            $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+            if ($referralPct === '') {
+                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+                if ($_firstBid) {
+                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
+                }
+                unset($_firstBid);
+            }
+            $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+        @endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="landlord" :auction="$auction">
@@ -1034,9 +1139,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <hr>
 
         @php
-        // Check if services exist before showing the section
-        $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
-
         // Photo enhancements data — needed inside the services loop
         $rawPhotoEnhancements = $auction->get->photo_enhancements ?? null;
         $photoEnhancements = is_string($rawPhotoEnhancements)
@@ -1287,10 +1389,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         <hr>
-        @php
-            $additionalDetailsRaw = @$auction->get->additional_details ?? null;
-            $additionalDetailsStr = is_string($additionalDetailsRaw) ? trim($additionalDetailsRaw) : null;
-        @endphp
         @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
         <x-viho.section-header title="Additional Details:" tag="h4" />
 
@@ -1303,43 +1401,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @include('partials.listing-photos-tours-documents')
 
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
-        @php
-            $rawCompatView = $auction->info('compatibility_preferences');
-            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
-                ? (json_decode($rawCompatView, true) ?? [])
-                : [];
-            $llView = $compatView['landlord_specific'] ?? [];
-
-            $repResolve = function(string $val, string $otherVal): string {
-                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
-            };
-            $repResolveArr = function(array $vals, string $otherVal): array {
-                return array_values(array_filter(array_map(function($v) use ($otherVal) {
-                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
-                }, $vals)));
-            };
-            $repRows = [];
-            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
-                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
-                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
-                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
-            };
-
-            $repAdd('Primary Leasing Goal', $llView['primary_leasing_goal'] ?? '', $llView['primary_leasing_goal_other'] ?? '');
-            $repAdd('Preferred Tenant Type', $llView['tenant_type_preference'] ?? '', $llView['tenant_type_preference_other'] ?? '');
-            $repAdd('Preferred Lease Duration', $llView['lease_duration_preference'] ?? '', '');
-            $repAdd('Level of Involvement in Day-to-Day Management', $llView['property_management_involvement'] ?? '', '');
-            $repAdd('Preferred Communication Style', $llView['communication_style'] ?? '', '');
-            $repAdd('Preferred Contact Frequency', $llView['preferred_contact_method'] ?? '', '');
-            $repAdd('Expected Agent Response Time', $llView['response_time_expectation'] ?? '', '');
-            $repAdd('Preferred Agent Working Style', $llView['preferred_agent_working_style'] ?? '', '');
-            $repAdd('Negotiation Style', $llView['negotiation_style'] ?? '', '');
-            $repAdd('Representation Priorities', $llView['representation_priorities'] ?? [], '');
-            $repAdd('Risk Tolerance', $llView['risk_tolerance'] ?? '', '');
-            $repAdd('Willingness to Offer Concessions', $llView['concessions_willingness'] ?? '', '');
-            $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
-            $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
-        @endphp
 
         @if (!empty($repRows))
         <hr />
@@ -1355,18 +1416,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
-        @php
-            $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
-                || !empty(@$auction->get->tenant_broker_commission_structure)
-                || !empty(@$auction->get->broker_fee_timing)
-                || !empty(@$auction->get->renewal_fee_type)
-                || !empty(@$auction->get->protection_period)
-                || !empty(@$auction->get->agency_agreement_timeframe)
-                || !empty(@$auction->get->early_termination_fee_option)
-                || !empty(@$auction->get->interested_in_selling)
-                || !empty(@$auction->get->interested_lease_option_agreement)
-                || !empty(@$auction->get->interested_in_property_management);
-        @endphp
         @if ($hasLandlordBrokerCompData)
         <hr />
         <x-viho.section-header title="Broker Compensation & Agency Agreement Terms" tag="h4" />
@@ -1803,17 +1852,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div> <!-- end broker-compensation-section -->
         @endif
         @endif {{-- /Auth::check() broker compensation --}}
-        @php
-            $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
-            if ($referralPct === '') {
-                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
-                if ($_firstBid) {
-                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
-                }
-                unset($_firstBid);
-            }
-            $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
-        @endphp
         @if ($referralPctDisplay !== '')
         <hr />
         <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
