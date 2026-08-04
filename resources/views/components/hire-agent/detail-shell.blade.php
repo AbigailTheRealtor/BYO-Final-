@@ -48,6 +48,23 @@
     @include('hire_agent.framework.styles')
 @endpush
 
+{{--
+    M5.1 — the scope root.
+
+    The framework stylesheet is pushed into the document's style stack, so every rule it declared
+    without an .hla- prefix applied to the WHOLE page: the site header, the off-canvas mobile
+    navigation and the footer included. Measured on a live landlord page, the bare `ul` rules were
+    styling 19 list items in the mobile nav alone.
+
+    This wrapper is what those rules are now scoped to. It carries no styling of its own and adds
+    no layout: it exists solely so `.hla-detail-page ul` can mean "a list on a Hire Agent detail
+    page" rather than "every list in the document".
+
+    It wraps the flash block as well as the containers, because the flash is part of this page and
+    was in range of the old unscoped rules too.
+--}}
+<div class="hla-detail-page">
+
 <x-hire-agent.flash />
 
 <div class="container">
@@ -79,3 +96,5 @@
     --}}
     {{ $afterGrid ?? '' }}
 </div>
+
+</div>{{-- .hla-detail-page --}}

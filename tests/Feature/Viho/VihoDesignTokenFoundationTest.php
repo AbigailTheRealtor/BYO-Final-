@@ -44,6 +44,33 @@ class VihoDesignTokenFoundationTest extends TestCase
         'resources/views/hire_tenant_agent/view.blade.php',
     ];
 
+    /**
+     * The ONE product file permitted to read a VIHO token. Added in M5.1.
+     *
+     * ── WHY THE BAN WAS LIFTED FOR EXACTLY ONE FILE ──────────────────────────────────────────
+     *
+     * The original rule said neither product may read a token "yet", and it was carrying the
+     * zero-render-change guarantee for M1: a foundation nothing consumes cannot alter a pixel.
+     * That guarantee has done its job. M5.1 aligns the Hire Agent framework stylesheet to the
+     * shared scale, which is the adoption the token layer existed for.
+     *
+     * It is a NAMED FILE, not a prefix and not a directory. `resources/views/hire_agent/` would
+     * have been easier to write and would have let every future file in that directory read
+     * tokens without anyone deciding it should. The whole point of the M1 contract is that
+     * adoption is a decision per file, so a wildcard here would dissolve the rule it is amending.
+     *
+     * What this does NOT permit:
+     *   · Create Offer. Still barred entirely until M8 — asserted separately below.
+     *   · Any other Hire Agent file. The role views, the shared components and the shell are all
+     *     still held to the original ban.
+     *   · Token DECLARATION. This file may read `var(--viho-*)`; it may not declare one. The
+     *     neutral stylesheet remains the single source of the values.
+     *
+     * Adding a second entry here is an architectural change requiring its own milestone decision,
+     * exactly as VihoPresentationPrimitivesTest::APPROVED_SHARED_CONSUMER is for components.
+     */
+    private const APPROVED_TOKEN_CONSUMER = 'resources/views/hire_agent/framework/styles.blade.php';
+
     /** The thirteen tokens the four Create Offer views already declare, verbatim. */
     private const DECLARED_TOKENS = [
         '--viho-primary'       => '#2563EB',
@@ -506,6 +533,12 @@ class VihoDesignTokenFoundationTest extends TestCase
 
                 $rel = ltrim(str_replace(base_path() . '/', '', $item->getPathname()), '/');
 
+                // M5.1 — one named file, matched exactly rather than by prefix, so it cannot
+                // widen into a directory. See APPROVED_TOKEN_CONSUMER.
+                if ($rel === self::APPROVED_TOKEN_CONSUMER) {
+                    continue;
+                }
+
                 foreach ($allowedPrefixes as $prefix) {
                     if (str_starts_with($rel, $prefix)) {
                         continue 2;
@@ -527,20 +560,88 @@ class VihoDesignTokenFoundationTest extends TestCase
     /**
      * Neither product reads a token, stated on its own so a failure names the product directly.
      *
-     * This is the half of the old assertion that carries the zero-render-change guarantee, kept
-     * sharp rather than folded into the scoped check above.
+     * AMENDED IN M5.1, BY EXACTLY ONE FILE. This carried M1's zero-render-change guarantee — a
+     * foundation nothing consumes cannot alter a pixel — and that guarantee has served its
+     * purpose. The Hire Agent framework stylesheet now reads the shared scale; see
+     * APPROVED_TOKEN_CONSUMER for why the exception is a named file rather than a directory.
+     *
+     * CREATE OFFER IS UNCHANGED and still barred in full, which is the half of this assertion
+     * that still carries a guarantee. The loop deliberately keeps both zones rather than dropping
+     * Hire Agent, so a second Hire Agent file reading a token fails here by name.
      */
     public function test_neither_product_consumes_the_tokens(): void
     {
         foreach ([Scanner::ZONE_HIRE_AGENT, Scanner::ZONE_CREATE_OFFER] as $zone) {
             foreach ($this->scanner->filesInZone($zone) as $file) {
+                if ($file === self::APPROVED_TOKEN_CONSUMER) {
+                    continue;
+                }
+
                 $this->assertStringNotContainsString(
                     'var(--viho',
                     Scanner::stripComments($this->scanner->read($file)),
-                    "{$file} must not read a VIHO token yet."
+                    "{$file} must not read a VIHO token. M5.1 lifted this for exactly one file — "
+                    . self::APPROVED_TOKEN_CONSUMER . ' — and a second consumer is an architectural '
+                    . 'change requiring its own milestone decision, not a test edit.'
                 );
             }
         }
+    }
+
+    /**
+     * Create Offer specifically reads no token, asserted on its own.
+     *
+     * The amendment above put a conditional inside a loop covering both products. That is exactly
+     * the shape of change that later gets "simplified" into skipping more than it should, so the
+     * Create Offer half is restated here where no exception exists to widen.
+     */
+    public function test_create_offer_still_reads_no_token(): void
+    {
+        foreach ($this->scanner->filesInZone(Scanner::ZONE_CREATE_OFFER) as $file) {
+            $this->assertStringNotContainsString(
+                'var(--viho',
+                Scanner::stripComments($this->scanner->read($file)),
+                "{$file} is Create Offer, which may not read a VIHO token before M8. The M5.1 "
+                . 'exception is a Hire Agent file and does not extend here.'
+            );
+        }
+    }
+
+    /**
+     * The approved consumer is real, is the only one, and is a file rather than a pattern.
+     *
+     * Three ways the M5.1 amendment could rot: the constant naming a file that no longer exists,
+     * the file existing but never actually reading a token (leaving a granted exception nobody
+     * uses, which invites someone to reuse it for something else), and the constant quietly
+     * becoming a directory prefix.
+     */
+    public function test_the_token_exception_is_a_single_real_file_that_uses_it(): void
+    {
+        $this->assertTrue(
+            $this->scanner->exists(self::APPROVED_TOKEN_CONSUMER),
+            'The approved token consumer must exist.'
+        );
+
+        $this->assertStringContainsString(
+            'var(--viho',
+            Scanner::stripComments($this->scanner->read(self::APPROVED_TOKEN_CONSUMER)),
+            'The exception is granted for adoption. A file that reads no token should not hold one.'
+        );
+
+        $this->assertStringEndsWith(
+            '.blade.php',
+            self::APPROVED_TOKEN_CONSUMER,
+            'The exception must name one file. A directory or prefix would let future files inherit '
+            . 'an exception nobody decided to grant them.'
+        );
+
+        // The exception must not have quietly become a second way into the neutral zone: reading
+        // tokens is permitted, declaring them is not.
+        $this->assertStringNotContainsString(
+            '--viho-primary:',
+            $this->scanner->read(self::APPROVED_TOKEN_CONSUMER),
+            'Tokens are declared once, in the neutral stylesheet. The consumer may only read them.'
+        );
     }
 
     /** The VIHO primitives really do read the tokens — the positive half of the same contract. */
