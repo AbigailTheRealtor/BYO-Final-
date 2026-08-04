@@ -143,18 +143,16 @@
 
      WHY THE NULL COALESCE IS LOAD-BEARING AND NOT DEFENSIVE CLUTTER
      ---------------------------------------------------------------
-     This tab is included by TWO different component trees:
+     This tab is included by SIX root blades. Two belong to components that carry the cascade
+     trait — HireBuyerAgent\BuyerAgentAuction (+Edit) at /buyer/add-auction, and the catch-all
+     TenantAgentAuction (+Edit) at /hire/agent/auction/{user_type}, whose buyer role maps to the
+     same `hire_buyer` key so the two entry points cannot diverge.
 
-       - App\Http\Livewire\HireBuyerAgent\BuyerAgentAuction (+Edit), reached at /add-auction,
-         which carries the cascade trait; and
-       - App\Http\Livewire\TenantAgentAuction (+Edit), the catch-all at
-         /hire/agent/auction/{user_type}, which serves all four roles from one component and
-         does NOT carry the trait in this slice.
-
-     The second host declares no $geoCascadeEnabled at all. Defaulting it to false here is what
-     keeps that host rendering exactly what it rendered before, rather than fataling on an
-     undefined variable — and it is why enabling the flag cannot leak the cascade into the
-     seller or landlord views the catch-all also serves. --}}
+     The other four — the seller and landlord root blades — include this tab from an unreachable
+     role branch, and their components carry no trait, so they declare no $geoCascadeEnabled at
+     all. Defaulting it to false is what keeps them rendering exactly what they rendered before
+     rather than fataling on an undefined variable, and it is why enabling the flag cannot leak
+     the cascade into a seller or landlord view. --}}
 @if ($geoCascadeEnabled ?? false)
     @include('partials.location-dna.geography-cascade')
 @endif

@@ -29,9 +29,17 @@ use RecursiveIteratorIterator;
  */
 class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
 {
-    /** The one tab partial authorized to run the cascade in slice 1. */
-    private const ENABLED_TAB =
-        'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php';
+    /**
+     * The tab partial each enabled workflow renders the cascade from.
+     *
+     * This map is the single source of truth for "which workflows have a UI". The scope-list
+     * check below reads it, so a workflow cannot ship enabled without appearing here, and it
+     * cannot appear here without its tab actually carrying the opt-in.
+     */
+    private const ENABLED_TABS = [
+        'hire_buyer'  => 'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php',
+        'hire_tenant' => 'resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php',
+    ];
 
     /** The shared widget's opt-in parameter. Absent ⇒ legacy behaviour. */
     private const OPT_IN = 'ldnaGeographyCascade';
@@ -39,11 +47,11 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
     /**
      * Every OTHER surface that includes the shared widget. None may opt in during slice 1.
      *
-     * Four are Livewire tabs on the rollout list for later slices; four are the legacy criteria
-     * forms, which are frozen by the Phase 1b hash pin and are not on the list at all.
+     * Two are Livewire tabs on the rollout list for later slices — Create Tenant and Create
+     * Buyer; four are the legacy criteria forms, which are frozen by the Phase 1b hash pin and
+     * are not on the rollout list at all.
      */
     private const UNTOUCHED_WIDGET_HOSTS = [
-        'resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php',
         'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php',
         'resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php',
         'resources/views/buyer_criteria/add.blade.php',
@@ -128,19 +136,20 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
     }
 
     /**
-     * The scope list names the pilot workflow and only the pilot workflow.
+     * The scope list names the two Hire workflows that have shipped, and nothing else.
      *
      * Master switch and scope list must BOTH agree before anything renders, so a single
-     * environment variable cannot widen the rollout by accident.
+     * environment variable cannot widen the rollout by accident. Create Tenant and Create Buyer
+     * are later slices and must not appear here until their tabs render the cascade.
      */
-    public function test_the_cascade_scope_is_the_pilot_workflow_only(): void
+    public function test_the_cascade_scope_is_the_shipped_hire_workflows(): void
     {
         $config = require $this->root().'/config/criteria_location_dna.php';
 
         $this->assertSame(
-            ['hire_buyer'],
+            ['hire_buyer', 'hire_tenant'],
             $config['geography_cascade_workflows'],
-            'Slice 1 is Hire Buyer. Widening this is a rollout decision, not a code change.'
+            'Widening this is a rollout decision, and requires the workflow tab to opt in first.'
         );
     }
 
@@ -148,13 +157,46 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
     // 2 · THE WIDGET OPT-IN REACHES EXACTLY ONE SURFACE
     // ═════════════════════════════════════════════════════════════════════════
 
-    public function test_the_enabled_tab_opts_the_widget_into_cascade_mode(): void
+    /**
+     * Every enabled tab must render the cascade AND suppress the widget's own inputs, and both
+     * must be driven by `$geoCascadeEnabled` rather than by a literal.
+     *
+     * WHY THE ASSERTIONS ARE THIS LITERAL
+     * -----------------------------------
+     * An earlier version of this guard only checked that the string `ldnaGeographyCascade`
+     * appeared in the tab. A mutation probe then replaced `@if ($geoCascadeEnabled ?? false)`
+     * with `@if (false)` — deleting the cascade UI while leaving that string untouched — and the
+     * guard passed. The result would have been a workflow shipped ENABLED with no geography
+     * controls, whose every save submitted four empty values and cleared the user's stored
+     * geography. Exactly the failure this guard exists to make impossible.
+     *
+     * So both halves are pinned in their guarded form: presence of the marker proves nothing,
+     * presence of the marker WIRED TO THE FLAG is the actual invariant.
+     */
+    public function test_every_enabled_tab_renders_the_cascade_and_suppresses_the_widget(): void
     {
-        $this->assertStringContainsString(
-            self::OPT_IN,
-            $this->read(self::ENABLED_TAB),
-            'Hire Buyer must hand the widget the cascade opt-in.'
-        );
+        foreach (self::ENABLED_TABS as $workflow => $tab) {
+            $source = $this->read($tab);
+
+            // 1. The cascade renders, gated by the flag — not by a literal, and not unguarded.
+            $this->assertStringContainsString(
+                '@if ($geoCascadeEnabled ?? false)',
+                $source,
+                "{$workflow}: the cascade block must be gated on \$geoCascadeEnabled."
+            );
+            $this->assertMatchesRegularExpression(
+                '/@if \(\$geoCascadeEnabled \?\? false\)\s*\R\s*@include\(\x27partials\.location-dna\.geography-cascade\x27\)/',
+                $source,
+                "{$workflow}: the cascade partial must be what that gate renders."
+            );
+
+            // 2. The widget suppresses its own tier inputs, driven by the SAME flag.
+            $this->assertMatchesRegularExpression(
+                '/\x27'.self::OPT_IN.'\x27\s*=>\s*\$geoCascadeEnabled \?\? false,/',
+                $source,
+                "{$workflow}: the widget opt-in must be wired to \$geoCascadeEnabled, not a literal."
+            );
+        }
     }
 
     /**
@@ -396,19 +438,26 @@ class Phase1cHireBuyerCascadeScopeGuardTest extends TestCase
     {
         $config = require $this->root().'/config/criteria_location_dna.php';
 
-        $tabs = [
-            'hire_buyer'  => self::ENABLED_TAB,
-            'hire_tenant' => 'resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php',
-        ];
-
         foreach ($config['geography_cascade_workflows'] as $workflow) {
-            $this->assertArrayHasKey($workflow, $tabs, "unknown workflow `{$workflow}` in the scope list");
+            $this->assertArrayHasKey(
+                $workflow,
+                self::ENABLED_TABS,
+                "unknown workflow `{$workflow}` in the scope list — no tab is registered for it"
+            );
+
+            $source = $this->read(self::ENABLED_TABS[$workflow]);
 
             $this->assertStringContainsString(
-                self::OPT_IN,
-                $this->read($tabs[$workflow]),
+                '@if ($geoCascadeEnabled ?? false)',
+                $source,
                 "`{$workflow}` ships enabled but its tab does not render the cascade — enabling it "
-                .'would clear stored geography on the next save.'
+                .'would submit four empty geography values and clear stored data on the next save.'
+            );
+            $this->assertMatchesRegularExpression(
+                '/\x27'.self::OPT_IN.'\x27\s*=>\s*\$geoCascadeEnabled \?\? false,/',
+                $source,
+                "`{$workflow}` ships enabled but its widget still renders the legacy tier inputs — "
+                .'two editors would write the same blob keys.'
             );
         }
     }

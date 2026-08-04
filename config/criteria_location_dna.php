@@ -81,16 +81,22 @@ return [
     | must agree before anything renders, so a single environment variable cannot
     | widen the rollout by accident.
     |
-    | Slice 1 is `hire_buyer` alone. The approved rollout order after it is
-    | `hire_tenant`, then `create_tenant`, then `create_buyer` — each its own
-    | slice, each verified before the next. Widening this list is a rollout
-    | decision, not a code change.
+    | Slice 1 shipped `hire_buyer`; slice 2 adds `hire_tenant`. The approved
+    | order after that is `create_tenant`, then `create_buyer` — each its own
+    | slice, each verified before the next.
+    |
+    | A WORKFLOW MAY ONLY BE LISTED ONCE ITS TAB RENDERS THE CASCADE. The cascade
+    | states all four geography keys whenever it is enabled, so a workflow that
+    | were switched on while its tab still showed the legacy inputs would submit
+    | four empty values and silently clear the user's stored geography. The tab
+    | opt-in and the entry here must therefore land together;
+    | `Phase1cHireBuyerCascadeScopeGuardTest` fails if one ships without the other.
     |
     */
 
     'geography_cascade_workflows' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer'))
+        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer,hire_tenant'))
     ))),
 
 ];
