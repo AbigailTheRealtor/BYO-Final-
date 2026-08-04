@@ -42,12 +42,12 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
     /**
      * The workflow implementations that must stay completely alone.
      *
-     * SHRINK-ONLY, like `AUTHORIZED_WRITERS`. `TenantAgentAuction` left this list at G1f-2 and
-     * both Buyer Offer copies left it at G1f-3; their post-migration boundaries are asserted by
-     * `G1f2MigrationBoundaryGuardTest` and `G1f3MigrationBoundaryGuardTest`. Four remain.
+     * SHRINK-ONLY, like `AUTHORIZED_WRITERS`. `TenantAgentAuction` left this list at G1f-2, both
+     * Buyer Offer copies at G1f-3, both Tenant Offer copies at G1f-4 and `BuyerAgentAuctionEdit`
+     * at G1f-5; their post-migration boundaries are asserted by their own guard suites. One
+     * remains — `TenantAgentAuctionEdit`, the only workflow still writing the old way.
      */
     private const UNMIGRATED_WORKFLOWS = [
-        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
@@ -157,16 +157,22 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         );
     }
 
-    /** The remaining unmigrated workflows still write their mirrors the old way. */
-    public function test_the_seven_unmigrated_workflows_are_untouched(): void
+    /** The one remaining unmigrated workflow still writes its mirrors the old way. */
+    public function test_the_remaining_unmigrated_workflow_is_untouched(): void
     {
+        $this->assertCount(
+            1,
+            self::UNMIGRATED_WORKFLOWS,
+            'One workflow remains unmigrated after G1f-5. This list may only SHRINK.'
+        );
+
         foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
             $source = $this->codeOnly($this->read($relative));
 
             $this->assertStringNotContainsString(
                 'OwnerPrivateLocationDnaWriter',
                 $source,
-                "{$relative} must NOT be wired to the canonical writer — that is G1f-2 and later."
+                "{$relative} must NOT be wired to the canonical writer — that is a later increment."
             );
             $this->assertStringNotContainsString(
                 'LocationDna\\Persistence',
@@ -194,7 +200,6 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         );
 
         foreach ([
-            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $host) {
             $this->assertStringContainsString(
@@ -292,7 +297,8 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
                 || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php'
                 || $relative === 'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php'
                 || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php'
-                || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php') {
+                || $relative === 'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php'
+                || $relative === 'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php') {
                 continue;
             }
 
@@ -304,7 +310,7 @@ class G1f1MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             [],
             $offenders,
-            'Only the two migrated workflow components may reference the persistence namespace. Found: '
+            'Only the seven migrated workflow components may reference the persistence namespace. Found: '
             .implode(', ', $offenders)
         );
     }

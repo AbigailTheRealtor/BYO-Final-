@@ -28,9 +28,10 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
 {
     private const CANONICAL_WRITE = "saveMeta('location_dna_preferences'";
 
-    /** The six workflow components migrated after G1f-4. */
+    /** The seven workflow components migrated after G1f-5. */
     private const MIGRATED = [
         'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php',
+        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
         'app/Http/Livewire/TenantAgentAuction.php',
@@ -38,9 +39,8 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
     ];
 
-    /** The two workflow implementations still untouched after G1f-4 — both Hire EDIT siblings. */
+    /** The one workflow implementation still untouched after G1f-5 — the Hire Tenant EDIT sibling. */
     private const UNMIGRATED = [
-        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
@@ -203,14 +203,14 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             $wired,
-            'Exactly six workflow components may reference the persistence namespace after G1f-4.'
+            'Exactly seven workflow components may reference the persistence namespace after G1f-5.'
         );
     }
 
-    /** The four unmigrated workflows are untouched. */
+    /** The one remaining unmigrated workflow is untouched. */
     public function test_the_four_unmigrated_workflows_are_untouched(): void
     {
-        $this->assertCount(2, self::UNMIGRATED);
+        $this->assertCount(1, self::UNMIGRATED);
 
         foreach (self::UNMIGRATED as $relative) {
             $code = $this->codeOnly($this->read($relative));
@@ -218,7 +218,7 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
             $this->assertStringNotContainsString(
                 'persistLocationDna',
                 $code,
-                "{$relative} must NOT be migrated — that is G1f-4 and later."
+                "{$relative} must NOT be migrated — that is a later increment."
             );
             $this->assertStringNotContainsString(
                 'LocationDna\\Persistence',
@@ -326,7 +326,6 @@ class G1f3MigrationBoundaryGuardTest extends TestCase
         );
 
         foreach ([
-            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $host) {
             $this->assertStringContainsString(

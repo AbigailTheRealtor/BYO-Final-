@@ -60,23 +60,35 @@ use Tests\TestCase;
  * candidate values are searched for in the executed statement bindings, and their
  * relative positions asserted. That is a direct observation of execution order.
  *
- * STATUS AFTER G1f-1
- * ------------------
- * GAP 2 is CLOSED and `BuyerAgentAuction` has since been MIGRATED, so this suite was narrowed
- * to the workflows that still carry the double-write. See `behaviouralComponents()` for the
- * exact narrowing and `test_buyer_agent_auction_no_longer_carries_the_double_write` for the
- * assertion that replaces its former row. Everything else is unchanged, so the coverage
- * G1f-2 and later depend on is intact.
+ * STATUS AFTER G1f-5 — GAP 2 CLOSED, AND THE DEFECT REMOVED FROM EVERY INVOCABLE PATH
+ * -----------------------------------------------------------------------------------
+ * All three Hire components with an invocable `saveAllMetadata()` have now been migrated to
+ * `LocationDnaPersistenceService`: `BuyerAgentAuction` by G1f-1, `TenantAgentAuction` by G1f-2
+ * and `BuyerAgentAuctionEdit` by G1f-5. **No invocable save path carries the double-write any
+ * more.** The one component that still does is `TenantAgentAuctionEdit`, whose write lives inside
+ * `update()` and is asserted structurally for the boundary reason below.
+ *
+ * This suite therefore no longer characterises a LIVE double-write behaviourally, and does not
+ * claim to. What it does instead — deliberately, rather than by emptying its fixture set and
+ * iterating nothing — is hold the migrated edit copy to the post-migration outcome:
+ *
+ *   - the four tests expressed as properties of the PERSISTED RESULT (which mirror value wins,
+ *     that no third value appears, that agreeing values converge, that no property value
+ *     survives) hold UNCHANGED across the migration. That they still pass, against the same
+ *     divergent fixture, is the parity evidence G1f-5 owed this suite;
+ *   - the two expressed as properties of the double-write MECHANISM (statement ordering,
+ *     in-flight property mutation) are INVERTED, because the mechanism is what was removed.
+ *
+ * Each migrated component also has a structural assertion here that it no longer carries the
+ * duplicate write, so reintroducing one fails the suite that documents what a double-write IS.
  *
  * COVERAGE, AND ONE DELIBERATE BOUNDARY
  * -------------------------------------
- * Two of the four Hire components still carry the double-write and expose an invocable
- * `saveAllMetadata()`; both are exercised behaviourally. `TenantAgentAuctionEdit` carries its double-write inside
- * `update()`, which runs full validation, file handling and a redirect; invoking it
- * would characterise those, not the mirror contract. It is asserted STRUCTURALLY and
- * recorded as a KNOWN WEAKER ASSERTION — the same boundary, for the same reason, that
- * `G1aWorkflowPersistenceMatrixCharacterisationTest` and `TenantOfferCitiesMirrorTest`
- * already establish and document.
+ * `TenantAgentAuctionEdit` carries its double-write inside `update()`, which runs full
+ * validation, file handling and a redirect; invoking it would characterise those, not the mirror
+ * contract. It is asserted STRUCTURALLY and recorded as a KNOWN WEAKER ASSERTION — the same
+ * boundary, for the same reason, that `G1aWorkflowPersistenceMatrixCharacterisationTest` and
+ * `TenantOfferCitiesMirrorTest` already establish and document.
  *
  * CHARACTERISATION, NOT REPAIR
  * ----------------------------
@@ -98,20 +110,31 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
     private const BLOB_STATE    = 'GA';
 
     /**
-     * The Hire components that STILL carry the double-write and whose save path is invocable.
+     * The Hire component exercised behaviourally through its invocable save path.
      *
-     * NARROWED BY G1f-1, THEN AGAIN BY G1f-2. `BuyerAgentAuction` (Hire Buyer · create) was the
-     * first workflow migrated to `LocationDnaPersistenceService` and `TenantAgentAuction`
-     * (Hire Tenant · create) the second, so neither has a double-write left to characterise: in
-     * both, the component-property mirror writes were removed and `saveSearchAreas()` is no longer
-     * called. Their post-migration behaviour is covered by
+     * NARROWED BY G1f-1, THEN G1f-2 — then KEPT, NOT EMPTIED, BY G1f-5.
+     * ----------------------------------------------------------------
+     * `BuyerAgentAuction` (Hire Buyer · create) was the first workflow migrated to
+     * `LocationDnaPersistenceService` and `TenantAgentAuction` (Hire Tenant · create) the second,
+     * so neither had a double-write left to characterise; both were removed from this set and
+     * replaced by the structural assertions below. Their post-migration behaviour is covered by
      * {@see G1f1BuyerAgentAuctionMigrationTest} and {@see G1f2TenantAgentAuctionMigrationTest}.
      *
-     * Each narrowing is confined to the one entry its increment migrated. The remaining component
-     * is exercised exactly as before, so this suite still protects the unmigrated workflows —
-     * which is the coverage G1f-3 and later will need.
+     * G1f-5 migrated the entry that remained, `BuyerAgentAuctionEdit`. Removing it too would have
+     * emptied this set and left all six behavioural tests below iterating nothing — six green
+     * tests asserting nothing at all. It is therefore RETAINED, and the six tests assert the
+     * POST-migration outcome on it instead of the pre-migration one.
      *
-     * `TenantAgentAuctionEdit` remains absent for the boundary reason in the class docblock.
+     * That is a real narrowing of what this suite claims, stated plainly: it no longer
+     * characterises a live double-write on any invocable path, because none exists. Four of the
+     * six tests below were already expressed as properties of the PERSISTED RESULT — which mirror
+     * value wins, that no third value appears, that agreeing values converge — and those hold
+     * unchanged across the migration, which is precisely the parity G1f-5 had to preserve. The
+     * two that were expressed as properties of the double-write MECHANISM (statement ordering,
+     * in-flight property mutation) are inverted, since the mechanism is what was removed.
+     *
+     * `TenantAgentAuctionEdit` remains absent for the boundary reason in the class docblock, and
+     * it — alone now — still carries the live double-write, asserted structurally below.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -238,14 +261,25 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * CHARACTERISED · in every invocable Hire component the component-property mirror
-     * write is executed BEFORE the trait-derived one, for all three dimensions.
+     * INVERTED BY G1f-5 · the component-property write is GONE, and only the
+     * blob-derived value ever reaches storage.
      *
-     * Proven from the query log, not from source order. Both candidate values are
-     * located in the executed bindings and their positions compared, so this is a
-     * direct observation of execution sequence.
+     * This test previously proved the ordering the double-write rested on: the
+     * component-property value was written first and the blob-derived value overwrote
+     * it, both located in the executed query bindings and their positions compared.
+     *
+     * G1f-5 removed the first of those two writes, so there is no longer an ordering to
+     * observe — and an ordering assertion over a single write would be meaningless.
+     * What replaces it is the stronger property the removal establishes: the
+     * component-property value is never written AT ALL, for any dimension.
+     *
+     * Still proven from the query log rather than from source, and still using the
+     * divergent fixture, so this is a direct observation that no statement anywhere in
+     * the real save path carries the property value to storage. That is what makes it
+     * strictly stronger than the ordering claim it replaces: ordering only established
+     * which write won, this establishes that the losing write no longer happens.
      */
-    public function test_the_component_property_write_occurs_before_the_trait_derived_write(): void
+    public function test_no_component_property_write_occurs_and_only_the_blob_derived_value_is_written(): void
     {
         $covered = 0;
 
@@ -267,22 +301,16 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
                 $propPositions = $this->bindingPositions($queries, $propValue);
                 $blobPositions = $this->bindingPositions($queries, $blobValue);
 
-                $this->assertNotEmpty(
+                $this->assertSame(
+                    [],
                     $propPositions,
-                    "{$label} · {$dimension}: the component-property value '{$propValue}' was never "
-                    .'written. The double-write no longer exists in the form F-G1F-3 records.'
+                    "{$label} · {$dimension}: the component-property value '{$propValue}' reached "
+                    .'storage. The double-write F-G1F-3 records has been reintroduced.'
                 );
                 $this->assertNotEmpty(
                     $blobPositions,
                     "{$label} · {$dimension}: the blob-derived value '{$blobValue}' was never written. "
-                    .'saveSearchAreas() did not run, or no longer mirrors this dimension.'
-                );
-                $this->assertLessThan(
-                    max($blobPositions),
-                    min($propPositions),
-                    "{$label} · {$dimension}: the component-property write must execute BEFORE the "
-                    .'trait-derived write. If this fails, the ordering the four Hire workflows depend '
-                    .'on has changed.'
+                    .'The canonical writer did not run, or no longer mirrors this dimension.'
                 );
             }
 
@@ -292,9 +320,9 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
         $this->assertSame(
             1,
             $covered,
-            'One UNMIGRATED Hire component exposes an invocable save path. BuyerAgentAuction was '
-            .'migrated by G1f-1 and TenantAgentAuction by G1f-2; both are covered by their own '
-            .'migration suites.'
+            'The one Hire component with an invocable save path was exercised. It is MIGRATED as of '
+            .'G1f-5; it is retained here rather than removed so this suite keeps asserting against a '
+            .'real save path instead of iterating an empty set.'
         );
     }
 
@@ -386,20 +414,31 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * CHARACTERISED · `counties` and `state` reach the winning write through a MUTATED
-     * component property, while `cities` bypasses the property entirely.
+     * INVERTED BY G1f-5 · NO component property is mutated in flight — the save path no
+     * longer reads or writes component state for any of the three dimensions.
      *
-     * This is F-G1-4's "the three dimensions do not share a code path", proven for the
-     * Hire family. `hydrateDiscreteLocationFromBlob()` overwrites `$this->state` and
-     * `$this->counties` from the blob before the trait's mirror writes; it never
-     * touches `$this->cities`, which the trait reads straight from the decoded blob.
+     * This test previously proved F-G1-4's "the three dimensions do not share a code
+     * path" for the Hire family: `saveSearchAreas()` called
+     * `hydrateDiscreteLocationFromBlob()`, which overwrote `$this->state` and
+     * `$this->counties` from the blob but never touched `$this->cities` — so after a
+     * save two properties had silently changed under the caller and one had not.
      *
-     * The consequence for G1f is concrete: a consolidated writer cannot treat the three
-     * dimensions uniformly by reading component state, because for `cities` the
-     * component state is stale by design.
+     * G1f-5 removed the trait call, and with it the only route by which a save mutated
+     * component state. The asymmetry is gone because the mechanism producing it is gone,
+     * so the assertion becomes its uniform counterpart: all three properties hold the
+     * values the caller set, unchanged.
+     *
+     * This is worth asserting rather than dropping, and it is not a restatement of the
+     * test above. That one proves no property value reached STORAGE; this one proves the
+     * save did not reach back and mutate the CALLER. A writer that re-hydrated component
+     * props as a side effect would pass that test and fail this one — and it would be a
+     * real regression, because the three dimensions would once again disagree about
+     * whether component state is authoritative after a save.
      */
-    public function test_counties_and_state_are_mutated_in_flight_but_cities_is_not(): void
+    public function test_no_component_property_is_mutated_in_flight(): void
     {
+        $covered = 0;
+
         foreach ($this->behaviouralComponents() as $label => $cfg) {
             $owner     = $this->owner($cfg['model'] === 'tenant' ? 'tenant' : 'buyer');
             $auction   = $this->record($cfg['model'], $owner);
@@ -408,23 +447,27 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
             $this->invokeSave($cfg, $component, $auction);
 
             $this->assertSame(
-                self::BLOB_STATE,
+                self::PROP_STATE,
                 $component->state,
-                "{$label}: hydrateDiscreteLocationFromBlob() must have overwritten \$this->state."
+                "{$label}: \$this->state must be UNCHANGED — the migrated save path no longer "
+                .'hydrates discrete props from the blob.'
             );
             $this->assertSame(
-                self::BLOB_COUNTIES,
+                self::PROP_COUNTIES,
                 $component->counties,
-                "{$label}: hydrateDiscreteLocationFromBlob() must have overwritten \$this->counties."
+                "{$label}: \$this->counties must be UNCHANGED for the same reason."
             );
             $this->assertSame(
                 self::PROP_CITIES,
                 $component->cities,
-                "{$label}: \$this->cities must be UNCHANGED — the trait reads cities from the decoded "
-                .'blob, never from the property. The persisted mirror and the component property '
-                .'therefore disagree after a save, by design.'
+                "{$label}: \$this->cities must be UNCHANGED — it never was mutated, and the uniform "
+                .'treatment of all three dimensions is what G1f-5 established.'
             );
+
+            $covered++;
         }
+
+        $this->assertSame(1, $covered, 'The one invocable Hire save path was exercised.');
     }
 
     /**
@@ -637,6 +680,96 @@ class G1fHireDoubleWriteCharacterisationTest extends TestCase
             'App\\Http\\Livewire\\TenantAgentAuction',
             HireTenantCreate::class,
             'The narrowing in behaviouralComponents() refers to this component.'
+        );
+    }
+
+    /**
+     * G1f-5 · `BuyerAgentAuctionEdit` no longer carries the double-write.
+     *
+     * The structural counterpart to the two inversions above, in the same form G1f-1 established
+     * for `BuyerAgentAuction` and G1f-2 for `TenantAgentAuction`: the component-property mirror
+     * writes are gone, the trait's save is no longer called, and exactly one canonical writer call
+     * stands in their place.
+     *
+     * Asserted here, in the suite that documents what a double-write IS, so that reintroducing the
+     * duplicate write fails this suite and not only the migration suite.
+     *
+     * TWO ABSENCES ARE ASSERTED DELIBERATELY, because this component is the Buyer family's edit
+     * copy and both were explicit scope boundaries for G1f-5:
+     *
+     *   - no `zipCodes` mirror write — the Buyer family has never written that key and D-G1F-4
+     *     keeps it that way; the Tenant family's opt-in must not leak across;
+     *   - no transaction opened in the component — the writer owns the transaction, and a second
+     *     one here would nest it silently.
+     */
+    public function test_buyer_agent_auction_edit_no_longer_carries_the_double_write(): void
+    {
+        $source = file_get_contents(base_path('app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php'));
+
+        $this->assertStringNotContainsString(
+            "\$auction->saveMeta('cities', json_encode(\$this->cities));",
+            $source,
+            'The component-property cities mirror write must be gone — it was the first half of '
+            .'the double-write.'
+        );
+        $this->assertStringNotContainsString(
+            "\$auction->saveMeta('counties', json_encode(\$this->counties));",
+            $source,
+            'The component-property counties mirror write must be gone.'
+        );
+        $this->assertStringNotContainsString(
+            "\$auction->saveMeta('state', \$this->state);",
+            $source,
+            'The component-property state mirror write must be gone.'
+        );
+        $this->assertStringNotContainsString(
+            '$this->saveSearchAreas($auction);',
+            $source,
+            'BuyerAgentAuctionEdit must no longer call the trait save — it writes through '
+            .'LocationDnaPersistenceService now.'
+        );
+        $this->assertStringContainsString(
+            '$this->persistLocationDna($auction);',
+            $source,
+            'It must call the canonical writer seam.'
+        );
+        $this->assertSame(
+            1,
+            substr_count($source, '$this->persistLocationDna($auction);'),
+            'Exactly one canonical writer call site — a second would reintroduce a double-write of '
+            .'a new kind.'
+        );
+
+        // SCOPE BOUNDARY · zipCodes is not introduced for the Buyer family (D-G1F-4).
+        $this->assertStringNotContainsString(
+            "saveMeta('zipCodes'",
+            $source,
+            'G1f-5 must not introduce a zipCodes mirror write — the Buyer family never wrote it.'
+        );
+        $this->assertStringNotContainsString(
+            'managingMirrors(',
+            $source,
+            'G1f-5 must use the default managed mirror set, not a zipCodes opt-in.'
+        );
+
+        // SCOPE BOUNDARY · no transaction is opened here; the writer owns it.
+        $this->assertStringNotContainsString(
+            'DB::transaction(',
+            $source,
+            'G1f-5 must not add an outer transaction — LocationDnaPersistenceService owns it.'
+        );
+
+        // The trait itself is untouched, and the one remaining host still uses it.
+        $this->assertStringContainsString(
+            "empty(\$ldna['cities'] ?? [])",
+            file_get_contents(base_path('app/Http/Livewire/Concerns/HasSearchAreas.php')),
+            'HasSearchAreas must be unchanged by G1f-5 — it still serves TenantAgentAuctionEdit.'
+        );
+
+        $this->assertSame(
+            'App\\Http\\Livewire\\HireBuyerAgent\\BuyerAgentAuctionEdit',
+            HireBuyerEdit::class,
+            'The retained entry in behaviouralComponents() refers to this component.'
         );
     }
 

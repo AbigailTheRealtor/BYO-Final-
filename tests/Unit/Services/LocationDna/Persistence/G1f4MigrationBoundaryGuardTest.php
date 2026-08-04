@@ -37,11 +37,11 @@ class G1f4MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'app/Http/Livewire/TenantAgentAuction.php',
+        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
     ];
 
     /** The two that remain — both Hire EDIT siblings. */
     private const UNMIGRATED = [
-        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
@@ -258,13 +258,13 @@ class G1f4MigrationBoundaryGuardTest extends TestCase
         sort($expected);
 
         $this->assertSame($expected, array_values(array_unique($wired)));
-        $this->assertCount(6, self::MIGRATED);
+        $this->assertCount(7, self::MIGRATED);
     }
 
-    /** The two remaining workflows are untouched. */
+    /** The one remaining workflow is untouched. */
     public function test_the_two_remaining_workflows_are_untouched(): void
     {
-        $this->assertCount(2, self::UNMIGRATED);
+        $this->assertCount(1, self::UNMIGRATED);
 
         foreach (self::UNMIGRATED as $relative) {
             $code = $this->codeOnly($this->read($relative));

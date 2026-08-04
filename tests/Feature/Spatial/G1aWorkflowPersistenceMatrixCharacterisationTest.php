@@ -103,6 +103,12 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
                 'class' => HireBuyerEdit::class, 'model' => 'buyer', 'impl' => 'trait',
                 'load' => 'loadAuctionData', 'user_type' => null,
                 'save' => 'saveAllMetadata', 'cleared_cities' => 'resurrected',
+                // G1f-5: MIGRATED to LocationDnaPersistenceService — the LAST invocable save path
+                // to move. Its LOAD side is unchanged and is still asserted by every load-side test
+                // below. With this row migrated no unmigrated invocable save path remains, which is
+                // why the two save-side tests below now assert the POST-migration property across
+                // the migrated set rather than skipping it — see their docblocks.
+                'migrated_save' => true,
             ],
             'Hire Tenant · create' => [
                 'class' => HireTenantCreate::class, 'model' => 'tenant', 'impl' => 'trait',
@@ -365,15 +371,56 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Geometry survives a write → read → write cycle byte-identically through every
-     * workflow whose save path is invocable (six of eight).
+     * Geometry survives a write → read → write cycle through every workflow whose save
+     * path is invocable (six of eight) — and the stored canonical bytes are STABLE
+     * across a re-save.
      *
      * This is `SearchAreasPersistenceCharacterisationTest`'s byte-identity property,
      * extended from one component to six. Includes a 1,200-vertex polygon, because
      * the risk §16.6 names is column truncation rather than PHP-level loss, and
      * unicode, because that is a storage property no unit fake can answer.
+     *
+     * RESTRUCTURED BY G1f-5, AND WHY IT HAD TO BE
+     * -------------------------------------------
+     * G1f-1 … G1f-4 each narrowed this test by SKIPPING the workflow they migrated, and
+     * asserted a shrinking `$covered` count: 6 → 4 → 2 → 1. G1f-5 migrates the last
+     * invocable save path, so continuing that pattern would leave `$covered === 0` — a
+     * loop that never executes and a suite that reports green because it asserted
+     * nothing. That is the zero-iteration failure mode this restructure exists to avoid.
+     *
+     * So the test is INVERTED rather than narrowed: it now runs against the MIGRATED
+     * invocable save paths — all six of them — and asserts the property in the form that
+     * survives migration.
+     *
+     * WHAT CHANGED ABOUT THE PROPERTY, PRECISELY
+     * ------------------------------------------
+     * The pre-migration paths wrote `$this->location_dna_preferences_json` through to
+     * storage verbatim, so the submitted bytes and the stored bytes were the same bytes.
+     * The canonical writer does not do that and must not: it hydrates, applies commands
+     * and RE-SERIALISES through {@see \App\Services\LocationDna\Contract\LocationDnaSerializer},
+     * which sorts keys at every level and stamps `schema_version`. That class's own
+     * contract states it outright — "BYTE-COMPATIBILITY IS WITHDRAWN … what IS guaranteed
+     * is determinism". Asserting submitted-equals-stored would therefore assert a
+     * guarantee the design deliberately withdrew, and would fail for the right reason.
+     *
+     * What is asserted instead is the pair of properties that actually protect the data,
+     * and both are real:
+     *
+     *   1. FIDELITY through each migrated save path — the 1,200-vertex polygon is not
+     *      truncated, the float radius does not drift, unicode is not mangled and the
+     *      notes survive newlines, quotes, an em dash and an emoji. This is the risk
+     *      §16.6 names (column truncation), and it is answered per workflow.
+     *   2. BYTE IDENTITY at the shared boundary — re-saving the STORED value must leave
+     *      the stored bytes untouched, byte for byte. This is the drift half of the
+     *      original assertion, and it holds post-migration by construction: equal
+     *      canonical meaning yields an equal revision token, the service returns a no-op
+     *      before writing, and determinism guarantees the bytes could not have differed
+     *      anyway. Asserted with `assertSame` on the raw strings.
+     *
+     * Between them the two cover what the single byte-identity assertion covered before:
+     * nothing is lost on the way in, and nothing drifts on the way back out.
      */
-    public function test_geometry_persists_byte_identically_through_every_invocable_save_path(): void
+    public function test_geometry_persists_faithfully_and_bytes_are_stable_through_every_migrated_save_path(): void
     {
         $path = [];
         for ($i = 0; $i < 1200; $i++) {
@@ -391,7 +438,7 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
         $covered = 0;
 
         foreach ($this->workflows() as $label => $wf) {
-            if ($wf['save'] === null || ($wf['migrated_save'] ?? false)) {
+            if ($wf['save'] === null || ! ($wf['migrated_save'] ?? false)) {
                 continue;
             }
 
@@ -403,48 +450,89 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
             $this->invokeSave($wf, $first, $auction);
 
             $stored = (string) $this->reread($wf['model'], $auction)->info('location_dna_preferences');
-            $this->assertSame($encoded, $stored, "{$label}: first write not byte-identical");
 
-            // Re-save the stored value unchanged — it must not drift.
+            // 1 · FIDELITY — nothing was truncated, drifted or mangled on the way in.
+            $decoded = json_decode($stored, true);
+            $this->assertIsArray($decoded, "{$label}: stored canonical document must be valid JSON");
+            $this->assertCount(1200, $decoded['polygons'][0]['path'], "{$label}: polygon truncated");
+            $this->assertSame(
+                ['lat' => 27.5, 'lng' => -82.5],
+                $decoded['polygons'][0]['path'][0],
+                "{$label}: first vertex drifted"
+            );
+            $this->assertSame(
+                ['lat' => 27.5 + (1199 / 100000), 'lng' => -82.5 - (1199 / 100000)],
+                $decoded['polygons'][0]['path'][1199],
+                "{$label}: last vertex drifted — a truncation that kept the count would show here"
+            );
+            $this->assertSame(5.25, $decoded['radius_searches'][0]['radius_miles'], "{$label}: radius drifted");
+            $this->assertSame('東京', $decoded['cities'][1], "{$label}: unicode mangled");
+            $this->assertSame("Coeur d'Alene", $decoded['cities'][0], "{$label}: apostrophe mangled");
+            $this->assertSame(
+                "Line one\nLine \"two\" — em dash, emoji 🏖",
+                $decoded['location_notes'],
+                "{$label}: notes lost a newline, quote, em dash or emoji"
+            );
+
+            // 2 · BYTE IDENTITY at the shared boundary — re-saving the stored value must not
+            // move a single byte. Equal meaning ⇒ equal revision token ⇒ the service returns
+            // before writing; and determinism means the bytes could not have differed anyway.
             $second = $this->componentForSave($wf);
             $second->location_dna_preferences_json = $stored;
             $this->invokeSave($wf, $second, $auction);
 
             $reStored = (string) $this->reread($wf['model'], $auction)->info('location_dna_preferences');
-            $this->assertSame($encoded, $reStored, "{$label}: blob drifted across a re-save");
-
-            $decoded = json_decode($reStored, true);
-            $this->assertCount(1200, $decoded['polygons'][0]['path'], "{$label}: polygon truncated");
-            $this->assertSame(5.25, $decoded['radius_searches'][0]['radius_miles'], "{$label}: radius drifted");
-            $this->assertSame('東京', $decoded['cities'][1], "{$label}: unicode mangled");
+            $this->assertSame($stored, $reStored, "{$label}: canonical bytes drifted across a re-save");
 
             $covered++;
         }
 
         $this->assertSame(
-            1,
+            6,
             $covered,
-            'One of the eight workflows has an invocable, UNMIGRATED save path. Hire Buyer create '
-            .'was migrated by G1f-1, Hire Tenant create by G1f-2, both Buyer Offer copies by G1f-3 '
-            .'and both Tenant Offer copies by G1f-4; their post-migration saves are covered by '
-            .'their own migration suites.'
+            'All six invocable save paths are MIGRATED and every one was exercised. G1f-1 migrated '
+            .'Hire Buyer create, G1f-2 Hire Tenant create, G1f-3 both Buyer Offer copies, G1f-4 both '
+            .'Tenant Offer copies and G1f-5 Hire Buyer edit. If this count falls, a workflow stopped '
+            .'being exercised and the fidelity property above went unasserted for it — which is the '
+            .'zero-iteration failure this restructure exists to prevent.'
         );
     }
 
     /**
-     * CHARACTERISED DEFECT · every invocable save path mirrors a cleared `cities` as
-     * `[]` while leaving `counties` and `state` stale.
+     * CLEAR SEMANTICS ARE UNIFORM · every invocable save path now honours a clear on
+     * ALL THREE dimensions, and no component property can resurrect a cleared value.
      *
-     * F-G1-4 across six workflows rather than one. The three-way split is uniform,
-     * which is the useful part: G1f's single writer has one shape of defect to
-     * replace, present identically in the trait and in both Buyer Offer copies.
+     * WHAT THIS TEST USED TO SAY, AND WHY IT NOW SAYS THE OPPOSITE
+     * -----------------------------------------------------------
+     * It characterised F-G1-4: a cleared `cities` mirrored as `[]` while `counties` and
+     * `state` kept stale values sourced from the component properties. That THREE-WAY
+     * SPLIT was uniform across every unmigrated invocable save path, and its uniformity
+     * was the useful part — G1f had one shape of defect to replace, not three.
+     *
+     * G1f-1 … G1f-4 narrowed the test by skipping each workflow they migrated: 6 → 4 →
+     * 2 → 1. G1f-5 migrates the last one, so narrowing again would make `$covered === 0`
+     * and the loop would assert nothing at all. The property is therefore INVERTED
+     * rather than retired, and it remains a statement about uniformity — the same
+     * statement, now with the defect resolved:
+     *
+     *   before · cities honours the clear, counties and state ignore it   (split)
+     *   after  · all three honour the clear                               (uniform)
+     *
+     * This is D-G1-4 4-A, asserted at the storage layer across all six migrated
+     * workflows at once, which is what makes it a PARITY assertion rather than six
+     * unrelated ones: had any single migration diverged, its row alone would fail.
+     *
+     * The divergent component properties are deliberately retained from the original
+     * fixture. Pre-migration they were the SOURCE of the stale values; post-migration
+     * the writer must derive every mirror from the resulting canonical document instead,
+     * so their continued presence is exactly what proves the resurrection route is shut.
      */
-    public function test_three_way_clear_split_is_uniform_across_every_invocable_save_path(): void
+    public function test_clear_semantics_are_uniform_across_every_migrated_save_path(): void
     {
         $covered = 0;
 
         foreach ($this->workflows() as $label => $wf) {
-            if ($wf['save'] === null || ($wf['migrated_save'] ?? false)) {
+            if ($wf['save'] === null || ! ($wf['migrated_save'] ?? false)) {
                 continue;
             }
 
@@ -454,6 +542,7 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
             $component           = $this->componentForSave($wf);
             $component->state    = 'Georgia';
             $component->counties = ['Pinellas'];
+            $component->cities   = ['Tampa'];
             $component->location_dna_preferences_json = json_encode([
                 'cities'   => [],
                 'counties' => [],
@@ -464,18 +553,30 @@ class G1aWorkflowPersistenceMatrixCharacterisationTest extends TestCase
 
             $fresh = $this->reread($wf['model'], $auction);
 
-            $this->assertSame('[]', $fresh->info('cities'), "{$label}: cities should honour the clear");
-            $this->assertSame('["Pinellas"]', $fresh->info('counties'), "{$label}: counties should ignore the clear");
-            $this->assertSame('Georgia', $fresh->info('state'), "{$label}: state should ignore the clear");
+            $this->assertSame('[]', (string) $fresh->info('cities'), "{$label}: cities must honour the clear");
+            $this->assertSame('[]', (string) $fresh->info('counties'), "{$label}: counties must honour the clear");
+            $this->assertSame('', (string) $fresh->info('state'), "{$label}: state must honour the clear");
+
+            // The resurrection route, shut. None of the divergent property values reached storage.
+            $this->assertStringNotContainsString(
+                'Pinellas',
+                (string) $fresh->info('counties'),
+                "{$label}: the component property must not resurrect a cleared counties value"
+            );
+            $this->assertStringNotContainsString(
+                'Tampa',
+                (string) $fresh->info('cities'),
+                "{$label}: the component property must not resurrect a cleared cities value"
+            );
 
             $covered++;
         }
 
         $this->assertSame(
-            1,
+            6,
             $covered,
-            'One invocable, UNMIGRATED save path remains: Hire Buyer edit. G1f-1 through G1f-4 '
-            .'migrated the other six.'
+            'All six invocable save paths are MIGRATED and every one was exercised. A falling count '
+            .'means a workflow stopped being asserted rather than that the defect was fixed.'
         );
     }
 

@@ -38,16 +38,16 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
     ];
 
     /**
      * The workflow implementations that must be left completely alone.
      *
-     * SHRINK-ONLY. The two Buyer Offer copies left at G1f-3 and the two Tenant Offer copies left
-     * at G1f-4, each pair together; the two Hire EDIT siblings remain.
+     * SHRINK-ONLY. The two Buyer Offer copies left at G1f-3, the two Tenant Offer copies at
+     * G1f-4 and `BuyerAgentAuctionEdit` at G1f-5; only `TenantAgentAuctionEdit` remains.
      */
     private const UNMIGRATED_WORKFLOWS = [
-        'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
         'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
@@ -144,14 +144,14 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         $this->assertSame(
             $expected,
             array_values(array_unique($wired)),
-            'Exactly six workflow components may be wired to the canonical writer after G1f-4.'
+            'Exactly seven workflow components may be wired to the canonical writer after G1f-5.'
         );
     }
 
-    /** The remaining unmigrated workflows are untouched. */
+    /** The remaining unmigrated workflow is untouched. */
     public function test_the_remaining_unmigrated_workflows_are_untouched(): void
     {
-        $this->assertCount(2, self::UNMIGRATED_WORKFLOWS);
+        $this->assertCount(1, self::UNMIGRATED_WORKFLOWS);
 
         foreach (self::UNMIGRATED_WORKFLOWS as $relative) {
             $code = $this->codeOnly($this->read($relative));
@@ -159,7 +159,7 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
             $this->assertStringNotContainsString(
                 'OwnerPrivateLocationDnaWriter',
                 $code,
-                "{$relative} must NOT be wired to the canonical writer — that is G1f-3 and later."
+                "{$relative} must NOT be wired to the canonical writer — that is a later increment."
             );
             $this->assertStringNotContainsString(
                 'LocationDna\\Persistence',
@@ -194,7 +194,7 @@ class G1f2MigrationBoundaryGuardTest extends TestCase
         $this->assertStringContainsString(
             "\$auction->saveMeta('cities', json_encode(\$this->cities));",
             $source,
-            'and still carries its component-property mirror write — the double-write G1f-3+ removes'
+            'and still carries its component-property mirror write — the last surviving double-write'
         );
     }
 

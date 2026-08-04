@@ -486,15 +486,20 @@ class TenantOfferCitiesMirrorTest extends TestCase
             }
         }
 
-        // And neither Hire edit workflow was dragged along — the two that remain unmigrated.
+        // NARROWED BY G1f-5. `BuyerAgentAuctionEdit` was one of the two Hire edit workflows this
+        // assertion held back, and it has since been migrated under its OWN authorization — which
+        // is the point the assertion was making: G1f-4's scope could not reach it. Its migrated
+        // boundary is pinned by G1f5MigrationBoundaryGuardTest and its behaviour by
+        // G1f5BuyerAgentAuctionEditMigrationTest.
+        //
+        // `TenantAgentAuctionEdit` remains, and remains unmigrated by any authorization so far.
         foreach ([
-            'app/Http/Livewire/HireBuyerAgent/BuyerAgentAuctionEdit.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $file) {
             $this->assertStringNotContainsString(
                 'persistLocationDna',
                 file_get_contents(base_path($file)),
-                "{$file}: no Hire edit workflow may be migrated by the G1f-4 authorization."
+                "{$file}: no Hire edit workflow may be migrated without its own authorization."
             );
         }
     }
