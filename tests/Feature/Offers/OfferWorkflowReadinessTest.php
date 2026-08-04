@@ -888,6 +888,14 @@ class OfferWorkflowReadinessTest extends TestCase
             //   decision, so it earns an explicit entry here.
             'config/hire_agent_hero.php',
             'resources/views/components/viho/hero.blade.php',
+            // M5.0 — the detail-page redesign flag. Two production paths and no behaviour: a
+            //   config file holding one default-false key, and the single class permitted to read
+            //   it. Nothing consumes the flag yet; the first consumer arrives with the markup it
+            //   gates. Kept separate from config/hire_agent_hero.php above on purpose — the hero
+            //   flag is enabled in a live environment while this rebuild is still being written,
+            //   so the two rollouts must be able to move independently.
+            'config/hire_agent_detail.php',
+            'app/Support/HireAgent/HireAgentDetailRedesign.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
