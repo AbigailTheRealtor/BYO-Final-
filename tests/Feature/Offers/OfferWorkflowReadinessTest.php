@@ -667,6 +667,18 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Services/LocationDna/Persistence/OwnerPrivateLocationDnaWriter.php',
             'app/Services/LocationDna/Persistence/PatchResult.php',
             'app/Services/LocationDna/Persistence/PersistenceOutcome.php',
+            // Criteria Location DNA Phase 1a — the inert, READ-ONLY geography enumeration layer
+            // behind the approved Criteria hierarchy (state required → counties required → ZIPs
+            // and cities optional). It reads the existing `us_*` reference tables and returns
+            // DTOs; it contains no write of any kind, is referenced by no controller, view,
+            // Livewire component or route, and its feature flag ships OFF. Wiring it to a UI is
+            // Phase 1c and writing through the canonical writer is Phase 2 — both separately
+            // authorised. Enforced by Phase1aCriteriaInertnessGuardTest.
+            'app/Services/LocationDna/Criteria/CriteriaGeographyRepository.php',
+            'app/Services/LocationDna/Criteria/EloquentCriteriaGeographyRepository.php',
+            'app/Services/LocationDna/Criteria/FakeCriteriaGeographyRepository.php',
+            'app/Services/LocationDna/Criteria/GeographyOption.php',
+            'config/criteria_location_dna.php',
         ];
 
         $unexpected = array_values(array_filter(
