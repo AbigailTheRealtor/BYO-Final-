@@ -809,8 +809,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/agent/default-profiles/{id}', [\App\Http\Controllers\AgentDefaultProfileController::class, 'destroy'])->name('default-profiles.destroy');
             Route::get('/agent/default-profiles/load', [\App\Http\Controllers\AgentDefaultProfileController::class, 'load'])->name('default-profiles.load');
 
-            Route::get('tenant/agent/auction/{auctionId}/competing-bids', [\App\Http\Controllers\CompetingBidsController::class, 'viewCompetingBids'])->name('tenant.agent.auction.competing-bids');
-            Route::get('tenant/agent/auction/{auctionId}/competing-bids/data', [\App\Http\Controllers\CompetingBidsController::class, 'getCompetingBidsData'])->name('tenant.agent.auction.competing-bids.data');
+            // Milestone 2, second checkpoint — the two Hire Agent competing-bids routes
+            // (tenant/agent/auction/{auctionId}/competing-bids and .../data) are RETIRED,
+            // together with CompetingBidsController, CompetingBidsService,
+            // tenant_agent/competing_bids.blade.php and BiddingPeriodAgentMapping.
+            // Proposal privacy is now decided centrally by App\Services\HireAgent\HireAgentProposalAccess.
+            // The URLs are deliberately left to 404 rather than redirected — a redirect to another
+            // proposal surface would itself be a disclosure. See HireAgentCompetingBidsRetirementTest.
+            // Create Offer's own competing-bids feed is a separate feature and is untouched.
 
             // Route::post('/tenant/agent/auction/bid/store', [TenantAgentAuctionBidController::class, 'save_bid'])->name('tenant.agent.auction.bid.save');
 

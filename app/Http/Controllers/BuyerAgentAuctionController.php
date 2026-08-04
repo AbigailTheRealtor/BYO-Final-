@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\CounterTerm;
+use App\Services\HireAgent\HireAgentProposalAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -35,12 +36,10 @@ class BuyerAgentAuctionController extends Controller
 
     public function storeAuction(Request $request)
     {
-        // dd($request->all());
         try {
             DB::beginTransaction();
             $auction = new BuyerAgentAuction();
             $auction->user_id = Auth::user()->id;
-            // dd(Auth::user()->id);
             $auction->title = $request->title_of_listing;
             $auction->save();
             $auction->saveMeta('working_with_agent', $request->working_with_agent);
@@ -290,7 +289,6 @@ class BuyerAgentAuctionController extends Controller
             $auctions = $liveAuctions->get();
         }
 
-        // dd($auctions[0]['id']);
 
         // $counter = CounterTerm::where(['buyer_auction_id' => $auctions[0]['id']]);
 
@@ -301,7 +299,6 @@ class BuyerAgentAuctionController extends Controller
         $page_data['auctions'] = $auctions;
         // $page_data['counter'] = $counter;
 
-        // dd($page_data);
 
         return view('hire-buyer-agent-auctions', $page_data);
     }
@@ -444,15 +441,26 @@ class BuyerAgentAuctionController extends Controller
             && (int) $auction->user_id !== (int) auth()->id()) {
             abort(404);
         }
-        // Auto-transition Bidding Period listing to Pending when timer ends
-        $this->autoTransitionBpToPending($auction);
+        // Milestone 3: the autoTransitionBpToPending($auction) call stood here. It was already
+        // a no-op — an earlier change neutralised it so an elapsed Bidding Period timer could
+        // not flip a listing to Pending — and the method is removed with the timer. Nothing
+        // now mutates listing status as a side effect of rendering a detail page.
+
+        // Milestone 2 — competing-agent proposal privacy. See the equivalent comment in
+        // SellerAgentAuctionController::viewDetail(). The authorized subset is decided here,
+        // server-side; the view renders only what survived.
+        $proposalAccess = app(HireAgentProposalAccess::class);
+        $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
 
         $page_data['title'] = $auction->address;
         $counties = County::all();
         $page_data['id'] = $id;
         $data = $auction;
         $counterTerms = CounterTerm::where('buyer_auction_id', $id)->first();
-        return view('buyerAgentAuctionDetail', compact('counties', 'auction', 'data', 'counterTerms'));
+        // Gates the owner-only empty state — a bid count is itself a disclosure.
+        $canReviewAllProposals = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
+
+        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals'));
     }
 
     public function buyerAgentAuctionsAdmin(Request $request)
@@ -482,8 +490,6 @@ class BuyerAgentAuctionController extends Controller
     public function buyerAgents()
     {
         $page_data['mySellerAgents'] = 'My Agents';
-        // dd($page_data);
-        // dd('ok');
         return view('buyerAgents', $page_data);
     }
 
@@ -546,24 +552,15 @@ class BuyerAgentAuctionController extends Controller
         if ($sort === 'most_viewed') {
             $auctions->orderByRaw('(SELECT COUNT(*) FROM buyer_agent_auction_bids WHERE buyer_agent_auction_bids.buyer_agent_auction_id = buyer_agent_auctions.id) DESC');
         } elseif ($sort === 'ending_soon') {
+            // Milestone 3: "ending soon" no longer ranks by a synthesised timer.
+            //
+            // The removed first branch ordered by created_at + auction_time (the retired bidding
+            // window) whenever that meta existed, falling back to expiration_date only when it
+            // did not — so a listing's position in this sort was decided by a countdown. Ranking
+            // by the listing's own expiration_date is normal lifecycle behaviour and is kept:
+            // it orders by a stored DATE and never computes time remaining.
             $auctions->orderByRaw("
                 CASE
-                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '') IS NOT NULL
-                        AND NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int > 0
-                        AND (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int) > NOW()
-                    THEN EXTRACT(EPOCH FROM (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM buyer_agent_auction_metas
-                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int))
                     WHEN COALESCE((SELECT meta_value FROM buyer_agent_auction_metas
                         WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1), '') <> ''
                         AND (SELECT meta_value FROM buyer_agent_auction_metas
@@ -580,7 +577,6 @@ class BuyerAgentAuctionController extends Controller
 
         $auctions_c = $auctions;
         $count = $auctions_c->count();
-        // dd($page_data['count']);
         $pAuctions = $auctions->paginate(15);
         $buyers = BuyerAgentAuction::where('is_approved', 1)->where('is_archived', 0)->get();
         return view('search-buyer-agent-auctions', compact('count', 'pAuctions', 'buyers'));
@@ -590,10 +586,8 @@ class BuyerAgentAuctionController extends Controller
     {
 
         $country_id = $request->input('country_name');
-        // dd($country_id);
         $country = Country::all();
         $country_get = collect($country)->where('name', $country_id)->first();
-        // dd($country_get->states->first()->name);
 
         foreach ($country_get->states as $state) {
             $statesArray[] = [
@@ -607,9 +601,7 @@ class BuyerAgentAuctionController extends Controller
             'message' => '200',
             'states_Array' => $statesArray,
         ]);
-        // dd($statesArray);
 
-        // dd('ok');
     }
     public function dynamic_option_city(Request $request)
     {
@@ -618,14 +610,12 @@ class BuyerAgentAuctionController extends Controller
         $state_id = $request->input('state_name');
         $states = State::all();
         $states_get = collect($states)->where('name', $state_id)->first();
-        // dd($states_get->cities->first()->name);
         foreach ($states_get->cities as $city) {
             $cityArray[] = [
                 'name' => $city->name,
 
             ];
         }
-        // dd($cityArray);
         $html1 = (string)view('partial_view.option_dynamic_city', compact('cityArray'));
         $html2 = (string)view('partial_view.option_dynamic_city2', compact('cityArray'));
 
@@ -635,9 +625,7 @@ class BuyerAgentAuctionController extends Controller
             'html2' => $html2,
             'cityArray' => $cityArray,
         ]);
-        // dd($statesArray);
 
-        // dd('ok');
     }
     public function counterTerms(Request $request, $id)
     {

@@ -21,7 +21,7 @@ class PublicMediaViewSmokeTest extends TestCase
     private const VIEWS = [
         'resources/views/agent/offer-listing-view.blade.php',
         'resources/views/agent-presets/edit.blade.php',
-        'resources/views/buyerAgentAuctionDetail.blade.php',
+        'resources/views/hire_buyer_agent/view.blade.php',
         'resources/views/hire-agent-direct/preview.blade.php',
         'resources/views/components/listing/client-info.blade.php',
         'resources/views/hire_tenant_agent/view.blade.php',

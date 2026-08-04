@@ -23,7 +23,6 @@ class TenantAgentAuctionBid extends Component
     public $auctionId;
     public $editBidId = null;
     public $isEditMode = false;
-    public $isBiddingPeriodListing = false;
     public $service_type; // 'full_service' or 'limited_service'
     public $user_type;
     public $property_type;
@@ -609,18 +608,38 @@ class TenantAgentAuctionBid extends Component
             return redirect()->route('home');
         }
         
-        $this->isBiddingPeriodListing = $auction->isBiddingPeriodType();
-        
-        $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
-        $isExpired = time() > $endDate;
-        
-        if ($isExpired) {
-            session()->flash('error', 'This auction has ended. Bidding is no longer available.');
+        // Milestone 3 — the proposal guard is now status-based, not timer-based.
+        //
+        // It previously read:
+        //
+        //     $endDate   = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
+        //     $isExpired = time() > $endDate;
+        //     if ($isExpired) { 'This auction has ended. Bidding is no longer available.' }
+        //
+        // That is an auction-clock guard, and a broken one: `end_date` and `end_time` are not
+        // columns on tenant_agent_auctions, so `$auction->end_date` was always null and the
+        // expression collapsed to strtotime(' 23:59:59') — today at one second to midnight,
+        // recomputed on every request. The gate was therefore closed for one second a day and
+        // open the rest of the time, and it had nothing to do with the listing's real lifecycle.
+        //
+        // The product rule is the one the detail views already enforce: an agent may propose
+        // while the listing is live. "Live" means it has not passed its expiration_date, has not
+        // been sold, and is not Pending or Hired Agent. expiration_date is the listing's own
+        // lifecycle field — it is read here as a date, never counted down, and nothing writes
+        // back to it.
+        $expirationDate = $auction->get->expiration_date ?? null;
+        if (! empty($expirationDate) && \Carbon\Carbon::now()->gte(\Carbon\Carbon::parse($expirationDate))) {
+            session()->flash('error', 'This listing has expired. Bidding is no longer available.');
             return redirect()->route('tenant.agent.auction.view', $auctionId);
         }
-        
+
         if ($auction->is_sold) {
             session()->flash('error', 'This listing has been sold. Bidding is no longer available.');
+            return redirect()->route('tenant.agent.auction.view', $auctionId);
+        }
+
+        if (in_array($auction->status, ['Pending', 'Hired Agent'], true)) {
+            session()->flash('error', 'This listing is not accepting new bids.');
             return redirect()->route('tenant.agent.auction.view', $auctionId);
         }
         // $this->additional_details = $auction->get->additional_details ?? '';

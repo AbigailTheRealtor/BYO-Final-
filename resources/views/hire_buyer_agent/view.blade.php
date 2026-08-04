@@ -32,54 +32,29 @@
 @endphp
 
 @push('styles')
-<!-- //Listing Description css  -->
-<link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
+{{-- Hire Agent Listing Detail Framework (Milestone 4): the thirty rules that were
+     byte-identical across all four detail views now live in one place. --}}
+
+{{--
+    Milestone 3 — the shared VIHO foundation, extended from the approved Landlord pilot and the
+    approved Seller migration.
+
+    Included HERE rather than in the shared detail shell, and that placement is the whole point:
+    the shell is rendered by all four roles, so putting it there would have enrolled Tenant in a
+    migration it is not part of. Landlord, Seller and Buyer are the migrated roles, so they are
+    the only three files that load it. Tenant keeps rendering exactly as it does today.
+
+    It arrives AFTER the framework stylesheet, which matters: where the two define the same
+    property for an element that carries both class families, VIHO wins. That is the intended
+    direction of the migration and the reason this page now looks like Create Offer.
+--}}
+@include('viho.styles')
+
+{{-- Residual Buyer-only rules. These LOOK shared but are not: they differ
+     between roles in colour, !important or comment text, so moving them into the shared
+     partial would have changed what this page renders. Left in place deliberately. --}}
 <style>
-    /* Chrome, Safari, Edge, Opera */
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    /* Firefox */
-    input[type=number] {
-        -moz-appearance: textfield;
-    }
-
-    .fa-dollar-sign,
-    .fa-percent {
-        padding: 0 20px;
-        background: #facd34;
-        color: #fff;
-        border: 0;
-        font-weight: 700 !important;
-        line-height: 39px !important;
-        margin-right: -5px;
-        z-index: 1;
-        border-radius: 3px 0 0 3px;
-    }
-
-    .form-control,
-    .form-select {
-        border-radius: 0.25rem;
-        box-shadow: inset 0 1px 2px 0 rgb(66 71 112 / 12%);
-        border-radius: 0.25rem;
-        background-color: #fafafb;
-        margin-bottom: 15px;
-    }
-
-    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
-    .card-header h4,
-    .section-title {
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0f1a24;
-    }
-
-    /* SECTION HEADER BAR — shorter + true vertical centering */
+/* SECTION HEADER BAR — shorter + true vertical centering */
     .card-header.section-header {
         display: flex !important;
         align-items: center !important;
@@ -88,8 +63,7 @@
         min-height: 0 !important;
         margin-top: 1.25rem;
     }
-
-    /* SECTION TITLE TEXT — remove default heading spacing */
+/* SECTION TITLE TEXT — remove default heading spacing */
     .section-header .section-title {
         margin: 0 !important;
         padding: 0 !important;
@@ -99,221 +73,65 @@
         font-weight: 700 !important;
         color: #0f1a24;
     }
-
-    /* Services section - extra breathing room before header */
-    .services-section-header {
-        margin-top: 0.75rem !important;
-    }
-
-    hr {
-        margin-top: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-
-    /* Field row styling - improved line-height for scan-readability */
-    .col-md-12.col-12.pt-2.fw-bold {
-        line-height: 1.6;
-        padding-top: 0.6rem !important;
-        padding-bottom: 0.2rem;
-    }
-
-    .field-row {
-        padding: 0.5rem 0;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-
-    .field-label {
-        font-weight: 600;
-        color: #34465c;
-    }
-
-    .field-value {
-        font-weight: normal;
-        color: #34465c;
-    }
-
-    /* Broker Compensation subsection headers - breathing room */
-    h5.mt-3.mb-2 {
-        padding-top: 0.75rem;
-        margin-top: 1rem !important;
-    }
-
-    /* Fix blank space under section headers - reduce gap to first content */
-    .card-body {
-        padding-top: 12px !important;
-    }
-
-    .card-body > :first-child {
-        margin-top: 0 !important;
-    }
-
-    /* Broker Compensation section text - match other section text color */
-    .broker-compensation-section,
-    .broker-compensation-section p,
-    .broker-compensation-section .col-md-12,
-    .broker-compensation-section .fw-bold {
-        color: #34465c !important;
-    }
-
-    /* Consistent row spacing for all buyer listing data rows */
+/* Consistent row spacing for all buyer listing data rows */
     .card-body .col-md-12.fw-bold,
     .card-body .col-12.fw-bold {
         padding-top: 0.5rem !important;
         padding-bottom: 0.35rem !important;
     }
-
-    ul {
-        --icon-size: 1em;
-        --gutter: .5em;
-        padding: 0 0 0 calc(var(--icon-size) + 2em);
-    }
-
-    ul li {
-        padding-left: var(--gutter);
-        color: #34465c;
-    }
-
-    ul:not(.services) li::marker {
-        content: "\f101";
-        /* FontAwesome Unicode */
-        font-family: FontAwesome;
-        font-size: var(--icon-size);
-        /* color: #006e9f; */
-        color: #11b7cf;
-    }
-
-    /* Services section - Tighter spacing and indentation */
-    ul.services {
-        list-style: none !important;
-        padding-left: 1.2em;
-        margin-top: 0.35rem;
-        margin-bottom: 0.5rem;
-    }
-
-    ul.services li {
-        padding: 0.15rem 0;
-        color: #34465c;
-        position: relative;
-        padding-left: 0;
-        list-style: none !important;
-        line-height: 1.4;
-    }
-
-    ul.services li::marker {
-        content: none !important;
-    }
-
-    ul.services li::before {
-        content: "•";
-        position: absolute;
-        left: -0.9em;
-        color: #34465c;
-        font-size: 1.1em;
-    }
-
-    /* Nested services lists inside another services list */
+/* Nested services lists inside another services list */
     ul.services ul.services {
         padding-left: 1.5em;
         margin-top: 0.25rem;
         margin-bottom: 0;
     }
-
-    /* Service category title styling */
+/* Service category title styling */
     .service-category-title {
         font-size: 1.1rem;
         font-weight: 600;
         margin-top: 1rem;
         margin-bottom: 0.5rem;
     }
-
-    .removeBold {
-        font-weight: normal;
-    }
-
-    /* Financing Details section - subsection headers (darker than text-secondary) */
+/* Financing Details section - subsection headers (darker than text-secondary) */
     .financing-subsection-header {
         font-weight: 700 !important;
         color: #374151 !important;
         margin-bottom: 0;
     }
-
-        /* Base button style */
+/* Base button style */
         .btn-custom {
             width: 100% !important;
             color: white;
             border: none;
         }
-
-        .biding-btn {
-            width: 31.5%;
-        }
-
-        /* Accept (green) */
+/* Accept (green) */
         .btn-accept {
             background-color: #28a745;
         }
-
-        .btn-accept:hover {
+.btn-accept:hover {
             background-color: #218838;
         }
-
-        /* Reject (red) */
+/* Reject (red) */
         .btn-reject {
             background-color: #dc3545;
         }
-
-        .btn-reject:hover {
+.btn-reject:hover {
             background-color: #c82333;
         }
-
-        /* Counter (yellow) */
+/* Counter (yellow) */
         .btn-counter {
             background-color: #ffc107 !important;
             color: #000000 !important;
         }
-
-        .btn-counter:hover {
+.btn-counter:hover {
             background-color: #e0a800 !important;
             color: #000000 !important;
         }
-
-        .view-btn {
-            padding: 6px !important;
-        }
-
-        .services-offered {
-            padding: 23px !important;
-        }
-
-        @media screen and (max-width: 800px) {
-            .accordion-body-padding {
-                padding: 7px !important;
-            }
-
-            .alert-font {
-                font-size: 10px;
-            }
-
-            .counter-font {
-                font-size: 15px;
-            }
-        }
-
-        /* Counter bidding history — field rows match Tenant typography (12px per li) */
+/* Counter bidding history — field rows match Tenant typography (12px per li) */
         .counter-bid-card ul.list-unstyled li {
             font-size: 12px;
         }
-
-        /* Bid card accordion chevron rotation (custom JS toggle) */
-        .bid-accordion-header .bid-chevron {
-            transition: transform 0.3s ease;
-        }
-        .bid-accordion-header:hover {
-            background-color: #f8f9fa !important;
-        }
-
-        /* Bid action buttons - matched sizing for Edit bid */
+/* Bid action buttons - matched sizing for Edit bid */
         .bid-action-btn {
             min-width: 140px;
             height: 38px;
@@ -326,42 +144,37 @@
             border: none !important;
             box-shadow: none;
         }
-        .bid-action-btn:hover {
-            opacity: 0.9;
-        }
-    </style>
+</style>
 @endpush
 
 @section('content')
     @php
         $auth_id = auth()->user() ? auth()->user()->id : 0;
     @endphp
-    @if (session('success'))
-    <div class="container mt-3">
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    @endif
-    @if (session('error'))
-    <div class="container mt-3">
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    @endif
-    <!-- Gallery Start Here  -->
+    {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
+         wrappers now come from the shared shell. Only role-specific content lives here. --}}
+    <x-hire-agent.detail-shell role="buyer" :auction="$auction">
+        <x-slot name="main">
+            {{--
+                M3. Was `div.card.description` wrapping `card-header.section-header` + an
+                `h4.section-title`. The heading level stays h4: typography is migrating, the
+                document outline is not.
 
+                THE INNER `div.card-body` BELOW IS DELIBERATELY LEFT IN PLACE, and this is the one
+                point where Buyer departs from Seller. Seller's card-body wrapped the whole card,
+                so it could be dropped and `viho-card-body` took its place one-for-one. Buyer's
+                does not: rendered DOM shows it closing early — the parser rebalances a stray
+                closer around the broker-compensation block — leaving three sections and one field
+                row as direct children of the card, outside it.
 
-        <div class="container listingDescription">
-        <div class="row">
-            <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
-                <div class="card description">
-                    <div class="card-header section-header">
-                        <h4 class="section-title">Listing Details:</h4>
-                    </div>
+                That matters because the Buyer-only rule `.card-body .col-md-12.fw-bold` styles
+                field rows through it. Dropping the wrapper would unstyle all 13 rows inside it;
+                re-pointing the rule at `.viho-card-body` would instead pull in the 1 row that sits
+                outside it today. Keeping it changes no field row at all, which is the requirement.
+                The cost is one extra nesting level and Buyer's existing ragged left edge, both of
+                which are preserved exactly as they render today.
+            --}}
+            <x-viho.card title="Listing Details:" title-tag="h4">
                     <div class="card-body">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
@@ -406,13 +219,9 @@
                                 </div>
                             @endif
 
-                            @if (strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period' && @$auction->get->auction_time != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Bidding Period Length:
-                                    <span class="removeBold"> {{ @$auction->get->auction_time }}
-                                    </span>
-                                </div>
-                            @endif
+                            {{-- Milestone 3: the "Bidding Period Length: 14 Days" row was removed
+                                 here. It is a bidding-period label describing a timer that no
+                                 longer exists or governs anything. --}}
                             @if (@$auction->get->meeting_Preference != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Meeting Preference:
@@ -423,9 +232,8 @@
 
                         </div>
                           <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Property Preferences:</h4>
-                        </div>
+                        {{-- M3: sub-section header inside the single Listing Details card. --}}
+                        <x-viho.section-header title="Property Preferences:" tag="h4" />
 
                         <div class="row" style="flex-wrap: wrap;">
 
@@ -787,9 +595,7 @@
 
                         @if ($buyerHasAssets || $buyerHasRealEstate)
                         <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Required Property or Business Assets</h4>
-                        </div>
+                        <x-viho.section-header title="Required Property or Business Assets" tag="h4" />
                         <div class="row" style="flex-wrap: wrap;">
                             @if ($buyerHasRealEstate)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -866,9 +672,7 @@
                         </div>
                         @endif
                         <hr>
-                            <div class="card-header section-header">
-                                <h4 class="section-title">Purchasing Terms:</h4>
-                            </div>
+                            <x-viho.section-header title="Purchasing Terms:" tag="h4" />
 
                             <!-- Special Sale Provisions -->
                             @php
@@ -991,9 +795,7 @@
                             @if($hasAnyFinancingDetails || @$auction->get->offered_financing != null)
                                 <hr>
                                 <div class="col-12">
-                                    <div class="card-header section-header">
-                                        <h4 class="section-title">Financing Details:</h4>
-                                    </div>
+                                    <x-viho.section-header title="Financing Details:" tag="h4" />
                                 </div>
                             @endif
 
@@ -1610,9 +1412,13 @@
                         @endphp
 
                         @if ($hasServices)
-                        <div class="card-header section-header services-section-header">
-                            <h4 class="section-title">Services:</h4>
-                        </div>
+                        {{-- The dropped `services-section-header` contributed one rule,
+                             `margin-top: 0.75rem !important`, overriding the framework's
+                             section-header top margin for this one heading. VIHO owns section
+                             spacing now, so carrying it would have re-introduced an override
+                             against the system being adopted. Landlord and Seller dropped it here
+                             too; this keeps the three migrated roles identical. --}}
+                        <x-viho.section-header title="Services:" tag="h4" />
 
                         @php
                         // Use ServicesFormatter to order services according to canonical order
@@ -1701,9 +1507,7 @@
                         @endif
                         <hr>
                         @if (@$auction->get->additional_details != null)
-                            <div class="card-header section-header">
-                                <h4 class="section-title">Additional Details:</h4>
-                            </div>
+                            <x-viho.section-header title="Additional Details:" tag="h4" />
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details: <span
@@ -1756,9 +1560,9 @@
 
                         @if (!empty($repRows))
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
-                        </div>
+                        {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
+                             rendered text is unchanged. Passing &amp; here would double-escape it. --}}
+                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
                         @foreach ($repRows as $repRow)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             {{ $repRow['label'] }}:
@@ -1783,9 +1587,9 @@
                         @endphp
                         @if ($hasBrokerCompData)
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>
-                        </div>
+                        {{-- Trailing colon retained: Buyer's heading text differs from Seller's and
+                             Landlord's here, and normalising it would be a copy change. --}}
+                        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms:" tag="h4" />
                         @endif
 
                         @auth
@@ -2022,18 +1826,22 @@
                         @endphp
                         @if ($referralPctDisplay !== '')
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Referral & Cooperation Terms</h4>
-                        </div>
+                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Referral Fee:
                             <span class="removeBold">{{ $referralPctDisplay }}</span>
                         </div>
                         @endif
                         <hr />
-                        <div class="card-header section-header">
-                            <h4 class="section-title">{{ ($auction->user && $auction->user->user_type === 'agent') ? "Agent's Info" : "Buyer's Info" }}</h4>
-                        </div>
+                        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is
+                             not parseable by Blade's attribute compiler. Same expression, same two
+                             outcomes. --}}
+                        @php
+                            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+                                ? "Agent's Info"
+                                : "Buyer's Info";
+                        @endphp
+                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
                                 Name:
@@ -2142,8 +1950,17 @@
                             @endif
 
                         </div>
-                    </div>
-                </div>
+            {{-- M3: this closed `div.card.description`; the card closes here instead. The closer
+                 above it still ends the final row, and the inner card-body keeps whatever closer
+                 the parser already pairs it with — neither is touched. --}}
+            </x-viho.card>
+                {{-- Milestone 5A.2-B: a third </div> closed .leftCol here, before the review card
+                     below. That made "card review" a direct child of the .row despite having no
+                     col-* class, and left the row's own closer to land before .rightCol — so the
+                     sidebar rendered outside the grid row entirely. Dropping this closer keeps
+                     .leftCol open through the review card; the existing closer further down then
+                     ends .leftCol, and .rightCol becomes its sibling inside the row, matching
+                     Seller and Landlord. --}}
                 @inject('auctionUser', 'App\Models\User')
                 @php
                     $auser = $auctionUser::find(@$auction->user_id);
@@ -2178,9 +1995,11 @@
                     </div>
                 </div>
                 @endif
-            </div>
+        </x-slot>
 
-            <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
+        {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
+             Extracting it is Milestone 5B. --}}
+        <x-slot name="sidebar">
                 <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
                 @if(@$auction->listing_id)
                 <div class="mb-2">
@@ -2208,28 +2027,15 @@
 
                         // ── Display-layer expiry override (badge only, no DB change) ──────────
                         if (!in_array($auction->status, ['Hired Agent', 'Pending', 'Draft'], true)) {
+                            // Milestone 3: this override used to synthesise an expiry from
+                            // created_at + auction_time for Bidding Period listings, so the badge
+                            // could read "Expired" purely because a countdown had elapsed. That
+                            // branch is retired; expiration_date is the only input, for every
+                            // listing type. Still display-only — the model is never mutated.
                             $_badgeNow  = \Carbon\Carbon::now();
-                            $_badgeType = strtolower(trim($auction->get->auction_type ?? ''));
-                            $_badgeExp  = null;
-                            if ($_badgeType === 'bidding period') {
-                                $_badgeStart = $auction->get->created_at ?? $auction->created_at ?? $_badgeNow;
-                                $_badgeTime  = trim($auction->get->auction_time ?? '');
-                                if (!empty($_badgeTime) && strtolower($_badgeTime) !== 'null') {
-                                    $_bp = explode(' ', $_badgeTime);
-                                    $_bv = (int)($_bp[0] ?? 0);
-                                    $_bu = strtolower($_bp[1] ?? 'days');
-                                    $_badgeExp = match(true) {
-                                        in_array($_bu, ['hour','hours'])     => \Carbon\Carbon::parse($_badgeStart)->addHours($_bv),
-                                        in_array($_bu, ['week','weeks'])     => \Carbon\Carbon::parse($_badgeStart)->addWeeks($_bv),
-                                        in_array($_bu, ['minute','minutes']) => \Carbon\Carbon::parse($_badgeStart)->addMinutes($_bv),
-                                        default                              => \Carbon\Carbon::parse($_badgeStart)->addDays($_bv),
-                                    };
-                                }
-                            } else {
-                                if (!empty($auction->get->expiration_date)) {
-                                    $_badgeExp = \Carbon\Carbon::parse($auction->get->expiration_date);
-                                }
-                            }
+                            $_badgeExp  = !empty($auction->get->expiration_date)
+                                ? \Carbon\Carbon::parse($auction->get->expiration_date)
+                                : null;
                             if ($_badgeExp && $_badgeNow->gte($_badgeExp)) {
                                 $_statusStyle        = $_statusStyles['Expired'];
                                 $_statusIcon         = $_statusIcons['Expired'];
@@ -2265,83 +2071,43 @@
 @inject('carbon', 'Carbon\Carbon')
 
     @php
-    // 🔹 Determine listing type: Traditional vs Bidding Period
-    $listingType = trim($auction->get->auction_type ?? '');
-    $isTraditionalListing = (strtolower($listingType) === 'traditional' || empty($listingType));
-    $isBiddingPeriodListing = in_array(strtolower($listingType), ['bidding period', 'auction (timer)']);
+        // Milestone 3 — legacy countdown retirement.
+        //
+        // This block used to compute TWO different expiries depending on auction_type. For a
+        // "Bidding Period" / "Auction (Timer)" listing it synthesised one from created_at +
+        // auction_time ("14 Days") and drove a live countdown from it; only a "Traditional"
+        // listing used expiration_date. The synthesised value then flowed into $isExpired, which
+        // gates the Bid button below — so an elapsed countdown, not the listing's own status,
+        // decided whether an agent could propose.
+        //
+        // The Hire Agent bidding timer is retired. expiration_date is now the SOLE expiry source
+        // for every listing, which is what it always was for Traditional listings. Note the
+        // direction: the timer is GONE, not re-pointed at expiration_date. Nothing derives a
+        // countdown from expiration_date, nothing derives expiration_date from elapsed time, and
+        // the two concepts are not synchronised. expiration_date answers one question only —
+        // is this listing still live — exactly as it does for a listing that never had a timer.
+        //
+        // Removed with the timer: $isBiddingPeriodListing, $isTraditionalListing, $start_time,
+        // $auction_time, $useAuctionTime, the duration switch, $isBiddingTimerActive,
+        // $canTakeAction (always true — a dead soft-deadline escape hatch) and $diff_d/H/I/S.
+        $expiration = !empty($auction->get->expiration_date)
+            ? $carbon::parse($auction->get->expiration_date)
+            : null;
 
-    // 🕒 Auction start time (when auction began)
-    $start_time = $auction->get->created_at ?? $auction->created_at ?? $carbon::now();
-
-    // 🔹 Get auction_time value
-    $auction_time = trim($auction->get->auction_time ?? '');
-    $useAuctionTime = !empty($auction_time) && strtolower($auction_time) !== 'null';
-
-    if ($useAuctionTime && $isBiddingPeriodListing) {
-    // 🔸 CASE 1: Use auction_time (e.g. "14 Days", "2 Weeks", "5 Hours") for Bidding Period
-    $auction_duration = $auction_time;
-    $duration_parts = explode(' ', trim($auction_duration)); // e.g. ['14', 'Days']
-    $duration_value = (int) ($duration_parts[0] ?? 0);
-    $duration_unit = strtolower($duration_parts[1] ?? 'days');
-
-    // 🧠 Convert unit into Carbon duration
-    switch ($duration_unit) {
-    case 'day':
-    case 'days':
-    $expiration = $carbon::parse($start_time)->addDays($duration_value);
-    break;
-    case 'hour':
-    case 'hours':
-    $expiration = $carbon::parse($start_time)->addHours($duration_value);
-    break;
-    case 'week':
-    case 'weeks':
-    $expiration = $carbon::parse($start_time)->addWeeks($duration_value);
-    break;
-    case 'minute':
-    case 'minutes':
-    $expiration = $carbon::parse($start_time)->addMinutes($duration_value);
-    break;
-    default:
-    $expiration = $carbon::parse($start_time)->addDays($duration_value);
-    break;
-    }
-    } elseif ($isTraditionalListing) {
-    // 🔸 CASE 2: Traditional listing - use expiration_date for listing lifecycle only (no timer)
-    $expiration = !empty($auction->get->expiration_date)
-    ? $carbon::parse($auction->get->expiration_date)
-    : null;
-    } else {
-    // 🔸 CASE 3: Fallback
-    $expiration = !empty($auction->get->expiration_date)
-    ? $carbon::parse($auction->get->expiration_date)
-    : null;
-    }
-
-    // 🧾 Determine if expired
-    $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
-
-    // 🔹 Timer is informational only — actions are never locked by the BP timer
-    $isBiddingTimerActive = $isBiddingPeriodListing && $expiration && !$isExpired;
-    $canTakeAction = true; // Soft deadline: timer never locks bid actions
-
-    // ⏱ Calculate remaining time if not expired (only for Bidding Period)
-    if ($isBiddingPeriodListing && $expiration && !$isExpired) {
-    $now = $carbon::now();
-    $diff_d = $now->diffInDays($expiration);
-    $diff_H = $now->diff($expiration)->format('%H');
-    $diff_I = $now->diff($expiration)->format('%I');
-    $diff_S = $now->diff($expiration)->format('%S');
-    }
+        $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
     @endphp
 
 
     {{-- 💰 Bid Info --}}
     @php
-    $lowest_bid_price = @$auction->bids->min('brokerage') ?? @$auction->get->concession;
-    $lowest_bid_price =
-    $lowest_bid_price < @$auction->get->concession ? $lowest_bid_price : @$auction->get->concession;
-        $lowest_bidder = @$auction->bids->where('brokerage', $lowest_bid_price)->first();
+        // Milestone 2 — competing-agent proposal privacy.
+        // $lowest_bid_price / $lowest_bidder were removed. They existed only to render
+        // "Agent N was the last bidder", which disclosed a competing agent and was mislabelled
+        // besides: it resolved the MINIMUM brokerage bid while calling that agent the LAST
+        // bidder. Not restored in any form. On this view that line had NO viewer gate at all —
+        // every visitor saw it — which is why the rule now lives server-side.
+        // $auction->bids is already narrowed to this viewer's authorized proposals by
+        // HireAgentProposalAccess in BuyerAgentAuctionController::viewAuctionDetails().
         $my_bid = @$auction->bids->where('user_id', $auth_id)->first();
         @endphp
 
@@ -2352,35 +2118,13 @@
         </a>
 
 
-        {{-- ⏳ Countdown Timer - Only shown for Bidding Period listings --}}
-        @if ($isBiddingPeriodListing)
-            @if ($isBiddingTimerActive)
-            <div class="time d-flex justify-content-between text-center flex-wrap pb-2"
-                data-expiration="{{ $expiration->toIso8601String() }}">
-                <div>
-                    <h5><b class="timer-d">{{ $diff_d }}</b></h5>
-                    <h6 class="opacity-50">Days</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-h">{{ $diff_H }}</b></h5>
-                    <h6 class="opacity-50">Hrs</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-m">{{ $diff_I }}</b></h5>
-                    <h6 class="opacity-50">Mins</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-s">{{ $diff_S }}</b></h5>
-                    <h6 class="opacity-50">Secs</h6>
-                </div>
-            </div>
-            @else
-            <div class="text-center mt-2 mb-0">
-                <span class="status-pill status-ended w-100 d-flex justify-content-center">Bidding Ended</span>
-            </div>
-            @endif
-        {{-- Traditional listings: No timer displayed --}}
-        @endif
+        {{--
+            Milestone 3: the Days / Hrs / Mins / Secs countdown block stood here, along with the
+            "Bidding Ended" pill it fell back to. Both are retired. The listing's state is already
+            carried by the status pill above (Active / Pending / Expired / Hired Agent) and by the
+            expiry notice below, neither of which counts down. No replacement urgency mechanism is
+            introduced — that is the point of the retirement, not an omission.
+        --}}
 
 
 
@@ -2432,14 +2176,13 @@
             <i class="fa-solid fa-pause-circle me-2"></i>Pending
         </div>
         @else
-        {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
-        @if ($isBiddingPeriodListing)
-        {{-- BP: "Bidding Ended" already rendered by the timer block above — no duplicate needed --}}
-        @else
+        {{-- Expiry catch-all. Milestone 3: this used to branch on listing type, suppressing the
+             notice for Bidding Period listings because the retired timer block had already
+             rendered "Bidding Ended". With the timer gone there is one expiry state and one
+             notice, driven by expiration_date. --}}
         <div class="alert alert-secondary text-center mb-2">
             <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
         </div>
-        @endif
         @endif
 
         @if (@$auction->sold)
@@ -2475,10 +2218,13 @@
             }
         @endphp
 
-        {{-- Last Bidder Info - outside the card (matches Tenant view layout) --}}
-        @if ($lowest_bidder)
-            <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
-        @else
+        {{--
+            Milestone 2 — the "Agent N was the last bidder." line was removed here. It is not
+            restored in any form. The empty state it shared an @if with is retained, but gated
+            on the server-side owner decision: a bid count is itself a disclosure, so "No agents
+            have submitted a bid yet." is owner-only rather than public.
+        --}}
+        @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
             <p class="mb-3">No agents have submitted a bid yet.</p>
         @endif
 
@@ -2490,7 +2236,8 @@
                                 $auction->load('meta');
                                 @endphp
 
-                                @if ($auction->bids->isEmpty())
+                                {{-- Owner-only: this second empty state is a count disclosure too. --}}
+                                @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
                                     <p class="mb-3">No agents have submitted a bid yet.</p>
                                 @endif
 
@@ -2500,8 +2247,12 @@
                                         $bidUser = data_get($bid, 'user_id');
                                         $isBidOwner = ($bidUser == $auth_id);
                                         $_isAgentViewer = $auth_id && auth()->check() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                                        $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $_isAgentViewer && $userHasBid) || ($isTraditionalListing && $_isAgentViewer);
-                                        if (!$canViewBid && $_isAgentViewer) { continue; }
+                                        // Milestone 2 — competing-agent proposal privacy.
+                                        // $auction->bids was narrowed by HireAgentProposalAccess in the
+                                        // controller. This guard is defence-in-depth with the opposite
+                                        // default to the one it replaced: skip anything that is not the
+                                        // owner's to review or the viewer's own.
+                                        if (! $isListingOwner && ! $isBidOwner) { continue; }
                                         $agentNumber = $agentNumberMap[$bidId] ?? $loop->iteration;
                                         $bidAccepted = data_get($bid, 'accepted', '0');
                                         $isExpiredBid = $isExpired ?? false;
@@ -2619,9 +2370,14 @@
                                             }
                                             $cardGetScoreColor = fn($pct) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$pct);
 
-                                            // Match score visibility: listing owner OR bid owner OR BP agent with a bid
-                                            $cardIsAgentViewer = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                                            $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
+                                            // Match score visibility: listing owner OR bid owner.
+                                            // Milestone 3: the third disjunct was
+                                            // ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid) — a
+                                            // Bidding Period carve-out letting any agent who had bid see a
+                                            // competitor's match score. It retires with the bidding period, which
+                                            // also finishes what Milestone 2 started: competing-proposal data is
+                                            // now owner-or-own-bid only, with no listing-type exception.
+                                            $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner;
                                             /**
                                              * ZERO-BASELINE / NO-DATA GUARD
                                              *
@@ -2830,12 +2586,12 @@
                                                style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                                 View Full Bid
                                             </a>
-                                            @elseif ($isBiddingPeriodListing && $cardIsAgentViewer && !$isBidOwner)
-                                            {{-- Bidding Period: Agent viewing another agent's bid - show limited view button --}}
-                                            <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
-                                               style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
-                                                View Full Services & Broker Compensation Terms
-                                            </a>
+                                            {{--
+                                                Milestone 2 — the "View Full Services & Broker Compensation Terms"
+                                                branch was removed here. It opened the Limited Bid Modal on a
+                                                COMPETITOR's proposal for any agent who had bid on a Bidding
+                                                Period listing. The modal itself is removed further down.
+                                            --}}
                                             @else
                                             <span style="color: #888; font-style: italic; font-size: 0.95rem;">
                                                 <i class="fa-solid fa-lock me-1"></i> Private - visible only to listing creator
@@ -2939,9 +2695,12 @@
 
                                                                         {{-- ── Listing owner: action buttons when bid is undecided ── --}}
                                                                         @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold)
-                                                                            @if ($isTraditionalListing && $isExpired)
+                                                                            {{-- Milestone 3: was ($isTraditionalListing && $isExpired). The
+                                                                                 listing-type qualifier is gone with the timer — expiry is
+                                                                                 expiry, whatever the old auction_type said. --}}
+                                                                            @if ($isExpired)
                                                                             <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                                                <i class="fa-solid fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
+                                                                                <i class="fa-solid fa-calendar-xmark me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                                                             </div>
                                                                             @else
                                                                             <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
@@ -3069,280 +2828,14 @@
                                                         </div>
                                                     @endif
 
-                                                    {{-- Limited Bid Modal: Bidding Period - Agents viewing competitor bids --}}
-                                                    @if ($isBiddingPeriodListing && $cardIsAgentViewer && !$isBidOwner && !$isListingOwner)
-                                                    @php
-                                                        $limitedBrokerMismatches = $brokerMismatches ?? [];
-                                                        $limitedIsMismatch = function($field) use ($limitedBrokerMismatches) {
-                                                            return isset($limitedBrokerMismatches[$field]);
-                                                        };
-                                                        $limitedCheckPurchaseFeeFieldMismatch = function() use ($limitedBrokerMismatches) {
-                                                            $feeFields = ['purchase_fee_type','purchase_fee_flat','purchase_fee_percentage',
-                                                                'purchase_fee_flat_combo','purchase_fee_percentage_combo','purchase_fee_other'];
-                                                            foreach ($feeFields as $f) { if (isset($limitedBrokerMismatches[$f])) return true; }
-                                                            return false;
-                                                        };
-                                                        $limitedMismatchStyle = 'background-color: #ffe6e6; padding: 2px 8px; border-radius: 4px; border-left: 3px solid #dc3545;';
-                                                        // Build purchase fee display for limited modal
-                                                        $lpft = data_get($bid, 'get.purchase_fee_type', '');
-                                                        $limitedPurchaseFeeDisplay = '';
-                                                        if ($lpft === 'Flat Fee') {
-                                                            $v = data_get($bid, 'get.purchase_fee_flat');
-                                                            $limitedPurchaseFeeDisplay = $v ? '$' . number_format((float)preg_replace('/[^0-9.]/', '', $v), 2) : '';
-                                                        } elseif ($lpft === 'Percentage of the Total Purchase Price') {
-                                                            $v = data_get($bid, 'get.purchase_fee_percentage');
-                                                            $limitedPurchaseFeeDisplay = $v ? $v . '% of Total Purchase Price' : '';
-                                                        } elseif ($lpft === 'Percentage of the Total Purchase Price + Flat Fee') {
-                                                            $p1 = data_get($bid, 'get.purchase_fee_flat_combo'); $p2 = data_get($bid, 'get.purchase_fee_percentage_combo');
-                                                            $limitedPurchaseFeeDisplay = trim(($p1 ? '$'.number_format((float)preg_replace('/[^0-9.]/','',$p1),2) : '') . ($p1 && $p2 ? ' + ' : '') . ($p2 ? $p2.'% of Total Purchase Price' : ''), ' +');
-                                                        } elseif ($lpft === 'other') { $limitedPurchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other', ''); }
-                                                        // Services
-                                                        $limitedBidSvcs = is_array(data_get($bid, 'get.services', [])) ? data_get($bid, 'get.services', []) : (json_decode(data_get($bid, 'get.services', '[]'), true) ?: []);
-                                                        $limitedBidOther = is_array(data_get($bid, 'get.other_services', [])) ? data_get($bid, 'get.other_services', []) : (json_decode(data_get($bid, 'get.other_services', '[]'), true) ?: []);
-                                                        $limitedOrderedSvcs = !empty($limitedBidSvcs) ? \App\Support\ServicesFormatter::orderSelectedServices($limitedBidSvcs, $flowKey) : [];
-                                                    @endphp
-                                                    <div class="modal fade"
-                                                        id="limitedBidModal{{ data_get($bid, 'id') }}"
-                                                        tabindex="-1"
-                                                        aria-labelledby="limitedBidModalLabel{{ data_get($bid, 'id') }}"
-                                                        aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg">
-                                                            <div class="modal-content" style="border-radius: 10px; border: none; position: relative; overflow: visible;">
-                                                                <button type="button" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 5px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-                                                                    &times;
-                                                                </button>
-                                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
-                                                                    <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
-                                                                        <i class="fa-solid fa-handshake me-2"></i> Services & Broker Compensation Terms
-                                                                    </h5>
-                                                                </div>
-                                                                <div class="modal-body" style="background: #fafafa; padding: 25px;">
-
-                                                                    {{-- Anonymous Notice --}}
-                                                                    <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
-                                                                        <i class="fa-solid fa-user-secret me-2"></i>
-                                                                        <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
-                                                                    </div>
-
-                                                                    {{-- Match Score Panel --}}
-                                                                    @if ($cardHasAnyBaseline)
-                                                                    <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
-                                                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                                                                <i class="fa-solid fa-chart-pie me-2"></i>Match Score
-                                                                            </h6>
-                                                                            <span class="badge" style="background: {{ $cardGetScoreColor($overallScore) }}; font-size: 1.1rem; padding: 8px 16px;">
-                                                                                {{ $overallScore }}% Match
-                                                                            </span>
-                                                                        </div>
-                                                                        <p class="small text-muted mb-3">
-                                                                            Comparing to: <strong>{{ $buyerBaselineLabel }}</strong>
-                                                                        </p>
-                                                                        <div class="row g-3">
-                                                                            <div class="col-md-6">
-                                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $cardGetScoreColor($score['services_match_percent'] ?? 100) }};">
-                                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                                        <span class="small fw-semibold">Services Match</span>
-                                                                                        <span class="badge" style="background: {{ $cardGetScoreColor($score['services_match_percent'] ?? 100) }};">{{ $score['services_match_percent'] ?? 100 }}%</span>
-                                                                                    </div>
-                                                                                    <div class="small text-muted mt-1">
-                                                                                        {{ ($score['services_baseline_total'] ?? 0) > 0 ? 'Matched: '.($score['services_matched_count'] ?? 0).'/'.($score['services_baseline_total'] ?? 0) : 'No services requested' }}
-                                                                                        @if (($score['services_baseline_total'] ?? 0) > 0 && ($score['services_missing_count'] ?? 0) > 0) &bull; Missing: {{ $score['services_missing_count'] }}@endif
-                                                                                    </div>
-                                                                                    @if (($score['services_extra_count'] ?? 0) > 0)
-                                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;">
-                                                                                        <span>&#11088;</span>
-                                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $score['services_extra_count'] }} {{ $score['services_extra_count'] === 1 ? 'Service' : 'Services' }}</span>
-                                                                                    </div>
-                                                                                    @endif
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="col-md-6">
-                                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $cardGetScoreColor($score['broker_comp_percent'] ?? 100) }};">
-                                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                                        <span class="small fw-semibold">Terms Match</span>
-                                                                                        <span class="badge" style="background: {{ $cardGetScoreColor($score['broker_comp_percent'] ?? 100) }};">{{ $score['broker_comp_percent'] ?? 100 }}%</span>
-                                                                                    </div>
-                                                                                    <div class="small text-muted mt-1">
-                                                                                        {{ ($score['broker_comp_total'] ?? 0) > 0 ? 'Matched: '.($score['broker_comp_matched'] ?? 0).'/'.($score['broker_comp_total'] ?? 0) : 'No terms provided' }}
-                                                                                        @if (($score['broker_comp_total'] ?? 0) > 0 && ($score['terms_changed_count'] ?? 0) > 0) &bull; Changed: {{ $score['terms_changed_count'] }}@endif
-                                                                                        @if (($score['terms_added_count'] ?? 0) > 0) &bull; Added: {{ $score['terms_added_count'] }}@endif
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    @else
-                                                                    <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-                                                                        <i class="fa-solid fa-circle-info me-1"></i>No match data available for this listing.
-                                                                    </div>
-                                                                    @endif
-
-                                                                    {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}
-                                                                    @if (data_get($bid, 'get.commission_structure') ||
-                                                                        data_get($bid, 'get.purchase_fee_type') ||
-                                                                        data_get($bid, 'get.interested_lease_option') ||
-                                                                        data_get($bid, 'get.protection_period') ||
-                                                                        data_get($bid, 'get.early_termination_fee_option') ||
-                                                                        data_get($bid, 'get.retainer_fee_option') ||
-                                                                        data_get($bid, 'get.agency_agreement_timeframe') ||
-                                                                        data_get($bid, 'get.brokerage_relationship'))
-                                                                    <div class="mb-5">
-                                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
-                                                                        </h6>
-
-                                                                        {{-- A) Buyer's Broker Compensation --}}
-                                                                        @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.purchase_fee_type'))
-                                                                        <div class="mb-4">
-                                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Buyer's Broker Compensation</h6>
-                                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                                @if (data_get($bid, 'get.commission_structure'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Buyer's Broker Commission Structure:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('commission_structure') ? $limitedMismatchStyle : '' }}">
-                                                                                        {{ data_get($bid, 'get.commission_structure') }}
-                                                                                        @if($limitedIsMismatch('commission_structure')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
-                                                                                    </span>
-                                                                                </li>
-                                                                                @endif
-                                                                                @if (data_get($bid, 'get.purchase_fee_type') && $limitedPurchaseFeeDisplay)
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Buyer's Broker Purchase Fee:</span>
-                                                                                    <span style="{{ $limitedCheckPurchaseFeeFieldMismatch() ? $limitedMismatchStyle : '' }}">
-                                                                                        {{ $limitedPurchaseFeeDisplay }}
-                                                                                        @if($limitedCheckPurchaseFeeFieldMismatch()) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
-                                                                                    </span>
-                                                                                </li>
-                                                                                @endif
-                                                                            </ul>
-                                                                        </div>
-                                                                        @endif
-
-                                                                        {{-- B) Lease Option --}}
-                                                                        @if (data_get($bid, 'get.interested_lease_option') || data_get($bid, 'get.interested_lease_option_agreement'))
-                                                                        <div class="mb-4">
-                                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease-Option Details</h6>
-                                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                                @if (data_get($bid, 'get.interested_lease_option'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Interested in Lease Option:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('interested_lease_option') ? $limitedMismatchStyle : '' }}">
-                                                                                        {{ data_get($bid, 'get.interested_lease_option') }}
-                                                                                        @if($limitedIsMismatch('interested_lease_option')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
-                                                                                    </span>
-                                                                                </li>
-                                                                                @endif
-                                                                                @if (data_get($bid, 'get.interested_lease_option_agreement'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Interested in Lease-Option Agreement:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('interested_lease_option_agreement') ? $limitedMismatchStyle : '' }}">
-                                                                                        {{ data_get($bid, 'get.interested_lease_option_agreement') }}
-                                                                                        @if($limitedIsMismatch('interested_lease_option_agreement')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
-                                                                                    </span>
-                                                                                </li>
-                                                                                @endif
-                                                                            </ul>
-                                                                        </div>
-                                                                        @endif
-
-                                                                        {{-- C) Legal Terms --}}
-                                                                        @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
-                                                                        <div class="mb-4">
-                                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Legal Terms</h6>
-                                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                                @if (data_get($bid, 'get.protection_period'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Protection Period:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('protection_period') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.protection_period') }} @if($limitedIsMismatch('protection_period')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
-                                                                                </li>
-                                                                                @endif
-                                                                                @if (data_get($bid, 'get.early_termination_fee_option'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Early Termination Fee:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('early_termination_fee_option') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.early_termination_fee_option') }} @if($limitedIsMismatch('early_termination_fee_option')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
-                                                                                </li>
-                                                                                @endif
-                                                                                @if (data_get($bid, 'get.retainer_fee_option'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Retainer Fee:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('retainer_fee_option') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.retainer_fee_option') }} @if($limitedIsMismatch('retainer_fee_option')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
-                                                                                </li>
-                                                                                @endif
-                                                                                @if (data_get($bid, 'get.agency_agreement_timeframe'))
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Agency Agreement Timeframe:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('agency_agreement_timeframe') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.agency_agreement_timeframe') }} @if($limitedIsMismatch('agency_agreement_timeframe')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
-                                                                                </li>
-                                                                                @endif
-                                                                            </ul>
-                                                                        </div>
-                                                                        @endif
-
-                                                                        {{-- D) Brokerage Relationship --}}
-                                                                        @if (data_get($bid, 'get.brokerage_relationship'))
-                                                                        <div class="mb-4">
-                                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Brokerage Relationship</h6>
-                                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                                    <span class="fw-semibold">Acceptable Brokerage Relationship:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('brokerage_relationship') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.brokerage_relationship') }} @if($limitedIsMismatch('brokerage_relationship')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
-                                                                                </li>
-                                                                            </ul>
-                                                                        </div>
-                                                                        @endif
-
-                                                                    </div>
-                                                                    @endif
-
-                                                                    {{-- Section 2: Offered Services (Categorized) --}}
-                                                                    @if (!empty($limitedBidSvcs))
-                                                                    <div class="mb-4">
-                                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                            <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
-                                                                        </h6>
-                                                                        @if (!empty($limitedOrderedSvcs))
-                                                                            @foreach ($limitedOrderedSvcs as $catName => $catSrvs)
-                                                                                @if (!empty($catSrvs))
-                                                                                <div class="mb-2">
-                                                                                    <strong style="font-size: 13px;">{{ $catName }}</strong>
-                                                                                    <ul class="list-unstyled ps-3 mb-0" style="margin-top: 4px;">
-                                                                                        @foreach ($catSrvs as $svc)
-                                                                                            @if ($svc !== 'Other')
-                                                                                            <li style="font-size: 12px;">{{ $svc }}</li>
-                                                                                            @endif
-                                                                                        @endforeach
-                                                                                    </ul>
-                                                                                </div>
-                                                                                @endif
-                                                                            @endforeach
-                                                                        @else
-                                                                            <ul class="list-unstyled ps-3">
-                                                                                @foreach ($limitedBidSvcs as $svc)
-                                                                                    @if ($svc !== 'Other')
-                                                                                    <li style="font-size: 12px;">{{ $svc }}</li>
-                                                                                    @endif
-                                                                                @endforeach
-                                                                            </ul>
-                                                                        @endif
-                                                                        @if (!empty($limitedBidOther))
-                                                                        <div class="mt-2">
-                                                                            <div class="fw-semibold" style="font-size: 13px; color: #34465c;">✍️ Additional Services</div>
-                                                                            <ul class="list-unstyled ps-3 mb-0" style="margin-top: 4px;">
-                                                                                @foreach ($limitedBidOther as $otherSvc)
-                                                                                <li style="font-size: 12px;">{{ $otherSvc }}</li>
-                                                                                @endforeach
-                                                                            </ul>
-                                                                        </div>
-                                                                        @endif
-                                                                    </div>
-                                                                    @endif
-
-                                                                </div>{{-- modal-body --}}
-                                                            </div>{{-- modal-content --}}
-                                                        </div>{{-- modal-dialog --}}
-                                                    </div>{{-- modal fade --}}
-                                                    @endif {{-- limitedBidModal condition --}}
+                                                    {{--
+                                                        Milestone 2 — the Limited Bid Modal was removed here. Under a
+                                                        Bidding Period listing it showed any agent who had bid the full
+                                                        Services and Broker Compensation terms of every COMPETITOR's
+                                                        proposal, plus that proposal's match score and a per-field
+                                                        mismatch highlight — competing content, amounts and summary in
+                                                        one surface. Its trigger link is removed with it.
+                                                    --}}
 
                                                     <!-- Counter Bids -->
 
@@ -4222,31 +3715,17 @@
                                                                         @inject('carbon', 'Carbon\Carbon')
 
                                                     @php
-                                                    // Step 1: Get auction_time and check if it's not empty
-                                                    $auctionTime = data_get($auction->get, 'auction_time');
+                                                        // Milestone 3: this inner block recomputed $expiration from auction_time
+                                                        // (created_at + "10 Days"), SHADOWING the page-level value from inside the
+                                                        // bid loop — so counter actions were gated by their own synthesised timer
+                                                        // even after the page-level one was retired. expiration_date is the only
+                                                        // source now, matching the page-level rule exactly.
+                                                        $expirationDate = data_get($auction->get, 'expiration_date');
+                                                        $expiration = !empty($expirationDate)
+                                                            ? $carbon::parse($expirationDate)
+                                                            : null;
 
-                                                    // Step 2: Base date is $auction->created_at (not from get)
-                                                    $baseDate = $carbon::parse($auction->created_at);
-
-                                                    // Step 3: Calculate expiration based on conditions
-                                                    if (!empty($auctionTime) && $auctionTime !== "" && $auctionTime !== null) {
-                                                    // Extract number from auction_time (e.g., "10 Days" -> 10)
-                                                    preg_match('/\d+/', $auctionTime, $matches);
-                                                    $days = isset($matches[0]) ? (int)$matches[0] : 0;
-
-                                                    $expiration = $days > 0
-                                                    ? $baseDate->copy()->addDays($days)
-                                                    : null;
-                                                    } else {
-                                                    // Use expiration_date from get if auction_time is empty
-                                                    $expirationDate = data_get($auction->get, 'expiration_date');
-                                                    $expiration = !empty($expirationDate)
-                                                    ? $carbon::parse($expirationDate)
-                                                    : null;
-                                                    }
-
-                                                    // Step 4: Check if expired
-                                                    $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
+                                                        $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
                                                     @endphp
 
                                                     @if ($showCounterActions)
@@ -4330,8 +3809,11 @@
                         </div>
                     </div>
                 </div>
-            </div>{{-- end rightCol sidebar --}}
-        </div>{{-- end main row --}}
+        </x-slot>
+
+        {{-- Buyer alone renders content inside the container but after the grid: the share
+             block 749ace982 established below the two columns. It stays exactly there. --}}
+        <x-slot name="afterGrid">
         <button class="btn w-100 mt-0">
             <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
@@ -4499,65 +3981,19 @@
                 </div>
             </div>
         </div>
-    </div>
+        </x-slot>
+    </x-hire-agent.detail-shell>
 @endsection
 
-{{-- 🧠 Timer Script --}}
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js"
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-@if ($expiration && !$isExpired)
-<script>
-    $(document).ready(function() {
-        const exp = $('.time').data('expiration');
-        const expTime = new Date(exp).getTime();
-        const now = new Date().getTime();
-        const diffSec = Math.floor((expTime - now) / 1000);
-        if (diffSec <= 0) return;
-
-        const durations = Math.floor(diffSec / 86400) + "d" +
-            Math.floor((diffSec % 86400) / 3600) + "h" +
-            Math.floor((diffSec % 3600) / 60) + "m" +
-            (diffSec % 60) + "s";
-
-        $('.timer-d').timer({
-            countdown: true,
-            duration: durations,
-            format: '%d',
-            callback: onTimerEnd
-        });
-        $('.timer-h').timer({
-            countdown: true,
-            duration: durations,
-            format: '%h',
-            callback: onTimerEnd
-        });
-        $('.timer-m').timer({
-            countdown: true,
-            duration: durations,
-            format: '%m',
-            callback: onTimerEnd
-        });
-        $('.timer-s').timer({
-            countdown: true,
-            duration: durations,
-            format: '%s',
-            callback: onTimerEnd
-        });
-
-        function onTimerEnd() {
-            $('.timer-d, .timer-h, .timer-m, .timer-s').timer('remove');
-            $('.time').html("<span class='status-pill status-ended w-100 d-flex justify-content-center'>Bidding Ended</span>");
-            $('.bid-btn').fadeOut(300, function() {
-                $(this).after(
-                    "<div class='text-center mt-2 mb-0'><span class='status-pill status-ended w-100 d-flex justify-content-center'>Bidding Ended</span></div>"
-                );
-            });
-        }
-    });
-</script>
-@endif
+{{--
+    Milestone 3: the timer.jquery CDN tag and the whole countdown initialiser were removed from
+    here. Beyond rendering the clock, its onTimerEnd callback replaced the countdown with a
+    "Bidding Ended" pill AND faded out the Bid button — a client-side, timer-derived proposal
+    restriction layered on top of the server-side one. Proposal availability is now decided
+    solely by listing status and expiration_date, server-side. No JavaScript countdown is
+    initialised on this page any more, and the library is no longer loaded at all.
+--}}
 <script>
 document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
     header.addEventListener('click', function() {

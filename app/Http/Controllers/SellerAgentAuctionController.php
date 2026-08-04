@@ -21,16 +21,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use App\Models\SellerAgentAuctionBid;
-use App\Models\SellerAgentAuctionMeta;
 use App\Models\AgentDefaultProfile;
 use App\Models\AcceptedBidSummary;
 use App\Services\AcceptedBidSummaryService;
+use App\Services\HireAgent\HireAgentProposalAccess;
 use App\Services\SellerAcceptedBidSummaryService;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
 use App\Notifications\SellerAgentHiredNotification;
 use Illuminate\Support\Facades\Log;
-use DateTime;
 
 class SellerAgentAuctionController extends Controller
 {
@@ -322,7 +321,6 @@ class SellerAgentAuctionController extends Controller
 
     public function updateSellerAgentHireAuction(Request $request)
     {
-        // dd($request->post());
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
         // $allowedVideos = ['mp4', 'mov', 'wmv', 'avi', 'mkv', 'mpeg-2'];
         // $allowedAudios = ['mp3', 'wav', 'voc', 'ogg', 'oga', 'cda', 'ogv'];
@@ -478,14 +476,29 @@ class SellerAgentAuctionController extends Controller
 
         $data = $auction;
 
-        // Auto-transition Bidding Period listing to Pending when timer ends
-        $this->autoTransitionBpToPending($auction);
+        // Milestone 3: the autoTransitionBpToPending($auction) call stood here. It was already
+        // a no-op — an earlier change neutralised it so an elapsed Bidding Period timer could
+        // not flip a listing to Pending — and the method is removed with the timer. Nothing
+        // now mutates listing status as a side effect of rendering a detail page.
 
-        $page_data['title']         = $auction->address ?? 'Listing Details';
-        $page_data['counties']      = County::all();
-        $page_data['id']            = $id;
-        $page_data['auth_id']       = auth()->id();
-        $page_data['lowest_bidder'] = $auction->bids->sortByDesc('created_at')->first();
+        // Milestone 2 — competing-agent proposal privacy. Narrow the loaded bid relation to
+        // the proposals this viewer is authorized to see BEFORE the view runs, so the view
+        // cannot disclose a competitor's proposal through any markup path. Owner keeps the
+        // full set (review / compare / counter / accept / reject); an agent keeps their own
+        // bid only; everyone else gets nothing.
+        $proposalAccess = app(HireAgentProposalAccess::class);
+        $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
+
+        $page_data['title']    = $auction->address ?? 'Listing Details';
+        $page_data['counties'] = County::all();
+        $page_data['id']       = $id;
+        $page_data['auth_id']  = auth()->id();
+        // Gates the owner-only empty state. A bid count is itself a disclosure, so "No agents
+        // have submitted a bid yet." is owner-only rather than public.
+        $page_data['canReviewAllProposals'] = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
+        // `lowest_bidder` was removed here: it fed the "Agent N was the last bidder" line,
+        // which disclosed a competitor AND mislabelled them (it was the minimum brokerage
+        // bid, not the most recent). The views shadowed this value anyway, so nothing read it.
 
         return view('hire_seller_agent.view', compact('auction', 'data') + $page_data);
     }
@@ -674,19 +687,19 @@ class SellerAgentAuctionController extends Controller
                 $bid->saveMeta('note', json_encode($uploadedFiles));
             }
 
-            // Increment 1 day by adding one bid — Bidding Period listings only
-            $bid_count = SellerAgentAuctionBid::where('seller_agent_auction_id', $request->auction_id)->count();
-            $seller_auction = SellerAgentAuction::with('meta')->find($request->auction_id);
-            $sellerAuctionTypeMeta = strtolower(trim($seller_auction->get->auction_type ?? ''));
-            if (in_array($sellerAuctionTypeMeta, ['bidding period', 'auction (timer)'])) {
-                $date = new DateTime($seller_auction->get->expiration_date);
-                $date->modify('+1 day');
-                $date->setTime(0, 0, 0);
-                $increase_day = $date->format('Y-m-d H:i:s');
-                SellerAgentAuctionMeta::where('meta_key', 'expiration_date')
-                    ->where('seller_agent_auction_id', $request->auction_id)
-                    ->update(['meta_value' => $increase_day]);
-            }
+            // Milestone 3: a bid no longer extends the listing's expiration date.
+            //
+            // This block used to push expiration_date forward by one day every time an agent
+            // submitted a bid, for 'bidding period' / 'auction (timer)' listings — classic
+            // auction anti-sniping. It is the clearest case of the two concepts being wired
+            // together: bidding activity WROTE to the listing's expiration field, so the
+            // expiration date was partly a function of the bidding clock rather than the
+            // seller's stated deadline. A seller who set a 30-day listing could find it running
+            // well past that because agents kept bidding.
+            //
+            // With the timer retired, expiration_date is owner-controlled input only. Nothing
+            // here derives it from elapsed time or bid activity; the owner changes it by editing
+            // the listing. ($bid_count was computed here solely for this block and is gone too.)
 
             DB::commit();
             $route = route('seller.agent.auction.detail', $request->auction_id);
@@ -1202,24 +1215,15 @@ class SellerAgentAuctionController extends Controller
         if ($sort === 'most_viewed') {
             $auctions->orderByRaw('(SELECT COUNT(*) FROM seller_agent_auction_bids WHERE seller_agent_auction_bids.seller_agent_auction_id = seller_agent_auctions.id) DESC');
         } elseif ($sort === 'ending_soon') {
+            // Milestone 3: "ending soon" no longer ranks by a synthesised timer.
+            //
+            // The removed first branch ordered by created_at + auction_time (the retired bidding
+            // window) whenever that meta existed, falling back to expiration_date only when it
+            // did not — so a listing's position in this sort was decided by a countdown. Ranking
+            // by the listing's own expiration_date is normal lifecycle behaviour and is kept:
+            // it orders by a stored DATE and never computes time remaining.
             $auctions->orderByRaw("
                 CASE
-                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM seller_agent_auction_metas
-                             WHERE seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '') IS NOT NULL
-                        AND NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM seller_agent_auction_metas
-                             WHERE seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int > 0
-                        AND (seller_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM seller_agent_auction_metas
-                             WHERE seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int) > NOW()
-                    THEN EXTRACT(EPOCH FROM (seller_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
-                            (SELECT meta_value FROM seller_agent_auction_metas
-                             WHERE seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
-                        , ''), '[^0-9]', '', 'g'), '')::int))
                     WHEN COALESCE((SELECT meta_value FROM seller_agent_auction_metas
                         WHERE seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1), '') <> ''
                         AND (SELECT meta_value FROM seller_agent_auction_metas
@@ -1234,11 +1238,9 @@ class SellerAgentAuctionController extends Controller
         }
         $auctions_c = $auctions;
 
-        // dd($auctions->toSql());
 
         $page_data['count'] = $auctions_c->count();
 
-        // dd($page_data['count']);
         $page_data['pAuctions'] = $auctions->paginate(12);
         return view('hire_seller_agent.search', $page_data);
     }

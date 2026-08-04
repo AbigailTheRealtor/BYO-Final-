@@ -274,17 +274,43 @@ class OfferWorkflowReadinessTest extends TestCase
 
     // ── Test 10: static production-file guard ────────────────────────────────
 
+    /**
+     * The change set is collected by Tests\Support\ProductionScopeGuard rather than by a bare
+     * `git diff` here.
+     *
+     * This test previously asked git one question — `git diff --name-only` — which compares the
+     * WORKING TREE to the INDEX and therefore sees only unstaged changes. It missed two whole
+     * categories, and both were hit for real:
+     *
+     *   - STAGED changes. The Milestone 2 retirement checkpoint deleted four production files with
+     *     `git rm`, which stages the deletion. Index and working tree agreed, so `git diff`
+     *     returned nothing and this guard evaluated none of them.
+     *   - COMMITTED changes. Once a checkpoint is committed the working tree is clean, so the
+     *     guard's answer decays to the empty set and it passes trivially — strongest before the
+     *     work landed, useless afterwards, which is backwards.
+     *
+     * The guard now unions committed / staged / unstaged / untracked, detects renames on both
+     * sides, and grades identically whether a checkpoint is uncommitted, half-staged or committed.
+     * Its own behaviour is proven in ProductionScopeGuardTest against a purpose-built repository,
+     * including the staged-delete case that was missed here.
+     *
+     * The committed range defaults to the merge base with `main` — "everything this branch changed"
+     * — and can be pointed at a specific checkpoint via PROD_SCOPE_GUARD_BASE_REF.
+     */
     public function test_no_production_files_were_modified(): void
     {
-        $prodDirs = ['app/', 'config/', 'routes/', 'database/', 'resources/'];
-        $dirArgs  = implode(' ', $prodDirs);
+        $guard   = new \Tests\Support\ProductionScopeGuard(base_path());
+        $baseRef = $guard->resolveBaseRef();
 
-        $tracked   = shell_exec("git --no-optional-locks diff --name-only -- {$dirArgs} 2>&1") ?? '';
-        $untracked = shell_exec("git --no-optional-locks ls-files --others --exclude-standard -- {$dirArgs} 2>&1") ?? '';
+        $this->assertNotNull(
+            $baseRef,
+            'The production-scope guard could not resolve a base ref, so committed changes would go '
+            . 'unexamined — the exact blind spot this guard was hardened to close. Set '
+            . \Tests\Support\ProductionScopeGuard::BASE_REF_ENV . ' to an explicit base commit.'
+        );
 
-        $changedLines   = array_filter(explode("\n", trim($tracked)));
-        $untrackedLines = array_filter(explode("\n", trim($untracked)));
-        $allChanged     = array_merge($changedLines, $untrackedLines);
+        $collected  = $guard->collect($baseRef);
+        $allChanged = $collected['paths'];
 
         // Files intentionally modified by the "offer detail page bugs" fix task:
         // direction-aware permission gating, notification recipient fix,
@@ -337,7 +363,7 @@ class OfferWorkflowReadinessTest extends TestCase
             //        Create-Offer listing-details (Buyer/Tenant stay Traditional-only).
             'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/hire_landlord_agent/view.blade.php',
-            'resources/views/buyerAgentAuctionDetail.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_tenant_agent/view.blade.php',
             'resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/listing-details.blade.php',
             'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/listing-details.blade.php',
@@ -394,7 +420,7 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
             'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
             'app/Http/Livewire/TenantAgentAuction.php',
-            'resources/views/buyerAgentAuctionDetail.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_seller_agent/view.blade.php',
             'resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/purchasing-terms.blade.php',
             'resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php',
@@ -671,16 +697,207 @@ class OfferWorkflowReadinessTest extends TestCase
             // single discriminator; show.blade.php (already allow-listed above) picks
             // the copy from it. See tests/Feature/Offers/PendingOfferBannerTest.php.
             'app/Models/Offer.php',
+            // Hire Agent Listing Framework — Milestone 1 (structural only).
+            //   The Buyer Hire detail view was the sole naming outlier: three of four
+            //   roles live at resources/views/hire_<role>_agent/view.blade.php, while
+            //   Buyer sat at the view root as buyerAgentAuctionDetail.blade.php. It was
+            //   relocated with `git mv` to resources/views/hire_buyer_agent/view.blade.php
+            //   (contents untouched, 0 insertions / 0 deletions), so this controller's
+            //   view() call changed from 'buyerAgentAuctionDetail' to 'hire_buyer_agent.view'.
+            //   The relocated view's own allow-list entries are updated in place above.
+            //   No behaviour, markup, copy, routing or data change.
+            //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md.
+            'app/Http/Controllers/BuyerAgentAuctionController.php',
+            //   The VACATED path of that `git mv`. It was never allow-listed before, because the
+            //   old `git diff --name-only` collection reported only a rename's destination — the
+            //   source silently disappeared from the guard's view. The hardened guard reports both
+            //   ends of a move (a rename is two production-path changes, and allow-listing only
+            //   the destination would let a protected file be moved out from under the guard), so
+            //   this entry is now required. It is a genuine pre-existing gap surfaced by the
+            //   hardening, not a new change: nothing edited this path in this checkpoint.
+            'resources/views/buyerAgentAuctionDetail.blade.php',
+            // Hire Agent Listing Framework — Milestone 2, first checkpoint
+            // (competing-agent proposal privacy).
+            //   New central access service: the authoritative decision on who may see which
+            //   Hire Agent proposal. Owner reviews all; a submitting agent sees only their own;
+            //   competing-proposal access defaults to deny; no administrator path is added.
+            //   The four Hire controllers narrow the loaded bid relation through it BEFORE the
+            //   view runs, so no competing data is returned and then hidden in Blade — which is
+            //   what the four detail views previously did.
+            //   The four detail views lose the competing-proposal surfaces: the "Agent N was the
+            //   last bidder" line (also mislabelled — it named the minimum brokerage bid), the
+            //   "submit your bid to view competing bids" prompt, the Bidding Period competing-bid
+            //   banner and inline CompetingBidsService block, the Buyer limited-bid modal, and
+            //   the per-card COMPETITOR SUMMARY branch. The owner-only empty state is kept.
+            //   BuyerAgentAuctionController.php and the four hire_*_agent/view.blade.php files
+            //   are already allow-listed above.
+            //   Deliberately NOT touched at that checkpoint, pending the separate deletion
+            //   checkpoint: CompetingBidsController, CompetingBidsService, the two
+            //   competing-bids routes, tenant_agent/competing_bids.blade.php,
+            //   BiddingPeriodAgentMapping and its table, and Create Offer's
+            //   offer-listing/partials/_competing-bids.blade.php.
+            //   See docs/investigations/hire-agent-listing-framework-implementation-plan.md §2.
+            'app/Services/HireAgent/HireAgentProposalAccess.php',
+            'app/Http/Controllers/SellerAgentAuctionController.php',
+            'app/Http/Controllers/LandlordAgentAuctionController.php',
+            'app/Http/Controllers/TenantAgentAuctionController.php',
+            // Hire Agent Listing Framework — Milestone 2, second checkpoint
+            // (retirement of the legacy competing-bids surfaces).
+            //   That deletion checkpoint is this one. The four files below are DELETED, not
+            //   modified. Proposal privacy is now decided solely by HireAgentProposalAccess, so
+            //   the legacy stack had no remaining caller: a full dependency inventory found the
+            //   controller reachable only from its own two routes, the service only from that
+            //   controller, the dedicated view only from that controller, and the model only
+            //   from that service. Every other hit was documentation or the first checkpoint's
+            //   own survival assertions.
+            //   The two routes are removed from the already-allow-listed routes/web.php and the
+            //   URLs are left to 404 rather than redirected — a redirect to another proposal
+            //   surface would itself be a disclosure. See HireAgentCompetingBidsRetirementTest.
+            //   NOT removed, deliberately: the bidding_period_agent_mappings TABLE and its
+            //   migration (schema changes are out of scope for this checkpoint — only the
+            //   Eloquent model is gone), the four *BidMatchScoreHelper classes and their
+            //   `broker_comp_*` / `services_*` aliases (a stale comment in
+            //   TenantBidMatchScoreHelper still names CompetingBidsService, but the helpers are
+            //   protected and the aliases have many live consumers across the Hire and Buyer
+            //   Criteria views), and Create Offer's competing-bids feature in full.
+            'app/Http/Controllers/CompetingBidsController.php',
+            'app/Services/CompetingBidsService.php',
+            'app/Models/BiddingPeriodAgentMapping.php',
+            'resources/views/tenant_agent/competing_bids.blade.php',
+            // Hire Agent Listing Framework — Milestone 3
+            // (retirement of the legacy listing countdown).
+            //   The Hire Agent bidding timer is removed. It was wired to the listing expiration
+            //   date in BOTH directions, which is what made it more than cosmetic: a Bidding
+            //   Period listing SYNTHESISED its expiry from created_at + auction_time and fed that
+            //   into $isExpired (so an elapsed countdown, not listing status, gated the Bid
+            //   button, and onTimerEnd faded the button out client-side), while submitting a bid
+            //   pushed expiration_date forward a day (so the owner's deadline moved with bidding
+            //   activity). expiration_date is now the sole expiry source and is owner input only.
+            //
+            //   The four hire_*_agent/view.blade.php files and the four detail controllers are
+            //   already allow-listed above. Newly touched, each for one reason:
+            //     search views      — the live "3d 04:12:07" countdown badge on result cards and
+            //                         the entire @push('scripts') block that drove it. Buyer has
+            //                         no search view, hence three not four.
+            //     bid_detail /      — $isBiddingPeriodListing was assigned and never read;
+            //     view-bid            removed with the bidding period.
+            //     bid_action_row    — dropped its $isTraditionalListing parameter, which existed
+            //                         only to spare Bidding Period listings the expiry notice.
+            //     Controller.php    — autoTransitionBpToPending() deleted from the base
+            //                         controller. It once flipped a listing to Pending when the
+            //                         countdown elapsed (timer completion mutating status); it
+            //                         was already a neutralised no-op and its only four callers
+            //                         were the Hire Agent detail controllers.
+            //     TenantAgentAuctionBid (Livewire + view)
+            //                       — the bid wizard's proposal guard read a non-existent
+            //                         end_date/end_time pair; it is now status-based
+            //                         (expiration_date / sold / Pending / Hired Agent). The
+            //                         "Public Bid Notice" bidding-period label is removed — it
+            //                         also stopped being true at Milestone 2.
+            //     TenantAgentAuction — isBiddingPeriodType() / isBiddingPeriodActive() deleted
+            //                         after losing their last callers. auction_ended and its use
+            //                         in getStatusAttribute() are KEPT: that flag is set by the
+            //                         owner ending the listing, not by a clock.
+            //   No schema, no migration, no Create Offer path is touched.
+            //   See HireAgentTimerRetirementTest and HireAgentTimerExpirationIsolationTest.
+            'resources/views/hire_seller_agent/search.blade.php',
+            'resources/views/hire_landlord_agent/search.blade.php',
+            'resources/views/hire_tenant_agent/search.blade.php',
+            'resources/views/hire_seller_agent/bid_detail.blade.php',
+            'resources/views/hire_buyer_agent/bid_detail.blade.php',
+            'resources/views/hire_landlord_agent/view-bid.blade.php',
+            'resources/views/hire_landlord_agent/partials/bid_action_row.blade.php',
+            'resources/views/livewire/tenant/tenant-agent-auction-bid.blade.php',
+            'app/Http/Controllers/Controller.php',
+            'app/Http/Livewire/Tenant/TenantAgentAuctionBid.php',
+            'app/Models/TenantAgentAuction.php',
+            // Hire Agent Listing Framework — Milestone 4
+            // (shared listing-detail framework).
+            //   Six NEW Hire Agent-owned files, plus the four detail views that adopt them. No
+            //   Create Offer path is touched, and the framework cannot reach Create Offer: it
+            //   declares its own .hla- CSS namespace, references no offer-listing view, and is
+            //   asserted disjoint from Create Offer's .sol- namespace by
+            //   HireAgentDetailFrameworkTest.
+            //
+            //   styles.blade.php — the thirty CSS rules that were BYTE-IDENTICAL in all four
+            //     detail views, chosen by rule-level intersection so relocating them cannot
+            //     change what renders, plus the new .hla-hero rules and mobile stacking. Rules
+            //     that merely looked shared (Buyer's yellow .btn-counter, !important and comment
+            //     differences) stay in each view's residual block, on purpose.
+            //   hero.blade.php — the shared hero. There was none before; the title sat at the top
+            //     of the right column. Renders no countdown, no remaining time and no competing-
+            //     proposal data by construction.
+            //   info-card / field / flash — the card shell, the 340-times-repeated label/value
+            //     row, and the identical session-flash block, extracted verbatim.
+            //   HireAgentHeroData — the hero's role-specific data contract. Pure, reads only
+            //     already-loaded $auction->get meta, adds no query, computes no figure, and
+            //     suppresses the retired "Bidding Period" listing-type label so a legacy row
+            //     cannot reintroduce that vocabulary through new markup.
+            //
+            //   No controller, route, model, migration or schema change was needed: the views
+            //   already had every value the hero shows.
+            'resources/views/hire_agent/framework/styles.blade.php',
+            'resources/views/components/hire-agent/hero.blade.php',
+            'resources/views/components/hire-agent/info-card.blade.php',
+            'resources/views/components/hire-agent/field.blade.php',
+            'resources/views/components/hire-agent/flash.blade.php',
+            'app/Support/HireAgent/HireAgentHeroData.php',
+            // Hire Agent Listing Framework — Milestone 5A.3 (shared detail shell).
+            //   The shell the four detail views had each been carrying inline: framework styles,
+            //   flash, hero, listing container, the Bootstrap row and both column wrappers. All
+            //   four views now name it instead, so each loses its own copy of those seven
+            //   wrappers — that is the whole of the change to them.
+            //   It owns page structure only: no authorization, no user id, no route resolution,
+            //   no role branching. $role reaches the hero for label selection and a test marker;
+            //   $auction reaches the hero for its display fields. The sidebar BODY stays with
+            //   each role view — extracting that is Milestone 5B.
+            //   Buyer additionally uses the afterGrid slot to keep its share block below the
+            //   grid, the position 749ace982 established.
+            //   This entry was missing when the component was committed on its own in 5c355846b;
+            //   the guard caught it here, which is what it is for.
+            'resources/views/components/hire-agent/detail-shell.blade.php',
+            // Milestone 1 — the shared VIHO design-token foundation. One neutral stylesheet of
+            //   CSS custom properties, extracted verbatim from the byte-identical :root block the
+            //   four Create Offer views each already carry, plus the radius/shadow/spacing/
+            //   typography values that occur in all four as literals.
+            //   Additive and inert: nothing includes it, and no page reads a --viho token
+            //   anywhere, so it cannot alter rendering. Adoption is M3 (Hire Agent) and M8
+            //   (Create Offer). This is the ONLY production path M1 touches.
+            'resources/views/viho/styles.blade.php',
+            // Milestone 2 — the eight neutral VIHO presentation primitives, plus the component CSS
+            //   they need appended to the M1 stylesheet above. Listed individually rather than as a
+            //   directory wildcard: the point of the entry is that adding a NINTH component is a
+            //   decision someone has to make explicitly, and a wildcard would wave the deferred
+            //   composed components (hero, gallery, detail shell, quick actions…) straight through.
+            //   Additive and inert: nothing renders any of them, and neither product reads a
+            //   --viho token. Adoption is M3 (Hire Agent) and M8 (Create Offer).
+            'resources/views/components/viho/action-tile.blade.php',
+            'resources/views/components/viho/badge.blade.php',
+            'resources/views/components/viho/button.blade.php',
+            'resources/views/components/viho/card.blade.php',
+            'resources/views/components/viho/empty-state.blade.php',
+            'resources/views/components/viho/kv.blade.php',
+            'resources/views/components/viho/section-header.blade.php',
+            'resources/views/components/viho/stat.blade.php',
+            // Milestone 4 — the Hire Agent hero redesign, landlord pilot. Two production paths:
+            //   the feature-flag config that gates the redesign (nothing reads these keys except
+            //   HireAgentHeroData::redesignEnabledFor(), and both the master switch and the role
+            //   allowlist default to off/landlord), and the neutral VIHO hero primitive — the
+            //   ninth component, promoted from the deferred composed list that the M2 entry above
+            //   deliberately refused to wave through with a wildcard. Promoting it was an explicit
+            //   decision, so it earns an explicit entry here.
+            'config/hire_agent_hero.php',
+            'resources/views/components/viho/hero.blade.php',
         ];
 
-        $unexpected = array_values(array_filter(
-            $allChanged,
-            fn ($f) => !in_array(trim($f), $taskAllowlist, true)
-        ));
+        $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
 
         $this->assertEmpty(
             $unexpected,
-            'Production files were modified or created outside the task allowlist: ' . implode(', ', $unexpected),
+            'Production files were modified or created outside the task allowlist: '
+            . implode(', ', $unexpected)
+            . "\n\nFull change set for {$baseRef}...HEAD (path [status/origin]):\n  "
+            . implode("\n  ", $guard->describe($collected['entries'], $allChanged)),
         );
     }
 }
