@@ -941,6 +941,21 @@ class OfferWorkflowReadinessTest extends TestCase
             //   component is registered here — M5.5 released none. The card's chrome reuses
             //   badge and empty-state, both already on this list since M2.
             'resources/views/hire_landlord_agent/partials/proposal_card.blade.php',
+            // M6 — listing document delivery hardening. A SECURITY change, and the only reason a
+            //   shared partial appears on this list.
+            //   The partial linked the listing document with a raw public storage URL — the last
+            //   entry in BladePublicMediaSeamTest::DEFERRED, deferred out of R2-E0b precisely
+            //   because replacing it is an authorization change. It now points at
+            //   route('listing.document.show', …) and renders the control only when
+            //   ListingDocumentAccessService::canViewDownload() allows it. No rule is
+            //   reimplemented here; the service is asked.
+            //   It is shared by the landlord and seller Hire Agent detail views and by nothing
+            //   else, which is why seller is in scope: fixing landlord alone would leave seller on
+            //   the public URL. Buyer and tenant do not include it and are untouched.
+            //   Registered as one exact path rather than a partials/ wildcard, for the reason the
+            //   M2 entry gives — the next shared partial to change should be a decision somebody
+            //   made and wrote down.
+            'resources/views/partials/listing-photos-tours-documents.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

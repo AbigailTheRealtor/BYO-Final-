@@ -1722,7 +1722,10 @@
                             </div>
                         @endif
 
-                        @include('partials.listing-photos-tours-documents')
+                        {{-- M6: see the equivalent note in hire_landlord_agent/view.blade.php.
+                             Seller is touched here only because it shares this partial and would
+                             otherwise keep the public document URL this milestone removes. --}}
+                        @include('partials.listing-photos-tours-documents', ['listingDocumentType' => 'seller'])
 
                         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
                         @php
