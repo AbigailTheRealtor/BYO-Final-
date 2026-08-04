@@ -81,8 +81,9 @@ return [
     | must agree before anything renders, so a single environment variable cannot
     | widen the rollout by accident.
     |
-    | Slice 1 shipped `hire_buyer`, slice 2 `hire_tenant`, slice 3 `create_tenant`.
-    | `create_buyer` is the last step, and is its own slice.
+    | Slices 1-4 shipped `hire_buyer`, `hire_tenant`, `create_tenant` and
+    | `create_buyer`. That is every workflow with a geography surface; Seller and
+    | Landlord have none and are excluded structurally, not by this list.
     |
     | A WORKFLOW MAY ONLY BE LISTED ONCE ITS TAB RENDERS THE CASCADE. The cascade
     | states all four geography keys whenever it is enabled, so a workflow that
@@ -95,7 +96,7 @@ return [
 
     'geography_cascade_workflows' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer,hire_tenant,create_tenant'))
+        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer,hire_tenant,create_tenant,create_buyer'))
     ))),
 
 ];

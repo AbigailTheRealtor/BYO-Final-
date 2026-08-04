@@ -21,6 +21,20 @@ class BuyerOfferListingEdit extends Component
     use ResolvesOwnedAuction;
     use HasImportantPlaces;
 
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+
+    /**
+     * Phase 1c slice 4 — the cascade workflow key for the role this component is serving.
+     *
+     * Must match BuyerOfferListing's exactly. Create and edit are one workflow to a user, and a
+     * cascade that appeared on one and vanished on the other would be worse than one that
+     * appeared on neither. Every role but buyer resolves to NULL.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return $this->user_type === 'buyer' ? 'create_buyer' : null;
+    }
+
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
     ];
@@ -1347,6 +1361,10 @@ class BuyerOfferListingEdit extends Component
     public function mount($auctionId = null)
     {
 
+        // Phase 1c — decide whether the cascade runs, before loadAuctionData() below re-derives
+        // the role from the stored record. Inert while the flag is off.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
         if ($auctionId) {
             $this->auctionId = $auctionId;
             $this->listingId = $auctionId;
@@ -1878,6 +1896,13 @@ class BuyerOfferListingEdit extends Component
 
             $this->existingLocationDna = $ldna;
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
+
+            // Phase 1c — hydrate the cascade from the document just decoded above. Booted here as
+            // well as in mount() because a loaded record's stored user_type is the authoritative
+            // one. Inert unless the buyer role's workflow is in scope; anything the reference
+            // corpus cannot match is carried as preserved history rather than dropped.
+            $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
             // 9B-2 prefill for Preferred State / counties runs after $this->counties is
             // loaded below (the JS bridge carries the merged blob back on save).
             $this->property_type = $auction->get->property_type ?? '';
@@ -2426,6 +2451,17 @@ class BuyerOfferListingEdit extends Component
      */
     protected function persistLocationDna($auction): void
     {
+        // Phase 1c — merge the cascade's four geography keys into the bridged payload, in the same
+        // label format the previous editor produced. Inert unless the cascade is enabled for this
+        // role, and a MERGE rather than a rebuild so the widget's polygons, radius searches,
+        // flexible flag and notes survive untouched.
+        //
+        // The write below is UNCHANGED: the DEFAULT writer and therefore the default mirror set,
+        // which excludes `zipCodes`. The Buyer family has never written that key and must not
+        // start — `create_buyer` is deliberately absent from ZIP_MIRROR_WORKFLOWS, and this class
+        // declares no `$zipCodes` property for the trait to touch even if it were.
+        $this->applyGeographyCascadeToPayload();
+
         (new OwnerPrivateLocationDnaWriter())
             ->persistFromEditorPayload($auction, $this->location_dna_preferences_json);
     }
@@ -2897,6 +2933,12 @@ class BuyerOfferListingEdit extends Component
         ]);
 
         try {
+            // Phase 1c — project the cascade into the bridged payload BEFORE the pre-validation
+            // hydrate below, so the discrete `$state` / `$counties` the `required` rules read are
+            // the ones the user actually chose rather than the stored values the widget's
+            // server-seeded blob still carries. Idempotent, and inert while the cascade is off.
+            $this->applyGeographyCascadeToPayload();
+
             // 9B-3: hydrate state/counties from the Search Areas blob before validation,
             // since the discrete Acceptable State/Counties inputs were removed.
             $this->hydrateDiscreteLocationFromBlob();
