@@ -1,9 +1,9 @@
-# Carried-forward items from Hire Agent M5.2 / M5.3 / M5.4
+# Carried-forward items from Hire Agent M5.2 / M5.3 / M5.4 / M5.5 / M6
 
 **Status:** OPEN, unowned. Recorded deliberately; **none of these is in scope for the
 milestone that found it.**
 **Recorded:** 2026-08-04, at the close of M5.3 (Quick Actions); extended at the close of M5.4
-(bid CTA and sidebar action rail).
+(bid CTA and sidebar action rail), M5.5 (proposal console) and M6 (listing document delivery).
 
 Each item below was found during M5 work, reviewed, and explicitly deferred rather than fixed in
 passing. They are written down because each is the kind of thing that is obvious on the day and
@@ -248,6 +248,64 @@ same way and want the same check.
 
 Fixing it means deciding what the counter is supposed to be compared *against* — the original bid,
 or the listing — which is a product question about the diff, not a rename.
+
+---
+
+## 11. 37 legacy listing-document files remain on the public disk
+
+**Class:** stale data with a public reach. Found during M6 verification. **Deliberately not
+deleted, not migrated, and not touched.** Removal requires its own approved step.
+
+M6 stopped the Blade layer from *linking* listing documents publicly: the partial now points at
+`route('listing.document.show', …)`, which re-checks
+`ListingDocumentAccessService::canViewDownload()` on every request and streams from the private
+disk. That closes the link. It does **not** close the files.
+
+### What was measured
+
+| Fact | Value |
+|---|---|
+| Files under `storage/app/public/auction/documents/` | **37** |
+| Files under `storage/app/auction/documents/` (private) | **0** |
+| Rows storing `listing_documents` — `seller_agent_auction_metas` | **0** |
+| Rows storing `listing_documents` — `landlord_agent_auction_metas` | **0** |
+| Native `listing_documents` column on any table | **none** (checked via `information_schema`) |
+
+So **no listing currently references any of these 37 files.** They are orphans with respect to
+`listing_documents`. They remain reachable by direct URL through the `public/storage` symlink —
+`/storage/auction/documents/<filename>` — by anyone who knows or guesses a filename. The
+filenames are UUIDs, which is obscurity, not access control.
+
+### Why M6 did not remove them
+
+Deleting files is irreversible and cannot be undone by a revert, which makes it the wrong thing
+to fold into a change whose whole appeal is that it is revertible. It is also a different kind of
+decision: the link fix is provably safe because the authorization already existed and was simply
+not being consulted, whereas deletion asserts that nothing anywhere needs these bytes — and this
+audit only establishes that `listing_documents` does not reference them. It does not establish
+what does.
+
+**That last point matters and is not settled.** `doc_rows` (123 rows) and `landlord_doc_rows`
+(64 rows) hold the *additional documents* uploads, served by
+`ListingDocumentController::additional()` — a different route with its own authorization. Whether
+any of the 37 files belongs to that path, to a retired flow, or to nothing at all was **not**
+determined here. Nobody should delete anything until it is.
+
+### What a cleanup step would have to do, in order
+
+1. Establish provenance for all 37 files — which meta key, which listing, which flow, or none.
+2. For any file still referenced, run `php artisan documents:backfill-private` (idempotent;
+   copy → verify → optional delete) so the private route can serve it.
+3. Only then remove the public copies, as a separately approved step, with the deletion list
+   reviewed rather than globbed.
+
+### One environment-specific caveat
+
+Every count above was measured against **this** database. A pre-HI-05 environment may well hold
+`listing_documents` rows whose files were never migrated; there, the M6 link change makes those
+documents unreachable until the backfill runs. **Run the audit before deploying M6 elsewhere** —
+it is the same three queries, and it is the difference between "no backfill needed" and "backfill
+is a prerequisite".
 
 ---
 

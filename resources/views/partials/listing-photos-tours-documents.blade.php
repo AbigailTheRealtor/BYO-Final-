@@ -36,10 +36,63 @@
     $viewVideoTourUrl   = $safeUrl($viewVideoTourUrl);
     $viewVirtualTourUrl = $safeUrl($viewVirtualTourUrl);
 
+    /*
+     | M6 — THE LISTING DOCUMENT IS DELIVERED THROUGH THE AUTHORIZED ROUTE, AND THIS FILE DOES
+     | NOT DECIDE WHO MAY HAVE IT.
+     |
+     | Until now this partial linked the document with a raw public storage URL, reachable by
+     | anyone who could read the page or guess the filename. It was the LAST such site in the
+     | Blade layer, carried as the single entry in BladePublicMediaSeamTest::DEFERRED, and it was
+     | deferred out of R2-E0b on the explicit grounds that replacing it is an authorization
+     | change rather than a URL-seam change. This is that change.
+     |
+     | The old idiom is described rather than quoted here on purpose: BladePublicMediaSeamTest
+     | scans every line of every view, and a comment that spelled it out would read as a live
+     | call site. Prose should not need an exemption from the guard it is describing.
+     |
+     | THE RULE IS ASKED, NEVER REBUILT. ListingDocumentAccessService::canViewDownload() is the
+     | authority, exactly as ListingDocumentController::show() consults it on every request. This
+     | file does not test ownership, does not read user_type, and does not know what
+     | REQUEST_REQUIRED means. Reimplementing the rule here — even correctly — would create the
+     | second opinion that lets a view and a controller drift apart, which is how the M4 Hire
+     | Agent hero came to publish compensation the page body was gating.
+     |
+     | The render gate and the route enforcement are NOT redundant, they are different jobs:
+     | the route decides whether the file may be delivered, and this decides whether a control is
+     | offered that would succeed. Without the gate the page would show a Download button that
+     | 403s for every viewer who is not the owner or an authorized listing agent.
+     |
+     | FAIL CLOSED ON A MISSING TYPE. $listingDocumentType is supplied by the including view
+     | (landlord / seller). A caller that forgets it, or passes a type the catalog does not
+     | support, gets NO document control — not a public link, and not a guess. The alternative,
+     | defaulting to a role, would silently hand one listing type's document rules to another.
+     */
+    $listingDocumentType = $listingDocumentType ?? null;
+
+    $canViewListingDocument = false;
+
+    if (! empty($viewListingDocument)
+        && is_string($listingDocumentType)
+        && \App\Services\Documents\ListingDocumentCatalog::supportsListingType($listingDocumentType)) {
+        $canViewListingDocument = app(\App\Services\Documents\ListingDocumentAccessService::class)
+            ->canViewDownload(
+                auth()->user(),
+                $listingDocumentType,
+                (int) data_get($auction, 'id'),
+                'listing_documents'
+            );
+    }
+
+    /*
+     | The section's own visibility follows the AUTHORIZED document, not the stored one. A listing
+     | whose only extra content is a document the viewer may not have now renders nothing at all,
+     | rather than a "Photos, Tours & Documents" heading with an empty body — the same defect the
+     | M5.5 proposal console had, and the same fix.
+     */
     $hasPhotosToursDocs = !empty($viewPropertyPhotos)
         || !empty($viewVideoTourUrl)
         || !empty($viewVirtualTourUrl)
-        || !empty($viewListingDocument);
+        || $canViewListingDocument;
 
     // Convert a YouTube or Vimeo URL to an embed URL (returns null for unsupported)
     $videoEmbedUrl = !empty($viewVideoTourUrl)
@@ -117,19 +170,20 @@
     @endif
 
     {{-- Documents --}}
-    @if (!empty($viewListingDocument))
+    {{-- M6: gated on the access service, not on the presence of a stored filename. See the
+         governance note in the @php block above — the R2-E0b deferral this replaces is closed. --}}
+    @if ($canViewListingDocument)
     <div class="col-12 mb-2">
         <p class="fw-bold mb-1"><i class="fa-solid fa-paperclip me-1 text-secondary"></i> Documents</p>
-        {{-- R2-E0b DEFERRED — do not convert this to ListingMediaUrl::get().
-             Since HI-05 the listing document is written to the PRIVATE disk
-             (SellerOfferListing.php:3885 / LandlordOfferListing.php:3834 call
-             storePrivate), so this public link is already wrong for new uploads
-             and still live for legacy files. The correct fix is
-             route('listing.document.show', …) via ListingDocumentController,
-             which re-checks authorization — an access-control change, not a URL
-             seam change. Tracked in the document track; BladePublicMediaSeamTest
-             carries the single allow-list entry for this line. --}}
-        <a href="{{ asset('storage/auction/documents/' . $viewListingDocument) }}"
+        {{-- Delivered by ListingDocumentController, which re-checks canViewDownload() on every
+             request and streams from the PRIVATE disk. No public URL for this file exists.
+             The document key is the literal catalogued key, never request input or a filename:
+             the controller resolves the stored path from the listing itself. --}}
+        <a href="{{ route('listing.document.show', [
+                'listingType' => $listingDocumentType,
+                'listingId'   => data_get($auction, 'id'),
+                'documentKey' => 'listing_documents',
+           ]) }}"
            target="_blank"
            rel="noopener noreferrer"
            class="btn btn-outline-dark btn-sm">

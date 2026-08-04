@@ -28,21 +28,28 @@ use Tests\TestCase;
 class BladePublicMediaSeamTest extends TestCase
 {
     /**
-     * The ONLY permitted asset('storage/…') site in the Blade layer.
+     * EMPTY, AND IT SHOULD STAY EMPTY.
      *
-     * partials/listing-photos-tours-documents.blade.php links the listing
-     * document. Since HI-05 that file is written to the PRIVATE disk, so the
-     * correct fix is route('listing.document.show', …) via
-     * ListingDocumentController — an authorization change owned by the document
-     * track, not a URL-seam change. Deferred out of R2-E0b deliberately so this
-     * PR stays byte-equivalent and revertible.
+     * This list held exactly one entry: the listing-document link in
+     * partials/listing-photos-tours-documents.blade.php. R2-E0b deferred it on
+     * the grounds that replacing it is an authorization change rather than a
+     * URL-seam change, and owned by the document track.
+     *
+     * M6 made that change. The link is now
+     * route('listing.document.show', …) — delivered by ListingDocumentController,
+     * which re-checks ListingDocumentAccessService::canViewDownload() on every
+     * request and streams from the private disk — and the partial no longer
+     * builds any storage URL for the document at all.
+     *
+     * The constant is kept rather than deleted, and
+     * test_deferred_exception_is_a_single_known_site is now an emptiness
+     * assertion, because the value of this list was never the entry: it was that
+     * a NEW exception has to be written down here to pass. Deleting the
+     * mechanism would remove that pressure along with the entry.
      *
      * Keyed by repo-relative path => the substring that identifies the line.
      */
-    private const DEFERRED = [
-        'resources/views/partials/listing-photos-tours-documents.blade.php'
-            => "asset('storage/auction/documents/' . \$viewListingDocument)",
-    ];
+    private const DEFERRED = [];
 
     /** The 25 views converted by R2-E0b, by group. */
     private const CONVERTED = [
@@ -165,25 +172,42 @@ class BladePublicMediaSeamTest extends TestCase
         );
     }
 
-    /** The deferred exception must remain exactly one line — no quiet growth. */
-    public function test_deferred_exception_is_a_single_known_site(): void
+    /**
+     * There is no deferred exception left, and adding one must be deliberate.
+     *
+     * M6 closed the single entry. This assertion is deliberately kept and inverted rather than
+     * removed: an empty allow-list that is *asserted* empty is a standing guard, whereas a
+     * deleted constant is an invitation to reintroduce a public media URL quietly.
+     */
+    public function test_no_deferred_exception_remains(): void
     {
-        $this->assertCount(1, self::DEFERRED, 'The deferred allow-list must not grow.');
+        $this->assertSame(
+            [],
+            self::DEFERRED,
+            'The deferred allow-list is closed. A new exception requires an explicit entry here '
+            . 'and the review that goes with it.'
+        );
+    }
 
-        foreach (self::DEFERRED as $rel => $needle) {
-            $src = (string) file_get_contents(base_path($rel));
+    /**
+     * The listing document is reached through the authorized route, not a storage URL.
+     *
+     * Source-level, because it is the seam this suite owns. The behavioural half — who is offered
+     * the control, and what the route does to an unauthorized request — lives in
+     * ListingDocumentDeliveryTest.
+     */
+    public function test_the_listing_document_uses_the_authorized_route(): void
+    {
+        $rel = 'resources/views/partials/listing-photos-tours-documents.blade.php';
+        $src = (string) file_get_contents(base_path($rel));
 
-            $this->assertSame(
-                1,
-                substr_count($src, $needle),
-                "The deferred document link in {$rel} must appear exactly once."
-            );
-            $this->assertSame(
-                1,
-                preg_match_all("/asset\(\s*['\"]storage\//", $src),
-                "{$rel} must contain no raw storage URL other than the deferred document link."
-            );
-        }
+        $this->assertStringContainsString("route('listing.document.show'", $src);
+        $this->assertStringNotContainsString('storage/auction/documents', $src);
+        $this->assertSame(
+            0,
+            preg_match_all("/asset\(\s*['\"]storage\//", $src),
+            "{$rel} must build no raw storage URL at all."
+        );
     }
 
     /** Every converted view still compiles and actually uses the resolver. */

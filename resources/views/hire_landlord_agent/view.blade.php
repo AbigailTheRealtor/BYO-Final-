@@ -1645,7 +1645,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @include('partials.listing-photos-tours-documents')
+        {{-- M6: the listing type is supplied here, not guessed inside the partial. It selects the
+             model and the document rules the access service applies; a partial that inferred it
+             would be deciding authorization scope from markup. Omitting it fails closed — the
+             document control simply does not render. --}}
+        @include('partials.listing-photos-tours-documents', ['listingDocumentType' => 'landlord'])
 
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
 
