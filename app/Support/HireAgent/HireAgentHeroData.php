@@ -178,11 +178,27 @@ final class HireAgentHeroData
     // ── the headline figure ──────────────────────────────────────────────────
 
     /**
-     * One stored key, `budget`, formatted with the helper the views already use. Only the label
-     * differs by role, because only the meaning differs.
+     * The headline figure, formatted with the helper the views already use.
+     *
+     * ── M5.0a: LANDLORD READS A DIFFERENT KEY ────────────────────────────────────────────────
+     *
+     * Every role used to read `budget`. For landlord that key is never written — the rent lives
+     * in `desired_rental_amount` — so the landlord figure resolved to null on every listing and
+     * the slot silently never rendered. That was a wiring defect, not missing data: the rent was
+     * there the whole time, under a name this presenter did not ask for.
+     *
+     * Only landlord is re-pointed. `budget` is confirmed correct for tenant, and buyer stores its
+     * own budget keys; seller's figure has the same class of defect (its price lives in the native
+     * `min_price` column) but the fix is a different key on a different storage model, and seller
+     * is outside this milestone's landlord-first scope. It is recorded here so the next role
+     * migration does not rediscover it: SELLER'S HEADLINE FIGURE IS STILL DEAD.
      */
     private static function figure(string $role, $meta): ?array
     {
+        if ($role === 'landlord') {
+            return self::landlordRentFigure($meta);
+        }
+
         $raw = $meta->budget ?? null;
 
         if (! ListingDisplayHelper::hasValue($raw)) {
@@ -192,7 +208,6 @@ final class HireAgentHeroData
         return [
             'label' => match ($role) {
                 'seller'   => 'Listing Price',
-                'landlord' => 'Monthly Rent',
                 'buyer'    => 'Purchase Budget',
                 'tenant'   => 'Rental Budget',
                 default    => 'Budget',
@@ -201,25 +216,70 @@ final class HireAgentHeroData
         ];
     }
 
+    /**
+     * Landlord rent, labelled by the frequency the owner actually chose.
+     *
+     * "Monthly Rent" was hard-coded before. The stored `lease_amount_frequency` is Monthly on most
+     * listings but Annually and Seasonal on others, so a fixed label would have mislabelled real
+     * records — stating a monthly figure for an annual amount, which is worse than showing no
+     * label at all. The frequency is read, never computed, and an unrecognised or absent value
+     * falls back to the unqualified "Rent" rather than guessing.
+     */
+    private static function landlordRentFigure($meta): ?array
+    {
+        $raw = $meta->desired_rental_amount ?? null;
+
+        if (! ListingDisplayHelper::hasValue($raw)) {
+            return null;
+        }
+
+        return [
+            'label' => self::rentLabel(self::str($meta->lease_amount_frequency ?? null)),
+            'value' => ListingDisplayHelper::fmtMoneyWhole($raw),
+        ];
+    }
+
+    /** Stored frequency → figure label. Anything unrecognised stays unqualified. */
+    private static function rentLabel(?string $frequency): string
+    {
+        return self::RENT_LABELS[strtolower(trim((string) $frequency))] ?? 'Rent';
+    }
+
     // ── the secondary facts ──────────────────────────────────────────────────
 
     /**
-     * Seller/Landlord get a compensation summary; Buyer/Tenant get their preferred area. Both are
-     * read straight from stored fields — no derivation.
+     * Buyer/Tenant get their preferred area; Seller/Landlord get no first fact at all.
+     *
+     * ── M5.0b: AGENT COMPENSATION IS NOT PUBLIC ──────────────────────────────────────────────
+     *
+     * THIS IS A PRODUCT-RULE CHANGE, NOT A TEST ADJUSTMENT. Hire Agent listings must not publicly
+     * display agent compensation. What stood here was the opposite: seller and landlord heroes
+     * carried a "Broker Compensation" / "Leasing Compensation" fact, sourced from the first
+     * non-empty of `commission_structure`, `purchase_fee_type`, `lease_fee_type` and
+     * `brokerage_relationship`.
+     *
+     * It was published to EVERYONE. The hero primitive cannot see who is looking — by design, and
+     * enforced by its guard tests — so there was no viewer distinction to fall back on. A
+     * logged-out visitor read the compensation arrangement straight off the page.
+     *
+     * The exposure was NOT limited to the redesigned hero. This presenter feeds both treatments,
+     * so the legacy hero published it too, on every role, behind no feature flag. Removing it here
+     * closes both at once, which is why the fix belongs in the presenter rather than in a view.
+     *
+     * The fallback chain is gone with it, and deliberately so — `brokerage_relationship` holds a
+     * relationship type ("Single Agent"), not compensation at all, so it could render a
+     * non-compensation value under a compensation label.
+     *
+     * Property roles are therefore left with `Property Type` alone. That asymmetry is intended: a
+     * property listing's remaining public facts describe the property, and nothing was substituted
+     * for the removed row. Do not reintroduce a compensation field here, or anywhere else public,
+     * without an explicit product decision reversing this one.
      */
     private static function facts(string $role, $meta): array
     {
         $facts = [];
 
-        if (in_array($role, ['seller', 'landlord'], true)) {
-            $comp = self::compensationSummary($meta);
-            if ($comp !== null) {
-                $facts[] = [
-                    'label' => $role === 'landlord' ? 'Leasing Compensation' : 'Broker Compensation',
-                    'value' => $comp,
-                ];
-            }
-        } else {
+        if (! in_array($role, ['seller', 'landlord'], true)) {
             $area = self::preferredArea($meta);
             if ($area !== null) {
                 $facts[] = ['label' => 'Preferred Area', 'value' => $area];
@@ -235,25 +295,16 @@ final class HireAgentHeroData
     }
 
     /**
-     * The compensation *structure label* the owner already chose — not a computed fee.
+     * Stored lease frequencies, lower-cased, mapped to the label the figure carries.
      *
-     * The Broker Compensation card carries dozens of interdependent fields (flat vs percentage vs
-     * combo, lease vs purchase, timing, termination). Summarising those into a number would be
-     * exactly the invented financial calculation this milestone forbids, and it would be wrong
-     * often enough to matter. The hero therefore names the structure and leaves the detail to the
-     * card, which is where the owner entered it.
+     * A closed list on purpose: a frequency nobody has reviewed should degrade to "Rent" rather
+     * than have a label invented for it.
      */
-    private static function compensationSummary($meta): ?string
-    {
-        foreach (['commission_structure', 'purchase_fee_type', 'lease_fee_type', 'brokerage_relationship'] as $key) {
-            $value = self::str($meta->{$key} ?? null);
-            if ($value !== null) {
-                return $value;
-            }
-        }
-
-        return null;
-    }
+    private const RENT_LABELS = [
+        'monthly'  => 'Monthly Rent',
+        'annually' => 'Annual Rent',
+        'seasonal' => 'Seasonal Rent',
+    ];
 
     /** Cities, else counties, else states — reusing the helper's list normalisation. */
     private static function preferredArea($meta): ?string
