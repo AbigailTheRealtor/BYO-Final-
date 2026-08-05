@@ -359,9 +359,33 @@ class ImportCensusGeography extends Command
      * This is where leading zeros are defended. The published files already pad, but a source
      * that has been through a spreadsheet will not, and `1` silently standing in for `01` is
      * the single most damaging thing that can happen to this schema.
+     *
+     * A BLANK IS NOT A ZERO
+     * ---------------------
+     * The same spreadsheet that drops a leading zero also produces empty cells, and padding an
+     * empty string yields `00` — which satisfies the digit check below and enters the schema as
+     * a real identifier. For a CHILD row that is survivable: no state `00` exists, so the orphan
+     * check aborts the import. For a ROSTER row nothing catches it, and a blank STATEFP would be
+     * imported as a state whose GEOID is `00`. So a blank is rejected here, while the file and
+     * line that produced it are still to hand.
+     *
+     * This is deliberately narrower than it looks. The one place blanks are EXPECTED — the
+     * county-only rows in the ZCTA relationship file — is recognised and counted by its caller
+     * before this method is ever reached, so that approved exception is unaffected.
      */
     private function fixedWidthCode(string $value, int $width, string $label, string $file, int $line): string
     {
+        if ($value === '') {
+            throw new RuntimeException(sprintf(
+                '%s line %d: %s is blank. A blank code is not zero — refusing to import it as a '
+                . '%d-digit identifier.',
+                $file,
+                $line,
+                $label,
+                $width
+            ));
+        }
+
         $padded = str_pad($value, $width, '0', STR_PAD_LEFT);
 
         if (! preg_match('/^\d{' . $width . '}$/', $padded)) {
@@ -744,6 +768,20 @@ class ImportCensusGeography extends Command
      * per key — acceptable because on a converged table there are none, and on a real upstream
      * withdrawal there are a handful.
      *
+     * THE ORDER BY IS LOAD-BEARING, AND IT MUST BE TOTAL
+     * --------------------------------------------------
+     * `chunk()` paginates with LIMIT/OFFSET, which means each page is a separate query. If the
+     * sort does not fully determine the order, rows tied on it may fall differently for each
+     * page — and a tie straddling a page boundary is then never returned at all. The row it
+     * belonged to would be missed by this diff and survive as a stale row, so the table would
+     * quietly stop being a projection of the sources: precisely the silent divergence the whole
+     * prune exists to prevent.
+     *
+     * Ordering by the FIRST key column alone is not enough. On `census_place_counties` and
+     * `census_zcta_counties` it is not unique — a place spans several counties, a ZCTA spans
+     * several counties — so those two tables are all ties. Ordering by every key column is
+     * unique by definition, because the key columns ARE the primary key.
+     *
      * @param array<int, array<string, mixed>> $rows
      * @param array<int, string>               $keyColumns
      */
@@ -757,18 +795,21 @@ class ImportCensusGeography extends Command
 
         $stale = [];
 
-        DB::table($table)
-            ->select($keyColumns)
-            ->orderBy($keyColumns[0])
-            ->chunk(2000, function ($existing) use (&$stale, $keyColumns, $incoming) {
-                foreach ($existing as $row) {
-                    $values = (array) $row;
+        $query = DB::table($table)->select($keyColumns);
 
-                    if (! isset($incoming[$this->compositeKey($values, $keyColumns)])) {
-                        $stale[] = $values;
-                    }
+        foreach ($keyColumns as $column) {
+            $query->orderBy($column);
+        }
+
+        $query->chunk(2000, function ($existing) use (&$stale, $keyColumns, $incoming) {
+            foreach ($existing as $row) {
+                $values = (array) $row;
+
+                if (! isset($incoming[$this->compositeKey($values, $keyColumns)])) {
+                    $stale[] = $values;
                 }
-            });
+            }
+        });
 
         foreach ($stale as $key) {
             $query = DB::table($table);

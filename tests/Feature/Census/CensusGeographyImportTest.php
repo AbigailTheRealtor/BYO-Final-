@@ -47,6 +47,37 @@ class CensusGeographyImportTest extends TestCase
     /** Rows in the ZCTA relationship file with a blank GEOID_ZCTA5_20 — valid, and skipped. */
     private const EXPECTED_BLANK_ZCTA_ROWS = 6;
 
+    /**
+     * Mirrors the chunk size the importer's prune reads existing keys with.
+     *
+     * Duplicated rather than derived on purpose: if the importer's chunk size changes, these
+     * tests should keep crossing a boundary at the size they were reasoned about, and the
+     * assertion that the corpus exceeds it will say so if the two ever stop agreeing.
+     */
+    private const PRUNE_CHUNK_SIZE = 2000;
+
+    /** Synthetic places / ZCTAs appended to push a relationship table past that boundary. */
+    private const SYNTHETIC_ROWS = 1200;
+
+    /** First synthetic PLACEFP and ZCTA5. Above every code the fixtures use, so nothing collides. */
+    private const SYNTHETIC_CODE_BASE = 90000;
+
+    /** The AZ state the synthetic rows hang off. Present in the fixtures. */
+    private const SYNTHETIC_STATE = '04';
+
+    /**
+     * Two real counties the synthetic places and ZCTAs are linked to, so every synthetic code
+     * appears TWICE and the prune's ordering column carries ties.
+     */
+    private const SYNTHETIC_COUNTIES = ['001', '003'];
+
+    /**
+     * A real county that no fixture relationship row uses and that no synthetic source row links
+     * to. Any row carrying it is therefore stale by construction, which is what lets the tests
+     * count survivors without tracking every injected pair.
+     */
+    private const STALE_COUNTY = '04005';
+
     /** @var list<string> Temporary directories built by a test, removed in tearDown. */
     private array $tempDirs = [];
 
@@ -562,6 +593,230 @@ class CensusGeographyImportTest extends TestCase
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Pruning past a chunk boundary (F1)
+    // ─────────────────────────────────────────────────────────────────────
+    //
+    // The prune reads existing keys with chunk(), which paginates by LIMIT/OFFSET. On the two
+    // relationship tables the first key column is NOT unique — a place spans several counties,
+    // a ZCTA spans several counties — so ordering by it alone leaves ties whose order between
+    // pages is not guaranteed. A tie straddling a page boundary can be skipped, and a skipped
+    // row is a stale row that survives: the table quietly stops being a projection of the files.
+    //
+    // The fixtures hold 419 and 778 relationship rows, both under one chunk, so the boundary is
+    // never crossed by the other tests. These two build a corpus that crosses it several times
+    // and carries ties throughout.
+
+    /** @test */
+    public function stale_place_county_rows_are_pruned_across_chunk_boundaries(): void
+    {
+        $dir = $this->fixtureCopyWithSyntheticPlaces();
+
+        $this->assertSame(0, $this->import(['--path' => $dir]), 'The enlarged corpus should import cleanly.');
+
+        $converged = DB::table('census_place_counties')->count();
+
+        $this->assertGreaterThan(
+            self::PRUNE_CHUNK_SIZE,
+            $converged,
+            'This test proves nothing unless the table exceeds the prune chunk size.'
+        );
+
+        $stale = $this->injectStalePlaceCounties();
+
+        $this->assertSame(
+            $converged + count($stale),
+            DB::table('census_place_counties')->count(),
+            'Guard: the stale rows must actually have been inserted.'
+        );
+
+        $this->assertSame(0, $this->import(['--path' => $dir]), 'The re-import should succeed.');
+
+        $survivors = DB::table('census_place_counties')
+            ->where('county_geoid', self::STALE_COUNTY)
+            ->count();
+
+        $this->assertSame(
+            0,
+            $survivors,
+            "{$survivors} stale place/county row(s) survived the prune. Every one of them is a row no "
+            . 'source file describes, so the table is no longer a projection of the sources.'
+        );
+
+        $this->assertSame($converged, DB::table('census_place_counties')->count());
+    }
+
+    /** @test */
+    public function stale_zcta_county_rows_are_pruned_across_chunk_boundaries(): void
+    {
+        $dir = $this->fixtureCopyWithSyntheticZctas();
+
+        $this->assertSame(0, $this->import(['--path' => $dir]), 'The enlarged corpus should import cleanly.');
+
+        $converged = DB::table('census_zcta_counties')->count();
+
+        $this->assertGreaterThan(
+            self::PRUNE_CHUNK_SIZE,
+            $converged,
+            'This test proves nothing unless the table exceeds the prune chunk size.'
+        );
+
+        $stale = $this->injectStaleZctaCounties();
+
+        $this->assertSame($converged + count($stale), DB::table('census_zcta_counties')->count());
+
+        $this->assertSame(0, $this->import(['--path' => $dir]), 'The re-import should succeed.');
+
+        $survivors = DB::table('census_zcta_counties')
+            ->where('county_geoid', self::STALE_COUNTY)
+            ->count();
+
+        $this->assertSame(0, $survivors, "{$survivors} stale ZCTA/county row(s) survived the prune.");
+        $this->assertSame($converged, DB::table('census_zcta_counties')->count());
+    }
+
+    /**
+     * The ties themselves, asserted rather than assumed.
+     *
+     * If a future change to the generator produced one relationship row per place, the two tests
+     * above would still pass and would silently stop testing the thing they exist for.
+     */
+    /** @test */
+    public function the_enlarged_corpus_actually_contains_ties_on_the_ordering_column(): void
+    {
+        $dir = $this->fixtureCopyWithSyntheticPlaces();
+        $this->import(['--path' => $dir]);
+
+        $placesWithSeveralCounties = DB::table('census_place_counties')
+            ->select('place_geoid')
+            ->groupBy('place_geoid')
+            ->havingRaw('COUNT(*) > 1')
+            ->get()
+            ->count();
+
+        $this->assertGreaterThanOrEqual(
+            self::SYNTHETIC_ROWS,
+            $placesWithSeveralCounties,
+            'The corpus must contain places spanning more than one county, or the ordering column '
+            . 'has no ties and the chunk-boundary hazard is not being exercised.'
+        );
+    }
+
+    /**
+     * The ordering itself, asserted at the source.
+     *
+     * The two tests above prove the PROPERTY — stale rows go, at a size that crosses several
+     * chunk boundaries — but they cannot prove the HAZARD is gone, because SQLite happens to
+     * return tied rows in a stable order and so does not reproduce it. Postgres, which is what
+     * production runs, offers no such guarantee: a seq scan, an index scan and a parallel scan
+     * can each order ties differently for each page.
+     *
+     * So the guarantee is pinned where it can be: the sort must be total. This is the same
+     * shape as the other regression guards in this codebase, and it is the assertion that
+     * fails if `orderBy($keyColumns[0])` is ever reintroduced.
+     */
+    /** @test */
+    public function the_prune_orders_by_every_key_column_not_just_the_first(): void
+    {
+        $source = (string) file_get_contents(app_path('Console/Commands/ImportCensusGeography.php'));
+
+        $this->assertStringNotContainsString(
+            'orderBy($keyColumns[0])',
+            $source,
+            'The prune must not order by the first key column alone: on census_place_counties and '
+            . 'census_zcta_counties that column is not unique, so a tie straddling a LIMIT/OFFSET '
+            . 'page boundary can be skipped and its stale row survives.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/foreach \(\$keyColumns as \$column\) \{\s*\$query->orderBy\(\$column\);\s*\}/',
+            $source,
+            'The prune should order by every key column, which is unique by definition and makes '
+            . 'the pagination deterministic.'
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // A blank code is not zero (F2)
+    // ─────────────────────────────────────────────────────────────────────
+    //
+    // str_pad('', 2, '0', STR_PAD_LEFT) is '00', which satisfies a two-digit check and enters the
+    // schema as a real identifier. For a child row the orphan check catches it — no state '00'
+    // exists. For a ROSTER row nothing does: a blank STATEFP becomes state '00' and is imported.
+    // The published files carry no blanks, but a source that has been through a spreadsheet will,
+    // and that is the case the padding was written for.
+
+    /** @test */
+    public function a_blank_state_code_is_refused_rather_than_becoming_state_zero(): void
+    {
+        $dir = $this->fixtureCopyWithLineAppended(
+            'national_state2020.txt',
+            'ZZ||00000099|Blank Code Test State'
+        );
+
+        $this->assertSame(
+            1,
+            $this->artisan('census:import-geography', ['--path' => $dir])->run(),
+            'A blank STATEFP must abort the import, not become state 00.'
+        );
+
+        $this->assertNothingWasWritten();
+    }
+
+    /** @test */
+    public function a_blank_county_code_is_refused_rather_than_becoming_county_zero(): void
+    {
+        $dir = $this->fixtureCopyWithLineAppended(
+            'national_county2020.txt',
+            'AZ|04||00025441|Blank Code Test County|H1|A'
+        );
+
+        $this->assertSame(1, $this->artisan('census:import-geography', ['--path' => $dir])->run());
+        $this->assertNothingWasWritten();
+    }
+
+    /** @test */
+    public function a_blank_place_code_is_refused_rather_than_becoming_place_zero(): void
+    {
+        $dir = $this->fixtureCopyWithLineAppended(
+            'national_place2020.txt',
+            'AZ|04||02582720|Blank Code Test place|INCORPORATED PLACE|C1|A|Apache County'
+        );
+
+        $this->assertSame(1, $this->artisan('census:import-geography', ['--path' => $dir])->run());
+        $this->assertNothingWasWritten();
+    }
+
+    /** @test */
+    public function no_zero_identifier_is_ever_created_by_a_clean_import(): void
+    {
+        $this->import();
+
+        $this->assertSame(0, DB::table('census_states')->where('geoid', '00')->count());
+        $this->assertSame(0, DB::table('census_counties')->where('countyfp', '000')->count());
+        $this->assertSame(0, DB::table('census_places')->where('placefp', '00000')->count());
+    }
+
+    /**
+     * The hardening must not swallow the one approved exception.
+     *
+     * The blank-ZCTA rows are recognised and counted BEFORE any code is validated, so rejecting
+     * blank codes must leave them exactly as they were. If this ever fails, the fix for F2 has
+     * widened into behaviour that was deliberately allowed.
+     */
+    /** @test */
+    public function the_approved_blank_zcta_skip_survives_the_blank_code_hardening(): void
+    {
+        $this->assertSame(0, $this->import());
+
+        $this->assertSame(
+            self::EXPECTED_BLANK_ZCTA_ROWS,
+            (int) DB::table('census_geography_meta')->where('dataset', 'zcta_counties')->value('rejected_count')
+        );
+
+        $this->assertSame(self::EXPECTED['census_zcta_counties'], DB::table('census_zcta_counties')->count());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────
 
@@ -635,6 +890,164 @@ class CensusGeographyImportTest extends TestCase
         file_put_contents($dir . '/' . $file, PHP_EOL . $line, FILE_APPEND);
 
         return $dir;
+    }
+
+    /** The synthetic place GEOIDs, in the order the generator emits them. @return list<string> */
+    private function syntheticPlaceGeoids(): array
+    {
+        $geoids = [];
+
+        for ($i = 0; $i < self::SYNTHETIC_ROWS; $i++) {
+            $geoids[] = self::SYNTHETIC_STATE . $this->syntheticCode($i);
+        }
+
+        return $geoids;
+    }
+
+    /** The synthetic ZCTA5 codes. @return list<string> */
+    private function syntheticZcta5s(): array
+    {
+        $codes = [];
+
+        for ($i = 0; $i < self::SYNTHETIC_ROWS; $i++) {
+            $codes[] = $this->syntheticCode($i);
+        }
+
+        return $codes;
+    }
+
+    private function syntheticCode(int $offset): string
+    {
+        return (string) (self::SYNTHETIC_CODE_BASE + $offset);
+    }
+
+    /**
+     * Fixtures plus SYNTHETIC_ROWS places, each linked to TWO counties.
+     *
+     * Two links per place is the point: it puts 2 × SYNTHETIC_ROWS rows in
+     * `census_place_counties` — past the chunk boundary — and it makes every synthetic
+     * `place_geoid` a tie in the column the prune orders by.
+     */
+    private function fixtureCopyWithSyntheticPlaces(): string
+    {
+        $dir = $this->fixtureCopy();
+
+        $places        = [];
+        $relationships = [];
+
+        foreach ($this->syntheticPlaceGeoids() as $i => $geoid) {
+            $placefp = substr($geoid, 2);
+
+            // STATE|STATEFP|PLACEFP|PLACENS|PLACENAME|TYPE|CLASSFP|FUNCSTAT|COUNTIES
+            $places[] = sprintf(
+                'AZ|%s|%s|9%06d|Synthetic %d town|INCORPORATED PLACE|C1|A|Apache County',
+                self::SYNTHETIC_STATE,
+                $placefp,
+                $i,
+                $i
+            );
+
+            foreach (self::SYNTHETIC_COUNTIES as $countyfp) {
+                // STATE|STATEFP|COUNTYFP|COUNTYNAME|PLACEFP|PLACENS|PLACENAME|TYPE|CLASSFP|FUNCSTAT
+                $relationships[] = sprintf(
+                    'AZ|%s|%s|Synthetic County|%s|9%06d|Synthetic %d town|INCORPORATED PLACE|C1|A',
+                    self::SYNTHETIC_STATE,
+                    $countyfp,
+                    $placefp,
+                    $i,
+                    $i
+                );
+            }
+        }
+
+        $this->appendLines($dir . '/national_place2020.txt', $places);
+        $this->appendLines($dir . '/national_place_by_county2020.txt', $relationships);
+
+        return $dir;
+    }
+
+    /** Fixtures plus SYNTHETIC_ROWS ZCTAs, each linked to TWO counties, for the same reason. */
+    private function fixtureCopyWithSyntheticZctas(): string
+    {
+        $dir  = $this->fixtureCopy();
+        $rows = [];
+
+        foreach ($this->syntheticZcta5s() as $i => $zcta5) {
+            foreach (self::SYNTHETIC_COUNTIES as $countyfp) {
+                // Only GEOID_ZCTA5_20 (2), GEOID_COUNTY_20 (10) and AREALAND_PART (17) are read;
+                // the remaining columns exist so the row has the 18 the header declares.
+                $rows[] = sprintf(
+                    '1|%s|ZCTA5 %s|1|0|G6350|B5|S|2|%s%s|Synthetic County|1|0|G4020|H1|A|%d|0',
+                    $zcta5,
+                    $zcta5,
+                    self::SYNTHETIC_STATE,
+                    $countyfp,
+                    1000 + $i
+                );
+            }
+        }
+
+        $this->appendLines($dir . '/tab20_zcta520_county20_natl.txt', $rows);
+
+        return $dir;
+    }
+
+    /**
+     * Insert referentially VALID place/county rows that no source describes.
+     *
+     * Valid on purpose. An orphan would be caught by the post-write integrity check even if the
+     * prune missed it, so only a well-formed stale row can prove the prune itself did the work.
+     *
+     * @return list<string> the place GEOIDs made stale
+     */
+    private function injectStalePlaceCounties(): array
+    {
+        $geoids = $this->syntheticPlaceGeoids();
+        $rows   = [];
+
+        foreach ($geoids as $geoid) {
+            $rows[] = [
+                'place_geoid'  => $geoid,
+                'county_geoid' => self::STALE_COUNTY,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ];
+        }
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('census_place_counties')->insert($chunk);
+        }
+
+        return $geoids;
+    }
+
+    /** The ZCTA equivalent. @return list<string> */
+    private function injectStaleZctaCounties(): array
+    {
+        $codes = $this->syntheticZcta5s();
+        $rows  = [];
+
+        foreach ($codes as $zcta5) {
+            $rows[] = [
+                'zcta5'         => $zcta5,
+                'county_geoid'  => self::STALE_COUNTY,
+                'arealand_part' => null,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ];
+        }
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('census_zcta_counties')->insert($chunk);
+        }
+
+        return $codes;
+    }
+
+    /** @param list<string> $lines */
+    private function appendLines(string $path, array $lines): void
+    {
+        file_put_contents($path, PHP_EOL . implode(PHP_EOL, $lines), FILE_APPEND);
     }
 
     private function deleteDirectory(string $dir): void
