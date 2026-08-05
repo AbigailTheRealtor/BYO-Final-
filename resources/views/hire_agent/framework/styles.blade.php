@@ -394,4 +394,44 @@
         font-size: var(--viho-font-3xs);
         color: var(--viho-primary);
     }
+@if ($hlaShellRedesign ?? false)
+    /* ── M7.1 — sidebar sticky preparation ─────────────────────────────────────
+       EMITTED ONLY FOR A ROLE THE REDESIGN IS ON FOR. $hlaShellRedesign is resolved by
+       detail-shell.blade.php, which includes this file, and Blade hands an included view the
+       caller's variables. The `?? false` is the fail-closed default for any other includer.
+
+       WHY THE RULE LIVES HERE RATHER THAN IN THE SHELL, and it is a constraint rather than a
+       preference. This file is the ONE product file permitted to read a --viho token:
+       VihoDesignTokenFoundationTest states that M5.1 lifted the ban for exactly this path and
+       that a second consumer is an architectural change requiring its own milestone decision,
+       not a test edit. M7.1 briefly put these two token reads in the shell, the guard caught it,
+       and the rule moved here rather than the boundary moving.
+
+       WHY IT IS STILL CONDITIONAL. This stylesheet is pushed unconditionally, so an always-on
+       rule would change the bytes of every Hire Agent page in BOTH flag states — inert with the
+       flag off, since nothing carries the class, but no longer byte-identical. "Flag off changes
+       nothing" is the guarantee this milestone keeps, and inert-but-present does not keep it.
+
+       Sticks BELOW the section navigation rather than at the viewport edge: .viho-section-nav is
+       itself sticky at --viho-section-nav-offset, and two elements sticking to the same line
+       would overlap. Reusing that token keeps the two related if either moves.
+
+       DOES NOTHING UNTIL THE SIDEBAR IS SHORTER THAN THE MAIN COLUMN, which is the honest state
+       today: a landlord sidebar carrying a populated proposal console is as tall as main, so this
+       is inert there and pays off for a guest, and for the other roles when they adopt. The rail
+       that makes it worthwhile is M7.4; this milestone only makes it possible.
+
+       Below lg the columns stack full-width and sticking is suppressed — a sticky element in a
+       single-column flow pins content over the page as the reader scrolls past it. */
+    @media (min-width: 992px) {
+        .hla-detail-page .hla-sidebar-sticky {
+            position: sticky;
+            top: calc(var(--viho-section-nav-offset, 0px) + var(--viho-space-lg, 1rem));
+            /* Never taller than the viewport, so a long sidebar scrolls internally rather than
+               pinning its own overflow out of reach. */
+            max-height: calc(100vh - var(--viho-section-nav-offset, 0px) - var(--viho-space-lg, 1rem));
+            overflow-y: auto;
+        }
+    }
+@endif
 </style>

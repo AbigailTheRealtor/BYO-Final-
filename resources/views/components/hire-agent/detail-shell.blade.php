@@ -48,6 +48,33 @@
     or where it points; it passes the slot through untouched.
 --}}
 @props(['role', 'auction'])
+@php
+    /*
+     | M7.1 — resolved FIRST, because two things below depend on it and Blade runs top to bottom.
+     |
+     | NOTE ON WHITESPACE: this block sits flush against the props line above, with a single
+     | newline before the comment below. A directive block like this one emits nothing itself, but
+     | the newlines AROUND it survive into the rendered page — so a blank line here would add one
+     | to every Hire Agent page in both flag states, and "flag off changes nothing" would stop
+     | being literally true. Verified by byte-diffing all four roles.
+     |
+     | (Directive names are described rather than written out in these comments. Blade scans for
+     | them inside PHP blocks too, so spelling the closing one here would end this block early —
+     | which it did, once, before this note existed.)
+     |
+     | Two things read it: the framework stylesheet included just below, which emits the sidebar
+     | sticky rule only for an enabled role, and the grid classes near the end of this file.
+     | Computing it once here is what keeps those two in step; computing it twice would be the
+     | second opinion this component's whole design avoids.
+     |
+     | The sticky rule lives in that stylesheet rather than here because it reads VIHO tokens, and
+     | that file is the only product file permitted to. Putting it here was tried, and the token
+     | guard rejected it — correctly.
+     |
+     | The full reasoning for each class change is in the block above the container markup.
+     */
+    $hlaShellRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor($role);
+@endphp
 
 {{--
     Pushed rather than emitted inline so the stylesheet still lands in <head> via the layout's
@@ -84,20 +111,77 @@
         @endisset
     </x-hire-agent.hero>
 </div>
+@php
+    /*
+     | M7.1 — PAGE LAYOUT, AND THE ONE PLACE ROLE SCOPE IS DECIDED.
+     |
+     | This component renders for all four roles, so the flag it reads cannot be the master
+     | switch: the bare master reader would hand seller, buyer and tenant the new grid on the
+     | switch that turns landlord on. enabledFor($role) consults the role allowlist,
+     | which defaults to landlord alone. (The config path is deliberately not spelled out in this
+     | file — a guard asserts that only the reader class names that key, and prose counts.)
+     |
+     | The role is asked of the service, never tested here. `$role` is passed to it and nothing
+     | else — no equality test against a role name, no match(), no array literal here. An inline
+     | check would be a second opinion about rollout scope living in markup, which is exactly
+     | what the config key exists to prevent.
+     |
+     | WHAT CHANGES, AND WHY EACH ONE. Measured against the Offer Listing detail page, which is
+     | the approved visual reference and is NOT modified by this milestone:
+     |
+     |   · py-4 on the container      — Offer Listing uses `container py-4`; this had no vertical
+     |                                  padding at all, so the grid began flush against the band
+     |                                  above it.
+     |   · g-4 on the row             — Offer Listing uses `row g-4`; this had no gutter, so the
+     |                                  two columns touched.
+     |   · align-items-start          — NOT cosmetic, and the reason it ships with the sticky
+     |                                  preparation rather than after it. A flex child stretched
+     |                                  to the row's full height cannot stick, because it is
+     |                                  never shorter than its container. align-items-start is
+     |                                  what lets the sidebar shrink to its content, and Offer
+     |                                  Listing pairs the two for the same reason.
+     |   · col-lg-9 / col-lg-3        — measured: Offer Listing renders 960px main / 320px
+     |                                  sidebar; this rendered 853 / 427. The sidebar was 107px
+     |                                  WIDER while holding less, which is what made an
+     |                                  under-filled sidebar read as broken rather than airy.
+     |
+     | CLASSES ARE ADDED, NEVER REPLACED. `listingDescription`, `leftCol` and `rightCol` are
+     | carried through both branches untouched: HireAgentShellStructureTest selects on all three
+     | by name, three role views carry their own CSS hanging off .leftCol, and .listingDescription
+     | is shared with buyer_criteria, seller_property and tenant_criteria — pages this milestone
+     | must not reach. Only the Bootstrap width classes differ between branches, and no test
+     | asserts on those (verified by repo-wide grep before the change).
+     |
+     | STICKY IS PREPARED HERE, NOT FINISHED HERE. The sidebar gains a hook and the alignment
+     | that makes sticking possible; the rail that benefits from it is M7.4. Measured caveat
+     | worth knowing: a landlord sidebar carrying a populated proposal console renders as tall
+     | as the main column, and a sticky element taller than the viewport is inert until scrolled
+     | past. That is correct behaviour, not a defect — it is why Offer Listing sticks an inner
+     | card rather than the column, and why M7.4 revisits this.
+     */
+    $hlaShellContainer = 'container listingDescription' . ($hlaShellRedesign ? ' py-4' : '');
+    $hlaShellRow       = 'row' . ($hlaShellRedesign ? ' g-4 align-items-start' : '');
+    $hlaShellMainCol   = $hlaShellRedesign
+        ? 'col-sm-12 col-md-8 col-lg-9 leftCol'
+        : 'col-sm-12 col-md-8 col-lg-8 leftCol';
+    $hlaShellSideCol   = $hlaShellRedesign
+        ? 'col-sm-12 col-md-4 col-lg-3 rightCol hla-sidebar-sticky'
+        : 'col-sm-12 col-md-4 col-lg-4 rightCol';
+@endphp
 
-<div class="container listingDescription"
+<div class="{{ $hlaShellContainer }}"
      data-hire-agent-detail-shell
      data-hire-agent-role="{{ $role }}">
     {{-- Bare, like afterGrid below and for the same reason: a wrapper introduced only to hang a
          marker on would change the DOM for the test's benefit rather than the page's. --}}
     {{ $beforeGrid ?? '' }}
 
-    <div class="row">
-        <div class="col-sm-12 col-md-8 col-lg-8 leftCol" data-hire-agent-main>
+    <div class="{{ $hlaShellRow }}">
+        <div class="{{ $hlaShellMainCol }}" data-hire-agent-main>
             {{ $main }}
         </div>
 
-        <div class="col-sm-12 col-md-4 col-lg-4 rightCol" data-hire-agent-sidebar>
+        <div class="{{ $hlaShellSideCol }}" data-hire-agent-sidebar>
             {{ $sidebar }}
         </div>
     </div>

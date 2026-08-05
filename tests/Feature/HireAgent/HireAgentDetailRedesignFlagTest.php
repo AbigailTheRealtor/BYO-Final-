@@ -134,12 +134,27 @@ class HireAgentDetailRedesignFlagTest extends TestCase
      * inverted — an EXACT list rather than an empty one — because the property worth protecting
      * was never "nobody reads it", it was "the set of readers is known".
      *
-     * The flag has no role allowlist, so role scope is enforced entirely by which files consult
-     * it. That makes this assertion the actual scoping mechanism for the pilot: if Seller, Buyer
-     * or Tenant starts reading the flag, the redesign has silently widened past landlord and this
-     * is what says so.
+     * M7.1 CHANGED THE MECHANISM, AND THIS TEST CHANGES WITH IT — DELIBERATELY, NOT TO GO GREEN.
+     *
+     * The paragraph that stood here read: "The flag has no role allowlist, so role scope is
+     * enforced entirely by which files consult it. That makes this assertion the actual scoping
+     * mechanism for the pilot." That was true while the redesigned markup lived in one role view.
+     *
+     * M7.1 moved page layout into components/hire-agent/detail-shell.blade.php, which all four
+     * role views render. The consumer set can no longer BE the role scope, because the shell is
+     * one file serving four roles — which is precisely why M7.1 added `redesign_roles` and
+     * HireAgentDetailRedesign::enabledFor(). Role scope moved from "which files read the flag" to
+     * "which roles the config allows", and that is now asserted by
+     * HireAgentDetailShellLayoutTest, including that the shipped default is landlord alone and
+     * that non-pilot roles keep the legacy grid with the master switch ON.
+     *
+     * SO WHAT IS LEFT WORTH ASSERTING HERE, and it is not nothing: the set of readers is still
+     * KNOWN. A third consumer appearing means a file started gating on the redesign without that
+     * being decided, and the two entries below are exactly the two that should. The shell must
+     * read it through enabledFor() — a shell reading the master enabled() would flip all four
+     * roles at once, and HireAgentDetailShellLayoutTest pins that too.
      */
-    public function test_the_landlord_detail_view_is_the_only_consumer_of_the_flag(): void
+    public function test_the_flag_consumers_are_exactly_the_landlord_view_and_the_shared_shell(): void
     {
         $consumers = [];
 
@@ -156,11 +171,33 @@ class HireAgentDetailRedesignFlagTest extends TestCase
         sort($consumers);
 
         $this->assertSame(
-            ['resources/views/hire_landlord_agent/view.blade.php'],
+            [
+                'resources/views/components/hire-agent/detail-shell.blade.php',
+                'resources/views/hire_landlord_agent/view.blade.php',
+            ],
             $consumers,
-            'The M5 detail redesign is a landlord pilot and the flag carries no role allowlist, so '
-            . 'the set of views reading it IS the role scope. Another role appearing here means the '
-            . 'pilot widened without that being decided.'
+            'The set of views gating on the detail redesign must stay known. The shared shell reads '
+            . 'it through enabledFor($role) so role scope comes from config; the landlord view reads '
+            . 'the master switch for its own pilot markup. A third entry means a file started gating '
+            . 'on the redesign without that being decided — which is the signal, not a failure to fix '
+            . 'by widening this list.'
         );
+    }
+
+    /**
+     * The shell must consult the ROLE-AWARE reader, never the master switch.
+     *
+     * This is the one-line difference between "landlord is a pilot" and "one environment variable
+     * migrates four roles". Asserted at source, because it is a statement about which method the
+     * file calls rather than about what any page renders.
+     */
+    public function test_the_shared_shell_reads_the_role_aware_flag_not_the_master_switch(): void
+    {
+        $src = (string) file_get_contents(
+            base_path('resources/views/components/hire-agent/detail-shell.blade.php')
+        );
+
+        $this->assertStringContainsString('HireAgentDetailRedesign::enabledFor($role)', $src);
+        $this->assertStringNotContainsString('HireAgentDetailRedesign::enabled()', $src);
     }
 }

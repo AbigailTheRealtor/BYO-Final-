@@ -29,4 +29,35 @@ class HireAgentDetailRedesign
     {
         return (bool) config('hire_agent_detail.redesign_enabled', false);
     }
+
+    /**
+     * Is the redesign active for THIS role?
+     *
+     * M7.1. The master switch above answers "is the redesign on at all"; this answers "may this
+     * role have it". Both must agree, mirroring HireAgentHeroData::redesignEnabledFor().
+     *
+     * WHY A SECOND METHOD RATHER THAN A ROLE ARGUMENT ON enabled(). Every existing caller of
+     * enabled() sits inside hire_landlord_agent/view.blade.php, where the role is a property of
+     * the file rather than a value. Adding a required argument would have meant editing markup
+     * this milestone is not reviewing, to pass a constant those call sites already imply. The two
+     * methods answer two genuinely different questions and the class stays the single reader,
+     * which is the property that matters.
+     *
+     * THE SHARED SHELL MUST USE THIS ONE. detail-shell.blade.php renders for all four roles, so
+     * a caller there asking enabled() would flip seller, buyer and tenant on landlord's switch.
+     *
+     * Comparison is exact and case-sensitive against the configured list. No normalisation, no
+     * aliases, no prefix matching: a role either appears in the allowlist or it does not, and a
+     * typo must fail closed rather than resolve to something that looks close enough.
+     */
+    public static function enabledFor(string $role): bool
+    {
+        if (! self::enabled()) {
+            return false;
+        }
+
+        $roles = config('hire_agent_detail.redesign_roles', []);
+
+        return is_array($roles) && in_array($role, $roles, true);
+    }
 }
