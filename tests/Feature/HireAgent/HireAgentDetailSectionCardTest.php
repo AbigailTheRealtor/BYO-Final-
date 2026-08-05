@@ -68,6 +68,13 @@ class HireAgentDetailSectionCardTest extends TestCase
             'auction_type'    => 'Traditional',
             'property_type'   => 'Residential Property',
             'expiration_date' => now()->addDays(30)->toDateTimeString(),
+
+            // M7.4 — Leasing Terms and Owner Info gained a has-content guard, so "sparse" would
+            // otherwise mean "absent" for these two rather than "present but nearly empty". One
+            // answer each keeps them rendering, which is what the assertions below are about; the
+            // fixture stays sparse in the sense that matters — no OPTIONAL section is satisfied.
+            'occupant_status' => 'Tenant',
+            'first_name'      => 'Abby',
         ];
     }
 
@@ -613,6 +620,23 @@ class HireAgentDetailSectionCardTest extends TestCase
      *
      * So the behaviour is PRESERVED, deliberately: the card renders, the nav entry works, and a
      * sparse listing shows an empty section exactly as it did before — just in a box.
+     *
+     * ── M7.4 FIXED IT, AND FIXED IT THE WAY THE PARAGRAPH ABOVE SAID IT WOULD HAVE TO ────────
+     * The expectation is now the empty set. Every section on this page derives its card AND its
+     * nav entry from one "this section has content" predicate, so no card can render blank and no
+     * entry can point at a card that did not render.
+     *
+     * The predicate is what M7.2 declined to build, for the reason recorded above: for the two
+     * largest sections it is dozens of field checks that must agree with the section's own
+     * conditions. M7.4 could take it on because the rows themselves moved first — every row now
+     * hides itself through one component, so the section-level question reduces to "does any of
+     * this section's stored meta hold an answer", asked of the raw keys rather than of the
+     * conditions. The duplication the nav's documentation warns about is still there in principle;
+     * what changed is that it is now one list per section, asserted in both directions by
+     * HireAgentFieldPresentationTest, rather than a second copy of the section's control flow.
+     *
+     * The empty set is the tightest this assertion can be, so a NEW id appearing here now means a
+     * section gained content that can vanish without its guard noticing.
      * ─────────────────────────────────────────────────────────────────────────────────────────
      */
     public function test_no_conditional_section_renders_an_empty_card(): void
@@ -639,11 +663,11 @@ class HireAgentDetailSectionCardTest extends TestCase
         sort($empty);
 
         $this->assertSame(
-            ['hla-section-leasing-terms', 'hla-section-owner-info'],
+            [],
             $empty,
-            'The set of sections that can render empty changed. A NEW id here means a guard was '
-            . 'placed around a card instead of inside it; a MISSING one means the known condition '
-            . 'was fixed and this expectation should be tightened.'
+            'A section rendered an empty card. Since M7.4 every section derives its card and its '
+            . 'nav entry from one has-content predicate, so an id here means that predicate no '
+            . 'longer covers everything the section can render.'
         );
     }
 

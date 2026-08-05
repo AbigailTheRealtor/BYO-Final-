@@ -369,9 +369,107 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
          |
          | Unconditional, because the section is.
          */
-        $hlaNavSections[] = ['id' => 'hla-section-listing-details', 'label' => 'Listing Details'];
-        $hlaNavSections[] = ['id' => 'hla-section-property-details', 'label' => 'Property Details'];
-        $hlaNavSections[] = ['id' => 'hla-section-leasing-terms', 'label' => 'Leasing Terms'];
+        /*
+         | M7.4 — Listing Details stops being unconditional.
+         |
+         | Its six rows each decline to render when their value is absent, so a listing that
+         | answered none of them produced a card containing a header and nothing else. The entry
+         | and the section are driven by ONE boolean for the reason the Owner Info note below
+         | states: the nav and the section must agree by construction rather than by two authors
+         | remembering to. HireAgentSectionNavTest asserts that agreement in both directions and
+         | fails loudly when a section hides itself by a route the nav cannot see — which is
+         | exactly what an emptiness rule living inside the section component would have been.
+         |
+         | The list is the section's WHOLE field set, not a sample. An incomplete list would hide a
+         | card that still had a row in it, so the guard is only safe while it enumerates
+         | everything the section can render; the two larger sections below are deliberately left
+         | unguarded rather than guarded from a partial list.
+         */
+        $hlaHasListingDetails = \App\Helpers\ListingDisplayHelper::anyHasValue([
+            @$auction->get->working_with_agent,
+            @$auction->get->desired_agent_hire_date,
+            @$auction->get->listing_date,
+            @$auction->get->expiration_date,
+            @$auction->get->auction_type,
+            @$auction->get->meeting_Preference,
+        ]);
+
+        if ($hlaHasListingDetails) {
+            $hlaNavSections[] = ['id' => 'hla-section-listing-details', 'label' => 'Listing Details'];
+        }
+        /*
+         | M7.4 — the two big sections, guarded from RAW META rather than from the display values.
+         |
+         | Every other guard on this page tests the variable the section is about to render. These
+         | two cannot: their values are derived inside the section — $stripState'd cities,
+         | $hlaStripThousands'd areas, normalised property types, the resolved storage fields — and
+         | the nav is built here, before any of that exists. Hoisting forty derivations up here to
+         | reach them would move half the section into the preamble for the nav's benefit.
+         |
+         | So the guard asks the question one level lower down, of the stored answers themselves.
+         | The derivations are all pure formatting: each one turns a present answer into a display
+         | string and an absent one into nothing, so "any of these keys holds an answer" and "any of
+         | those rows will render" are the same question asked either side of the formatting.
+         |
+         | THE LISTS ARE COMPLETE, AND COMPLETENESS IS THE WHOLE SAFETY PROPERTY. A key omitted here
+         | is not a cosmetic miss: the section would be judged empty and hidden while still holding
+         | a row that renders. They were derived by enumerating every :value expression and every
+         | slot-fed row in each section and reducing each to the meta it reads, rather than written
+         | from memory. HireAgentFieldPresentationTest asserts both directions — a listing with no
+         | meta at all hides them, and one answer brings the section and its nav entry back
+         | together.
+         */
+        $hlaHasPropertyDetails = \App\Helpers\ListingDisplayHelper::anyHasValue([
+            @$auction->get->property_city, @$auction->get->property_county,
+            @$auction->get->property_state, @$auction->get->state,
+            @$auction->get->property_zip, @$auction->get->zip_code,
+            @$auction->get->cities, @$auction->get->counties, @$auction->get->zipCodes,
+            @$auction->get->property_type, @$auction->get->property_items,
+            @$auction->get->condition_prop,
+            @$auction->get->bedrooms, @$auction->get->other_bedrooms,
+            @$auction->get->bathrooms, @$auction->get->other_bathrooms,
+            @$auction->get->minimum_heated_square, @$auction->get->minimum_leaseable,
+            @$auction->get->total_square_feet, @$auction->get->sqft_heated_source,
+            @$auction->get->total_acreage,
+            @$auction->get->appliances, @$auction->get->other_appliances,
+            @$auction->get->tenant_require,
+            @$auction->get->carport_needed, @$auction->get->garage_needed,
+            @$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper,
+            @$auction->get->pool_needed, @$auction->get->pool_type,
+            @$auction->get->view_preference, @$auction->get->other_preferences,
+            @$auction->get->leasing_55_plus,
+            @$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities,
+            @$auction->get->pets, @$auction->get->type_of_pets,
+            @$auction->get->weight_of_pets, @$auction->get->breed_restrictions,
+        ]);
+
+        $hlaHasLeasingTerms = \App\Helpers\ListingDisplayHelper::anyHasValue([
+            @$auction->get->occupant_status, @$auction->get->occupant_tenant,
+            @$auction->get->leasing_spaces,
+            @$auction->get->guests_allowed, @$auction->get->restrictions,
+            @$auction->get->common_areas_access, @$auction->get->maintenance_by,
+            @$auction->get->maintenance_response_time, @$auction->get->utilities,
+            @$auction->get->common_areas_cleaning,
+            @$auction->get->included_storage_space, @$auction->get->storage_space,
+            @$auction->get->included_storage_space_com_single, @$auction->get->storage_space_com_single,
+            @$auction->get->included_storage_space_res_single, @$auction->get->storage_space_res_single,
+            @$auction->get->included_storage_space_com_entire, @$auction->get->storage_space_com_entire,
+            @$auction->get->included_storage_space_res_entire, @$auction->get->storage_space_res_entire,
+            @$auction->get->bathroom_facilities, @$auction->get->room_size,
+            @$auction->get->shared_amenities, @$auction->get->building_hours,
+            @$auction->get->access_24_7, @$auction->get->zoning_allows,
+            @$auction->get->space_features, @$auction->get->neighboring_tenants,
+            @$auction->get->desired_rental_amount, @$auction->get->lease_amount_frequency,
+            @$auction->get->rent_includes, @$auction->get->owner_responsible_for,
+            @$auction->get->terms_of_lease, @$auction->get->desired_lease_term,
+        ]);
+
+        if ($hlaHasPropertyDetails) {
+            $hlaNavSections[] = ['id' => 'hla-section-property-details', 'label' => 'Property Details'];
+        }
+        if ($hlaHasLeasingTerms) {
+            $hlaNavSections[] = ['id' => 'hla-section-leasing-terms', 'label' => 'Leasing Terms'];
+        }
 
         if ($hasServices) {
             $hlaNavSections[] = ['id' => 'hla-section-services', 'label' => 'Services'];
@@ -411,7 +509,29 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
          | to. It is a pure read of $auction->user with no side effect, so computing it earlier
          | changes nothing but the line it sits on.
          */
-        $hlaNavSections[] = ['id' => 'hla-section-owner-info', 'label' => $_ownerInfoHeading];
+        /*
+         | M7.4 — Owner Info stops being unconditional too, and the note above it is now half true.
+         |
+         | "The heading and the fields below it render for every viewer" was right about the
+         | VIEWER and wrong about the LISTING: the section holds one text field and three media
+         | embeds, each already behind its own guard, so a listing that supplied none of the four
+         | produced a heading with nothing under it. That was survivable as a trailing sub-heading
+         | and is not survivable as the last CARD on the page.
+         |
+         | The four values below ARE the section — first_name plus the three media fields — so this
+         | list is complete rather than representative, which is the condition that makes hiding
+         | safe. isset() rather than hasValue() for `photo`, matching the guard the img row itself
+         | uses; a filename is a filename and the placeholder rules do not apply to it.
+         */
+        $hlaHasOwnerInfo = \App\Helpers\ListingDisplayHelper::anyHasValue([
+            @$auction->get->first_name,
+            @$auction->get->video,
+            @$auction->get->video_link,
+        ]) || isset($auction->get->photo);
+
+        if ($hlaHasOwnerInfo) {
+            $hlaNavSections[] = ['id' => 'hla-section-owner-info', 'label' => $_ownerInfoHeading];
+        }
     }
 @endphp
 
@@ -594,6 +714,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 header accordingly. Section ORDER is unchanged in both branches.
             --}}
             <x-hire-agent.detail-body :redesign="$hlaDetailRedesign" title="Listing Details:">
+            {{-- M7.4 — flag off keeps the section unconditionally; the boolean only exists, and only
+                 applies, when the redesign is on. See the nav block for why one value drives both. --}}
+            @if (! $hlaDetailRedesign || ($hlaHasListingDetails ?? true))
             <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines" :legacy-header="false">
                     <div class="row" style="flex-wrap: wrap;">
                         {{-- M7.3 — the "Listing Title" row is gone, and it could never have rendered.
@@ -608,59 +731,69 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                              value is already on the page: the hero renders it as the page heading.
                              Fixing the read would have produced a heading followed immediately by a
                              row repeating it. The one field, in the one place. --}}
-                        @if (@$auction->get->working_with_agent != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Current Representation Status with Broker:
-                            <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
-                        </div>
-                        @endif
+                        @php
+                            /*
+                             | M7.4 — dates are formatted BEFORE the row, not inside it.
+                             |
+                             | The three date rows each wrapped date(…, strtotime($v)) in their own
+                             | `!= null` guard, and the guard was doing double duty: it decided
+                             | whether the row appeared AND it kept strtotime() away from a null,
+                             | which is a deprecation in PHP 8.1+ and returns the epoch rather than
+                             | nothing. Moving the emptiness decision into the row component would
+                             | have removed the second job silently, so the formatting is resolved
+                             | here and the component receives a finished string or nothing at all.
+                             |
+                             | ListingDisplayHelper::hasValue is the same rule the row applies, asked
+                             | one step earlier — not a second opinion, the same call.
+                             */
+                            $hlaFmtDate = function ($value) {
+                                return \App\Helpers\ListingDisplayHelper::hasValue($value)
+                                    ? date('F j, Y', strtotime($value))
+                                    : null;
+                            };
 
-                        @if (@$auction->get->desired_agent_hire_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Desired Agent Hire Date:
-                            <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
-                        </div>
-                        @endif
-                        @if (@$auction->get->listing_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Listing Date:
-                            <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->listing_date)) }}</span>
-                        </div>
-                        @endif
-                        @if (@$auction->get->expiration_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Expiration Date:
-                            <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->expiration_date)) }}</span>
-                        </div>
-                        @endif
-                        @if (@$auction->get->auction_type != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Listing Type:
-                            <span class="removeBold"> {{ @$auction->get->auction_type }}
-                            </span>
-                        </div>
-                        @endif
+                            $hlaHireDate   = $hlaFmtDate(@$auction->get->desired_agent_hire_date);
+                            $hlaListDate   = $hlaFmtDate(@$auction->get->listing_date);
+                            $hlaExpiryDate = $hlaFmtDate(@$auction->get->expiration_date);
+                        @endphp
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Current Representation Status with Broker" :value="@$auction->get->working_with_agent" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Desired Agent Hire Date" :value="$hlaHireDate" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Listing Date" :value="$hlaListDate" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Expiration Date" :value="$hlaExpiryDate" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Listing Type" :value="@$auction->get->auction_type" />
 
                         {{-- Milestone 3: the "Bidding Period Length: 14 Days" row was removed
                              here. It is a bidding-period label describing a timer that no
                              longer exists or governs anything. --}}
-                        @if (@$auction->get->meeting_Preference != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Meeting Preference:
-                            <span class="removeBold"> {{ @$auction->get->meeting_Preference }}
-                            </span>
-                        </div>
-                        @endif
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Meeting Preference" :value="@$auction->get->meeting_Preference" />
 
                     </div>
-            </x-hire-agent.detail-section>@if (! $hlaDetailRedesign)<hr>@endif
+            </x-hire-agent.detail-section>
+            @endif
+            @if (! $hlaDetailRedesign)<hr>@endif
+            {{-- M7.4 — one boolean, shared with the nav entry above. --}}
+            @if (! $hlaDetailRedesign || ($hlaHasPropertyDetails ?? true))
             <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-property-details" title="Property Details:" icon="fa-solid fa-house">
 
                     <div class="row" style="flex-wrap: wrap;">
 
                         @php
+                            /*
+                             | M7.4 — null-safe, because the call site moved.
+                             |
+                             | Each caller used to sit behind its own hasValue() guard, so this
+                             | closure only ever saw a non-empty string. The row component now makes
+                             | the emptiness decision, which means it has to be handed the FORMATTED
+                             | value — and formatting therefore happens before anything has checked
+                             | for null. preg_replace(null) is deprecated in PHP 8.1 and would emit a
+                             | notice per absent field rather than failing loudly.
+                             |
+                             | It returns '' for an absent value, which hasValue() counts as absent,
+                             | so the row still does not render. Same outcome, no notice.
+                             */
                             $stripState = function($str) {
-                                return trim(preg_replace('/,\s*[A-Z]{2}$/', '', $str));
+                                if (!\App\Helpers\ListingDisplayHelper::hasValue($str)) return '';
+                                return trim(preg_replace('/,\s*[A-Z]{2}$/', '', (string) $str));
                             };
 
                             $propertyCityVal = @$auction->get->property_city;
@@ -706,77 +839,39 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $rawZips = is_array($rawZips) ? array_filter($rawZips) : [];
                         @endphp
 
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyCityVal))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            City:
-                            <span class="removeBold">{{ $stripState($propertyCityVal) }}</span>
-                        </div>
-                        @endif
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyCountyVal))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            County:
-                            <span class="removeBold">{{ $stripState($propertyCountyVal) }}</span>
-                        </div>
-                        @endif
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyStateVal))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            State:
-                            <span class="removeBold">{{ $propertyStateVal }}</span>
-                        </div>
-                        @endif
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyZipVal))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Zip Code:
-                            <span class="removeBold">{{ $propertyZipVal }}</span>
-                        </div>
-                        @endif
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="City" :value="$stripState($propertyCityVal)" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="County" :value="$stripState($propertyCountyVal)" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="State" :value="$propertyStateVal" />
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Zip Code" :value="$propertyZipVal" />
 
                         @if (!empty($cleanCities))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable Cities:
+                        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Acceptable Cities" :bare-slot="true">
                             @foreach ($cleanCities as $city)
                                 <span class="removeBold badge bg-secondary">{{ $city }}</span>
                             @endforeach
-                        </div>
+                        </x-hire-agent.field>
                         @endif
                         @if (!empty($cleanCounties))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable Counties:
+                        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Acceptable Counties" :bare-slot="true">
                             @foreach ($cleanCounties as $county)
                                 <span class="removeBold badge bg-secondary">{{ $county }}</span>
                             @endforeach
-                        </div>
+                        </x-hire-agent.field>
                         @endif
-                        @if (!empty($stateVal))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable State:
-                            <span class="removeBold">{{ $stateVal }}</span>
-                        </div>
-                        @endif
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Acceptable State" :value="$stateVal" />
                         @if (!empty($rawZips))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable Zip Code:
+                        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Acceptable Zip Code" :bare-slot="true">
                             @foreach ($rawZips as $zip)
                                 <span class="removeBold badge bg-secondary">{{ $zip }}</span>
                             @endforeach
-                        </div>
+                        </x-hire-agent.field>
                         @endif
 
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Property Type:
-                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }}</span>
-                        </div>
-                        @endif
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Property Type" :value="\App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type)" />
                         @php
                             $landlordPropertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
                         @endphp
-                        @if (!empty($landlordPropertyStyleItems))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Property Style:
-                            <span class="removeBold">{{ implode(', ', $landlordPropertyStyleItems) }}</span>
-                        </div>
-                        @endif
+                        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Property Style" :value="implode(', ', $landlordPropertyStyleItems)" />
 
 
                         {{-- <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -824,17 +919,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             return $landlordConditionLabelMap[$item] ?? $item;
                         }, $landlordConditionItems);
                     @endphp
-                    @if (!empty($landlordConditionItems))
-                    <div class="col-md-12 col-12 pt-2 fw-bold"> Property Condition:
-                        <span class="removeBold">{{ implode(', ', $landlordConditionItems) }}</span>
-                    </div>
-                    @endif
+                    <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Property Condition" :value="implode(', ', $landlordConditionItems)" />
 
                     {{-- @if (@$auction->get->property_type != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Property Type:
-                                    <span class="removeBold">{{ @$auction->get->property_type }}</span>
-                </div>
+                                <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Property Type" :value="@$auction->get->property_type" />
                 @endif
 
                 @if (@$auction->get->property_items != null)
@@ -849,66 +937,31 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                  naming a field this page no longer knows about. Removed with the live read rather
                  than left behind to contradict it. It emitted nothing in either flag state. --}}
 
-            @if (@$auction->get->bedrooms != null)
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Bedrooms:
-                <span class="removeBold">{{ @$auction->get->bedrooms !== 'Other' ? @$auction->get->bedrooms : @$auction->get->other_bedrooms }}</span>
-            </div>
-            @endif
             @php
+                $bedroomDisplay  = @$auction->get->bedrooms !== 'Other' ? @$auction->get->bedrooms : @$auction->get->other_bedrooms;
                 $bathroomDisplay = @$auction->get->bathrooms !== 'Other' ? @$auction->get->bathrooms : @$auction->get->other_bathrooms;
+
+                /*
+                 | M7.4 — the four square-footage reads shared one shape: strip thousands separators
+                 | from a value that may legitimately be absent. They also shared a guard spelled
+                 | `!= null && != 'null'`, which is hasValue()'s rule written out longhand — the
+                 | string 'null' is exactly what that helper already rejects. Resolving them here
+                 | lets the rows carry the same guard as every other row on the page instead of
+                 | their own dialect of it.
+                 */
+                $hlaStripThousands = function ($value) {
+                    return \App\Helpers\ListingDisplayHelper::hasValue($value)
+                        ? str_replace(',', '', (string) $value)
+                        : null;
+                };
             @endphp
-            @if (\App\Helpers\ListingDisplayHelper::hasValue($bathroomDisplay))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Bathrooms:
-                <span class="removeBold">{{ $bathroomDisplay }}</span>
-            </div>
-            @endif
-
-            @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Heated SqFt:
-                <span class="removeBold">
-
-                    {{ str_replace(',', '', $auction->get->minimum_heated_square ?? '') }}
-
-
-                </span>
-            </div>
-            @endif
-            @if (@$auction->get->minimum_leaseable != null && @$auction->get->minimum_leaseable != 'null')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Net Leasable SqFt:
-                <span class="removeBold">
-
-                    {{ str_replace(',', '', $auction->get->minimum_leaseable ?? '') }}
-                </span>
-            </div>
-            @endif
-            @if (@$auction->get->total_square_feet != null && @$auction->get->total_square_feet != 'null')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Total SqFt:
-                <span class="removeBold">
-
-                    {{ str_replace(',', '', $auction->get->total_square_feet ?? '') }}
-                </span>
-            </div>
-            @endif
-            @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != 'null')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                SqFt Heated Source:
-                <span class="removeBold">
-                    {{ str_replace(',', '', $auction->get->sqft_heated_source ?? '') }}
-                </span>
-            </div>
-            @endif
-            @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != 'null')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Total Acreage:
-                <span class="removeBold">
-                    {{ @$auction->get->total_acreage != '' ? @$auction->get->total_acreage : '' }}</span>
-            </div>
-            @endif
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Bedrooms" :value="$bedroomDisplay" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Bathrooms" :value="$bathroomDisplay" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Heated SqFt" :value="$hlaStripThousands(@$auction->get->minimum_heated_square)" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Net Leasable SqFt" :value="$hlaStripThousands(@$auction->get->minimum_leaseable)" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Total SqFt" :value="$hlaStripThousands(@$auction->get->total_square_feet)" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="SqFt Heated Source" :value="$hlaStripThousands(@$auction->get->sqft_heated_source)" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Total Acreage" :value="@$auction->get->total_acreage" />
             @if (!empty($auction->get->appliances) && is_array($auction->get->appliances) && count($auction->get->appliances) > 0)
             @php
             $appliancesToShow = [];
@@ -923,15 +976,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endphp
 
             @if (count($appliancesToShow) > 0)
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Appliances Included:
+            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Appliances Included" :bare-slot="true">
 
                 @foreach ($appliancesToShow as $appliance)
                 <span class="removeBold badge bg-secondary">
                     {{ $appliance }}
                 </span>
                 @endforeach
-            </div>
+            </x-hire-agent.field>
             @endif
             @endif
 
@@ -942,25 +994,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $tenantRequireVal = is_string($tenantRequireRaw) ? trim(trim($tenantRequireRaw, '"')) : '';
             @endphp
             @if (!empty($tenantRequireVal) && $tenantRequireVal !== 'null')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Furnishings:
-                <span class="removeBold">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Furnishings">
                     <span class="removeBold badge bg-secondary">{{ $tenantRequireVal }}</span>
-                </span>
-            </div>
+                </x-hire-agent.field>
             @endif
-            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Carport:
-                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
-            </div>
-            @endif
-            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Garage:
-                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
-            </div>
-            @endif
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Carport"
+                :value="\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed) ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') : null" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Garage"
+                :value="\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed) ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') : null" />
             @endif
 
             @if ($isCommercial)
@@ -998,8 +1039,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 }
             @endphp
             @if (!empty($parkingResult))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Garage/Parking Features:
+            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Garage/Parking Features" :bare-slot="true">
                 @if (count($parkingResult) === 1)
                 <span class="removeBold">{{ $parkingResult[0] }}</span>
                 @else
@@ -1007,7 +1047,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <span class="removeBold badge bg-secondary">{{ $feature }}</span>
                 @endforeach
                 @endif
-            </div>
+            </x-hire-agent.field>
             @endif
             @endif
 
@@ -1044,30 +1084,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             ->implode(', ');
             @endphp
 
+            {{-- M7.4 — the three pool branches choose the VALUE, not whether the row exists, so the
+                 @elseif chain stays exactly as it is and only the markup inside each arm changes.
+                 The 'Yes' arm keeps a slot because its value is assembled from a condition rather
+                 than being a single expression. --}}
             @if (optional($auction->get)->pool_needed === 'Yes')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                
-                Pool:
-                <span class="removeBold">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Pool">
                     @if (!empty($poolTypes))
                     Yes ({{ $poolTypes }})
                     @else
                     Yes
                     @endif
-                </span>
-            </div>
+                </x-hire-agent.field>
             @elseif (optional($auction->get)->pool_needed === 'No')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                
-                Pool:
-                <span class="removeBold">No</span>
-            </div>
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Pool" value="No" />
             @elseif (optional($auction->get)->pool_needed === 'Optional')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                
-                Pool:
-                <span class="removeBold">Optional</span>
-            </div>
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Pool" value="Optional" />
             @endif
             @endif
 
@@ -1076,79 +1108,58 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
             @endphp
             @if (!empty($viewPrefItems))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> View Preference:
+            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="View Preference" :bare-slot="true">
                 @foreach ($viewPrefItems as $item)
                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-            </div>
+            </x-hire-agent.field>
             @endif
-            @if (@$auction->get->leasing_55_plus)
-
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Age-Restricted Community:
-                <span class="removeBold">
-                    {{ @$auction->get->leasing_55_plus != '' ? @$auction->get->leasing_55_plus : '' }}</span>
-            </div>
-
-            @endif
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Age-Restricted Community" :value="@$auction->get->leasing_55_plus" />
             @php
                 $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
             @endphp
             @if (!empty($amenityItems))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Amenities and Property Features:
+            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Amenities and Property Features" :bare-slot="true">
                 @foreach ($amenityItems as $item)
                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-            </div>
+            </x-hire-agent.field>
             @endif
 
-            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pets))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Pets Allowed:
-                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
-            </div>
-            @endif
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Pets Allowed"
+                :value="\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pets) ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) : null" />
             @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
-            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Acceptable Pet Types:
-                <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
-            </div>
-            @endif
-            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Maximum Weight Per Pet (lbs):
-                <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
-            </div>
-            @endif
-            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->breed_restrictions))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Restrictions:
-                <span class="removeBold">{{ @$auction->get->breed_restrictions }}</span>
-            </div>
-            @endif
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Acceptable Pet Types" :value="@$auction->get->type_of_pets" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Maximum Weight Per Pet (lbs)"
+                :value="\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets) ? @$auction->get->weight_of_pets . ' lbs' : null" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Pet Restrictions" :value="@$auction->get->breed_restrictions" />
             @endif
 
         </div>
-        </x-hire-agent.detail-section>@if (! $hlaDetailRedesign)<hr>@endif
+        </x-hire-agent.detail-section>
+        @endif
+        @if (! $hlaDetailRedesign)<hr>@endif
+        {{-- M7.4 — one boolean, shared with the nav entry above. --}}
+        @if (! $hlaDetailRedesign || ($hlaHasLeasingTerms ?? true))
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-leasing-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
-        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">  Occupant Type:
-                <span class="removeBold">{{ @$auction->get->occupant_status }}</span>
-            </div>
-        </div>
-        @endif
-        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_tenant))
-            <div class="row" style="flex-wrap: wrap;">
-                <div class="col-12 fw-bold pt-2">  Occupied Until:
-                    <span class="removeBold">
-                        @php
-                            $date = \Carbon\Carbon::parse($auction->get->occupant_tenant);
-                            echo $date->format('F j, Y');
-                        @endphp
-                    </span>
-                </div>
-            </div>
-        @endif
+        @php
+            /*
+             | M7.4 — Leasing Terms keeps its own row spelling on the legacy branch.
+             |
+             | Every row in this section writes `col-12 fw-bold pt-2` inside its own `div.row`,
+             | where the sections above write `col-md-12 col-12 pt-2 fw-bold` and share one row per
+             | section. Both are carried verbatim through $width and legacyRow rather than
+             | normalised, because flag off is asserted against the pre-change render and a tidier
+             | class order is still a changed attribute. The redesign branch ignores both and emits
+             | the same grid cell every other section does, which is the whole point of the
+             | milestone: the page reads as one page with the flag on, and as itself with it off.
+             */
+            $hlaOccupiedUntil = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_tenant)
+                ? \Carbon\Carbon::parse($auction->get->occupant_tenant)->format('F j, Y')
+                : null;
+        @endphp
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" width="col-12 fw-bold pt-2" label="Occupant Type" :value="@$auction->get->occupant_status" />
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" width="col-12 fw-bold pt-2" label="Occupied Until" :value="$hlaOccupiedUntil" />
 
         @php
             $lsType = trim(@$auction->get->leasing_spaces ?? '');
@@ -1187,193 +1198,101 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if ($hlp::hasValue($lsType))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">  Leasing Space:
-                <span class="removeBold">{{ $lsType }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Leasing Space" :value="$lsType" />
         @endif
 
         @if ($lsType === 'Single Room')
         {{-- Single Room: strict ordered fields for both Residential and Commercial --}}
         {{-- 2. Guests are --}}
         @if ($hlp::hasValue(@$auction->get->guests_allowed))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Guests are:
-                <span class="removeBold">{{ $auction->get->guests_allowed }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Guests are" :value="$auction->get->guests_allowed" />
         @endif
         {{-- 3. Restrictions Include --}}
         @if ($hlp::hasValue(@$auction->get->restrictions))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Restrictions Include:
-                <span class="removeBold">{{ $auction->get->restrictions }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Restrictions Include" :value="$auction->get->restrictions" />
         @endif
         {{-- 4. Shared Areas Available --}}
         @if ($hlp::hasValue(@$auction->get->common_areas_access))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Shared Areas Available:
-                <span class="removeBold">{{ $auction->get->common_areas_access }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Shared Areas Available" :value="$auction->get->common_areas_access" />
         @endif
         {{-- 5. Maintenance and Repairs Are Handled By --}}
         @if ($hlp::hasValue(@$auction->get->maintenance_by))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Maintenance and Repairs Are Handled By:
-                <span class="removeBold">{{ $auction->get->maintenance_by }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Maintenance and Repairs Are Handled By" :value="$auction->get->maintenance_by" />
         @endif
         {{-- 6. Maintenance Response Time --}}
         @if ($hlp::hasValue(@$auction->get->maintenance_response_time))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Maintenance Response Time:
-                <span class="removeBold">{{ $auction->get->maintenance_response_time }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Maintenance Response Time" :value="$auction->get->maintenance_response_time" />
         @endif
         {{-- 7. Utilities --}}
         @if ($hlp::hasValue(@$auction->get->utilities))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Utilities:
-                <span class="removeBold">{{ $auction->get->utilities }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Utilities" :value="$auction->get->utilities" />
         @endif
         {{-- 8. Common Area Maintenance --}}
         @if ($hlp::hasValue(@$auction->get->common_areas_cleaning))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Common Area Maintenance:
-                <span class="removeBold">{{ $auction->get->common_areas_cleaning }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Common Area Maintenance" :value="$auction->get->common_areas_cleaning" />
         @endif
         {{-- 9. Included Storage Space --}}
         @if ($hlp::hasValue($lsStorageIncluded))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Included Storage Space:
-                <span class="removeBold">{{ $lsStorageIncluded }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Included Storage Space" :value="$lsStorageIncluded" />
         @endif
         {{-- 10. Storage Space Size --}}
         @if ($hlp::hasValue($lsStorageSize))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Storage Space Size:
-                <span class="removeBold">{{ $lsStorageSize }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Storage Space Size" :value="$lsStorageSize" />
         @endif
         {{-- 11. Bathroom Facilities --}}
         @if ($hlp::hasValue(@$auction->get->bathroom_facilities))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Bathroom Facilities:
-                <span class="removeBold">{{ $auction->get->bathroom_facilities }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Bathroom Facilities" :value="$auction->get->bathroom_facilities" />
         @endif
         {{-- 12. Approximate Room Size --}}
         @if ($hlp::hasValue(@$auction->get->room_size))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Approximate Room Size:
-                <span class="removeBold">{{ $auction->get->room_size }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Approximate Room Size" :value="$auction->get->room_size" />
         @endif
 
         @elseif ($lsType === 'Entire Property')
         {{-- Entire Property: strict ordered fields for both Residential and Commercial --}}
         {{-- 2. Restrictions Include --}}
         @if ($hlp::hasValue(@$auction->get->restrictions))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Restrictions Include:
-                <span class="removeBold">{{ $auction->get->restrictions }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Restrictions Include" :value="$auction->get->restrictions" />
         @endif
         {{-- 3. Maintenance and Repairs Are Handled By --}}
         @if ($hlp::hasValue(@$auction->get->maintenance_by))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Maintenance and Repairs Are Handled By:
-                <span class="removeBold">{{ $auction->get->maintenance_by }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Maintenance and Repairs Are Handled By" :value="$auction->get->maintenance_by" />
         @endif
         {{-- 4. Maintenance Response Time --}}
         @if ($hlp::hasValue(@$auction->get->maintenance_response_time))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Maintenance Response Time:
-                <span class="removeBold">{{ $auction->get->maintenance_response_time }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Maintenance Response Time" :value="$auction->get->maintenance_response_time" />
         @endif
         {{-- 5. Included Storage Space --}}
         @if ($hlp::hasValue($lsStorageIncluded))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Included Storage Space:
-                <span class="removeBold">{{ $lsStorageIncluded }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Included Storage Space" :value="$lsStorageIncluded" />
         @endif
         {{-- 6. Storage Space Size --}}
         @if ($hlp::hasValue($lsStorageSize))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Storage Space Size:
-                <span class="removeBold">{{ $lsStorageSize }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Storage Space Size" :value="$lsStorageSize" />
         @endif
         {{-- 7. Shared Amenities Include --}}
         @if ($hlp::hasValue(@$auction->get->shared_amenities))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Shared Amenities Include:
-                <span class="removeBold">{{ $auction->get->shared_amenities }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Shared Amenities Include" :value="$auction->get->shared_amenities" />
         @endif
         {{-- 8. Building Hours --}}
         @if ($hlp::hasValue(@$auction->get->building_hours))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Building Hours:
-                <span class="removeBold">{{ $auction->get->building_hours }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Building Hours" :value="$auction->get->building_hours" />
         @endif
         {{-- 9. 24/7 Access Available --}}
         @if ($hlp::hasValue(@$auction->get->access_24_7))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">24/7 Access Available:
-                <span class="removeBold">{{ $auction->get->access_24_7 }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="24/7 Access Available" :value="$auction->get->access_24_7" />
         @endif
         {{-- 10. Zoning Allows --}}
         @if ($hlp::hasValue(@$auction->get->zoning_allows))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Zoning Allows:
-                <span class="removeBold">{{ $auction->get->zoning_allows }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Zoning Allows" :value="$auction->get->zoning_allows" />
         @endif
         {{-- 11. Space Features --}}
         @if ($hlp::hasValue(@$auction->get->space_features))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Space Features:
-                <span class="removeBold">{{ $auction->get->space_features }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Space Features" :value="$auction->get->space_features" />
         @endif
         {{-- 12. Neighboring Tenants Include --}}
         @if ($hlp::hasValue(@$auction->get->neighboring_tenants))
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Neighboring Tenants Include:
-                <span class="removeBold">{{ $auction->get->neighboring_tenants }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap; margin-left: 1rem;" width="col-12 fw-bold" label="Neighboring Tenants Include" :value="$auction->get->neighboring_tenants" />
         @endif
         @endif
 
@@ -1388,69 +1307,48 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if (!empty($tenantPayItems))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">
-                Tenant Responsible For:
+        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Tenant Responsible For">
                 @foreach ($tenantPayItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-            </div>
-        </div>
+        </x-hire-agent.field>
         @endif
 
         @if ($isCommercial && !empty($ownerPayItems))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">
-                Owner Responsible For:
+        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Owner Responsible For">
                 @foreach ($ownerPayItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-            </div>
-        </div>
+        </x-hire-agent.field>
         @endif
 
         @php
             $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList($termsOfLease, @$auction->get->custom_lease_term);
         @endphp
         @if (!empty($leaseTermItems))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">
-                Terms of Lease:
+        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Terms of Lease">
                 @foreach ($leaseTermItems as $lt)
                     <span class="removeBold badge bg-secondary">{{ $lt }}</span>
                 @endforeach
-            </div>
-        </div>
+        </x-hire-agent.field>
         @endif
 
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->desired_rental_amount))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">
-                Desired Rental Amount:
-                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->desired_rental_amount) }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Desired Rental Amount" :value="\App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->desired_rental_amount)" />
         @endif
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->lease_amount_frequency))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">
-                Lease Amount Frequency:
-                <span class="removeBold">{{ @$auction->get->lease_amount_frequency }}</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Lease Amount Frequency" :value="@$auction->get->lease_amount_frequency" />
         @endif
 
         @php
             $desiredLeaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->desired_lease_length, @$auction->get->other_lease_term);
         @endphp
         @if (!empty($desiredLeaseTermItems))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">Desired Lease Term:
+        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Desired Lease Term">
                 @foreach ($desiredLeaseTermItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-            </div>
-        </div>
+        </x-hire-agent.field>
         @endif
         @php
             $rawRentIncludes = @$auction->get->rent_includes;
@@ -1461,23 +1359,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $rentIncludesItems = $isRentNone ? [] : \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->rent_includes, @$auction->get->other_rent_include);
         @endphp
         @if ($isRentNone)
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">Rent Includes:
-                <span class="removeBold">None</span>
-            </div>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Rent Includes" value="None" />
         @elseif (!empty($rentIncludesItems))
-        <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold pt-2">Rent Includes:
+        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Rent Includes">
                 @foreach ($rentIncludesItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-            </div>
-        </div>
+        </x-hire-agent.field>
         @endif
 
 
-        </x-hire-agent.detail-section>@if (! $hlaDetailRedesign)<hr>@endif
+        </x-hire-agent.detail-section>
+        @endif
+        @if (! $hlaDetailRedesign)<hr>@endif
 
         @php
         // Photo enhancements data — needed inside the services loop
@@ -1752,10 +1646,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Additional Details: <span
-                class="removeBold">{{ $additionalDetailsStr }}</span>
-        </div>
+        {{-- M7.4 — full width. This is free prose the landlord typed, not a short answer, so a
+             half-width cell would wrap it into a column two words wide. The section guard above is
+             already this field's own emptiness test — one field, one condition — and the nav
+             mirrors it, so the row needs no further guard of its own. --}}
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Additional Details" :value="$additionalDetailsStr" />
         </x-hire-agent.detail-section>@endif
 
         {{-- M7.3 — PHOTOS, TOURS & DOCUMENTS IS GONE FROM THIS PAGE, BY PRODUCT DECISION.
@@ -1798,11 +1693,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
              text is unchanged. Passing &amp; here would double-escape it. --}}
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
+        {{-- M7.4 — $repRows is already built as label/value pairs, and every pair in it has a value:
+             the builder drops empties before this loop, which is why !empty($repRows) is a complete
+             guard for the section and why the nav can share it. The rows still route through the
+             adapter rather than emitting their own markup, so a pair that ever did arrive empty
+             disappears here instead of printing a bare label. --}}
         @foreach ($repRows as $repRow)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            {{ $repRow['label'] }}:
-            <span class="removeBold">{{ $repRow['value'] }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" :label="$repRow['label']" :value="$repRow['value']" />
         @endforeach
         </x-hire-agent.detail-section>@endif
 
@@ -1853,31 +1750,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $landlordLeaseFeeCombined = $landlordLeaseFeeType;
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Landlord's Broker Lease Fee:
-            <span class="removeBold">{{ $landlordLeaseFeeCombined }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Landlord's Broker Lease Fee" :value="$landlordLeaseFeeCombined" />
         @endif
 
         @if ($canon(@$auction->get->purchase_fee_type ?? '') === 'Percentage of the Gross Rent' && !empty(@$auction->get->sales_tax_option_gross) && @$auction->get->sales_tax_option_gross !== 'null')
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Sales Tax:
-            <span class="removeBold">{{ @$auction->get->sales_tax_option_gross === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_gross === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_gross) }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="@$auction->get->sales_tax_option_gross === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_gross === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_gross)" />
         @endif
 
         @if ($canon(@$auction->get->purchase_fee_type ?? '') === "Percentage of Month's Rent" && !empty(@$auction->get->sales_tax_option_monthly) && @$auction->get->sales_tax_option_monthly !== 'null')
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Sales Tax:
-            <span class="removeBold">{{ @$auction->get->sales_tax_option_monthly === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_monthly === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_monthly) }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="@$auction->get->sales_tax_option_monthly === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_monthly === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_monthly)" />
         @endif
 
         @if ($canon(@$auction->get->purchase_fee_type ?? '') === 'Flat Fee' && !empty(@$auction->get->sales_tax_option_flat) && @$auction->get->sales_tax_option_flat !== 'null')
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Sales Tax:
-            <span class="removeBold">{{ @$auction->get->sales_tax_option_flat === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_flat === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_flat) }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="@$auction->get->sales_tax_option_flat === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_flat === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_flat)" />
         @endif
 
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
@@ -1887,10 +1772,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
 
         @if (@$auction->get->tenant_broker_commission_structure != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Tenant's Broker Commission Structure:
-            <span class="removeBold">{{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Structure" :value="$auction->get->tenant_broker_commission_structure ?? ''" />
         @endif
 
         @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation' && @$auction->get->tenant_broker_commission_structure != "No Compensation Offered to the Tenant's Broker")
@@ -1914,10 +1796,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             }
         @endphp
         @if ($tenantFeeCombined !== '—')
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Tenant's Broker Commission Fee:
-            <span class="removeBold">{{ $tenantFeeCombined }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Fee" :value="$tenantFeeCombined" />
         @endif
         @endif
 
@@ -1928,10 +1807,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (!$isResidential && @$auction->get->tenant_broker_commission_structure != null)
         <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
 
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Tenant's Broker Commission Structure:
-            <span class="removeBold">{{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Structure" :value="$auction->get->tenant_broker_commission_structure ?? ''" />
 
         @if (@$auction->get->tenant_broker_commission_structure != "No Compensation Offered to the Tenant's Broker")
         @php
@@ -1949,10 +1825,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             }
         @endphp
         @if ($commFeeCombined !== null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Tenant's Broker Commission Fee:
-            <span class="removeBold">{{ $commFeeCombined }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Fee" :value="$commFeeCombined" />
         @endif
         @endif
 
@@ -1988,17 +1861,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $paymentTimingDisplay = 'Deducted from Rent Collected (' . $auction->get->broker_fee_days_from_rent . ' Calendar Days to Pay Balance)';
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Payment Timing for Broker Fees:
-            <span class="removeBold">{{ $paymentTimingDisplay }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Payment Timing for Broker Fees" :value="$paymentTimingDisplay" />
         @endif
 
         @if (@$auction->get->broker_fee_days_after_due_event != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Days After Due Event:
-            <span class="removeBold">{{ $auction->get->broker_fee_days_after_due_event }} days</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Days After Due Event" :value="$auction->get->broker_fee_days_after_due_event . ' days'" />
         @endif
 
         @if (@$auction->get->renewal_fee_type != null)
@@ -2031,10 +1898,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $renewalFeeCombined = $renewalFeeType;
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Lease Renewal/Extension Fee:
-            <span class="removeBold">{{ $renewalFeeCombined }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Lease Renewal/Extension Fee" :value="$renewalFeeCombined" />
         @endif
 
         @php
@@ -2051,17 +1915,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             }
         @endphp
         @if (!empty($renewalSalesTax) && $renewalSalesTax !== 'null')
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Sales Tax:
-            <span class="removeBold">{{ $renewalSalesTax === 'including' ? 'Including Sales Tax' : ($renewalSalesTax === 'excluding' ? 'Excluding Sales Tax' : $renewalSalesTax) }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="$renewalSalesTax === 'including' ? 'Including Sales Tax' : ($renewalSalesTax === 'excluding' ? 'Excluding Sales Tax' : $renewalSalesTax)" />
         @endif
 
         @if (@$auction->get->expansion_commission_percentage != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Expansion Commission for Lease Amendment:
-            <span class="removeBold">{{ $fmtPercent($auction->get->expansion_commission_percentage) }} of original commission</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Expansion Commission for Lease Amendment" :value="$fmtPercent($auction->get->expansion_commission_percentage) . ' of original commission'" />
         @endif
 
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
@@ -2072,10 +1930,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (@$auction->get->interested_in_property_management != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Interested in Property Management:
-            <span class="removeBold">{{ $auction->get->interested_in_property_management === 'yes' ? 'Yes' : 'No' }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Interested in Property Management" :value="$auction->get->interested_in_property_management === 'yes' ? 'Yes' : 'No'" />
         @endif
 
         @if (@$auction->get->interested_in_property_management === 'yes')
@@ -2097,10 +1952,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             }
         @endphp
         @if ($pmFeeCombined !== '—')
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Property Management Fee:
-            <span class="removeBold">{{ $pmFeeCombined }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Property Management Fee" :value="$pmFeeCombined" />
         @endif
         @endif
 
@@ -2112,37 +1964,30 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (@$auction->get->interested_lease_option_agreement != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Interested in Offering a Lease-Option Agreement:
-            <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Interested in Offering a Lease-Option Agreement" :value="$auction->get->interested_lease_option_agreement ?? ''" />
         @endif
 
         @if (@$auction->get->interested_lease_option_agreement === 'Yes')
             @if (@$auction->get->lease_value != null)
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation for Creating the Lease-Option Agreement:
-                <span class="removeBold">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Compensation for Creating the Lease-Option Agreement">
                     @if (@$auction->get->lease_type === 'percent')
                         {{ $fmtPercent($auction->get->lease_value) }} of Total Purchase Price
                     @else
                         {{ $fmtMoney($auction->get->lease_value) }}
                     @endif
-                </span>
-            </div>
+                
+            </x-hire-agent.field>
             @endif
 
             @if (@$auction->get->purchase_value != null)
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation if Purchase Option is Exercised:
-                <span class="removeBold">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Compensation if Purchase Option is Exercised">
                     @if (@$auction->get->purchase_type === 'percent')
                         {{ $fmtPercent($auction->get->purchase_value) }} of Total Purchase Price
                     @else
                         {{ $fmtMoney($auction->get->purchase_value) }}
                     @endif
-                </span>
-            </div>
+                
+            </x-hire-agent.field>
             @endif
         @endif
 
@@ -2154,10 +1999,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (@$auction->get->interested_in_selling != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Interested in Selling:
-            <span class="removeBold">{{ $auction->get->interested_in_selling ?? '' }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Interested in Selling" :value="$auction->get->interested_in_selling ?? ''" />
         @endif
 
         @if (@$auction->get->interested_in_selling === 'Yes')
@@ -2181,10 +2023,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $purchaseFeeCombined = $purchaseFeeType;
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Landlord's Broker Purchase Fee:
-            <span class="removeBold">{{ $purchaseFeeCombined }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Landlord's Broker Purchase Fee" :value="$purchaseFeeCombined" />
         @endif
 
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
@@ -2195,29 +2034,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (@$auction->get->protection_period != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Protection Period Timeframe:
-            <span class="removeBold">{{ $auction->get->protection_period }} days</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Protection Period Timeframe" :value="$auction->get->protection_period . ' days'" />
         @endif
 
         @if ($isResidential && @$auction->get->early_termination_fee_option != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Early Termination Fee:
-            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Early Termination Fee">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(
                 $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No',
                 $auction->get->early_termination_fee_option == 'yes' && @$auction->get->early_termination_fee_amount ? $fmtMoney($auction->get->early_termination_fee_amount) : null
-            ) }}</span>
-        </div>
+            ) }}
+        </x-hire-agent.field>
         @endif
 
         @if (@$auction->get->agency_agreement_timeframe != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Landlord Agency Agreement Timeframe:
-            <span class="removeBold">
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Landlord Agency Agreement Timeframe">
                 {{ $auction->get->agency_agreement_timeframe === 'Other' ? $auction->get->agency_agreement_custom : $auction->get->agency_agreement_timeframe }}
-            </span>
-        </div>
+            
+        </x-hire-agent.field>
         @endif
 
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
@@ -2228,10 +2060,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (@$auction->get->brokerage_relationship != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Acceptable Brokerage Relationship:
-            <span class="removeBold">{{ $auction->get->brokerage_relationship ?? '' }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Acceptable Brokerage Relationship" :value="$auction->get->brokerage_relationship ?? ''" />
         @endif
 
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker))
@@ -2239,10 +2068,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
 
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Additional Terms:
-            <span class="removeBold">{{ $auction->get->additional_details_broker }}</span>
-        </div>
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Additional Terms" :value="$auction->get->additional_details_broker" />
         @endif
 
         </div> <!-- end broker-compensation-section -->
@@ -2251,23 +2077,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if ($referralPctDisplay !== '')
         @if (! $hlaDetailRedesign)<hr />@endif
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Referral Fee:
-            <span class="removeBold">{{ $referralPctDisplay }}</span>
-        </div>
+        {{-- M7.4 — the section's guard IS this field's emptiness test, and the nav shares it. --}}
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Referral Fee" :value="$referralPctDisplay" />
         </x-hire-agent.detail-section>@endif
         @if (! $hlaDetailRedesign)<hr />@endif
         {{-- $_ownerInfoHeading is resolved near the nav block above, not here — M7.2 hoisted it so
              the nav entry and this heading are one value rather than two expressions. --}}
+        @if (! $hlaDetailRedesign || ($hlaHasOwnerInfo ?? true))
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-owner-info" :title="$_ownerInfoHeading" icon="fa-solid fa-id-card">
-        @if (!empty($auction->get->first_name))
-        <div class="col-md-12 col-12 pt-2 fw-bold"> First
-            Name:
-            <span class="removeBold">
-                {{ $auction->get->first_name }}
-            </span>
-        </div>
-        @endif
+        {{-- M7.4 — the ONLY label/value field in this section. Everything below it is media: a
+             video element, an image and a link embed, each in its own col-md-6 cell. Those are
+             deliberately NOT routed through the field adapter — a 5/7 grid positions a short text
+             answer beside its label, and putting a 29vh video in the value column would size the
+             media to 58% of a half-width cell and label it like a data point. They keep their own
+             markup and their own guards. --}}
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="First Name" :value="@$auction->get->first_name" />
 
         <div class="row">
             {{-- @if (isset($auction->get->video))
@@ -2366,6 +2190,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
      off the wrapper still emits the single card these two used to be; with it on the wrapper emits
      nothing and the sections above are siblings. --}}
 </x-hire-agent.detail-section>
+@endif
 </x-hire-agent.detail-body>
 @inject('auctionUser', 'App\Models\User')
 @php

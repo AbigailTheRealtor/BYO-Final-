@@ -532,5 +532,73 @@
         border: 1px solid var(--viho-border);
         box-shadow: var(--viho-shadow-card);
     }
+
+    /* M7.4 — the flex context every section card's rows sit in.
+
+       Each converted row renders a `col-md-6` (or `col-12`) cell, and a Bootstrap column needs a
+       flex parent or it degrades into a block element at 50% width, stacking one per line with the
+       other half blank. Three sections — Leasing Terms, Compensation, Representation — never had a
+       section-level `div.row` to inherit: their legacy markup wrapped EACH row in its own, which
+       the adapter now emits on the legacy branch only. Rather than add a wrapper to those three
+       call sites and not the others, the card supplies one for every section.
+
+       NOT `.row`, deliberately. Bootstrap's row carries negative side margins that assume a
+       `.container`/`.col` ancestor, and two of these sections still contain a `div.row` of their
+       own for content the adapter does not render. Nesting row-inside-row would pull those against
+       the card's padding. This declares only the flex behaviour the columns actually require and
+       inherits the card's padding untouched.
+
+       Gutter matches the `g-4` the shell gives the page grid, so a row of fields and the two page
+       columns are spaced by the same value. */
+    .hla-detail-page .hla-field-grid {
+        display: flex;
+        flex-wrap: wrap;
+        row-gap: var(--viho-space-xs);
+    }
+
+    /* NO WIDTH RULES FOR THE CELLS THEMSELVES. A half-span cell is `col-md-6 col-12` and a
+       full-span one is `col-12`, so a rule targeting `.col-12` matches BOTH and forces every field
+       to full width — which is exactly what a first attempt here did, collapsing the two-up grid
+       the milestone exists to produce. Bootstrap's own cascade already resolves the pair correctly:
+       `col-12` below the md breakpoint, `col-md-6` at and above it. The flex context above is the
+       only thing that was missing. */
+
+    /* M7.4 refinement — a pill run stacks under its label instead of sitting in the value column.
+
+       `.viho-kv-split` reserves 41.6% for the label and starts the value there, which is right for
+       "City / Redington Beach" and wrong for a label followed by six pills: the run wrapped inside
+       the remaining 58% while the left half of the card stayed empty, opening a corridor down the
+       middle. Widening both halves to 100% turns the same primitive into a stacked pair — label on
+       its own line, run beginning at the card's left edge and wrapping across the full width.
+
+       DONE HERE RATHER THAN IN THE PRIMITIVE. x-viho.kv still emits `viho-kv-label` and
+       `viho-kv-value` exactly as it does everywhere else; only their widths are overridden, and
+       only on this page. A pill run is a Hire Agent presentation decision, and VIHO is shared with
+       Create Offer — a layout added there for one product's benefit is the kind of thing the
+       primitive guard tests exist to keep out.
+
+       THE PILLS ARE NOT STYLED HERE, DELIBERATELY. `badge bg-secondary` comes from Bootstrap and
+       from the callers' own markup, unchanged by this milestone. This rule positions the container
+       and nothing inside it, so a pill looks the same in both flag states. */
+    .hla-detail-page .hla-field-badges .viho-kv-split > .viho-kv-label,
+    .hla-detail-page .hla-field-badges .viho-kv-split > .viho-kv-value {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* The run sits directly under its label rather than a full row-gap away — close enough to read
+       as one field, which is the complaint that prompted the mode. */
+    .hla-detail-page .hla-field-badges .viho-kv-split > .viho-kv-value {
+        margin-top: var(--viho-space-2xs);
+    }
+
+    /* Pills wrap as a group with even spacing instead of relying on whitespace between inline
+       elements, which collapses unpredictably once a run wraps to a second line. */
+    .hla-detail-page .hla-field-badges .viho-kv-value {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--viho-space-2xs);
+        align-items: center;
+    }
 @endif
 </style>
