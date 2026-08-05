@@ -157,17 +157,40 @@
    Desktop has no fixed header above the reading column, so the bar sticks to the viewport top: 0.
    Below the lg breakpoint the mobile header bar occupies 104px, so the nav must clear it.
 
-   ONE variable does both jobs: the bar sticks below the chrome, and .viho-section-nav-target uses
-   the same value for scroll-margin-top so an anchored heading never lands underneath the bar it
-   was reached from. Two variables would drift, and the symptom is easy to miss. */
+   THE OLD NOTE HERE CLAIMED ONE VARIABLE DOES BOTH JOBS. It read: "ONE variable does both jobs:
+   the bar sticks below the chrome, and .viho-section-nav-target uses the same value for
+   scroll-margin-top so an anchored heading never lands underneath the bar it was reached from. Two
+   variables would drift, and the symptom is easy to miss."
+
+   The instinct was right and the arithmetic was wrong, and M7.2 measured it. The two jobs need
+   DIFFERENT values. The bar sticks at the height of the chrome above it. A scroll target must
+   clear the chrome AND the bar itself, because the bar is what it is being scrolled underneath.
+   Reusing one value for both leaves the target short by exactly the bar's own height — 0px of
+   clearance on desktop, where the chrome is 0 and the bar is not.
+
+   Measured on the landlord page: clicking a nav entry landed the card at y≈0 with the bar's bottom
+   edge at 46.9px (desktop) and 150.9px (mobile). The card header — the thing the nav exists to
+   deliver you to — sat underneath it in 6 of 7 desktop sections and 7 of 7 on mobile. */
 :root {
     --viho-section-nav-offset: 0px;
+
+    /* The bar's own height, and the reason it is a SEPARATE variable from the offset above.
+       Generous on purpose: measured at 46.9px, declared at 3.5rem (56px). Overshooting parks the
+       card a few pixels below the bar, which reads as breathing room. Undershooting clips the
+       header, which is the bug this replaces. Asymmetric costs, so the slack goes one way. */
+    --viho-section-nav-height: 3.5rem;
 }
 @media (max-width: 991.98px) {
     :root {
         --viho-section-nav-offset: 104px;
     }
 }
+
+/* THE RULE THAT CONSUMES THESE TWO IS NOT HERE, AND CANNOT BE.
+   The scroll offset for the section cards reads both tokens, and reading a --viho token is
+   permitted in exactly one product file — hire_agent/framework/styles.blade.php. Declaring them is
+   what this block does; consuming them is that file's job. M7.1 hit the same boundary with the
+   sidebar sticky rule and moved the rule rather than the boundary, and M7.2 does the same. */
 
 /* Smooth scrolling is CSS here, not script. The nav emits real hrefs, so the browser performs the
    scroll itself and honours the reader's motion preference — reimplementing it in JS would mean

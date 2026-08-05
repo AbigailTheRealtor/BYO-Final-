@@ -126,6 +126,20 @@ class HireAgentDetailSectionCardTest extends TestCase
     /** @param string $viewer owner|guest|stranger */
     private function render(string $role, array $meta, string $viewer = 'owner'): DOMXPath
     {
+        return $this->xpath($this->renderRaw($role, $meta, $viewer));
+    }
+
+    /**
+     * The response body, unparsed.
+     *
+     * The CSS assertions need this: DOMDocument keeps a <style> element's text, but reaching it
+     * through XPath and reassembling the declaration is more machinery than reading the source, and
+     * the thing under test is the stylesheet the page ships.
+     *
+     * @param string $viewer owner|guest|stranger
+     */
+    private function renderRaw(string $role, array $meta, string $viewer = 'owner'): string
+    {
         [, $route] = $this->wiringFor($role);
 
         $owner   = User::factory()->create(['user_type' => 'seller']);
@@ -146,7 +160,7 @@ class HireAgentDetailSectionCardTest extends TestCase
         $response = $request->get(route($route, $listing->id));
         $response->assertOk();
 
-        return $this->xpath($response->getContent());
+        return $response->getContent();
     }
 
     private function xpath(string $html): DOMXPath
@@ -312,6 +326,172 @@ class HireAgentDetailSectionCardTest extends TestCase
                 "//*[contains(concat(' ', normalize-space(@class), ' '), ' viho-section-header-icon ')]"
             )->length,
             'Flag off must render no section header icon.'
+        );
+    }
+
+    // ── The scroll offset, which the card must carry because it is the anchor ─
+
+    /**
+     * The section cards get a scroll offset, and it clears BOTH the chrome and the bar.
+     *
+     * ─────────────────────────────────────────────────────────────────────────────────────────
+     * THE BUG THIS EXISTS TO PREVENT RECURRING, WHICH NO OTHER ASSERTION IN THIS FILE CATCHES.
+     *
+     * Before M7.2 the anchor was a zero-height `<span class="viho-section-nav-target">` above each
+     * heading, and viho/styles.blade.php gives THAT CLASS its scroll-margin-top. M7.2 deleted the
+     * spans and moved the ids onto the cards. The cards inherited the id and not the class, so the
+     * offset stopped applying — silently. Every anchor still resolved. Every nav entry still
+     * pointed at a real element. The suite stayed green.
+     *
+     * The only symptom was visual: measured on the running page, clicking a nav entry landed the
+     * card at y≈0 with the bar's bottom edge at 46.9px on desktop and 150.9px on mobile, putting
+     * the card header underneath the bar in 6 of 7 desktop sections and 7 of 7 on mobile — the
+     * exact outcome the milestone exists to fix.
+     *
+     * So this asserts the DECLARATION, not the rendered geometry, which PHPUnit cannot see. It is
+     * a coupling check: the anchors and the thing that offsets them must stay attached.
+     * ─────────────────────────────────────────────────────────────────────────────────────────
+     */
+    public function test_section_cards_declare_a_scroll_offset(): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->renderRaw('landlord', $this->richMeta());
+
+        $this->assertMatchesRegularExpression(
+            '/\.hla-detail-page\s*\[id\^="hla-section-"\]\s*\{[^}]*scroll-margin-top/s',
+            $html,
+            'The section cards must declare a scroll offset. Without it a nav entry lands the card '
+            . 'flush with the viewport top and the sticky bar covers the header.'
+        );
+    }
+
+    /**
+     * The offset clears the bar as well as the chrome — two variables, not one.
+     *
+     * The original rule reused `--viho-section-nav-offset` alone. That value is where the BAR
+     * sticks; a target scrolled to it lands exactly under the bar, short by the bar's own height.
+     * On desktop the offset is 0px, so reusing it produced no clearance whatsoever.
+     *
+     * Asserted as "the declaration references both variables" rather than by pinning a pixel
+     * total, so retuning either value stays a one-line change and does not break this test.
+     */
+    public function test_the_scroll_offset_clears_the_bar_and_not_only_the_chrome(): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->renderRaw('landlord', $this->richMeta());
+
+        preg_match(
+            '/\.hla-detail-page\s*\[id\^="hla-section-"\]\s*\{(?<body>[^}]*)\}/s',
+            $html,
+            $m
+        );
+
+        $this->assertNotEmpty($m['body'] ?? '', 'The scroll offset rule must exist to be checked.');
+
+        foreach (['--viho-section-nav-offset', '--viho-section-nav-height'] as $variable) {
+            $this->assertStringContainsString(
+                $variable,
+                $m['body'],
+                "The offset must be built from [{$variable}]. Using the chrome offset alone leaves "
+                . 'the target short by the height of the bar it is scrolled underneath.'
+            );
+        }
+
+        $this->assertStringContainsString(
+            '--viho-section-nav-height',
+            $html,
+            'The bar height variable must be declared, not only referenced.'
+        );
+    }
+
+    /**
+     * The legacy nav-target class is no longer required — the CARD is the anchor.
+     *
+     * Two things asserted together because either alone would be misleading: no element carries the
+     * class, and the ids live on elements that are cards. A page that still emitted the spans would
+     * mean the decomposition left its old anchors behind; a page whose ids sat on something other
+     * than a card would mean the nav resolves somewhere that is not a section.
+     */
+    public function test_the_card_is_the_anchor_and_the_legacy_nav_target_class_is_gone(): void
+    {
+        $this->enableRedesign();
+
+        $x = $this->render('landlord', $this->richMeta());
+
+        $this->assertSame(
+            0,
+            $x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' viho-section-nav-target ')]")->length,
+            'The legacy nav-target spans must be gone; the card carries the id now.'
+        );
+
+        foreach ($x->query('//*[starts-with(@id, "hla-section-")]') as $node) {
+            $this->assertStringContainsString(
+                'viho-card',
+                $node->getAttribute('class'),
+                "[{$node->getAttribute('id')}] holds a section anchor but is not a card."
+            );
+        }
+    }
+
+    /** With the flag off the offset rule is not emitted at all. */
+    public function test_flag_off_emits_no_scroll_offset_rule(): void
+    {
+        config([
+            'hire_agent_detail.redesign_enabled' => false,
+            'hire_agent_detail.redesign_roles'   => ['landlord'],
+        ]);
+
+        $this->assertStringNotContainsString(
+            '.hla-detail-page [id^="hla-section-"]',
+            $this->renderRaw('landlord', $this->richMeta()),
+            'The legacy page must push no redesign CSS.'
+        );
+    }
+
+    /**
+     * Every section this page can render resolves from the nav — all nine, not just the ones one
+     * fixture happens to produce.
+     *
+     * The rich fixture alone renders eight; compensation needs an authenticated viewer as well, so
+     * the union across viewers is what proves the full set. Written as an explicit expected list so
+     * a section that silently stopped rendering fails by name.
+     */
+    public function test_all_nine_section_anchors_resolve(): void
+    {
+        $this->enableRedesign();
+
+        $seen = [];
+        foreach (['owner', 'guest'] as $viewer) {
+            $x = $this->render('landlord', $this->richMeta(), $viewer);
+
+            foreach ($this->navTargets($x) as $target) {
+                $this->assertContains(
+                    $target,
+                    $this->cardIds($x),
+                    "{$viewer}: nav entry [#{$target}] resolves to no card."
+                );
+                $seen[$target] = true;
+            }
+        }
+
+        ksort($seen);
+
+        $this->assertSame(
+            [
+                'hla-section-additional-details',
+                'hla-section-compensation',
+                'hla-section-leasing-terms',
+                'hla-section-listing-details',
+                'hla-section-owner-info',
+                'hla-section-property-details',
+                'hla-section-referral',
+                'hla-section-representation',
+                'hla-section-services',
+            ],
+            array_keys($seen),
+            'All nine sections must be reachable from the nav across the viewers that may see them.'
         );
     }
 

@@ -433,5 +433,39 @@
             overflow-y: auto;
         }
     }
+
+    /* ── M7.2 — the section cards ARE the scroll anchors, so they carry the offset ──
+       EMITTED ONLY FOR A ROLE THE REDESIGN IS ON FOR, and here for the same reason the sidebar
+       rule above is: it reads --viho tokens, and this file is the one product file permitted to.
+
+       WHAT WENT WRONG, BECAUSE IT WENT WRONG SILENTLY. Before M7.2 each anchor was a zero-height
+       `<span class="viho-section-nav-target">` above its heading, and viho/styles.blade.php gives
+       THAT CLASS its scroll-margin-top. M7.2 deleted the spans and moved the ids onto the cards.
+       The cards inherited the id and not the class, so the offset stopped applying. Nothing threw,
+       every anchor still resolved, and the suite stayed green — the only symptom was visual.
+
+       Measured on the landlord page before this rule: a nav click landed the card at y≈0 with the
+       bar's bottom edge at 46.9px on desktop and 150.9px on mobile, hiding the card header under
+       the bar in 6 of 7 desktop sections and 7 of 7 on mobile. The nav exists to deliver a reader
+       to a section header, so that was the milestone failing at its own purpose.
+
+       TWO TOKENS, NOT ONE, AND THAT IS THE FIX. --viho-section-nav-offset is where the BAR sticks:
+       the chrome above it. A scroll target must clear the chrome AND the bar itself, because the
+       bar is what it would otherwise land beneath. The page's original note claimed one variable
+       could do both jobs; it cannot, and on desktop the offset is 0px so reusing it alone gave no
+       clearance at all.
+
+       NOT SOLVED by putting .viho-section-nav-target on the cards. That class is the VIHO layer's
+       word for "a thing a nav scrolls to"; a card is the section itself, and borrowing the class
+       would re-couple this page's spacing to a primitive that knows nothing about this page's
+       chrome — the coupling these tokens exist to avoid.
+
+       Scoped under .hla-detail-page, like every other rule in this file, so it cannot reach Offer
+       Listing or any other page that might one day mint a similar id. */
+    .hla-detail-page [id^="hla-section-"] {
+        scroll-margin-top: calc(
+            var(--viho-section-nav-offset, 0px) + var(--viho-section-nav-height, 3.5rem)
+        );
+    }
 @endif
 </style>
