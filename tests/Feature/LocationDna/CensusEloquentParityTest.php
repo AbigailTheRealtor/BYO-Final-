@@ -11,32 +11,43 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Phase 1d-2 — MEASUREMENT, not a pass/fail gate.
+ * Phase 1d-2 Stage 2 — MEASUREMENT, not a pass/fail gate.
  *
  * WHAT THIS FILE IS FOR, AND WHAT IT REFUSES TO DO
  * ------------------------------------------------
- * Switching `geography_source` changes which places exist. Some of that change is the improvement
- * the whole phase is for — 32,188 published places instead of a USPS ZIP-locality list; ZIPs in
- * the five states `us_zip_codes` covers not at all; the 280 counties that currently resolve no
- * ZIPs. Some of it is loss: a place name that no longer matches a stored label, and USPS ZIPs
- * that have no ZCTA at all because the Census only tabulates areas with addressable population.
+ * Switching `geography_source` changes which places exist. Some of that is the improvement the
+ * phase is for; some of it is loss. Which outweighs the other is a product decision about data,
+ * not something a test may decide. So nothing here asserts the SIZE of any difference and nothing
+ * changes based on what is found. It counts, and it prints.
  *
- * Which of those outweighs the other is a product decision about data, not something a test may
- * decide. So this file asserts NOTHING about the size of any difference and changes NOTHING based
- * on what it finds. It counts, and it prints. The numbers are the input to a go/no-go conversation
- * that happens outside the suite.
+ * THE MEASUREMENT IS BOUNDED, AND THE BOUND IS REPORTED
+ * -----------------------------------------------------
+ * The census fixtures are a real national subset, not the full corpus, so a naive comparison would
+ * read every fixture gap as data loss. Each tier is therefore scoped to where BOTH sides have
+ * complete coverage, and the scope is printed alongside the numbers:
  *
- * WHY MOST OF IT SKIPS IN CI, AND WHY THAT IS CORRECT
- * ---------------------------------------------------
- * A real measurement needs both corpora populated in one database. In the suite neither is: the
- * `us_*` reference tables are empty in the in-memory connection, and `census_*` is empty until
- * something imports it. Seeding both with invented rows would produce a number that looks like a
- * measurement and is not one — the single most misleading thing this file could do.
+ *   states    all 57 — the fixture carries the complete national roster
+ *   counties  the 7 states whose fixture county count equals the real one
+ *             (AZ 15, CA 58, FL 67, IL 102, MT 56, NY 62, PR 78)
+ *   cities    the 7 counties the fixture carries place rows for
+ *   ZIPs      the same 7 counties
  *
- * So the real-corpus report SKIPS unless it finds both populated, naming what is missing. Point it
- * at an environment where the reference tables are real and `census:import-geography` has run, and
- * it reports. The harness itself is proven separately, on controlled fixtures, so this file is
- * never vacuous even when the report cannot run.
+ * Outside those bounds the fixture is silent, and silence is not absence.
+ *
+ * WHERE THE `us_*` DATA COMES FROM
+ * --------------------------------
+ * From a read-only export, not from a live connection. The suite forces an in-memory SQLite
+ * connection precisely so a test can never reach the real database, and this file does not work
+ * around that. It reads a JSON export produced separately and loads it into the test connection.
+ *
+ * With no export present the report SKIPS, naming what is missing. Inventing production-like rows
+ * to make it run would produce a number that looks like a measurement and is not one — the single
+ * most misleading thing this file could do. The comparison harness itself is asserted on
+ * controlled fixtures below, so the file is never vacuous even when the report cannot run.
+ *
+ * To produce the export, run against an environment where `us_*` is populated:
+ *   CENSUS_PARITY_US_EXPORT=/path/to/us_reference_export.json
+ * and point this test at the same path.
  */
 class CensusEloquentParityTest extends TestCase
 {
@@ -45,6 +56,20 @@ class CensusEloquentParityTest extends TestCase
     private CensusCriteriaGeographyRepository $census;
 
     private EloquentCriteriaGeographyRepository $eloquent;
+
+    /** The states whose fixture county coverage equals the real county count. */
+    private const FULLY_COVERED_STATES = ['AZ', 'CA', 'FL', 'IL', 'MT', 'NY', 'PR'];
+
+    /** The counties the fixture carries place and ZCTA rows for, by census GEOID. */
+    private const TARGET_COUNTIES = [
+        '04013' => 'Maricopa County, AZ',
+        '06037' => 'Los Angeles County, CA',
+        '12103' => 'Pinellas County, FL',
+        '17031' => 'Cook County, IL',
+        '30033' => 'Garfield County, MT',
+        '36119' => 'Westchester County, NY',
+        '72127' => 'San Juan Municipio, PR',
+    ];
 
     protected function setUp(): void
     {
@@ -62,12 +87,13 @@ class CensusEloquentParityTest extends TestCase
      * Compare two option lists by NAME, which is the only vocabulary they share.
      *
      * Ids are deliberately not compared: they are surrogate keys on one side and GEOIDs on the
-     * other, so an id comparison would report 100% difference and mean nothing. Names are what the
-     * stored blob carries and what the hydrator matches on, so a name that exists on one side and
-     * not the other is exactly the thing that decides whether a stored selection survives.
+     * other, so an id comparison would report 100% difference and mean nothing. And for cities
+     * there is no alternative at all — `us_cities.fips_code` is empty for every one of its 25,830
+     * rows, so the name IS the identity. That is also precisely why a name difference here is the
+     * thing that decides whether a stored selection survives the swap.
      *
-     * Normalised the way the hydrator normalises: lowercased, whitespace collapsed. Anything more
-     * aggressive would flatter the result.
+     * Normalised the way the hydrator normalises — lowercased, whitespace collapsed — and no more
+     * aggressively than that, which would flatter the result.
      *
      * @param  list<GeographyOption>  $legacy
      * @param  list<GeographyOption>  $census
@@ -94,7 +120,7 @@ class CensusEloquentParityTest extends TestCase
         $set = [];
 
         foreach ($options as $option) {
-            $key = trim((string) preg_replace('/\s+/', ' ', mb_strtolower($option->name)));
+            $key = $this->nameKey($option->name);
 
             if ($key !== '') {
                 $set[$key] ??= $option->name;
@@ -104,36 +130,9 @@ class CensusEloquentParityTest extends TestCase
         return $set;
     }
 
-    private function report(string $line): void
+    private function nameKey(string $name): string
     {
-        fwrite(STDOUT, PHP_EOL.'    '.$line);
-    }
-
-    /** @param array{matched: int, only_legacy: list<string>, only_census: list<string>} $result */
-    private function reportComparison(string $tier, array $result): void
-    {
-        $this->report(sprintf(
-            '%-10s matched %5d | only legacy %5d | only census %5d',
-            $tier,
-            $result['matched'],
-            count($result['only_legacy']),
-            count($result['only_census'])
-        ));
-
-        foreach (['only legacy' => 'only_legacy', 'only census' => 'only_census'] as $label => $key) {
-            if ($result[$key] === []) {
-                continue;
-            }
-
-            $sample = array_slice($result[$key], 0, 8);
-
-            $this->report(sprintf(
-                '             %s e.g. %s%s',
-                $label,
-                implode(', ', $sample),
-                count($result[$key]) > count($sample) ? ', …' : ''
-            ));
-        }
+        return trim((string) preg_replace('/\s+/', ' ', mb_strtolower($name)));
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -180,165 +179,361 @@ class CensusEloquentParityTest extends TestCase
         $this->assertSame([], $result['only_census']);
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    // The report
-    // ═════════════════════════════════════════════════════════════════════
-
-    /**
-     * Enumerate both sources across every state both can see, and print the deltas.
-     *
-     * Asserts only that both implementations honour the interface — that every option is of the
-     * kind its tier promises. The differences themselves are reported, never asserted.
-     */
-    /** @test */
-    public function it_reports_the_difference_between_the_two_sources(): void
-    {
-        $this->skipUnlessBothCorporaArePopulated();
-
-        $legacyStates = $this->eloquent->states();
-        $censusStates = $this->census->states();
-
-        $this->report('');
-        $this->report('── Criteria geography parity: us_* vs census_* ──');
-        $this->reportComparison('states', $this->compare($legacyStates, $censusStates));
-
-        // Pair the states by name so each tier below is compared within the same state rather than
-        // across the whole country, where a duplicate county name would match the wrong parent.
-        $censusByName = [];
-
-        foreach ($censusStates as $option) {
-            $censusByName[$this->nameKey($option->name)] = $option->id;
-        }
-
-        $totals = [
-            'counties' => ['matched' => 0, 'only_legacy' => 0, 'only_census' => 0],
-            'cities'   => ['matched' => 0, 'only_legacy' => 0, 'only_census' => 0],
-            'zips'     => ['matched' => 0, 'only_legacy' => 0, 'only_census' => 0],
-        ];
-
-        foreach ($legacyStates as $legacyState) {
-            $censusStateId = $censusByName[$this->nameKey($legacyState->name)] ?? null;
-
-            if ($censusStateId === null) {
-                continue;
-            }
-
-            $legacyCounties = $this->eloquent->countiesInState($legacyState->id);
-            $censusCounties = $this->census->countiesInState($censusStateId);
-
-            $this->accumulate($totals['counties'], $this->compare($legacyCounties, $censusCounties));
-
-            $legacyCountyIds = $this->idsOf($legacyCounties);
-            $censusCountyIds = $this->idsOf($censusCounties);
-
-            $this->accumulate($totals['cities'], $this->compare(
-                $this->eloquent->citiesInCounties($legacyCountyIds),
-                $this->census->citiesInCounties($censusCountyIds)
-            ));
-
-            $this->accumulate($totals['zips'], $this->compare(
-                $this->eloquent->zipsInCounties($legacyCountyIds),
-                $this->census->zipsInCounties($censusCountyIds)
-            ));
-        }
-
-        foreach ($totals as $tier => $counts) {
-            $this->report(sprintf(
-                '%-10s matched %5d | only legacy %5d | only census %5d',
-                $tier,
-                $counts['matched'],
-                $counts['only_legacy'],
-                $counts['only_census']
-            ));
-        }
-
-        $this->report('');
-        $this->report('"only legacy" is what a stored selection would stop matching.');
-        $this->report('"only census" is coverage the reference tables never had.');
-        $this->report('');
-
-        // The only assertions in the report: both sides honour the contract.
-        $this->assertEveryOptionIsOfKind($legacyStates, GeographyOption::KIND_STATE);
-        $this->assertEveryOptionIsOfKind($censusStates, GeographyOption::KIND_STATE);
-    }
-
-    // ═════════════════════════════════════════════════════════════════════
-    // Helpers
-    // ═════════════════════════════════════════════════════════════════════
-
-    private function nameKey(string $name): string
-    {
-        return trim((string) preg_replace('/\s+/', ' ', mb_strtolower($name)));
-    }
-
-    /** @param list<GeographyOption> $options @return list<string> */
-    private function idsOf(array $options): array
-    {
-        return array_values(array_unique(array_map(
-            static fn (GeographyOption $o): string => $o->id,
-            $options
-        )));
-    }
-
-    /**
-     * @param  array{matched: int, only_legacy: int, only_census: int}                       $totals
-     * @param  array{matched: int, only_legacy: list<string>, only_census: list<string>}     $result
-     */
-    private function accumulate(array &$totals, array $result): void
-    {
-        $totals['matched']     += $result['matched'];
-        $totals['only_legacy'] += count($result['only_legacy']);
-        $totals['only_census'] += count($result['only_census']);
-    }
-
-    /** @param list<GeographyOption> $options */
-    private function assertEveryOptionIsOfKind(array $options, string $kind): void
-    {
-        foreach ($options as $option) {
-            $this->assertTrue(
-                $option->is($kind),
-                "Both implementations must emit only `{$kind}` options for this tier."
-            );
-        }
-    }
-
-    /**
-     * Skip with a message that says exactly what is missing and how to supply it.
-     *
-     * A silent skip would let this file rot into decoration. A skip that names the two conditions
-     * tells the next reader precisely what kind of environment produces a real measurement.
-     */
-    private function skipUnlessBothCorporaArePopulated(): void
-    {
-        $legacyRows = DB::table('us_states')->count();
-        $censusRows = DB::table('census_states')->count();
-
-        if ($legacyRows > 0 && $censusRows > 0) {
-            return;
-        }
-
-        $missing = [];
-
-        if ($legacyRows === 0) {
-            $missing[] = 'the us_* reference tables are empty';
-        }
-
-        if ($censusRows === 0) {
-            $missing[] = 'the census_* corpus is empty (run census:import-geography)';
-        }
-
-        $this->markTestSkipped(
-            'Parity can only be measured where both sources are populated: '
-            .implode(' and ', $missing).'. The comparison harness itself is covered by the '
-            .'assertions above; this reports real numbers only against a real environment.'
-        );
-    }
-
-    /** The interface both sides implement, asserted once so the report cannot drift off-contract. */
     /** @test */
     public function both_implementations_satisfy_the_same_interface(): void
     {
         $this->assertInstanceOf(CriteriaGeographyRepository::class, $this->census);
         $this->assertInstanceOf(CriteriaGeographyRepository::class, $this->eloquent);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // The report
+    // ═════════════════════════════════════════════════════════════════════
+
+    /** @test */
+    public function it_reports_the_difference_between_the_two_sources(): void
+    {
+        $export = $this->loadUsReferenceExport();
+
+        $this->assertSame(
+            0,
+            $this->artisan('census:import-geography', [
+                '--path' => base_path('tests/fixtures/census/2020'),
+            ])->run(),
+            'The census fixtures must import before anything can be compared.'
+        );
+
+        $this->line('');
+        $this->line('════════════════════════════════════════════════════════════════════');
+        $this->line(' CRITERIA GEOGRAPHY PARITY — us_* (legacy) vs census_* (Phase 1d-1)');
+        $this->line('════════════════════════════════════════════════════════════════════');
+        $this->line(sprintf(
+            ' us_* export: %d states, %d counties, %d cities, %d zips',
+            count($export['us_states']),
+            count($export['us_counties']),
+            count($export['us_cities']),
+            count($export['us_zip_codes'])
+        ));
+        $this->line(sprintf(
+            ' census_*   : %d states, %d counties, %d places, %d zctas',
+            DB::table('census_states')->count(),
+            DB::table('census_counties')->count(),
+            DB::table('census_places')->count(),
+            DB::table('census_zctas')->count()
+        ));
+
+        $this->reportStates();
+        $this->reportCounties();
+        $this->reportCitiesAndZips();
+
+        $this->line('');
+        $this->line('════════════════════════════════════════════════════════════════════');
+        $this->line('');
+
+        // The only assertions in the report: both sides honour the contract.
+        foreach ($this->eloquent->states() as $option) {
+            $this->assertTrue($option->is(GeographyOption::KIND_STATE));
+        }
+
+        foreach ($this->census->states() as $option) {
+            $this->assertTrue($option->is(GeographyOption::KIND_STATE));
+        }
+    }
+
+    // ── 1 · States ───────────────────────────────────────────────────────
+
+    private function reportStates(): void
+    {
+        $legacy = $this->eloquent->states();
+        $census = $this->census->states();
+
+        $this->section('1 · STATES  (scope: complete on both sides)');
+        $this->line(sprintf('   eloquent %3d    census %3d', count($legacy), count($census)));
+
+        $result = $this->compare($legacy, $census);
+
+        $this->line(sprintf(
+            '   name matched %3d | only legacy %3d | only census %3d',
+            $result['matched'],
+            count($result['only_legacy']),
+            count($result['only_census'])
+        ));
+
+        $this->samples('only legacy', $result['only_legacy']);
+        $this->samples('only census', $result['only_census']);
+
+        // FIPS pairing, which is available for states and is the structural check names cannot give.
+        $legacyFips = [];
+        foreach ($legacy as $option) {
+            if ($option->code !== null && trim($option->code) !== '') {
+                $legacyFips[str_pad(trim($option->code), 2, '0', STR_PAD_LEFT)] = $option->name;
+            }
+        }
+
+        $censusFips = [];
+        foreach ($census as $option) {
+            $censusFips[(string) $option->code] = $option->name;
+        }
+
+        $pairedButRenamed = [];
+        foreach (array_intersect_key($legacyFips, $censusFips) as $fips => $legacyName) {
+            if ($this->nameKey($legacyName) !== $this->nameKey($censusFips[$fips])) {
+                $pairedButRenamed[] = "{$fips}: '{$legacyName}' vs '{$censusFips[$fips]}'";
+            }
+        }
+
+        $this->line(sprintf(
+            '   FIPS paired  %3d | legacy without FIPS %d | differing name under same FIPS %d',
+            count(array_intersect_key($legacyFips, $censusFips)),
+            count($legacy) - count($legacyFips),
+            count($pairedButRenamed)
+        ));
+
+        $this->samples('renamed', $pairedButRenamed);
+    }
+
+    // ── 2 · Counties ─────────────────────────────────────────────────────
+
+    private function reportCounties(): void
+    {
+        $this->section('2 · COUNTIES  (scope: the 7 states with complete fixture coverage)');
+
+        $censusStateByUsps = [];
+        foreach (DB::table('census_states')->get(['geoid', 'usps']) as $row) {
+            $censusStateByUsps[strtoupper((string) $row->usps)] = (string) $row->geoid;
+        }
+
+        $legacyStateByAbbrev = [];
+        foreach (DB::table('us_states')->get(['id', 'abbreviation']) as $row) {
+            $legacyStateByAbbrev[strtoupper((string) $row->abbreviation)] = (string) $row->id;
+        }
+
+        $totalLegacy = $totalCensus = $totalMatched = 0;
+        $allOnlyLegacy = $allOnlyCensus = [];
+
+        foreach (self::FULLY_COVERED_STATES as $abbrev) {
+            $legacyStateId = $legacyStateByAbbrev[$abbrev] ?? null;
+            $censusStateId = $censusStateByUsps[$abbrev] ?? null;
+
+            if ($legacyStateId === null || $censusStateId === null) {
+                $this->line(sprintf('   %-3s  unpairable (legacy=%s census=%s)', $abbrev, $legacyStateId ?? '—', $censusStateId ?? '—'));
+
+                continue;
+            }
+
+            $legacy = $this->eloquent->countiesInState($legacyStateId);
+            $census = $this->census->countiesInState($censusStateId);
+            $result = $this->compare($legacy, $census);
+
+            $totalLegacy  += count($legacy);
+            $totalCensus  += count($census);
+            $totalMatched += $result['matched'];
+
+            foreach ($result['only_legacy'] as $n) {
+                $allOnlyLegacy[] = "{$abbrev}: {$n}";
+            }
+            foreach ($result['only_census'] as $n) {
+                $allOnlyCensus[] = "{$abbrev}: {$n}";
+            }
+
+            $this->line(sprintf(
+                '   %-3s  eloquent %3d  census %3d  matched %3d  only-legacy %3d  only-census %3d',
+                $abbrev,
+                count($legacy),
+                count($census),
+                $result['matched'],
+                count($result['only_legacy']),
+                count($result['only_census'])
+            ));
+        }
+
+        $this->line(sprintf(
+            '   ───  eloquent %3d  census %3d  matched %3d  only-legacy %3d  only-census %3d',
+            $totalLegacy,
+            $totalCensus,
+            $totalMatched,
+            count($allOnlyLegacy),
+            count($allOnlyCensus)
+        ));
+
+        $this->samples('only legacy', $allOnlyLegacy, 12);
+        $this->samples('only census', $allOnlyCensus, 12);
+    }
+
+    // ── 3 & 4 · Cities and ZIPs ──────────────────────────────────────────
+
+    private function reportCitiesAndZips(): void
+    {
+        $this->section('3 · CITIES / PLACES   and   4 · ZIPS  (scope: the 7 fixture counties)');
+
+        $legacyCountyByKey = [];
+        foreach (DB::table('us_counties')->join('us_states', 'us_states.id', '=', 'us_counties.state_id')
+                     ->get(['us_counties.id as id', 'us_counties.name as name', 'us_states.abbreviation as abbrev']) as $row) {
+            $key = $this->nameKey((string) $row->name).'|'.strtoupper((string) $row->abbrev);
+            $legacyCountyByKey[$key] = (string) $row->id;
+        }
+
+        $cityTotals = ['legacy' => 0, 'census' => 0, 'matched' => 0];
+        $zipTotals  = ['legacy' => 0, 'census' => 0, 'matched' => 0];
+        $cityOnlyLegacy = $cityOnlyCensus = $zipOnlyLegacy = $zipOnlyCensus = [];
+
+        foreach (self::TARGET_COUNTIES as $geoid => $label) {
+            [$countyName, $abbrev] = array_map('trim', explode(',', $label));
+
+            $legacyCountyId = $legacyCountyByKey[$this->nameKey($countyName).'|'.$abbrev] ?? null;
+
+            if ($legacyCountyId === null) {
+                $this->line(sprintf('   %-26s  NO LEGACY COUNTY — name does not exist in us_counties', $label));
+                $this->line(sprintf('   %-26s  census places %d, zctas %d (all of them unreachable from legacy)',
+                    '',
+                    count($this->census->citiesInCounties([$geoid])),
+                    count($this->census->zipsInCounties([$geoid]))
+                ));
+
+                continue;
+            }
+
+            $legacyCities = $this->eloquent->citiesInCounties([$legacyCountyId]);
+            $censusCities = $this->census->citiesInCounties([$geoid]);
+            $cityResult   = $this->compare($legacyCities, $censusCities);
+
+            $legacyZips = $this->eloquent->zipsInCounties([$legacyCountyId]);
+            $censusZips = $this->census->zipsInCounties([$geoid]);
+            $zipResult  = $this->compare($legacyZips, $censusZips);
+
+            $cityTotals['legacy']  += count($legacyCities);
+            $cityTotals['census']  += count($censusCities);
+            $cityTotals['matched'] += $cityResult['matched'];
+
+            $zipTotals['legacy']  += count($this->nameSet($legacyZips));
+            $zipTotals['census']  += count($this->nameSet($censusZips));
+            $zipTotals['matched'] += $zipResult['matched'];
+
+            foreach ($cityResult['only_legacy'] as $n) {
+                $cityOnlyLegacy[] = "{$abbrev}: {$n}";
+            }
+            foreach ($cityResult['only_census'] as $n) {
+                $cityOnlyCensus[] = "{$abbrev}: {$n}";
+            }
+            foreach ($zipResult['only_legacy'] as $n) {
+                $zipOnlyLegacy[] = "{$abbrev}: {$n}";
+            }
+            foreach ($zipResult['only_census'] as $n) {
+                $zipOnlyCensus[] = "{$abbrev}: {$n}";
+            }
+
+            $this->line(sprintf('   %s', $label));
+            $this->line(sprintf(
+                '      cities  eloquent %4d  census %4d  matched %4d  only-legacy %4d  only-census %4d',
+                count($legacyCities),
+                count($censusCities),
+                $cityResult['matched'],
+                count($cityResult['only_legacy']),
+                count($cityResult['only_census'])
+            ));
+            $this->line(sprintf(
+                '      zips    eloquent %4d  census %4d  matched %4d  only-legacy %4d  only-census %4d',
+                count($this->nameSet($legacyZips)),
+                count($this->nameSet($censusZips)),
+                $zipResult['matched'],
+                count($zipResult['only_legacy']),
+                count($zipResult['only_census'])
+            ));
+        }
+
+        $this->line('');
+        $this->line(sprintf(
+            '   CITY TOTALS  eloquent %4d  census %4d  matched %4d  only-legacy %4d  only-census %4d',
+            $cityTotals['legacy'],
+            $cityTotals['census'],
+            $cityTotals['matched'],
+            count($cityOnlyLegacy),
+            count($cityOnlyCensus)
+        ));
+        $this->samples('removed by census', $cityOnlyLegacy, 20);
+        $this->samples('added by census', $cityOnlyCensus, 20);
+
+        $this->line('');
+        $this->line(sprintf(
+            '   ZIP TOTALS   eloquent %4d  census %4d  matched %4d  only-legacy %4d  only-census %4d',
+            $zipTotals['legacy'],
+            $zipTotals['census'],
+            $zipTotals['matched'],
+            count($zipOnlyLegacy),
+            count($zipOnlyCensus)
+        ));
+        $this->samples('missing from census', $zipOnlyLegacy, 20);
+        $this->samples('added by census', $zipOnlyCensus, 20);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Loading and output
+    // ═════════════════════════════════════════════════════════════════════
+
+    /**
+     * Load the read-only `us_*` export into the test connection.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function loadUsReferenceExport(): array
+    {
+        $path = (string) (getenv('CENSUS_PARITY_US_EXPORT') ?: '');
+
+        if ($path === '' || ! is_file($path)) {
+            $this->markTestSkipped(
+                'No us_* export available, so there is nothing real to compare against. The suite '
+                .'runs an in-memory connection with empty reference tables, and inventing rows '
+                .'would produce a number that looks like a measurement and is not one. Set '
+                .'CENSUS_PARITY_US_EXPORT to a JSON export taken from an environment where the '
+                .'us_* tables are populated. The comparison harness itself is covered by the '
+                .'assertions in this file regardless.'
+            );
+        }
+
+        $export = json_decode((string) file_get_contents($path), true);
+
+        if (! is_array($export) || ! isset($export['us_states'])) {
+            $this->markTestSkipped("The export at {$path} is not readable as a us_* reference export.");
+        }
+
+        foreach (['us_states', 'us_counties', 'us_cities', 'us_zip_codes'] as $table) {
+            $rows = $export[$table] ?? [];
+
+            foreach (array_chunk($rows, 400) as $chunk) {
+                DB::table($table)->insert($chunk);
+            }
+        }
+
+        return $export;
+    }
+
+    private function line(string $text): void
+    {
+        fwrite(STDOUT, $text.PHP_EOL);
+    }
+
+    private function section(string $title): void
+    {
+        $this->line('');
+        $this->line(' '.$title);
+        $this->line(' '.str_repeat('─', 66));
+    }
+
+    /** @param list<string> $values */
+    private function samples(string $label, array $values, int $limit = 10): void
+    {
+        if ($values === []) {
+            return;
+        }
+
+        $sample = array_slice($values, 0, $limit);
+
+        $this->line(sprintf(
+            '      %s (%d): %s%s',
+            $label,
+            count($values),
+            implode(' · ', $sample),
+            count($values) > count($sample) ? ' · …' : ''
+        ));
     }
 }
