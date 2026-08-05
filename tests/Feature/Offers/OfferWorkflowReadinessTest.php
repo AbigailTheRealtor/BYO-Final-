@@ -985,6 +985,38 @@ class OfferWorkflowReadinessTest extends TestCase
             //   M2 entry gives.
             'resources/views/components/hire-agent/detail-body.blade.php',
             'resources/views/components/hire-agent/detail-section.blade.php',
+            // Tenant offer-listing ZIP resolution — a READ-PATH fix, no writer touched.
+            //
+            // ZIPs for this workflow live in two stores and nothing mirrors between them: the
+            // Search Areas map writes `location_dna_preferences.zip_codes`, while the legacy
+            // `zipCodes` meta is written by 11 components from a discrete property.
+            // `HasSearchAreas::saveSearchAreas()` mirrors state / counties / cities and stops
+            // short of ZIPs. This loader read only the legacy key, so a tenant who set ZIPs
+            // through the map got an empty `preferred_zip_codes` and matched on everything.
+            //
+            // It now reads ZIPs from `location_dna_preferences.zip_codes` whenever the blob
+            // carries that key, and falls back to legacy `zipCodes` only when the blob cannot
+            // speak — absent, unparseable, or predating the key. Those are the older listings
+            // the discrete input wrote before the widget existed; they keep working untouched.
+            //
+            // The presence of the KEY, not the emptiness of its value, transfers authority. An
+            // empty `zip_codes: []` deliberately clears legacy ZIPs rather than falling back to
+            // them: the map is this workflow's only ZIP editing surface, so an empty array is a
+            // user who cleared their selection, and honouring it is what makes "Clear All" work
+            // instead of resurrecting values the user has no way to remove.
+            //
+            // This is intentionally NARROWER than LocationMatchAuctionExtractor, which unions
+            // the same two sources and continues to do so — unchanged by this commit. The
+            // divergence is deliberate: the extractor feeds proximity scoring, where a superset
+            // of ZIPs only widens a search, while this loader feeds a query filter, where a
+            // stale ZIP silently re-adds inventory the user removed.
+            //
+            // NO WRITER CHANGED, deliberately. A write-path mirror would have touched 11
+            // components and permanently altered stored meta; the two Hire Tenant components
+            // even order their inline `zipCodes` write and `saveSearchAreas()` call oppositely,
+            // so a trait-level mirror would resolve differently on create than on edit. A read
+            // fix cannot corrupt stored data and is reversible by revert alone.
+            'app/Services/Stellar/TenantOfferListingCriteriaLoader.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
