@@ -5,13 +5,28 @@
     (`ldna-json-field` / `ldna-important-places-field` emitted by
     partials/location-dna/map-input.blade.php) back into the host Livewire
     component's `$location_dna_preferences_json` / `$important_places_json`
-    props. Extracted verbatim from the Create-Offer buyer/tenant tabs so the
-    Hire Buyer/Tenant tabs reuse the identical, proven mechanism.
+    props. Originally extracted verbatim from the Create-Offer buyer/tenant
+    tabs; those tabs now include this partial too, so all four Search Areas
+    tabs — Hire Buyer, Hire Tenant, Offer Buyer, Offer Tenant — share this one
+    copy and no inline duplicate remains.
 
     Include this once, immediately AFTER the map-input @include, in any tab that
     hosts the Search Areas map. The host component must declare the two props
     (via App\Http\Livewire\Concerns\HasSearchAreas +
     App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces).
+
+    The `_ldnaSearchAreasBridgeReady` guard below is deliberately PAGE-GLOBAL,
+    not per-tab. Everything it protects is global — `window.ldnaSerialize`,
+    the fixed `ldna-*` DOM ids emitted by map-input, and the two `Livewire.hook`
+    registrations — so re-running this block would double-wrap and double-fire
+    rather than set up a second widget. Exactly one Search Areas tab renders per
+    page: every parent view selects one via a mutually exclusive
+    `@if ($user_type === ...)` chain. Panel-scoped state keys off `$mapPanelId`
+    instead (see `ldnaInit_*` in map-input); page-global singletons key off this
+    flag. Before the tabs were consolidated the Offer copies used their own
+    `_ldnaBuyerBridgeReady` / `_ldnaTenantBridgeReady` names, which tracked which
+    TAB had rendered rather than which workflow — misleading, since a component
+    renders another role's tab whenever `$user_type` says so.
 --}}
 <input type="hidden" id="ldna-livewire-bridge" wire:model.defer="location_dna_preferences_json">
 <input type="hidden" id="ldna-ip-livewire-bridge" wire:model.defer="important_places_json">
