@@ -596,12 +596,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             <x-hire-agent.detail-body :redesign="$hlaDetailRedesign" title="Listing Details:">
             <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines" :legacy-header="false">
                     <div class="row" style="flex-wrap: wrap;">
-                        @if (@$auction->get->listing_title != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Listing Title
-                            <span class="removeBold">{{ @$auction->get->listing_title }}</span>
-                        </div>
-                        @endif
+                        {{-- M7.3 — the "Listing Title" row is gone, and it could never have rendered.
+                             The questionnaire DOES ask for a listing title, but the component stores
+                             the answer in the auction's native `title` COLUMN
+                             (LandLordAgentAuction::save, `$auction->title = $this->listing_title`),
+                             not as `listing_title` meta. This row read the meta key, which nothing
+                             writes — measured at zero rows — so the `!= null` guard was never
+                             satisfied and the row was dead in both flag states.
+
+                             It is removed rather than repointed at `$auction->title`, because that
+                             value is already on the page: the hero renders it as the page heading.
+                             Fixing the read would have produced a heading followed immediately by a
+                             row repeating it. The one field, in the one place. --}}
                         @if (@$auction->get->working_with_agent != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Current Representation Status with Broker:
@@ -676,14 +682,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 return $stripState($county);
                             }, array_filter($rawCounties));
 
-                            $stateVal = null;
-                            $rawStates = @$auction->get->states;
-                            if (is_string($rawStates)) { $rawStates = json_decode($rawStates, true); }
-                            if (is_array($rawStates) && !empty($rawStates)) {
-                                $stateVal = implode('; ', $rawStates);
-                            } elseif (!empty(@$auction->get->state)) {
-                                $stateVal = @$auction->get->state;
-                            }
+                            /*
+                             | M7.3 — the `states` (plural) read is gone, and this is a removal of
+                             | dead code rather than a change of behaviour.
+                             |
+                             | It was the FIRST branch of a two-branch fallback: a JSON array in
+                             | `states`, else the scalar in `state`. Only one thing writes `states`
+                             | — TenantAgentAuctionController — and nothing in either Hire Landlord
+                             | Agent component writes it. Measured before removal: zero rows in
+                             | landlord_agent_auction_metas carry the key, on any workflow, so the
+                             | first branch has never been taken on this page and the value has
+                             | always come from `state`.
+                             |
+                             | Reading it here made a tenant-role field look like part of the
+                             | landlord questionnaire, which is the specific confusion M7.3 exists
+                             | to remove: this page must show only what the Hire Landlord Agent flow
+                             | asks. `state` IS asked and IS written, so it stays.
+                             */
+                            $stateVal = !empty(@$auction->get->state) ? @$auction->get->state : null;
 
                             $rawZips = @$auction->get->zipCodes;
                             if (is_string($rawZips)) { $rawZips = json_decode($rawZips, true); }
@@ -778,10 +794,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif --}}
                     @php
-                        $rawLandlordCondition = @$auction->get->condition_prop_buyer;
-                        if (empty($rawLandlordCondition)) {
-                            $rawLandlordCondition = @$auction->get->condition_prop;
-                        }
+                        /*
+                         | M7.3 — `condition_prop_buyer` is gone from this page, and like the
+                         | `states` removal above this is dead code rather than a behaviour change.
+                         |
+                         | It was the FIRST branch of a two-branch fallback, with `condition_prop`
+                         | second. `condition_prop_buyer` is written only by HireBuyerAgent and by
+                         | the Buyer/Tenant Offer Listing components — never by either Hire Landlord
+                         | Agent component — and it carries zero rows in landlord_agent_auction_metas
+                         | on any workflow. The first branch has never been taken here.
+                         |
+                         | `condition_prop` is the landlord questionnaire's own field, is written by
+                         | the flow, and holds data on 13 hire_agent listings. It is now read
+                         | directly, which is what the page was already displaying.
+                         */
+                        $rawLandlordCondition = @$auction->get->condition_prop;
                         $landlordConditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
                             $rawLandlordCondition,
                             @$auction->get->other_property_condition
@@ -817,19 +844,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif --}}
 
-                {{-- <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Property
-                                Condition:
-                                @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
-                                    @foreach (array_filter(@$auction->get->condition_prop_buyer) as $item)
-                                        <span class="removeBold"> {{ $item }}</span>
-                @if ($item == 'Other')
-                <span class="removeBold"> {{ @$auction->get->other_property_condition }}</span>
-                @endif
-                @endforeach
-                @endif
-
-            </div> --}}
+            {{-- M7.3: a commented-out second copy of the Property Condition row stood here. It read
+                 `condition_prop_buyer` — the buyer-role field removed above — so it was dead markup
+                 naming a field this page no longer knows about. Removed with the live read rather
+                 than left behind to contradict it. It emitted nothing in either flag state. --}}
 
             @if (@$auction->get->bedrooms != null)
             <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1693,6 +1711,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
 
             @php
+                /*
+                 | M7.3 — KEPT, and the reason is recorded here because it does not look kept-able.
+                 |
+                 | `client_custom_services` appears in NEITHER Hire Landlord Agent component and in
+                 | none of the questionnaire tabs, which is the same signature as the two fields
+                 | M7.3 removed from Property Details. It is not the same thing.
+                 |
+                 | It is written by HireAgentDirectController — the direct "Hire Me" entry path,
+                 | where a client hires a named agent without going through the auction
+                 | questionnaire. That is a real Hire Agent workflow, so the field is in scope for a
+                 | Hire Agent detail page; it simply arrives from the second door rather than the
+                 | first. Confirmed present on a live hire_agent listing.
+                 |
+                 | The rule M7.3 applies is "does this belong to the Hire Agent workflow", not "is
+                 | it in the questionnaire component". Checking only the component would have
+                 | deleted this.
+                 */
                 $ccsRawLandlord = @$auction->get->client_custom_services;
                 $clientCustomServicesLandlord = is_array($ccsRawLandlord)
                     ? $ccsRawLandlord
@@ -1723,11 +1758,38 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         </x-hire-agent.detail-section>@endif
 
-        {{-- M6: the listing type is supplied here, not guessed inside the partial. It selects the
-             model and the document rules the access service applies; a partial that inferred it
-             would be deciding authorization scope from markup. Omitting it fails closed — the
-             document control simply does not render. --}}
-        @include('partials.listing-photos-tours-documents', ['listingDocumentType' => 'landlord'])
+        {{-- M7.3 — PHOTOS, TOURS & DOCUMENTS IS GONE FROM THIS PAGE, BY PRODUCT DECISION.
+
+             A Hire Agent detail page shows what the Hire Agent creation flow can produce. This
+             section showed none of it. The four fields the partial reads — property photos, video
+             tour, virtual tour, listing document — are written ONLY by the Offer Listing
+             components. No Hire Agent questionnaire, in any of the four roles, captures any of
+             them: the sole file inputs in the hire flows are the landlord's own `photo` and
+             `video`, both of which render in the Owner's Info section below.
+
+             WHY IT COULD APPEAR HERE AT ALL. Offer Listing and Hire Agent share one table —
+             LandlordOfferListing writes the same LandlordAgentAuction model this page reads — and
+             the two workflows are told apart only by a `workflow_type` meta stamp. So Offer
+             Listing values are reachable from a Hire Agent page by construction, not by accident.
+             `property_photos` is itself one of the keys the Offer Listing controller uses to
+             RECOGNISE an Offer Listing, which is the sharpest statement of the problem: this page
+             was rendering a section keyed on the app's own signal for "not a Hire Agent listing".
+
+             Measured before removal: zero `workflow_type=hire_agent` rows carried any of the four
+             keys, so nothing that renders today stops rendering. It was not harmless, though —
+             twenty untagged legacy rows DO carry photos and tour URLs, and the view route applies
+             no workflow filter, so one reached through this route would have displayed them.
+
+             THE INFRASTRUCTURE IS UNTOUCHED, DELIBERATELY. Only this render site is removed. The
+             partial file, ListingDocumentCatalog, ListingDocumentAccessService,
+             ListingDocumentController and the listing.document.show route are all unchanged, and
+             Offer Listing still delivers documents through them — its seller view links that route
+             directly. Nothing about who may have a document changed here; a section simply stopped
+             being drawn on a page whose workflow cannot produce one. If a Hire Agent document
+             workflow is ever wanted, the delivery half already exists and only a questionnaire
+             field would be needed.
+
+             The `<hr>` that preceded the section lived inside the partial and goes with it. --}}
 
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
 
@@ -2310,7 +2372,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 $auser = $auctionUser::find(@$auction->user_id);
 @endphp
 <!-- Review  -->
-<div class="card review">
+{{-- M7.3: same chrome hook as the proposal console, added only in the redesigned branch so the
+     flag-off DOM is unchanged. This card is the last node in the main column and was the only one
+     there still rendering the theme's Bootstrap chrome under a column of viho cards. --}}
+<div class="card review{{ $hlaDetailRedesign ? ' hla-surface-card' : '' }}">
     <div class="card-body d-flex align-items-center">
         <div class="left d-flex align-items-center">
             <x-avatar-img :avatar="$auser->avatar" alt="" class="w-25" />
@@ -2755,7 +2820,14 @@ $auser = $auctionUser::find(@$auction->user_id);
         @endphp
 
         @if (! $hlaDetailRedesign || $hlaProposalConsoleVisible)
-        <div class="card higestBider">
+        {{-- M7.3: the chrome hook is appended only in the redesigned branch. With the flag off the
+             class attribute is byte-identical to what it has always been, and the framework
+             stylesheet emits no rule for the hook either — so the legacy page is untouched.
+             The hook rather than the existing class because HireAgentProposalConsoleTest uses
+             `higestBider` as its proxy for "the console is in the DOM"; naming that class in a
+             stylesheet would put the string on the page for viewers the console is withheld from.
+             See the rule's note in hire_agent/framework/styles.blade.php. --}}
+        <div class="card higestBider{{ $hlaDetailRedesign ? ' hla-surface-card' : '' }}">
             <div class="card-body card-body-padding">
                 {{--
                     Milestone 2 — the "Agent N was the last bidder." line was removed here. It is

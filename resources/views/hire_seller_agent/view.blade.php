@@ -1722,10 +1722,18 @@
                             </div>
                         @endif
 
-                        {{-- M6: see the equivalent note in hire_landlord_agent/view.blade.php.
-                             Seller is touched here only because it shares this partial and would
-                             otherwise keep the public document URL this milestone removes. --}}
-                        @include('partials.listing-photos-tours-documents', ['listingDocumentType' => 'seller'])
+                        {{-- M7.3 — Photos, Tours & Documents removed. See the full reasoning in
+                             hire_landlord_agent/view.blade.php; it applies here unchanged.
+
+                             In short: the four fields the partial reads are written only by the
+                             Offer Listing components, no Hire Agent questionnaire captures any of
+                             them, and this view was the partial's only other caller. Seller is
+                             removed in the same change as landlord for the same reason it was
+                             included in M6 — leaving one of the two behind is how the pair drifts.
+
+                             Nothing about document delivery or authorization changes. The Seller
+                             OFFER Listing view keeps its own document link, which points at the
+                             same untouched route. --}}
 
                         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
                         @php

@@ -467,5 +467,70 @@
             var(--viho-section-nav-offset, 0px) + var(--viho-section-nav-height, 3.5rem)
         );
     }
+
+    /* ── M7.3 — the sub-headings were LARGER than the card titles above them ──
+       A hierarchy inversion, and it only became one when M7.2 landed. Before decomposition these
+       h5s sat inside one card whose single title was 1.5rem, so an h5 beneath it was correctly
+       smaller. Now every section is its own card and a viho card title is --viho-font-lg, 1.05rem.
+       An unstyled Bootstrap h5 is 1.25rem, so each of the eleven sub-headings inside Broker
+       Compensation renders ~19% larger than the heading of the card containing it — the deepest
+       level of the outline shouting over the level above it.
+
+       Measured against the reference, which does not have this problem: Create Offer's in-card
+       sub-heading is an h6 at 0.9rem under a 1.05rem card header. This matches that RELATIONSHIP
+       — sub-heading below card title — using Hire Agent's own markup. The element stays h5: the
+       document outline is correct and is not what was wrong. Only its size is.
+
+       The existing margin rule for these headings is left alone. Vertical rhythm was not the
+       defect and changing both at once would make it impossible to tell which one moved. */
+    .hla-detail-page h5.mt-3.mb-2 {
+        font-size: 0.95rem;
+        letter-spacing: var(--viho-tracking-tight, -0.01em);
+        color: var(--viho-text-strong, #1E293B);
+    }
+
+    /* ── M7.3 — two cards were still rendering Bootstrap's chrome beside a page of viho cards ──
+       Nothing in this repository styles the sidebar proposal console's own class or
+       `.card.review` (the owner summary at the foot of the main column), so both fall through to
+       the theme's `.card`: ~0.25rem radius, an rgba(0,0,0,.125) border, no shadow. Everything
+       around them has rendered 0.75rem / #E2E8F0 / 0 1px 6px since M7.2. The console sits directly
+       beside that column at the lg breakpoint, so the mismatch is visible side by side.
+
+       IT MUST NOT NAME THE CONSOLE'S OWN CLASS, AND A TEST CAUGHT IT TWICE. The first version of
+       this rule listed that class in the selector. HireAgentProposalConsoleTest asserts the class
+       name is ABSENT from the DOM for a guest, an agent who has not bid, an unrelated user and an
+       administrator — it uses that string as the proxy for "the console rendered". A stylesheet is
+       part of the DOM, so naming the class there put it on the page for every viewer and the
+       assertion failed, correctly. The proxy is legitimate and the rule was wrong, so the rule
+       moved rather than the test.
+
+       The SECOND failure was this comment. With the selector fixed, the prose above still spelled
+       the class out to explain why it must not — and a CSS comment inside a style block ships to
+       the browser just as the selector does. Hence the circumlocution here, which is the same
+       convention the section-nav and detail-section notes already use for names a guard scans for.
+       Blade comments elsewhere in these files may spell it freely: those are stripped at compile
+       time and never reach the page. A CSS comment is not a Blade comment.
+
+       The hook is therefore a class the caller adds ONLY in the redesigned branch, to markup that
+       is itself already behind the console's visibility gate. When the console is withheld the
+       element does not render, so the hook does not either, and the privacy proxy keeps working
+       exactly as written. With the flag off no hook is emitted at all, which is what keeps the
+       flag-off DOM identical.
+
+       GEOMETRY ONLY, AND DELIBERATELY SO. Radius, border and shadow — the three properties that
+       make a card look like it belongs — and nothing else. Padding is untouched, and so is
+       everything inside the console: its proposal cards carry their own class and inline geometry,
+       so they are out of this rule's reach by construction. That matters beyond tidiness. The
+       console's contents are gated by HireAgentProposalAccess, and a styling milestone that could
+       alter what a proposal card renders would be the ideal place for an authorization regression
+       to hide inside a visual diff. This cannot reach them.
+
+       Tokens are read rather than repeated, so these two cannot drift if the card geometry is
+       retuned in the primitive. */
+    .hla-detail-page .hla-surface-card {
+        border-radius: var(--viho-radius-lg);
+        border: 1px solid var(--viho-border);
+        box-shadow: var(--viho-shadow-card);
+    }
 @endif
 </style>
