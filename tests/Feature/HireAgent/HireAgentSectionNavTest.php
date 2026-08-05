@@ -35,10 +35,27 @@ class HireAgentSectionNavTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /** Sections that render for every viewer of every listing, so they are always expected. */
+    /**
+     * Sections that render for every viewer of every listing, so they are always expected.
+     *
+     * M7.2 added two, both because decomposition turned an existing piece of the page into a
+     * section that the nav now has to account for:
+     *
+     *   · listing-details — was the WRAPPER card's heading. When the wrapper stopped existing it
+     *     became the first section card, and a section card with an anchor and no entry breaks the
+     *     both-directions invariant this file enforces.
+     *   · owner-info      — always rendered and was never offered. Harmless as a sub-heading in a
+     *     long card; as the LAST CARD on the page, a card the nav declines to mention reads as
+     *     something withheld.
+     *
+     * Both are unconditional, like the two that were here before, so neither carries a guard.
+     * Order is document order — the assertions below compare sequences, not sets.
+     */
     private const ALWAYS_PRESENT = [
+        'hla-section-listing-details',
         'hla-section-property-details',
         'hla-section-leasing-terms',
+        'hla-section-owner-info',
     ];
 
     // ── Fixtures ─────────────────────────────────────────────────────────────

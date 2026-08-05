@@ -956,6 +956,35 @@ class OfferWorkflowReadinessTest extends TestCase
             //   M2 entry gives — the next shared partial to change should be a decision somebody
             //   made and wrote down.
             'resources/views/partials/listing-photos-tours-documents.blade.php',
+            // M7.2 — the reusable detail section framework. Two shared Blade components, and NO
+            //   new VIHO primitive: both compose card and section-header, which have been on this
+            //   list since M2.
+            //   They exist because the detail page rendered ONE card spanning nine sub-sections
+            //   with zero-height <span> anchors buried inside it, so a section-nav link landed
+            //   mid-document rather than on a card header. The reference page (Offer Listing)
+            //   renders discrete cards each carrying its own id. Decomposing to match needs a
+            //   wrapper that disappears when the redesign is on and a section that becomes a card
+            //   — neither of which can be expressed as a conditional around a tag pair 1,700 lines
+            //   apart without leaving unbalanced markup in separate @if branches.
+            //   These are the SECOND and THIRD shared Hire Agent files permitted to compose VIHO,
+            //   after the M4 hero. That expansion was reviewed and approved for M7.2 and is
+            //   recorded in VihoPresentationPrimitivesTest::APPROVED_SHARED_CONSUMERS, which stays
+            //   an explicit named list — the detail shell, field, flash and info-card in the same
+            //   directory remain banned, and a test proves the ban still bites for them.
+            //   Neither component reads config, resolves a route, or reads a user. Each receives
+            //   the resolved flag as a plain boolean from its caller, so there is still exactly one
+            //   reader of HIRE_AGENT_DETAIL_REDESIGN_ENABLED, and each sits INSIDE the caller's
+            //   guards — Auth::check() and $hasLandlordBrokerCompData for compensation — never
+            //   around them, so neither can be the reason a section is visible.
+            //   Inert until a caller renders them. The only caller is the landlord detail view,
+            //   behind HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false. With the flag off
+            //   the rendered DOM is identical to the pre-change page for all four roles — verified
+            //   against the tree at 4d9c74961, see
+            //   docs/investigations/hire-agent-m7-2-flag-off-guarantee.md.
+            //   Two exact paths rather than a components/hire-agent/ wildcard, for the reason the
+            //   M2 entry gives.
+            'resources/views/components/hire-agent/detail-body.blade.php',
+            'resources/views/components/hire-agent/detail-section.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
