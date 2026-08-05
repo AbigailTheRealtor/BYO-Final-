@@ -721,6 +721,18 @@ class OfferWorkflowReadinessTest extends TestCase
             // Scope is pinned by Phase1cHireBuyerCascadeScopeGuardTest: one tab partial opts in,
             // seven other hosts of the shared widget keep their own inputs and their own place
             // autocomplete, and Seller/Landlord are untouched.
+            // Criteria Location DNA Phase 1d-3 — the geography COMPATIBILITY layer, which prepares
+            // the hydrator for a Census-spelled corpus without switching to one. Two rungs are
+            // added BELOW the existing exact match — deterministic normalisation (accents, class
+            // words, saint/st, spacing) and an explicit alias table — so a stored `Adjuntas County`
+            // can reach a published `Adjuntas Municipio`. `key()` is untouched, the exact rung
+            // still answers first, ambiguity resolves to NO MATCH rather than to the first hit, and
+            // an unresolved label is preserved verbatim exactly as before. ZIPs are deliberately
+            // excluded: a PO-box ZIP is not a spelling of the ZCTA around it.
+            //
+            // NO SOURCE CHANGE. `CRITERIA_LDNA_GEOGRAPHY_SOURCE` still ships `eloquent`.
+            'app/Services/LocationDna/Criteria/Projection/GeographyNameCompatibility.php',
+            'app/Services/LocationDna/Criteria/Projection/GeographyNameAliases.php',
             'app/Services/LocationDna/Criteria/Projection/GeographyLabelProjector.php',
             'app/Services/LocationDna/Criteria/Projection/GeographySelectionHydrator.php',
             'app/Services/LocationDna/Criteria/Projection/HydratedGeography.php',

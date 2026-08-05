@@ -36,6 +36,35 @@ use App\Services\LocationDna\Criteria\Rules\GeographySelection;
  * a county with or without its class word, an unpadded ZIP. It never invents a match: tolerance is
  * about recognising what the corpus already contains, not about finding the nearest thing.
  *
+ * FOUR RUNGS, TRIED IN ORDER (Phase 1d-3)
+ * ---------------------------------------
+ * The tolerance above was built for the reference tables. Published Census geography spells the
+ * same places differently — `Bayamón Municipio` where a stored label says `Bayamon County`,
+ * `DeKalb County` where it says `De Kalb County` — so two rungs were added BELOW the existing ones
+ * rather than folded into them:
+ *
+ *   1. EXACT, and the class-suffix tolerance that has always accompanied it. Unchanged, and still
+ *      answers first, so nothing that matched before matches differently now.
+ *   2. DETERMINISTIC COMPATIBILITY NORMALISATION — {@see GeographyNameCompatibility}. Accents fold,
+ *      punctuation and spacing stop mattering, `saint` and `st` converge, and one geography-class
+ *      word is removed at the county tier. Ambiguity resolves to NOTHING, never to the first hit.
+ *   3. EXPLICIT ALIASES — {@see GeographyNameAliases}. Only for names no rule can derive, each one
+ *      written down individually.
+ *   4. PRESERVE, exactly as before.
+ *
+ * The order is the safety argument. Each rung is strictly more permissive than the one above it and
+ * is only consulted when the one above found nothing, so widening the bottom cannot change what the
+ * top already answered. `key()` in particular is untouched — it is the comparison form of rung 1,
+ * and every stored record and existing suite depends on precisely what it does today.
+ *
+ * ZIPS GAIN NOTHING FROM ANY OF THIS, ON PURPOSE
+ * ----------------------------------------------
+ * A ZIP is digits; there is no accent, no class word and no spelling to reconcile. The only
+ * "compatibility" available at that tier would be mapping a PO-box ZIP onto the ZCTA that
+ * geographically surrounds it, and that is a different claim about the world, not a different
+ * spelling of the same one. So the ZIP matcher below is byte-for-byte what Phase 1c shipped: the
+ * Census ZCTA is authoritative where it matches, and a legacy ZIP with no counterpart is preserved.
+ *
  * READ-ONLY, like everything in this namespace.
  */
 final class GeographySelectionHydrator
@@ -60,9 +89,24 @@ final class GeographySelectionHydrator
         ' city',
     ];
 
+    private readonly GeographyNameCompatibility $compatibility;
+
+    private readonly GeographyNameAliases $aliases;
+
+    /**
+     * The constructor signature is deliberately unchanged.
+     *
+     * Two call sites build this class by hand — the cascade trait and the unit suite — and both
+     * pass the repository alone. The compatibility rungs are behaviour of the hydrator rather than
+     * a collaborator a caller chooses between, so they are constructed here instead of being added
+     * to the signature: no wiring moves, no container binding is needed, and there is no way to
+     * assemble a hydrator that is missing them.
+     */
     public function __construct(
         private readonly CriteriaGeographyRepository $geography,
     ) {
+        $this->compatibility = new GeographyNameCompatibility();
+        $this->aliases       = new GeographyNameAliases($this->compatibility);
     }
 
     /**
@@ -130,8 +174,9 @@ final class GeographySelectionHydrator
     {
         $options = $this->geography->countiesInState($stateId);
 
-        $exact = [];
-        $loose = [];
+        $exact  = [];
+        $loose  = [];
+        $compat = [];
 
         foreach ($options as $option) {
             if (! $option->is(GeographyOption::KIND_COUNTY)) {
@@ -150,15 +195,32 @@ final class GeographySelectionHydrator
             if ($bare !== $name && $bare !== '') {
                 $loose[$bare] = array_key_exists($bare, $loose) ? null : $option->id;
             }
+
+            // Rung 2's index, built alongside rather than instead of the two above. It reduces the
+            // corpus name the same way the stored label will be reduced, which is what lets
+            // `Adjuntas County` reach `Adjuntas Municipio` — the class word is gone from BOTH sides
+            // before either is compared, so neither spelling is privileged.
+            $this->compatibility->register($compat, $this->compatibility->countyKey($name), $option->id);
         }
 
-        return $this->partition($labels, function (string $label) use ($exact, $loose): ?string {
+        return $this->partition($labels, function (string $label) use ($exact, $loose, $compat): ?string {
             $wanted = $this->key($this->stripStateSuffix($label));
 
-            return $exact[$wanted]
+            // ── Rung 1 · exact, and the class-suffix tolerance. Unchanged. ──────
+            $matched = $exact[$wanted]
                 ?? $loose[$wanted]
                 ?? $exact[$this->stripCountyClass($wanted)]
                 ?? null;
+
+            if ($matched !== null) {
+                return $matched;
+            }
+
+            // ── Rung 2 · deterministic compatibility normalisation. ─────────────
+            //
+            // No rung 3 here: no county name has yet been found that a rule cannot derive, and an
+            // alias table with nothing in it would only invite one. See GeographyNameAliases.
+            return $this->compatibility->lookup($compat, $this->compatibility->countyKey($wanted));
         });
     }
 
@@ -169,23 +231,65 @@ final class GeographySelectionHydrator
      */
     private function matchCities(array $countyIds, array $labels): array
     {
-        $index = [];
+        $index  = [];
+        $compat = [];
 
         if ($countyIds !== []) {
             foreach ($this->geography->citiesInCounties($countyIds) as $option) {
                 if ($option->is(GeographyOption::KIND_CITY)) {
-                    $index[$this->key($option->name)] ??= $option->id;
+                    $name = $this->key($option->name);
+
+                    $index[$name] ??= $option->id;
+
+                    // A place spanning two selected counties is enumerated once per parent, so this
+                    // sees one id twice. `register()` treats that as the same option rather than as
+                    // a collision — see the rule it documents.
+                    $this->compatibility->register($compat, $this->compatibility->placeKey($name), $option->id);
                 }
             }
         }
 
-        return $this->partition(
-            $labels,
-            fn (string $label): ?string => $index[$this->key($this->stripStateSuffix($label))] ?? null,
-        );
+        return $this->partition($labels, function (string $label) use ($index, $compat): ?string {
+            $wanted = $this->key($this->stripStateSuffix($label));
+
+            // ── Rung 1 · exact. Unchanged. ──────────────────────────────────────
+            if (isset($index[$wanted])) {
+                return $index[$wanted];
+            }
+
+            // ── Rung 2 · deterministic compatibility normalisation. ─────────────
+            $normalized = $this->compatibility->placeKey($wanted);
+            $matched    = $this->compatibility->lookup($compat, $normalized);
+
+            if ($matched !== null) {
+                return $matched;
+            }
+
+            // ── Rung 3 · explicit alias, resolved through the SAME index. ───────
+            //
+            // The alias supplies a corpus name, not an id. It is then looked up like any other
+            // name, so an alias whose target is not among the enumerated counties — or is ambiguous
+            // there — resolves to nothing and the label is preserved. An alias redirects; it does
+            // not assert that the destination exists.
+            $alias = $this->aliases->city($normalized);
+
+            return $alias === null ? null : $this->compatibility->lookup($compat, $alias);
+        });
     }
 
     /**
+     * DELIBERATELY UNTOUCHED BY THE COMPATIBILITY RUNGS (Phase 1d-3).
+     *
+     * A ZIP carries no spelling to reconcile, so the only thing a compatibility layer could offer
+     * here is mapping a PO-box ZIP onto the ZCTA that surrounds it. That is not a normalisation —
+     * a PO-box ZIP has no area, and the ZCTA around it is a DIFFERENT geography that happens to
+     * contain the building. Treating them as the same value would silently rewrite a stored ZIP
+     * into one the user never entered, and would do it to records nobody is looking at.
+     *
+     * So the rule stays exactly as Phase 1c left it: the ZCTA is authoritative where the stored ZIP
+     * matches one, and a ZIP with no counterpart in the corpus is preserved verbatim. Nothing is
+     * migrated, converted or dropped.
+     *
      * @param  list<string>  $countyIds
      * @param  list<string>  $labels
      * @return array{0: list<string>, 1: list<string>}

@@ -37,7 +37,13 @@ enum GeographyRule: string
     /** A chosen county does not belong to the chosen state. */
     case CountyNotInState = 'county_not_in_state';
 
-    /** A chosen city does not belong to any chosen county. Cities have exactly one county. */
+    /**
+     * A chosen city does not belong to any chosen county.
+     *
+     * City selections resolve through geography relationships and identifiers — the corpus states
+     * which counties a place belongs to, and this rule reports a place none of the chosen counties
+     * claims. How many counties that is depends on the corpus and is not this enum's business.
+     */
     case CityNotInSelectedCounty = 'city_not_in_selected_county';
 
     /**

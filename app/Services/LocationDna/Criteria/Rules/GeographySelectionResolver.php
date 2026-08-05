@@ -30,24 +30,29 @@ use App\Services\LocationDna\Criteria\GeographyOption;
  * An unknown state simply justifies no counties, so everything below it clears and
  * {@see GeographySelectionValidator} reports `StateUnknown` against the state itself.
  *
- * CITIES AND ZIPS ARE CLEARED BY DIFFERENT RULES, AND THAT ASYMMETRY IS DELIBERATE
- * -------------------------------------------------------------------------------
- * It reads like an inconsistency. It is not, and anyone tempted to "make these two consistent"
- * should read this first:
+ * CITIES AND ZIPS ARE BOTH RE-DERIVED FROM THE SURVIVING COUNTIES
+ * ---------------------------------------------------------------
+ * Neither tier is cleared by remembering which county it came from. Both are re-enumerated from
+ * the counties that survived and kept where the corpus still offers them:
  *
- *   CITIES ARE CONTAINMENT. `us_cities.county_id` is a real foreign key. A city belongs to exactly
- *   one county. Deselect that county and the city is unconditionally orphaned.
+ *   CITY SELECTIONS RESOLVE THROUGH GEOGRAPHY RELATIONSHIPS AND IDENTIFIERS. The corpus states
+ *   which counties claim a place, and this class asks it — it does not assume how many there are.
+ *   Under the reference tables `us_cities.county_id` is a single foreign key, so in practice one
+ *   county answers; under published Census geography `census_place_counties` is a real many-to-many
+ *   and a place straddling a line is offered under each parent. The rule below is correct for both
+ *   because it never encodes the count: a city is kept while ANY surviving county still enumerates
+ *   it.
  *
- *   ZIPS ARE ASSOCIATION. `us_zip_codes` has no county foreign key; Phase 1a associates a ZIP to a
- *   county by matching (bare county name, state abbreviation), and a ZCTA legitimately crosses
- *   county lines. So one ZIP can have several parent counties, and it survives while ANY of them
- *   survives.
+ *   ZIPS ARE ASSOCIATION, and always visibly so. `us_zip_codes` has no county foreign key; Phase 1a
+ *   associates a ZIP to a county by matching (bare county name, state abbreviation), and a ZCTA
+ *   legitimately crosses county lines. So one ZIP can have several parent counties, and it survives
+ *   while ANY of them survives.
  *
- * Getting that second rule wrong is the expensive mistake available in this phase. "County removed
+ * Getting that survival rule wrong is the expensive mistake available in this phase. "County removed
  * → remove its ZIPs" destroys valid data every time a ZIP straddles a boundary: select Suffolk and
  * Nassau, ZIP 11001 is associated with both, deselect Suffolk, and the naive rule deletes 11001
- * even though Nassau still justifies it. The implementation below re-derives the allowed ZIPs from
- * the SURVIVING counties and keeps the intersection, which cannot make that mistake.
+ * even though Nassau still justifies it. The implementation below re-derives BOTH tiers from the
+ * SURVIVING counties and keeps the intersection, which cannot make that mistake at either tier.
  *
  * Exact geometric containment for ZIPs waits for the spatial corpus, exactly as Phase 1a's
  * interface documents. This layer must not pre-empt it.
@@ -91,7 +96,9 @@ final class GeographySelectionResolver
             $cleared,
         );
 
-        // ── Cities, justified by CONTAINMENT in a surviving county ──────────
+        // ── Cities, justified by a RELATIONSHIP to ANY surviving county ─────
+        // Re-derived from the survivors rather than from the county the city was picked under, so a
+        // place the corpus offers under two selected counties outlives the loss of either one.
         $cityOptions = $counties === [] ? [] : $this->geography->citiesInCounties($counties);
 
         $cities = $this->keepJustified(
