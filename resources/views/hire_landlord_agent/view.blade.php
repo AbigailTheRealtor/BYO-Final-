@@ -292,6 +292,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
         @endphp
 
+{{-- Owner/Agent Info heading — hoisted by M7.2 so the nav entry and the section share one value
+     rather than two expressions that have to be kept in agreement. Moved verbatim from just above
+     the section; it was already resolved in PHP because a bound attribute containing `&&` is not
+     parseable by Blade's attribute compiler. --}}
+        @php
+            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+                ? "Agent's Info"
+                : "Landlord's Info";
+        @endphp
+
 @php
     /*
      | M5.2b — SECTION NAVIGATION.
@@ -321,6 +331,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     $hlaNavSections = [];
 
     if ($hlaDetailRedesign) {
+        /*
+         | M7.2 — Listing Details, which became a section by being decomposed.
+         |
+         | It was the WRAPPER card's heading, not a section, so there was nothing for the nav to
+         | point at. Now that each section is its own card it is one, and an anchor with no entry
+         | breaks the invariant HireAgentSectionNavTest enforces in both directions: every entry
+         | has a section AND every section has an entry.
+         |
+         | The alternative was to leave the card without an id, which satisfies the invariant by
+         | making the section unreachable instead. Rejected — it would be the only section card a
+         | reader cannot navigate to, and "the nav lists the page's sections" is a simpler rule to
+         | keep than "the nav lists the page's sections except the first one".
+         |
+         | Unconditional, because the section is.
+         */
+        $hlaNavSections[] = ['id' => 'hla-section-listing-details', 'label' => 'Listing Details'];
         $hlaNavSections[] = ['id' => 'hla-section-property-details', 'label' => 'Property Details'];
         $hlaNavSections[] = ['id' => 'hla-section-leasing-terms', 'label' => 'Leasing Terms'];
 
@@ -343,6 +369,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         if ($referralPctDisplay !== '') {
             $hlaNavSections[] = ['id' => 'hla-section-referral', 'label' => 'Referral & Cooperation'];
         }
+
+        /*
+         | M7.2 — the Owner/Agent Info entry, and why it did not exist before.
+         |
+         | The section always rendered and was never reachable from the nav. That was survivable
+         | while it was a sub-heading inside a long card: a reader scrolling to the end arrived at
+         | it anyway. Decomposition makes it the LAST CARD ON THE PAGE, and a card the nav declines
+         | to mention reads as something the page is hiding rather than something it forgot.
+         |
+         | UNCONDITIONAL, because the section is. Unlike every entry above it there is no guard to
+         | mirror — the heading and the fields below it render for every viewer, including an
+         | anonymous one. Adding a condition here would be inventing one.
+         |
+         | The label is the heading, not a paraphrase of it. $_ownerInfoHeading is hoisted here
+         | from just above the section for exactly the reason M5.2a hoisted the other guards: the
+         | nav and the section must agree by construction rather than by two authors remembering
+         | to. It is a pure read of $auction->user with no side effect, so computing it earlier
+         | changes nothing but the line it sits on.
+         */
+        $hlaNavSections[] = ['id' => 'hla-section-owner-info', 'label' => $_ownerInfoHeading];
     }
 @endphp
 
@@ -508,12 +554,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 `h4` + `card-body`. The heading level stays h4: typography is migrating, the
                 document outline is not.
 
-                This is one card containing eight sub-sections, not eight sibling cards — the
-                rendered DOM has exactly two children under leftCol, this and the review card.
-                The sub-headings below therefore become x-viho.section-header rather than more
-                cards, which is what keeps the section order and nesting identical.
+                M7.2 — THE NOTE THAT USED TO SIT HERE DESCRIBED A SHAPE THAT NO LONGER HOLDS. It
+                read: "This is one card containing eight sub-sections, not eight sibling cards — the
+                rendered DOM has exactly two children under leftCol, this and the review card. The
+                sub-headings below therefore become x-viho.section-header rather than more cards,
+                which is what keeps the section order and nesting identical."
+
+                That was true, and keeping the nesting identical was right for a typography
+                milestone. It is what M7.2 changes: the reference page renders discrete cards each
+                carrying its own id, and a nav link into a monolith lands on a bare span mid-card
+                rather than on a header. Sibling cards ARE the parity fix.
+
+                Both shapes still exist and the flag chooses between them. x-hire-agent.detail-body
+                emits the wrapper card when the redesign is off and nothing when it is on; each
+                section below is an x-hire-agent.detail-section that renders a card or the original
+                header accordingly. Section ORDER is unchanged in both branches.
             --}}
-            <x-viho.card title="Listing Details:" title-tag="h4">
+            <x-hire-agent.detail-body :redesign="$hlaDetailRedesign" title="Listing Details:">
+            <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines" :legacy-header="false">
                     <div class="row" style="flex-wrap: wrap;">
                         @if (@$auction->get->listing_title != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -566,10 +624,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endif
 
                     </div>
-                    <hr>
-                    {{-- M3 pilot: sub-section header inside the single Listing Details card. --}}
-                    @if ($hlaDetailRedesign)<span id="hla-section-property-details" class="viho-section-nav-target"></span>@endif
-                    <x-viho.section-header title="Property Details:" tag="h4" />
+            </x-hire-agent.detail-section>@if (! $hlaDetailRedesign)<hr>@endif
+            <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-property-details" title="Property Details:" icon="fa-solid fa-house">
 
                     <div class="row" style="flex-wrap: wrap;">
 
@@ -1031,9 +1087,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
 
         </div>
-        <hr>
-        @if ($hlaDetailRedesign)<span id="hla-section-leasing-terms" class="viho-section-nav-target"></span>@endif
-        <x-viho.section-header title="Leasing Terms:" tag="h4" />
+        </x-hire-agent.detail-section>@if (! $hlaDetailRedesign)<hr>@endif
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-leasing-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
         <div class="row" style="flex-wrap: wrap;">
             <div class="col-12 fw-bold pt-2">  Occupant Type:
@@ -1381,7 +1436,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
 
-        <hr>
+        </x-hire-agent.detail-section>@if (! $hlaDetailRedesign)<hr>@endif
 
         @php
         // Photo enhancements data — needed inside the services loop
@@ -1400,9 +1455,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         ];
         @endphp
 
+        {{-- The card opens INSIDE $hasServices, so it exists exactly when the section does and an
+             empty card can never render. Same rule for every conditional section below. --}}
         @if ($hasServices)
-        @if ($hlaDetailRedesign)<span id="hla-section-services" class="viho-section-nav-target"></span>@endif
-        <x-viho.section-header title="Services:" tag="h4" />
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-services" title="Services:" icon="fa-solid fa-list-check">
 
         @php
         // Landlord Residential service categories (exact match with listing creation form)
@@ -1632,18 +1688,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
 
         </div>
-        @endif
+        </x-hire-agent.detail-section>@endif
 
-        <hr>
+        @if (! $hlaDetailRedesign)<hr>@endif
         @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
-        @if ($hlaDetailRedesign)<span id="hla-section-additional-details" class="viho-section-nav-target"></span>@endif
-        <x-viho.section-header title="Additional Details:" tag="h4" />
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Additional Details: <span
                 class="removeBold">{{ $additionalDetailsStr }}</span>
         </div>
-        @endif
+        </x-hire-agent.detail-section>@endif
 
         {{-- M6: the listing type is supplied here, not guessed inside the partial. It selects the
              model and the document rules the access service applies; a partial that inferred it
@@ -1654,27 +1709,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
 
         @if (!empty($repRows))
-        <hr />
+        @if (! $hlaDetailRedesign)<hr />@endif
         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
              text is unchanged. Passing &amp; here would double-escape it. --}}
-        @if ($hlaDetailRedesign)<span id="hla-section-representation" class="viho-section-nav-target"></span>@endif
-        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
         @foreach ($repRows as $repRow)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             {{ $repRow['label'] }}:
             <span class="removeBold">{{ $repRow['value'] }}</span>
         </div>
         @endforeach
-        @endif
+        </x-hire-agent.detail-section>@endif
 
         @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
         @if ($hasLandlordBrokerCompData)
-        <hr />
-        {{-- Inside BOTH guards — Auth::check() above and $hasLandlordBrokerCompData — so the anchor
+        @if (! $hlaDetailRedesign)<hr />@endif
+        {{-- Inside BOTH guards — Auth::check() above and $hasLandlordBrokerCompData — so the CARD
              exists exactly when the section does, and the nav entry's matching pair of conditions
-             is what keeps the link from pointing at nothing. --}}
-        @if ($hlaDetailRedesign)<span id="hla-section-compensation" class="viho-section-nav-target"></span>@endif
-        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms" tag="h4" />
+             is what keeps the link from pointing at nothing. M7.2 moved the id from a bare span
+             onto the card; both guards are untouched and the card opens inside them, never around
+             them. An anonymous visitor reaches neither. --}}
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-compensation" title="Broker Compensation & Agency Agreement Terms" icon="fa-solid fa-dollar-sign">
 
         <div class="broker-compensation-section">
 
@@ -2106,26 +2161,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         </div> <!-- end broker-compensation-section -->
-        @endif
+        </x-hire-agent.detail-section>@endif
         @endif {{-- /Auth::check() broker compensation --}}
         @if ($referralPctDisplay !== '')
-        <hr />
-        @if ($hlaDetailRedesign)<span id="hla-section-referral" class="viho-section-nav-target"></span>@endif
-        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
+        @if (! $hlaDetailRedesign)<hr />@endif
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Referral Fee:
             <span class="removeBold">{{ $referralPctDisplay }}</span>
         </div>
-        @endif
-        <hr />
-        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is not
-             parseable by Blade's attribute compiler. Same expression, same two outcomes. --}}
-        @php
-            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
-                ? "Agent's Info"
-                : "Landlord's Info";
-        @endphp
-        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
+        </x-hire-agent.detail-section>@endif
+        @if (! $hlaDetailRedesign)<hr />@endif
+        {{-- $_ownerInfoHeading is resolved near the nav block above, not here — M7.2 hoisted it so
+             the nav entry and this heading are one value rather than two expressions. --}}
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-owner-info" :title="$_ownerInfoHeading" icon="fa-solid fa-id-card">
         @if (!empty($auction->get->first_name))
         <div class="col-md-12 col-12 pt-2 fw-bold"> First
             Name:
@@ -2227,8 +2276,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
     </div>
-{{-- M3 pilot: the former card-body close is gone with its opening tag; the card itself closes here. --}}
-</x-viho.card>
+{{-- M3 pilot: the former card-body close is gone with its opening tag; the card itself closes here.
+     M7.2: "here" is now the last SECTION's close, followed by the body wrapper's. With the redesign
+     off the wrapper still emits the single card these two used to be; with it on the wrapper emits
+     nothing and the sections above are siblings. --}}
+</x-hire-agent.detail-section>
+</x-hire-agent.detail-body>
 @inject('auctionUser', 'App\Models\User')
 @php
 $auser = $auctionUser::find(@$auction->user_id);
