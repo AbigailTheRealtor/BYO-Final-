@@ -90,8 +90,35 @@
     LEGACY IS UNAFFECTED, as with every other flag on this component. `bareSlot` remains the legacy
     spelling for these same rows and the two are passed together at every badge call site.
 
+    ── M7.6 — listValue, AND WHY A PILL RUN IS NOT ALWAYS THE ANSWER ───────────────────────────
+
+    THE REFERENCE DOES NOT PILL ITS DATA. Create Offer renders every multi-select answer through
+    its `$listRow` closure, which joins the items with ", " and hands the result to the same
+    label/value row a single-valued field uses. The only `badge bg-secondary` on that page is
+    "Bidding Closed" — a STATUS. So the reference's vocabulary is: a pill means state, plain text
+    means data. This page had drifted to using pills for both, which spends the reader's strongest
+    visual signal on "Dishwasher, Dryer, Microwave".
+
+    `listValue` moves a row back onto the reference's side of that line WITHOUT disturbing the
+    legacy branch, which is the constraint that shapes the whole design. Flag-off output is
+    asserted verbatim, and flag-off renders pills; so the pills cannot be deleted from the call
+    site. The caller therefore passes BOTH — the pill run in the slot, which only the legacy
+    branch reads, and the underlying array as `listValue`, which only the redesign branch reads.
+    One row, two renderings, and neither branch has to know what the other does.
+
+    PRECEDENCE IS LISTVALUE, THEN SLOT, THEN VALUE, and only in the redesign branch. A call site
+    that passes no `listValue` is completely unaffected, which is what keeps this from being a
+    change to all 120 rows instead of the nine it is meant for.
+
+    THE THREE ROWS THAT KEEP THEIR PILLS — Acceptable Cities, Counties, Zip Code — are the case
+    the reference does not have to answer. They are unbounded enumerations of short tokens, and a
+    forty-item comma list is genuinely worse to scan than forty chips. They keep `badges` and pass
+    no `listValue`, so they keep rendering exactly as they do today.
+
     @param string $label          WITHOUT a trailing colon; the legacy branch adds one
     @param mixed  $value          omitted entirely when the display helper counts it as absent
+    @param mixed  $listValue      REDESIGN ONLY — array/string rendered as ", "-joined text,
+                                  overriding the slot so legacy can keep its pill run untouched
     @param string $width          COMPLETE legacy class list for the row div, order included
     @param bool   $redesign       resolved flag state, passed by the caller — never read from config
     @param string $span           redesign cell width: 'half' (default, two per line) | 'full'
@@ -103,6 +130,7 @@
 @props([
     'label',
     'value'          => null,
+    'listValue'      => null,
     'width'          => 'col-md-12 col-12 pt-2 fw-bold',
     'redesign'       => false,
     'span'           => 'half',
@@ -122,11 +150,29 @@
      | pages agree on how a list reads. Filtering first is what makes an all-empty array count as
      | absent rather than rendering as a bare separator.
      */
-    $hlaFieldValue = is_array($value)
-        ? implode(', ', array_filter($value, fn ($v) => \App\Helpers\ListingDisplayHelper::hasValue($v)))
-        : $value;
+    $hlaFieldJoin = fn ($v) => is_array($v)
+        ? implode(', ', array_map(
+            fn ($item) => trim((string) $item),
+            array_filter($v, fn ($item) => \App\Helpers\ListingDisplayHelper::hasValue($item))
+        ))
+        : $v;
 
-    $hlaFieldHasValue = $hlaFieldHasSlot || \App\Helpers\ListingDisplayHelper::hasValue($hlaFieldValue);
+    $hlaFieldValue = $hlaFieldJoin($value);
+
+    /*
+     | M7.6. Joined with the same separator and filtered by the same rule as $value, because a
+     | pill run converted to text must read exactly like a field that was always text — the point
+     | of the conversion is that the reader cannot tell which rows used to be which. Trimming is
+     | added here rather than above because these arrays come straight from questionnaire answers
+     | (`other_appliances` and friends carry the user's own whitespace), where $value's callers
+     | have almost always passed through a helper already.
+     */
+    $hlaFieldListValue = $hlaFieldJoin($listValue);
+    $hlaFieldHasListValue = \App\Helpers\ListingDisplayHelper::hasValue($hlaFieldListValue);
+
+    $hlaFieldHasValue = $hlaFieldHasSlot
+        || $hlaFieldHasListValue
+        || \App\Helpers\ListingDisplayHelper::hasValue($hlaFieldValue);
 
     /*
      | A pill run always spans the card. Deriving it here rather than asking every badge call site
@@ -143,7 +189,7 @@
 @if ($hlaFieldHasValue)
     @if ($redesign)
         <div class="{{ $hlaFieldRedesignWidth }} hla-field">
-            <x-viho.kv :label="$label" layout="split">{{ $hlaFieldHasSlot ? $slot : $hlaFieldValue }}</x-viho.kv>
+            <x-viho.kv :label="$label" layout="split">{{ $hlaFieldHasListValue ? $hlaFieldListValue : ($hlaFieldHasSlot ? $slot : $hlaFieldValue) }}</x-viho.kv>
         </div>
     @elseif ($bareSlot)
     <div class="{{ $width }}">{{ $label }}:

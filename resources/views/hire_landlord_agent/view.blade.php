@@ -462,6 +462,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @$auction->get->desired_rental_amount, @$auction->get->lease_amount_frequency,
             @$auction->get->rent_includes, @$auction->get->owner_responsible_for,
             @$auction->get->terms_of_lease, @$auction->get->desired_lease_term,
+            /*
+             | M7.6 — the three keys the rows in this section actually read.
+             |
+             | THE GUARD ALREADY LOOKED LIKE IT COVERED THEM, which is why the gap survived. It
+             | lists `owner_responsible_for` and `desired_lease_term`; the rows below read
+             | `owner_pays` and `desired_lease_length`. The names are near-misses rather than
+             | absences, so reading the list told you the section was covered when it was not, and
+             | `tenant_pays` had no near-miss at all. A listing whose only leasing answer was one of
+             | these three rendered no Leasing Terms card and no nav entry, while the rows sat
+             | inside a section that had already decided it was empty.
+             |
+             | The near-miss keys are KEPT rather than corrected. Nothing here proves they are
+             | unwritten — they may be live on older rows or on another workflow — and removing a
+             | key from an anyHasValue() list can only ever hide a section that renders today.
+             | Adding is safe in the one direction that matters; subtracting is not.
+             */
+            @$auction->get->tenant_pays, @$auction->get->owner_pays,
+            @$auction->get->desired_lease_length,
         ]);
 
         if ($hlaHasPropertyDetails) {
@@ -984,7 +1002,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endphp
 
             @if (count($appliancesToShow) > 0)
-            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Appliances Included" :bare-slot="true">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Appliances Included" span="full" :bare-slot="true" :list-value="$appliancesToShow">
 
                 @foreach ($appliancesToShow as $appliance)
                 <span class="removeBold badge bg-secondary">
@@ -1047,7 +1065,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 }
             @endphp
             @if (!empty($parkingResult))
-            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Garage/Parking Features" :bare-slot="true">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Garage/Parking Features" span="full" :bare-slot="true" :list-value="$parkingResult">
                 @if (count($parkingResult) === 1)
                 <span class="removeBold">{{ $parkingResult[0] }}</span>
                 @else
@@ -1116,7 +1134,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
             @endphp
             @if (!empty($viewPrefItems))
-            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="View Preference" :bare-slot="true">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="View Preference" span="full" :bare-slot="true" :list-value="$viewPrefItems">
                 @foreach ($viewPrefItems as $item)
                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
@@ -1127,7 +1145,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
             @endphp
             @if (!empty($amenityItems))
-            <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" label="Amenities and Property Features" :bare-slot="true">
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Amenities and Property Features" span="full" :bare-slot="true" :list-value="$amenityItems">
                 @foreach ($amenityItems as $item)
                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
@@ -1315,7 +1333,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if (!empty($tenantPayItems))
-        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Tenant Responsible For">
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Tenant Responsible For" :list-value="$tenantPayItems">
                 @foreach ($tenantPayItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
@@ -1323,7 +1341,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if ($isCommercial && !empty($ownerPayItems))
-        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Owner Responsible For">
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Owner Responsible For" :list-value="$ownerPayItems">
                 @foreach ($ownerPayItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
@@ -1334,7 +1352,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList($termsOfLease, @$auction->get->custom_lease_term);
         @endphp
         @if (!empty($leaseTermItems))
-        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Terms of Lease">
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Terms of Lease" :list-value="$leaseTermItems">
                 @foreach ($leaseTermItems as $lt)
                     <span class="removeBold badge bg-secondary">{{ $lt }}</span>
                 @endforeach
@@ -1352,7 +1370,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $desiredLeaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->desired_lease_length, @$auction->get->other_lease_term);
         @endphp
         @if (!empty($desiredLeaseTermItems))
-        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Desired Lease Term">
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Desired Lease Term" :list-value="$desiredLeaseTermItems">
                 @foreach ($desiredLeaseTermItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
@@ -1369,7 +1387,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if ($isRentNone)
         <x-hire-agent.field :redesign="$hlaDetailRedesign" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Rent Includes" value="None" />
         @elseif (!empty($rentIncludesItems))
-        <x-hire-agent.field :badges="true" :redesign="$hlaDetailRedesign" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Rent Includes">
+        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" :bare-slot="true" :legacy-row="true" legacy-row-style="flex-wrap: wrap;" width="col-12 fw-bold pt-2" label="Rent Includes" :list-value="$rentIncludesItems">
                 @foreach ($rentIncludesItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach

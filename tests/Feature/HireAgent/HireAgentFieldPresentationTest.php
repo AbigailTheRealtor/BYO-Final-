@@ -35,6 +35,13 @@ use Tests\TestCase;
  * FLAG OFF IS ASSERTED HERE TOO, because every one of these rows is shared markup: the same
  * component renders the legacy line, and a change that improved the redesign by quietly altering
  * what a non-pilot role emits would pass every redesign assertion in this file.
+ *
+ * M7.6 ADDS A THIRD CLAIM, and it is about vocabulary rather than shape: a pill means STATE and
+ * plain text means DATA, which is the distinction the reference page draws and this one had lost.
+ * Nine of the twelve pill runs became ", "-joined text; three stayed pills because they are
+ * unbounded token lists. Both halves are asserted, and asserted together in one render, because
+ * the regression that matters is not either rendering in isolation — it is the two ceasing to
+ * disagree.
  */
 class HireAgentFieldPresentationTest extends TestCase
 {
@@ -112,6 +119,84 @@ class HireAgentFieldPresentationTest extends TestCase
         }
 
         return $out;
+    }
+
+    /**
+     * The `.hla-field` cell whose label is exactly $label, or null.
+     *
+     * Addressing a row BY ITS LABEL rather than by position is what lets the M7.6 assertions name
+     * the field they are about. The page renders ~120 rows and several carry pills, so a test that
+     * asserted "some badge cell exists" would keep passing after the specific field it was written
+     * for stopped being a badge cell — which is precisely how the test this replaced went stale.
+     */
+    private function fieldCell(string $html, string $label): ?\DOMElement
+    {
+        $x = $this->xpath($html);
+
+        foreach ($x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' viho-kv-label ')]") as $node) {
+            if (trim(preg_replace('/\s+/', ' ', $node->textContent)) !== $label) {
+                continue;
+            }
+
+            for ($n = $node; $n !== null; $n = $n->parentNode) {
+                if ($n instanceof \DOMElement
+                    && str_contains(' ' . $n->getAttribute('class') . ' ', ' hla-field ')) {
+                    return $n;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** The rendered value text of the grid row labelled $label, or null when it did not render. */
+    private function gridValue(string $html, string $label): ?string
+    {
+        $cell = $this->fieldCell($html, $label);
+
+        if ($cell === null) {
+            return null;
+        }
+
+        $values = (new DOMXPath($cell->ownerDocument))->query(
+            ".//*[contains(concat(' ', normalize-space(@class), ' '), ' viho-kv-value ')]",
+            $cell
+        );
+
+        return $values->length === 0
+            ? null
+            : trim(preg_replace('/\s+/', ' ', $values->item(0)->textContent));
+    }
+
+    /** The pills inside the grid row labelled $label. */
+    private function pillsIn(string $html, string $label): array
+    {
+        $cell = $this->fieldCell($html, $label);
+
+        if ($cell === null) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ((new DOMXPath($cell->ownerDocument))->query(
+            ".//*[contains(concat(' ', normalize-space(@class), ' '), ' badge ')]",
+            $cell
+        ) as $pill) {
+            $out[] = trim($pill->textContent);
+        }
+
+        return $out;
+    }
+
+    /** The declaration block of the first rule whose selector is exactly $selector, braces excluded. */
+    private function ruleBody(string $html, string $selector): string
+    {
+        $quoted = preg_quote($selector, '/');
+
+        return preg_match('/(?:^|[};])\s*' . $quoted . '\s*\{([^}]*)\}/m', $html, $m)
+            ? trim($m[1])
+            : '';
     }
 
     /** The text of every legacy bold row on the page. */
@@ -234,51 +319,58 @@ class HireAgentFieldPresentationTest extends TestCase
     // ── Pill runs ────────────────────────────────────────────────────────────
 
     /**
-     * A multi-select answer renders as a stacked pill run, not as a value in the 5/7 column.
+     * The three token fields render as stacked pill runs. They are the only ones left that do.
+     *
+     * WHY THESE THREE AND NOT ANY MULTI-SELECT. Until M7.6 every multi-select on this page rendered
+     * as pills, and the test that stood here asserted it using View Preference. M7.6 moved nine of
+     * the twelve runs to comma-separated text to match the reference, View Preference among them,
+     * which left that test asserting the opposite of the intended behaviour. It is retargeted here
+     * onto the three that deliberately keep their pills — Acceptable Cities, Counties and Zip Code
+     * — because they are unbounded enumerations of short tokens, where a forty-item comma list is
+     * genuinely worse to scan than forty chips.
      *
      * Three things are asserted and they are three different regressions. The CELL must carry the
      * badge class, or the stacking rule has nothing to hook onto and the run silently returns to
-     * the value column. The PILLS must still be pills — this mode moves a run, it does not restyle
-     * one, and a refactor that turned them into comma-separated text would satisfy a label-only
-     * assertion. And the pills must be INSIDE the field's own cell rather than merely somewhere on
-     * the page, which is what containment proves.
+     * the value column. The PILLS must still be pills — a well-meaning extension of M7.6 that
+     * converted these three as well would satisfy a label-only assertion. And the pills must be
+     * INSIDE the field's own cell rather than merely somewhere on the page, which is what
+     * addressing the cell by its label proves.
+     *
+     * @dataProvider dataProviderForTokenFields
      */
-    public function test_a_multi_select_renders_as_a_stacked_pill_run(): void
-    {
+    public function test_a_token_field_renders_as_a_stacked_pill_run(
+        string $metaKey,
+        string $label,
+        array $tokens
+    ): void {
         $this->enableRedesign();
 
-        $html = $this->render($this->listing([
-            'view_preference' => json_encode(['City', 'Greenbelt', 'Lake']),
-        ]));
+        $html = $this->render($this->listing([$metaKey => json_encode($tokens)]));
 
-        $x = $this->xpath($html);
+        $cell = $this->fieldCell($html, $label);
+        $this->assertNotNull($cell, "{$label} must render as a field.");
 
-        $cells = $x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' hla-field-badges ')]");
-        $this->assertGreaterThan(0, $cells->length, 'A pill run must render in a badge cell.');
-
-        $cell = null;
-        foreach ($cells as $candidate) {
-            if (str_contains($candidate->textContent, 'View Preference')) {
-                $cell = $candidate;
-                break;
-            }
-        }
-
-        $this->assertNotNull($cell, 'View Preference must render as a badge field.');
-
-        $pills = (new DOMXPath($cell->ownerDocument))->query(
-            ".//*[contains(concat(' ', normalize-space(@class), ' '), ' badge ')]",
-            $cell
+        $this->assertStringContainsString(
+            'hla-field-badges',
+            $cell->getAttribute('class'),
+            "{$label} must keep its badge cell — the stacking rule hooks onto that class."
         );
 
-        $this->assertSame(3, $pills->length, 'Each selected option keeps its own pill.');
+        $this->assertSame(
+            $tokens,
+            $this->pillsIn($html, $label),
+            "{$label}: each token keeps its own pill, in order."
+        );
+    }
 
-        $text = [];
-        foreach ($pills as $pill) {
-            $text[] = trim($pill->textContent);
-        }
-
-        $this->assertSame(['City', 'Greenbelt', 'Lake'], $text, 'Pill text and order are preserved.');
+    /** @return array<string, array{0: string, 1: string, 2: array<int, string>}> */
+    public function dataProviderForTokenFields(): array
+    {
+        return [
+            'cities'   => ['cities', 'Acceptable Cities', ['Tampa', 'Clearwater', 'Sarasota']],
+            'counties' => ['counties', 'Acceptable Counties', ['Pinellas', 'Hillsborough']],
+            'zips'     => ['zipCodes', 'Acceptable Zip Code', ['33701', '33702', '33703']],
+        ];
     }
 
     /** A badge field spans the card, so the run starts at the left edge rather than mid-row. */
@@ -287,12 +379,21 @@ class HireAgentFieldPresentationTest extends TestCase
         $this->enableRedesign();
 
         $html = $this->render($this->listing([
-            'view_preference' => json_encode(['City']),
+            'cities' => json_encode(['Tampa']),
         ]));
 
-        $x = $this->xpath($html);
+        $x     = $this->xpath($html);
+        $cells = $x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' hla-field-badges ')]");
 
-        foreach ($x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' hla-field-badges ')]") as $cell) {
+        /*
+         | The precondition is the point of this line, not ceremony. The body below is a foreach,
+         | so a page that emitted NO badge cell at all would iterate zero times and pass — which is
+         | what this test did between M7.6 converting View Preference and this fixture being moved
+         | onto a field that still has pills. A vacuous pass is worse than a failure here.
+         */
+        $this->assertGreaterThan(0, $cells->length, 'Precondition: a badge cell rendered.');
+
+        foreach ($cells as $cell) {
             $classes = $cell->getAttribute('class');
 
             $this->assertStringContainsString('col-12', $classes, 'A badge cell must span the card.');
@@ -302,6 +403,274 @@ class HireAgentFieldPresentationTest extends TestCase
                 'A half-width badge cell would reopen the gap this mode closes.'
             );
         }
+    }
+
+    // ── M7.6 — list values render as text ────────────────────────────────────
+
+    /**
+     * A converted multi-select renders as ", "-joined text in the value column, with no pills.
+     *
+     * This is the whole of M7.6 stated as one assertion. The reference page renders every
+     * multi-select answer through its `$listRow` closure, which joins with ", " and hands the
+     * result to the same label/value row a single-valued field uses; the only pill on that page is
+     * a STATUS. So the vocabulary being restored is "a pill means state, plain text means data".
+     *
+     * THE ABSENCE OF PILLS IS ASSERTED SEPARATELY from the presence of the text, because the two
+     * fail independently. The call sites still pass the pill run in the slot — the legacy branch
+     * reads it and cannot be changed — so a precedence bug in the component that preferred the slot
+     * over `listValue` would render BOTH the text and the pills, or the pills alone, while the
+     * label assertion carried on passing.
+     *
+     * @dataProvider dataProviderForListValueFields
+     */
+    public function test_a_list_value_field_renders_comma_separated_text(
+        array $meta,
+        string $label,
+        array $items
+    ): void {
+        $this->enableRedesign();
+
+        $html = $this->render($this->listing($meta));
+
+        $this->assertNotNull($this->fieldCell($html, $label), "{$label} must render as a field.");
+
+        $this->assertSame(
+            implode(', ', $items),
+            $this->gridValue($html, $label),
+            "{$label}: a converted multi-select reads as one joined string."
+        );
+
+        $this->assertSame(
+            [],
+            $this->pillsIn($html, $label),
+            "{$label}: the slot's pill run must not reach the redesign branch."
+        );
+
+        $cell = $this->fieldCell($html, $label);
+        $this->assertStringNotContainsString(
+            'hla-field-badges',
+            $cell->getAttribute('class'),
+            "{$label}: a text row must not carry the badge cell class."
+        );
+    }
+
+    /**
+     * The nine converted rows, reduced to the five that can be reached by fixture.
+     *
+     * EVERY CASE CARRIES ONLY ITS OWN ANSWER, WHICH IS ITSELF PART OF THE CLAIM. The last three
+     * rows live in Leasing Terms, whose visibility guard (`$hlaHasLeasingTerms`) lists the meta
+     * keys that make the section render. `tenant_pays`, `owner_pays` and `desired_lease_length`
+     * were missing from it — the guard listed the near-miss names `owner_responsible_for` and
+     * `desired_lease_term`, so it read as covering rows it did not — and a listing whose only
+     * leasing answer was one of the three rendered no section at all. M7.6 added the three keys.
+     *
+     * These fixtures therefore double as the regression test for that fix: each passes ONE meta
+     * key and expects the row, so a guard that loses a key again fails here rather than silently
+     * hiding a populated section.
+     *
+     * THE ONE EXCEPTION IS `property_type`, and it is not a guard concern. The Owner row carries
+     * its own `$isCommercial` condition, so it needs a commercial property type to render at all —
+     * a property of that row, not of the section it sits in.
+     *
+     * @return array<string, array{0: array<string, string>, 1: string, 2: array<int, string>}>
+     */
+    public function dataProviderForListValueFields(): array
+    {
+        return [
+            'view preference' => [
+                ['view_preference' => json_encode(['City', 'Greenbelt', 'Lake'])],
+                'View Preference',
+                ['City', 'Greenbelt', 'Lake'],
+            ],
+            'amenities' => [
+                ['non_negotiable_amenities' => json_encode(['Pool', 'Gym'])],
+                'Amenities and Property Features',
+                ['Pool', 'Gym'],
+            ],
+            'tenant pays' => [
+                ['tenant_pays' => json_encode(['Electricity', 'Water', 'Internet'])],
+                'Tenant Responsible For',
+                ['Electricity', 'Water', 'Internet'],
+            ],
+            'owner pays' => [
+                [
+                    'property_type' => 'Commercial',
+                    'owner_pays'    => json_encode(['Taxes', 'Insurance']),
+                ],
+                'Owner Responsible For',
+                ['Taxes', 'Insurance'],
+            ],
+            'lease term' => [
+                ['desired_lease_length' => json_encode(['12 Months', '24 Months'])],
+                'Desired Lease Term',
+                ['12 Months', '24 Months'],
+            ],
+        ];
+    }
+
+    /**
+     * Every converted list row spans the card, rather than sitting half-width in a two-up line.
+     *
+     * THIS IS A REGRESSION GUARD WITH A KNOWN CAUSE. Full width used to be implied: `:badges="true"`
+     * forced `col-12` for any pill run, so a converted row that dropped `badges` without gaining
+     * `span="full"` silently fell back to the `col-md-6` default. Three of the nine did exactly
+     * that, and the failure is invisible in a diff — the attribute that mattered is the one that is
+     * no longer there. Asserting the rendered width on every converted row is the only form of this
+     * check that cannot be defeated by the next conversion forgetting the same attribute.
+     *
+     * @dataProvider dataProviderForListValueFields
+     */
+    public function test_a_converted_list_row_spans_the_card(
+        array $meta,
+        string $label,
+        array $items
+    ): void {
+        $this->enableRedesign();
+
+        $html = $this->render($this->listing($meta));
+
+        $cell = $this->fieldCell($html, $label);
+        $this->assertNotNull($cell, "{$label} must render as a field.");
+
+        $this->assertStringNotContainsString(
+            'col-md-6',
+            $cell->getAttribute('class'),
+            "{$label}: a converted list row must span the card, not sit half-width."
+        );
+    }
+
+    /**
+     * One render, both vocabularies — the distinction M7.6 exists to draw.
+     *
+     * The per-field tests above each render a listing carrying one answer. This one populates a
+     * token field and a converted field TOGETHER, because the regression that would survive both of
+     * those tests is a component that reads some page-level state and applies one rendering to
+     * every field on it. Two fields disagreeing within a single render is the actual claim.
+     */
+    public function test_token_fields_keep_pills_while_list_fields_render_text(): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->render($this->listing([
+            'cities'          => json_encode(['Tampa', 'Sarasota']),
+            'view_preference' => json_encode(['City', 'Lake']),
+        ]));
+
+        $this->assertSame(
+            ['Tampa', 'Sarasota'],
+            $this->pillsIn($html, 'Acceptable Cities'),
+            'A token field keeps its pills.'
+        );
+
+        $this->assertSame([], $this->pillsIn($html, 'View Preference'), 'A list field renders no pills.');
+        $this->assertSame('City, Lake', $this->gridValue($html, 'View Preference'), 'It renders text instead.');
+    }
+
+    /**
+     * Flag off renders the pill run for a converted field, exactly as it did before M7.6.
+     *
+     * The conversion is redesign-only by construction: the call sites pass the pill run in the slot
+     * AND the array as `listValue`, and each branch reads one of them. Three roles render this
+     * component every day with the flag off, so the branch that must not move is asserted here on
+     * the same field the redesign assertions above convert.
+     */
+    public function test_flag_off_still_renders_the_pill_run_for_a_converted_field(): void
+    {
+        $this->disableRedesign();
+
+        $html = $this->render($this->listing([
+            'view_preference' => json_encode(['City', 'Greenbelt', 'Lake']),
+        ]));
+
+        $this->assertSame([], $this->gridLabels($html), 'Flag off must emit no grid row.');
+
+        $x     = $this->xpath($html);
+        $pills = [];
+
+        foreach ($x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' badge ')]") as $pill) {
+            $pills[] = trim($pill->textContent);
+        }
+
+        foreach (['City', 'Greenbelt', 'Lake'] as $token) {
+            $this->assertContains($token, $pills, "Flag off keeps the [{$token}] pill.");
+        }
+
+        $this->assertStringNotContainsString(
+            'City, Greenbelt, Lake',
+            $html,
+            'The joined string is a redesign construct and must not leak to the legacy branch.'
+        );
+    }
+
+    // ── M7.6 — the rules that carry the spacing and the type scale ───────────
+
+    /**
+     * The grid spaces its rows by the token, and the primitive's own margin is stood down.
+     *
+     * ASSERTED AS CSS TEXT, following the convention the sidebar surface test set: these rules have
+     * no DOM consequence to observe, and the failure being guarded is that a rule is dropped or
+     * renamed, not that an element is missing. Both halves are read because they are one mechanism
+     * — a row-gap alone would be doubled by the margin it replaced, which is the bug M7.6 fixed,
+     * and a margin reset alone would leave the rows touching.
+     */
+    public function test_the_field_grid_carries_the_row_gap_and_retires_the_primitive_margin(): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->render($this->listing(['working_with_agent' => 'Not Represented']));
+
+        $grid = $this->ruleBody($html, '.hla-detail-page .hla-field-grid');
+        $this->assertNotSame('', $grid, 'Precondition: the grid rule was located.');
+        $this->assertStringContainsString('row-gap: var(--hla-field-row-gap)', $grid, 'The gap reads the token.');
+
+        $this->assertStringContainsString(
+            '--hla-field-row-gap: 0.5rem',
+            $html,
+            "The token matches the reference page's mb-2."
+        );
+
+        $reset = $this->ruleBody($html, '.hla-detail-page .hla-field .viho-kv');
+        $this->assertNotSame('', $reset, 'Precondition: the margin reset was located.');
+        $this->assertStringContainsString('margin-bottom: 0', $reset, 'The primitive margin is stood down.');
+    }
+
+    /**
+     * The two halves carry the reference's sizes, and the value stays the larger of the pair.
+     *
+     * The literals are asserted against the reference rather than against themselves: Create Offer
+     * sets `.875rem` on its `col-md-5` label and `.925rem` on its `col-md-7` value inline on every
+     * row. The ORDER is asserted as well as the values, because a transposition renders at exactly
+     * the right sizes with the emphasis inverted, which no size-only assertion would catch.
+     */
+    public function test_the_field_type_scale_matches_the_reference(): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->render($this->listing(['working_with_agent' => 'Not Represented']));
+
+        $label = $this->ruleBody($html, '.hla-detail-page .hla-field .viho-kv-label');
+        $value = $this->ruleBody($html, '.hla-detail-page .hla-field .viho-kv-value');
+
+        $this->assertNotSame('', $label, 'Precondition: the label rule was located.');
+        $this->assertNotSame('', $value, 'Precondition: the value rule was located.');
+
+        $this->assertStringContainsString('font-size: 0.875rem', $label, "The label half matches the reference.");
+        $this->assertStringContainsString('font-size: 0.925rem', $value, "The value half matches the reference.");
+    }
+
+    /** Flag off ships none of it — the rules are scoped to a page the legacy branch does not emit. */
+    public function test_flag_off_emits_no_field_grid_rules(): void
+    {
+        $this->disableRedesign();
+
+        $html = $this->render($this->listing(['working_with_agent' => 'Not Represented']));
+
+        $this->assertStringNotContainsString('--hla-field-row-gap', $html, 'The token is a redesign construct.');
+        $this->assertSame(
+            '',
+            $this->ruleBody($html, '.hla-detail-page .hla-field .viho-kv-label'),
+            'The type scale must not reach the legacy branch.'
+        );
     }
 
     /**

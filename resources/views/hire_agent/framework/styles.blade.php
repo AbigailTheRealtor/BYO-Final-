@@ -573,12 +573,61 @@
        the card's padding. This declares only the flex behaviour the columns actually require and
        inherits the card's padding untouched.
 
-       Gutter matches the `g-4` the shell gives the page grid, so a row of fields and the two page
-       columns are spaced by the same value. */
+       Row spacing is set by `--hla-field-row-gap` below, which M7.6 aligned to the reference
+       page's `mb-2`; see the note there for why it is a gap rather than a margin. */
     .hla-detail-page .hla-field-grid {
         display: flex;
         flex-wrap: wrap;
-        row-gap: var(--viho-space-xs);
+        row-gap: var(--hla-field-row-gap);
+    }
+
+    /* M7.6 — vertical rhythm, and the doubling that had to be removed to get it.
+
+       TWO SPACINGS WERE STACKING. `.viho-kv` carries `margin-bottom: 0.65rem` for the pages that
+       use the primitive outside a grid, and `.hla-field-grid` added a `row-gap` on top of it. The
+       two are not alternatives — a flex row-gap applies BETWEEN lines and the margin applies below
+       every cell, so consecutive field rows were separated by the sum, ~1rem, against the
+       reference page's `mb-2` (0.5rem). Every card on the page was carrying twice the intended
+       air, which read as the fields being unrelated to each other.
+
+       The margin is zeroed and the gap alone carries the rhythm. Doing it in this order rather
+       than the reverse matters: row-gap is the one that understands wrapping, so two fields
+       sharing a line are spaced from the line below by the same value whether one of them wrapped
+       to two lines or not. A margin cannot express that.
+
+       SCOPED TO `.hla-field`, NOT `.viho-kv`. Today `x-hire-agent.field` is the only thing in the
+       application that renders the primitive, and it always wraps it in `.hla-field` — so a
+       narrower selector and a global one currently match the same elements. The scope is not there
+       to exclude a present-day caller; it is there because the primitive's `margin-bottom` is what
+       a caller OUTSIDE a grid depends on for its rhythm, and the next page to adopt `x-viho.kv`
+       inherits that default rather than this page's correction. `.hla-field` is the wrapper this
+       component emits, so the reset lands only on rows that have a grid to inherit spacing from,
+       which is the condition that actually justifies removing the margin. */
+    .hla-detail-page {
+        --hla-field-row-gap: 0.5rem;
+    }
+
+    .hla-detail-page .hla-field .viho-kv {
+        margin-bottom: 0;
+    }
+
+    /* M7.6 — the reference's type scale, which this page had never adopted.
+
+       Create Offer sets these sizes inline on every row it renders: `.875rem` on the label half,
+       `.925rem` on the value half. `.viho-kv-label` and `.viho-kv-value` set colour and weight but
+       deliberately no size, so this page had been inheriting the ~1rem body size for both halves.
+       Larger type in what was already a looser grid is most of why the two pages did not look
+       related; the split ratio was identical the whole time.
+
+       The value stays fractionally larger than its label, as it is on the reference — the label is
+       supporting text and the answer is the content, and a scale that flattens them makes a card
+       read as an undifferentiated block. */
+    .hla-detail-page .hla-field .viho-kv-label {
+        font-size: 0.875rem;
+    }
+
+    .hla-detail-page .hla-field .viho-kv-value {
+        font-size: 0.925rem;
     }
 
     /* NO WIDTH RULES FOR THE CELLS THEMSELVES. A half-span cell is `col-md-6 col-12` and a
