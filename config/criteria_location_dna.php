@@ -116,23 +116,27 @@ return [
     | silently clear the user's stored geography. The tab opt-in and the entry
     | here must therefore land together.
     |
-    | THE SHIPPED DEFAULT IS EMPTY, and deliberately so: at this commit no host
-    | carries the cascade trait, so there is no workflow it would be truthful to
-    | name. Each wiring slice adds its own key alongside the tab that renders it,
-    | which keeps "listed" and "wired" the same statement at every commit rather
-    | than only at the end of the rollout.
+    | THE SHIPPED DEFAULT NAMES ONLY WHAT IS WIRED. Slice 1 wired `hire_buyer`
+    | across all three reachable surfaces, so it is listed here in the same commit
+    | that made its tab render the cascade. Each later slice adds its own key
+    | alongside its tab, which keeps "listed" and "wired" the same statement at
+    | every commit rather than only at the end of the rollout.
     |
     | Valid keys are the four Buyer/Tenant workflows: `hire_buyer`, `hire_tenant`,
-    | `create_tenant`, `create_buyer`. Seller and Landlord are excluded
+    | `create_tenant`, `create_buyer`. The last three are NOT YET WIRED and must
+    | not be added here until they are. Seller and Landlord are excluded
     | STRUCTURALLY, not by this list — their tabs carry no geography surface, and
     | the shared catch-all component maps their user types to no workflow at all,
     | so no value here can reach them.
+    |
+    | Note that the master gate above still ships OFF, so listing a workflow here
+    | does not turn anything on by itself. Both must agree.
     |
     */
 
     'geography_cascade_workflows' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', ''))
+        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer'))
     ))),
 
 ];

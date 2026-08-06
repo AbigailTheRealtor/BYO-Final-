@@ -21,7 +21,16 @@ class BuyerAgentAuction extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
+
+    /**
+     * Phase 1c slice 1 — the key this workflow registers under in the cascade scope list.
+     *
+     * Named here rather than passed as a literal at each call site so the create and edit
+     * surfaces cannot drift apart and register under two different names.
+     */
+    private const GEOGRAPHY_CASCADE_WORKFLOW = 'hire_buyer';
 
 
     // Livewire properties for form fields
@@ -743,6 +752,11 @@ class BuyerAgentAuction extends Component
     // Methods
     public function mount($listingId = null)
     {
+        // Phase 1c slice 1 — decide whether the geography cascade runs for this workflow.
+        // Called FIRST so loadDraft() below can hydrate it from the stored document. With the
+        // flag off this sets one boolean and does nothing else.
+        $this->bootGeographyCascade(self::GEOGRAPHY_CASCADE_WORKFLOW);
+
         $this->addService();
 
         // Set listing_date to today's date by default (only if creating new listing)
@@ -1411,6 +1425,13 @@ class BuyerAgentAuction extends Component
             // 9D: Search Areas + Important Places. Runs after the discrete cities/counties/state
             // loads above so the blob prefill guards see them.
             $this->loadSearchAreas($auction);
+
+            // Phase 1c — hydrate the cascade from the SAME decoded document loadSearchAreas()
+            // just produced. Inert while the flag is off. Anything the corpus cannot match is
+            // carried as preserved history rather than dropped, so re-saving a legacy draft
+            // cannot quietly delete a location the user never touched.
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
             $this->loadImportantPlaces($auction);
 
             // Property details
@@ -1901,6 +1922,17 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
+
+        // Phase 1c — merge the cascade's four geography keys into the bridged payload, in the
+        // same label format the previous editor produced. Inert while the flag is off, and a
+        // MERGE rather than a rebuild so the widget's polygons, radius searches, flexible flag
+        // and notes survive untouched.
+        //
+        // ORDERING IS LOAD-BEARING: this must be the LAST write to
+        // $location_dna_preferences_json before saveSearchAreas() reads it. The Search Areas
+        // bridge re-serialises that property on every map interaction, so a merge performed any
+        // earlier would be overwritten by the next one and the geography would silently vanish.
+        $this->applyGeographyCascadeToPayload();
 
         // 9D: Search Areas + Important Places. saveSearchAreas() writes the
         // location_dna_preferences blob and re-mirrors the discrete cities/counties/state

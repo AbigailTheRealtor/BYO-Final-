@@ -30,7 +30,29 @@ class TenantAgentAuction extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
+
+    /**
+     * Phase 1c — which cascade workflow this component is serving, or NULL for none.
+     *
+     * THIS IS WHERE SELLER AND LANDLORD ARE EXCLUDED, AND IT IS STRUCTURAL RATHER THAN
+     * CONFIGURED. This one component serves all four roles off `user_type`. Returning null for
+     * seller and landlord means no value of CRITERIA_LDNA_CASCADE_WORKFLOWS can switch the
+     * cascade on for them — the scope list is consulted only after a non-null key exists. Their
+     * tabs carry no geography surface, so there is nothing for the cascade to replace.
+     *
+     * `tenant` deliberately returns null in this slice: `hire_tenant` becomes a live key only
+     * when the Hire Tenant tab renders the cascade, and the tab opt-in and the scope entry must
+     * land together or a workflow would state four empty geography keys over stored data.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return match ($this->user_type) {
+            'buyer' => 'hire_buyer',
+            default => null,
+        };
+    }
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -1814,6 +1836,11 @@ class TenantAgentAuction extends Component
         // Set user_type from route parameter, or default to 'tenant'
         $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
+        // Phase 1c — decide whether the cascade runs, AFTER user_type is known (the workflow map
+        // reads it) and BEFORE any draft load below can hydrate it. Seller and landlord resolve
+        // to no workflow at all, so this is a no-op for them.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
         $this->initializeFeeStructure();
         $this->addService();
 
@@ -3060,6 +3087,12 @@ class TenantAgentAuction extends Component
             // discrete cities/counties/state loads above so the blob prefill guards see them.
             if (in_array($this->user_type, ['buyer', 'tenant'])) {
                 $this->loadSearchAreas($auction);
+
+                // Phase 1c — hydrate the cascade from the same decoded document. Inert unless
+                // this user_type maps to a wired workflow. Unresolvable stored labels are
+                // preserved rather than dropped.
+                $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
                 $this->loadImportantPlaces($auction);
             }
 
@@ -4288,6 +4321,11 @@ class TenantAgentAuction extends Component
         // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
         // written just above from the blob (the map is now the single editing surface).
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
+            // Phase 1c — merge the cascade's geography keys into the bridged payload. Must be
+            // the LAST write to $location_dna_preferences_json before saveSearchAreas() reads
+            // it; the Search Areas bridge re-serialises that property on every map interaction.
+            $this->applyGeographyCascadeToPayload();
+
             $this->saveSearchAreas($auction);
             $this->saveImportantPlaces($auction);
         }

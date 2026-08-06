@@ -27,7 +27,28 @@ class TenantAgentAuctionEdit extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
+
+    /**
+     * Phase 1c — the workflow this edit surface is serving, or NULL for none.
+     *
+     * THE REACHABLE HIRE BUYER EDIT SURFACE. routes/web.php sends
+     * `/buyer/agent/auction/edit/{auctionId}/{user_type?}` here with `user_type` defaulting to
+     * `buyer`, so this — not HireBuyerAgent\BuyerAgentAuctionEdit — is what a buyer actually
+     * edits. It must stay in lockstep with the create surfaces or a listing created with the
+     * cascade would be edited with the legacy inputs.
+     *
+     * Mirrors {@see \App\Http\Livewire\TenantAgentAuction::geographyCascadeWorkflow()}: seller and
+     * landlord resolve to null structurally, and `tenant` joins when its tab renders the cascade.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return match ($this->user_type) {
+            'buyer' => 'hire_buyer',
+            default => null,
+        };
+    }
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2555,6 +2576,10 @@ class TenantAgentAuctionEdit extends Component
             $this->auctionId = $auctionId;
             $this->user_type = $user_type;
 
+            // Phase 1c — decide whether the cascade runs, AFTER user_type is assigned (the
+            // workflow map reads it) and BEFORE loadAuctionData() hydrates from the document.
+            $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             
             // Enforce Residential-only field cleanup for Commercial properties after load
@@ -2619,6 +2644,11 @@ class TenantAgentAuctionEdit extends Component
         // cities/counties/state loads above so the blob prefill guards see them.
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
             $this->loadSearchAreas($auction);
+
+            // Phase 1c — hydrate the cascade from the same decoded document. Unresolvable stored
+            // labels are preserved rather than dropped, so editing a legacy record cannot delete
+            // a location the user never touched.
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
             $this->loadImportantPlaces($auction);
         }
 
@@ -3454,6 +3484,11 @@ class TenantAgentAuctionEdit extends Component
             // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
             // written just above from the blob (the map is now the single editing surface).
             if (in_array($this->user_type, ['buyer', 'tenant'])) {
+                // Phase 1c — merge the cascade's geography keys into the bridged payload. Must
+                // be the LAST write to $location_dna_preferences_json before saveSearchAreas()
+                // reads it; the bridge re-serialises that property on every map interaction.
+                $this->applyGeographyCascadeToPayload();
+
                 $this->saveSearchAreas($auction);
                 $this->saveImportantPlaces($auction);
             }
