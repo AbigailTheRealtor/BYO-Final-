@@ -36,6 +36,11 @@ use App\Services\AskAi\AskAiFinalResponseBuilderService;
 use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
+use App\Services\LocationDna\Criteria\CensusCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\EloquentCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\FakeCriteriaGeographyRepository;
+use InvalidArgumentException;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
 use App\Contracts\CommuteTimeAdapterInterface;
@@ -95,6 +100,38 @@ class AppServiceProvider extends ServiceProvider
         // Laravel's auto-wiring would also resolve this correctly today, but explicit DI is
         // safer: it is immune to future constructor changes in those dependencies and makes
         // the intent clear to anyone reading the service graph.
+        // Criteria geography cascade (Phase 1c, extended in Phase 1d-2). Read-only enumeration
+        // behind a config-selected implementation, so a test or a demo can compose the in-memory
+        // fixture without a database. The binding is unconditional — it costs nothing to register
+        // and the CASCADE, not the repository, is what the feature flag gates.
+        //
+        // EVERY ARM IS EXPLICIT, INCLUDING THE DEFAULT ONE.
+        // This was a ternary: `=== 'fake' ? Fake : Eloquent`. That made `eloquent` the
+        // fall-through, so every unrecognised value — a typo, an env var declared but never set,
+        // a source named before its class existed — silently served the legacy `us_*` tables.
+        // For a phase whose purpose is switching the source, "it worked" and "it did nothing"
+        // then look identical from the outside. An unknown value now fails loudly instead.
+        //
+        // NO DATABASE CHECK BELONGS HERE. Whether the census corpus is actually populated is a
+        // real question, and `census:verify-geography` is where it is asked; querying a table
+        // from a container binding would couple service resolution to database availability on
+        // every request. See config/criteria_location_dna.php.
+        $this->app->bind(CriteriaGeographyRepository::class, function () {
+            $source = config('criteria_location_dna.geography_source');
+
+            return match ($source) {
+                'eloquent' => new EloquentCriteriaGeographyRepository(),
+                'census'   => new CensusCriteriaGeographyRepository(),
+                'fake'     => new FakeCriteriaGeographyRepository(),
+                default    => throw new InvalidArgumentException(sprintf(
+                    'Unknown criteria_location_dna.geography_source %s. Expected one of: '
+                    .'eloquent, census, fake. Refusing to fall back — a silent fallback would '
+                    .'serve the legacy us_* tables and look exactly like success.',
+                    var_export($source, true)
+                )),
+            };
+        });
+
         $this->app->bind(BoundaryAdapterInterface::class, CensusTigerBoundaryAdapter::class);
         $this->app->bind(FloodZoneAdapterInterface::class, FemaFloodZoneAdapter::class);
         $this->app->bind(SchoolDistrictAdapterInterface::class, CensusSchoolDistrictAdapter::class);
