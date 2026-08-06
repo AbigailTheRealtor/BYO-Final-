@@ -630,6 +630,79 @@
         font-size: 0.925rem;
     }
 
+    /* M7.7 — the label column on FULL-SPAN rows only.
+
+       `.viho-kv-split` reserves 41.666% for the label, the ratio col-md-5/7 resolves to, and that is
+       right for a half-span cell: the cell is half a card, so the column lands near 190px and a short
+       label sits close to its answer. A full-span row applies the same percentage to TWICE the width
+       — ~382px at 1440 — so the rule that reads correctly at half span opens ~200px of empty floor on
+       a row whose label is short. The two spans were never aligned with each other; each was
+       proportional to a different container.
+
+       THE NUMBER IS DERIVED, NOT TUNED, and that is the whole point. A half-span cell is 50% of the
+       card, so its label column resolves to 41.666% x 50% = 20.833% OF THE CARD. Giving a full-span
+       row that same 20.833% makes its label column exactly as wide, in pixels, as the half-span rows
+       stacked above and below it — so every label column on the page ends at one x-position and every
+       value begins at the next, whatever the row's span. An earlier draft picked 34% by eye to close
+       a target-sized gap; it narrowed the corridor without ever making the two spans agree, which is
+       the actual defect. Half-span rows are the reference here because they were always correct.
+
+       So this rule adds no new proportion to the page. It restates the one already in `.viho-kv-split`
+       against the container the row actually occupies.
+
+       NO FIELD NAMES IN THIS COMMENT, AND THAT IS A RULE RATHER THAN A STYLE CHOICE. This file is
+       emitted inline into the document, so every word here is page text. An earlier draft named the
+       multi-select rows it was written to improve, and
+       HireAgentFieldPresentationTest::an_empty_multi_select_renders_no_row asserts those labels are
+       ABSENT when the answer is empty — the prose alone turned that guard red across all four of its
+       data sets. Describe rows by shape, never by label.
+
+       DESKTOP ONLY, AT THE STYLESHEET'S EXISTING 992px BREAKPOINT. Below it there is not enough card
+       to divide: at 768px the card is ~408px, so a matched label column would be ~85px and would wrap
+       the same multi-select rows this change exists to improve. Tablet keeps 41.666% and
+       mobile keeps the primitive's 100% stack. The media query is also what protects that stack —
+       this selector outscores the primitive's `max-width: 767.98px` rule, and specificity does not
+       care which query a rule sits in, so an unscoped version would silently un-stack every row on a
+       phone.
+
+       BOTH EXCLUSIONS ARE LOAD-BEARING, AND THE FIRST IS THE TRAP THE COMMENT BELOW ALREADY NAMES.
+       A half-span cell is `col-md-6 col-12`, so it CARRIES `col-12` as well — Bootstrap resolves
+       which one wins by breakpoint, but the class is on the element at every width. `.col-12` alone
+       therefore selects half-span rows too, and inside a min-width query it would re-halve the very
+       rows this alignment is measured FROM — the reference would move with the thing being aligned to
+       it, and the two would never meet. `:not(.col-md-6)` limits this to genuinely full-width rows.
+
+       `:not(.hla-field-badges)` because a badge row is also `col-12`, and M7.4 widens both halves to
+       100% to stack a pill run under its label. Without the exclusion this rule outscores that one
+       and would fold the run back into a narrow column — reopening the corridor M7.4 closed. */
+    /* THE 5px, AND WHY IT IS NOT A FUDGE FACTOR.
+
+       20.833% alone lands 5px wide, measured. Two half-span cells pay Bootstrap's 24px column gutter
+       TWICE — 431px of content each, 862px between them — while one full-span cell pays it once and
+       carries 886px. The percentage is applied to a container 24px larger than the pair it is meant
+       to match, and the split ratio scales that surplus into the label:
+
+           (41.666% - 20.833%) x 24px = 5px
+
+       Constant, not proportional: the gutter is a fixed length, so the error does not grow with the
+       viewport. Measured at 5.0px at 1440, 1200 and 992 alike, which is why a flat subtraction fixes
+       it at every desktop width rather than only the one it was tuned at.
+
+       Subtracted from the VALUE too, in the opposite direction, so the row still fills its container —
+       the label gives back 5px and the value takes it, leaving the right edge flush with the card as
+       it is on a half-span row. */
+    @media (min-width: 992px) {
+        .hla-detail-page .hla-field.col-12:not(.col-md-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-label {
+            flex: 0 0 calc(20.833% - 5px);
+            max-width: calc(20.833% - 5px);
+        }
+
+        .hla-detail-page .hla-field.col-12:not(.col-md-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-value {
+            flex: 0 0 calc(79.167% - var(--viho-space-md) + 5px);
+            max-width: calc(79.167% - var(--viho-space-md) + 5px);
+        }
+    }
+
     /* NO WIDTH RULES FOR THE CELLS THEMSELVES. A half-span cell is `col-md-6 col-12` and a
        full-span one is `col-12`, so a rule targeting `.col-12` matches BOTH and forces every field
        to full width — which is exactly what a first attempt here did, collapsing the two-up grid
