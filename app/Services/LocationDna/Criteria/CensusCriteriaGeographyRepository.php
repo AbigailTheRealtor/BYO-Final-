@@ -68,11 +68,12 @@ final class CensusCriteriaGeographyRepository implements CriteriaGeographyReposi
     {
         return DB::table('census_states')
             ->orderBy('name')
-            ->get(['geoid', 'name'])
+            ->get(['geoid', 'usps', 'name'])
             ->map(fn (object $row): GeographyOption => GeographyOption::state(
                 $this->code($row->geoid),
                 $this->text($row->name),
                 $this->code($row->geoid),
+                $this->nullIfBlank($row->usps),
             ))
             ->all();
     }
@@ -221,5 +222,21 @@ final class CensusCriteriaGeographyRepository implements CriteriaGeographyReposi
     private function text(mixed $value): string
     {
         return trim((string) $value);
+    }
+
+    /**
+     * A column's value, or null when it holds nothing.
+     *
+     * `census_states.usps` is `char(2)` NOT NULL, so a blank is not reachable through the importer
+     * — which rejects blank codes. This exists so a hand-edited or partially restored row surfaces
+     * as an ABSENT abbreviation rather than as the two-space string Postgres would pad it to. An
+     * empty label suffix is visible; `"Pinellas County,   "` is not. Mirrors the same helper on
+     * {@see EloquentCriteriaGeographyRepository}.
+     */
+    private function nullIfBlank(mixed $value): ?string
+    {
+        $value = $value === null ? '' : trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 }

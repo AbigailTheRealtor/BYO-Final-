@@ -94,6 +94,33 @@ class EloquentCriteriaGeographyRepositoryTest extends TestCase
         $this->assertSame(GeographyOption::KIND_STATE, $match->kind);
     }
 
+    /**
+     * Phase 1d-3 — the abbreviation comes from `us_states.abbreviation`.
+     *
+     * It is the suffix in the cascade's stored `Pinellas County, FL` label. Asserted at the
+     * repository boundary so the label's raw material is pinned to a column rather than to a
+     * lookup a consumer performs for itself — the coupling that made this value wrong under the
+     * census source.
+     */
+    public function test_a_state_carries_its_usps_abbreviation(): void
+    {
+        $id = $this->state('Zzytopia', 'ZZ', '99');
+
+        $match = collect($this->repo->states())->firstWhere('id', (string) $id);
+
+        $this->assertNotNull($match);
+        $this->assertSame('ZZ', $match->abbreviation);
+    }
+
+    /** Only states carry one — the tiers below have no abbreviation to carry. */
+    public function test_no_sub_state_tier_carries_an_abbreviation(): void
+    {
+        $stateId = $this->state('Zzytopia', 'ZZ', '99');
+        $this->county('Pinellas County', $stateId, '99103');
+
+        $this->assertNull($this->repo->countiesInState((string) $stateId)[0]->abbreviation);
+    }
+
     public function test_counties_are_scoped_to_their_state_and_carry_the_geoid(): void
     {
         $fl = $this->state('Floridia', 'FZ', '90');

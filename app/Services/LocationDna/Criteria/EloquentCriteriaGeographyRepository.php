@@ -74,6 +74,7 @@ final class EloquentCriteriaGeographyRepository implements CriteriaGeographyRepo
                 (string) $s->id,
                 (string) $s->name,
                 $this->nullIfBlank($s->fips_code),
+                $this->nullIfBlank($s->abbreviation),
             ))
             ->all();
     }

@@ -150,6 +150,55 @@ class CensusCriteriaGeographyRepositoryTest extends TestCase
         $this->assertSame('01', $state->code);
     }
 
+    /**
+     * Phase 1d-3 — the abbreviation comes from `census_states.usps`.
+     *
+     * THIS IS THE ASSERTION THE CENSUS SOURCE NEEDED MOST.
+     * The abbreviation is the suffix in the stored `Pinellas County, FL` label. Before it lived on
+     * the option, the only way to obtain it was to query `UsState` by the option's id — which is a
+     * `us_states` primary key under the eloquent source and a two-digit GEOID here. That lookup
+     * addressed an unrelated row, or none, and the resulting label was silently wrong. Pinning the
+     * value to this column is what makes the label correct regardless of which source is bound.
+     */
+    /** @test */
+    public function a_state_carries_its_usps_abbreviation(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+
+        $this->assertSame('FL', $this->repo->states()[0]->abbreviation);
+    }
+
+    /**
+     * The abbreviation tracks the state, not the id.
+     *
+     * A GEOID and a `us_states` surrogate key are both short numeric strings, so a lookup keyed on
+     * the wrong one fails silently rather than loudly. Two states asserted together is what makes
+     * a mismatch visible: an implementation that returned a fixed or positionally-derived
+     * abbreviation would pass a single-row test.
+     */
+    /** @test */
+    public function each_state_carries_its_own_abbreviation(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->state('36', 'NY', 'New York');
+
+        $byId = [];
+        foreach ($this->repo->states() as $state) {
+            $byId[$state->id] = $state->abbreviation;
+        }
+
+        $this->assertSame(['12' => 'FL', '36' => 'NY'], $byId);
+    }
+
+    /** Only states carry one. */
+    public function test_no_sub_state_tier_carries_an_abbreviation(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->county('12103', 'Pinellas County');
+
+        $this->assertNull($this->repo->countiesInState('12')[0]->abbreviation);
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Counties
     // ─────────────────────────────────────────────────────────────────────

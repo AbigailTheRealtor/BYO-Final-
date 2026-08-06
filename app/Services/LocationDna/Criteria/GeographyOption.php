@@ -37,11 +37,12 @@ final class GeographyOption
     private const KINDS = [self::KIND_STATE, self::KIND_COUNTY, self::KIND_CITY, self::KIND_ZIP];
 
     /**
-     * @param  string       $kind      one of the KIND_* constants
-     * @param  string       $id        stable identifier within its kind
-     * @param  string       $name      display label
-     * @param  string|null  $code      external identifier: state FIPS, county GEOID, ZIP; null when absent
-     * @param  string|null  $parentId  id of the option one tier up; null for states
+     * @param  string       $kind          one of the KIND_* constants
+     * @param  string       $id            stable identifier within its kind
+     * @param  string       $name          display label
+     * @param  string|null  $code          external identifier: state FIPS, county GEOID, ZIP; null when absent
+     * @param  string|null  $parentId      id of the option one tier up; null for states
+     * @param  string|null  $abbreviation  USPS two-letter state code; states only, null when absent
      */
     public function __construct(
         public readonly string $kind,
@@ -49,6 +50,7 @@ final class GeographyOption
         public readonly string $name,
         public readonly ?string $code = null,
         public readonly ?string $parentId = null,
+        public readonly ?string $abbreviation = null,
     ) {
         if (! in_array($kind, self::KINDS, true)) {
             throw new InvalidArgumentException(
@@ -71,11 +73,38 @@ final class GeographyOption
         if ($kind !== self::KIND_STATE && $parentId === null) {
             throw new InvalidArgumentException("A `{$kind}` option must name its parent.");
         }
+
+        if ($kind !== self::KIND_STATE && $abbreviation !== null) {
+            throw new InvalidArgumentException("A `{$kind}` option has no abbreviation.");
+        }
     }
 
-    public static function state(string $id, string $name, ?string $fips = null): self
-    {
-        return new self(self::KIND_STATE, $id, $name, $fips);
+    /**
+     * Phase 1d-3 — `$abbreviation` carries the USPS two-letter code, and it is the reason this
+     * parameter exists at all.
+     *
+     * The cascade's stored label format is `Pinellas County, FL`. The suffix is the STATE
+     * abbreviation, and until now the only way to obtain it was to query `UsState` directly by the
+     * option's id. That coupling is invisible under the `eloquent` source, where the option id IS
+     * the `us_states` primary key — and WRONG under `census`, where the id is a two-digit GEOID
+     * that would address a different `us_states` row entirely, or none. The failure mode is a
+     * label silently missing or carrying the wrong state, which is precisely the class of quiet
+     * corruption this corpus work exists to end.
+     *
+     * Carrying it on the option makes the answer come from whichever repository produced the
+     * option, so the label is correct under every source and no consumer needs to know which one
+     * is bound. `us_states.abbreviation` and `census_states.usps` are the two columns involved.
+     *
+     * It is STATE-ONLY, guarded above. A county or city carrying an abbreviation would be a
+     * meaningless value that a later reader could reasonably mistake for its own state suffix.
+     */
+    public static function state(
+        string $id,
+        string $name,
+        ?string $fips = null,
+        ?string $abbreviation = null,
+    ): self {
+        return new self(self::KIND_STATE, $id, $name, $fips, null, $abbreviation);
     }
 
     public static function county(string $id, string $name, string $stateId, ?string $geoid = null): self
@@ -131,15 +160,21 @@ final class GeographyOption
             && $this->parentId === $other->parentId;
     }
 
-    /** @return array<string, string|null> */
+    /**
+     * @return array<string, string|null>
+     *
+     * `abbreviation` is always present and is null for every kind but state, so a consumer reading
+     * the array form does not have to know which kinds can carry one.
+     */
     public function toArray(): array
     {
         return [
-            'kind'      => $this->kind,
-            'id'        => $this->id,
-            'name'      => $this->name,
-            'code'      => $this->code,
-            'parent_id' => $this->parentId,
+            'kind'         => $this->kind,
+            'id'           => $this->id,
+            'name'         => $this->name,
+            'code'         => $this->code,
+            'parent_id'    => $this->parentId,
+            'abbreviation' => $this->abbreviation,
         ];
     }
 }

@@ -171,7 +171,7 @@ class FakeCriteriaGeographyRepositoryTest extends TestCase
     public function test_to_array_exposes_the_wire_shape(): void
     {
         $this->assertSame(
-            ['kind' => 'county', 'id' => 'c-1', 'name' => 'Pinellas County', 'code' => '12103', 'parent_id' => '12'],
+            ['kind' => 'county', 'id' => 'c-1', 'name' => 'Pinellas County', 'code' => '12103', 'parent_id' => '12', 'abbreviation' => null],
             GeographyOption::county('c-1', 'Pinellas County', '12', '12103')->toArray()
         );
     }
