@@ -69,4 +69,70 @@ return [
 
     'geography_source' => env('CRITERIA_LDNA_GEOGRAPHY_SOURCE', 'eloquent'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Geography cascade — the editing surface
+    |--------------------------------------------------------------------------
+    |
+    | Master gate for replacing a workflow's four free-text geography inputs with
+    | the corpus-backed cascade: state → counties → optional cities → optional
+    | ZIPs.
+    |
+    | DEFAULT OFF. With the gate closed every workflow renders exactly what it
+    | rendered before — the shared map widget keeps its own geography inputs and
+    | its own third-party place autocomplete — and no new query is issued.
+    |
+    | Turning this on does NOT change how anything is saved. The cascade projects
+    | its selection back into the same four canonical keys, in the same label
+    | format, and hands them to the same writer. No meta key is added, no mirror
+    | set changes, and no schema changes.
+    |
+    | INDEPENDENT OF `geography_source` ON PURPOSE. The source decides WHICH DATA
+    | backs the tiers; this decides WHETHER THE CASCADE RENDERS AT ALL. Either can
+    | move without the other, so the census corpus can be exercised through the
+    | repository tests while every editing surface stays on its legacy inputs.
+    |
+    | MANUAL VISUAL VERIFICATION IS A PREREQUISITE before enabling this in any
+    | shared environment. There is no automated browser coverage for these tabs,
+    | so layout and CSS regressions are not caught by the suite.
+    |
+    */
+
+    'geography_cascade_enabled' => (bool) env('CRITERIA_LDNA_CASCADE_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Geography cascade scope
+    |--------------------------------------------------------------------------
+    |
+    | Which workflows the cascade applies to while the master gate is open. Both
+    | must agree before anything renders, so a single environment variable cannot
+    | widen the rollout by accident.
+    |
+    | A WORKFLOW MAY ONLY BE LISTED ONCE ITS TAB RENDERS THE CASCADE, and that is
+    | a data-safety rule rather than a tidiness one. The cascade states all four
+    | geography keys whenever it is enabled, so a workflow switched on while its
+    | tab still showed the legacy inputs would submit four empty values and
+    | silently clear the user's stored geography. The tab opt-in and the entry
+    | here must therefore land together.
+    |
+    | THE SHIPPED DEFAULT IS EMPTY, and deliberately so: at this commit no host
+    | carries the cascade trait, so there is no workflow it would be truthful to
+    | name. Each wiring slice adds its own key alongside the tab that renders it,
+    | which keeps "listed" and "wired" the same statement at every commit rather
+    | than only at the end of the rollout.
+    |
+    | Valid keys are the four Buyer/Tenant workflows: `hire_buyer`, `hire_tenant`,
+    | `create_tenant`, `create_buyer`. Seller and Landlord are excluded
+    | STRUCTURALLY, not by this list — their tabs carry no geography surface, and
+    | the shared catch-all component maps their user types to no workflow at all,
+    | so no value here can reach them.
+    |
+    */
+
+    'geography_cascade_workflows' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', ''))
+    ))),
+
 ];
