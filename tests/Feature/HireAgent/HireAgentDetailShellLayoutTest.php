@@ -209,7 +209,22 @@ class HireAgentDetailShellLayoutTest extends TestCase
         $this->assertStringContainsString('class="container listingDescription py-4"', $html);
         $this->assertStringContainsString('class="row g-4 align-items-start"', $html);
         $this->assertStringContainsString('col-sm-12 col-md-8 col-lg-9 leftCol', $html);
-        $this->assertStringContainsString('col-sm-12 col-md-4 col-lg-3 rightCol hla-sidebar-sticky', $html);
+
+        /*
+         | M7.5 — the width classes are the shell's; the sticky no longer is.
+         |
+         | This asserted `... rightCol hla-sidebar-sticky` until M7.5, because M7.1 put the sticky
+         | hook on the column. M7.1 also recorded why that could not work — a column carrying a
+         | populated proposal console is as tall as the main column, and an element that is never
+         | shorter than its container never sticks — and named the fix. M7.5 moved the class onto
+         | a card INSIDE the sidebar that holds the status/CTA stack only.
+         |
+         | Both halves are asserted. Dropping the class from the expected string alone would still
+         | pass if the class came back, because assertStringContainsString matches a prefix of the
+         | live class list.
+         */
+        $this->assertStringContainsString('col-sm-12 col-md-4 col-lg-3 rightCol"', $html);
+        $this->assertStringNotContainsString('rightCol hla-sidebar-sticky', $html);
     }
 
     /**

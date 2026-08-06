@@ -599,19 +599,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         ->isListingOwner(auth()->id(), $auction);
 
     /*
-     | M5.4 — ORPHANED SEPARATORS.
+     | M5.4 — ORPHANED SEPARATORS. Closed out by M7.5; the variable that lived here is gone.
      |
-     | Two bare <hr> rules sit at the top of the sidebar, each separating a block that is
-     | frequently absent. The first follows the identity/Edit Listing block, which M4 moved into
-     | the hero — so with the hero flag on it separates nothing, which is the state this
-     | environment already runs in. The second follows the "Agent Selected" winner alert, which
-     | renders only for a sold listing, so it separates nothing on every live listing.
+     | M5.4's finding stands and is worth keeping: two bare <hr> rules sat at the top of the
+     | sidebar, each separating a block that is frequently absent. The first followed the
+     | identity/Edit Listing block, which M4 moved into the hero — so with the hero flag on it
+     | separates nothing. The second followed the "Agent Selected" winner alert, which renders
+     | only for a sold listing, so it separates nothing on every live listing. Browser
+     | verification found them as the only remaining children of an otherwise empty guest
+     | sidebar: two 1px rules and a button.
      |
-     | Browser verification found them as the only remaining children of an otherwise empty
-     | guest sidebar: two 1px rules and a button. Each is now tied to the block it belongs to.
-     | Flag-gated, like the stranded icon button, because they are visible today.
+     | M5.4 tied each rule to the block it belonged to, which needed
+     | $hlaSidebarIdentityShown — "did the identity block render". M7.5 makes the redesigned
+     | sidebar a CARD, and a card's edge and padding are the separation those rules were standing
+     | in for, so in that branch neither renders at all and there is nothing left to condition on.
+     | Both are now a plain @unless on the detail flag at their own call sites, and this
+     | assignment had no remaining reader.
+     |
+     | The legacy branch is unchanged: with the flag off both rules render exactly as before,
+     | because M5.4's condition was `! $hlaDetailRedesign || ...` and its first arm already made
+     | the legacy answer unconditional.
      */
-    $hlaSidebarIdentityShown = ! \App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('landlord');
 @endphp
 
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
@@ -2195,8 +2203,37 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 @inject('auctionUser', 'App\Models\User')
 @php
 $auser = $auctionUser::find(@$auction->user_id);
+
+/*
+ | M7.5 — THE OWNER CARD SAYS ONLY WHAT THE RECORD SUPPORTS.
+ |
+ | NOT FLAG-GATED, unlike everything else on this page since M4. Three of the four things
+ | removed here were fabricated claims about a real person: a five-star rating with no rating
+ | data behind it, a "last online 5 days ago" that was a string literal rather than a reading
+ | of anything, and a bare "..." standing in for a bio that does not exist. A flag that leaves
+ | invented facts about a named user on the live page until a layout rollout is ready is the
+ | wrong instrument. Layout stays behind the flag; accuracy does not.
+ |
+ | THE GUARD. find() returns null for a listing whose owner row is gone, and the card then
+ | rendered an avatar fallback, an empty name, and three links to /author with no id — which
+ | 404s, because UserController::author uses findOrFail. The buyer view has carried this exact
+ | guard since before M7; landlord, seller and tenant did not. This adopts the spelling already
+ | in the repository rather than inventing a second one.
+ |
+ | THE NAME IS PART OF THE GUARD, not decoration. The card exists to identify someone, so a
+ | resolvable row with no usable name is as empty as no row at all, and rendering the link
+ | anyway would put a bold empty anchor where the name belongs. `name` first, because that is
+ | the column the card already read; the first/last pair is the fallback for rows that never
+ | populated it.
+ */
+$hlaOwnerName = trim((string) ($auser->name ?? ''));
+
+if ($auser && $hlaOwnerName === '') {
+    $hlaOwnerName = trim(($auser->first_name ?? '') . ' ' . ($auser->last_name ?? ''));
+}
 @endphp
 <!-- Review  -->
+@if ($auser && $hlaOwnerName !== '')
 {{-- M7.3: same chrome hook as the proposal console, added only in the redesigned branch so the
      flag-off DOM is unchanged. This card is the last node in the main column and was the only one
      there still rendering the theme's Bootstrap chrome under a column of viho cards. --}}
@@ -2205,28 +2242,26 @@ $auser = $auctionUser::find(@$auction->user_id);
         <div class="left d-flex align-items-center">
             <x-avatar-img :avatar="$auser->avatar" alt="" class="w-25" />
             <div>
-                <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
-                            Details</b></a><span></span>
-                    <span class="start opacity-50">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </span>
-                </p>
-                <p class="mb-0">...</p>
-                <p class="mb-0 opacity-50">{{ $auser->name }} • last online 5 days ago.</p>
+                {{-- The name IS the link. It read "User Details" before, with the actual name
+                     demoted to a muted line below — naming the control after its destination
+                     rather than after the person it identifies. --}}
+                <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>{{ $hlaOwnerName }}</b></a></p>
             </div>
         </div>
         <div class="right text-center">
-            <a href="{{ route('author', [$auser->id]) }}"><button class="btn">Message</button></a>
+            {{-- Message goes to the conversation, not to the profile. Both controls pointed at
+                 `author` before this, so "Message" and "View Profile" were the same link twice
+                 under two labels. Same route, type token and argument order as the Quick Actions
+                 tile above; the route sits behind the auth middleware group, so an anonymous
+                 click redirects to login exactly as that tile's already does. --}}
+            <a href="{{ route('auction-chat', ['landlord-agent', $auction->id]) }}"><button class="btn">Message</button></a>
             <a href="{{ route('author', [$auser->id]) }}"><button class="btn view-btn">View
                     Profile</button></a>
         </div>
 
     </div>
 </div>
+@endif
         </x-slot>
 
         {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
@@ -2239,6 +2274,43 @@ $auser = $auctionUser::find(@$auction->user_id);
         // The directive emits no output, so hoisting it cannot alter the legacy rendering.
         $auth_id = auth()->id();
     @endphp
+
+    {{--
+        M7.5 — THE SIDEBAR SURFACE.
+
+        Everything from here to the proposal console is one card. Before this the sidebar was a
+        bare stack — alerts, two horizontal rules and a button, sitting directly on the page
+        background beside a main column made entirely of cards. Measured against the Offer Listing
+        sidebar, which is the approved reference and is NOT modified by this milestone: one card,
+        white, 1px border, rounded, shadowed, padded.
+
+        WHERE IT CLOSES, AND WHY THAT IS THE DESIGN RATHER THAN A CONVENIENCE. It closes ABOVE the
+        proposal console, which stays a sibling below it rather than a child. Two reasons, and the
+        second is the load-bearing one:
+
+          · Nesting. The console is a Bootstrap `.card` and, under the redesign, also carries
+            `.hla-surface-card`. Putting it inside another card renders border inside border and
+            shadow inside shadow. Offer Listing has no console-equivalent, so "one card holds
+            everything" is a shape its sidebar can afford and this one cannot.
+
+          · The console's contents are gated by HireAgentProposalAccess. M7.4 fenced
+            `.hla-surface-card` to geometry specifically so a styling change could never be the
+            place an authorization regression hides inside a visual diff. Keeping the console
+            outside this wrapper keeps that fence intact: no rule added by this milestone has a
+            selector that can reach a proposal card.
+
+        AND IT IS WHAT MAKES THE STICKY WORK. M7.1 put `hla-sidebar-sticky` on the sidebar COLUMN
+        and recorded why it did nothing: a column carrying a populated console is as tall as the
+        main column, and an element that is never shorter than its container never sticks. The
+        class is on this card instead, and this card is short by construction — because the thing
+        that made the column tall is now beside it rather than in it.
+
+        The wrapper is redesign-only, so with the flag off the sidebar emits exactly the bytes it
+        emitted before this milestone.
+    --}}
+    @if ($hlaDetailRedesign)
+    <div class="hla-surface-card hla-sidebar-card hla-sidebar-sticky" data-hire-agent-sidebar-card>
+    @endif
 
     {{--
         M4 — the sidebar identity block.
@@ -2319,10 +2391,21 @@ $auser = $auctionUser::find(@$auction->user_id);
     </div>
     @endif
     @endunless
-    {{-- M5.4: only separates the identity block when that block actually rendered. --}}
-    @if (! $hlaDetailRedesign || $hlaSidebarIdentityShown)
+    {{-- M5.4: only separates the identity block when that block actually rendered.
+         M7.5: and in the redesigned branch it separates nothing at all, because the sidebar is now
+         a card — the card's own edge and padding are the separation a rule was standing in for.
+         The M5.4 condition is kept for the legacy branch, unchanged, so flag-off is untouched.
+
+         WORTH RECORDING, because it is the live state rather than a hypothetical: with the hero
+         flag on and the detail flag off — which is what .env carries today — the M5.4 condition
+         evaluates via its `! $hlaDetailRedesign` arm, so this rule renders even though the
+         identity block above it does not. That orphan is a flag-combination artifact, it is
+         visible now, and M7.5 does NOT fix it: the fix is turning the detail flag on after visual
+         verification, and suppressing it a second time in the legacy branch would be the duplicate
+         M5.4 was careful to avoid. --}}
+    @unless ($hlaDetailRedesign)
     <hr>
-    @endif
+    @endunless
 
     {{-- 🏆 Display Winner Information if Listing is Sold --}}
     @php
@@ -2369,10 +2452,14 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
     </div>
     @endif
-    {{-- M5.4: only separates the winner alert when the listing is actually sold. --}}
-    @if (! $hlaDetailRedesign || ($auction->is_sold && ($acceptedBid || $acceptedCounterBid)))
+    {{-- M5.4 tied this rule to the winner alert, so it only separated something on a sold listing.
+         M7.5 retires it from the redesigned branch entirely — the sidebar is a card now, and its
+         edge and padding are the separation. Legacy is unchanged: M5.4's first arm
+         (`! $hlaDetailRedesign`) already made the flag-off answer unconditional, so a plain
+         @unless renders exactly what the old condition did with the flag off. --}}
+    @unless ($hlaDetailRedesign)
     <hr>
-    @endif
+    @endunless
     @inject('carbon', 'Carbon\Carbon')
 
     @php
@@ -2643,6 +2730,16 @@ $auser = $auctionUser::find(@$auction->user_id);
             $hlaProposalConsoleVisible = ($canReviewAllProposals ?? false)
                 || $auction->bids->isNotEmpty();
         @endphp
+
+    {{-- M7.5 — the sidebar card closes HERE, above the proposal console. The console is its
+         sibling, not its child: it brings its own card chrome (Bootstrap `.card`, plus
+         `.hla-surface-card` under the redesign), and its contents are gated by
+         HireAgentProposalAccess. Nesting it would double the border and shadow, and would put a
+         geometry rule from this milestone in reach of a proposal card. See the block that opens
+         the wrapper for the full reasoning. --}}
+    @if ($hlaDetailRedesign)
+    </div>
+    @endif
 
         @if (! $hlaDetailRedesign || $hlaProposalConsoleVisible)
         {{-- M7.3: the chrome hook is appended only in the redesigned branch. With the flag off the

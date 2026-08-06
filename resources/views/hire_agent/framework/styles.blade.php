@@ -395,31 +395,60 @@
         color: var(--viho-primary);
     }
 @if ($hlaShellRedesign ?? false)
-    /* ── M7.1 — sidebar sticky preparation ─────────────────────────────────────
+    /* ── M7.5 — the sidebar surface, and the card that carries the sticky ──────
        EMITTED ONLY FOR A ROLE THE REDESIGN IS ON FOR. $hlaShellRedesign is resolved by
        detail-shell.blade.php, which includes this file, and Blade hands an included view the
        caller's variables. The `?? false` is the fail-closed default for any other includer.
 
-       WHY THE RULE LIVES HERE RATHER THAN IN THE SHELL, and it is a constraint rather than a
+       WHY THESE RULES LIVE HERE RATHER THAN IN THE SHELL, and it is a constraint rather than a
        preference. This file is the ONE product file permitted to read a --viho token:
        VihoDesignTokenFoundationTest states that M5.1 lifted the ban for exactly this path and
        that a second consumer is an architectural change requiring its own milestone decision,
-       not a test edit. M7.1 briefly put these two token reads in the shell, the guard caught it,
-       and the rule moved here rather than the boundary moving.
+       not a test edit. M7.1 briefly put its token reads in the shell, the guard caught it, and
+       the rule moved here rather than the boundary moving.
 
-       WHY IT IS STILL CONDITIONAL. This stylesheet is pushed unconditionally, so an always-on
+       WHY THEY ARE STILL CONDITIONAL. This stylesheet is pushed unconditionally, so an always-on
        rule would change the bytes of every Hire Agent page in BOTH flag states — inert with the
-       flag off, since nothing carries the class, but no longer byte-identical. "Flag off changes
-       nothing" is the guarantee this milestone keeps, and inert-but-present does not keep it.
+       flag off, since nothing carries the classes, but no longer byte-identical. "Flag off
+       changes nothing" is the guarantee this milestone keeps, and inert-but-present does not
+       keep it.
+
+       GEOMETRY AND SURFACE ONLY. Measured against the Offer Listing sidebar card, which is the
+       approved visual reference and is NOT modified by this milestone: white surface, 1px border,
+       rounded corners, a card shadow, interior padding. Nothing about typography, nothing about
+       the controls inside, and no selector that can reach a descendant — the sidebar holds the
+       proposal console as a SIBLING of this card precisely so a styling milestone cannot alter
+       what a HireAgentProposalAccess-gated element renders. Same fence M7.4 put around
+       .hla-surface-card, kept for the same reason.
+
+       RADIUS, BORDER AND SHADOW ARE NOT REPEATED HERE. The card composes .hla-surface-card, which
+       M7.4 already defined from tokens; this rule adds only the two things that card deliberately
+       omits. .hla-surface-card was written for elements that brought their own background and
+       padding — a Bootstrap .card, in both its cases. A bare div brings neither, so a sidebar card
+       carrying only that class would render as a bordered transparent box with its contents
+       against the edge. */
+    .hla-detail-page .hla-sidebar-card {
+        background: var(--viho-card-bg);
+        padding: var(--viho-space-lg);
+    }
+
+    /* THE STICKY ELEMENT IS THE CARD, NOT THE COLUMN. M7.1 put this class on the sidebar column
+       and recorded why that could not work: a landlord sidebar carrying a populated proposal
+       console is as tall as the main column, and an element that is never shorter than its
+       container never sticks. It named the fix — Offer Listing sticks an inner card — and
+       deferred it. The class now sits on the status/CTA card, which is short by construction,
+       because the console that made the column tall is its sibling rather than its child.
 
        Sticks BELOW the section navigation rather than at the viewport edge: .viho-section-nav is
        itself sticky at --viho-section-nav-offset, and two elements sticking to the same line
        would overlap. Reusing that token keeps the two related if either moves.
 
-       DOES NOTHING UNTIL THE SIDEBAR IS SHORTER THAN THE MAIN COLUMN, which is the honest state
-       today: a landlord sidebar carrying a populated proposal console is as tall as main, so this
-       is inert there and pays off for a guest, and for the other roles when they adopt. The rail
-       that makes it worthwhile is M7.4; this milestone only makes it possible.
+       NO max-height / overflow-y ANY MORE, and their removal is part of the fix rather than a
+       tidy-up. They existed because the sticky element was the whole column, which could exceed
+       the viewport; a short card cannot, so the pair only stood to put an internal scrollbar on a
+       card with no visual affordance that it scrolls. If a future sidebar card does grow past the
+       viewport, the answer is to move what made it tall out into a sibling — which is exactly the
+       shape this milestone establishes.
 
        Below lg the columns stack full-width and sticking is suppressed — a sticky element in a
        single-column flow pins content over the page as the reader scrolls past it. */
@@ -427,10 +456,6 @@
         .hla-detail-page .hla-sidebar-sticky {
             position: sticky;
             top: calc(var(--viho-section-nav-offset, 0px) + var(--viho-space-lg, 1rem));
-            /* Never taller than the viewport, so a long sidebar scrolls internally rather than
-               pinning its own overflow out of reach. */
-            max-height: calc(100vh - var(--viho-section-nav-offset, 0px) - var(--viho-space-lg, 1rem));
-            overflow-y: auto;
         }
     }
 

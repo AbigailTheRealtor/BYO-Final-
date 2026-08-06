@@ -99,6 +99,27 @@ class VihoPresentationPrimitivesTest extends TestCase
         // M7.2 — the reusable detail section framework.
         'resources/views/components/hire-agent/detail-body.blade.php',
         'resources/views/components/hire-agent/detail-section.blade.php',
+        /*
+         | M7.4 — the field adapter. RECORDED LATE, BY M7.5, AND THAT IS THE POINT OF THE ENTRY.
+         |
+         | M7.4 introduced components/hire-agent/field.blade.php and routed ~340 label/value rows
+         | through it. It composes x-viho.kv, so it is a shared VIHO consumer — and this list was
+         | not updated, so M7.4 shipped with these three assertions failing. M7.5 found them red
+         | and this is the correction; no production file is touched by it.
+         |
+         | IT MEETS THE SAME BAR THE OTHER THREE DO, which is why it is added rather than the
+         | assertion being loosened. The line this list draws is "shared Hire Agent presentation
+         | that has been reviewed" versus "a layout or shell that would migrate pages nobody
+         | reviewed". field.blade.php is the sibling of detail-section.blade.php, granted in M7.2
+         | for exactly this reason: the section card and the rows inside it are one framework, and
+         | the row half arrived a milestone after the card half. It renders no page of its own,
+         | reaches no Create Offer view, and widens no role allowlist — rollout scope stays with
+         | the redesign flag readers, which it consults via its own `redesign` prop.
+         |
+         | THE MISS IS THE LESSON, not the entry. A guard that fails silently for a whole
+         | milestone is only as good as the suite being run and read, and this one was neither.
+         */
+        'resources/views/components/hire-agent/field.blade.php',
     ];
 
     /** The approved list as a display string, for assertion messages. */
@@ -845,6 +866,11 @@ class VihoPresentationPrimitivesTest extends TestCase
             'resources/views/components/hire-agent/hero.blade.php'           => '<x-viho.hero',
             'resources/views/components/hire-agent/detail-body.blade.php'    => '<x-viho.card',
             'resources/views/components/hire-agent/detail-section.blade.php' => '<x-viho.card',
+            // M7.4's field adapter, recorded by M7.5. The grant is for the key/value ROW — the
+            // half of the section framework that arrived after the card half. Naming `kv` rather
+            // than accepting any VIHO tag is what keeps it inside the terms it was reviewed under:
+            // a field that started composing card chrome would be a section, not a row.
+            'resources/views/components/hire-agent/field.blade.php'          => '<x-viho.kv',
         ];
 
         // The two lists are asserted to be the same set, so an entry added to

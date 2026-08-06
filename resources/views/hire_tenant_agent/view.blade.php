@@ -1195,35 +1195,51 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     @inject('auctionUser', 'App\Models\User')
     @php
     $auser = $auctionUser::find(@$auction->user_id);
+
+    /*
+     | M7.5 — the owner card says only what the record supports. Applied to all four roles,
+     | because the card was copied to all four and so were its three fabrications: a five-star
+     | rating with no rating data behind it, a hardcoded "last online 5 days ago", and a "..."
+     | standing in for a bio that does not exist.
+     |
+     | Not flag-gated. This role has adopted no redesign flag at all, and the reasoning holds
+     | regardless: invented claims about a named person are not something to leave live pending
+     | a layout rollout.
+     |
+     | The guard adopts the buyer view's existing `@if ($auser)` — the only one of the four that
+     | already had it — rather than inventing a second spelling. The name is part of it: a
+     | resolvable row with no usable name identifies nobody, and would render a bold empty anchor
+     | where the name belongs.
+     */
+    $hlaOwnerName = trim((string) ($auser->name ?? ''));
+
+    if ($auser && $hlaOwnerName === '') {
+        $hlaOwnerName = trim(($auser->first_name ?? '') . ' ' . ($auser->last_name ?? ''));
+    }
     @endphp
     <!-- Review  -->
+    @if ($auser && $hlaOwnerName !== '')
     <div class="card review">
         <div class="card-body d-flex align-items-center">
             <div class="left d-flex align-items-center">
                 <x-avatar-img :avatar="$auser->avatar" alt="" class="w-25" />
                 <div>
-                    <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
-                                Details</b></a><span></span>
-                        <span class="start opacity-50">
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                        </span>
-                    </p>
-                    <p class="mb-0">...</p>
-                    <p class="mb-0 opacity-50">{{ $auser->name }} • last online 5 days ago.</p>
+                    {{-- The name IS the link; it read "User Details" before, with the actual name
+                         demoted to a muted line below. --}}
+                    <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>{{ $hlaOwnerName }}</b></a></p>
                 </div>
             </div>
             <div class="right text-center">
-                <a href="{{ route('author', [$auser->id]) }}"><button class="btn">Message</button></a>
+                {{-- Message goes to the conversation, not to the profile. Both controls pointed at
+                     `author` before this, so the two labels were one link. --}}
+                <a href="{{ route('auction-chat', ['tenant-agent', $auction->id]) }}"><button class="btn">Message</button></a>
                 <a href="{{ route('author', [$auser->id]) }}"><button class="btn view-btn">View
                         Profile</button></a>
             </div>
 
         </div>
     </div>
+    @endif
 </div>
 {{-- Milestone 5A.2-T (1 of 2): .leftCol was never closed before .rightCol opened, so the entire
      sidebar rendered INSIDE the eight-column main region instead of beside it. This closer ends
