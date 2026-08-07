@@ -66,6 +66,15 @@ class LocationDnaGeocodeServiceTest extends TestCase
         // does not fire by default (env var is not set in the test environment and
         // config() returns null, which blank() treats as truthy).
         config(['services.google.places_key' => 'test-google-api-key']);
+
+        // These cases characterise the LEGACY Google geocoding path, which is now
+        // fail-closed behind the kill switch and OFF by default. Opting in here is
+        // deliberate and is not a statement that Google geocoding is the desired
+        // product behaviour — the platform direction is a non-Google resolver. It
+        // keeps these cases exercising the branch they were written for; the
+        // switched-off behaviour is asserted separately in
+        // tests/Feature/Security/GooglePlacesKillSwitchTest.
+        config(['google_places.enabled' => true]);
     }
 
     // =========================================================================
