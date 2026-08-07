@@ -1051,8 +1051,15 @@ class OfferWorkflowReadinessTest extends TestCase
             // D1 geocoder swap becomes a one-file change. Naming only: no signature,
             // behaviour or payload handling changed. The trait carries the method;
             // ValidStreetAddress references it in a comment.
-            'app/Http/Livewire/Concerns/HandlesGooglePlacesAddress.php',
+            'app/Http/Livewire/Concerns/HandlesResolvedPropertyAddress.php',
             'app/Rules/ValidStreetAddress.php',
+            // Provider-neutral trait rename: HandlesGooglePlacesAddress ->
+            // HandlesResolvedPropertyAddress. Both halves of the rename are listed —
+            // the new path above, and the removed path here, which the guard still
+            // sees as a deletion in the diff window. Naming only; the trait's method,
+            // signature and behaviour are untouched, and no provider is selected,
+            // called, or added by it.
+            'app/Http/Livewire/Concerns/HandlesGooglePlacesAddress.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

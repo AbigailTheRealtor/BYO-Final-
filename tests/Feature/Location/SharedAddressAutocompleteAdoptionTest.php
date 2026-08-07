@@ -21,7 +21,7 @@ use Tests\TestCase;
  * -------------------------------
  * BuyerOfferListing, BuyerOfferListingEdit, TenantOfferListing and
  * TenantOfferListingEdit do NOT implement fillFromResolvedAddress() — not their own,
- * not via HandlesGooglePlacesAddress. If the shared component were emitted on
+ * not via HandlesResolvedPropertyAddress. If the shared component were emitted on
  * their pages, selecting a Google suggestion would call a Livewire method that
  * does not exist. The partial therefore gates on an explicit class allowlist AND
  * on method_exists(). Both halves are asserted here.

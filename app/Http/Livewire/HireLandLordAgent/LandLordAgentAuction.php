@@ -16,7 +16,7 @@ class LandLordAgentAuction extends Component
 {
     use WithFileUploads;
     use ValidatesMediaUploads;
-    use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */

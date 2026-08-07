@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Location;
 
-use App\Http\Livewire\Concerns\HandlesGooglePlacesAddress;
+use App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress;
 use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing;
 use App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit;
 use App\Http\Livewire\OfferListing\Seller\SellerOfferListing;
@@ -43,7 +43,7 @@ use Tests\TestCase;
  *
  * Approved as a correctness fix by the owner, 2026-07-26.
  *
- * @see \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress
+ * @see \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress
  */
 class PropertyAddressFillParityTest extends TestCase
 {
@@ -81,13 +81,13 @@ class PropertyAddressFillParityTest extends TestCase
     public function test_the_fill_method_comes_from_the_shared_trait(string $component): void
     {
         $this->assertContains(
-            HandlesGooglePlacesAddress::class,
+            HandlesResolvedPropertyAddress::class,
             (new ReflectionClass($component))->getTraitNames(),
             "{$component} must use the shared trait"
         );
 
         $this->assertSame(
-            (new ReflectionClass(HandlesGooglePlacesAddress::class))->getFileName(),
+            (new ReflectionClass(HandlesResolvedPropertyAddress::class))->getFileName(),
             (new ReflectionMethod($component, 'fillFromResolvedAddress'))->getFileName(),
             "{$component} must not declare its own fillFromResolvedAddress()"
         );

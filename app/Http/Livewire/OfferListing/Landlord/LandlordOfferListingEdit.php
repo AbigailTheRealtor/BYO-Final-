@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
-use App\Http\Livewire\Concerns\HandlesGooglePlacesAddress;
+use App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
@@ -29,7 +29,7 @@ class LandlordOfferListingEdit extends Component
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use GuidesPublishValidation;    // publish gate + guided correction (parity with create)
     use ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
-    use HandlesGooglePlacesAddress; // Phase 1: the one fillFromResolvedAddress()
+    use HandlesResolvedPropertyAddress; // Phase 1: the one fillFromResolvedAddress()
     use HasCanonicalPetFee;         // #2 Part B: canonical pet fee (create + edit)
 
     protected $listeners = [
@@ -1249,7 +1249,7 @@ class LandlordOfferListingEdit extends Component
         }
     }
 
-    // fillFromResolvedAddress() now comes from HandlesGooglePlacesAddress (Phase 1).
+    // fillFromResolvedAddress() now comes from HandlesResolvedPropertyAddress (Phase 1).
     // The trait additionally resets highlightedPropertyCityIndex, which this copy
     // omitted; see PropertyAddressFillParityTest for why that is a fix.
 

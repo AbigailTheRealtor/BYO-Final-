@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Livewire\OfferListing\Concerns\HasMlsImport;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
-use App\Http\Livewire\Concerns\HandlesGooglePlacesAddress;
+use App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
@@ -29,7 +29,7 @@ class LandlordOfferListing extends Component
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use \App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation; // publish gate required-field contract (parity with edit)
     use ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
-    use HandlesGooglePlacesAddress; // Phase 1: the one fillFromResolvedAddress()
+    use HandlesResolvedPropertyAddress; // Phase 1: the one fillFromResolvedAddress()
     use HasCanonicalPetFee;         // #2 Part B: canonical pet fee (create + edit)
 
     // TODO: set to false before production launch
@@ -1306,7 +1306,7 @@ class LandlordOfferListing extends Component
         }
     }
 
-    // fillFromResolvedAddress() now comes from HandlesGooglePlacesAddress (Phase 1).
+    // fillFromResolvedAddress() now comes from HandlesResolvedPropertyAddress (Phase 1).
 
     public function updatedPropertyCity($value)
     {

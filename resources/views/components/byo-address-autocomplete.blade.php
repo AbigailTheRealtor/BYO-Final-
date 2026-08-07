@@ -4,7 +4,7 @@
   Renders the Street Address input (wired to Google Places Autocomplete) plus an
   optional Unit / Apt / Suite field, and emits the autocomplete JS + the Google
   Maps loader. On place selection it calls the consuming Livewire component's
-  fill method (HandlesGooglePlacesAddress::fillFromResolvedAddress) which populates
+  fill method (HandlesResolvedPropertyAddress::fillFromResolvedAddress) which populates
   the City / County / State / ZIP fields that live below this component in the
   host form. Those downstream fields keep their existing markup + server-side
   city-suggestion behaviour — this component only owns Street + Unit + the map.

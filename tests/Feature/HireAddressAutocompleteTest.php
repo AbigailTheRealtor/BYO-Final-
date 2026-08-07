@@ -13,7 +13,7 @@ use Tests\TestCase;
  * component (<x-byo-address-autocomplete>) for Seller + Landlord. The component
  * renders the Street Address autocomplete input + Unit/Apt/Suite field, and the
  * Google Places place_changed handler calls fillFromResolvedAddress() (provided by
- * the HandlesGooglePlacesAddress trait) to populate City / County / State / ZIP.
+ * the HandlesResolvedPropertyAddress trait) to populate City / County / State / ZIP.
  *
  * The live Hire flow is served by TenantAgentAuction (user_type = seller|landlord).
  */
