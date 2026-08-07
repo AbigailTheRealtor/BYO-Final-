@@ -219,6 +219,20 @@ class LandlordAgentAuctionController extends Controller
 
     public function update($id, Request $request)
     {
+        // S2 — legacy endpoint, still routed (POST landlord/hire/agent/auction/edit/{id},
+        // middleware web|auth|verified, so the caller is authenticated but was
+        // otherwise unchecked). {id} is client-supplied and was previously resolved
+        // with an unscoped find() before `user_id = Auth::id()` reassigned the row,
+        // so ANY authenticated user could overwrite another user's listing and
+        // transfer it to themselves.
+        // Resolved owner-scoped, ahead of the try: abort() throws an HttpException
+        // that the catch(\Exception) below would otherwise swallow into a redirect.
+        $auction = LandlordAgentAuction::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        abort_if($auction === null, 403, 'You are not authorized to update this listing.');
+
         try {
             $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
             DB::beginTransaction();
@@ -229,7 +243,6 @@ class LandlordAgentAuctionController extends Controller
                 $auction_length_days = '-1';
             }
 
-            $auction = LandlordAgentAuction::find($id);
             $auction->user_id = Auth::user()->id;
             // address is stored in meta via saveMeta("address") below — landlord_agent_auctions has no address column
             $auction->auction_type = $request->auction_type;

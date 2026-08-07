@@ -18,6 +18,7 @@ class LandLordAgentAuction extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
+    use \App\Http\Livewire\Concerns\ResolvesOwnedAuction;       // S1: object-level ownership on the write paths
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -940,6 +941,43 @@ class LandLordAgentAuction extends Component
     }
 
     // Methods
+    /**
+     * S1 — runs on every subsequent Livewire request (action calls). listingId is
+     * a public, client-controlled property, so a tampered value in a hydration
+     * payload must fail closed here before any action method becomes reachable.
+     * Null listingId (brand-new create flow) is allowed. See ResolvesOwnedAuction.
+     *
+     * Consumer-owned listing: owner-only, hence the null $assignedListingType.
+     */
+    public function hydrate()
+    {
+        $this->assertCanManageAuction(HirelandLordAgentAuction::class, $this->listingId, null);
+    }
+
+    /**
+     * S1 — resolve the row this component is allowed to write to.
+     *
+     * Defence in depth: hydrate()/mount()/the action entrypoints already guard,
+     * but the final write path must guarantee ownership independently rather
+     * than inherit it from a lifecycle hook. The lookup is scoped to the
+     * authenticated owner, so a foreign listingId resolves to nothing — and it
+     * fails closed instead of silently creating a second listing.
+     */
+    private function resolveWritableAuction(): HirelandLordAgentAuction
+    {
+        if (empty($this->listingId)) {
+            return new HirelandLordAgentAuction();
+        }
+
+        $auction = HirelandLordAgentAuction::where('id', $this->listingId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        abort_if($auction === null, 403, 'You are not authorized to access this listing.');
+
+        return $auction;
+    }
+
     public function mount($listingId = null)
     {
         $this->addService();
@@ -965,6 +1003,9 @@ class LandLordAgentAuction extends Component
         ]);
 
         if ($listingId) {
+            // S1: refuse a foreign id on the initial GET with the same 403 the
+            // Offer Listing components use, rather than silently rendering blank.
+            $this->assertCanManageAuction(HirelandLordAgentAuction::class, $listingId, null);
             $this->loadDraft($listingId);
         }
     }
@@ -1542,15 +1583,17 @@ class LandLordAgentAuction extends Component
 
     public function saveDraft()
     {
+        // S1: assert BEFORE the try. abort() throws an HttpException, which the
+        // catch(\Exception) below would otherwise swallow into a flash message —
+        // turning a 403 into a silent no-op.
+        $this->assertCanManageAuction(HirelandLordAgentAuction::class, $this->listingId, null);
 
         try {
 
 
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? HirelandLordAgentAuction::find($this->listingId)
-                : new HirelandLordAgentAuction();
+            $auction = $this->resolveWritableAuction();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
@@ -2789,6 +2832,11 @@ class LandLordAgentAuction extends Component
 
     public function store()
     {
+        // S1: assert BEFORE the try below. abort() throws an HttpException, which
+        // the catch(\Exception) would otherwise swallow into a flash message —
+        // turning a 403 into a silent no-op.
+        $this->assertCanManageAuction(HirelandLordAgentAuction::class, $this->listingId, null);
+
         $storeRules = [
             'first_name'           => 'required|string',
             'last_name'            => 'required|string',
@@ -2862,9 +2910,7 @@ class LandLordAgentAuction extends Component
         try {
             $this->isDraft = 0;
 
-            $auction = $this->listingId
-                ? HirelandLordAgentAuction::find($this->listingId)
-                : new HirelandLordAgentAuction();
+            $auction = $this->resolveWritableAuction();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
