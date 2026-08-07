@@ -25,7 +25,7 @@ class TenantAgentAuctionEdit extends Component
 {
     use WithFileUploads;
     use ValidatesMediaUploads;
-    use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
 

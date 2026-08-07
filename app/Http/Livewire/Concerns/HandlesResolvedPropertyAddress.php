@@ -3,15 +3,31 @@
 namespace App\Http\Livewire\Concerns;
 
 /**
- * HandlesGooglePlacesAddress (A3.20–A3.25)
+ * HandlesResolvedPropertyAddress (A3.20–A3.25)
  *
  * Shared server-side handler for the map-integrated address component
  * (resources/views/components/byo-address-autocomplete.blade.php).
  *
- * The Blade component's Google Places `place_changed` listener calls this
- * method with the resolved address parts, populating the standard address
- * properties that every Hire Agent / Create Offer component already declares
- * (address, property_city, property_county, property_state, property_zip).
+ * The Blade component's `place_changed` listener calls this method with the
+ * resolved address parts, populating the standard address properties that every
+ * Hire Agent / Create Offer component already declares (address, property_city,
+ * property_county, property_state, property_zip).
+ *
+ * WHY THE NAMES ARE PROVIDER-NEUTRAL (Phase 1)
+ * --------------------------------------------
+ * `fillFromResolvedAddress()` describes what it receives — a resolved address —
+ * not who resolved it. Today the resolver is Google Places; Decision D1 will
+ * replace it (US Census Geocoder, then OpenAddresses/NAD). When that happens only
+ * the caller changes: the eight-argument contract, this method, and every consuming
+ * component stay exactly as they are. That is the whole point of the naming — the
+ * D1 swap becomes a one-file change instead of a rename across ten components.
+ *
+ * The trait carried a Google-specific name for one commit after the method was
+ * neutralised, because renaming a trait used by ten components was outside that
+ * commit's approved scope. It is now
+ * `HandlesResolvedPropertyAddress`, matching the method it exists to provide.
+ * Naming only: no signature, no behaviour, and no payload handling changed with
+ * either step, and nothing here selects, calls, or knows about a provider.
  *
  * Geo + place-id properties (property_lat / property_lng / google_place_id) and
  * the server-side city-suggestion state (propertyCitySuggestions /
@@ -20,9 +36,9 @@ namespace App\Http\Livewire\Concerns;
  * to mix into components that do not carry those fields (e.g. the Hire Agent
  * components, which intentionally omit the geo fields).
  */
-trait HandlesGooglePlacesAddress
+trait HandlesResolvedPropertyAddress
 {
-    public function fillFromGooglePlaces(
+    public function fillFromResolvedAddress(
         string $street,
         string $city,
         string $county,
@@ -48,7 +64,7 @@ trait HandlesGooglePlacesAddress
             $this->google_place_id = $placeId;
         }
 
-        // Clear any open server-side city-suggestion dropdown once Google fills the parts.
+        // Clear any open server-side city-suggestion dropdown once the parts are filled.
         if (property_exists($this, 'propertyCitySuggestions')) {
             $this->propertyCitySuggestions = [];
         }

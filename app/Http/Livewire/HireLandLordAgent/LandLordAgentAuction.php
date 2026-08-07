@@ -16,7 +16,8 @@ class LandLordAgentAuction extends Component
 {
     use WithFileUploads;
     use ValidatesMediaUploads;
-    use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2821,7 +2822,14 @@ class LandLordAgentAuction extends Component
             'commercial_approval_conditions'      => 'nullable|string',
         ];
 
+        // Phase 0 (Spatial UI Integration) — the property street address was
+        // validated as `required|string` here, which accepted `43434`, `33708`,
+        // `Main` and `.`. One canonical definition, shared with the Offer Listing
+        // publish traits, so Hire and Create cannot drift apart.
+        $storeRules = array_merge($storeRules, \App\Rules\ValidStreetAddress::rules());
+
         $storeMessages = [
+            'address.required'              => 'Enter the property street address.',
             'first_name.required'           => 'First Name is required.',
             'last_name.required'            => 'Last Name is required.',
             'phone_number.required'         => 'Phone Number is required.',
