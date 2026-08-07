@@ -33,8 +33,9 @@ use App\Services\LocationDna\Criteria\Rules\GeographySelection;
  * MATCHING IS TOLERANT IN ONE DIRECTION ONLY
  * ------------------------------------------
  * It accepts more shapes than it emits — with or without the state suffix, any case, any padding,
- * a county with or without its class word, an unpadded ZIP. It never invents a match: tolerance is
- * about recognising what the corpus already contains, not about finding the nearest thing.
+ * a county with or without its class word, a `Saint` the corpus spells `St.`, an unpadded ZIP. It
+ * never invents a match: tolerance is about recognising what the corpus already contains, not about
+ * finding the nearest thing.
  *
  * READ-ONLY, like everything in this namespace.
  */
@@ -272,10 +273,51 @@ final class GeographySelectionHydrator
         return $keyed;
     }
 
-    /** Comparison form: lowercased, with internal whitespace collapsed. */
+    /** Comparison form: lowercased, with internal whitespace collapsed and `Saint` folded to `St`. */
     private function key(string $value): string
     {
-        return trim((string) preg_replace('/\s+/', ' ', mb_strtolower(trim($value))));
+        $keyed = trim((string) preg_replace('/\s+/', ' ', mb_strtolower(trim($value))));
+
+        return $this->foldSaintPrefix($keyed);
+    }
+
+    /**
+     * Fold a leading `Saint` / `St.` / `St` to one comparison form.
+     *
+     * WHY THIS EXISTS
+     * ---------------
+     * The two corpora spell the same places differently and neither is wrong. `us_cities` holds 159
+     * names beginning `Saint ` and 13 beginning `St. `; `census_places` holds 210 beginning `St. `
+     * and NOT ONE beginning `Saint `. So a label stored years ago as `Saint Petersburg, FL` — a real
+     * value in this database — matched the reference tables and matches nothing in the Census
+     * corpus. It would be preserved rather than dropped, which is safe but wrong: the place is
+     * there, spelled the other way.
+     *
+     * COMPARISON ONLY. This never touches what is stored or displayed. Both the corpus name and the
+     * stored label pass through {@see self::key()}, so the fold cancels out: the id that matches is
+     * the corpus's own, and {@see GeographyLabelProjector} labels it from the corpus name. A stored
+     * `Saint Petersburg, FL` therefore resolves to the St. Petersburg option and is re-emitted in
+     * the Census spelling ON THE NEXT SAVE — by the user's action, never by a migration.
+     *
+     * THE PREFIX ONLY, AND ONLY AS A WHOLE WORD
+     * -----------------------------------------
+     * `\s+` after the token is what keeps `Sainte Genevieve` and `Stevensville` out: neither has a
+     * word boundary where this needs one. Folding anywhere else in the name would equate
+     * `Mount Saint Francis` with a `Mount St Francis` that may be a different place, which is the
+     * class of guess {@see GeographySelectionHydrator} exists to refuse.
+     *
+     * `Ste.` / `Sainte` IS DELIBERATELY NOT FOLDED. It is a distinct French feminine form, the
+     * corpora do not disagree about it the way they disagree about `Saint`, and folding it would
+     * risk equating `Ste. Genevieve` with a `St. Genevieve` that is a different place.
+     *
+     * VERIFIED NON-LOSSY AGAINST THE LIVE CORPUS. Folding introduces ZERO new collisions: no county
+     * within a state, and no place within a county, collapses onto another under this rule. Where a
+     * genuine ambiguity already exists the county matcher's `$loose` index still resolves it to null
+     * and matches nothing, which this does not change.
+     */
+    private function foldSaintPrefix(string $keyed): string
+    {
+        return (string) preg_replace('/^(?:saint|st\.|st)\s+/', 'st ', $keyed);
     }
 
     /**
