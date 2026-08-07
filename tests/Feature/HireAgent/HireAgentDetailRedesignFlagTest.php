@@ -176,12 +176,45 @@ class HireAgentDetailRedesignFlagTest extends TestCase
                 'resources/views/hire_landlord_agent/view.blade.php',
             ],
             $consumers,
-            'The set of views gating on the detail redesign must stay known. The shared shell reads '
-            . 'it through enabledFor($role) so role scope comes from config; the landlord view reads '
-            . 'the master switch for its own pilot markup. A third entry means a file started gating '
-            . 'on the redesign without that being decided — which is the signal, not a failure to fix '
-            . 'by widening this list.'
+            'The set of views gating on the detail redesign must stay known. BOTH read it through '
+            . 'enabledFor(), so role scope comes from config in either file. A third entry means a '
+            . 'file started gating on the redesign without that being decided — which is the signal, '
+            . 'not a failure to fix by widening this list.'
         );
+    }
+
+    /**
+     * NEITHER consumer may read the master switch. The landlord view used to, and it was a bug.
+     *
+     * The reasoning for it was that the redesigned markup lives in that file, so the role is a
+     * property of the file rather than a value — sound about role scope, and silent about the
+     * failure it caused. That file's markup depends on the framework stylesheet's redesign block,
+     * which the shell gates on enabledFor(); with the master on and landlord off the allowlist the
+     * page rendered the markup with none of the CSS that lays it out. Failing open into a broken
+     * page is the wrong direction for a rollout switch.
+     *
+     * ASSERTED AT SOURCE, like the shell guard below, because it is a statement about which method
+     * a file calls rather than about what any page renders. The rendered behaviour is pinned
+     * separately by HireAgentDetailShellLayoutTest, and both are worth having: this one fails on
+     * the line that caused it, that one fails on the symptom a reader would actually see.
+     *
+     * `enabled()` is NOT deprecated and is not removed. It still answers the master switch, which
+     * is a genuine question — the tests above ask it. What is asserted here is only that no VIEW
+     * makes a rollout decision with it.
+     */
+    public function test_no_view_gates_on_the_master_switch(): void
+    {
+        foreach ([
+            'resources/views/components/hire-agent/detail-shell.blade.php',
+            'resources/views/hire_landlord_agent/view.blade.php',
+        ] as $path) {
+            $this->assertStringNotContainsString(
+                'HireAgentDetailRedesign::enabled()',
+                (string) file_get_contents(base_path($path)),
+                "{$path} must gate on enabledFor(), not the master switch — the two disagreeing is "
+                . 'what let the body render redesign markup without the stylesheet that lays it out.'
+            );
+        }
     }
 
     /**

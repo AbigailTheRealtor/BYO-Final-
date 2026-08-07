@@ -146,8 +146,11 @@
 </style>
 
 {{-- M5.2b — the product half of the section navigation. Flag-gated, so with the redesign off this
-     page pushes no additional CSS at all. --}}
-@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabled())
+     page pushes no additional CSS at all.
+
+     THE ROLE-AWARE READER, NOT THE MASTER SWITCH — see the note at the $hlaDetailRedesign
+     assignment below for why all three of this file's gates had to move together. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('landlord'))
 <style>
 /* THE STICKY OFFSET, SUPPLIED BY THE CONSUMER.
    x-viho.section-nav declares `position: sticky` but deliberately leaves `top` unset, because the
@@ -346,10 +349,34 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
      | Property Details and Leasing Terms are unconditional — they render for every viewer — so
      | they are added without a guard rather than behind a condition that is always true.
      |
-     | Everything is behind the flag: with HIRE_AGENT_DETAIL_REDESIGN_ENABLED off the array stays
-     | empty, no nav renders, no anchors are emitted and no script is pushed.
+     | Everything is behind the flag: with the redesign off for this role the array stays empty,
+     | no nav renders, no anchors are emitted and no script is pushed.
+     |
+     | ── THE ROLE-AWARE READER, AND WHY THE MASTER SWITCH WAS THE WRONG ONE ──────────────────
+     |
+     | This read enabled() — the master switch alone — on the reasoning that the redesigned markup
+     | lives in this file, so the role is a property of the file rather than a value to test. That
+     | reasoning is sound about ROLE SCOPE and silent about the thing that actually breaks:
+     | agreement with the shell.
+     |
+     | components/hire-agent/detail-shell.blade.php resolves enabledFor($role), and the framework
+     | stylesheet emits its entire redesign block only when that resolved. This file's markup
+     | DEPENDS on that block — `.hla-field-grid` gets its `display: flex` from it, and a Bootstrap
+     | column with no flex parent degrades into a block at 50% width, one per line with the other
+     | half blank. So with the master on and this role absent from the allowlist, the page rendered
+     | redesign markup with none of the CSS that makes it a layout: broken, rather than legacy.
+     |
+     | Failing open into a broken page is the wrong direction for a rollout switch, and no test
+     | caught it because the reader-level tests assert only that the two methods disagree, never
+     | what this page does when they do. They do now.
+     |
+     | THE ROLE IS PASSED, NOT TESTED. There is no equality check against a role name here and no
+     | second opinion about rollout scope — the allowlist in config remains the only thing that
+     | grants a role the redesign. This file merely states which role it is, which is exactly what
+     | HireAgentHeroData::redesignEnabledFor('landlord') already does twice further down. The two
+     | flags now read the same way in the same file.
      */
-    $hlaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabled();
+    $hlaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('landlord');
 
     $hlaNavSections = [];
 
@@ -2947,8 +2974,12 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
 </script>
 
 {{-- M5.2b — active section highlighting. Flag-gated: with the redesign off this page pushes no
-     additional script, so there is no new behaviour to regress. --}}
-@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabled())
+     additional script, so there is no new behaviour to regress.
+
+     THE ROLE-AWARE READER, NOT THE MASTER SWITCH. This script drives the nav emitted under the
+     same gate; reading a different flag than the markup it operates on is how a page ends up
+     binding behaviour to elements that were never rendered. See the $hlaDetailRedesign note. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('landlord'))
 <script>
 /*
     The behaviour half of the section navigation, and the reason x-viho.section-nav ships without
