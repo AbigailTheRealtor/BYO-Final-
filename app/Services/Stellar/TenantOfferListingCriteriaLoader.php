@@ -35,7 +35,12 @@ use Illuminate\Support\Facades\DB;
  * never incorrectly excludes them.
  *
  * Key rename table (offer listing EAV → matcher payload key):
- *   zipCodes              → preferred_zip_codes    (JSON decode; legacy loader hardcoded [])
+ *   location_dna_preferences.zip_codes
+ *     ELSE zipCodes       → preferred_zip_codes    (blob is authoritative whenever it carries the
+ *                                                   key, INCLUDING an empty array — that is a
+ *                                                   cleared selection, not missing data; legacy
+ *                                                   meta answers only when the blob is absent,
+ *                                                   unparseable, or predates the key)
  *   counties              → preferred_counties     (JSON decode)
  *   maximum_budget/budget → max_price              (maximum_budget preferred)
  *   bedrooms/other_bedrooms → min_bedrooms         (handles 'custom' value)
@@ -139,7 +144,7 @@ class TenantOfferListingCriteriaLoader
         }
 
         // -----------------------------------------------------------------------
-        // Location — LDNA blob for cities/radius/polygons; separate keys for zip/county
+        // Location — LDNA blob for cities/radius/polygons/zips; separate keys for county
         // -----------------------------------------------------------------------
         $ldnaRaw     = $get('location_dna_preferences');
         $ldna        = [];
@@ -167,7 +172,41 @@ class TenantOfferListingCriteriaLoader
             ? (is_array($ldna['polygons']) ? $ldna['polygons'] : [])
             : [];
 
-        $preferredZipCodes = $this->decodeJsonMeta($get('zipCodes'));
+        // ZIPs follow the Location DNA authority rule, exactly as cities do above.
+        //
+        // THE BLOB WINS WHENEVER IT CARRIES THE KEY — INCLUDING WHEN IT CARRIES AN EMPTY ARRAY
+        // -----------------------------------------------------------------------------------
+        // Before this, the loader read ONLY the legacy `zipCodes` meta. The Search Areas map
+        // writes ZIPs into the blob as `zip_codes` and nothing mirrors them out —
+        // HasSearchAreas::saveSearchAreas() mirrors state / counties / cities and stops there — so
+        // a tenant who set ZIPs through the map got an empty `preferred_zip_codes` and matched
+        // against every ZIP in the dataset.
+        //
+        // The presence of the KEY, not the emptiness of its value, is what transfers authority.
+        // That distinction is the whole point: the map is the only ZIP editing surface this
+        // workflow has, so `zip_codes: []` is a user who cleared their ZIPs, not an absence of
+        // information. Treating it as absence would resurrect stale legacy values the user has no
+        // way to remove, and "Clear All" would silently fail. `array_key_exists` is therefore
+        // deliberate — `isset()` and `!empty()` both collapse that distinction.
+        //
+        // Legacy `zipCodes` is consulted only when the blob cannot speak: no blob at all, an
+        // unparseable one, or one that predates the ZIP key. Those are the records the discrete
+        // input wrote before the widget existed, and they keep working untouched.
+        //
+        // Note this is a NARROWER rule than {@see \App\Services\LocationDna\LocationMatchAuctionExtractor},
+        // which unions the same two sources. The divergence is intentional and worth knowing about:
+        // the extractor feeds proximity scoring, where a superset of ZIPs only widens a search,
+        // while this loader feeds a query filter, where a stale ZIP silently re-adds inventory the
+        // user removed.
+        //
+        // READ-ONLY. Nothing here writes: both stores are left exactly as they were found, and
+        // reconciling them is a data-migration decision, not a loader's to make.
+        $preferredZipCodes = array_values(array_unique(
+            ($ldnaBlobPresent && array_key_exists('zip_codes', $ldna))
+                ? $this->decodeJsonMeta($ldna['zip_codes'])
+                : $this->decodeJsonMeta($get('zipCodes'))
+        ));
+
         $preferredCounties = $this->decodeJsonMeta($get('counties'));
 
         // -----------------------------------------------------------------------

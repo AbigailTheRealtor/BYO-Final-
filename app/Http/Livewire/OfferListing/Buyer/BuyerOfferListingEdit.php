@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\WizardEventService;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces;
+use App\Http\Livewire\Concerns\HasSearchAreas;
 
 class BuyerOfferListingEdit extends Component
 {
@@ -20,6 +21,10 @@ class BuyerOfferListingEdit extends Component
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use HasImportantPlaces;
+    // Phase 9D Search Areas plumbing, shared with the four Hire Agent components. Adopted here
+    // in place of a private hydrateDiscreteLocationFromBlob() copy; loadSearchAreas() and
+    // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
+    use HasSearchAreas;
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -2379,29 +2384,9 @@ class BuyerOfferListingEdit extends Component
         return str_replace(',', '', $value);
     }
 
-    /**
-     * 9B-3: mirror the Search Areas blob's state/counties into the discrete $state/$counties
-     * props. Called before validation (the discrete Acceptable State/Counties UI was removed
-     * in 9B-3, so the blob is now the editing surface) and again before the discrete saveMeta
-     * write-back. Non-empty guards preserve backward compatibility — an empty blob value never
-     * wipes an existing discrete value.
-     */
-    protected function hydrateDiscreteLocationFromBlob(): void
-    {
-        $ldna = json_decode($this->location_dna_preferences_json ?? '', true);
-        if (!is_array($ldna)) {
-            return;
-        }
-        if (trim((string) ($ldna['state'] ?? '')) !== '') {
-            $this->state = trim((string) $ldna['state']);
-        }
-        if (!empty($ldna['counties'] ?? [])) {
-            $this->counties = array_values(array_filter(
-                (array) $ldna['counties'],
-                fn($c) => is_string($c) && trim($c) !== ''
-            ));
-        }
-    }
+    // `hydrateDiscreteLocationFromBlob()` now comes from HasSearchAreas — see the class-level
+    // `use`. The private copy that stood here was identical to the trait's apart from the trait's
+    // `property_exists` guards, which are no-ops here because this component declares both props.
 
     protected function saveAllMetadata($auction)
     {
