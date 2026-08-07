@@ -62,8 +62,23 @@
     still emit nothing, or the page would grow a duplicate heading directly beneath the card title
     it duplicates. Every other section passes the default and renders its header in both branches.
 
+    ON THE TRAILING COLON, WHICH IS STRIPPED IN ONE BRANCH ONLY. M7.4. Six of the nine landlord
+    headings end in a colon and three do not — "Referral & Cooperation Terms" and "Landlord's Info"
+    never had one — so the page currently punctuates its own sections two different ways. The
+    reference page uses none, and a heading sitting on a card header band is a title rather than a
+    sentence fragment introducing what follows.
+
+    It is stripped HERE rather than at the nine call sites because the legacy branch must keep it:
+    HireAgentSectionCardDomEquivalenceTest asserts the flag-off headings verbatim, colons included,
+    for all four roles. One expression in one place cannot drift; nine edited strings could, and
+    would have to be edited back for the roles that have not adopted the redesign.
+
+    rtrim rather than a match on known titles, because the rule is "this page does not punctuate
+    headings", not "these six strings become those six strings" — a heading added later gets the
+    same treatment without anyone remembering to add it to a list.
+
     @param bool   $redesign      resolved flag state — never read from config here
-    @param string $title         section heading, identical in both branches
+    @param string $title         section heading; the colon survives in the legacy branch only
     @param string $id            anchor id; the CARD carries it, so a nav link lands on the header
     @param string $icon          optional decorative icon class, card branch only
     @param bool   $legacyHeader  emit the legacy header — false only for the wrapper card's own
@@ -76,4 +91,4 @@
     'icon'         => null,
     'legacyHeader' => true,
 ])
-@if ($redesign)<x-viho.card :id="$id" :title="$title" :icon="$icon" title-tag="h4">{{ $slot }}</x-viho.card>@elseif ($legacyHeader)<x-viho.section-header :title="$title" tag="h4" />{{ $slot }}@else{{ $slot }}@endif
+@if ($redesign)<x-viho.card :id="$id" :title="rtrim(trim($title), ':')" :icon="$icon" title-tag="h4"><div class="hla-field-grid">{{ $slot }}</div></x-viho.card>@elseif ($legacyHeader)<x-viho.section-header :title="$title" tag="h4" />{{ $slot }}@else{{ $slot }}@endif

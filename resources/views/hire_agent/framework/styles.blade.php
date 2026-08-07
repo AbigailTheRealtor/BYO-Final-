@@ -395,31 +395,60 @@
         color: var(--viho-primary);
     }
 @if ($hlaShellRedesign ?? false)
-    /* ── M7.1 — sidebar sticky preparation ─────────────────────────────────────
+    /* ── M7.5 — the sidebar surface, and the card that carries the sticky ──────
        EMITTED ONLY FOR A ROLE THE REDESIGN IS ON FOR. $hlaShellRedesign is resolved by
        detail-shell.blade.php, which includes this file, and Blade hands an included view the
        caller's variables. The `?? false` is the fail-closed default for any other includer.
 
-       WHY THE RULE LIVES HERE RATHER THAN IN THE SHELL, and it is a constraint rather than a
+       WHY THESE RULES LIVE HERE RATHER THAN IN THE SHELL, and it is a constraint rather than a
        preference. This file is the ONE product file permitted to read a --viho token:
        VihoDesignTokenFoundationTest states that M5.1 lifted the ban for exactly this path and
        that a second consumer is an architectural change requiring its own milestone decision,
-       not a test edit. M7.1 briefly put these two token reads in the shell, the guard caught it,
-       and the rule moved here rather than the boundary moving.
+       not a test edit. M7.1 briefly put its token reads in the shell, the guard caught it, and
+       the rule moved here rather than the boundary moving.
 
-       WHY IT IS STILL CONDITIONAL. This stylesheet is pushed unconditionally, so an always-on
+       WHY THEY ARE STILL CONDITIONAL. This stylesheet is pushed unconditionally, so an always-on
        rule would change the bytes of every Hire Agent page in BOTH flag states — inert with the
-       flag off, since nothing carries the class, but no longer byte-identical. "Flag off changes
-       nothing" is the guarantee this milestone keeps, and inert-but-present does not keep it.
+       flag off, since nothing carries the classes, but no longer byte-identical. "Flag off
+       changes nothing" is the guarantee this milestone keeps, and inert-but-present does not
+       keep it.
+
+       GEOMETRY AND SURFACE ONLY. Measured against the Offer Listing sidebar card, which is the
+       approved visual reference and is NOT modified by this milestone: white surface, 1px border,
+       rounded corners, a card shadow, interior padding. Nothing about typography, nothing about
+       the controls inside, and no selector that can reach a descendant — the sidebar holds the
+       proposal console as a SIBLING of this card precisely so a styling milestone cannot alter
+       what a HireAgentProposalAccess-gated element renders. Same fence M7.4 put around
+       .hla-surface-card, kept for the same reason.
+
+       RADIUS, BORDER AND SHADOW ARE NOT REPEATED HERE. The card composes .hla-surface-card, which
+       M7.4 already defined from tokens; this rule adds only the two things that card deliberately
+       omits. .hla-surface-card was written for elements that brought their own background and
+       padding — a Bootstrap .card, in both its cases. A bare div brings neither, so a sidebar card
+       carrying only that class would render as a bordered transparent box with its contents
+       against the edge. */
+    .hla-detail-page .hla-sidebar-card {
+        background: var(--viho-card-bg);
+        padding: var(--viho-space-lg);
+    }
+
+    /* THE STICKY ELEMENT IS THE CARD, NOT THE COLUMN. M7.1 put this class on the sidebar column
+       and recorded why that could not work: a landlord sidebar carrying a populated proposal
+       console is as tall as the main column, and an element that is never shorter than its
+       container never sticks. It named the fix — Offer Listing sticks an inner card — and
+       deferred it. The class now sits on the status/CTA card, which is short by construction,
+       because the console that made the column tall is its sibling rather than its child.
 
        Sticks BELOW the section navigation rather than at the viewport edge: .viho-section-nav is
        itself sticky at --viho-section-nav-offset, and two elements sticking to the same line
        would overlap. Reusing that token keeps the two related if either moves.
 
-       DOES NOTHING UNTIL THE SIDEBAR IS SHORTER THAN THE MAIN COLUMN, which is the honest state
-       today: a landlord sidebar carrying a populated proposal console is as tall as main, so this
-       is inert there and pays off for a guest, and for the other roles when they adopt. The rail
-       that makes it worthwhile is M7.4; this milestone only makes it possible.
+       NO max-height / overflow-y ANY MORE, and their removal is part of the fix rather than a
+       tidy-up. They existed because the sticky element was the whole column, which could exceed
+       the viewport; a short card cannot, so the pair only stood to put an internal scrollbar on a
+       card with no visual affordance that it scrolls. If a future sidebar card does grow past the
+       viewport, the answer is to move what made it tall out into a sibling — which is exactly the
+       shape this milestone establishes.
 
        Below lg the columns stack full-width and sticking is suppressed — a sticky element in a
        single-column flow pins content over the page as the reader scrolls past it. */
@@ -427,10 +456,6 @@
         .hla-detail-page .hla-sidebar-sticky {
             position: sticky;
             top: calc(var(--viho-section-nav-offset, 0px) + var(--viho-space-lg, 1rem));
-            /* Never taller than the viewport, so a long sidebar scrolls internally rather than
-               pinning its own overflow out of reach. */
-            max-height: calc(100vh - var(--viho-section-nav-offset, 0px) - var(--viho-space-lg, 1rem));
-            overflow-y: auto;
         }
     }
 
@@ -466,6 +491,355 @@
         scroll-margin-top: calc(
             var(--viho-section-nav-offset, 0px) + var(--viho-section-nav-height, 3.5rem)
         );
+    }
+
+    /* ── M7.3 — the sub-headings were LARGER than the card titles above them ──
+       A hierarchy inversion, and it only became one when M7.2 landed. Before decomposition these
+       h5s sat inside one card whose single title was 1.5rem, so an h5 beneath it was correctly
+       smaller. Now every section is its own card and a viho card title is --viho-font-lg, 1.05rem.
+       An unstyled Bootstrap h5 is 1.25rem, so each of the eleven sub-headings inside Broker
+       Compensation renders ~19% larger than the heading of the card containing it — the deepest
+       level of the outline shouting over the level above it.
+
+       Measured against the reference, which does not have this problem: Create Offer's in-card
+       sub-heading is an h6 at 0.9rem under a 1.05rem card header. This matches that RELATIONSHIP
+       — sub-heading below card title — using Hire Agent's own markup. The element stays h5: the
+       document outline is correct and is not what was wrong. Only its size is.
+
+       The existing margin rule for these headings is left alone. Vertical rhythm was not the
+       defect and changing both at once would make it impossible to tell which one moved. */
+    .hla-detail-page h5.mt-3.mb-2 {
+        font-size: 0.95rem;
+        letter-spacing: var(--viho-tracking-tight, -0.01em);
+        color: var(--viho-text-strong, #1E293B);
+    }
+
+    /* ── M7.3 — two cards were still rendering Bootstrap's chrome beside a page of viho cards ──
+       Nothing in this repository styles the sidebar proposal console's own class or
+       `.card.review` (the owner summary at the foot of the main column), so both fall through to
+       the theme's `.card`: ~0.25rem radius, an rgba(0,0,0,.125) border, no shadow. Everything
+       around them has rendered 0.75rem / #E2E8F0 / 0 1px 6px since M7.2. The console sits directly
+       beside that column at the lg breakpoint, so the mismatch is visible side by side.
+
+       IT MUST NOT NAME THE CONSOLE'S OWN CLASS, AND A TEST CAUGHT IT TWICE. The first version of
+       this rule listed that class in the selector. HireAgentProposalConsoleTest asserts the class
+       name is ABSENT from the DOM for a guest, an agent who has not bid, an unrelated user and an
+       administrator — it uses that string as the proxy for "the console rendered". A stylesheet is
+       part of the DOM, so naming the class there put it on the page for every viewer and the
+       assertion failed, correctly. The proxy is legitimate and the rule was wrong, so the rule
+       moved rather than the test.
+
+       The SECOND failure was this comment. With the selector fixed, the prose above still spelled
+       the class out to explain why it must not — and a CSS comment inside a style block ships to
+       the browser just as the selector does. Hence the circumlocution here, which is the same
+       convention the section-nav and detail-section notes already use for names a guard scans for.
+       Blade comments elsewhere in these files may spell it freely: those are stripped at compile
+       time and never reach the page. A CSS comment is not a Blade comment.
+
+       The hook is therefore a class the caller adds ONLY in the redesigned branch, to markup that
+       is itself already behind the console's visibility gate. When the console is withheld the
+       element does not render, so the hook does not either, and the privacy proxy keeps working
+       exactly as written. With the flag off no hook is emitted at all, which is what keeps the
+       flag-off DOM identical.
+
+       GEOMETRY ONLY, AND DELIBERATELY SO. Radius, border and shadow — the three properties that
+       make a card look like it belongs — and nothing else. Padding is untouched, and so is
+       everything inside the console: its proposal cards carry their own class and inline geometry,
+       so they are out of this rule's reach by construction. That matters beyond tidiness. The
+       console's contents are gated by HireAgentProposalAccess, and a styling milestone that could
+       alter what a proposal card renders would be the ideal place for an authorization regression
+       to hide inside a visual diff. This cannot reach them.
+
+       Tokens are read rather than repeated, so these two cannot drift if the card geometry is
+       retuned in the primitive. */
+    .hla-detail-page .hla-surface-card {
+        border-radius: var(--viho-radius-lg);
+        border: 1px solid var(--viho-border);
+        box-shadow: var(--viho-shadow-card);
+    }
+
+    /* M7.4 — the flex context every section card's rows sit in.
+
+       Each converted row renders a `col-lg-6` (or `col-12`) cell, and a Bootstrap column needs a
+       flex parent or it degrades into a block element at 50% width, stacking one per line with the
+       other half blank. Three sections — Leasing Terms, Compensation, Representation — never had a
+       section-level `div.row` to inherit: their legacy markup wrapped EACH row in its own, which
+       the adapter now emits on the legacy branch only. Rather than add a wrapper to those three
+       call sites and not the others, the card supplies one for every section.
+
+       NOT `.row`, deliberately. Bootstrap's row carries negative side margins that assume a
+       `.container`/`.col` ancestor, and two of these sections still contain a `div.row` of their
+       own for content the adapter does not render. Nesting row-inside-row would pull those against
+       the card's padding. This declares only the flex behaviour the columns actually require and
+       inherits the card's padding untouched.
+
+       Row spacing is set by `--hla-field-row-gap` below, which M7.9 aligned to the spacing the
+       reference page actually renders; see the note there for why it is a gap rather than a
+       margin, and why the class name it was originally aimed at was the wrong target. */
+    /* M7.8 — the horizontal gap is DECLARED here, because nothing was ever supplying one.
+
+       THE GUTTER WAS PHANTOM. Bootstrap 5 puts a column's horizontal padding on `.row > *`, not on
+       the `.col-*` classes themselves — `.col-lg-6` resolves to `flex: 0 0 auto; width: 50%` and
+       nothing else. This grid is deliberately not a `.row` (see the note above), so its cells were
+       inheriting no padding from anywhere and two half-span fields sat flush against each other:
+       `.viho-kv-split` sizes its value to end exactly on the cell's right edge, so the left field's
+       value box touched the right field's label box with 0px between them.
+
+       DERIVED FROM THIS GRID, NOT BORROWED FROM BOOTSTRAP'S. The value matches what the reference
+       page's rows genuinely apply between their two columns, but it is written down here rather
+       than read from `--bs-gutter-x`: this container is not a row, so a Bootstrap variable would be
+       describing a mechanism that is not running. A token means the gap and the alignment maths
+       below cannot disagree — change it in one place and the label columns follow.
+
+       `column-gap` ALONE IS NOT ENOUGH, AND THE CELL WIDTH BELOW IS THE OTHER HALF. A gap between
+       two children that are each `width: 50%` overflows the container and wraps them one per line,
+       which would be the exact opposite of the two-up grid this page wants. The lg rule further
+       down narrows each half cell by half the gap so the pair plus the gap comes back to 100%. */
+    .hla-detail-page .hla-field-grid {
+        display: flex;
+        flex-wrap: wrap;
+        row-gap: var(--hla-field-row-gap);
+        column-gap: var(--hla-field-col-gap);
+    }
+
+    /* M7.6 — vertical rhythm, and the doubling that had to be removed to get it.
+
+       TWO SPACINGS WERE STACKING. `.viho-kv` carries `margin-bottom: 0.65rem` for the pages that
+       use the primitive outside a grid, and `.hla-field-grid` added a `row-gap` on top of it. The
+       two are not alternatives — a flex row-gap applies BETWEEN lines and the margin applies below
+       every cell, so consecutive field rows were separated by the sum, ~1rem, against the
+       reference page's row spacing. Every card on the page was carrying twice the intended
+       air, which read as the fields being unrelated to each other.
+
+       (M7.6 recorded that spacing as "`mb-2` (0.5rem)". It is not — see the M7.9 note below. The
+       diagnosis above was right and the target it aimed at was 0.15rem short.)
+
+       The margin is zeroed and the gap alone carries the rhythm. Doing it in this order rather
+       than the reverse matters: row-gap is the one that understands wrapping, so two fields
+       sharing a line are spaced from the line below by the same value whether one of them wrapped
+       to two lines or not. A margin cannot express that.
+
+       SCOPED TO `.hla-field`, NOT `.viho-kv`. Today `x-hire-agent.field` is the only thing in the
+       application that renders the primitive, and it always wraps it in `.hla-field` — so a
+       narrower selector and a global one currently match the same elements. The scope is not there
+       to exclude a present-day caller; it is there because the primitive's `margin-bottom` is what
+       a caller OUTSIDE a grid depends on for its rhythm, and the next page to adopt `x-viho.kv`
+       inherits that default rather than this page's correction. `.hla-field` is the wrapper this
+       component emits, so the reset lands only on rows that have a grid to inherit spacing from,
+       which is the condition that actually justifies removing the margin. */
+    /* M7.8 adds the horizontal companion. Both live on the same element so a reader looking for
+       "how far apart are the fields" finds one answer covering both axes. 1.5rem is what the
+       reference page's rows put between their columns; see the grid rule above for why it is
+       restated here instead of being read off a Bootstrap variable.
+
+       ── M7.9 — THE ROW GAP WAS AIMED AT A NUMBER THE REFERENCE DOES NOT USE ──────────────────
+
+       M7.6 set this to 0.5rem and named the target "the reference page's `mb-2`". `mb-2` IS
+       0.5rem in Bootstrap — but the reference overrides it for exactly these rows:
+
+           .lol-view-page .row.mb-2 { margin-bottom: 0.65rem !important; }
+
+       So the class it was named after never governed the spacing it was measured against. The
+       page renders 0.65rem, and this page has been 0.15rem tighter on every row since M7.6.
+
+       MEASURED IN A BROWSER, NOT INFERRED FROM THE CASCADE, because the whole defect was a
+       cascade read that looked right. On a live landlord page the reference reports a computed
+       `margin-bottom: 10.4px` and 38 consecutive inter-row gaps of 10.39px; this page reported a
+       `row-gap` of 8px. 0.65rem is 10.4px, so the two now agree at the value the reference
+       actually renders rather than the one its class name implies.
+
+       ONE DIFFERENCE IS NOT REPRODUCED, DELIBERATELY. A margin applies below EVERY row including
+       the last, so on the reference a card whose final element is a row carries ~10.4px of
+       trailing space before the card's own padding. A row-gap applies only BETWEEN lines and adds
+       nothing after the last one. Matching that would mean giving the card asymmetric interior
+       padding — 1.25rem above the fields and 1.9rem below — which is a property of how the
+       reference is built rather than a spacing decision anyone made. The rhythm BETWEEN rows is
+       what "row rhythm" means and is what this aligns; the trailing space stays as it is.
+
+       NOTHING ELSE MOVES. This is one token value. Column gap, cell widths, breakpoints, the
+       type scale and the label/value split are all untouched. */
+    .hla-detail-page {
+        --hla-field-row-gap: 0.65rem;
+        --hla-field-col-gap: 1.5rem;
+    }
+
+    .hla-detail-page .hla-field .viho-kv {
+        margin-bottom: 0;
+    }
+
+    /* M7.6 — the reference's type scale, which this page had never adopted.
+
+       Create Offer sets these sizes inline on every row it renders: `.875rem` on the label half,
+       `.925rem` on the value half. `.viho-kv-label` and `.viho-kv-value` set colour and weight but
+       deliberately no size, so this page had been inheriting the ~1rem body size for both halves.
+       Larger type in what was already a looser grid is most of why the two pages did not look
+       related; the split ratio was identical the whole time.
+
+       The value stays fractionally larger than its label, as it is on the reference — the label is
+       supporting text and the answer is the content, and a scale that flattens them makes a card
+       read as an undifferentiated block. */
+    .hla-detail-page .hla-field .viho-kv-label {
+        font-size: 0.875rem;
+    }
+
+    .hla-detail-page .hla-field .viho-kv-value {
+        font-size: 0.925rem;
+    }
+
+    /* M7.7 — the label column on FULL-SPAN rows only.
+
+       `.viho-kv-split` reserves 41.666% for the label, the ratio col-md-5/7 resolves to, and that is
+       right for a half-span cell: the cell is half a card, so the column lands near 190px and a short
+       label sits close to its answer. A full-span row applies the same percentage to TWICE the width
+       — ~382px at 1440 — so the rule that reads correctly at half span opens ~200px of empty floor on
+       a row whose label is short. The two spans were never aligned with each other; each was
+       proportional to a different container.
+
+       THE NUMBER IS DERIVED, NOT TUNED, and that is the whole point. A half-span cell is 50% of the
+       card, so its label column resolves to 41.666% x 50% = 20.833% OF THE CARD. Giving a full-span
+       row that same 20.833% makes its label column exactly as wide, in pixels, as the half-span rows
+       stacked above and below it — so every label column on the page ends at one x-position and every
+       value begins at the next, whatever the row's span. An earlier draft picked 34% by eye to close
+       a target-sized gap; it narrowed the corridor without ever making the two spans agree, which is
+       the actual defect. Half-span rows are the reference here because they were always correct.
+
+       So this rule adds no new proportion to the page. It restates the one already in `.viho-kv-split`
+       against the container the row actually occupies.
+
+       NO FIELD NAMES IN THIS COMMENT, AND THAT IS A RULE RATHER THAN A STYLE CHOICE. This file is
+       emitted inline into the document, so every word here is page text. An earlier draft named the
+       multi-select rows it was written to improve, and
+       HireAgentFieldPresentationTest::an_empty_multi_select_renders_no_row asserts those labels are
+       ABSENT when the answer is empty — the prose alone turned that guard red across all four of its
+       data sets. Describe rows by shape, never by label.
+
+       DESKTOP ONLY, AT THE STYLESHEET'S EXISTING 992px BREAKPOINT. Below it there is not enough card
+       to divide: at 768px the card is ~408px, so a matched label column would be ~85px and would wrap
+       the same multi-select rows this change exists to improve. Tablet keeps 41.666% and
+       mobile keeps the primitive's 100% stack. The media query is also what protects that stack —
+       this selector outscores the primitive's `max-width: 767.98px` rule, and specificity does not
+       care which query a rule sits in, so an unscoped version would silently un-stack every row on a
+       phone.
+
+       BOTH EXCLUSIONS ARE LOAD-BEARING, AND THE FIRST IS THE TRAP THE COMMENT BELOW ALREADY NAMES.
+       A half-span cell is `col-lg-6 col-12`, so it CARRIES `col-12` as well — Bootstrap resolves
+       which one wins by breakpoint, but the class is on the element at every width. `.col-12` alone
+       therefore selects half-span rows too, and inside a min-width query it would re-halve the very
+       rows this alignment is measured FROM — the reference would move with the thing being aligned to
+       it, and the two would never meet. `:not(.col-lg-6)` limits this to genuinely full-width rows.
+
+       M7.8 CHANGED WHICH CLASS THAT IS. The exclusion named the md-breakpoint spelling until the
+       two-up split moved from md to lg. An exclusion naming a class the cells no longer carry does
+       not fail loudly — it simply stops excluding, and this rule would quietly narrow every
+       half-span label to a fifth of its own cell. The class here and the one the field component
+       emits are one decision written in two files, and neither may move alone.
+
+       (The retired spelling is described rather than written, for the reason the compensation-card
+       note below gives at length: a CSS comment is page text, unlike a Blade comment, so a class
+       name in prose here is a class name on the page. Leaving a dead one there invites the next
+       reader to grep for it and find this sentence.)
+
+       `:not(.hla-field-badges)` because a badge row is also `col-12`, and M7.4 widens both halves to
+       100% to stack a pill run under its label. Without the exclusion this rule outscores that one
+       and would fold the run back into a narrow column — reopening the corridor M7.4 closed. */
+    /* THE GAP CORRECTION, AND WHY IT IS NOW DERIVED RATHER THAN MEASURED.
+
+       M7.7 subtracted a flat 5px here and explained it as the surplus a full-span cell carries
+       because it pays the column gutter once where a half-span pair pays it twice. THE ARITHMETIC WAS
+       RIGHT AND THE PREMISE WAS NOT: Bootstrap applies that gutter through `.row > *`, this grid is
+       not a row, and so no gutter was being paid by anybody. The 5px was correcting for something
+       that was not happening — which is why the two spans still did not line up.
+
+       M7.8 declares the gap instead of assuming it, and the same derivation then holds for real.
+       With a grid of width W, a gap of G and two half cells of (W - G)/2:
+
+           half-span label = 41.666% x (W - G)/2 = 20.833%·W - 0.20833·G
+
+       So a full-span label matches it at 20.833% minus 0.20833 of the gap. At the declared 1.5rem
+       that is 5px — the same number, now falling out of a gap the page actually applies rather than
+       standing in for one it never did. Written as the expression instead of the result so that
+       retuning `--hla-field-col-gap` moves the alignment with it; a literal would silently go stale.
+
+       Subtracted from the VALUE in the opposite direction, so label + the primitive's own gap + value
+       still sums to 100% and the row's right edge stays flush with the card, as on a half-span row. */
+    @media (min-width: 992px) {
+        /* The other half of the gap, and the reason `column-gap` on the grid is safe. Bootstrap sizes
+           `.col-lg-6` at exactly 50%, so a pair of them plus any gap overflows and wraps to one per
+           line. Narrowing each cell by half the gap brings the pair back to 100%: two cells at
+           (50% - G/2) plus one G between them. Emitted only at lg, because that is the only width at
+           which these cells are side by side — below it they are `col-12` and the gap is inert.
+
+           `width` as well as the flex pair because `.col-lg-6` sets `width: 50%` outright. A definite
+           flex-basis already wins over it, so this is belt and braces rather than load-bearing. */
+        .hla-detail-page .hla-field-grid > .hla-field.col-lg-6 {
+            flex: 0 0 calc(50% - var(--hla-field-col-gap) / 2);
+            max-width: calc(50% - var(--hla-field-col-gap) / 2);
+            width: calc(50% - var(--hla-field-col-gap) / 2);
+        }
+
+        .hla-detail-page .hla-field.col-12:not(.col-lg-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-label {
+            flex: 0 0 calc(20.833% - var(--hla-field-col-gap) * 0.20833);
+            max-width: calc(20.833% - var(--hla-field-col-gap) * 0.20833);
+        }
+
+        .hla-detail-page .hla-field.col-12:not(.col-lg-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-value {
+            flex: 0 0 calc(79.167% - var(--viho-space-md) + var(--hla-field-col-gap) * 0.20833);
+            max-width: calc(79.167% - var(--viho-space-md) + var(--hla-field-col-gap) * 0.20833);
+        }
+    }
+
+    /* ON THE ONE WIDTH RULE THERE IS, AND THE SHAPE IT MUST KEEP. Until M7.8 this note read "NO
+       WIDTH RULES FOR THE CELLS THEMSELVES", and the reasoning behind it still stands even though
+       the conclusion has moved: a half-span cell is `col-lg-6 col-12` and a full-span one is
+       `col-12`, so a rule targeting `.col-12` matches BOTH and forces every field to full width —
+       which is exactly what a first attempt here did, collapsing the two-up grid this page exists
+       to produce.
+
+       The lg rule above is the single exception, and it is safe for the reason that trap is not: it
+       names `.col-lg-6`, which only half-span cells carry, and it sits inside the min-width query
+       where those cells are actually side by side. Below lg it does not apply at all and Bootstrap's
+       own cascade resolves the pair unaided — `col-12` below 992, `col-lg-6` at and above it.
+
+       Any future width rule here must clear the same two bars: name the class that distinguishes
+       the spans rather than the one they share, and scope itself to the breakpoint where the
+       distinction is real. */
+
+    /* M7.4 refinement — a pill run stacks under its label instead of sitting in the value column.
+
+       `.viho-kv-split` reserves 41.6% for the label and starts the value there, which is right for
+       "City / Redington Beach" and wrong for a label followed by six pills: the run wrapped inside
+       the remaining 58% while the left half of the card stayed empty, opening a corridor down the
+       middle. Widening both halves to 100% turns the same primitive into a stacked pair — label on
+       its own line, run beginning at the card's left edge and wrapping across the full width.
+
+       DONE HERE RATHER THAN IN THE PRIMITIVE. x-viho.kv still emits `viho-kv-label` and
+       `viho-kv-value` exactly as it does everywhere else; only their widths are overridden, and
+       only on this page. A pill run is a Hire Agent presentation decision, and VIHO is shared with
+       Create Offer — a layout added there for one product's benefit is the kind of thing the
+       primitive guard tests exist to keep out.
+
+       THE PILLS ARE NOT STYLED HERE, DELIBERATELY. `badge bg-secondary` comes from Bootstrap and
+       from the callers' own markup, unchanged by this milestone. This rule positions the container
+       and nothing inside it, so a pill looks the same in both flag states. */
+    .hla-detail-page .hla-field-badges .viho-kv-split > .viho-kv-label,
+    .hla-detail-page .hla-field-badges .viho-kv-split > .viho-kv-value {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* The run sits directly under its label rather than a full row-gap away — close enough to read
+       as one field, which is the complaint that prompted the mode. */
+    .hla-detail-page .hla-field-badges .viho-kv-split > .viho-kv-value {
+        margin-top: var(--viho-space-2xs);
+    }
+
+    /* Pills wrap as a group with even spacing instead of relying on whitespace between inline
+       elements, which collapses unpredictably once a run wraps to a second line. */
+    .hla-detail-page .hla-field-badges .viho-kv-value {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--viho-space-2xs);
+        align-items: center;
     }
 @endif
 </style>

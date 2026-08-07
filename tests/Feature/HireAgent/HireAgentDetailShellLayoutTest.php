@@ -209,7 +209,22 @@ class HireAgentDetailShellLayoutTest extends TestCase
         $this->assertStringContainsString('class="container listingDescription py-4"', $html);
         $this->assertStringContainsString('class="row g-4 align-items-start"', $html);
         $this->assertStringContainsString('col-sm-12 col-md-8 col-lg-9 leftCol', $html);
-        $this->assertStringContainsString('col-sm-12 col-md-4 col-lg-3 rightCol hla-sidebar-sticky', $html);
+
+        /*
+         | M7.5 — the width classes are the shell's; the sticky no longer is.
+         |
+         | This asserted `... rightCol hla-sidebar-sticky` until M7.5, because M7.1 put the sticky
+         | hook on the column. M7.1 also recorded why that could not work — a column carrying a
+         | populated proposal console is as tall as the main column, and an element that is never
+         | shorter than its container never sticks — and named the fix. M7.5 moved the class onto
+         | a card INSIDE the sidebar that holds the status/CTA stack only.
+         |
+         | Both halves are asserted. Dropping the class from the expected string alone would still
+         | pass if the class came back, because assertStringContainsString matches a prefix of the
+         | live class list.
+         */
+        $this->assertStringContainsString('col-sm-12 col-md-4 col-lg-3 rightCol"', $html);
+        $this->assertStringNotContainsString('rightCol hla-sidebar-sticky', $html);
     }
 
     /**
@@ -237,6 +252,72 @@ class HireAgentDetailShellLayoutTest extends TestCase
 
         $this->assertStringContainsString('col-lg-9 leftCol', $this->render('seller'));
         $this->assertStringContainsString('col-lg-8 leftCol', $this->render('tenant'), 'Tenant stays behind.');
+    }
+
+    // ── The landlord BODY obeys the allowlist too, not just the shell ────────
+
+    /**
+     * THE GAP THESE TWO TESTS CLOSE, AND WHY IT SURVIVED THREE MILESTONES.
+     *
+     * The landlord view gated its own markup on the MASTER switch while the shell — and therefore
+     * the framework stylesheet's entire redesign block — gated on enabledFor($role). Both call
+     * sites were individually defensible: the markup lives in the landlord file, so the role is a
+     * property of the file; the shell serves four roles, so it must ask about one. What neither
+     * accounted for is that the markup DEPENDS on the stylesheet. `.hla-field-grid` takes its
+     * `display: flex` from that block, and a Bootstrap column without a flex parent degrades into
+     * a block at 50% width — one field per line with the other half blank.
+     *
+     * So with the master on and landlord off the allowlist, the page emitted redesign markup with
+     * none of the CSS that makes it a layout. It failed OPEN into a broken page rather than closed
+     * into the legacy one, which is the wrong direction for a rollout switch.
+     *
+     * WHY NOTHING CAUGHT IT. test_the_master_reader_is_unchanged above constructs exactly this
+     * configuration and asserts only that the two READERS disagree. That is a true statement about
+     * the flag class and says nothing about the page. These two tests assert the page.
+     *
+     * THEY ASSERT MARKUP, NOT GEOMETRY, deliberately. `.hla-field-grid` and the section cards are
+     * emitted by the body; the shell's own column classes are already covered above. Pinning the
+     * body's markup is what makes this a guard on the gate rather than a second layout test.
+     */
+    public function test_the_landlord_body_renders_the_redesign_when_the_role_is_allowlisted(): void
+    {
+        $this->enableRedesign(['landlord']);
+        $html = $this->render('landlord');
+
+        $this->assertStringContainsString('hla-field-grid', $html, 'The body must emit the field grid.');
+        $this->assertStringContainsString('col-lg-6 col-12 hla-field', $html, 'Half-span cells must render.');
+        $this->assertStringContainsString('viho-card', $html, 'Sections must render as cards.');
+    }
+
+    /**
+     * The master switch alone must NOT be enough to render this page's body.
+     *
+     * The allowlist is empty rather than holding another role, so the only thing distinguishing
+     * this from the test above is landlord's membership — which is precisely the variable under
+     * test. A non-empty list would leave open whether some other role's presence mattered.
+     */
+    public function test_the_landlord_body_stays_legacy_when_the_role_is_not_allowlisted(): void
+    {
+        config([
+            'hire_agent_detail.redesign_enabled' => true,
+            'hire_agent_detail.redesign_roles'   => [],
+        ]);
+
+        // The precondition IS the scenario: master on, role off. Without it this test would still
+        // pass with the flag entirely disabled and would be guarding nothing.
+        $this->assertTrue(HireAgentDetailRedesign::enabled(), 'Precondition: the master switch is on.');
+        $this->assertFalse(HireAgentDetailRedesign::enabledFor('landlord'), 'Precondition: landlord is not allowlisted.');
+
+        $html = $this->render('landlord');
+
+        $this->assertStringNotContainsString('hla-field-grid', $html, 'No field grid without the stylesheet that lays it out.');
+        $this->assertStringNotContainsString('col-lg-6 col-12 hla-field', $html, 'No half-span cells.');
+        $this->assertStringNotContainsString('hla-section-', $html, 'No section card anchors.');
+
+        // And it is the LEGACY page, not merely an absence — the shell's own classes prove which
+        // branch rendered rather than leaving "nothing matched" as the only evidence.
+        $this->assertStringContainsString('col-sm-12 col-md-8 col-lg-8 leftCol', $html);
+        $this->assertStringContainsString('class="container listingDescription"', $html);
     }
 
     // ── Selectors other suites and stylesheets depend on ─────────────────────

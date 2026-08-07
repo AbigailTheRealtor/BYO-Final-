@@ -152,12 +152,26 @@
      | must not reach. Only the Bootstrap width classes differ between branches, and no test
      | asserts on those (verified by repo-wide grep before the change).
      |
-     | STICKY IS PREPARED HERE, NOT FINISHED HERE. The sidebar gains a hook and the alignment
-     | that makes sticking possible; the rail that benefits from it is M7.4. Measured caveat
-     | worth knowing: a landlord sidebar carrying a populated proposal console renders as tall
-     | as the main column, and a sticky element taller than the viewport is inert until scrolled
-     | past. That is correct behaviour, not a defect — it is why Offer Listing sticks an inner
-     | card rather than the column, and why M7.4 revisits this.
+     | STICKY WAS PREPARED HERE AND IS NO LONGER APPLIED HERE. M7.5.
+     |
+     | M7.1 put `hla-sidebar-sticky` on this column and recorded the caveat that made it inert: a
+     | landlord sidebar carrying a populated proposal console renders as tall as the main column,
+     | and a sticky element that is never shorter than its container never gets to stick. It also
+     | recorded the fix — "it is why Offer Listing sticks an inner card rather than the column" —
+     | and deferred it. M7.5 takes it: the class moves onto a card inside the sidebar holding the
+     | status and CTA stack only, with the proposal console left a sibling beneath it. That card
+     | is short, so it can actually stick.
+     |
+     | THE CLASS NAME IS UNCHANGED, ONLY ITS ELEMENT. The framework stylesheet still selects
+     | `.hla-detail-page .hla-sidebar-sticky`, so its scoping and its flag-conditional emission
+     | are untouched by the move.
+     |
+     | WHY THE SHELL STOPS OWNING IT. The shell supplies the column and nothing inside it — the
+     | sidebar body belongs to each role view. Now that stickiness attaches to a specific card
+     | rather than to the column as a whole, it is the role view's to place, and leaving a hook
+     | here would be the shell asserting something about content it does not render. What stays
+     | is `align-items-start`, which is genuinely the grid's business: without it the column
+     | stretches to the row's height and nothing inside it can stick.
      */
     $hlaShellContainer = 'container listingDescription' . ($hlaShellRedesign ? ' py-4' : '');
     $hlaShellRow       = 'row' . ($hlaShellRedesign ? ' g-4 align-items-start' : '');
@@ -165,7 +179,7 @@
         ? 'col-sm-12 col-md-8 col-lg-9 leftCol'
         : 'col-sm-12 col-md-8 col-lg-8 leftCol';
     $hlaShellSideCol   = $hlaShellRedesign
-        ? 'col-sm-12 col-md-4 col-lg-3 rightCol hla-sidebar-sticky'
+        ? 'col-sm-12 col-md-4 col-lg-3 rightCol'
         : 'col-sm-12 col-md-4 col-lg-4 rightCol';
 @endphp
 

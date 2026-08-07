@@ -48,11 +48,18 @@ class HireAgentSectionNavTest extends TestCase
      *     long card; as the LAST CARD on the page, a card the nav declines to mention reads as
      *     something withheld.
      *
-     * Both are unconditional, like the two that were here before, so neither carries a guard.
-     * Order is document order — the assertions below compare sequences, not sets.
+     * M7.4 MOVED listing-details OUT OF THIS LIST. Its six rows each stopped rendering when their
+     * value is absent, so a listing that answered none of them produced a card holding a header and
+     * nothing else — and the milestone's whole point is that an empty section is not furniture. It
+     * is now guarded like the five optional sections are, by one boolean that drives the entry and
+     * the card together, so the both-directions invariant still holds; it simply holds at a
+     * different size depending on what the listing answered. It is exercised as an optional section
+     * below rather than deleted from the file.
+     *
+     * The rest are unconditional and carry no guard. Order is document order — the assertions below
+     * compare sequences, not sets.
      */
     private const ALWAYS_PRESENT = [
-        'hla-section-listing-details',
         'hla-section-property-details',
         'hla-section-leasing-terms',
         'hla-section-owner-info',
@@ -81,6 +88,13 @@ class HireAgentSectionNavTest extends TestCase
 
         $listing->saveMeta('address', '100 Test Street');
 
+        // M7.4 — the four sections that became conditional this milestone. The fixture is named for
+        // populating EVERY section, so it has to answer these now that they can be absent.
+        $listing->saveMeta('working_with_agent', 'Not Represented');  // Listing Details
+        $listing->saveMeta('property_city', 'Redington Beach');       // Property Details
+        $listing->saveMeta('occupant_status', 'Tenant');              // Leasing Terms
+        $listing->saveMeta('first_name', 'Abby');                     // Owner Info
+
         // Services  →  $hasServices
         $listing->saveMeta('services', ['Professional photography']);
 
@@ -101,7 +115,19 @@ class HireAgentSectionNavTest extends TestCase
         return $listing;
     }
 
-    /** The same listing with none of the optional sections populated. */
+    /**
+     * The same listing with none of the OPTIONAL sections populated.
+     *
+     * M7.4 gave the three core sections a guard of their own, so "populate nothing" stopped meaning
+     * "only the core sections render" and started meaning "no section renders at all" — which tests
+     * something real but not what this fixture is for. Its job is to catch an OPTIONAL entry
+     * hard-coded into the bar, and an empty page cannot catch that: every id is absent, so a
+     * hard-coded one would be absent too and the assertion would pass for the wrong reason.
+     *
+     * One answer per core section is therefore planted, and one only. They are the cheapest field
+     * in each — a city, an occupancy status, a first name — chosen so the fixture states plainly
+     * that it is holding those three sections open on purpose rather than carrying incidental data.
+     */
     private function listingWithNoOptionalSections(): LandlordAgentAuction
     {
         $owner = User::factory()->create(['user_type' => 'seller']);
@@ -115,6 +141,11 @@ class HireAgentSectionNavTest extends TestCase
         ]);
 
         $listing->saveMeta('address', '100 Test Street');
+
+        // One answer each, to hold the three core sections open — see the note above.
+        $listing->saveMeta('property_city', 'Redington Beach');
+        $listing->saveMeta('occupant_status', 'Tenant');
+        $listing->saveMeta('first_name', 'Abby');
 
         return $listing;
     }
@@ -311,6 +342,7 @@ class HireAgentSectionNavTest extends TestCase
         $this->assertSame(self::ALWAYS_PRESENT, $nav, 'Only the unconditional sections may be offered.');
 
         foreach ([
+            'hla-section-listing-details',
             'hla-section-services',
             'hla-section-additional-details',
             'hla-section-representation',

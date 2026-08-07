@@ -651,6 +651,39 @@
     color: inherit;
     transition: box-shadow var(--viho-transition), border-color var(--viho-transition), transform var(--viho-transition);
 }
+/* M7.3 — THE HOVER STATE THE PORT DROPPED.
+   This tile was derived from Create Offer's `.lol-interaction-card`, which lifts on hover
+   (translateY(-2px) + a raised shadow + a brighter border). The transition list above was carried
+   over faithfully; the rule it was transitioning was not, so the tile declared it would animate
+   three properties and then never changed any of them. Measured on the landlord page: the band was
+   the only interactive region that gave no pointer feedback at all.
+
+   NEUTRAL TOKENS, NOT THE REFERENCE'S COLOURS. Create Offer hovers to teal — #99f6e4 border over
+   rgba(15,118,110,.12) — but that teal IS --viho-landlord, a role accent. A primitive that hard-
+   coded one role's colour would hand it to every future consumer, so this uses --viho-primary and
+   the existing raised shadow. The MOTION matches the reference; the palette stays this layer's.
+
+   Not merged into .viho-action-tile-active. That class means "this tile represents the current
+   state" and is a property of the data; this is a pointer state. Sharing a rule would make an
+   active tile indistinguishable from a hovered one. */
+.viho-action-tile:hover {
+    border-color: var(--viho-primary);
+    box-shadow: var(--viho-shadow-raised);
+    transform: translateY(-2px);
+}
+/* A tile that cannot be interacted with must not pretend otherwise. `pointer-events: none` on the
+   disabled variant already blocks the hover, but only while that declaration survives; stating it
+   here means the lift cannot come back by someone relaxing pointer-events for a tooltip. */
+.viho-action-tile-disabled:hover {
+    border-color: var(--viho-border-strong);
+    box-shadow: none;
+    transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .viho-action-tile:hover {
+        transform: none;
+    }
+}
 .viho-action-tile:focus-visible {
     outline: 2px solid var(--viho-primary);
     outline-offset: 2px;
@@ -694,11 +727,26 @@
 .viho-quick-actions {
     margin-bottom: var(--viho-space-2xl);
 }
+/* M7.3 — the rule and the padding beneath it are new; everything above them is unchanged.
+   Create Offer's band label carries a bottom border, which is what makes the band read as one
+   labelled region rather than a stray caption sitting above unrelated tiles. Without it the label
+   floated: 0.75rem of margin was the only thing joining it to the grid, and at 0.72rem uppercase
+   it is light enough that the eye did not make the join. The border is the cheap fix and it is the
+   one the reference already uses.
+
+   It takes the SUBTLE border token rather than the standard one, because this is an internal
+   division inside a region rather than the edge of one; the heavier value would compete with the
+   card borders directly beneath it. (Neither token is named in full here. This file is parsed for
+   its token declarations by VihoDesignTokenFoundationTest, which reads a token name followed by a
+   colon as a declaration wherever it appears — including inside a comment. Writing the pair out to
+   contrast them redefined one of them to this sentence, and the guard caught it.) */
 .viho-quick-actions-label {
     display: flex;
     align-items: center;
     gap: var(--viho-space-xs);
     margin: 0 0 var(--viho-space-md);
+    padding-bottom: var(--viho-space-md);
+    border-bottom: 1px solid var(--viho-border-subtle);
     font-size: var(--viho-font-2xs);
     font-weight: var(--viho-weight-semibold);
     letter-spacing: 0.06em;

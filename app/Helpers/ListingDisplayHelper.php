@@ -37,6 +37,32 @@ class ListingDisplayHelper
         return $val !== '' && $val !== 'null' && !self::isPlaceholder($val);
     }
 
+    /**
+     * Does ANY of these values survive hasValue()?
+     *
+     * M7.4. A section card must not render when every field inside it is blank, and the decision
+     * has to be made BEFORE the card opens — the card component cannot make it, by its own
+     * contract: it "cannot hide a section and must never be the reason one is visible". So the
+     * caller asks this, and asks it with the same values it is about to render.
+     *
+     * Deliberately variadic-free and array-shaped: a caller listing eight fields inline reads as
+     * the list of things the section is made of, which is exactly what the guard means. Nested
+     * arrays are passed through to hasValue() untouched, so a multi-select answer counts as
+     * present only when it holds something.
+     *
+     * @param  array<int, mixed>  $values
+     */
+    public static function anyHasValue(array $values): bool
+    {
+        foreach ($values as $value) {
+            if (self::hasValue($value)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function fmtMoney($value): string
     {
         $clean = str_replace(',', '', (string) $value);

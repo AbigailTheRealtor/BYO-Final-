@@ -985,6 +985,26 @@ class OfferWorkflowReadinessTest extends TestCase
             //   M2 entry gives.
             'resources/views/components/hire-agent/detail-body.blade.php',
             'resources/views/components/hire-agent/detail-section.blade.php',
+            // M7.4 — ListingDisplayHelper::anyHasValue(), and the only reason a shared helper
+            //   appears on this list.
+            //   PURELY ADDITIVE: one new static method. No existing method was touched, so every
+            //   current caller of hasValue(), fmtMoney() and the rest is byte-identical to the
+            //   tree before it. That is what makes a shared helper safe to widen here — the risk
+            //   a helper normally carries is that a behaviour change reaches consumers nobody
+            //   enumerated, and an addition has no such reach.
+            //   It exists because a section card must not render when every field inside it is
+            //   blank, and that decision has to be made BEFORE the card opens. The card component
+            //   cannot make it by its own contract — it "cannot hide a section and must never be
+            //   the reason one is visible", the same rule the M7.2 entry above records — so the
+            //   caller decides, using the same values it is about to render.
+            //   It belongs in the helper rather than the view because hasValue() already owns
+            //   what "blank" means, including the placeholder strings. A view looping the fields
+            //   itself would be a second opinion about emptiness, and the first one is right.
+            //   Inert until called, and with the flag off nothing calls it: all four call sites
+            //   are the landlord detail view's section guards, and every one sits INSIDE that
+            //   file's `if ($hlaDetailRedesign)` branch, behind
+            //   HIRE_AGENT_DETAIL_REDESIGN_ENABLED, which defaults false.
+            'app/Helpers/ListingDisplayHelper.php',
             // Tenant offer-listing ZIP resolution — a READ-PATH fix, no writer touched.
             //
             // ZIPs for this workflow live in two stores and nothing mirrors between them: the
