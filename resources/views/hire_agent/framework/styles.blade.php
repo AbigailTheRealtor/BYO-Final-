@@ -560,7 +560,7 @@
 
     /* M7.4 — the flex context every section card's rows sit in.
 
-       Each converted row renders a `col-md-6` (or `col-12`) cell, and a Bootstrap column needs a
+       Each converted row renders a `col-lg-6` (or `col-12`) cell, and a Bootstrap column needs a
        flex parent or it degrades into a block element at 50% width, stacking one per line with the
        other half blank. Three sections — Leasing Terms, Compensation, Representation — never had a
        section-level `div.row` to inherit: their legacy markup wrapped EACH row in its own, which
@@ -575,10 +575,30 @@
 
        Row spacing is set by `--hla-field-row-gap` below, which M7.6 aligned to the reference
        page's `mb-2`; see the note there for why it is a gap rather than a margin. */
+    /* M7.8 — the horizontal gap is DECLARED here, because nothing was ever supplying one.
+
+       THE GUTTER WAS PHANTOM. Bootstrap 5 puts a column's horizontal padding on `.row > *`, not on
+       the `.col-*` classes themselves — `.col-lg-6` resolves to `flex: 0 0 auto; width: 50%` and
+       nothing else. This grid is deliberately not a `.row` (see the note above), so its cells were
+       inheriting no padding from anywhere and two half-span fields sat flush against each other:
+       `.viho-kv-split` sizes its value to end exactly on the cell's right edge, so the left field's
+       value box touched the right field's label box with 0px between them.
+
+       DERIVED FROM THIS GRID, NOT BORROWED FROM BOOTSTRAP'S. The value matches what the reference
+       page's rows genuinely apply between their two columns, but it is written down here rather
+       than read from `--bs-gutter-x`: this container is not a row, so a Bootstrap variable would be
+       describing a mechanism that is not running. A token means the gap and the alignment maths
+       below cannot disagree — change it in one place and the label columns follow.
+
+       `column-gap` ALONE IS NOT ENOUGH, AND THE CELL WIDTH BELOW IS THE OTHER HALF. A gap between
+       two children that are each `width: 50%` overflows the container and wraps them one per line,
+       which would be the exact opposite of the two-up grid this page wants. The lg rule further
+       down narrows each half cell by half the gap so the pair plus the gap comes back to 100%. */
     .hla-detail-page .hla-field-grid {
         display: flex;
         flex-wrap: wrap;
         row-gap: var(--hla-field-row-gap);
+        column-gap: var(--hla-field-col-gap);
     }
 
     /* M7.6 — vertical rhythm, and the doubling that had to be removed to get it.
@@ -603,8 +623,13 @@
        inherits that default rather than this page's correction. `.hla-field` is the wrapper this
        component emits, so the reset lands only on rows that have a grid to inherit spacing from,
        which is the condition that actually justifies removing the margin. */
+    /* M7.8 adds the horizontal companion. Both live on the same element so a reader looking for
+       "how far apart are the fields" finds one answer covering both axes. 1.5rem is what the
+       reference page's rows put between their columns; see the grid rule above for why it is
+       restated here instead of being read off a Bootstrap variable. */
     .hla-detail-page {
         --hla-field-row-gap: 0.5rem;
+        --hla-field-col-gap: 1.5rem;
     }
 
     .hla-detail-page .hla-field .viho-kv {
@@ -666,49 +691,87 @@
        phone.
 
        BOTH EXCLUSIONS ARE LOAD-BEARING, AND THE FIRST IS THE TRAP THE COMMENT BELOW ALREADY NAMES.
-       A half-span cell is `col-md-6 col-12`, so it CARRIES `col-12` as well — Bootstrap resolves
+       A half-span cell is `col-lg-6 col-12`, so it CARRIES `col-12` as well — Bootstrap resolves
        which one wins by breakpoint, but the class is on the element at every width. `.col-12` alone
        therefore selects half-span rows too, and inside a min-width query it would re-halve the very
        rows this alignment is measured FROM — the reference would move with the thing being aligned to
-       it, and the two would never meet. `:not(.col-md-6)` limits this to genuinely full-width rows.
+       it, and the two would never meet. `:not(.col-lg-6)` limits this to genuinely full-width rows.
+
+       M7.8 CHANGED WHICH CLASS THAT IS. The exclusion named the md-breakpoint spelling until the
+       two-up split moved from md to lg. An exclusion naming a class the cells no longer carry does
+       not fail loudly — it simply stops excluding, and this rule would quietly narrow every
+       half-span label to a fifth of its own cell. The class here and the one the field component
+       emits are one decision written in two files, and neither may move alone.
+
+       (The retired spelling is described rather than written, for the reason the compensation-card
+       note below gives at length: a CSS comment is page text, unlike a Blade comment, so a class
+       name in prose here is a class name on the page. Leaving a dead one there invites the next
+       reader to grep for it and find this sentence.)
 
        `:not(.hla-field-badges)` because a badge row is also `col-12`, and M7.4 widens both halves to
        100% to stack a pill run under its label. Without the exclusion this rule outscores that one
        and would fold the run back into a narrow column — reopening the corridor M7.4 closed. */
-    /* THE 5px, AND WHY IT IS NOT A FUDGE FACTOR.
+    /* THE GAP CORRECTION, AND WHY IT IS NOW DERIVED RATHER THAN MEASURED.
 
-       20.833% alone lands 5px wide, measured. Two half-span cells pay Bootstrap's 24px column gutter
-       TWICE — 431px of content each, 862px between them — while one full-span cell pays it once and
-       carries 886px. The percentage is applied to a container 24px larger than the pair it is meant
-       to match, and the split ratio scales that surplus into the label:
+       M7.7 subtracted a flat 5px here and explained it as the surplus a full-span cell carries
+       because it pays the column gutter once where a half-span pair pays it twice. THE ARITHMETIC WAS
+       RIGHT AND THE PREMISE WAS NOT: Bootstrap applies that gutter through `.row > *`, this grid is
+       not a row, and so no gutter was being paid by anybody. The 5px was correcting for something
+       that was not happening — which is why the two spans still did not line up.
 
-           (41.666% - 20.833%) x 24px = 5px
+       M7.8 declares the gap instead of assuming it, and the same derivation then holds for real.
+       With a grid of width W, a gap of G and two half cells of (W - G)/2:
 
-       Constant, not proportional: the gutter is a fixed length, so the error does not grow with the
-       viewport. Measured at 5.0px at 1440, 1200 and 992 alike, which is why a flat subtraction fixes
-       it at every desktop width rather than only the one it was tuned at.
+           half-span label = 41.666% x (W - G)/2 = 20.833%·W - 0.20833·G
 
-       Subtracted from the VALUE too, in the opposite direction, so the row still fills its container —
-       the label gives back 5px and the value takes it, leaving the right edge flush with the card as
-       it is on a half-span row. */
+       So a full-span label matches it at 20.833% minus 0.20833 of the gap. At the declared 1.5rem
+       that is 5px — the same number, now falling out of a gap the page actually applies rather than
+       standing in for one it never did. Written as the expression instead of the result so that
+       retuning `--hla-field-col-gap` moves the alignment with it; a literal would silently go stale.
+
+       Subtracted from the VALUE in the opposite direction, so label + the primitive's own gap + value
+       still sums to 100% and the row's right edge stays flush with the card, as on a half-span row. */
     @media (min-width: 992px) {
-        .hla-detail-page .hla-field.col-12:not(.col-md-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-label {
-            flex: 0 0 calc(20.833% - 5px);
-            max-width: calc(20.833% - 5px);
+        /* The other half of the gap, and the reason `column-gap` on the grid is safe. Bootstrap sizes
+           `.col-lg-6` at exactly 50%, so a pair of them plus any gap overflows and wraps to one per
+           line. Narrowing each cell by half the gap brings the pair back to 100%: two cells at
+           (50% - G/2) plus one G between them. Emitted only at lg, because that is the only width at
+           which these cells are side by side — below it they are `col-12` and the gap is inert.
+
+           `width` as well as the flex pair because `.col-lg-6` sets `width: 50%` outright. A definite
+           flex-basis already wins over it, so this is belt and braces rather than load-bearing. */
+        .hla-detail-page .hla-field-grid > .hla-field.col-lg-6 {
+            flex: 0 0 calc(50% - var(--hla-field-col-gap) / 2);
+            max-width: calc(50% - var(--hla-field-col-gap) / 2);
+            width: calc(50% - var(--hla-field-col-gap) / 2);
         }
 
-        .hla-detail-page .hla-field.col-12:not(.col-md-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-value {
-            flex: 0 0 calc(79.167% - var(--viho-space-md) + 5px);
-            max-width: calc(79.167% - var(--viho-space-md) + 5px);
+        .hla-detail-page .hla-field.col-12:not(.col-lg-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-label {
+            flex: 0 0 calc(20.833% - var(--hla-field-col-gap) * 0.20833);
+            max-width: calc(20.833% - var(--hla-field-col-gap) * 0.20833);
+        }
+
+        .hla-detail-page .hla-field.col-12:not(.col-lg-6):not(.hla-field-badges) .viho-kv-split > .viho-kv-value {
+            flex: 0 0 calc(79.167% - var(--viho-space-md) + var(--hla-field-col-gap) * 0.20833);
+            max-width: calc(79.167% - var(--viho-space-md) + var(--hla-field-col-gap) * 0.20833);
         }
     }
 
-    /* NO WIDTH RULES FOR THE CELLS THEMSELVES. A half-span cell is `col-md-6 col-12` and a
-       full-span one is `col-12`, so a rule targeting `.col-12` matches BOTH and forces every field
-       to full width — which is exactly what a first attempt here did, collapsing the two-up grid
-       the milestone exists to produce. Bootstrap's own cascade already resolves the pair correctly:
-       `col-12` below the md breakpoint, `col-md-6` at and above it. The flex context above is the
-       only thing that was missing. */
+    /* ON THE ONE WIDTH RULE THERE IS, AND THE SHAPE IT MUST KEEP. Until M7.8 this note read "NO
+       WIDTH RULES FOR THE CELLS THEMSELVES", and the reasoning behind it still stands even though
+       the conclusion has moved: a half-span cell is `col-lg-6 col-12` and a full-span one is
+       `col-12`, so a rule targeting `.col-12` matches BOTH and forces every field to full width —
+       which is exactly what a first attempt here did, collapsing the two-up grid this page exists
+       to produce.
+
+       The lg rule above is the single exception, and it is safe for the reason that trap is not: it
+       names `.col-lg-6`, which only half-span cells carry, and it sits inside the min-width query
+       where those cells are actually side by side. Below lg it does not apply at all and Bootstrap's
+       own cascade resolves the pair unaided — `col-12` below 992, `col-lg-6` at and above it.
+
+       Any future width rule here must clear the same two bars: name the class that distinguishes
+       the spans rather than the one they share, and scope itself to the breakpoint where the
+       distinction is real. */
 
     /* M7.4 refinement — a pill run stacks under its label instead of sitting in the value column.
 

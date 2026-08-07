@@ -121,7 +121,8 @@
                                   overriding the slot so legacy can keep its pill run untouched
     @param string $width          COMPLETE legacy class list for the row div, order included
     @param bool   $redesign       resolved flag state, passed by the caller — never read from config
-    @param string $span           redesign cell width: 'half' (default, two per line) | 'full'
+    @param string $span           redesign cell width: 'half' (default, two per line at lg and
+                                  above; full width below it) | 'full'
     @param bool   $bareSlot       legacy branch emits the slot unwrapped — for badge/pill runs
     @param bool   $badges         redesign stacks label over a full-width pill run; implies full span
     @param bool   $legacyRow      legacy branch wraps the row in its own div.row
@@ -178,8 +179,33 @@
      | A pill run always spans the card. Deriving it here rather than asking every badge call site
      | to pass span="full" as well keeps the two from being set inconsistently — a badge row that
      | was half-width would reintroduce the corridor this mode exists to close, just narrower.
+     |
+     | ── M7.8 — TWO-UP STARTS AT lg, NOT md, AND THE NUMBER IS WHY ──────────────────────────────
+     |
+     | This read `col-md-6`, so two fields shared a line from 768px up. Measured: at 768 the card's
+     | field grid is 408px, a half cell is 204px, and `.viho-kv-split` reserves 41.666% of it for
+     | the label — an 85px column. The longest labels on this page run to 47 characters, which is
+     | roughly six wrapped lines against a two-line value. The grid was technically two-up and
+     | practically unreadable for the whole tablet band.
+     |
+     | M7.7 already recorded this number from the other direction: it declined to apply its
+     | full-span alignment below 992 because "at 768px the card is ~408px, so a matched label
+     | column would be ~85px and would wrap". That was correct about the full-span rows and left
+     | the half-span rows sitting at exactly the width it rejected.
+     |
+     | `col-lg-6` moves the split to 992px, where a half cell is 312px and the label column is
+     | 130px. Below that every cell is `col-12` and each field gets the whole card — 170px of
+     | label at 768 — which is also the width the reference page gives its own rows, since a
+     | full-width row and Create Offer's `col-md-5`/`col-md-7` resolve to the same 41.666%.
+     |
+     | MOBILE IS UNTOUCHED. `col-12` was always the sub-md spelling and still is; below 767.98px
+     | the primitive stacks label over value regardless of the cell width.
+     |
+     | THE STYLESHEET'S FULL-SPAN RULE EXCLUDES THIS CLASS BY NAME and must be changed with it —
+     | a half cell carries `col-12` too, so an exclusion still naming the old class would stop
+     | matching and the rule would re-halve these labels. See the note on that media query.
      */
-    $hlaFieldRedesignWidth = ($badges || $span === 'full') ? 'col-12' : 'col-md-6 col-12';
+    $hlaFieldRedesignWidth = ($badges || $span === 'full') ? 'col-12' : 'col-lg-6 col-12';
 
     if ($badges) {
         $hlaFieldRedesignWidth .= ' hla-field-badges';

@@ -397,8 +397,13 @@ class HireAgentFieldPresentationTest extends TestCase
             $classes = $cell->getAttribute('class');
 
             $this->assertStringContainsString('col-12', $classes, 'A badge cell must span the card.');
+            /*
+             | M7.8 — the half-span class is `col-lg-6`, not `col-md-6`. Asserting the old name here
+             | would still pass and guard nothing, which is the vacuous-pass failure the precondition
+             | above exists to prevent in the other direction.
+             */
             $this->assertStringNotContainsString(
-                'col-md-6',
+                'col-lg-6',
                 $classes,
                 'A half-width badge cell would reopen the gap this mode closes.'
             );
@@ -513,10 +518,15 @@ class HireAgentFieldPresentationTest extends TestCase
      *
      * THIS IS A REGRESSION GUARD WITH A KNOWN CAUSE. Full width used to be implied: `:badges="true"`
      * forced `col-12` for any pill run, so a converted row that dropped `badges` without gaining
-     * `span="full"` silently fell back to the `col-md-6` default. Three of the nine did exactly
+     * `span="full"` silently fell back to the half-span default. Three of the nine did exactly
      * that, and the failure is invisible in a diff — the attribute that mattered is the one that is
      * no longer there. Asserting the rendered width on every converted row is the only form of this
      * check that cannot be defeated by the next conversion forgetting the same attribute.
+     *
+     * THE CLASS NAME MOVED IN M7.8, from `col-md-6` to `col-lg-6`, when the two-up split shifted
+     * from the md breakpoint to lg. It is spelled once below rather than in this prose so there is
+     * only one place to update if it moves again — a guard naming a class the page no longer emits
+     * passes forever and protects nothing.
      *
      * @dataProvider dataProviderForListValueFields
      */
@@ -533,7 +543,7 @@ class HireAgentFieldPresentationTest extends TestCase
         $this->assertNotNull($cell, "{$label} must render as a field.");
 
         $this->assertStringNotContainsString(
-            'col-md-6',
+            'col-lg-6',
             $cell->getAttribute('class'),
             "{$label}: a converted list row must span the card, not sit half-width."
         );
