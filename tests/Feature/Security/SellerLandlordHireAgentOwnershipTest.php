@@ -136,6 +136,9 @@ class SellerLandlordHireAgentOwnershipTest extends TestCase
         return Livewire::test(SellerHireComponent::class)
             ->set('listing_title', 'Attacker Supplied Title')
             ->set('property_type', 'Residential')
+            // The street address is validated on full submit (ValidStreetAddress),
+            // so a form that is meant to be otherwise-valid must carry a real one.
+            ->set('address', '123 Main St')
             ->call('selectStateSuggestion', 'Florida')
             ->set('first_name', 'Mallory')
             ->set('last_name', 'Attacker')
@@ -153,6 +156,9 @@ class SellerLandlordHireAgentOwnershipTest extends TestCase
     {
         return Livewire::test(LandlordHireComponent::class)
             ->set('listing_title', 'Attacker Supplied Title')
+            // The street address is validated on full submit (ValidStreetAddress),
+            // so a form that is meant to be otherwise-valid must carry a real one.
+            ->set('address', '123 Main St')
             ->set('first_name', 'Mallory')
             ->set('last_name', 'Attacker')
             ->set('phone_number', '8135550999')

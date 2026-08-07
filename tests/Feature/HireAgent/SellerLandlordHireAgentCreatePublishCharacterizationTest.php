@@ -64,6 +64,9 @@ class SellerLandlordHireAgentCreatePublishCharacterizationTest extends TestCase
         return Livewire::test(self::SELLER_COMPONENT)
             ->set('listing_title', 'Characterization Seller Listing')
             ->set('property_type', 'Residential')
+            // The street address is validated on full submit (ValidStreetAddress),
+            // so the minimum accepted field set now includes a real street address.
+            ->set('address', '123 Main St')
             ->call('selectStateSuggestion', 'Florida')
             ->set('first_name', 'Sam')
             ->set('last_name', 'Seller')
@@ -82,6 +85,9 @@ class SellerLandlordHireAgentCreatePublishCharacterizationTest extends TestCase
     {
         return Livewire::test(self::LANDLORD_COMPONENT)
             ->set('listing_title', 'Characterization Landlord Listing')
+            // The street address is validated on full submit (ValidStreetAddress),
+            // so the minimum accepted field set now includes a real street address.
+            ->set('address', '123 Main St')
             ->set('first_name', 'Lee')
             ->set('last_name', 'Landlord')
             ->set('phone_number', '8135550200')
