@@ -519,4 +519,139 @@ class GeographySelectionHydratorTest extends TestCase
         $this->assertSame([], $matched);
         $this->assertSame(['Nowhere Township'], $preserved);
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // Phase 1d-5 · A SECOND PASS OVER THE CITY TIER'S LEFTOVERS
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private function neighborhoodCorpus(): \App\Services\LocationDna\Criteria\FakeCriteriaNeighborhoodRepository
+    {
+        return (new \App\Services\LocationDna\Criteria\FakeCriteriaNeighborhoodRepository())
+            ->withNeighborhood('900', 'Snell Isle', '100')       // inside St. Petersburg
+            ->withNeighborhood('901', 'Old Northeast', '100')
+            ->withNeighborhood('910', 'Ybor City', '101');       // inside Tampa
+
+    }
+
+    private function hydrateWithNeighborhoods(array $blob): object
+    {
+        return (new GeographySelectionHydrator($this->corpus(), $this->neighborhoodCorpus()))
+            ->fromLabels($blob);
+    }
+
+    /**
+     * The default construction — what the Livewire trait still uses — must behave exactly as before:
+     * a neighbourhood label is unrecognised and therefore preserved.
+     */
+    public function test_without_a_neighborhood_repository_a_neighborhood_label_is_preserved(): void
+    {
+        $hydrated = $this->hydrate([
+            'state'    => 'Florida',
+            'counties' => ['Pinellas County, FL'],
+            'cities'   => ['St. Petersburg, FL', 'Snell Isle, FL'],
+        ]);
+
+        $this->assertSame(['100'], $hydrated->selection->cityIds);
+        $this->assertSame([], $hydrated->selection->neighborhoodIds);
+        $this->assertSame(['Snell Isle, FL'], $hydrated->preserved->cities);
+    }
+
+    public function test_a_leftover_city_label_is_matched_as_a_neighborhood(): void
+    {
+        $hydrated = $this->hydrateWithNeighborhoods([
+            'state'    => 'Florida',
+            'counties' => ['Pinellas County, FL'],
+            'cities'   => ['St. Petersburg, FL', 'Snell Isle, FL'],
+        ]);
+
+        $this->assertSame(['100'], $hydrated->selection->cityIds);
+        $this->assertSame(['900'], $hydrated->selection->neighborhoodIds);
+        $this->assertSame([], $hydrated->preserved->cities);
+    }
+
+    /**
+     * The safety rule. Without its parent city selected, the label must stay PRESERVED — promoting
+     * it would hand the resolver something it clears immediately, and a cleared selection is not
+     * preserved, so the label would be gone on the next save.
+     */
+    public function test_a_neighborhood_without_its_parent_city_stays_preserved(): void
+    {
+        $hydrated = $this->hydrateWithNeighborhoods([
+            'state'    => 'Florida',
+            'counties' => ['Pinellas County, FL'],
+            'cities'   => ['Snell Isle, FL'],
+        ]);
+
+        $this->assertSame([], $hydrated->selection->cityIds);
+        $this->assertSame([], $hydrated->selection->neighborhoodIds);
+        $this->assertSame(['Snell Isle, FL'], $hydrated->preserved->cities);
+    }
+
+    public function test_a_neighborhood_of_an_unselected_city_stays_preserved(): void
+    {
+        // Tampa is not selected, so Ybor City has nothing to hang from.
+        $hydrated = $this->hydrateWithNeighborhoods([
+            'state'    => 'Florida',
+            'counties' => ['Pinellas County, FL', 'Hillsborough County, FL'],
+            'cities'   => ['St. Petersburg, FL', 'Ybor City, FL'],
+        ]);
+
+        $this->assertSame(['100'], $hydrated->selection->cityIds);
+        $this->assertSame([], $hydrated->selection->neighborhoodIds);
+        $this->assertSame(['Ybor City, FL'], $hydrated->preserved->cities);
+    }
+
+    public function test_a_label_matching_neither_tier_is_still_preserved(): void
+    {
+        $hydrated = $this->hydrateWithNeighborhoods([
+            'state'    => 'Florida',
+            'counties' => ['Pinellas County, FL'],
+            'cities'   => ['St. Petersburg, FL', 'Snell Isle, FL', 'Nowhere At All, FL'],
+        ]);
+
+        $this->assertSame(['900'], $hydrated->selection->neighborhoodIds);
+        $this->assertSame(['Nowhere At All, FL'], $hydrated->preserved->cities);
+    }
+
+    public function test_neighborhood_matching_tolerates_case_padding_and_the_state_suffix(): void
+    {
+        foreach (['Snell Isle, FL', '  snell   isle  ', 'SNELL ISLE'] as $label) {
+            $hydrated = $this->hydrateWithNeighborhoods([
+                'state'    => 'Florida',
+                'counties' => ['Pinellas County, FL'],
+                'cities'   => ['St. Petersburg, FL', $label],
+            ]);
+
+            $this->assertSame(['900'], $hydrated->selection->neighborhoodIds, "failed for: {$label}");
+        }
+    }
+
+    public function test_several_neighborhoods_of_one_city_all_match(): void
+    {
+        $hydrated = $this->hydrateWithNeighborhoods([
+            'state'    => 'Florida',
+            'counties' => ['Pinellas County, FL'],
+            'cities'   => ['St. Petersburg, FL', 'Snell Isle, FL', 'Old Northeast, FL'],
+        ]);
+
+        $this->assertSame(['900', '901'], $hydrated->selection->neighborhoodIds);
+        $this->assertSame([], $hydrated->preserved->cities);
+    }
+
+    public function test_a_neighborhood_under_a_preserved_county_is_not_promoted(): void
+    {
+        // The county did not match, so no city matched, so nothing justifies the neighbourhood.
+        $hydrated = $this->hydrateWithNeighborhoods([
+            'state'    => 'Florida',
+            'counties' => ['Ye Olde County, FL'],
+            'cities'   => ['St. Petersburg, FL', 'Snell Isle, FL'],
+        ]);
+
+        $this->assertSame([], $hydrated->selection->neighborhoodIds);
+        $this->assertSame(
+            ['St. Petersburg, FL', 'Snell Isle, FL'],
+            $hydrated->preserved->cities,
+            'Both are preserved verbatim — nothing below an unmatched county is dropped.'
+        );
+    }
 }

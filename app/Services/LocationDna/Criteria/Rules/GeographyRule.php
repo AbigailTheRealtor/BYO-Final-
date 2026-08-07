@@ -41,6 +41,20 @@ enum GeographyRule: string
     case CityNotInSelectedCounty = 'city_not_in_selected_county';
 
     /**
+     * Phase 1d-5 — a chosen neighbourhood does not belong to any chosen CITY.
+     *
+     * CONTAINMENT, like cities and unlike ZIPs. A neighbourhood sits inside exactly one
+     * municipality — `location_places.parent_place_id` is a single foreign key — so deselecting
+     * that city orphans it unconditionally. There is no "survives while any parent survives"
+     * subtlety here; that rule belongs to ZIPs alone, and applying it to this tier would keep a
+     * neighbourhood alive under a city the user has removed.
+     *
+     * Note the parent is the CITY, not the county. A neighbourhood whose county is still selected
+     * but whose city is not is orphaned, because the tier above it is gone.
+     */
+    case NeighborhoodNotInSelectedCity = 'neighborhood_not_in_selected_city';
+
+    /**
      * A chosen ZIP is associated with none of the chosen counties.
      *
      * ASSOCIATION, NOT CONTAINMENT. A ZIP is satisfied by ANY chosen county it is associated with,
@@ -77,6 +91,8 @@ enum GeographyRule: string
 
             self::CityNotInSelectedCounty => GeographyTier::Cities,
 
+            self::NeighborhoodNotInSelectedCity => GeographyTier::Neighborhoods,
+
             self::ZipNotInSelectedCounties,
             self::MalformedZip => GeographyTier::ZipCodes,
 
@@ -106,6 +122,7 @@ enum GeographyRule: string
             self::CountyRequired            => 'At least one county must be selected.',
             self::CountyNotInState          => 'The selected county does not belong to the selected state.',
             self::CityNotInSelectedCounty   => 'The selected city does not belong to any selected county.',
+            self::NeighborhoodNotInSelectedCity => 'The selected neighborhood does not belong to any selected city.',
             self::ZipNotInSelectedCounties  => 'The selected ZIP code is not associated with any selected county.',
             self::DuplicateSelection        => 'The same selection appears more than once.',
             self::MalformedZip              => 'A ZIP code must be five digits.',

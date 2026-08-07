@@ -33,63 +33,79 @@ namespace App\Services\LocationDna\Criteria\Rules;
 final class GeographySelection
 {
     /**
+     * `$neighborhoodIds` (Phase 1d-5) carries the tier below cities. It is LAST in the signature so
+     * that every existing positional call — of which there are many in the suites — keeps meaning
+     * what it meant, and an old four-argument call yields an empty neighbourhood tier rather than
+     * silently shifting ZIPs into it.
+     *
      * @param  list<string>  $countyIds
      * @param  list<string>  $cityIds
      * @param  list<string>  $zipCodes
+     * @param  list<string>  $neighborhoodIds
      */
     private function __construct(
         public readonly ?string $stateId,
         public readonly array $countyIds,
         public readonly array $cityIds,
         public readonly array $zipCodes,
+        public readonly array $neighborhoodIds = [],
     ) {
     }
 
     public static function empty(): self
     {
-        return new self(null, [], [], []);
+        return new self(null, [], [], [], []);
     }
 
     /**
      * @param  list<string|int>  $countyIds
      * @param  list<string|int>  $cityIds
      * @param  list<string|int>  $zipCodes
+     * @param  list<string|int>  $neighborhoodIds
      */
     public static function of(
         string|int|null $stateId = null,
         array $countyIds = [],
         array $cityIds = [],
         array $zipCodes = [],
+        array $neighborhoodIds = [],
     ): self {
         return new self(
             self::scalarOrNull($stateId),
             self::stringList($countyIds),
             self::stringList($cityIds),
             self::stringList($zipCodes),
+            self::stringList($neighborhoodIds),
         );
     }
 
     public function withState(string|int|null $stateId): self
     {
-        return new self(self::scalarOrNull($stateId), $this->countyIds, $this->cityIds, $this->zipCodes);
+        return new self(self::scalarOrNull($stateId), $this->countyIds, $this->cityIds, $this->zipCodes, $this->neighborhoodIds);
     }
 
     /** @param list<string|int> $countyIds */
     public function withCounties(array $countyIds): self
     {
-        return new self($this->stateId, self::stringList($countyIds), $this->cityIds, $this->zipCodes);
+        return new self($this->stateId, self::stringList($countyIds), $this->cityIds, $this->zipCodes, $this->neighborhoodIds);
     }
 
     /** @param list<string|int> $cityIds */
     public function withCities(array $cityIds): self
     {
-        return new self($this->stateId, $this->countyIds, self::stringList($cityIds), $this->zipCodes);
+        return new self($this->stateId, $this->countyIds, self::stringList($cityIds), $this->zipCodes, $this->neighborhoodIds);
     }
 
     /** @param list<string|int> $zipCodes */
     public function withZipCodes(array $zipCodes): self
     {
-        return new self($this->stateId, $this->countyIds, $this->cityIds, self::stringList($zipCodes));
+        return new self($this->stateId, $this->countyIds, $this->cityIds, self::stringList($zipCodes), $this->neighborhoodIds);
+    }
+
+    /** @param list<string|int> $neighborhoodIds */
+    public function withNeighborhoods(array $neighborhoodIds): self
+    {
+        return new self($this->stateId, $this->countyIds, $this->cityIds, $this->zipCodes, self::stringList($neighborhoodIds));
     }
 
     public function hasState(): bool
@@ -101,10 +117,11 @@ final class GeographySelection
     public function idsFor(GeographyTier $tier): array
     {
         return match ($tier) {
-            GeographyTier::State    => $this->hasState() ? [(string) $this->stateId] : [],
-            GeographyTier::Counties => $this->countyIds,
-            GeographyTier::Cities   => $this->cityIds,
-            GeographyTier::ZipCodes => $this->zipCodes,
+            GeographyTier::State         => $this->hasState() ? [(string) $this->stateId] : [],
+            GeographyTier::Counties      => $this->countyIds,
+            GeographyTier::Cities        => $this->cityIds,
+            GeographyTier::Neighborhoods => $this->neighborhoodIds,
+            GeographyTier::ZipCodes      => $this->zipCodes,
         };
     }
 
@@ -114,6 +131,7 @@ final class GeographySelection
         return ! $this->hasState()
             && $this->countyIds === []
             && $this->cityIds === []
+            && $this->neighborhoodIds === []
             && $this->zipCodes === [];
     }
 
@@ -124,7 +142,7 @@ final class GeographySelection
             return false;
         }
 
-        foreach ([GeographyTier::Counties, GeographyTier::Cities, GeographyTier::ZipCodes] as $tier) {
+        foreach ([GeographyTier::Counties, GeographyTier::Cities, GeographyTier::Neighborhoods, GeographyTier::ZipCodes] as $tier) {
             $mine   = $this->idsFor($tier);
             $theirs = $other->idsFor($tier);
 
@@ -139,14 +157,26 @@ final class GeographySelection
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The selection as an array, keyed by tier.
+     *
+     * ⚠ NOT THE STORAGE FORMAT, and the `neighborhoods` key is where that distinction starts to
+     * matter. This is a DTO dump for debugging and for {@see SelectionResolution::toArray()}; what
+     * gets PERSISTED is {@see \App\Services\LocationDna\Criteria\Projection\GeographyLabelProjector}'s
+     * output, which has four keys and folds neighbourhoods into `cities`. Anything writing this
+     * array to a blob would invent a fifth stored key that no consumer reads — see
+     * {@see GeographyTier::Neighborhoods}.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [
-            GeographyTier::State->value    => $this->stateId,
-            GeographyTier::Counties->value => $this->countyIds,
-            GeographyTier::Cities->value   => $this->cityIds,
-            GeographyTier::ZipCodes->value => $this->zipCodes,
+            GeographyTier::State->value         => $this->stateId,
+            GeographyTier::Counties->value      => $this->countyIds,
+            GeographyTier::Cities->value        => $this->cityIds,
+            GeographyTier::Neighborhoods->value => $this->neighborhoodIds,
+            GeographyTier::ZipCodes->value      => $this->zipCodes,
         ];
     }
 

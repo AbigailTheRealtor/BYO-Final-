@@ -117,6 +117,48 @@
             @endforeach
         </div>
 
+        {{-- ── Neighborhoods (optional, Phase 1d-5) ──────────────────────────────
+             GATED, and the whole block is absent while the flag is off — not hidden, not
+             disabled, not rendered empty. With `$geoNeighborhoodTierEnabled` false this partial
+             emits exactly the markup it emitted before the tier existed.
+
+             It hangs off CITIES, not counties: that is what makes it a real fifth tier. Selected
+             neighborhoods are stored in the SAME `cities` array as cities themselves, so nothing
+             downstream sees a new key. --}}
+        @if ($geoNeighborhoodTierEnabled ?? false)
+            <div class="col-md-6">
+                <label class="fw-bold" style="font-size:.88rem;" for="geo-cascade-neighborhoods">
+                    Neighborhoods <small class="text-muted">(optional)</small>
+                </label>
+                <select id="geo-cascade-neighborhoods" class="form-select form-select-sm" multiple size="6"
+                        wire:model="geoNeighborhoodIds" @if (empty($geoCityIds)) disabled @endif>
+                    @foreach ($this->geoNeighborhoodOptions() as $option)
+                        <option value="{{ $option['id'] }}">{{ $option['name'] }}</option>
+                    @endforeach
+                </select>
+                @if (empty($geoCityIds))
+                    <div class="ldna-hint">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Select at least one city to narrow by neighborhood.
+                    </div>
+                @elseif (empty($this->geoNeighborhoodOptions()))
+                    <div class="ldna-hint">
+                        <i class="fa-solid fa-circle-info"></i>
+                        No neighborhoods on record for these cities — you can skip this.
+                    </div>
+                @endif
+                @if ($this->geoOptionsTruncated('neighborhoods'))
+                    <div class="ldna-hint text-warning">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Showing the first 1,000 neighborhoods. Select fewer cities to see the rest.
+                    </div>
+                @endif
+                @foreach ($this->geographyViolationsFor('neighborhoods') as $message)
+                    <div class="error-message text-danger" style="font-size:.8rem;">{{ $message }}</div>
+                @endforeach
+            </div>
+        @endif
+
         {{-- ── ZIP codes (optional) ──────────────────────────────────────────── --}}
         <div class="col-md-6">
             <label class="fw-bold" style="font-size:.88rem;" for="geo-cascade-zips">

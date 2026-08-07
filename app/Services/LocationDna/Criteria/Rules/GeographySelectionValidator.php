@@ -3,7 +3,9 @@
 namespace App\Services\LocationDna\Criteria\Rules;
 
 use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\GeographyOption;
+use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
 
 /**
  * Phase 1b — validates a selection and reports every rule it breaks.
@@ -36,8 +38,21 @@ final class GeographySelectionValidator
     /** Canonical ZIP form: exactly five digits. Phase 1a pads on the way out of the repository. */
     private const ZIP_PATTERN = '/^\d{5}$/';
 
+    /**
+     * Phase 1d-5 — `$neighborhoods` is OPTIONAL, defaulting to the null object, for the same reason
+     * it is on {@see GeographySelectionResolver}: every existing call site keeps working and keeps
+     * reporting exactly what it reported before, and the tier stays inert until a surface asks for
+     * the repository.
+     *
+     * One consequence worth stating, because it looks like a bug and is not: with the null object
+     * bound, a selection that somehow carries neighbourhood ids reports EVERY one of them as an
+     * orphan. That is correct — nothing justifies them, which is precisely what the rule says — and
+     * it is unreachable in practice, because no surface can produce such a selection while the tier
+     * is off.
+     */
     public function __construct(
         private readonly CriteriaGeographyRepository $geography,
+        private readonly CriteriaNeighborhoodRepository $neighborhoods = new NullCriteriaNeighborhoodRepository(),
     ) {
     }
 
@@ -68,7 +83,7 @@ final class GeographySelectionValidator
             $violations[] = GeographyViolation::of(GeographyRule::CountyRequired);
         }
 
-        foreach ([GeographyTier::Counties, GeographyTier::Cities, GeographyTier::ZipCodes] as $tier) {
+        foreach ([GeographyTier::Counties, GeographyTier::Cities, GeographyTier::Neighborhoods, GeographyTier::ZipCodes] as $tier) {
             $seen = [];
 
             foreach ($selection->idsFor($tier) as $id) {
@@ -146,9 +161,40 @@ final class GeographySelectionValidator
                 GeographyOption::KIND_CITY
             );
 
+        $justifiedCities = [];
+
         foreach ($this->uniqueNonEmpty($selection->cityIds) as $cityId) {
-            if (! isset($allowedCities[$cityId])) {
-                $violations[] = GeographyViolation::of(GeographyRule::CityNotInSelectedCounty, $cityId);
+            if (isset($allowedCities[$cityId])) {
+                $justifiedCities[] = $cityId;
+                continue;
+            }
+
+            $violations[] = GeographyViolation::of(GeographyRule::CityNotInSelectedCounty, $cityId);
+        }
+
+        // R5 — every neighbourhood is CONTAINED by a JUSTIFIED city.
+        //
+        // Justified, not merely selected: a neighbourhood under a city that is itself an orphan has
+        // no standing either, and hanging it off the raw selection would let one bad county keep a
+        // whole branch alive. The chain is the same one the resolver walks — state, county, city,
+        // neighbourhood — so the two agree by construction rather than by coincidence.
+        //
+        // Reported ONCE. A user who picked a city in the wrong county sees that city named; they do
+        // not additionally see every neighbourhood beneath it listed as broken, which would be
+        // several messages describing one mistake. The same restraint the ZIP check shows below.
+        $allowedNeighborhoods = $justifiedCities === []
+            ? []
+            : $this->idsOf(
+                $this->neighborhoods->neighborhoodsInCities($justifiedCities),
+                GeographyOption::KIND_NEIGHBORHOOD
+            );
+
+        foreach ($this->uniqueNonEmpty($selection->neighborhoodIds) as $neighborhoodId) {
+            if (! isset($allowedNeighborhoods[$neighborhoodId])) {
+                $violations[] = GeographyViolation::of(
+                    GeographyRule::NeighborhoodNotInSelectedCity,
+                    $neighborhoodId
+                );
             }
         }
 

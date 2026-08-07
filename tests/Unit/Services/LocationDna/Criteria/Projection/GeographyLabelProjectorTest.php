@@ -257,4 +257,110 @@ class GeographyLabelProjectorTest extends TestCase
             $this->project($selection, preserved: $preserved),
         );
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // Phase 1d-5 · NEIGHBOURHOODS FOLD INTO `cities` (Decision 1A)
+    // ═════════════════════════════════════════════════════════════════════════
+
+    /** @return list<GeographyOption> */
+    private function neighborhoods(): array
+    {
+        return [
+            GeographyOption::neighborhood('900', 'Snell Isle', '100'),
+            GeographyOption::neighborhood('901', 'Old Northeast', '100'),
+        ];
+    }
+
+    private function projectWithNeighborhoods(
+        GeographySelection $selection,
+        ?PreservedGeographyLabels $preserved = null,
+    ): array {
+        return $this->projector->project(
+            $selection,
+            'Florida',
+            'FL',
+            $this->counties(),
+            $this->cities(),
+            $preserved ?? PreservedGeographyLabels::none(),
+            $this->neighborhoods(),
+        );
+    }
+
+    /**
+     * The seventh argument is optional, and omitting it must reproduce the pre-1d-5 output exactly.
+     * Every existing caller — including the Livewire trait, untouched by this slice — relies on it.
+     */
+    public function test_omitting_the_neighborhood_argument_projects_exactly_as_before(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], ['33708']);
+
+        $this->assertSame(
+            ['state' => 'Florida', 'counties' => ['Pinellas County, FL'], 'cities' => ['St. Petersburg, FL'], 'zip_codes' => ['33708']],
+            $this->project($selection)
+        );
+    }
+
+    /** A selection carrying neighbourhoods but projected without options emits no label for them. */
+    public function test_a_neighborhood_with_no_matching_option_is_skipped_not_guessed_at(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], [], ['900']);
+
+        $this->assertSame(['St. Petersburg, FL'], $this->project($selection)['cities']);
+    }
+
+    public function test_a_neighborhood_is_emitted_into_the_cities_key(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], [], ['900']);
+
+        $result = $this->projectWithNeighborhoods($selection);
+
+        $this->assertSame(['St. Petersburg, FL', 'Snell Isle, FL'], $result['cities']);
+        $this->assertSame(['state', 'counties', 'cities', 'zip_codes'], array_keys($result));
+        $this->assertArrayNotHasKey('neighborhoods', $result);
+    }
+
+    public function test_neighborhood_labels_carry_the_state_suffix(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], [], [], ['900', '901']);
+
+        $this->assertSame(['Snell Isle, FL', 'Old Northeast, FL'], $this->projectWithNeighborhoods($selection)['cities']);
+    }
+
+    public function test_order_is_cities_then_neighborhoods_then_preserved(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], [], ['900']);
+        $preserved = new PreservedGeographyLabels(cities: ['Ye Olde Village, FL']);
+
+        $this->assertSame(
+            ['St. Petersburg, FL', 'Snell Isle, FL', 'Ye Olde Village, FL'],
+            $this->projectWithNeighborhoods($selection, $preserved)['cities']
+        );
+    }
+
+    public function test_a_neighborhood_sharing_a_city_label_is_not_duplicated(): void
+    {
+        $projector = $this->projector;
+
+        $result = $projector->project(
+            GeographySelection::of('1', ['10'], ['100'], [], ['902']),
+            'Florida',
+            'FL',
+            $this->counties(),
+            $this->cities(),
+            PreservedGeographyLabels::none(),
+            [GeographyOption::neighborhood('902', 'St. Petersburg', '100')],
+        );
+
+        $this->assertSame(['St. Petersburg, FL'], $result['cities']);
+    }
+
+    public function test_projection_with_neighborhoods_is_idempotent(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], ['33708'], ['900', '901']);
+
+        $this->assertSame(
+            $this->projectWithNeighborhoods($selection),
+            $this->projectWithNeighborhoods($selection),
+        );
+    }
 }

@@ -319,4 +319,104 @@ class HireBuyerGeographyCascadeWiringTest extends TestCase
     {
         $this->assertStringContainsString('if (stateEl)', $this->read(self::WIDGET));
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // Phase 1d-5 · THE NEIGHBOURHOOD TIER'S OWN GATE
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private const CASCADE_PARTIAL = 'resources/views/partials/location-dna/geography-cascade.blade.php';
+
+    /** @test */
+    public function the_neighborhood_tier_ships_disabled(): void
+    {
+        $config = require base_path('config/criteria_location_dna.php');
+
+        $this->assertFalse(
+            $config['neighborhood_tier_enabled'],
+            'The tier must ship off — enabling it is a rollout decision, not a code change.'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * The block is ABSENT while the flag is off, not merely hidden or disabled. That is what makes
+     * "renders exactly the same" a structural guarantee rather than a CSS one.
+     */
+    public function the_neighborhood_block_is_wrapped_in_its_own_flag(): void
+    {
+        $partial = $this->read(self::CASCADE_PARTIAL);
+
+        $this->assertStringContainsString('@if ($geoNeighborhoodTierEnabled ?? false)', $partial);
+        $this->assertStringContainsString('wire:model="geoNeighborhoodIds"', $partial);
+
+        // The gate must open BEFORE the select it protects.
+        $gate   = strpos($partial, '@if ($geoNeighborhoodTierEnabled ?? false)');
+        $select = strpos($partial, 'geo-cascade-neighborhoods');
+
+        $this->assertNotFalse($gate);
+        $this->assertNotFalse($select);
+        $this->assertLessThan($select, $gate, 'The neighbourhood select must sit inside the gate.');
+    }
+
+    /** @test */
+    public function the_four_original_tiers_are_not_behind_the_neighborhood_flag(): void
+    {
+        $partial = $this->read(self::CASCADE_PARTIAL);
+
+        // Each original select must appear before the neighbourhood gate opens, so turning the tier
+        // on or off cannot move or suppress any of them.
+        $gate = strpos($partial, '@if ($geoNeighborhoodTierEnabled ?? false)');
+
+        foreach (['geo-cascade-state', 'geo-cascade-counties', 'geo-cascade-cities'] as $id) {
+            $this->assertLessThan(
+                $gate,
+                strpos($partial, $id),
+                "{$id} must not be affected by the neighbourhood gate"
+            );
+        }
+    }
+
+    /** @test */
+    public function the_tier_hangs_off_cities_rather_than_counties(): void
+    {
+        $partial = $this->read(self::CASCADE_PARTIAL);
+
+        $this->assertStringContainsString(
+            'wire:model="geoNeighborhoodIds" @if (empty($geoCityIds)) disabled @endif',
+            $partial,
+            'A neighbourhood is justified by its city; gating on counties would make it a second city list.'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * The tier adds NO storage key. Asserted against the trait source because it is the one place
+     * a fifth key could be introduced by accident.
+     */
+    public function the_trait_never_projects_a_neighborhoods_key(): void
+    {
+        $trait = $this->read('app/Http/Livewire/Concerns/HasGeographyCascade.php');
+
+        $this->assertStringNotContainsString("'neighborhoods' =>", $trait);
+        $this->assertStringContainsString('$this->neighborhoodRepository()', $trait);
+    }
+
+    /** @test */
+    public function seller_and_landlord_remain_structurally_excluded_from_the_tier(): void
+    {
+        // Unchanged by this slice: the catch-all still maps only `buyer` to a workflow, and the
+        // tier rides on the cascade, so a null workflow excludes it before any flag is consulted.
+        foreach ([
+            'app/Http/Livewire/TenantAgentAuction.php',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php',
+        ] as $relative) {
+            $body = $this->read($relative);
+
+            $this->assertStringContainsString("'buyer' => 'hire_buyer',", $body);
+            $this->assertStringContainsString('default => null,', $body);
+            $this->assertStringNotContainsString('geoNeighborhood', $body, 'No role component may reference the tier directly.');
+        }
+    }
 }

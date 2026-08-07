@@ -135,19 +135,90 @@ class GeographySelectionTest extends TestCase
         );
     }
 
+    /**
+     * Phase 1d-5 — `neighborhoods` joins this array, and it is NOT a storage key.
+     *
+     * `toArray()` is a DTO dump keyed by tier. What gets persisted is the projector's four-key
+     * output, which folds neighbourhoods into `cities`. Asserting the shape here pins the tier
+     * vocabulary; it does not describe the stored document. See {@see GeographyTier::Neighborhoods}.
+     */
     public function test_to_array_uses_the_canonical_tier_keys(): void
     {
-        $selection = GeographySelection::of('1', ['10'], ['100'], ['11001']);
+        $selection = GeographySelection::of('1', ['10'], ['100'], ['11001'], ['900']);
 
         $this->assertSame(
             [
-                'state'     => '1',
-                'counties'  => ['10'],
-                'cities'    => ['100'],
-                'zip_codes' => ['11001'],
+                'state'         => '1',
+                'counties'      => ['10'],
+                'cities'        => ['100'],
+                'neighborhoods' => ['900'],
+                'zip_codes'     => ['11001'],
             ],
             $selection->toArray()
         );
+    }
+
+    public function test_an_old_four_argument_call_leaves_the_neighbourhood_tier_empty(): void
+    {
+        // The parameter was appended rather than inserted precisely so this stays true: a caller
+        // written before the tier existed must not have its ZIPs land in it.
+        $selection = GeographySelection::of('1', ['10'], ['100'], ['11001']);
+
+        $this->assertSame(['11001'], $selection->zipCodes);
+        $this->assertSame([], $selection->neighborhoodIds);
+    }
+
+    public function test_neighbourhoods_round_trip_through_the_dto(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], [], ['900', '901']);
+
+        $this->assertSame(['900', '901'], $selection->neighborhoodIds);
+        $this->assertSame(['900', '901'], $selection->idsFor(GeographyTier::Neighborhoods));
+    }
+
+    public function test_with_neighborhoods_replaces_only_that_tier(): void
+    {
+        $original = GeographySelection::of('1', ['10'], ['100'], ['11001'], ['900']);
+        $changed  = $original->withNeighborhoods(['901']);
+
+        $this->assertSame(['901'], $changed->neighborhoodIds);
+        $this->assertSame(['900'], $original->neighborhoodIds, 'the DTO is immutable');
+        $this->assertSame(['10'], $changed->countyIds);
+        $this->assertSame(['100'], $changed->cityIds);
+        $this->assertSame(['11001'], $changed->zipCodes);
+        $this->assertSame('1', $changed->stateId);
+    }
+
+    public function test_every_other_wither_preserves_the_neighbourhood_tier(): void
+    {
+        $selection = GeographySelection::of('1', ['10'], ['100'], ['11001'], ['900']);
+
+        $this->assertSame(['900'], $selection->withState('2')->neighborhoodIds);
+        $this->assertSame(['900'], $selection->withCounties(['11'])->neighborhoodIds);
+        $this->assertSame(['900'], $selection->withCities(['101'])->neighborhoodIds);
+        $this->assertSame(['900'], $selection->withZipCodes(['11002'])->neighborhoodIds);
+    }
+
+    public function test_a_selection_with_only_a_neighbourhood_is_not_empty(): void
+    {
+        $this->assertFalse(GeographySelection::of(null, [], [], [], ['900'])->isEmpty());
+    }
+
+    public function test_equality_distinguishes_neighbourhood_membership(): void
+    {
+        $a = GeographySelection::of('1', ['10'], ['100'], [], ['900']);
+        $b = GeographySelection::of('1', ['10'], ['100'], [], ['901']);
+
+        $this->assertFalse($a->equals($b));
+        $this->assertTrue($a->equals(GeographySelection::of('1', ['10'], ['100'], [], ['900'])));
+    }
+
+    public function test_equality_ignores_neighbourhood_order(): void
+    {
+        $a = GeographySelection::of('1', ['10'], [], [], ['900', '901']);
+        $b = GeographySelection::of('1', ['10'], [], [], ['901', '900']);
+
+        $this->assertTrue($a->equals($b));
     }
 
     public function test_a_selection_with_only_a_state_is_not_empty(): void

@@ -3,7 +3,9 @@
 namespace App\Services\LocationDna\Criteria\Projection;
 
 use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\GeographyOption;
+use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\Rules\GeographySelection;
 
 /**
@@ -61,8 +63,14 @@ final class GeographySelectionHydrator
         ' city',
     ];
 
+    /**
+     * Phase 1d-5 — `$neighborhoods` is OPTIONAL and defaults to the null object, so every existing
+     * call site (including the Livewire trait, untouched by this slice) hydrates exactly as before:
+     * a label the city tier cannot match stays preserved, which is today's behaviour precisely.
+     */
     public function __construct(
         private readonly CriteriaGeographyRepository $geography,
+        private readonly CriteriaNeighborhoodRepository $neighborhoods = new NullCriteriaNeighborhoodRepository(),
     ) {
     }
 
@@ -97,11 +105,19 @@ final class GeographySelectionHydrator
         // Cities and ZIPs are justified by the counties that MATCHED. A city under a preserved
         // county has nothing to hang from, so it is preserved too rather than promoted into a
         // selection the resolver would immediately clear.
-        [$cityIds, $unmatchedCities] = $this->matchCities($countyIds, $cities);
-        [$zipCodes, $unmatchedZips]  = $this->matchZips($countyIds, $zips);
+        [$cityIds, $leftoverCityLabels] = $this->matchCities($countyIds, $cities);
+        [$zipCodes, $unmatchedZips]     = $this->matchZips($countyIds, $zips);
+
+        // ── Phase 1d-5 — a SECOND PASS over what the city tier could not match ───────────
+        //
+        // Neighbourhoods are stored in the `cities` array, because that is where they have always
+        // been: `Clearwater Beach, FL` sits in the cities list of records written years ago, and
+        // until now nothing could recognise it. So the leftovers of city matching are exactly the
+        // right candidates, and no stored blob has to change for this to work.
+        [$neighborhoodIds, $unmatchedCities] = $this->matchNeighborhoods($cityIds, $leftoverCityLabels);
 
         return new HydratedGeography(
-            GeographySelection::of($stateId, $countyIds, $cityIds, $zipCodes),
+            GeographySelection::of($stateId, $countyIds, $cityIds, $zipCodes, $neighborhoodIds),
             new PreservedGeographyLabels(null, $unmatchedCounties, $unmatchedCities, $unmatchedZips),
         );
     }
@@ -177,6 +193,54 @@ final class GeographySelectionHydrator
                 if ($option->is(GeographyOption::KIND_CITY)) {
                     $index[$this->key($option->name)] ??= $option->id;
                 }
+            }
+        }
+
+        return $this->partition(
+            $labels,
+            fn (string $label): ?string => $index[$this->key($this->stripStateSuffix($label))] ?? null,
+        );
+    }
+
+    /**
+     * Phase 1d-5 — match the city tier's leftovers against the neighbourhoods of the MATCHED cities.
+     *
+     * ⚠ THE PARENT CITY MUST ALREADY BE SELECTED, AND THIS IS A DATA-SAFETY RULE RATHER THAN A
+     * STRICTNESS PREFERENCE.
+     *
+     * `HasGeographyCascade::loadGeographyCascade()` hydrates and then, on the very next line, calls
+     * `refreshGeographyCascade()` — which runs {@see GeographySelectionResolver}. The resolver
+     * justifies a neighbourhood by its SELECTED CITY. So a neighbourhood promoted here whose parent
+     * city is not in the selection would be cleared microseconds later — and a CLEARED selection is
+     * not preserved, unlike an unmatched label. The label would vanish from the blob on the next
+     * save, silently, which is the exact failure this whole namespace is built to prevent.
+     *
+     * Enumerating from `$cityIds` makes hydration and resolution agree by construction: everything
+     * this promotes is, by definition, justified by a city that survived.
+     *
+     * THE CONSEQUENCE, STATED PLAINLY: a stored `Clearwater Beach, FL` with no `Clearwater, FL`
+     * beside it stays PRESERVED rather than becoming a selection. Nothing is lost and nothing is
+     * recognised — identical to the behaviour before this tier existed. Selecting the parent city
+     * is what makes the neighbourhood resolvable, which is the same rule the editor enforces going
+     * forward.
+     *
+     * @param  list<string>  $cityIds  cities that matched, and therefore justify a neighbourhood
+     * @param  list<string>  $labels   the city tier's unmatched labels
+     * @return array{0: list<string>, 1: list<string>} matched neighbourhood ids, still-unmatched labels
+     */
+    private function matchNeighborhoods(array $cityIds, array $labels): array
+    {
+        // No candidate labels, or no city to hang one from: nothing to do, and no query to issue.
+        // The second guard is what keeps the tier free for the callers that never use it.
+        if ($labels === [] || $cityIds === []) {
+            return [[], $labels];
+        }
+
+        $index = [];
+
+        foreach ($this->neighborhoods->neighborhoodsInCities($cityIds) as $option) {
+            if ($option->is(GeographyOption::KIND_NEIGHBORHOOD)) {
+                $index[$this->key($option->name)] ??= $option->id;
             }
         }
 

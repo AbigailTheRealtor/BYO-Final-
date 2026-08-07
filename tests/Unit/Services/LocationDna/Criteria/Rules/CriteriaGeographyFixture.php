@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\LocationDna\Criteria\Rules;
 
 use App\Services\LocationDna\Criteria\FakeCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\FakeCriteriaNeighborhoodRepository;
 
 /**
  * Phase 1b — the shared fixture for the rules tests.
@@ -43,6 +44,16 @@ trait CriteriaGeographyFixture
     protected const ZIP_NASSAU  = '11550'; // Nassau only
     protected const ZIP_ORLEANS = '70112'; // Orleans only
 
+    // Neighbourhoods (Phase 1d-5; containment, exactly one city parent)
+    //
+    // Two under Babylon so ordering and partial clearing are both observable, one under a city in a
+    // DIFFERENT county so the two-tier transitive clear — drop Nassau, lose Hempstead, lose West
+    // End — can be asserted rather than assumed.
+    protected const OAK_BEACH  = '900'; // Babylon (Suffolk)
+    protected const GILGO      = '901'; // Babylon (Suffolk)
+    protected const WEST_END   = '910'; // Hempstead (Nassau)
+    protected const FRENCH_QTR = '920'; // New Orleans (Orleans, Louisiana)
+
     protected function geography(): FakeCriteriaGeographyRepository
     {
         return (new FakeCriteriaGeographyRepository())
@@ -66,5 +77,24 @@ trait CriteriaGeographyFixture
             ->withZip(self::ZIP_SUFFOLK, self::SUFFOLK)
             ->withZip(self::ZIP_NASSAU, self::NASSAU)
             ->withZip(self::ZIP_ORLEANS, self::ORLEANS);
+    }
+
+    /**
+     * Phase 1d-5 — the neighbourhood corpus, kept SEPARATE from the geography one.
+     *
+     * Two repositories rather than one, because that is the shape production has: a test that could
+     * reach neighbourhoods through `geography()` would be exercising a coupling
+     * {@see \App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository} exists to prevent.
+     *
+     * Registered against CITY ids, never county ids — containment through the tier immediately
+     * above, which is what makes the transitive clear observable.
+     */
+    protected function neighborhoods(): FakeCriteriaNeighborhoodRepository
+    {
+        return (new FakeCriteriaNeighborhoodRepository())
+            ->withNeighborhood(self::OAK_BEACH, 'Oak Beach', self::BABYLON)
+            ->withNeighborhood(self::GILGO, 'Gilgo', self::BABYLON)
+            ->withNeighborhood(self::WEST_END, 'West End', self::HEMPSTEAD)
+            ->withNeighborhood(self::FRENCH_QTR, 'French Quarter', self::NEW_ORLEANS);
     }
 }

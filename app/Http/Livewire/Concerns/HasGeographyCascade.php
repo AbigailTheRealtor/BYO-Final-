@@ -3,7 +3,9 @@
 namespace App\Http\Livewire\Concerns;
 
 use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\GeographyOption;
+use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\Projection\GeographyLabelProjector;
 use App\Services\LocationDna\Criteria\Projection\GeographySelectionHydrator;
 use App\Services\LocationDna\Criteria\Projection\PreservedGeographyLabels;
@@ -117,6 +119,33 @@ trait HasGeographyCascade
     public $geoZipCodes = [];
 
     /**
+     * Phase 1d-5 — selected neighbourhood ids, the tier below cities.
+     *
+     * Ids are `location_places.id`. They are NOT stored: a selected neighbourhood is projected into
+     * the same `cities` array as everything else, in the same `{name}, {ST}` label format, so no
+     * new storage key exists and no consumer has to learn one. See
+     * {@see \App\Services\LocationDna\Criteria\Rules\GeographyTier::Neighborhoods}.
+     *
+     * @var array<int, string>
+     */
+    public $geoNeighborhoodIds = [];
+
+    /**
+     * Is the neighbourhood tier live for this host?
+     *
+     * TWO GATES, BOTH REQUIRED, AND THE FIRST IS WHAT KEEPS THIS BUYER-ONLY. The cascade itself
+     * must be enabled — which needs the master switch AND a workflow in the scope list, today just
+     * `hire_buyer` — and then the tier's own flag must also be on. Seller and landlord map to a
+     * NULL workflow in the shared catch-all component, so `$geoCascadeEnabled` is false for them
+     * and no value of the tier flag can reach them. Hire Tenant is absent from the scope list for
+     * the same reason. No role check appears anywhere below; the structure does the work.
+     *
+     * Public so it survives the Livewire round trip and reaches Blade, which renders nothing at all
+     * for this tier while it is false.
+     */
+    public $geoNeighborhoodTierEnabled = false;
+
+    /**
      * Display name and abbreviation of the selected state.
      *
      * Cached as properties rather than looked up during projection: the projector needs the
@@ -192,6 +221,11 @@ trait HasGeographyCascade
     {
         $this->geoWorkflow       = (string) $workflow;
         $this->geoCascadeEnabled = $workflow !== null && $this->geographyCascadeIsEnabledFor($workflow);
+
+        // Phase 1d-5 — the tier rides on the cascade rather than beside it, so it can never render
+        // for a host whose cascade is off. See the property for why that makes it Buyer-only.
+        $this->geoNeighborhoodTierEnabled = $this->geoCascadeEnabled
+            && (bool) config('criteria_location_dna.neighborhood_tier_enabled', false);
     }
 
     public function geographyCascadeIsEnabledFor(?string $workflow): bool
@@ -231,7 +265,10 @@ trait HasGeographyCascade
             return;
         }
 
-        $hydrated = (new GeographySelectionHydrator($this->geographyRepository()))->fromLabels($blob);
+        $hydrated = (new GeographySelectionHydrator(
+            $this->geographyRepository(),
+            $this->neighborhoodRepository(),
+        ))->fromLabels($blob);
 
         $this->geoPreserved = $hydrated->preserved->toArray();
 
@@ -266,6 +303,11 @@ trait HasGeographyCascade
         $this->refreshGeographyCascade();
     }
 
+    public function updatedGeoNeighborhoodIds(): void
+    {
+        $this->refreshGeographyCascade();
+    }
+
     /**
      * Re-resolve the selection against the corpus and mirror the result outwards.
      *
@@ -281,8 +323,10 @@ trait HasGeographyCascade
         $this->geoOptionCache = [];
         $this->geoStateRoster = null;
 
-        $resolution = (new GeographySelectionResolver($this->geographyRepository()))
-            ->resolve($this->geographySelection());
+        $resolution = (new GeographySelectionResolver(
+            $this->geographyRepository(),
+            $this->neighborhoodRepository(),
+        ))->resolve($this->geographySelection());
 
         $this->geoCleared = array_map(
             static fn ($cleared): array => $cleared->toArray(),
@@ -348,6 +392,30 @@ trait HasGeographyCascade
             return $this->geoCountyIds === []
                 ? []
                 : $this->geographyRepository()->citiesInCounties($this->stringList($this->geoCountyIds));
+        });
+    }
+
+    /**
+     * Phase 1d-5 — neighbourhoods of the SELECTED CITIES.
+     *
+     * Hung off cities rather than counties, which is what makes this a genuine fifth tier rather
+     * than a second city list: pick Clearwater and Clearwater Beach becomes available; drop
+     * Clearwater and it goes with it.
+     *
+     * Returns empty without consulting anything when the tier is off or no city is selected, so a
+     * host that never uses it pays nothing.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    public function geoNeighborhoodOptions(): array
+    {
+        return $this->geoOptions('neighborhoods', function (): array {
+            if (! $this->geoNeighborhoodTierEnabled || $this->geoCityIds === []) {
+                return [];
+            }
+
+            return $this->neighborhoodRepository()
+                ->neighborhoodsInCities($this->stringList($this->geoCityIds));
         });
     }
 
@@ -462,8 +530,10 @@ trait HasGeographyCascade
 
     private function geographyValidation()
     {
-        return (new GeographySelectionValidator($this->geographyRepository()))
-            ->validate($this->geographySelection());
+        return (new GeographySelectionValidator(
+            $this->geographyRepository(),
+            $this->neighborhoodRepository(),
+        ))->validate($this->geographySelection());
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -513,6 +583,12 @@ trait HasGeographyCascade
             ? []
             : $this->geographyRepository()->citiesInCounties($this->stringList($this->geoCountyIds));
 
+        // Enumerated only when something is actually selected, exactly like the tiers above. The
+        // projector folds these into the `cities` key — there is no fifth key and must not be one.
+        $neighborhoods = ($this->geoNeighborhoodIds === [] || ! $this->geoNeighborhoodTierEnabled)
+            ? []
+            : $this->neighborhoodRepository()->neighborhoodsInCities($this->stringList($this->geoCityIds));
+
         return (new GeographyLabelProjector())->project(
             $this->geographySelection(),
             $this->geoStateName,
@@ -520,6 +596,7 @@ trait HasGeographyCascade
             $counties,
             $cities,
             PreservedGeographyLabels::fromArray($this->geoPreserved),
+            $neighborhoods,
         );
     }
 
@@ -564,15 +641,17 @@ trait HasGeographyCascade
             $this->stringList($this->geoCountyIds),
             $this->stringList($this->geoCityIds),
             $this->stringList($this->geoZipCodes),
+            $this->stringList($this->geoNeighborhoodIds),
         );
     }
 
     private function assignGeographySelection(GeographySelection $selection): void
     {
-        $this->geoStateId   = (string) ($selection->stateId ?? '');
-        $this->geoCountyIds = $selection->countyIds;
-        $this->geoCityIds   = $selection->cityIds;
-        $this->geoZipCodes  = $selection->zipCodes;
+        $this->geoStateId          = (string) ($selection->stateId ?? '');
+        $this->geoCountyIds        = $selection->countyIds;
+        $this->geoCityIds          = $selection->cityIds;
+        $this->geoZipCodes         = $selection->zipCodes;
+        $this->geoNeighborhoodIds  = $selection->neighborhoodIds;
 
         $this->rememberSelectedState();
     }
@@ -642,6 +721,24 @@ trait HasGeographyCascade
     private function geographyRepository(): CriteriaGeographyRepository
     {
         return app(CriteriaGeographyRepository::class);
+    }
+
+    /**
+     * Phase 1d-5 — the neighbourhood tier's repository.
+     *
+     * When the tier is off this returns the null object DIRECTLY rather than asking the container.
+     * The binding would return the same thing — it reads the same flag — so this is not a second
+     * gate to keep in step; it is a guarantee that a host with the tier disabled cannot be affected
+     * by a misconfigured binding, and it keeps the disabled path free of a container resolution on
+     * every render.
+     */
+    private function neighborhoodRepository(): CriteriaNeighborhoodRepository
+    {
+        if (! $this->geoNeighborhoodTierEnabled) {
+            return new NullCriteriaNeighborhoodRepository();
+        }
+
+        return app(CriteriaNeighborhoodRepository::class);
     }
 
     /**

@@ -37,9 +37,13 @@ use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
 use App\Services\LocationDna\Criteria\CensusCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CensusCriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\EloquentCriteriaGeographyRepository;
 use App\Services\LocationDna\Criteria\FakeCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\FakeCriteriaNeighborhoodRepository;
+use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
 use InvalidArgumentException;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
@@ -129,6 +133,36 @@ class AppServiceProvider extends ServiceProvider
                     .'serve the legacy us_* tables and look exactly like success.',
                     var_export($source, true)
                 )),
+            };
+        });
+
+        /**
+         * Phase 1d-5 — the neighbourhood tier.
+         *
+         * IT FAILS TO EMPTY, WHERE THE BINDING ABOVE FAILS LOUD, AND THE CONTRAST IS THE POINT.
+         *
+         * An unrecognised `geography_source` throws, because every alternative serves REAL DATA
+         * FROM THE WRONG CORPUS and is indistinguishable from success. Here the only alternative is
+         * an empty tier — which is precisely the behaviour of every environment before this phase
+         * existed, is what the flag shipping `false` already means, and cannot corrupt anything.
+         * Throwing would turn "this feature is off" into an outage.
+         *
+         * TWO CONDITIONS, BOTH REQUIRED, AND THE SECOND IS NOT A CONFIG VALUE ANYONE SETS. The tier
+         * joins a city option's id to `location_places.census_place_geoid`; those are the same
+         * value under `census` and unrelated under `eloquent`, where a city id is a `us_cities`
+         * surrogate key. So the source is checked HERE rather than trusted to an operator: an
+         * environment that turns the flag on without switching the source gets no neighbourhoods
+         * instead of neighbourhoods attached to the wrong cities.
+         */
+        $this->app->bind(CriteriaNeighborhoodRepository::class, function () {
+            if (! (bool) config('criteria_location_dna.neighborhood_tier_enabled', false)) {
+                return new NullCriteriaNeighborhoodRepository();
+            }
+
+            return match (config('criteria_location_dna.geography_source')) {
+                'census' => new CensusCriteriaNeighborhoodRepository(),
+                'fake'   => new FakeCriteriaNeighborhoodRepository(),
+                default  => new NullCriteriaNeighborhoodRepository(),
             };
         });
 

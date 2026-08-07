@@ -383,4 +383,283 @@ class GeographySelectionResolverTest extends TestCase
             $resolution->clearedFor(GeographyTier::ZipCodes)[0]->toArray()
         );
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // Phase 1d-5 · NEIGHBOURHOODS, JUSTIFIED BY A SURVIVING CITY
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private function tieredResolver(): GeographySelectionResolver
+    {
+        return new GeographySelectionResolver($this->geography(), $this->neighborhoods());
+    }
+
+    /**
+     * The default constructor is what every existing call site uses, including the Livewire trait
+     * this slice deliberately does not touch. It must leave the four original tiers untouched AND
+     * clear the fifth, because nothing justifies it.
+     */
+    public function test_without_a_neighborhood_repository_the_four_original_tiers_are_unchanged(): void
+    {
+        $selection = GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK, self::NASSAU],
+            [self::BABYLON, self::HEMPSTEAD],
+            [self::ZIP_SHARED, self::ZIP_SUFFOLK],
+        );
+
+        $resolution = $this->resolver()->resolve($selection);
+
+        $this->assertSame([self::SUFFOLK, self::NASSAU], $resolution->selection->countyIds);
+        $this->assertSame([self::BABYLON, self::HEMPSTEAD], $resolution->selection->cityIds);
+        $this->assertSame([self::ZIP_SHARED, self::ZIP_SUFFOLK], $resolution->selection->zipCodes);
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+        $this->assertFalse($resolution->changed(), 'The default must not clear anything that was justified.');
+    }
+
+    public function test_without_a_neighborhood_repository_a_selected_neighborhood_is_cleared(): void
+    {
+        // Unreachable while the tier is off — no surface can produce this — but the rule still has
+        // to be the honest one: with nothing to justify it, it goes.
+        $resolution = $this->resolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH],
+        ));
+
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+        $this->assertCount(1, $resolution->clearedFor(GeographyTier::Neighborhoods));
+    }
+
+    public function test_a_neighborhood_survives_while_its_city_survives(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH, self::GILGO],
+        ));
+
+        $this->assertSame([self::OAK_BEACH, self::GILGO], $resolution->selection->neighborhoodIds);
+        $this->assertFalse($resolution->changed());
+    }
+
+    public function test_deselecting_a_city_clears_its_neighborhoods(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK, self::NASSAU],
+            [self::BABYLON],                       // Hempstead deselected
+            [],
+            [self::OAK_BEACH, self::WEST_END],     // West End is Hempstead's
+        ));
+
+        $this->assertSame([self::OAK_BEACH], $resolution->selection->neighborhoodIds);
+
+        $cleared = $resolution->clearedFor(GeographyTier::Neighborhoods);
+        $this->assertCount(1, $cleared);
+        $this->assertSame(self::WEST_END, $cleared[0]->id);
+        $this->assertSame(GeographyRule::NeighborhoodNotInSelectedCity, $cleared[0]->reason);
+    }
+
+    /**
+     * C4 extended to two tiers. Dropping a COUNTY takes its cities, and the cities take their
+     * neighbourhoods — in the same pass, because each stage reads the survivors of the one above.
+     */
+    public function test_clearing_is_transitive_from_county_through_city_to_neighborhood(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],                       // Nassau dropped
+            [self::BABYLON, self::HEMPSTEAD],      // Hempstead is Nassau's
+            [],
+            [self::OAK_BEACH, self::WEST_END],     // West End is Hempstead's
+        ));
+
+        $this->assertSame([self::BABYLON], $resolution->selection->cityIds);
+        $this->assertSame([self::OAK_BEACH], $resolution->selection->neighborhoodIds);
+        $this->assertCount(1, $resolution->clearedFor(GeographyTier::Cities));
+        $this->assertCount(1, $resolution->clearedFor(GeographyTier::Neighborhoods));
+    }
+
+    public function test_changing_state_clears_the_neighborhood_tier_too(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(
+            GeographySelection::of(
+                self::NEW_YORK,
+                [self::SUFFOLK],
+                [self::BABYLON],
+                [],
+                [self::OAK_BEACH],
+            )->withState(self::LOUISIANA)
+        );
+
+        $this->assertSame([], $resolution->selection->countyIds);
+        $this->assertSame([], $resolution->selection->cityIds);
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+    }
+
+    public function test_a_neighborhood_of_an_unselected_city_in_a_selected_county_is_cleared(): void
+    {
+        // The parent is the CITY, not the county. Suffolk being selected is not enough.
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::HUNTINGTON],                    // Babylon not selected
+            [],
+            [self::OAK_BEACH],                     // Babylon's
+        ));
+
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+    }
+
+    public function test_a_neighborhood_from_another_state_is_cleared(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::FRENCH_QTR],                    // New Orleans, Louisiana
+        ));
+
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+    }
+
+    public function test_duplicate_and_blank_neighborhood_ids_are_cleared(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH, self::OAK_BEACH, ''],
+        ));
+
+        $this->assertSame([self::OAK_BEACH], $resolution->selection->neighborhoodIds);
+        $this->assertSame(
+            [GeographyRule::DuplicateSelection, GeographyRule::MalformedId],
+            array_map(
+                static fn ($c) => $c->reason,
+                $resolution->clearedFor(GeographyTier::Neighborhoods)
+            )
+        );
+    }
+
+    /** C5 — idempotence must survive the new tier. */
+    public function test_resolving_twice_with_neighborhoods_changes_nothing_the_second_time(): void
+    {
+        $once = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK, self::NASSAU],
+            [self::BABYLON],
+            [self::ZIP_SHARED],
+            [self::OAK_BEACH, self::WEST_END],
+        ));
+
+        $twice = $this->tieredResolver()->resolve($once->selection);
+
+        $this->assertTrue($once->selection->equals($twice->selection));
+        $this->assertFalse($twice->changed());
+    }
+
+    /** C6 — subtractive: the result is always a subset of the input. */
+    public function test_the_neighborhood_tier_is_never_added_to(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::GILGO],
+        ));
+
+        // Oak Beach is also under Babylon and is deliberately NOT selected.
+        $this->assertSame([self::GILGO], $resolution->selection->neighborhoodIds);
+    }
+
+    /**
+     * The tier costs nothing when unused. A repository that throws proves the call never happens —
+     * which matters because every caller in the application today selects no neighbourhoods.
+     */
+    public function test_no_neighborhood_lookup_happens_when_none_is_selected(): void
+    {
+        $exploding = new class implements \App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository {
+            public function neighborhoodsInCities(array $cityIds): array
+            {
+                throw new \RuntimeException('The neighbourhood tier must not be queried here.');
+            }
+        };
+
+        $resolution = (new GeographySelectionResolver($this->geography(), $exploding))->resolve(
+            GeographySelection::of(self::NEW_YORK, [self::SUFFOLK], [self::BABYLON], [self::ZIP_SUFFOLK])
+        );
+
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+        $this->assertSame([self::BABYLON], $resolution->selection->cityIds);
+    }
+
+    public function test_no_neighborhood_lookup_happens_when_no_city_survives(): void
+    {
+        $exploding = new class implements \App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository {
+            public function neighborhoodsInCities(array $cityIds): array
+            {
+                throw new \RuntimeException('The neighbourhood tier must not be queried here.');
+            }
+        };
+
+        $resolution = (new GeographySelectionResolver($this->geography(), $exploding))->resolve(
+            GeographySelection::of(self::NEW_YORK, [self::SUFFOLK], [], [], [self::OAK_BEACH])
+        );
+
+        $this->assertSame([], $resolution->selection->neighborhoodIds);
+    }
+
+    /** The ZIP association rule must be unaffected by the tier sitting above it. */
+    public function test_zips_still_hang_off_counties_not_neighborhoods(): void
+    {
+        $resolution = $this->tieredResolver()->resolve(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK, self::NASSAU],
+            [self::BABYLON],
+            [self::ZIP_SHARED, self::ZIP_NASSAU],   // Nassau's ZIP, no Nassau city selected
+            [self::OAK_BEACH],
+        ));
+
+        $this->assertSame(
+            [self::ZIP_SHARED, self::ZIP_NASSAU],
+            $resolution->selection->zipCodes,
+            'A ZIP is justified by its county alone; the city and neighbourhood tiers are irrelevant to it.'
+        );
+    }
+
+    /** The resolved selection must still satisfy the validator — the layer's core invariant. */
+    public function test_a_resolved_selection_with_neighborhoods_carries_no_violation(): void
+    {
+        $geography     = $this->geography();
+        $neighborhoods = $this->neighborhoods();
+
+        $resolution = (new GeographySelectionResolver($geography, $neighborhoods))->resolve(
+            GeographySelection::of(
+                self::NEW_YORK,
+                [self::SUFFOLK, self::ORLEANS],
+                [self::BABYLON, self::NEW_ORLEANS],
+                [self::ZIP_ORLEANS],
+                [self::OAK_BEACH, self::FRENCH_QTR],
+            )
+        );
+
+        $result = (new GeographySelectionValidator($geography, $neighborhoods))
+            ->validate($resolution->selection);
+
+        $this->assertSame(
+            [],
+            array_filter(
+                $result->violations,
+                static fn ($v): bool => ! $v->governsCompletenessOnly()
+            )
+        );
+    }
 }

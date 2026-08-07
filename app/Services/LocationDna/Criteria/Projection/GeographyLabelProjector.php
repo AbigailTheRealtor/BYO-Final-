@@ -45,10 +45,33 @@ final class GeographyLabelProjector
      * cascade is a complete editor for all four tiers, so it states all four every time — the same
      * thing the editor it replaces does.
      *
-     * @param  string|null            $stateName          display name of the selected state
-     * @param  string|null            $stateAbbreviation  two-letter abbreviation, or null when absent
-     * @param  list<GeographyOption>  $countyOptions      counties currently enumerable
-     * @param  list<GeographyOption>  $cityOptions        cities currently enumerable
+     * PHASE 1d-5 — NEIGHBOURHOODS ARE PROJECTED INTO `cities`, AND THERE IS NO FIFTH KEY.
+     *
+     * This is the one place the decision is actually executed, so the reasoning belongs here.
+     * Six consumers already read the `cities` key — `LocationMatchAuctionExtractor`, three Stellar
+     * criteria loaders, `BoundaryLookupService` and `CriteriaListingResolver` — and not one of them
+     * would read a `neighborhoods` key. Emitting one would make every selected neighbourhood
+     * invisible to matching, with no error raised anywhere and no symptom until match quality was
+     * noticed to have dropped months later.
+     *
+     * Folding them in costs nothing, because the label format is already identical: a neighbourhood
+     * emits `Clearwater Beach, FL`, exactly the shape a city emits and exactly what historic records
+     * ALREADY carry for it — such a label is sitting in the `cities` array of stored blobs today,
+     * preserved-but-unmatched. So this tier does not introduce a new stored value; it lets the
+     * corpus recognise one that was always there.
+     *
+     * ORDER IS SELECTED CITIES, THEN NEIGHBOURHOODS, THEN HISTORY. Fixed rather than incidental, so
+     * that a workflow with no neighbourhood selected emits byte-identical output to one compiled
+     * before this parameter existed — which is what makes the slice safe to merge while the tier is
+     * off.
+     *
+     * @param  string|null            $stateName            display name of the selected state
+     * @param  string|null            $stateAbbreviation    two-letter abbreviation, or null when absent
+     * @param  list<GeographyOption>  $countyOptions        counties currently enumerable
+     * @param  list<GeographyOption>  $cityOptions          cities currently enumerable
+     * @param  list<GeographyOption>  $neighborhoodOptions  neighbourhoods currently enumerable; empty
+     *                                                      by default, so every existing six-argument
+     *                                                      call keeps its exact behaviour
      * @return array{state: string, counties: list<string>, cities: list<string>, zip_codes: list<string>}
      */
     public function project(
@@ -58,6 +81,7 @@ final class GeographyLabelProjector
         array $countyOptions,
         array $cityOptions,
         PreservedGeographyLabels $preserved,
+        array $neighborhoodOptions = [],
     ): array {
         return [
             'state'     => $this->projectState($selection, $stateName, $preserved),
@@ -65,8 +89,12 @@ final class GeographyLabelProjector
                 $this->label($selection->idsFor(GeographyTier::Counties), $countyOptions, GeographyOption::KIND_COUNTY, $stateAbbreviation),
                 $preserved->counties,
             ),
+            // Cities and neighbourhoods share one key by design — see the note above. `merge()`
+            // deduplicates by label, so a neighbourhood that happens to share a city's name
+            // collapses to one entry rather than producing a duplicate the user would see twice.
             'cities'    => $this->merge(
                 $this->label($selection->idsFor(GeographyTier::Cities), $cityOptions, GeographyOption::KIND_CITY, $stateAbbreviation),
+                $this->label($selection->idsFor(GeographyTier::Neighborhoods), $neighborhoodOptions, GeographyOption::KIND_NEIGHBORHOOD, $stateAbbreviation),
                 $preserved->cities,
             ),
             // ZIP codes are already canonical five-digit strings and carry no state suffix —
@@ -144,22 +172,24 @@ final class GeographyLabelProjector
     }
 
     /**
-     * Selected labels first, preserved history after, each label once.
+     * Concatenate label lists in the order given, each label once.
      *
      * Order is fixed rather than incidental so that saving twice without touching anything
      * produces the same bytes both times. A set that reordered itself would make every no-op save
      * look like a change to anything comparing documents.
      *
-     * @param  list<string>  $selected
-     * @param  list<string>  $preserved
+     * VARIADIC since Phase 1d-5, because the `cities` key now draws from three lists rather than
+     * two. The two-argument calls beside it are unchanged in meaning and in output.
+     *
+     * @param  list<string>  ...$lists  selected labels first, preserved history last
      * @return list<string>
      */
-    private function merge(array $selected, array $preserved): array
+    private function merge(array ...$lists): array
     {
         $out  = [];
         $seen = [];
 
-        foreach ([...$selected, ...$preserved] as $label) {
+        foreach (array_merge(...$lists) as $label) {
             $label = (string) $label;
 
             if ($label === '' || isset($seen[$label])) {

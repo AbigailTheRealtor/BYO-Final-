@@ -385,4 +385,170 @@ class GeographySelectionValidatorTest extends TestCase
         $this->assertFalse($result->isValid());
         $this->assertNotEmpty($result->violations());
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // Phase 1d-5 · R5 — NEIGHBOURHOODS ARE CONTAINED BY A JUSTIFIED CITY
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private function tieredValidator(): GeographySelectionValidator
+    {
+        return new GeographySelectionValidator($this->geography(), $this->neighborhoods());
+    }
+
+    public function test_a_neighborhood_in_a_selected_city_is_valid(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH, self::GILGO],
+        ));
+
+        $this->assertTrue($result->isValid());
+        $this->assertSame([], $result->violationsFor(GeographyTier::Neighborhoods));
+    }
+
+    public function test_a_neighborhood_whose_city_is_not_selected_is_an_orphan(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::HUNTINGTON],                 // Babylon not selected
+            [],
+            [self::OAK_BEACH],                  // Babylon's
+        ));
+
+        $this->assertFalse($result->isValid());
+
+        $violations = $result->violationsFor(GeographyTier::Neighborhoods);
+        $this->assertCount(1, $violations);
+        $this->assertSame(GeographyRule::NeighborhoodNotInSelectedCity, $violations[0]->rule);
+        $this->assertSame(self::OAK_BEACH, $violations[0]->offendingId);
+    }
+
+    public function test_a_neighborhood_with_no_cities_selected_at_all_is_an_orphan(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [],
+            [],
+            [self::OAK_BEACH],
+        ));
+
+        $this->assertCount(1, $result->violationsFor(GeographyTier::Neighborhoods));
+    }
+
+    /**
+     * The city must be JUSTIFIED, not merely present. A city in the wrong county cannot lend
+     * standing to anything beneath it.
+     */
+    public function test_a_neighborhood_under_an_unjustified_city_is_reported_once_not_twice(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::NASSAU],                     // Babylon belongs to Suffolk, not Nassau
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH],
+        ));
+
+        $this->assertCount(1, $result->violationsFor(GeographyTier::Cities));
+        $this->assertCount(
+            1,
+            $result->violationsFor(GeographyTier::Neighborhoods),
+            'One message per broken thing — the city and its orphaned neighbourhood are two things.'
+        );
+    }
+
+    public function test_a_neighborhood_from_another_state_is_an_orphan(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::FRENCH_QTR],
+        ));
+
+        $this->assertCount(1, $result->violationsFor(GeographyTier::Neighborhoods));
+    }
+
+    public function test_a_duplicate_neighborhood_is_reported_structurally(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH, self::OAK_BEACH],
+        ));
+
+        $violations = $result->violationsFor(GeographyTier::Neighborhoods);
+        $this->assertCount(1, $violations);
+        $this->assertSame(GeographyRule::DuplicateSelection, $violations[0]->rule);
+    }
+
+    public function test_a_blank_neighborhood_id_is_reported_as_malformed(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [''],
+        ));
+
+        $violations = $result->violationsFor(GeographyTier::Neighborhoods);
+        $this->assertCount(1, $violations);
+        $this->assertSame(GeographyRule::MalformedId, $violations[0]->rule);
+    }
+
+    /**
+     * The state short-circuit must extend to the new tier. A user who has picked neighbourhoods but
+     * no state sees ONE message about the state, not one per orphaned tier.
+     */
+    public function test_an_unknown_state_does_not_cascade_into_neighborhood_errors(): void
+    {
+        $result = $this->tieredValidator()->validate(GeographySelection::of(
+            'not-a-state',
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH],
+        ));
+
+        $this->assertSame([], $result->violationsFor(GeographyTier::Neighborhoods));
+    }
+
+    // ── The default construction, which every existing call site uses ────────
+
+    public function test_without_a_neighborhood_repository_the_other_tiers_validate_unchanged(): void
+    {
+        $result = $this->validator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK, self::NASSAU],
+            [self::BABYLON, self::HEMPSTEAD],
+            [self::ZIP_SHARED],
+        ));
+
+        $this->assertTrue($result->isValid());
+        $this->assertSame([], $result->violations);
+    }
+
+    public function test_without_a_neighborhood_repository_a_neighborhood_cannot_be_justified(): void
+    {
+        // Honest rather than lenient: nothing enumerated it, so nothing justifies it. Unreachable
+        // in practice — no surface can select a neighbourhood while the tier is off.
+        $result = $this->validator()->validate(GeographySelection::of(
+            self::NEW_YORK,
+            [self::SUFFOLK],
+            [self::BABYLON],
+            [],
+            [self::OAK_BEACH],
+        ));
+
+        $this->assertCount(1, $result->violationsFor(GeographyTier::Neighborhoods));
+    }
 }

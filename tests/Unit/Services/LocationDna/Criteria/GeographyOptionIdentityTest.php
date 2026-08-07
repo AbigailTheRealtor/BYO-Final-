@@ -37,7 +37,54 @@ class GeographyOptionIdentityTest extends TestCase
         $this->assertTrue(GeographyOption::state('1', 'New York')->is(GeographyOption::KIND_STATE));
         $this->assertTrue(GeographyOption::county('10', 'Suffolk County', '1')->is(GeographyOption::KIND_COUNTY));
         $this->assertTrue(GeographyOption::city('100', 'Babylon', '10')->is(GeographyOption::KIND_CITY));
+        $this->assertTrue(GeographyOption::neighborhood('900', 'Clearwater Beach', '100')->is(GeographyOption::KIND_NEIGHBORHOOD));
         $this->assertTrue(GeographyOption::zip('11001', '10')->is(GeographyOption::KIND_ZIP));
+    }
+
+    /**
+     * Phase 1d-5 — a neighbourhood is NOT a city.
+     *
+     * The resolver decides what a tier accepts by filtering on kind, so if `is(KIND_CITY)` were
+     * true for a neighbourhood it would silently become selectable in the city tier — and a
+     * neighbourhood label would then be justified by a county rather than by its city.
+     *
+     * @test
+     */
+    public function a_neighbourhood_is_not_interchangeable_with_a_city(): void
+    {
+        $neighborhood = GeographyOption::neighborhood('900', 'Clearwater Beach', '100');
+
+        $this->assertFalse($neighborhood->is(GeographyOption::KIND_CITY));
+        $this->assertFalse(GeographyOption::city('100', 'Clearwater', '10')->is(GeographyOption::KIND_NEIGHBORHOOD));
+    }
+
+    /** @test */
+    public function a_neighbourhood_is_parented_by_its_city_and_carries_no_code(): void
+    {
+        $neighborhood = GeographyOption::neighborhood('900', 'Clearwater Beach', '1212875');
+
+        $this->assertSame('900', $neighborhood->id);
+        $this->assertSame('Clearwater Beach', $neighborhood->name);
+        $this->assertSame('1212875', $neighborhood->parentId, 'the parent is the city option id');
+        $this->assertNull($neighborhood->code, 'a neighbourhood has no published external identifier');
+        $this->assertNull($neighborhood->abbreviation);
+    }
+
+    /** @test */
+    public function two_neighbourhoods_of_the_same_name_under_different_cities_are_distinct(): void
+    {
+        $a = GeographyOption::neighborhood('900', 'Downtown', '100');
+        $b = GeographyOption::neighborhood('901', 'Downtown', '101');
+
+        $this->assertFalse($a->matches($b));
+    }
+
+    /** @test */
+    public function a_neighbourhood_must_name_its_parent(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        new GeographyOption(GeographyOption::KIND_NEIGHBORHOOD, '900', 'Clearwater Beach');
     }
 
     public function test_matches_is_true_for_the_same_option(): void

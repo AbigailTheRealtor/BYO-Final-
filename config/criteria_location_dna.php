@@ -139,4 +139,39 @@ return [
         explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer'))
     ))),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Neighborhood tier (Phase 1d-5)
+    |--------------------------------------------------------------------------
+    |
+    | Master gate for the tier BELOW cities: neighbourhoods and communities,
+    | served from the supplemental `location_places` layer rather than from any
+    | published corpus. Clearwater Beach is the case it exists for — a barrier
+    | island inside the City of Clearwater that the Census cannot publish because
+    | it is not a unit of government.
+    |
+    | DEFAULT OFF. With the gate closed, `CriteriaNeighborhoodRepository` resolves
+    | to the null object, every enumeration returns an empty list, and a stored
+    | `Clearwater Beach, FL` stays preserved-but-unmatched exactly as it is today.
+    |
+    | IT ALSO REQUIRES `geography_source = census`, AND THAT IS NOT A SECOND
+    | SWITCH TO REMEMBER — it is enforced in the binding. The tier joins a city
+    | option's id to `location_places.census_place_geoid`, which is only the same
+    | value under the census source; under `eloquent` a city id is a `us_cities`
+    | surrogate key that would address a different place or none at all. So this
+    | flag turned on against the eloquent source yields the null object rather
+    | than wrong neighbourhoods. Failing to an empty tier is safe; the geography
+    | source's own binding throws instead, because there a silent fallback would
+    | serve real-but-wrong data.
+    |
+    | TURNING THIS ON DOES NOT ADD A STORAGE KEY. A selected neighbourhood is
+    | projected into the EXISTING `cities` array, in the same `{name}, {ST}` label
+    | format. There is no `neighborhoods` key in a stored document and there must
+    | not be one — six consumers read `cities` and none would read a fifth key.
+    | See `GeographyTier::Neighborhoods`.
+    |
+    */
+
+    'neighborhood_tier_enabled' => (bool) env('CRITERIA_LDNA_NEIGHBORHOOD_TIER_ENABLED', false),
+
 ];

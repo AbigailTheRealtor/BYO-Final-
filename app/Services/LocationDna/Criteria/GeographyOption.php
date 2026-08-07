@@ -34,7 +34,25 @@ final class GeographyOption
     public const KIND_CITY   = 'city';
     public const KIND_ZIP    = 'zip';
 
-    private const KINDS = [self::KIND_STATE, self::KIND_COUNTY, self::KIND_CITY, self::KIND_ZIP];
+    /**
+     * Phase 1d-5 — a neighbourhood or community, sitting below a city.
+     *
+     * A SEPARATE KIND RATHER THAN A CITY WITH A FLAG. The distinction is load-bearing in two
+     * places: the cascade justifies a neighbourhood by its selected CITY where a city is justified
+     * by its county, and a surface has to be able to render the two tiers apart. Modelling it as a
+     * city carrying a boolean would make `is(KIND_CITY)` true for both, which is precisely the
+     * filter the resolver uses to decide what a tier accepts — so a neighbourhood would silently
+     * become selectable as a city.
+     */
+    public const KIND_NEIGHBORHOOD = 'neighborhood';
+
+    private const KINDS = [
+        self::KIND_STATE,
+        self::KIND_COUNTY,
+        self::KIND_CITY,
+        self::KIND_NEIGHBORHOOD,
+        self::KIND_ZIP,
+    ];
 
     /**
      * @param  string       $kind          one of the KIND_* constants
@@ -115,6 +133,30 @@ final class GeographyOption
     public static function city(string $id, string $name, string $countyId): self
     {
         return new self(self::KIND_CITY, $id, $name, null, $countyId);
+    }
+
+    /**
+     * Phase 1d-5 — a neighbourhood, parented by the CITY it sits inside.
+     *
+     * WHY THE PARENT IS A CITY AND NOT A COUNTY
+     * -----------------------------------------
+     * Every other sub-state option hangs off the tier immediately above it, and a neighbourhood's
+     * defining fact is which municipality contains it — Clearwater Beach is meaningful as part of
+     * Clearwater, not merely as something in Pinellas County. Parenting it by county would make
+     * the tier a flat second city list and lose the containment the cascade needs to clear it when
+     * its city is deselected.
+     *
+     * `$cityId` is therefore a CITY OPTION'S id, which under the census source is the seven-digit
+     * place GEOID — the same value `location_places.census_place_geoid` stores, which is what makes
+     * the supplemental layer joinable to the cascade at all.
+     *
+     * NO `code`. A neighbourhood has no published external identifier: the Census does not
+     * enumerate it, which is the entire reason the supplemental layer exists. Passing its surrogate
+     * key as a `code` would dress an internal id up as a government one.
+     */
+    public static function neighborhood(string $id, string $name, string $cityId): self
+    {
+        return new self(self::KIND_NEIGHBORHOOD, $id, $name, null, $cityId);
     }
 
     public static function zip(string $zip, string $countyId): self

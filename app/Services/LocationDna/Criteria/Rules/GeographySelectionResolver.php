@@ -3,7 +3,9 @@
 namespace App\Services\LocationDna\Criteria\Rules;
 
 use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\GeographyOption;
+use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
 
 /**
  * Phase 1b — the cascade engine. Given a selection, return the part of it the corpus still
@@ -57,8 +59,22 @@ use App\Services\LocationDna\Criteria\GeographyOption;
  */
 final class GeographySelectionResolver
 {
+    /**
+     * Phase 1d-5 — `$neighborhoods` is OPTIONAL, and the default is what keeps this slice inert.
+     *
+     * A caller that does not pass one gets {@see NullCriteriaNeighborhoodRepository}, which
+     * enumerates nothing, so the neighbourhood tier is always empty and the other four tiers behave
+     * exactly as they did before this parameter existed. Every existing call site — including the
+     * Livewire trait, which this slice deliberately does not touch — therefore keeps working and
+     * keeps producing byte-identical results.
+     *
+     * That is not merely a compatibility convenience. It is where the feature gate lands in this
+     * layer: the flag decides what the container BINDS, and a surface opts in by ASKING for the
+     * repository. Until a surface does, no configuration value can make this tier resolve anything.
+     */
     public function __construct(
         private readonly CriteriaGeographyRepository $geography,
+        private readonly CriteriaNeighborhoodRepository $neighborhoods = new NullCriteriaNeighborhoodRepository(),
     ) {
     }
 
@@ -102,10 +118,38 @@ final class GeographySelectionResolver
             $cleared,
         );
 
+        // ── Neighbourhoods, justified by CONTAINMENT in a surviving CITY ────
+        //
+        // The parent is the city, not the county, so clearing is transitive through two tiers: drop
+        // a county, its cities go, and their neighbourhoods go with them — all in this one pass,
+        // because each stage reads the SURVIVORS of the stage above rather than the input.
+        //
+        // Two short-circuits, and the second is the one that matters. No surviving city means
+        // nothing can be justified, so the answer is known without asking. An empty neighbourhood
+        // selection means there is nothing to justify — and skipping the call there is what makes
+        // the tier cost exactly zero queries for every caller that never selects one, which today
+        // is all of them.
+        $neighborhoodOptions = ($cities === [] || $selection->neighborhoodIds === [])
+            ? []
+            : $this->neighborhoods->neighborhoodsInCities($cities);
+
+        $neighborhoods = $this->keepJustified(
+            $selection->neighborhoodIds,
+            $this->allowedIds($neighborhoodOptions, GeographyOption::KIND_NEIGHBORHOOD),
+            GeographyTier::Neighborhoods,
+            GeographyRule::NeighborhoodNotInSelectedCity,
+            $cleared,
+        );
+
         // ── ZIPs, justified by ASSOCIATION with ANY surviving county ────────
         // Re-derived from the survivors, so a ZIP shared by two selected counties outlives the loss
         // of either one. Collapsing the multi-parent option list to a set of ZIP codes IS the
         // association rule — the parent that produced each row is deliberately not consulted.
+        //
+        // NOTE that ZIPs hang off COUNTIES, not off the neighbourhood tier above them. That is a
+        // deliberate decision rather than an oversight in the ordering: a ZCTA crosses municipal
+        // boundaries as freely as it crosses county ones, so re-parenting ZIPs under cities or
+        // neighbourhoods would destroy the association rule this class exists to protect.
         $zipOptions = $counties === [] ? [] : $this->geography->zipsInCounties($counties);
 
         $zips = $this->keepJustified(
@@ -117,7 +161,7 @@ final class GeographySelectionResolver
         );
 
         return new SelectionResolution(
-            GeographySelection::of($selection->stateId, $counties, $cities, $zips),
+            GeographySelection::of($selection->stateId, $counties, $cities, $zips, $neighborhoods),
             $cleared,
         );
     }
