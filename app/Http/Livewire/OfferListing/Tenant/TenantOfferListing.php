@@ -4969,7 +4969,11 @@ class TenantOfferListing extends Component
             'counties' => $this->counties ?? [],
             'timestamp' => now()->toDateTimeString(),
         ]);
-        
+
+        // A blocked submit must not inherit the previous action's success banner — see the same
+        // clear in TenantAgentAuction::store(). Before any validation, so it covers every refusal.
+        session()->forget('success');
+
         try {
 
             $this->isDraft = 0;

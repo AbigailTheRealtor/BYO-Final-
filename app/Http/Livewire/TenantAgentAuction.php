@@ -5047,6 +5047,19 @@ class TenantAgentAuction extends Component
         // only). Thrown BEFORE the try below so the ValidationException propagates to
         // Livewire instead of being swallowed into a generic error flash by the catch.
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
+            // A blocked submit must not inherit the PREVIOUS action's success banner.
+            // `saveDraft()` flashes "Draft saved successfully (Version N)" and redirects, so
+            // without this a user who saves a draft and then submits sees that green banner
+            // sitting above a submit that did not happen — which is exactly how a blocked
+            // submit came to read as a successful one.
+            //
+            // SCOPED TO THE ROLES THE GUARD BELOW APPLIES TO. This class serves all four
+            // roles; seller and landlord neither render Important Places nor reach the throw,
+            // so clearing their flash would be an unrelated behaviour change in a shared
+            // method. Cleared immediately before the guard rather than at the top of the
+            // method for the same reason.
+            session()->forget('success');
+
             $this->assertImportantPlacesValid();
         }
 

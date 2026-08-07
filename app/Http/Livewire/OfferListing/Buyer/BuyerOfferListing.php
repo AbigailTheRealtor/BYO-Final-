@@ -2942,6 +2942,10 @@ class BuyerOfferListing extends Component
             'state' => $this->state ?? null,
         ]);
 
+        // A blocked submit must not inherit the previous action's success banner — see the same
+        // clear in TenantAgentAuction::store(). Before any validation, so it covers every refusal.
+        session()->forget('success');
+
         try {
             // 9B-3: hydrate state/counties from the Search Areas blob before validation,
             // since the discrete Acceptable State/Counties inputs were removed.

@@ -2404,6 +2404,10 @@ class BuyerAgentAuction extends Component
             'state' => $this->state ?? null,
         ]);
 
+        // A blocked submit must not inherit the previous action's success banner — see the same
+        // clear in TenantAgentAuction::store(). Before any validation, so it covers every refusal.
+        session()->forget('success');
+
         // 9D: block submit when a started Important Place row is incomplete. Before the try
         // so the ValidationException propagates to Livewire rather than being swallowed.
         $this->assertImportantPlacesValid();

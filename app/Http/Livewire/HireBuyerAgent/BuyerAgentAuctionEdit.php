@@ -2212,6 +2212,10 @@ class BuyerAgentAuctionEdit extends Component
             'state' => $this->state ?? null,
         ]);
 
+        // A blocked save-edit must not inherit the previous action's success banner — see the
+        // same clear in TenantAgentAuction::store(). Before any validation.
+        session()->forget('success');
+
         // 9D: block save-edit when a started Important Place row is incomplete. Before the try
         // so the ValidationException propagates to Livewire rather than being swallowed.
         $this->assertImportantPlacesValid();

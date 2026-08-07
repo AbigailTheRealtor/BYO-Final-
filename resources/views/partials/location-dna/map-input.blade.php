@@ -312,6 +312,30 @@
       "within minutes" shows only a pin — travel-time areas are never drawn as fake circles.
     </div>
 
+    {{-- ── Submit guard errors ──────────────────────────────────────────────────────────
+         `assertImportantPlacesValid()` throws a ValidationException keyed to
+         `important_places_json` when a STARTED row is left incomplete. Until this block
+         existed nothing rendered that key: the exception was raised, Livewire returned it,
+         and every one of the seven Buyer/Tenant surfaces failed silently — the submit was
+         blocked with no message, above a stale green "Draft saved successfully" banner.
+
+         It lives in the shared partial rather than in seven views precisely so the seven
+         cannot drift apart again. It is inside `@if($enableImportantPlaces)`, so Seller and
+         Landlord — which never render the section and never call the guard — are untouched.
+
+         The messages are the service's own ("Important Place #1: enter an address."), so
+         nothing here restates a rule; a change to validate() shows up here without an edit. --}}
+    @if ($errors->has('important_places_json'))
+      <div class="alert alert-danger py-2 px-3 mt-2 mb-2" role="alert" id="ldna-ip-errors">
+        <strong class="d-block" style="font-size:.85rem;">Please complete your Important Places before submitting.</strong>
+        <ul class="mb-0 mt-1 ps-3" style="font-size:.82rem;">
+          @foreach ($errors->get('important_places_json') as $ldnaIpError)
+            <li>{{ $ldnaIpError }}</li>
+          @endforeach
+        </ul>
+      </div>
+    @endif
+
     <div id="ldna-ip-rows"></div>
 
     <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="ldnaIpAddRow()">

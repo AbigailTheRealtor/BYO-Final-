@@ -3380,6 +3380,11 @@ class TenantAgentAuctionEdit extends Component
         // full submit only — draft saves skip it). Before the try so the ValidationException
         // propagates to Livewire rather than being caught by the handler below.
         if (!$this->_isDraftSave && in_array($this->user_type, ['buyer', 'tenant'])) {
+            // A blocked save-edit must not inherit the previous action's success banner — see
+            // the same clear in TenantAgentAuction::store(). Scoped by the SAME condition as
+            // the guard: seller and landlord are out, and a draft save owns its own flash.
+            session()->forget('success');
+
             $this->assertImportantPlacesValid();
         }
 
