@@ -14,18 +14,26 @@
      x-data="{ showPtgOther: {{ ($compatibility_preferences['buyer_specific']['primary_transaction_goal'] ?? '') === 'Other' ? 'true' : 'false' }} }"
      @update-ptg-other.window="showPtgOther = $event.detail.showOther">
     <label class="fw-bold">
-        Primary Transaction Goal:<span class="text-danger">*</span>
+        {{-- No `*` on any label in this tab. The Listing Details tab tells the buyer that fields
+             marked with an asterisk are required, so an asterisk here would assert a requirement
+             that neither the server rules nor the client-side blocker enforce any more. Every
+             field in this tab is optional; none of them carries one. --}}
+        Primary Transaction Goal:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="What is the main reason you are purchasing a property?">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div wire:ignore wire:key="compat-ptg-select" class="input-cover mt-2 has-select-icon">
+        {{-- OPTIONAL: the `required` attribute was removed with the server rule (now
+             `nullable|string`). `getAllRequiredFields()` collects `[required]` controls and the
+             form's submit listener calls preventDefault() on any that are empty, so the attribute
+             alone kept this blocking after the PHP rule was relaxed. The field still renders,
+             still round-trips, and is still read by the match scorer when supplied. --}}
         <select id="compat_primary_transaction_goal"
                 data-compat-field="primary_transaction_goal"
                 data-placeholder="Select"
-                class="form-control has-icon" data-icon="fa-solid fa-bullseye"
-                required>
+                class="form-control has-icon" data-icon="fa-solid fa-bullseye">
             <option value="">Select</option>
             <option value="Primary Residence">Primary Residence</option>
             <option value="Vacation / Secondary Home">Vacation / Secondary Home</option>
@@ -53,16 +61,20 @@
      @update-rp-other.window="hasRpOther = $event.detail.hasOther"
      wire:key="compat-rep-priorities-group">
     <label class="fw-bold">
-        Representation Priorities:<span class="text-danger">*</span>
+        Representation Priorities:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the areas where agent expertise matters most to you. You may choose multiple.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div wire:ignore wire:key="compat-rep-priorities-select" class="input-cover mt-2 has-select-icon">
+        {{-- OPTIONAL — see the note on primary_transaction_goal above. This one had THREE
+             enforcement layers: the server rule, an explicit push in `buyerGetInvalidItems()`,
+             and this attribute. The first two are already gone; leaving this behind kept the
+             field blocking anyway. --}}
         <select id="compat_representation_priorities" name="compat_representation_priorities[]"
                 multiple class="form-control has-icon select2-multiple" data-icon="fa-solid fa-list-check"
-                data-placeholder="Select" required>
+                data-placeholder="Select">
             <option value="Price Negotiation">Price Negotiation</option>
             <option value="Speed of Transaction">Speed of Transaction</option>
             <option value="Finding Off-Market Properties">Finding Off-Market Properties</option>
@@ -163,18 +175,18 @@
 <!-- 6. Communication Style -->
 <div class="form-group">
     <label class="fw-bold">
-        Communication Style:<span class="text-danger">*</span>
+        Communication Style:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="How often would you like your agent to provide updates and check in with you?">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div wire:ignore wire:key="compat-comm-style-select" class="input-cover mt-2 has-select-icon">
+        {{-- OPTIONAL — see the note on primary_transaction_goal above. --}}
         <select id="compat_communication_style"
                 data-compat-field="communication_style"
                 data-placeholder="Select"
-                class="form-control has-icon" data-icon="fa-solid fa-comments"
-                required>
+                class="form-control has-icon" data-icon="fa-solid fa-comments">
             <option value="">Select</option>
             <option value="Frequent Updates (Daily)">Frequent Updates – Daily check-ins</option>
             <option value="Regular Updates (Every Few Days)">Regular Updates – Every few days</option>
@@ -257,18 +269,18 @@
 <!-- 10. Negotiation Style -->
 <div class="form-group">
     <label class="fw-bold">
-        Negotiation Style:<span class="text-danger">*</span>
+        Negotiation Style:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="How would you like your agent to approach negotiations on your behalf?">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div wire:ignore wire:key="compat-negotiation-select" class="input-cover mt-2 has-select-icon">
+        {{-- OPTIONAL — see the note on primary_transaction_goal above. --}}
         <select id="compat_negotiation_style"
                 data-compat-field="negotiation_style"
                 data-placeholder="Select"
-                class="form-control has-icon" data-icon="fa-solid fa-scale-balanced"
-                required>
+                class="form-control has-icon" data-icon="fa-solid fa-scale-balanced">
             <option value="">Select</option>
             <option value="Aggressive Negotiator">Aggressive – Push hard for the lowest price and best terms</option>
             <option value="Firm but Fair">Firm but Fair – Strong position while maintaining goodwill</option>
@@ -285,18 +297,18 @@
      x-data="{ showPawsOther: {{ ($compatibility_preferences['buyer_specific']['preferred_agent_working_style'] ?? '') === 'Other' ? 'true' : 'false' }} }"
      @update-paws-other.window="showPawsOther = $event.detail.showOther">
     <label class="fw-bold">
-        Preferred Agent Working Style:<span class="text-danger">*</span>
+        Preferred Agent Working Style:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="What type of working dynamic do you prefer with your agent?">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div wire:ignore wire:key="compat-paws-select" class="input-cover mt-2 has-select-icon">
+        {{-- OPTIONAL — see the note on primary_transaction_goal above. --}}
         <select id="compat_preferred_agent_working_style"
                 data-compat-field="preferred_agent_working_style"
                 data-placeholder="Select"
-                class="form-control has-icon" data-icon="fa-solid fa-user-tie"
-                required>
+                class="form-control has-icon" data-icon="fa-solid fa-user-tie">
             <option value="">Select</option>
             <option value="Highly Proactive">Highly Proactive – Agent brings me opportunities before I ask</option>
             <option value="Responsive Partner">Responsive Partner – Agent reacts quickly to my requests</option>

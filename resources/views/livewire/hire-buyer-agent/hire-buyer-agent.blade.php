@@ -2666,6 +2666,56 @@
             const saveButton = document.getElementById('save-button');
             const formContainer = document.getElementById('wizard-form-container');
 
+            // Fields that must NEVER block a Buyer submit, keyed the same way resolveBuyerFieldKey()
+            // keys them (wire:model first, then element id for the wire:ignore Select2 selects).
+            //
+            // These are matching preferences and a broker-status disclosure, not listing facts, and
+            // their server rules are `nullable` (or absent, for working_with_agent). Removing the
+            // `required` attributes in the Blade partials is the primary fix; this set is the
+            // backstop, because every consumer below — updateSaveButton(), validateAllTabsStrictly()
+            // and buyerGetInvalidItems(), whose caller calls preventDefault() — funnels through
+            // getAllRequiredFields(), so a `required` reintroduced by a Select2 re-init or a
+            // morphdom patch would silently restore the block on all three at once.
+            //
+            // BUYER ONLY, and enforced server-side rather than by convention: this view also
+            // renders the seller / tenant / landlord compatibility partials, which reuse the same
+            // `compat_*` element ids. Gating the list on $user_type means the exemption cannot
+            // reach another role's fields even if this view is ever rendered for one.
+            @php
+                // Built in a @php block rather than inline in @json: Blade's @json argument parser
+                // stops at the first ')' it finds and cannot span a multi-line array literal, which
+                // silently truncates the list to its first few entries.
+                $buyerNonBlockingKeys = $user_type === 'buyer' ? [
+                    'working_with_agent',
+                    'compat_primary_transaction_goal',
+                    'compat_representation_priorities',
+                    'compat_communication_style',
+                    'compat_negotiation_style',
+                    'compat_preferred_agent_working_style',
+                    // Pets renders as #pets (Residential) or #pets_income (Income); both bind to
+                    // the same `pets` property. Neither carries `required` today, so these two are
+                    // backstop only — the blocker that actually had to go was an explicit push in
+                    // the OTHER Hire Buyer shell (tenant-agent-auction.blade.php). Listed here so
+                    // this set is the whole answer to "what must not block a buyer submit".
+                    'pets',
+                    'pets_income',
+                ] : [];
+            @endphp
+            const BUYER_NON_BLOCKING_KEYS = new Set(@json($buyerNonBlockingKeys));
+
+            // True when the field is one of the Buyer fields that may not block submission.
+            function isBuyerNonBlockingField(field) {
+                if (!field) return false;
+                const key = field.getAttribute('wire:model')
+                    || field.getAttribute('wire:model.defer')
+                    || field.getAttribute('wire:model.lazy')
+                    || field.id
+                    || field.name
+                    || '';
+                return BUYER_NON_BLOCKING_KEYS.has(key)
+                    || BUYER_NON_BLOCKING_KEYS.has(key.replace(/\[\]$/, ''));
+            }
+
             // Get all required fields from only active tabs depending on service type
             function getAllRequiredFields() {
                 const requiredFields = [];
@@ -2689,7 +2739,10 @@
                     const tab = document.querySelector(selector);
                     if (!tab) return;
                     const fields = tab.querySelectorAll('[required]');
-                    fields.forEach(field => requiredFields.push(field));
+                    fields.forEach(field => {
+                        if (isBuyerNonBlockingField(field)) return;
+                        requiredFields.push(field);
+                    });
                 });
 
                 return requiredFields;
