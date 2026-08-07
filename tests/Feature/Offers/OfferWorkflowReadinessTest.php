@@ -1037,6 +1037,49 @@ class OfferWorkflowReadinessTest extends TestCase
             // so a trait-level mirror would resolve differently on create than on edit. A read
             // fix cannot corrupt stored data and is reversible by revert alone.
             'app/Services/Stellar/TenantOfferListingCriteriaLoader.php',
+            // Phase 0 (Spatial UI Integration) — street-address shape validation
+            // across all Seller/Landlord surfaces. The other six components this
+            // phase touches are already allow-listed above; these are the ones it
+            // reaches that no previous task did.
+            'app/Http/Livewire/Concerns/ValidatesPropertyAddress.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
+            //   The two services the rule and trait are built on. Both are new files and
+            //   neither was registered when they were introduced — an omission in the
+            //   original slice's bookkeeping, corrected here rather than carried forward.
+            //   AddressShapeValidator is pure and DB-free; ZipCodeLookupService reads the
+            //   `us_zip_codes` gazetteer we already own. Neither makes an outbound call.
+            'app/Services/Location/AddressShapeValidator.php',
+            'app/Services/Location/ZipCodeLookupService.php',
+            // Phase 0 presentation layer — surfacing the address error on the field
+            // at fault, the ZIP-moved notice, and honest map-unavailable messaging.
+            // The two seller/landlord tab partials this phase also touches are
+            // already allow-listed above.
+            'resources/views/components/address-assist-notice.blade.php',
+            'resources/views/components/byo-address-autocomplete.blade.php',
+            'resources/views/components/google-maps-auth-telemetry.blade.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php',
+            // Phase 1 (Shared Components) — the four listing blades drop their
+            // duplicated Google Places listener in favour of the shared
+            // <x-byo-address-autocomplete>, invoked script-only from the two
+            // property-preference partials. Every other file this commit touches is
+            // already allow-listed above; this is the only one no previous task
+            // reached.
+            'resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php',
+            // Phase 1 (Shared Components) — provider-neutral rename of the shared
+            // fill method (fillFromGooglePlaces -> fillFromResolvedAddress) so the
+            // D1 geocoder swap becomes a one-file change. Naming only: no signature,
+            // behaviour or payload handling changed. The trait carries the method;
+            // ValidStreetAddress references it in a comment.
+            'app/Http/Livewire/Concerns/HandlesResolvedPropertyAddress.php',
+            'app/Rules/ValidStreetAddress.php',
+            // Provider-neutral trait rename: HandlesGooglePlacesAddress ->
+            // HandlesResolvedPropertyAddress. Both halves of the rename are listed —
+            // the new path above, and the removed path here, which the guard still
+            // sees as a deletion in the diff window. Naming only; the trait's method,
+            // signature and behaviour are untouched, and no provider is selected,
+            // called, or added by it.
+            'app/Http/Livewire/Concerns/HandlesGooglePlacesAddress.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
