@@ -573,8 +573,9 @@
        the card's padding. This declares only the flex behaviour the columns actually require and
        inherits the card's padding untouched.
 
-       Row spacing is set by `--hla-field-row-gap` below, which M7.6 aligned to the reference
-       page's `mb-2`; see the note there for why it is a gap rather than a margin. */
+       Row spacing is set by `--hla-field-row-gap` below, which M7.9 aligned to the spacing the
+       reference page actually renders; see the note there for why it is a gap rather than a
+       margin, and why the class name it was originally aimed at was the wrong target. */
     /* M7.8 — the horizontal gap is DECLARED here, because nothing was ever supplying one.
 
        THE GUTTER WAS PHANTOM. Bootstrap 5 puts a column's horizontal padding on `.row > *`, not on
@@ -607,8 +608,11 @@
        use the primitive outside a grid, and `.hla-field-grid` added a `row-gap` on top of it. The
        two are not alternatives — a flex row-gap applies BETWEEN lines and the margin applies below
        every cell, so consecutive field rows were separated by the sum, ~1rem, against the
-       reference page's `mb-2` (0.5rem). Every card on the page was carrying twice the intended
+       reference page's row spacing. Every card on the page was carrying twice the intended
        air, which read as the fields being unrelated to each other.
+
+       (M7.6 recorded that spacing as "`mb-2` (0.5rem)". It is not — see the M7.9 note below. The
+       diagnosis above was right and the target it aimed at was 0.15rem short.)
 
        The margin is zeroed and the gap alone carries the rhythm. Doing it in this order rather
        than the reverse matters: row-gap is the one that understands wrapping, so two fields
@@ -626,9 +630,36 @@
     /* M7.8 adds the horizontal companion. Both live on the same element so a reader looking for
        "how far apart are the fields" finds one answer covering both axes. 1.5rem is what the
        reference page's rows put between their columns; see the grid rule above for why it is
-       restated here instead of being read off a Bootstrap variable. */
+       restated here instead of being read off a Bootstrap variable.
+
+       ── M7.9 — THE ROW GAP WAS AIMED AT A NUMBER THE REFERENCE DOES NOT USE ──────────────────
+
+       M7.6 set this to 0.5rem and named the target "the reference page's `mb-2`". `mb-2` IS
+       0.5rem in Bootstrap — but the reference overrides it for exactly these rows:
+
+           .lol-view-page .row.mb-2 { margin-bottom: 0.65rem !important; }
+
+       So the class it was named after never governed the spacing it was measured against. The
+       page renders 0.65rem, and this page has been 0.15rem tighter on every row since M7.6.
+
+       MEASURED IN A BROWSER, NOT INFERRED FROM THE CASCADE, because the whole defect was a
+       cascade read that looked right. On a live landlord page the reference reports a computed
+       `margin-bottom: 10.4px` and 38 consecutive inter-row gaps of 10.39px; this page reported a
+       `row-gap` of 8px. 0.65rem is 10.4px, so the two now agree at the value the reference
+       actually renders rather than the one its class name implies.
+
+       ONE DIFFERENCE IS NOT REPRODUCED, DELIBERATELY. A margin applies below EVERY row including
+       the last, so on the reference a card whose final element is a row carries ~10.4px of
+       trailing space before the card's own padding. A row-gap applies only BETWEEN lines and adds
+       nothing after the last one. Matching that would mean giving the card asymmetric interior
+       padding — 1.25rem above the fields and 1.9rem below — which is a property of how the
+       reference is built rather than a spacing decision anyone made. The rhythm BETWEEN rows is
+       what "row rhythm" means and is what this aligns; the trailing space stays as it is.
+
+       NOTHING ELSE MOVES. This is one token value. Column gap, cell widths, breakpoints, the
+       type scale and the label/value split are all untouched. */
     .hla-detail-page {
-        --hla-field-row-gap: 0.5rem;
+        --hla-field-row-gap: 0.65rem;
         --hla-field-col-gap: 1.5rem;
     }
 

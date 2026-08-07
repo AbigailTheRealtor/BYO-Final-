@@ -633,10 +633,22 @@ class HireAgentFieldPresentationTest extends TestCase
         $this->assertNotSame('', $grid, 'Precondition: the grid rule was located.');
         $this->assertStringContainsString('row-gap: var(--hla-field-row-gap)', $grid, 'The gap reads the token.');
 
+        /*
+         | M7.9 — 0.65rem, not 0.5rem, and the difference is the whole point of the change.
+         |
+         | M7.6 set this to 0.5rem and justified it as "the reference page's mb-2". Bootstrap's
+         | mb-2 IS 0.5rem, but the reference overrides it for exactly these rows —
+         | `.lol-view-page .row.mb-2 { margin-bottom: 0.65rem !important; }` — so the class it was
+         | named after never governed the spacing it was measured against. Verified in a browser:
+         | the reference computes to 10.4px and renders 38 consecutive inter-row gaps of 10.39px.
+         |
+         | The assertion message no longer names `mb-2`. Naming the class is what made the original
+         | wrong, and a guard that repeats the mistaken premise would read as confirming it.
+         */
         $this->assertStringContainsString(
-            '--hla-field-row-gap: 0.5rem',
+            '--hla-field-row-gap: 0.65rem',
             $html,
-            "The token matches the reference page's mb-2."
+            'The token matches the row spacing the reference page actually renders (0.65rem).'
         );
 
         $reset = $this->ruleBody($html, '.hla-detail-page .hla-field .viho-kv');
