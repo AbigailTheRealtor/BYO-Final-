@@ -4,6 +4,7 @@ namespace Tests\Feature\Security;
 
 use App\Models\PropertyLocationDna;
 use App\Services\LocationDna\GooglePlacesPoiAdapter;
+use App\Services\LocationDna\LocationDnaGeocodeService;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -104,6 +105,196 @@ class GooglePlacesKillSwitchTest extends TestCase
 
         $this->assertFalse($output['success']);
         $this->assertSame('missing_google_api_key', $output['error']);
+    }
+
+    // =====================================================================
+    // GEOCODING — the path the original kill switch never covered.
+    //
+    // GooglePlacesPoiAdapter honoured `google_places.enabled`; LocationDnaGeocodeService
+    // did not. Its only gate was `blank($apiKey)`, so a key present in the environment
+    // was enough to send an outbound Geocoding request with the switch off. These tests
+    // pin the fail-closed behaviour.
+    //
+    // Product direction is a NON-GOOGLE resolver. None of these tests assert that
+    // enabling Google geocoding is desirable — they assert that it cannot happen
+    // unless someone explicitly turns it on.
+    // =====================================================================
+
+    /** The exact contract a caller sees when no approved resolver can produce a coordinate. */
+    private const UNRESOLVED_ERROR = 'non_google_geocoder_unavailable';
+
+    private function addressWithoutCoordinates(): array
+    {
+        return [
+            'address' => '14047 Marguerite Dr',
+            'city'    => 'Madeira Beach',
+            'state'   => 'FL',
+            'zip'     => '33708',
+        ];
+    }
+
+    /** @test */
+    public function geocoding_makes_zero_outbound_calls_when_the_switch_is_off_despite_a_valid_key(): void
+    {
+        config(['google_places.enabled' => false]);
+        config(['services.google.places_key' => 'a-real-looking-key']); // key present, switch off
+
+        // No client injected: the service resolves ClientInterface from the container,
+        // where TestCase has bound BlocksGooglePlacesHttpClient. If the guard ever
+        // regresses, that client throws and names the 2026-07-05 incident.
+        $output = app(LocationDnaGeocodeService::class)->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $this->addressWithoutCoordinates(),
+        );
+
+        $this->assertFalse($output['success']);
+        $this->assertSame('skipped', $output['status']);
+        $this->assertSame(self::UNRESOLVED_ERROR, $output['error']);
+        $this->assertNull($output['lat']);
+        $this->assertNull($output['lng']);
+    }
+
+    /**
+     * The guard must sit ahead of the credential check, not behind it.
+     *
+     * Counts invocations rather than using `expects($this->never())`: geocodeForListing()
+     * wraps everything in `catch (Throwable)`, which SWALLOWS a PHPUnit expectation
+     * failure and reports it as status='failed'. A counter read after the call survives
+     * that catch-all and states plainly whether an outbound request was attempted.
+     */
+    public function test_geocoding_never_touches_the_http_client_when_the_switch_is_off(): void
+    {
+        config(['google_places.enabled' => false]);
+        config(['services.google.places_key' => 'a-real-looking-key']);
+
+        $calls  = 0;
+        $client = $this->createMock(\GuzzleHttp\ClientInterface::class);
+        $client->method('request')->willReturnCallback(function () use (&$calls) {
+            $calls++;
+            throw new \RuntimeException('outbound request attempted with the kill switch off');
+        });
+
+        $output = (new LocationDnaGeocodeService($client))->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $this->addressWithoutCoordinates(),
+        );
+
+        $this->assertSame(0, $calls, 'The geocoder must issue ZERO outbound requests when the switch is off.');
+        $this->assertSame('skipped', $output['status']);
+        $this->assertSame(self::UNRESOLVED_ERROR, $output['error']);
+    }
+
+    /** The unresolved state is recorded, not silently dropped — "unknown" must be legible later. */
+    public function test_geocoding_persists_the_unresolved_reason_on_the_record(): void
+    {
+        config(['google_places.enabled' => false]);
+        config(['services.google.places_key' => 'a-real-looking-key']);
+
+        app(LocationDnaGeocodeService::class)->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $this->addressWithoutCoordinates(),
+        );
+
+        $record = PropertyLocationDna::where('listing_type', self::LISTING_TYPE)
+            ->where('listing_id', self::LISTING_ID)
+            ->first();
+
+        $this->assertNotNull($record, 'The address attempt must still be recorded.');
+        $this->assertSame('skipped', $record->geocode_status);
+        $this->assertSame(self::UNRESOLVED_ERROR, $record->geocode_error);
+        $this->assertNull($record->geocoded_lat);
+        $this->assertNull($record->geocoded_lng);
+        $this->assertSame('14047 Marguerite Dr', $record->source_address);
+    }
+
+    /**
+     * Pre-supplied coordinates are the whole point of failing closed rather than hard-
+     * erroring: a listing that already knows where it is must flow through the pipeline
+     * untouched, switch off or not.
+     */
+    public function test_pre_supplied_coordinates_still_resolve_with_the_switch_off(): void
+    {
+        config(['google_places.enabled' => false]);
+        config(['services.google.places_key' => 'a-real-looking-key']);
+
+        $calls  = 0;
+        $client = $this->createMock(\GuzzleHttp\ClientInterface::class);
+        $client->method('request')->willReturnCallback(function () use (&$calls) {
+            $calls++;
+            throw new \RuntimeException('pre-supplied coordinates must not trigger geocoding');
+        });
+
+        $output = (new LocationDnaGeocodeService($client))->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $this->addressWithoutCoordinates() + ['pre_lat' => '27.7960', 'pre_lng' => '-82.7998'],
+        );
+
+        $this->assertSame(0, $calls, 'Pre-supplied coordinates must bypass geocoding entirely.');
+
+        $this->assertTrue($output['success']);
+        $this->assertSame('geocoded', $output['status']);
+        $this->assertSame('saved_meta', $output['source']);
+        $this->assertSame(27.7960, $output['lat']);
+        $this->assertSame(-82.7998, $output['lng']);
+    }
+
+    /** A previously geocoded record keeps serving its cached coordinate; the guard sits after the cache. */
+    public function test_cached_coordinates_still_resolve_with_the_switch_off(): void
+    {
+        config(['google_places.enabled' => false]);
+        config(['services.google.places_key' => 'a-real-looking-key']);
+
+        PropertyLocationDna::create([
+            'listing_type'   => self::LISTING_TYPE,
+            'listing_id'     => self::LISTING_ID,
+            'source_address' => '14047 Marguerite Dr',
+            'source_city'    => 'Madeira Beach',
+            'source_state'   => 'FL',
+            'source_zip'     => '33708',
+            'geocode_status' => 'geocoded',
+            'geocoded_lat'   => 27.7960,
+            'geocoded_lng'   => -82.7998,
+        ]);
+
+        $calls  = 0;
+        $client = $this->createMock(\GuzzleHttp\ClientInterface::class);
+        $client->method('request')->willReturnCallback(function () use (&$calls) {
+            $calls++;
+            throw new \RuntimeException('a cached coordinate must not trigger geocoding');
+        });
+
+        $output = (new LocationDnaGeocodeService($client))->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $this->addressWithoutCoordinates(),
+        );
+
+        $this->assertSame(0, $calls, 'A cached coordinate must be served without an outbound request.');
+        $this->assertTrue($output['success']);
+        $this->assertSame('geocoded', $output['status']);
+    }
+
+    /**
+     * A missing coordinate must not become an exception. `skipped` is a normal outcome
+     * the pipeline already understands, so a publish/save cannot crash on it.
+     */
+    public function test_the_pipeline_reports_skipped_rather_than_failing_when_coordinates_are_unresolvable(): void
+    {
+        config(['google_places.enabled' => false]);
+        config(['services.google.places_key' => 'a-real-looking-key']);
+
+        $output = app(LocationDnaGeocodeService::class)->geocodeForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+            $this->addressWithoutCoordinates(),
+        );
+
+        $this->assertNotSame('failed', $output['status'], 'Unresolvable is not a failure — nothing was attempted.');
+        $this->assertSame('skipped', $output['status']);
     }
 
     /**

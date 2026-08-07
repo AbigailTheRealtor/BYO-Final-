@@ -16,6 +16,8 @@ use Throwable;
  * Google Maps Geocoding API (same API key already used in Livewire components).
  *
  * This service MUST NEVER:
+ *   - Make an outbound Google request while GOOGLE_PLACES_ENABLED is false. The kill
+ *     switch outranks the credential; a present API key is not permission to geocode.
  *   - Connect to the AI marketing report or Property DNA persistence pipelines.
  *   - Perform AI or OpenAI calls of any kind.
  *   - Introduce routes, controllers, Blade views, Livewire components, or JavaScript.
@@ -56,7 +58,10 @@ class LocationDnaGeocodeService
      *   (c) If record is 'geocoded' and ALL address fields (address, city, state, county, zip)
      *       are unchanged, return the cached result.
      *   (d) If any address field changed, clear prior lat/lng and reset status to 'pending'.
-     *   (e) Call Google Maps Geocoding API via Guzzle.
+     *   (e) Fail closed unless Google is explicitly enabled. GOOGLE_PLACES_ENABLED=false
+     *       returns status='skipped', error='non_google_geocoder_unavailable' and makes
+     *       ZERO outbound requests, regardless of whether an API key is present.
+     *   (e-bis) Call Google Maps Geocoding API via Guzzle.
      *   (f) On success: set status 'geocoded', store lat/lng, geocode_source='google', geocoded_at.
      *   (g) On API failure or empty result: persist status 'failed' with error detail.
      *   (h) Entire method is wrapped in try/catch(Throwable). On exception, if a record
@@ -179,7 +184,40 @@ class LocationDnaGeocodeService
 
             $record->save();
 
-            // (e) Call Google Maps Geocoding API
+            // (e) Google is not an approved coordinate source. Fail closed.
+            //
+            // The kill switch is the OUTERMOST guard on this path and is checked
+            // BEFORE the credential: a present GOOGLE_PLACES_API_KEY is not permission
+            // to geocode. Until this commit the only gate here was `blank($apiKey)`, so
+            // a key sitting in the environment was sufficient to send an outbound
+            // Geocoding request even with GOOGLE_PLACES_ENABLED=false. The circuit
+            // breaker written after the 2026-07-05 incident covered Nearby Search
+            // (GooglePlacesPoiAdapter) and never covered this path.
+            //
+            // Returns 'skipped', not 'failed' — the same status the service already
+            // uses when the address is too incomplete to resolve. Nothing was attempted
+            // and nothing went wrong; the coordinate is simply unknown.
+            //
+            // `non_google_geocoder_unavailable` names the real reason: the platform's
+            // approved geocoder is a non-Google resolver that does not exist yet
+            // (SPATIAL-INTELLIGENCE-PLATFORM: "Google-free by design"). It is
+            // deliberately NOT phrased as "google disabled", which would imply that
+            // turning Google back on is the fix. It is not — building the resolver is.
+            //
+            // Only reachable when the coordinate could not be obtained any other way:
+            // pre-supplied property_lat/property_lng (a-bis) and an unchanged cached
+            // geocode (c) both return above without consulting this guard.
+            if (! config('google_places.enabled', false)) {
+                $record->geocode_status = 'skipped';
+                $record->geocode_error  = 'non_google_geocoder_unavailable';
+                $record->save();
+
+                $output = $this->skippedOutput($listingType, $listingId, 'non_google_geocoder_unavailable');
+                $this->audit($listingType, $listingId, $output, $addressData);
+
+                return $output;
+            }
+
             $apiKey = config('services.google.places_key');
 
             if (blank($apiKey)) {

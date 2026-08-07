@@ -55,6 +55,15 @@ class LocationDnaPipelineTriggerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // This suite characterises the end-to-end pipeline over the LEGACY Google
+        // geocoding path, which is now fail-closed behind the kill switch and OFF by
+        // default. Opting in keeps these cases exercising the branch they were written
+        // for; it is not a statement that Google geocoding is the desired product
+        // behaviour. The switched-off contract is asserted in
+        // tests/Feature/Security/GooglePlacesKillSwitchTest.
+        config(['google_places.enabled' => true]);
+
         $this->bindMockedServices();
     }
 
