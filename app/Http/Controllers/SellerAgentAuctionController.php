@@ -321,6 +321,20 @@ class SellerAgentAuctionController extends Controller
 
     public function updateSellerAgentHireAuction(Request $request)
     {
+        // S2 — legacy endpoint, still routed (POST hire/agent/seller/update,
+        // middleware web|auth|verified, so the caller is authenticated but was
+        // otherwise unchecked). $request->id is client-supplied and was previously
+        // resolved with an unscoped find() before `user_id = Auth::id()` reassigned
+        // the row, so ANY authenticated user could overwrite another user's listing
+        // and transfer it to themselves.
+        // Resolved owner-scoped, ahead of the try: abort() throws an HttpException
+        // that the catch(\Exception) below would otherwise swallow into a redirect.
+        $auction = SellerAgentAuction::where('id', $request->id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        abort_if($auction === null, 403, 'You are not authorized to update this listing.');
+
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
         // $allowedVideos = ['mp4', 'mov', 'wmv', 'avi', 'mkv', 'mpeg-2'];
         // $allowedAudios = ['mp3', 'wav', 'voc', 'ogg', 'oga', 'cda', 'ogv'];
@@ -335,7 +349,6 @@ class SellerAgentAuctionController extends Controller
                 $auction_lenth_days = '-1';
             }
 
-            $auction = SellerAgentAuction::find($request->id);
             $auction->user_id = Auth::user()->id;
             $auction->address = $request->address;
             $auction->auction_type = $request->auction_type;

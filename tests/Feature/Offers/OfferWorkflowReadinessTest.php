@@ -1080,6 +1080,31 @@ class OfferWorkflowReadinessTest extends TestCase
             // signature and behaviour are untouched, and no provider is selected,
             // called, or added by it.
             'app/Http/Livewire/Concerns/HandlesGooglePlacesAddress.php',
+            // Seller/Landlord Hire Agent ownership hardening — a SECURITY change (S1/S2).
+            //
+            // Both Hire Agent wizards resolved the row to write with an unscoped
+            // `Model::find($this->listingId)` and then assigned `user_id = Auth::id()`.
+            // `listingId` is a public Livewire property, so any authenticated user could
+            // point it at another user's listing and both overwrite it AND transfer
+            // ownership of the row to themselves. The same unscoped-find-then-reassign
+            // shape sat in the two legacy update endpoints.
+            //
+            // NO new path is added by this entry. All four files this change touches are
+            // already on this list: SellerAgentAuction.php (Phase 0 address-validation
+            // entry above — the two tasks reached the same file by different routes, and
+            // one allowlist entry covers both), LandLordAgentAuction.php (money-precision
+            // entry above), and SellerAgentAuctionController.php /
+            // LandlordAgentAuctionController.php (Hire Agent Listing Framework M2 entry
+            // above). This comment records the security rationale for the seller
+            // component so the entry is not read as address-only bookkeeping.
+            //
+            // No new mechanism was invented: all four files use the existing
+            // ResolvesOwnedAuction concern that the four Offer Listing components already
+            // use, with the same owner-only rule and the same 403.
+            //
+            // Exact paths, not a HireSellerAgent/ wildcard, for the reason the M2 entry
+            // gives — the next file under this role should be a decision somebody made and
+            // wrote down.
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
