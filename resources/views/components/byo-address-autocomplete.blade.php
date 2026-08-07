@@ -4,7 +4,7 @@
   Renders the Street Address input (wired to Google Places Autocomplete) plus an
   optional Unit / Apt / Suite field, and emits the autocomplete JS + the Google
   Maps loader. On place selection it calls the consuming Livewire component's
-  fill method (HandlesGooglePlacesAddress::fillFromGooglePlaces) which populates
+  fill method (HandlesGooglePlacesAddress::fillFromResolvedAddress) which populates
   the City / County / State / ZIP fields that live below this component in the
   host form. Those downstream fields keep their existing markup + server-side
   city-suggestion behaviour — this component only owns Street + Unit + the map.
@@ -23,11 +23,26 @@
   show-unit      (bool)   render the Unit field       (default true)
   street-required(bool)   mark street required        (default true)
   with-geo-fields(bool)   render hidden lat/lng/place_id (default false)
+  render-markup  (bool)   render Street/Unit inputs    (default true)
+
+  Script-only mode (render-markup="false") — Phase 1
+  --------------------------------------------------
+  Emits the autocomplete listener and the Maps loader WITHOUT the Street/Unit
+  inputs, for hosts that already render those inputs themselves. It exists so the
+  Seller/Landlord property-preference partials — each shared by six listing blades
+  across all four roles — can drop their duplicated listener JS without their
+  markup moving, which would have changed the Buyer/Tenant pages that include the
+  same partials.
+
+  `street-id` must name an input the host already renders; the listener binds to it
+  by id exactly as the full-markup mode does. Everything else (guards, parsing, the
+  Livewire resolution, the loader) is identical — there is deliberately only ONE
+  copy of this script in the codebase.
 --}}
 @props([
     'streetId',
     'callback',
-    'fillMethod' => 'fillFromGooglePlaces',
+    'fillMethod' => 'fillFromResolvedAddress',
     'streetModel' => 'address',
     'unitModel' => 'unit_address',
     'showUnit' => true,
@@ -36,7 +51,10 @@
     'latModel' => 'property_lat',
     'lngModel' => 'property_lng',
     'placeIdModel' => 'google_place_id',
+    'renderMarkup' => true,
 ])
+
+@if($renderMarkup)
 
 <!-- Street Address (Google Places autocomplete) -->
 <div class="form-group mb-3">
@@ -47,10 +65,18 @@
     </span>
     <div class="input-cover">
         <input type="text" id="{{ $streetId }}" wire:model="{{ $streetModel }}"
-            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+            class="form-control has-icon @error($streetModel) is-invalid @enderror"
+            data-icon="fa-solid fa-map-pin"
             placeholder="Enter street address (e.g., 123 Main Street)"
             autocomplete="off" @if($streetRequired) required @endif>
     </div>
+    {{-- Phase 0 (Spatial UI Integration): the street address is validated
+         server-side now. Without this block the rejection had nowhere to land —
+         submit simply failed with no visible reason on the field at fault. --}}
+    @error($streetModel)
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+    <x-address-assist-notice :notice="$addressAssistNotice ?? ''" />
 </div>
 
 @if($showUnit)
@@ -63,9 +89,13 @@
     </span>
     <div class="input-cover">
         <input type="text" wire:model="{{ $unitModel }}"
-            class="form-control has-icon" data-icon="fa-solid fa-door-open"
+            class="form-control has-icon @error($unitModel) is-invalid @enderror"
+            data-icon="fa-solid fa-door-open"
             placeholder="e.g., Apt 4B, Suite 200 (optional)" autocomplete="off">
     </div>
+    @error($unitModel)
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
 </div>
 @endif
 
@@ -74,6 +104,8 @@
 <input type="hidden" id="{{ $streetId }}-lng" wire:model="{{ $lngModel }}">
 <input type="hidden" id="{{ $streetId }}-place-id" wire:model="{{ $placeIdModel }}">
 @endif
+
+@endif {{-- /renderMarkup --}}
 
 @push('scripts')
 <script>

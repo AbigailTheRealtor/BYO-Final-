@@ -17,6 +17,7 @@ class SellerAgentAuctionEdit extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2018,7 +2019,10 @@ class SellerAgentAuctionEdit extends Component
     public function update()
     {
         try {
-            $this->validate([
+            // Phase 0 (Spatial UI Integration) — edit-publish validated only the
+            // nullable contingency fields, so a published listing could be re-saved
+            // with `43434` in the street-address field. Same canonical rule as create.
+            $this->validate(array_merge(\App\Rules\ValidStreetAddress::rules(), [
                 'initial_deposit_timeframe'          => 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other',
                 'additional_deposit_timeframe'       => 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other',
                 'appraisal_contingency_preference'   => 'nullable|in:,Required,Preferred Waived,Negotiable,Not Applicable',
@@ -2027,7 +2031,7 @@ class SellerAgentAuctionEdit extends Component
                 'seller_contribution_credit_offered' => 'nullable|in:,Yes,No',
                 'possession_preference'              => 'nullable|in:,At Closing,Day After Closing,Seller Rent Back,Negotiable,Other',
                 'home_warranty_offered'              => 'nullable|in:,Yes,No',
-            ]);
+            ]), ['address.required' => 'Enter the property street address.']);
 
             $this->isDraft = 0;
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire\OfferListing\Concerns;
 
+use App\Rules\ValidStreetAddress;
+
 /**
  * BYO-H1 — Shared Seller Offer-Listing publish validation.
  *
@@ -21,13 +23,23 @@ trait SellerPublishValidation
             'listing_title'  => 'required|string|max:255',
             'property_type'  => 'required|string',
             'state'          => 'nullable|string',
-            'unit_address'   => 'nullable|string|max:100',
             'first_name'     => 'required|string',
             'last_name'      => 'required|string',
             'phone_number'   => 'required|string',
             'email'          => 'required|email',
             'current_status' => 'nullable|string',
         ];
+
+        // Phase 0 (Spatial UI Integration) — the property street address is now
+        // validated for SHAPE, not merely for presence. Publishing previously
+        // accepted `43434`, `33708`, `Main` and `.` because nothing here checked
+        // the field at all. The rules live in ValidStreetAddress::rules() so this
+        // trait, its Landlord twin, and the four Hire components all enforce one
+        // definition rather than four copies that can drift.
+        //
+        // This also supplies `unit_address` (nullable, max:100) — the rule pair
+        // travels together, so the line it replaces here is not lost.
+        $rules = array_merge($rules, ValidStreetAddress::rules());
 
         // ── MLS / Property Detail scalar fields ───────────────────────────────
         $rules['year_built']             = 'nullable|digits:4|integer|min:1800|max:' . date('Y');
@@ -170,6 +182,11 @@ trait SellerPublishValidation
         return [
             'listing_title.required'   => 'Listing Title is required',
             'property_type.required'   => 'Property Type is required',
+            // Phase 0 — the shape failures carry their own actionable messages from
+            // ValidStreetAddress; only the framework-level rules need one here.
+            'address.required'         => 'Enter the property street address.',
+            'address.max'              => 'That street address is too long. Enter just the street address — the city, state and ZIP have their own fields.',
+            'unit_address.max'         => 'Unit / Apt is limited to 100 characters.',
             'first_name.required'      => 'First Name is required',
             'last_name.required'       => 'Last Name is required',
             'phone_number.required'    => 'Phone Number is required',

@@ -17,6 +17,7 @@ class SellerAgentAuction extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
+    use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2939,6 +2940,12 @@ class SellerAgentAuction extends Component
             'email'          => 'required|email',
             'current_status' => 'required|string',
         ];
+
+        // Phase 0 (Spatial UI Integration) — the property street address was
+        // validated as `required|string` here, which accepted `43434`, `33708`,
+        // `Main` and `.`. One canonical definition, shared with the Offer Listing
+        // publish traits, so Hire and Create cannot drift apart.
+        $rules = array_merge($rules, \App\Rules\ValidStreetAddress::rules());
 
         // Bidding Period fields - only validate if listing type is Bidding Period
         if ($this->auction_type === 'Bidding Period') {

@@ -383,10 +383,18 @@
     </span>
     <div class="input-cover">
         <input type="text" id="seller-offer-street-address" wire:model="address"
-            class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+            class="form-control has-icon @error('address') is-invalid @enderror"
+            data-icon="fa-solid fa-map-pin"
             placeholder="Enter street address (e.g., 123 Main Street)" required
             autocomplete="off">
     </div>
+    {{-- Phase 0 (Spatial UI Integration): the street address is validated
+         server-side now. Without this block the rejection had nowhere to land —
+         submit simply failed with no visible reason on the field at fault. --}}
+    @error('address')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+    <x-address-assist-notice :notice="$addressAssistNotice ?? ''" />
 </div>
 
 <!-- Unit / Apt / Suite -->
@@ -398,11 +406,45 @@
     </span>
     <div class="input-cover">
         <input type="text" wire:model="unit_address"
-            class="form-control has-icon" data-icon="fa-solid fa-door-open"
+            class="form-control has-icon @error('unit_address') is-invalid @enderror"
+            data-icon="fa-solid fa-door-open"
             placeholder="e.g., Apt 4B, Suite 200 (optional)"
             autocomplete="off">
     </div>
+    @error('unit_address')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
 </div>
+
+{{-- Phase 1 (Shared Components) — the Google Places listener for the street input
+     above. Script-only: the inputs stay exactly where they are, because this
+     partial is included by six listing blades across all four roles and moving
+     the markup would change the Buyer/Tenant pages.
+
+     GATED DELIBERATELY. Only SellerOfferListing and SellerOfferListingEdit
+     implement fillFromResolvedAddress(), and before Phase 1 only their two blades
+     carried this listener. Buyer, Landlord and Tenant blades also render this
+     partial (when $user_type === 'seller') and never bound autocomplete to this
+     input — emitting it for them would both change their behaviour and call a
+     Livewire method they do not implement. The method_exists() clause is belt and
+     braces: it makes an unimplemented call structurally impossible, not merely
+     unlikely.
+
+     Asserted by tests/Feature/Location/SharedAddressAutocompleteAdoptionTest.php --}}
+@php
+    $byoSellerAutocompleteHost = isset($this)
+        && in_array(get_class($this), [
+            \App\Http\Livewire\OfferListing\Seller\SellerOfferListing::class,
+            \App\Http\Livewire\OfferListing\Seller\SellerOfferListingEdit::class,
+        ], true)
+        && method_exists($this, 'fillFromResolvedAddress');
+@endphp
+@if($byoSellerAutocompleteHost)
+    <x-byo-address-autocomplete
+        street-id="seller-offer-street-address"
+        callback="byoInitSellerOfferPlaces"
+        :render-markup="false" />
+@endif
 
 <input type="hidden" id="seller-offer-property-lat" wire:model="property_lat">
 <input type="hidden" id="seller-offer-property-lng" wire:model="property_lng">
