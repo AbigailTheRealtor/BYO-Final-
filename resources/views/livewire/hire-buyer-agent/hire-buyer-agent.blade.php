@@ -2942,23 +2942,22 @@
                                     items.push({ field: _ofEl || document.body, tab: _ofTab, fieldName: BUYER_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
                                 }
 
-                                // representation_priorities: required multi-select in compatibility tab
-                                var _compatBgi = _comp.get('compatibility_preferences');
-                                var _rpValBgi2 = (_compatBgi && _compatBgi.buyer_specific) ? _compatBgi.buyer_specific.representation_priorities : [];
-                                if (typeof _rpValBgi2 === 'string') { try { _rpValBgi2 = JSON.parse(_rpValBgi2); } catch(exRp2) {} }
-                                var _rpEmptyBgi = !_rpValBgi2 || (Array.isArray(_rpValBgi2) && _rpValBgi2.length === 0) || _rpValBgi2 === '[]';
-                                if (_rpEmptyBgi) {
-                                    var $rpDomBgi = $('#compat_representation_priorities');
-                                    if ($rpDomBgi.length) {
-                                        var _rpDomValBgi = $rpDomBgi.val();
-                                        if (_rpDomValBgi && Array.isArray(_rpDomValBgi) && _rpDomValBgi.length > 0) _rpEmptyBgi = false;
-                                    }
-                                }
-                                if (_rpEmptyBgi && !items.some(function(i) { return i.key === 'compat_representation_priorities'; })) {
-                                    var _rpElBgi = document.getElementById('compat_representation_priorities');
-                                    var _rpTabBgi = _rpElBgi ? _rpElBgi.closest('.tab-pane') : null;
-                                    items.push({ field: _rpElBgi || document.body, tab: _rpTabBgi, fieldName: BUYER_FIELD_LABELS['compat_representation_priorities'] || 'Representation Priorities', key: 'compat_representation_priorities' });
-                                }
+                                // representation_priorities: NO LONGER A SUBMIT BLOCKER.
+                                //
+                                // The client-side check that pushed `compat_representation_priorities`
+                                // into `items` was removed together with its server rule, which is now
+                                // `nullable|array`. Relaxing only the PHP would have changed nothing a
+                                // user could see: this list feeds `buyerGetInvalidItems()`, and the
+                                // form's submit listener calls `e.preventDefault()` whenever the list
+                                // is non-empty — so the browser refused the submit before Livewire was
+                                // ever reached, and the field appeared required no matter what the
+                                // server said.
+                                //
+                                // The multi-select itself is untouched: it still renders, still
+                                // initialises Select2, still round-trips through
+                                // `compatibility_preferences.buyer_specific.representation_priorities`,
+                                // and is still read by the match scorer when the buyer fills it in.
+                                // Optional means optional — not absent.
                             }
                         }
                     } catch(ex3) {}

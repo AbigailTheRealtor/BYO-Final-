@@ -4058,8 +4058,21 @@ class TenantAgentAuction extends Component
             if (in_array($this->property_type, ['Residential', 'Commercial', 'Business'])) {
                 $rules['bathrooms'] = 'required';
             }
-            if (in_array($this->property_type, ['Residential', 'Income'])) {
-                $rules['pets'] = 'required';
+            // PETS IS OPTIONAL, AND THE PROPERTY-TYPE LIST IS SPELLED BOTH WAYS ON PURPOSE.
+            //
+            // Two separate problems lived on this one line. It was `required`, which made a
+            // matching preference block submission; and its list held only the SHORT property-type
+            // spellings while the input renders behind `$property_type === 'Residential Property'`
+            // (pre-screening / property-preferences partials). A buyer listing carrying the short
+            // form therefore had a required field with no visible input — unfillable, and blocking
+            // with an error pointing at a control that was not on the page.
+            //
+            // `nullable` removes the block; the widened list removes the mismatch, so the rule can
+            // never again apply to a state the UI cannot satisfy. Both spellings appear because the
+            // tenant and landlord branches above already accept both — this makes buyer consistent
+            // rather than inventing a new convention.
+            if (in_array($this->property_type, ['Residential Property', 'Residential', 'Income Property', 'Income'])) {
+                $rules['pets'] = 'nullable';
             }
             if ($this->property_type === 'Business') {
                 $rules['real_estate_purchase'] = 'required';
@@ -4071,11 +4084,24 @@ class TenantAgentAuction extends Component
             $rules['offered_financing']   = 'required|array|min:1';
 
             // Tab 6 – Representation Preferences & Compatibility
-            $rules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'required|string';
-            $rules['compatibility_preferences.buyer_specific.representation_priorities']     = 'required|array|min:1';
-            $rules['compatibility_preferences.buyer_specific.communication_style']           = 'required|string';
-            $rules['compatibility_preferences.buyer_specific.negotiation_style']             = 'required|string';
-            $rules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'required|string';
+            // OPTIONAL — these five are COMPATIBILITY/MATCHING PREFERENCES, not listing facts.
+            //
+            // They describe how a buyer would like to work with an agent. A listing without them is
+            // complete and matchable; it simply matches on fewer dimensions. Requiring them meant a
+            // buyer who had filled in every fact about the property they wanted could not submit.
+            //
+            // STILL VALIDATED WHEN PRESENT — `nullable|string` / `nullable|array` keeps the type
+            // contract, so a supplied value is still the shape the match scorer reads. Nothing is
+            // removed from the UI and nothing stops being persisted.
+            //
+            // BUYER ONLY. The seller, landlord and tenant branches of this same method keep their
+            // own `required` rules untouched; this class serves all four roles and this block runs
+            // only under `$this->user_type === 'buyer'`.
+            $rules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'nullable|string';
+            $rules['compatibility_preferences.buyer_specific.representation_priorities']     = 'nullable|array';
+            $rules['compatibility_preferences.buyer_specific.communication_style']           = 'nullable|string';
+            $rules['compatibility_preferences.buyer_specific.negotiation_style']             = 'nullable|string';
+            $rules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'nullable|string';
             // Optional buyer compat fields
             $rules['compatibility_preferences.buyer_specific.primary_transaction_goal_other']      = 'nullable|string|max:500';
             $rules['compatibility_preferences.buyer_specific.representation_priorities_other']      = 'nullable|string|max:500';

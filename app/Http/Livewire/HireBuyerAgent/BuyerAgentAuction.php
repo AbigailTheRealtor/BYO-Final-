@@ -2442,11 +2442,18 @@ class BuyerAgentAuction extends Component
             ];
             // Representation Preferences & Compatibility required only for full_service buyer flow
             if ($this->service_type === 'full_service') {
-                $validationRules['compatibility_preferences.buyer_specific.communication_style']           = 'required|string';
-                $validationRules['compatibility_preferences.buyer_specific.negotiation_style']             = 'required|string';
-                $validationRules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'required|string';
-                $validationRules['compatibility_preferences.buyer_specific.representation_priorities']     = 'required|array|min:1';
-                $validationRules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'required|string';
+                // OPTIONAL — compatibility/matching preferences, not listing facts. See the same
+                // change in TenantAgentAuction::validateOnlyFilledFields(); both components serve
+                // Hire Buyer and had their own copy of these rules, so both had to move together
+                // or the flow would behave differently depending on which one rendered.
+                //
+                // `nullable|string` / `nullable|array` keeps the type contract for supplied values,
+                // so the match scorer still reads the same shapes. Buyer only.
+                $validationRules['compatibility_preferences.buyer_specific.communication_style']           = 'nullable|string';
+                $validationRules['compatibility_preferences.buyer_specific.negotiation_style']             = 'nullable|string';
+                $validationRules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'nullable|string';
+                $validationRules['compatibility_preferences.buyer_specific.representation_priorities']     = 'nullable|array';
+                $validationRules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'nullable|string';
             }
             
             // Add Bidding Period specific validation
@@ -2459,12 +2466,11 @@ class BuyerAgentAuction extends Component
                 'counties.min' => 'At least one county is required.',
                 'state.required' => 'State is required.',
                 'auction_time.required' => 'Bidding Period Length is required.',
-                'compatibility_preferences.buyer_specific.communication_style.required'           => 'Communication Style is required.',
-                'compatibility_preferences.buyer_specific.negotiation_style.required'             => 'Negotiation Style is required.',
-                'compatibility_preferences.buyer_specific.primary_transaction_goal.required'      => 'Primary Transaction Goal is required.',
-                'compatibility_preferences.buyer_specific.representation_priorities.required'     => 'Representation Priorities is required.',
-                'compatibility_preferences.buyer_specific.representation_priorities.min'          => 'Please select at least one Representation Priority.',
-                'compatibility_preferences.buyer_specific.preferred_agent_working_style.required' => 'Preferred Agent Working Style is required.',
+                // The five buyer-compatibility `.required` / `.min` messages that stood here were
+                // removed with the rules that raised them. A message for a rule that no longer
+                // exists is unreachable, and leaving it behind would state a requirement the
+                // validator does not enforce — the next reader would have to run the code to find
+                // out which was true.
             ]);
             
             $this->isDraft = 0;
