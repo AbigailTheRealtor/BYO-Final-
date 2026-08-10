@@ -102,6 +102,44 @@ class CensusGeocoderAdapterTest extends TestCase
         return ['result' => ['input' => ['address' => ['address' => 'x']], 'addressMatches' => []]];
     }
 
+    /**
+     * A match whose returned state/ZIP can be varied independently of its
+     * coordinate — the shape the G4 geography check is about. `null` removes
+     * the component entirely; '' returns it empty, which is what the service
+     * does for components it has no value for.
+     */
+    private function geoMatch(?string $state, ?string $zip, float $lng = -82.458094358643, float $lat = 27.948434712759): array
+    {
+        $components = [
+            'streetName'  => 'MADISON',
+            'city'        => 'TAMPA',
+            'suffixType'  => 'ST',
+            'fromAddress' => '301',
+            'toAddress'   => '399',
+        ];
+
+        if ($state !== null) {
+            $components['state'] = $state;
+        }
+
+        if ($zip !== null) {
+            $components['zip'] = $zip;
+        }
+
+        return [
+            'tigerLine'         => ['side' => 'R', 'tigerLineId' => '104530163'],
+            'coordinates'       => ['x' => $lng, 'y' => $lat],
+            'addressComponents' => $components,
+            'matchedAddress'    => '315 MADISON ST, TAMPA, FL, 33602',
+        ];
+    }
+
+    /** @param array<int, array<string, mixed>> $matches */
+    private function bodyOf(array $matches): array
+    {
+        return ['result' => ['addressMatches' => $matches]];
+    }
+
     // ── identity ────────────────────────────────────────────────────────────
 
     public function test_it_identifies_itself_as_the_census_geocoder_rung(): void
@@ -450,6 +488,125 @@ class CensusGeocoderAdapterTest extends TestCase
             'Guam'                => [13.4443, 144.7937,  'Hagatna, GU'],
             'American Samoa'      => [-14.2756, -170.7020, 'Pago Pago, AS'],
         ];
+    }
+
+    // ── geography agreement (G4) ────────────────────────────────────────────
+
+    public function test_a_match_in_the_requested_state_and_zip_is_accepted(): void
+    {
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch('FL', '33602')]))]);
+
+        $this->assertTrue($this->adapter()->resolve($this->tampa())->isResolved());
+    }
+
+    public function test_a_match_in_a_different_state_is_rejected(): void
+    {
+        // The failure this check exists for: a street name that also exists in
+        // another state resolves to a valid, in-range, entirely plausible
+        // coordinate several hundred miles from the listing.
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch('GA', '33602')]))]);
+
+        $result = $this->adapter()->resolve($this->tampa());
+
+        $this->assertFalse($result->isResolved());
+        $this->assertSame('census_state_mismatch', $result->reason);
+    }
+
+    public function test_a_match_in_a_different_zip_is_rejected(): void
+    {
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch('FL', '33607')]))]);
+
+        $result = $this->adapter()->resolve($this->tampa());
+
+        $this->assertFalse($result->isResolved());
+        $this->assertSame('census_zip_mismatch', $result->reason);
+    }
+
+    public function test_a_state_name_and_its_code_are_the_same_state(): void
+    {
+        // Both sides normalize through PropertyAddress, so this must not be a
+        // mismatch. A check that rejected "Florida" against "FL" would be worse
+        // than no check at all — it would fail on correct data.
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch('FL', '33602')]))]);
+
+        $address = new PropertyAddress(
+            address: '315 E Madison St', city: 'Tampa', state: 'Florida', zip: '33602'
+        );
+
+        $this->assertTrue($this->adapter()->resolve($address)->isResolved());
+    }
+
+    public function test_a_requested_zip_plus_four_matches_a_returned_zip5(): void
+    {
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch('FL', '33602')]))]);
+
+        $address = new PropertyAddress(
+            address: '315 E Madison St', city: 'Tampa', state: 'FL', zip: '33602-1234'
+        );
+
+        $this->assertTrue(
+            $this->adapter()->resolve($address)->isResolved(),
+            'ZIP+4 identifies a delivery segment, not a different place'
+        );
+    }
+
+    public function test_a_component_the_caller_did_not_supply_is_not_checked(): void
+    {
+        // No ZIP was claimed, so the provider cannot contradict one. The state
+        // still has to agree.
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch('FL', '33607')]))]);
+
+        $address = new PropertyAddress(address: '315 E Madison St', city: 'Tampa', state: 'FL');
+
+        $this->assertTrue($this->adapter()->resolve($address)->isResolved());
+    }
+
+    /**
+     * @dataProvider omittedComponents
+     */
+    public function test_a_missing_requested_component_is_rejected_with_its_own_reason(
+        ?string $state,
+        ?string $zip,
+        string $case
+    ): void {
+        // Policy pinned deliberately (G4). Ten live matches were sampled and
+        // every one populated both fields, while other components routinely
+        // come back as ''. A missing component is therefore the provider
+        // behaving unobserved, not the normal case degrading — and it gets its
+        // own reason so a shape change shows up in telemetry as an anomaly
+        // rather than as an epidemic of apparently wrong addresses.
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([$this->geoMatch($state, $zip)]))]);
+
+        $result = $this->adapter()->resolve($this->tampa());
+
+        $this->assertFalse($result->isResolved(), $case);
+        $this->assertSame('census_match_components_missing', $result->reason, $case);
+    }
+
+    public static function omittedComponents(): array
+    {
+        return [
+            'state absent'  => [null, '33602', 'state key missing entirely'],
+            'state empty'   => ['',   '33602', 'state returned as an empty string'],
+            'zip absent'    => ['FL', null,    'zip key missing entirely'],
+            'zip empty'     => ['FL', '',      'zip returned as an empty string'],
+        ];
+    }
+
+    public function test_the_requested_zip_disambiguates_rather_than_taking_the_first_match(): void
+    {
+        // Two candidates, one in the requested ZIP. Dropping the other is not
+        // "taking the first result" — it is using information the caller
+        // supplied instead of guessing.
+        Http::fake([self::ENDPOINT => Http::response($this->bodyOf([
+            $this->geoMatch('FL', '33607', -82.500000, 27.960000),
+            $this->geoMatch('FL', '33602', -82.458094358643, 27.948434712759),
+        ]))]);
+
+        $result = $this->adapter()->resolve($this->tampa());
+
+        $this->assertTrue($result->isResolved());
+        $this->assertSame(27.948434712759, $result->latitude);
     }
 
     // ── ambiguity ───────────────────────────────────────────────────────────

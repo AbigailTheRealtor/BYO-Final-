@@ -114,6 +114,51 @@ use Throwable;
  * already requires a ZIP or a city+state, and a ZIP disambiguates almost
  * everything.
  *
+ * GEOGRAPHY AGREEMENT (added in G4)
+ * ---------------------------------
+ * A coordinate is not evidence that the provider found the right property. The
+ * geocoder answers with whatever its corpus considered the best match for the
+ * string it was given, and a street name that exists in two states will
+ * cheerfully resolve to the wrong one — returning a valid, in-range, plausible
+ * coordinate for a property several hundred miles from the one being listed.
+ * Nothing about the numbers reveals that.
+ *
+ * So every match is checked against what was actually asked: if the caller
+ * supplied a state, the match must be in that state; if the caller supplied a
+ * ZIP, the match must be in that ZIP5. Both sides are normalized through
+ * {@see PropertyAddress}, so "FL"/"Florida" agree and a requested
+ * "33602-1234" agrees with a returned "33602" — but genuinely different
+ * geography does not. Exact equality only; there is no fuzzy fallback, because
+ * a rule that sometimes accepts the wrong county is not a rule.
+ *
+ * This runs per match rather than over the response as a whole, which also
+ * disambiguates: where the provider offers several candidates and only one is
+ * in the requested ZIP, the requested ZIP is evidence, and the others are
+ * dropped. That is not the same as taking the first result — it is using
+ * information the caller supplied instead of guessing.
+ *
+ * A component the caller did NOT supply is not checked. The caller made no
+ * claim about it, so the provider cannot contradict one.
+ *
+ * WHEN THE PROVIDER OMITS A COMPONENT WE ASKED ABOUT
+ * --------------------------------------------------
+ * Rejected, as `census_match_components_missing`.
+ *
+ * The policy is deliberate and was decided on evidence rather than taste. Ten
+ * successful live matches were sampled across FL, DC, MA, NY, IL, CA and WA,
+ * including three queries that supplied no ZIP at all; every one returned a
+ * populated `state` and `zip`. That the service populates other components with
+ * empty strings — `preType`, `preDirection`, `suffixQualifier` are routinely
+ * '' — makes the consistency of these two more meaningful, not less: empties
+ * are clearly available to this API and these fields never used them.
+ *
+ * So a missing component is not the normal case degrading gracefully; it is the
+ * provider behaving in a way it has not been observed to behave, and a guard
+ * that waves through the one response shape it cannot verify is not a guard.
+ * It carries its own reason rather than reusing `census_zip_mismatch` so that
+ * if the service ever does change shape, telemetry shows an anomaly appearing
+ * at volume instead of a sudden epidemic of apparently wrong addresses.
+ *
  * CACHING: OUTCOMES YES, FAULTS NEVER
  * -----------------------------------
  * Keyed on {@see PropertyAddress::coordinateCacheKeyInput()} — the unit-free
@@ -207,7 +252,7 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
         $outcome  = Cache::get($cacheKey);
 
         if (! is_array($outcome)) {
-            $outcome = $this->lookup($line);
+            $outcome = $this->lookup($line, $address);
 
             // Only definitive outcomes reach this line — a fault has already
             // thrown, so there is no path by which one is cached.
@@ -230,7 +275,7 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
      *
      * @throws CoordinateProviderUnavailable when the provider is at fault
      */
-    private function lookup(string $line): array
+    private function lookup(string $line, PropertyAddress $address): array
     {
         $response = $this->request($line);
 
@@ -267,7 +312,7 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
             );
         }
 
-        return $this->interpret($matches);
+        return $this->interpret($matches, $address);
     }
 
     /**
@@ -303,9 +348,10 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
      * @param  array<int, mixed> $matches
      * @return array{hit: bool, lat?: float, lng?: float, matched?: string, reason?: string}
      */
-    private function interpret(array $matches): array
+    private function interpret(array $matches, PropertyAddress $address): array
     {
-        $points = [];
+        $points     = [];
+        $rejections = [];
 
         foreach ($matches as $match) {
             if (! is_array($match)) {
@@ -317,12 +363,23 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
             $latitude  = CoordinateValidator::toFloat($match['coordinates']['y'] ?? null);
 
             if (! CoordinateValidator::isValidPair($latitude, $longitude)) {
+                $rejections[] = 'census_coordinates_invalid';
                 continue;
             }
 
             // In range but not anywhere this provider serves — which is what a
             // transposed pair looks like. See the axis heading in the docblock.
             if (! $this->isWithinServiceArea($latitude, $longitude)) {
+                $rejections[] = 'census_coordinates_invalid';
+                continue;
+            }
+
+            // Does the provider's answer describe the place we asked about?
+            // See GEOGRAPHY AGREEMENT in the class docblock.
+            $disagreement = $this->geographyDisagreement($match, $address);
+
+            if ($disagreement !== null) {
+                $rejections[] = $disagreement;
                 continue;
             }
 
@@ -337,11 +394,18 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
 
         if ($points === []) {
             // Either the corpus has no such address, or every match it returned
-            // carried an unusable coordinate. Both are final answers about this
-            // address rather than statements about the service, so both cache.
+            // was rejected. Both are final answers about this address rather
+            // than statements about the service, so both cache.
+            //
+            // The first rejection is reported rather than a generic one: with a
+            // single match — overwhelmingly the common case — it is exactly the
+            // reason, and it keeps "matched the wrong state" from being filed
+            // under the same label as "the coordinate was corrupt".
             return [
                 'hit'    => false,
-                'reason' => $matches === [] ? 'census_no_match' : 'census_coordinates_invalid',
+                'reason' => $matches === []
+                    ? 'census_no_match'
+                    : ($rejections[0] ?? 'census_no_match'),
             ];
         }
 
@@ -357,6 +421,60 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
             'lng'     => $chosen['lng'],
             'matched' => $chosen['matched'],
         ];
+    }
+
+    /**
+     * Why this match does not describe the place that was asked about, or null
+     * when it does.
+     *
+     * Exact equality on normalized values only — no fuzzy matching, no distance
+     * fallback, no "close enough". Both sides go through {@see PropertyAddress}
+     * so that "FL", "Fl" and "Florida" compare equal and a requested
+     * "33602-1234" compares equal to a returned "33602", while genuinely
+     * different geography compares unequal.
+     *
+     * A component that was not supplied is not checked: the caller made no
+     * claim about it, so the provider cannot contradict one. A component that
+     * was supplied but comes back empty is a different matter — see
+     * `census_match_components_missing` in the docblock.
+     */
+    private function geographyDisagreement(array $match, PropertyAddress $address): ?string
+    {
+        $components = is_array($match['addressComponents'] ?? null)
+            ? $match['addressComponents']
+            : [];
+
+        $requestedState = $address->normalizedState();
+        $requestedZip   = $address->normalizedZip5();
+
+        // Normalized through the same rules as the request, so the comparison
+        // is between like and like.
+        $returned = new PropertyAddress(
+            state: is_string($components['state'] ?? null) ? $components['state'] : '',
+            zip:   is_string($components['zip'] ?? null)   ? $components['zip']   : '',
+        );
+
+        if ($requestedState !== '') {
+            if ($returned->normalizedState() === '') {
+                return 'census_match_components_missing';
+            }
+
+            if ($returned->normalizedState() !== $requestedState) {
+                return 'census_state_mismatch';
+            }
+        }
+
+        if ($requestedZip !== '') {
+            if ($returned->normalizedZip5() === '') {
+                return 'census_match_components_missing';
+            }
+
+            if ($returned->normalizedZip5() !== $requestedZip) {
+                return 'census_zip_mismatch';
+            }
+        }
+
+        return null;
     }
 
     /**
