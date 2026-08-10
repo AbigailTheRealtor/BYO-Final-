@@ -35,6 +35,23 @@ namespace App\Services\Location\Coordinates;
  * collision policy, cross-source identity) is a later phase and is deliberately
  * not built here — this only guarantees that when it arrives, the string it
  * consumes is already deterministic and unit-aware.
+ *
+ * PROVENANCE HANDLES (added in G2) — NOT PART OF THE ADDRESS
+ * ---------------------------------------------------------
+ * `listingType` / `listingId` / `mlsListingKey` are record handles, not address
+ * components. They exist because the two local adapters cannot do their job from
+ * a postal address alone: reusing a coordinate we already possess means finding
+ * the row that possesses it, and the only honest way to find that row is an
+ * exact record key. The alternative — matching a stored coordinate to an address
+ * by similarity — is precisely the guessing this design refuses to do.
+ *
+ * They are deliberately absent from `coordinateLookupLine()`,
+ * `propertyIdentityLine()`, `identityFingerprintInput()`,
+ * `coordinateCacheKeyInput()` and `hasMinimumForLookup()`. A property's identity
+ * and its cache key are properties of the address, not of which table happens to
+ * hold it today; letting a listing id leak into either would give one physical
+ * property as many identities as it has rows, and would defeat the unit-free
+ * cache sharing that exists to keep provider calls down.
  */
 final class PropertyAddress
 {
@@ -45,7 +62,25 @@ final class PropertyAddress
         public readonly string $county = '',
         public readonly string $state = '',
         public readonly string $zip = '',
+        public readonly string $listingType = '',
+        public readonly ?int $listingId = null,
+        public readonly string $mlsListingKey = '',
     ) {
+    }
+
+    /**
+     * True when this address carries a listing handle an already-stored
+     * coordinate could be looked up by.
+     */
+    public function hasListingHandle(): bool
+    {
+        return $this->listingType !== '' && $this->listingId !== null;
+    }
+
+    /** True when this address carries an MLS/Bridge record key. */
+    public function hasMlsListingKey(): bool
+    {
+        return trim($this->mlsListingKey) !== '';
     }
 
     /**
@@ -63,6 +98,13 @@ final class PropertyAddress
             county:      (string) ($data['property_county'] ?? $data['county'] ?? ''),
             state:       (string) ($data['property_state']  ?? $data['state']  ?? ''),
             zip:         (string) ($data['property_zip']    ?? $data['zip']    ?? ''),
+
+            // Provenance handles — optional, and never part of the address itself.
+            listingType:   (string) ($data['listing_type'] ?? ''),
+            listingId:     isset($data['listing_id']) && $data['listing_id'] !== ''
+                ? (int) $data['listing_id']
+                : null,
+            mlsListingKey: (string) ($data['mls_listing_key'] ?? $data['listing_key'] ?? ''),
         );
     }
 
