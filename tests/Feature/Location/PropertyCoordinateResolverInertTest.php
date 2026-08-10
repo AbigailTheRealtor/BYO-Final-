@@ -49,15 +49,34 @@ class PropertyCoordinateResolverInertTest extends TestCase
         $this->assertSame([], (new PropertyCoordinateResolver())->providerIds());
     }
 
-    public function test_no_network_adapter_class_exists_yet(): void
+    /**
+     * G3 added the US Census rung, so its absence is no longer the guarantee.
+     * What still holds — and is what this test was always really protecting —
+     * is that the G1 resolver reaches nothing regardless of which adapters
+     * exist elsewhere in the codebase, which the three assertions above state
+     * directly. The commercial rungs remain unwritten.
+     */
+    public function test_no_commercial_geocoder_class_exists_yet(): void
     {
         foreach ([
-            'App\\Services\\Location\\Coordinates\\Adapters\\CensusGeocoderAdapter',
             'App\\Services\\Location\\Coordinates\\Adapters\\CommercialGeocoderAdapter',
             'App\\Services\\Location\\Coordinates\\Adapters\\GeoapifyAdapter',
+            'App\\Services\\Location\\Coordinates\\Adapters\\OpenCageAdapter',
         ] as $class) {
-            $this->assertFalse(class_exists($class), "{$class} must not exist in G1");
+            $this->assertFalse(class_exists($class), "{$class} must not exist yet");
         }
+    }
+
+    /**
+     * The Census adapter exists but cannot be reached by a default resolver:
+     * an empty ladder has no rungs, and the adapter is on no ladder.
+     */
+    public function test_the_census_adapter_is_not_reachable_from_a_default_resolver(): void
+    {
+        $this->assertNotContains(
+            'us_census',
+            (new PropertyCoordinateResolver())->providerIds()
+        );
     }
 
     // ── fail-closed behaviour ───────────────────────────────────────────────

@@ -2,6 +2,9 @@
 
 namespace App\Services\Location\Coordinates;
 
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
 /**
  * Orchestrates the adapter ladder.
  *
@@ -30,6 +33,23 @@ namespace App\Services\Location\Coordinates;
  * last and is still returned honestly labelled, so a caller can frame a map
  * without ever being handed a centroid that claims to be the property —
  * {@see PropertyCoordinateResult::isUsableForLocationDna()} keeps that promise.
+ *
+ * FAULTS (added in G3)
+ * --------------------
+ * {@see PropertyCoordinateResolverInterface} promises callers that a provider
+ * outage "degrades to 'no coordinate' rather than an exception in a publish
+ * path". Until G3 that promise cost nothing to keep: every rung was a local
+ * database read, and the adapter contract's allowance for throwing on genuine
+ * faults had no one to exercise it. The US Census rung is the first that can
+ * time out, 502, or answer with something that is not JSON.
+ *
+ * So a throwing rung is caught here, logged, and skipped — the ladder continues
+ * to the next rung exactly as it would for a rung that simply found nothing.
+ * The distinction is not discarded: when a fault occurred and nothing else
+ * resolved, the unresolved reason is `provider_unavailable` rather than
+ * `no_adapter_resolved`, so a caller can tell "this address does not exist"
+ * from "we could not ask". Acting on that signal — circuit breaking, budgets,
+ * retry — is G4; preserving it is this class's job.
  */
 final class PropertyCoordinateResolver implements PropertyCoordinateResolverInterface
 {
@@ -73,12 +93,29 @@ final class PropertyCoordinateResolver implements PropertyCoordinateResolverInte
             );
         }
 
+        $faulted = false;
+
         foreach ($this->adapters as $adapter) {
             if (! $adapter->isAvailable()) {
                 continue;
             }
 
-            $result = $adapter->resolve($address);
+            try {
+                $result = $adapter->resolve($address);
+            } catch (Throwable $e) {
+                // A rung that is broken is skipped, not fatal. See FAULTS in the
+                // class docblock. The try covers resolution only: isAvailable()
+                // is required to answer without a network call, so a throw there
+                // is a bug to surface rather than an outage to absorb.
+                $faulted = true;
+
+                Log::warning('PropertyCoordinateResolver: adapter faulted', [
+                    'provider' => $adapter->providerId(),
+                    'error'    => $e->getMessage(),
+                ]);
+
+                continue;
+            }
 
             if ($result->isResolved()) {
                 return $result;
@@ -87,7 +124,15 @@ final class PropertyCoordinateResolver implements PropertyCoordinateResolverInte
 
         // No adapter answered. Fail closed with a reason rather than inventing a
         // coordinate — the shape the merged Google kill-switch work established.
-        return PropertyCoordinateResult::unresolved('no_adapter_resolved', $normalized);
+        //
+        // The reason distinguishes the two ways of answering nothing, because
+        // they call for opposite responses: nobody could match this address
+        // (final; the address is the problem) versus a rung broke on the way
+        // (retryable; the provider is the problem).
+        return PropertyCoordinateResult::unresolved(
+            $faulted ? 'provider_unavailable' : 'no_adapter_resolved',
+            $normalized
+        );
     }
 
     /**
