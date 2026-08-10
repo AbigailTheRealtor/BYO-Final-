@@ -182,15 +182,31 @@ class LocalCoordinateLadderTest extends TestCase
         );
     }
 
-    public function test_no_network_adapter_exists_in_g2(): void
+    /**
+     * G3 wrote the US Census rung, so "no network adapter exists" is no longer
+     * the guarantee this suite can make. The guarantee it still makes — and the
+     * one that actually mattered — is that no network rung is on THIS ladder,
+     * which {@see self::test_the_ladder_is_exactly_the_two_local_rungs_in_order}
+     * and {@see self::test_every_rung_declares_itself_local} assert directly,
+     * and which the zero-outbound tests below prove behaviourally.
+     */
+    public function test_no_network_adapter_is_on_the_local_ladder(): void
+    {
+        $this->assertNotContains(
+            'us_census',
+            LocalCoordinateLadder::resolver()->providerIds(),
+            'The Census rung exists as of G3 but the local ladder must stay local'
+        );
+    }
+
+    public function test_the_unwritten_rungs_are_still_unwritten(): void
     {
         foreach ([
-            'App\\Services\\Location\\Coordinates\\Adapters\\CensusGeocoderAdapter',
             'App\\Services\\Location\\Coordinates\\Adapters\\CommercialGeocoderAdapter',
             'App\\Services\\Location\\Coordinates\\Adapters\\GeoapifyAdapter',
             'App\\Services\\Location\\Coordinates\\Adapters\\CentroidAdapter',
         ] as $class) {
-            $this->assertFalse(class_exists($class), "{$class} must not exist in G2");
+            $this->assertFalse(class_exists($class), "{$class} must not exist yet");
         }
     }
 
@@ -273,12 +289,32 @@ class LocalCoordinateLadderTest extends TestCase
 
     // ── source-level proof, not just behavioural ────────────────────────────
 
+    /**
+     * The one file in the namespace permitted to reach the network.
+     *
+     * An allowlist rather than a skip: a second network adapter has to be named
+     * here before its HTTP client stops failing this test, so "this file may
+     * call out" stays a deliberate, reviewable entry instead of a scan that
+     * quietly got looser. Every file not on this list must still be incapable
+     * of an outbound request.
+     */
+    private const MAY_REACH_THE_NETWORK = [
+        'CensusGeocoderAdapter.php',
+    ];
+
     public function test_no_adapter_constructs_an_outbound_client(): void
     {
+        $checked = 0;
+
         foreach ($this->namespaceFiles() as $file) {
+            if (in_array(basename($file), self::MAY_REACH_THE_NETWORK, true)) {
+                continue;
+            }
+
             $source = file_get_contents($file);
 
             $this->assertIsString($source);
+            $checked++;
 
             foreach (['Http::', 'new Client', 'GuzzleHttp', 'file_get_contents(', 'curl_', 'fsockopen'] as $needle) {
                 $this->assertStringNotContainsString(
@@ -287,6 +323,63 @@ class LocalCoordinateLadderTest extends TestCase
                     basename($file) . " must not use {$needle}"
                 );
             }
+        }
+
+        // An allowlist that grew to cover everything would make this test pass
+        // by examining nothing.
+        $this->assertGreaterThan(5, $checked, 'The scan must still cover the namespace');
+    }
+
+    /**
+     * Proves the scan above would actually catch an un-allowlisted network file,
+     * rather than passing because the needles no longer match anything.
+     *
+     * Every exempt file must contain at least one of the very needles the scan
+     * rejects. If that stops being true, the exemption is dead weight and the
+     * scan is no longer being tested by anything — which is exactly how a guard
+     * rots into a test that passes unconditionally.
+     */
+    public function test_the_outbound_scan_would_trip_on_an_unlisted_network_file(): void
+    {
+        $needles = ['Http::', 'new Client', 'GuzzleHttp', 'file_get_contents(', 'curl_', 'fsockopen'];
+
+        foreach (self::MAY_REACH_THE_NETWORK as $basename) {
+            $source = file_get_contents(
+                base_path('app/Services/Location/Coordinates/Adapters/' . $basename)
+            );
+
+            $this->assertIsString($source);
+
+            $hits = array_filter(
+                $needles,
+                static fn (string $needle): bool => str_contains($source, $needle)
+            );
+
+            $this->assertNotEmpty(
+                $hits,
+                "{$basename} is exempt from the outbound scan but contains none of the "
+                . 'needles that scan looks for — so the exemption proves nothing and the '
+                . 'scan would not have caught this file had it been unlisted'
+            );
+        }
+    }
+
+    /**
+     * The allowlist above is a statement about which files may call out. This
+     * asserts the statement is true in the other direction — that a file granted
+     * the exemption is one that declares itself a network rung — so the
+     * exemption cannot be quietly used to smuggle a client into a local one.
+     */
+    public function test_every_exempt_file_is_a_declared_network_adapter(): void
+    {
+        foreach (self::MAY_REACH_THE_NETWORK as $basename) {
+            $class = 'App\\Services\\Location\\Coordinates\\Adapters\\' . basename($basename, '.php');
+
+            $this->assertTrue(class_exists($class), "{$class} must exist to be exempt");
+            $this->assertTrue(
+                (new $class())->requiresNetwork(),
+                "{$class} is exempt from the outbound-client scan, so it must declare requiresNetwork()"
+            );
         }
     }
 
@@ -350,17 +443,35 @@ class LocalCoordinateLadderTest extends TestCase
     }
 
     /**
-     * Every file in the coordinates namespace, including the Adapters
-     * subdirectory. Recursive on purpose: a non-recursive glob would have gone
-     * on passing while the adapters it was meant to cover sat one level down.
+     * Every file in the coordinates namespace, at any depth.
+     *
+     * Genuinely recursive rather than a pair of hand-written globs. The earlier
+     * version listed the root and `Adapters/` explicitly, which was correct for
+     * exactly as long as those were the only two directories — G3 added
+     * `Exceptions/`, which a hand-written list would have silently stopped
+     * covering while continuing to report success.
      *
      * @return list<string>
      */
     private function namespaceFiles(): array
     {
-        return array_merge(
-            glob(base_path('app/Services/Location/Coordinates/*.php')) ?: [],
-            glob(base_path('app/Services/Location/Coordinates/Adapters/*.php')) ?: [],
+        $files = [];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(
+                base_path('app/Services/Location/Coordinates'),
+                \FilesystemIterator::SKIP_DOTS
+            )
         );
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $files[] = $file->getPathname();
+            }
+        }
+
+        sort($files);
+
+        return $files;
     }
 }

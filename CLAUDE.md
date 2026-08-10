@@ -56,6 +56,20 @@ Bid forms are multi-tab Livewire components located in `app/Http/Livewire/` subd
 
 `LocationDnaPipelineRunner` (in `app/Services/LocationDna/`) orchestrates async enrichment for a property: POI lookup (Google Places via `GooglePlacesPoiAdapter`), flood zone (FEMA API), school districts (Census TIGER), and commute times. Results are cached via `LocationDnaPoiTileCache`. The pipeline runs as a queued job (`app/Jobs/ComputeLocationDna.php`). FEMA bounding-box size limits are configured in `config/location_dna.php`.
 
+### Property coordinate ladder (separate from the Location DNA pipeline)
+
+`app/Services/Location/Coordinates/` resolves one property address to one coordinate, provider-neutrally. `PropertyCoordinateResolver` walks a list of `CoordinateProviderAdapterInterface` rungs in precedence order and returns the first resolved answer — local sources before any paid or rate-limited one.
+
+Three types carry the design and are worth reading before touching anything here:
+
+- **`PropertyAddress`** normalizes twice on purpose — `coordinateLookupLine()` drops the unit (what a geocoder is asked, and the cache key), `propertyIdentityLine()` keeps it (what distinguishes two condos).
+- **`CoordinatePrecision`** decides via `isExact()` whether a point may drive distance, commute and flood-boundary work. A ZIP centroid and a rooftop are both "a latitude and a longitude"; this enum is what stops the first being measured from.
+- **`PropertyCoordinateResult`** is the single immutable return type. Consumers should reach for `exactCoordinates()`, not `->latitude` — the accessor enforces the gate, the property bypasses it.
+
+Built in phases: G1 the contracts, G2 the two local rungs (`ExistingCoordinatesAdapter`, `BridgeMlsCoordinatesAdapter`, assembled by `LocalCoordinateLadder`), G3 the first network rung (`CensusGeocoderAdapter`). **Nothing here is wired into a listing flow yet** — `PropertyCoordinateResolverInterface` is deliberately bound to nothing, so no component can inject a resolver by accident. Integration and cost controls are G4/G5, and Seller/Landlord Location DNA dispatch stays separately gated regardless.
+
+A rung that is *broken* raises `CoordinateProviderUnavailable`; a rung that simply *cannot match the address* returns an unresolved result. Keep that distinction when adding a rung — the first must never be cached, the second should be.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.
@@ -101,6 +115,9 @@ Beyond standard Laravel keys, this app requires:
 | `HIRE_AGENT_HERO_REDESIGN_ROLES` | Comma-separated roles the redesign applies to while enabled. Default `landlord` (the pilot). Independent of the master switch — both must agree. Widening this is a rollout decision, not a code change. |
 | `HIRE_AGENT_DETAIL_REDESIGN_ENABLED` | Master gate for the redesigned Hire Agent listing **detail page** (M5) — section navigation, quick actions, sidebar, cards, photo gallery. Default `false` = inert. **Independent of the hero flag on purpose**: the hero is being visually verified while the detail rebuild is still in progress, so one must not move the other. Gating is read only via `HireAgentDetailRedesign::enabledFor($role)` — no view may gate on the master switch, because the page body and the shared shell disagreeing is what once let the body render redesign markup without the stylesheet that lays it out. `enabled()` still answers the master switch alone and is not a gate. Pairs with `HIRE_AGENT_DETAIL_REDESIGN_ROLES` below; both must agree. |
 | `HIRE_AGENT_DETAIL_REDESIGN_ROLES` | Comma-separated roles the detail redesign applies to while enabled. Default `landlord` (the pilot). Independent of the master switch — both must agree, and this list is the only thing that grants a role the redesign. Widening it is a rollout decision, not a code change. Mirrors `HIRE_AGENT_HERO_REDESIGN_ROLES`; added in M7.1 when page layout moved into the shared shell all four roles render, so "which files exist" stopped being able to scope the pilot. |
+| `CENSUS_GEOCODER_ENABLED` | Master gate for `CensusGeocoderAdapter` (G3) — the first non-Google coordinate provider. Default `false` = the adapter reports itself unavailable and is skipped without being called. **This flag carries more weight than the other gates in this table**: the US Census Geocoder needs no API key, so the missing credential that normally keeps an unfinished integration quiet does not exist here. Nothing else stands between the adapter and an outbound request. As of G3 the adapter is on no ladder, bound in no container and referenced by no flow, so enabling it changes nothing — assembling a ladder that includes it is G4/G5. |
+| `CENSUS_GEOCODER_BENCHMARK` | Which vintage of the Census address-range corpus to match against. Default `Public_AR_Current`. Pinned explicitly rather than relying on the service default so a change on the Census side arrives as a config diff instead of as coordinates that quietly moved. Valid values come from `/geocoder/benchmarks?format=json`; an unrecognised one is rejected with HTTP 400 and surfaces as a provider fault, not as "this address does not exist". |
+| `CENSUS_GEOCODER_TIMEOUT` / `CENSUS_GEOCODER_CACHE_TTL` / `CENSUS_GEOCODER_MAX_ADDRESS_LENGTH` | Request ceiling (default 10s), cache lifetime (default 30 days, keyed on the unit-free lookup line so every unit in a building shares one call), and the service's own 100-character address limit mirrored locally so an over-long address is declined before a request is spent on it. |
 | `LOCATION_DNA_FLOOD_ZONE_MAX_AREA` | FEMA API bounding-box threshold in sq-degrees |
 | `OFFER_PLAYOFF_ALLOWED_IDS` | Comma-separated user IDs or `*` for all |
 
