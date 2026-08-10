@@ -22,6 +22,13 @@ class PropertyLocationDna extends Model
         'geocode_status',
         'geocode_error',
         'geocoded_at',
+
+        // Coordinate provenance (G4). Nullable everywhere: NULL means the row
+        // predates provenance tracking, which is not the same as a coordinate
+        // known to be coarse.
+        'geocode_precision',
+        'geocode_provider',
+        'normalized_address',
         'summary_json',
         'lifestyle_json',
         'generated_at',

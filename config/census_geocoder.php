@@ -24,6 +24,17 @@
 |
 */
 
+/**
+ * A ceiling that may legitimately be "none".
+ *
+ * `(int) null` is 0, and a cap of 0 would block every request rather than
+ * permitting them all — the exact inverse of what an unset value means. This
+ * keeps that footgun in one place.
+ */
+$capOrNull = static function ($value): ?int {
+    return ($value === null || $value === '' || $value === 'null') ? null : (int) $value;
+};
+
 return [
 
     /*
@@ -118,5 +129,76 @@ return [
     | looks identical to a real misconfiguration.
     */
     'max_address_length' => (int) env('CENSUS_GEOCODER_MAX_ADDRESS_LENGTH', 100),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Request ceilings (G4)
+    |--------------------------------------------------------------------------
+    | Operational discipline that is deliberately independent of price.
+    |
+    | The Census Geocoder is free and publishes no rate limit, which is exactly
+    | why these exist. Cost is not the only thing a runaway loop spends: an
+    | observer firing per save, a queue that retries, or a page that resolves on
+    | every render can each turn one user action into thousands of requests.
+    | Against a paid provider that produces a visible bill. Against a free one it
+    | produces nothing at all until the Bureau stops answering us — damage to a
+    | shared public service and to our own access, neither of which is undone by
+    | noticing quickly.
+    |
+    | The defaults are conservative on purpose. 500/hour and 5,000/day is far
+    | more than any legitimate current workload — nothing calls this adapter at
+    | all today — and far less than a loop would reach in minutes. They are a
+    | backstop against a bug, not a capacity plan; raise them when a real
+    | workload needs it, with evidence from telemetry.
+    |
+    | null disables a ceiling entirely. Prefer a high number to null: a ceiling
+    | you can see in config is easier to reason about than one that is absent.
+    */
+    'hourly_cap' => $capOrNull(env('CENSUS_GEOCODER_HOURLY_CAP', 500)),
+    'daily_cap'  => $capOrNull(env('CENSUS_GEOCODER_DAILY_CAP', 5000)),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Circuit breaker (G4)
+    |--------------------------------------------------------------------------
+    | When the provider is down, each further request costs a full timeout to
+    | learn what the previous one already established. Five faults inside ten
+    | minutes opens the circuit for five minutes, during which no request is
+    | attempted and the rung fails closed.
+    |
+    | Five rather than one: an isolated timeout is normal internet weather and
+    | must not take the provider out of service. Five inside a ten-minute window
+    | is a pattern rather than noise.
+    |
+    | Five minutes rather than an hour: long enough for a transient outage to
+    | pass and for retry pressure on a struggling service to drop, short enough
+    | that a brief blip does not disable geocoding for the rest of the day.
+    |
+    | The local rungs are unaffected by any of this — an open Census circuit
+    | must never stop a coordinate we already hold from being returned.
+    */
+    'breaker' => [
+        'failure_threshold' => (int) env('CENSUS_GEOCODER_BREAKER_THRESHOLD', 5),
+        'cooldown_seconds'  => (int) env('CENSUS_GEOCODER_BREAKER_COOLDOWN', 300),
+        'window_seconds'    => (int) env('CENSUS_GEOCODER_BREAKER_WINDOW', 600),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ambiguity cache TTL (G4)
+    |--------------------------------------------------------------------------
+    | An ambiguous match is a real, deterministic answer about this address —
+    | ask again in a minute and the corpus returns the same two candidates — so
+    | re-requesting on every page render would spend the budget learning the
+    | same thing repeatedly.
+    |
+    | But it is not as settled as a clean miss. Ambiguity is usually the symptom
+    | of a thin address (a missing ZIP, a fixable typo), and the corpus is
+    | revised on a survey cadence; caching it for the full 30 days would keep
+    | answering "we cannot tell" long after either changed. One day is the
+    | compromise: cheap enough to stop a loop, short enough that a fix is picked
+    | up the next day without an operator having to know a cache exists.
+    */
+    'ambiguous_cache_ttl' => (int) env('CENSUS_GEOCODER_AMBIGUOUS_CACHE_TTL', 86400),
 
 ];

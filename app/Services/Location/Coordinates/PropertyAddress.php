@@ -179,6 +179,35 @@ final class PropertyAddress
         return $this->normalizeUnit($this->unitAddress) !== '';
     }
 
+    /**
+     * The two-letter state code, or '' when none was supplied.
+     *
+     * Exposed (G4) so a provider's answer can be checked against what was
+     * asked. A geocoder that returns a match in a different state has not
+     * found this property, and detecting that requires comparing two states
+     * under identical normalization — "FL", "Fl" and "Florida" are one state,
+     * and a caller that re-implemented that rule would eventually disagree
+     * with this one. There is exactly one way to normalize a state here, and
+     * this is it.
+     */
+    public function normalizedState(): string
+    {
+        return $this->normalizeState($this->state);
+    }
+
+    /**
+     * The ZIP5, or '' when none was supplied.
+     *
+     * Exposed for the same reason as {@see self::normalizedState()}. Note that
+     * this truncates ZIP+4, so a caller comparing a requested "33602-1234"
+     * against a returned "33602" gets the right answer rather than a spurious
+     * mismatch.
+     */
+    public function normalizedZip5(): string
+    {
+        return $this->zip5($this->zip);
+    }
+
     // ── normalization ────────────────────────────────────────────────────────
 
     /**

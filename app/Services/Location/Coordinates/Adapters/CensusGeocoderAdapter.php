@@ -6,6 +6,9 @@ use App\Services\Location\Coordinates\CoordinatePrecision;
 use App\Services\Location\Coordinates\CoordinateProviderAdapterInterface;
 use App\Services\Location\Coordinates\CoordinateSource;
 use App\Services\Location\Coordinates\Exceptions\CoordinateProviderUnavailable;
+use App\Services\Location\Coordinates\Guards\CoordinateProviderTelemetry;
+use App\Services\Location\Coordinates\Guards\ProviderCircuitBreaker;
+use App\Services\Location\Coordinates\Guards\ProviderRequestBudget;
 use App\Services\Location\Coordinates\PropertyAddress;
 use App\Services\Location\Coordinates\PropertyCoordinateResult;
 use Illuminate\Support\Facades\Cache;
@@ -114,6 +117,51 @@ use Throwable;
  * already requires a ZIP or a city+state, and a ZIP disambiguates almost
  * everything.
  *
+ * GEOGRAPHY AGREEMENT (added in G4)
+ * ---------------------------------
+ * A coordinate is not evidence that the provider found the right property. The
+ * geocoder answers with whatever its corpus considered the best match for the
+ * string it was given, and a street name that exists in two states will
+ * cheerfully resolve to the wrong one — returning a valid, in-range, plausible
+ * coordinate for a property several hundred miles from the one being listed.
+ * Nothing about the numbers reveals that.
+ *
+ * So every match is checked against what was actually asked: if the caller
+ * supplied a state, the match must be in that state; if the caller supplied a
+ * ZIP, the match must be in that ZIP5. Both sides are normalized through
+ * {@see PropertyAddress}, so "FL"/"Florida" agree and a requested
+ * "33602-1234" agrees with a returned "33602" — but genuinely different
+ * geography does not. Exact equality only; there is no fuzzy fallback, because
+ * a rule that sometimes accepts the wrong county is not a rule.
+ *
+ * This runs per match rather than over the response as a whole, which also
+ * disambiguates: where the provider offers several candidates and only one is
+ * in the requested ZIP, the requested ZIP is evidence, and the others are
+ * dropped. That is not the same as taking the first result — it is using
+ * information the caller supplied instead of guessing.
+ *
+ * A component the caller did NOT supply is not checked. The caller made no
+ * claim about it, so the provider cannot contradict one.
+ *
+ * WHEN THE PROVIDER OMITS A COMPONENT WE ASKED ABOUT
+ * --------------------------------------------------
+ * Rejected, as `census_match_components_missing`.
+ *
+ * The policy is deliberate and was decided on evidence rather than taste. Ten
+ * successful live matches were sampled across FL, DC, MA, NY, IL, CA and WA,
+ * including three queries that supplied no ZIP at all; every one returned a
+ * populated `state` and `zip`. That the service populates other components with
+ * empty strings — `preType`, `preDirection`, `suffixQualifier` are routinely
+ * '' — makes the consistency of these two more meaningful, not less: empties
+ * are clearly available to this API and these fields never used them.
+ *
+ * So a missing component is not the normal case degrading gracefully; it is the
+ * provider behaving in a way it has not been observed to behave, and a guard
+ * that waves through the one response shape it cannot verify is not a guard.
+ * It carries its own reason rather than reusing `census_zip_mismatch` so that
+ * if the service ever does change shape, telemetry shows an anomaly appearing
+ * at volume instead of a sudden epidemic of apparently wrong addresses.
+ *
  * CACHING: OUTCOMES YES, FAULTS NEVER
  * -----------------------------------
  * Keyed on {@see PropertyAddress::coordinateCacheKeyInput()} — the unit-free
@@ -127,8 +175,39 @@ use Throwable;
  * A fault raises {@see CoordinateProviderUnavailable} instead, which is the
  * signal G4's breaker and per-provider budget will consume.
  *
- * G3 SCOPE
- * --------
+ * OPERATIONAL GUARDS (added in G4)
+ * --------------------------------
+ * Two things can stop a request before it is made, and both refuse by raising
+ * {@see CoordinateProviderUnavailable} rather than returning an unresolved
+ * result. That is deliberate: "we declined to ask" and "we asked and could not
+ * reach them" are the same answer to a caller — no coordinate, try the next
+ * rung — and the resolver already knows how to skip a rung that cannot answer.
+ * The `kind` on the exception keeps them distinguishable where the difference
+ * actually matters, which is telemetry and the breaker's own accounting.
+ *
+ *   {@see ProviderCircuitBreaker}  five faults in ten minutes opens the circuit
+ *                                  for five minutes; while open, nothing is sent
+ *   {@see ProviderRequestBudget}   hourly and daily ceilings, counted only for
+ *                                  requests actually sent
+ *
+ * The budget exists even though this provider is free, and that is the point of
+ * it: cost is not the only thing a runaway loop spends. An observer firing per
+ * save or a page resolving per render turns one user action into thousands of
+ * requests, and against a free service that produces no bill and no signal —
+ * just a slowly worsening relationship with a shared public resource, until the
+ * Bureau stops answering. The ceiling makes that impossible rather than
+ * unlikely.
+ *
+ * Crucially, neither guard touches the local rungs. An open Census circuit must
+ * never stop a coordinate we already hold from being returned, which is exactly
+ * why the network rung sits below the local ones.
+ *
+ * A rate-limit block does NOT count against the breaker. Counting it would let
+ * the breaker trip on our own rationing and then stay open blaming the
+ * provider, which would be an outage we invented.
+ *
+ * G3/G4 SCOPE
+ * -----------
  * This class is the whole of G3. It is not on {@see LocalCoordinateLadder} —
  * that ladder is the local rungs and stays local — it is bound in no container,
  * referenced by no listing flow, and dispatches no Location DNA work. It also
@@ -204,17 +283,197 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
         }
 
         $cacheKey = self::CACHE_PREFIX . md5($address->coordinateCacheKeyInput());
+        $hash     = CoordinateProviderTelemetry::addressHash($address->coordinateCacheKeyInput());
         $outcome  = Cache::get($cacheKey);
 
-        if (! is_array($outcome)) {
-            $outcome = $this->lookup($line);
+        if (is_array($outcome)) {
+            // A cache hit costs no request and is not counted against the
+            // budget — rationing our own memory would defeat the cache.
+            CoordinateProviderTelemetry::record(
+                $this->providerId(),
+                CoordinateProviderTelemetry::OUTCOME_CACHE_HIT,
+                ['address_hash' => $hash, 'state' => $address->normalizedState()]
+            );
 
-            // Only definitive outcomes reach this line — a fault has already
-            // thrown, so there is no path by which one is cached.
-            Cache::put($cacheKey, $outcome, (int) config('census_geocoder.cache_ttl', 2592000));
+            return $this->toResult($outcome, $line);
         }
 
+        // Both guards run before anything is sent, and both refuse by raising
+        // rather than returning: "we declined to ask" is the same answer to a
+        // caller as "we asked and could not reach them", and the resolver
+        // already knows how to skip a rung that cannot answer. The kind on the
+        // exception keeps them distinguishable where it matters — telemetry,
+        // and the breaker's own accounting.
+        $this->refuseIfCircuitOpen($hash, $address);
+        $this->refuseIfOverBudget($hash, $address);
+
+        $startedAt = microtime(true);
+
+        try {
+            $outcome = $this->lookup($line, $address);
+        } catch (CoordinateProviderUnavailable $e) {
+            if ($e->isProviderFault()) {
+                $this->breaker()->recordFault();
+            }
+
+            CoordinateProviderTelemetry::record(
+                $this->providerId(),
+                CoordinateProviderTelemetry::OUTCOME_PROVIDER_FAILURE,
+                [
+                    'address_hash'  => $hash,
+                    'reason'        => $e->reason,
+                    'kind'          => $e->kind,
+                    'latency_ms'    => $this->elapsedMs($startedAt),
+                    'circuit_state' => $this->breaker()->state(),
+                ]
+            );
+
+            throw $e;
+        }
+
+        // The provider answered. Whatever it said, it is healthy.
+        $this->breaker()->recordSuccess();
+
+        // Only definitive outcomes reach this line — a fault has already thrown,
+        // so there is no path by which one is cached.
+        Cache::put($cacheKey, $outcome, $this->cacheTtlFor($outcome));
+
+        $this->recordOutcome($outcome, $hash, $address, $startedAt);
+
         return $this->toResult($outcome, $line);
+    }
+
+    /**
+     * How long this particular answer stays true.
+     *
+     * A clean miss and a resolved coordinate are both settled facts about an
+     * address and keep the full TTL. Ambiguity is settled too — ask again in a
+     * minute and the corpus offers the same candidates — but it is usually the
+     * symptom of a thin address rather than a property of the world, so it gets
+     * a shorter life: long enough to stop a render loop re-asking, short enough
+     * that a corrected ZIP is picked up without anyone needing to know a cache
+     * exists.
+     *
+     * @param array{hit: bool, reason?: string} $outcome
+     */
+    private function cacheTtlFor(array $outcome): int
+    {
+        if (($outcome['reason'] ?? null) === 'census_ambiguous_match') {
+            return (int) config('census_geocoder.ambiguous_cache_ttl', 86400);
+        }
+
+        return (int) config('census_geocoder.cache_ttl', 2592000);
+    }
+
+    /** @throws CoordinateProviderUnavailable */
+    private function refuseIfCircuitOpen(string $hash, PropertyAddress $address): void
+    {
+        if (! $this->breaker()->isOpen()) {
+            return;
+        }
+
+        CoordinateProviderTelemetry::record(
+            $this->providerId(),
+            CoordinateProviderTelemetry::OUTCOME_BLOCKED,
+            [
+                'address_hash'  => $hash,
+                'reason'        => 'provider_circuit_open',
+                'circuit_state' => 'open',
+                'state'         => $address->normalizedState(),
+            ]
+        );
+
+        throw CoordinateProviderUnavailable::circuitOpen(
+            $this->providerId(),
+            'US Census geocoder circuit is open after repeated faults'
+        );
+    }
+
+    /** @throws CoordinateProviderUnavailable */
+    private function refuseIfOverBudget(string $hash, PropertyAddress $address): void
+    {
+        $budget  = $this->budget();
+        $blocked = $budget->blockedReason();
+
+        if ($blocked === null) {
+            $budget->recordRequest();
+
+            return;
+        }
+
+        CoordinateProviderTelemetry::record(
+            $this->providerId(),
+            CoordinateProviderTelemetry::OUTCOME_BLOCKED,
+            array_merge(
+                [
+                    'address_hash' => $hash,
+                    'reason'       => $blocked,
+                    'state'        => $address->normalizedState(),
+                ],
+                $budget->spent()
+            )
+        );
+
+        throw CoordinateProviderUnavailable::rateLimited(
+            $this->providerId(),
+            $blocked,
+            "US Census geocoder request ceiling reached ({$blocked})"
+        );
+    }
+
+    /**
+     * @param array{hit: bool, reason?: string, lat?: float} $outcome
+     */
+    private function recordOutcome(
+        array $outcome,
+        string $hash,
+        PropertyAddress $address,
+        float $startedAt
+    ): void {
+        $reason = $outcome['reason'] ?? null;
+
+        $result = match (true) {
+            ($outcome['hit'] ?? false) === true    => CoordinateProviderTelemetry::OUTCOME_SUCCESS,
+            $reason === 'census_no_match'          => CoordinateProviderTelemetry::OUTCOME_NO_MATCH,
+            $reason === 'census_ambiguous_match'   => CoordinateProviderTelemetry::OUTCOME_AMBIGUOUS,
+            default                                => CoordinateProviderTelemetry::OUTCOME_REJECTED,
+        };
+
+        CoordinateProviderTelemetry::record($this->providerId(), $result, [
+            'address_hash'  => $hash,
+            'state'         => $address->normalizedState(),
+            'reason'        => $reason,
+            'precision'     => ($outcome['hit'] ?? false) === true
+                ? CoordinatePrecision::Interpolated->value
+                : null,
+            'latency_ms'    => $this->elapsedMs($startedAt),
+            'cache'         => 'miss',
+            'circuit_state' => $this->breaker()->state(),
+        ]);
+    }
+
+    private function elapsedMs(float $startedAt): int
+    {
+        return (int) round((microtime(true) - $startedAt) * 1000);
+    }
+
+    private function budget(): ProviderRequestBudget
+    {
+        return new ProviderRequestBudget(
+            $this->providerId(),
+            config('census_geocoder.hourly_cap'),
+            config('census_geocoder.daily_cap'),
+        );
+    }
+
+    private function breaker(): ProviderCircuitBreaker
+    {
+        return new ProviderCircuitBreaker(
+            $this->providerId(),
+            (int) config('census_geocoder.breaker.failure_threshold', 5),
+            (int) config('census_geocoder.breaker.cooldown_seconds', 300),
+            (int) config('census_geocoder.breaker.window_seconds', 600),
+        );
     }
 
     /**
@@ -230,16 +489,17 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
      *
      * @throws CoordinateProviderUnavailable when the provider is at fault
      */
-    private function lookup(string $line): array
+    private function lookup(string $line, PropertyAddress $address): array
     {
         $response = $this->request($line);
 
         // 5xx and 429 are the service's problem and may pass; every other 4xx
         // means it rejected this particular request, which is ours.
         if ($response->serverError() || $response->status() === 429) {
-            throw new CoordinateProviderUnavailable(
+            throw CoordinateProviderUnavailable::fault(
                 $this->providerId(),
-                "US Census geocoder returned HTTP {$response->status()}"
+                "US Census geocoder returned HTTP {$response->status()}",
+                'provider_http_' . $response->status()
             );
         }
 
@@ -261,13 +521,14 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
         // all, and caching it as one would be indistinguishable from the
         // address genuinely not existing.
         if (! is_array($matches)) {
-            throw new CoordinateProviderUnavailable(
+            throw CoordinateProviderUnavailable::fault(
                 $this->providerId(),
-                'US Census geocoder returned a body without result.addressMatches'
+                'US Census geocoder returned a body without result.addressMatches',
+                'provider_malformed_body'
             );
         }
 
-        return $this->interpret($matches);
+        return $this->interpret($matches, $address);
     }
 
     /**
@@ -290,9 +551,10 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
         } catch (Throwable $e) {
             // Connection refused, DNS failure, timeout. Transient by nature and
             // never cached.
-            throw new CoordinateProviderUnavailable(
+            throw CoordinateProviderUnavailable::fault(
                 $this->providerId(),
-                'US Census geocoder unreachable: ' . $e->getMessage()
+                'US Census geocoder unreachable: ' . $e->getMessage(),
+                'provider_unreachable'
             );
         }
     }
@@ -303,9 +565,10 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
      * @param  array<int, mixed> $matches
      * @return array{hit: bool, lat?: float, lng?: float, matched?: string, reason?: string}
      */
-    private function interpret(array $matches): array
+    private function interpret(array $matches, PropertyAddress $address): array
     {
-        $points = [];
+        $points     = [];
+        $rejections = [];
 
         foreach ($matches as $match) {
             if (! is_array($match)) {
@@ -317,12 +580,23 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
             $latitude  = CoordinateValidator::toFloat($match['coordinates']['y'] ?? null);
 
             if (! CoordinateValidator::isValidPair($latitude, $longitude)) {
+                $rejections[] = 'census_coordinates_invalid';
                 continue;
             }
 
             // In range but not anywhere this provider serves — which is what a
             // transposed pair looks like. See the axis heading in the docblock.
             if (! $this->isWithinServiceArea($latitude, $longitude)) {
+                $rejections[] = 'census_coordinates_invalid';
+                continue;
+            }
+
+            // Does the provider's answer describe the place we asked about?
+            // See GEOGRAPHY AGREEMENT in the class docblock.
+            $disagreement = $this->geographyDisagreement($match, $address);
+
+            if ($disagreement !== null) {
+                $rejections[] = $disagreement;
                 continue;
             }
 
@@ -337,11 +611,18 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
 
         if ($points === []) {
             // Either the corpus has no such address, or every match it returned
-            // carried an unusable coordinate. Both are final answers about this
-            // address rather than statements about the service, so both cache.
+            // was rejected. Both are final answers about this address rather
+            // than statements about the service, so both cache.
+            //
+            // The first rejection is reported rather than a generic one: with a
+            // single match — overwhelmingly the common case — it is exactly the
+            // reason, and it keeps "matched the wrong state" from being filed
+            // under the same label as "the coordinate was corrupt".
             return [
                 'hit'    => false,
-                'reason' => $matches === [] ? 'census_no_match' : 'census_coordinates_invalid',
+                'reason' => $matches === []
+                    ? 'census_no_match'
+                    : ($rejections[0] ?? 'census_no_match'),
             ];
         }
 
@@ -357,6 +638,60 @@ final class CensusGeocoderAdapter implements CoordinateProviderAdapterInterface
             'lng'     => $chosen['lng'],
             'matched' => $chosen['matched'],
         ];
+    }
+
+    /**
+     * Why this match does not describe the place that was asked about, or null
+     * when it does.
+     *
+     * Exact equality on normalized values only — no fuzzy matching, no distance
+     * fallback, no "close enough". Both sides go through {@see PropertyAddress}
+     * so that "FL", "Fl" and "Florida" compare equal and a requested
+     * "33602-1234" compares equal to a returned "33602", while genuinely
+     * different geography compares unequal.
+     *
+     * A component that was not supplied is not checked: the caller made no
+     * claim about it, so the provider cannot contradict one. A component that
+     * was supplied but comes back empty is a different matter — see
+     * `census_match_components_missing` in the docblock.
+     */
+    private function geographyDisagreement(array $match, PropertyAddress $address): ?string
+    {
+        $components = is_array($match['addressComponents'] ?? null)
+            ? $match['addressComponents']
+            : [];
+
+        $requestedState = $address->normalizedState();
+        $requestedZip   = $address->normalizedZip5();
+
+        // Normalized through the same rules as the request, so the comparison
+        // is between like and like.
+        $returned = new PropertyAddress(
+            state: is_string($components['state'] ?? null) ? $components['state'] : '',
+            zip:   is_string($components['zip'] ?? null)   ? $components['zip']   : '',
+        );
+
+        if ($requestedState !== '') {
+            if ($returned->normalizedState() === '') {
+                return 'census_match_components_missing';
+            }
+
+            if ($returned->normalizedState() !== $requestedState) {
+                return 'census_state_mismatch';
+            }
+        }
+
+        if ($requestedZip !== '') {
+            if ($returned->normalizedZip5() === '') {
+                return 'census_match_components_missing';
+            }
+
+            if ($returned->normalizedZip5() !== $requestedZip) {
+                return 'census_zip_mismatch';
+            }
+        }
+
+        return null;
     }
 
     /**

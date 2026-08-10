@@ -42,15 +42,66 @@ use RuntimeException;
 final class CoordinateProviderUnavailable extends RuntimeException
 {
     /**
+     * The provider itself misbehaved — timeout, 5xx, 429, unparseable body.
+     * The only kind that should count against a circuit breaker.
+     */
+    public const KIND_FAULT = 'fault';
+
+    /**
+     * We declined to call, because an hourly or daily cap was already spent.
+     * Nothing is wrong with the provider; we are rationing it.
+     */
+    public const KIND_RATE_LIMITED = 'rate_limited';
+
+    /** We declined to call, because the breaker is open after repeated faults. */
+    public const KIND_CIRCUIT_OPEN = 'circuit_open';
+
+    /**
      * @param string $providerId the adapter's {@see
      *        \App\Services\Location\Coordinates\CoordinateProviderAdapterInterface::providerId()},
      *        carried so a caught fault can be attributed without parsing the
      *        message.
+     * @param string $kind why the provider is unavailable. All three kinds mean
+     *        "we could not ask" to a caller, which is why they share a type —
+     *        but only KIND_FAULT is evidence about the provider's health, so
+     *        collapsing them would make the breaker trip on its own rationing.
+     * @param string $reason the structured, machine-readable reason recorded on
+     *        telemetry, e.g. `census_hourly_cap_reached`. Distinct from the
+     *        human message.
      */
-    public function __construct(
+    private function __construct(
         public readonly string $providerId,
         string $message,
+        public readonly string $kind = self::KIND_FAULT,
+        public readonly string $reason = 'provider_fault',
     ) {
         parent::__construct($message);
+    }
+
+    /** The provider misbehaved. Counts against the breaker. */
+    public static function fault(string $providerId, string $message, string $reason = 'provider_fault'): self
+    {
+        return new self($providerId, $message, self::KIND_FAULT, $reason);
+    }
+
+    /** A cap was already spent. Does NOT count against the breaker. */
+    public static function rateLimited(string $providerId, string $reason, string $message): self
+    {
+        return new self($providerId, $message, self::KIND_RATE_LIMITED, $reason);
+    }
+
+    /** The breaker is open. Does NOT count against the breaker — it is the breaker. */
+    public static function circuitOpen(string $providerId, string $message): self
+    {
+        return new self($providerId, $message, self::KIND_CIRCUIT_OPEN, 'provider_circuit_open');
+    }
+
+    /**
+     * True when this is evidence the provider is unhealthy, rather than a
+     * decision we made about it.
+     */
+    public function isProviderFault(): bool
+    {
+        return $this->kind === self::KIND_FAULT;
     }
 }
