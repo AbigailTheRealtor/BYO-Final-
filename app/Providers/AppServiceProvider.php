@@ -44,6 +44,10 @@ use App\Services\LocationDna\Criteria\EloquentCriteriaGeographyRepository;
 use App\Services\LocationDna\Criteria\FakeCriteriaGeographyRepository;
 use App\Services\LocationDna\Criteria\FakeCriteriaNeighborhoodRepository;
 use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
+use App\Services\LocationDna\Criteria\Search\FakeGeographySearchRepository;
+use App\Services\LocationDna\Criteria\Search\GeographySearchRepository;
+use App\Services\LocationDna\Criteria\Search\LocationPlaceSearchRepository;
+use App\Services\LocationDna\Criteria\Search\NullGeographySearchRepository;
 use InvalidArgumentException;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
@@ -163,6 +167,38 @@ class AppServiceProvider extends ServiceProvider
                 'census' => new CensusCriteriaNeighborhoodRepository(),
                 'fake'   => new FakeCriteriaNeighborhoodRepository(),
                 default  => new NullCriteriaNeighborhoodRepository(),
+            };
+        });
+
+        /**
+         * M1 — geography search.
+         *
+         * IT FAILS TO EMPTY, FOR THE SAME REASON THE TIER ABOVE DOES. The only alternative to
+         * search is no search, which is what every environment did before M1 and cannot corrupt
+         * anything. Only `census` can answer: a search over the `us_*` tables would return
+         * surrogate keys that the census-backed cascade resolves to different places or to none,
+         * and `us_cities.fips_code` is empty for all 25,830 rows so there is no stable identifier
+         * to hand back in the first place.
+         *
+         * The source key is `census` while the implementation reads `location_places` — the source
+         * names the IDENTIFIER LINEAGE, and the canonical layer is where those identifiers live
+         * alongside the supplemental places the published corpus omits.
+         *
+         * THE NEIGHBOURHOOD FLAG IS PASSED IN, NOT READ INSIDE THE REPOSITORY. Search must agree
+         * with the cascade about whether that tier exists — offering a neighbourhood the cascade
+         * has no tier to hold would produce a match a user can select and nothing can accept. The
+         * decision is made here, beside the identical one made for CriteriaNeighborhoodRepository,
+         * so the two cannot drift.
+         *
+         * Nothing renders this yet: M1 is the seam only, and no UI consumes it.
+         */
+        $this->app->bind(GeographySearchRepository::class, function () {
+            $neighborhoods = (bool) config('criteria_location_dna.neighborhood_tier_enabled', false);
+
+            return match (config('criteria_location_dna.geography_source')) {
+                'census' => new LocationPlaceSearchRepository($neighborhoods),
+                'fake'   => new FakeGeographySearchRepository(),
+                default  => new NullGeographySearchRepository(),
             };
         });
 
