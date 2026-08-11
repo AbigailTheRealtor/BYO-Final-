@@ -50,6 +50,13 @@ manually, in the Replit UI:
   not start `deploy/scheduler.sh` more than once. `->withoutOverlapping(5)` is a
   backstop, not a licence to run duplicates.
 - **Do not** add `schedule:work` to the web `run`/`serve` command.
+- **Do not** add `php artisan migrate` to this script or to any scheduler
+  process. Migrations belong to `deploy/start-production.sh` alone — see
+  `deploy/DEPLOYMENT.md`. This is not a style preference: the application is on
+  Laravel 8, which has no `migrate --isolated`, so there is no migration lock
+  and two processes migrating concurrently is an unprotected race.
+  `DeploymentMigrationReadinessTest` asserts this file contains no
+  `artisan migrate`.
 
 ## Why this is safe even if the scheduler is down
 

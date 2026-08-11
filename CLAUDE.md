@@ -99,6 +99,18 @@ Service order, compensation fields, and UI display decisions are driven by confi
 
 `config/bya_compatibility.php` has a **kill switch** (`BYA_COMPATIBILITY_KILL_SWITCH`, defaults `true` = all consumer-facing compatibility blocked) and a GA flag (`BYA_COMPATIBILITY_GA_ENABLED`, defaults `false`). Do not enable GA without coordinating with the owner.
 
+### Deployment & migrations
+
+**`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.
+
+Nothing else may migrate: not `deploy/scheduler.sh`, not the build phase, not a second web process. This app is on **Laravel 8, which has no `migrate --isolated`**, so there is no migration lock and concurrency safety rests entirely on single ownership. `DeploymentMigrationReadinessTest` asserts all of it.
+
+`scripts/post-merge.sh` also migrates, but it is the Replit **workspace** `[postMerge]` hook — it does not fire on deploy or on a GitHub merge. Do not treat it as the deployment's migration step; that assumption is exactly how G4's migration reached `main` and never reached a schema.
+
+Two CI gates: `migration-tests.yml` (`migrate:fresh`, empty DB) and `incremental-migration-tests.yml` (previous-release schema, populated, migrated forward — the operation a deploy actually performs).
+
+`ProvenanceSchemaReadiness` is the runtime backstop: when the provenance columns are absent, coordinate writes proceed and provenance is skipped with `schema_not_ready` rather than raising `SQLSTATE[42703]` inside a listing save. See `deploy/DEPLOYMENT.md`, which also documents an **open question about `APP_DEBUG` in deployments**.
+
 ## Frozen / legacy code
 
 **`initializeLimitedService()`** — present in all four Create Offer Listing Blade files (seller, buyer, landlord, tenant). This function is **frozen legacy code for the Limited Service flow**. Never modify, test, or clean up anything inside it. All validation cleanup applies only to the Full Service scope, never inside this function.
