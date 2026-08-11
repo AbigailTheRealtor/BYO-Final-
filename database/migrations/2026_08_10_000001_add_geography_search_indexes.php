@@ -63,7 +63,16 @@ return new class extends Migration
         // ZCTAs: the primary key is a char(5), which a collated LIKE prefix scan cannot use. The
         // ZIP tier stays on the ZCTA roster for identifier parity with the cascade — see
         // LocationPlaceSearchRepository::searchZips().
-        'census_zctas_zcta5_search_index' => 'census_zctas (zcta5 text_pattern_ops)',
+        //
+        // `bpchar_pattern_ops`, NOT `text_pattern_ops`, AND THE DIFFERENCE IS NOT COSMETIC.
+        // The operator class has to match the column's actual type. `zcta5` is `character(5)` —
+        // bpchar — and Postgres rejects `text_pattern_ops` on it outright:
+        //   ERROR: operator class "text_pattern_ops" does not accept data type character
+        // The three indexes above escape this because they index `lower(col)`, and `lower()`
+        // returns text whatever it was given. This one indexes the bare column, because the
+        // repository queries it through the builder's native `like` with no `lower()` wrapper, so
+        // an expression index would not be matched by the planner.
+        'census_zctas_zcta5_search_index' => 'census_zctas (zcta5 bpchar_pattern_ops)',
     ];
 
     public function up(): void
