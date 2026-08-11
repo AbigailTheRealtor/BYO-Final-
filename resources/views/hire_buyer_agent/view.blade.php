@@ -175,7 +175,8 @@
                 which are preserved exactly as they render today.
             --}}
             <x-viho.card title="Listing Details:" title-tag="h4">
-                    <div class="card-body">
+@if (! ($byaDetailRedesign ?? false))                    <div class="card-body">
+@endif
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1811,7 +1812,8 @@
                         </div>
                         @endif
 
-                        </div>
+@if (! ($byaDetailRedesign ?? false))                        </div>
+@endif
                         <!-- End Broker Compensation Section -->
                         @php
                             $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
