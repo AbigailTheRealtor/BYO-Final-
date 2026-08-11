@@ -31,6 +31,7 @@ class TenantAgentAuction extends Component
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut seeding the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
 
     /**
@@ -1840,6 +1841,15 @@ class TenantAgentAuction extends Component
         // reads it) and BEFORE any draft load below can hydrate it. Seller and landlord resolve
         // to no workflow at all, so this is a no-op for them.
         $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+        // M2 — AFTER the cascade's boot, whose flag the search gate reads.
+        //
+        // THIS COMPONENT IS WHERE THE REAL HIRE WORKFLOW LIVES. `hire/agent/auction/{user_type?}`
+        // routes here, not to `HireBuyerAgent\BuyerAgentAuction` — which serves only
+        // `buyer/add-auction`. Wiring search here is what gives the Buyer EDIT path the search box
+        // its create path already had, and it is the seam Hire Tenant will use once its workflow
+        // key goes live. It changes nothing for any role whose workflow map returns null.
+        $this->bootGeographySearch();
 
         $this->initializeFeeStructure();
         $this->addService();

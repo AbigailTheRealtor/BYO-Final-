@@ -671,15 +671,83 @@ class HireBuyerGeographySearchTest extends TestCase
         }
     }
 
-    /** No other role's component may acquire the search trait in this milestone. */
-    /** @test */
-    public function no_other_role_component_carries_the_search_trait(): void
+    /**
+     * THE CATCH-ALL CARRIES SEARCH TOO, AND THAT IS WHERE THE REAL HIRE WORKFLOW LIVES.
+     *
+     * This assertion used to say the opposite. It was written when M2 was believed to be Hire
+     * Buyer only, and it was wrong about which component Hire Buyer actually uses:
+     * `HireBuyerAgent\BuyerAgentAuction` serves `buyer/add-auction`, while
+     * `hire/agent/auction/{user_type?}` and BOTH edit routes resolve to `TenantAgentAuction{,Edit}`.
+     * A Buyer could therefore create a listing with the search box and edit it without one.
+     *
+     * Wiring the catch-all closes that gap. It changes nothing for any role whose workflow map
+     * returns null — which is still every role but Buyer — because the search gate reads
+     * `$geoCascadeEnabled`.
+     *
+     * @test
+     */
+    public function the_catch_all_components_are_wired_for_search(): void
     {
         foreach ([
             'app/Http/Livewire/TenantAgentAuction.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
+        ] as $relative) {
+            $source = (string) file_get_contents(base_path($relative));
+
+            $this->assertStringContainsString('HasGeographySearch', $source, "{$relative} must carry the trait");
+
+            $cascade = strpos($source, 'bootGeographyCascade(');
+            $search  = strpos($source, 'bootGeographySearch(');
+
+            $this->assertNotFalse($search, "{$relative} must boot search");
+            $this->assertLessThan(
+                $search,
+                $cascade,
+                "{$relative}: search boots AFTER the cascade, whose flag it reads."
+            );
+        }
+    }
+
+    /**
+     * WIRING THE TRAIT IS NOT ENABLING THE ROLE.
+     *
+     * Commit A adds the seam; `hire_tenant` is a separate decision with its own data-safety work.
+     * Until the workflow map names it, a tenant resolves to no workflow, the cascade is off, and
+     * the search gate is off with it — so this pins that the trait's arrival changed nothing for
+     * Tenant, Seller or Landlord.
+     *
+     * @test
+     */
+    public function wiring_the_catch_all_does_not_enable_any_new_role(): void
+    {
+        foreach ([
+            'app/Http/Livewire/TenantAgentAuction.php',
+            'app/Http/Livewire/TenantAgentAuctionEdit.php',
+        ] as $relative) {
+            $source = (string) file_get_contents(base_path($relative));
+            $start  = strpos($source, 'protected function geographyCascadeWorkflow(): ?string');
+            $body   = substr($source, (int) $start, (int) strpos($source, "\n    }", (int) $start) - (int) $start);
+
+            $this->assertStringContainsString("'buyer' => 'hire_buyer',", $body);
+            $this->assertStringContainsString('default => null,', $body);
+            $this->assertStringNotContainsString("'tenant' =>", $body, 'hire_tenant is a later, separate decision');
+            $this->assertStringNotContainsString("'seller' =>", $body);
+            $this->assertStringNotContainsString("'landlord' =>", $body);
+        }
+
+        $config = require base_path('config/criteria_location_dna.php');
+        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
+    }
+
+    /** Seller, Landlord and the Offer components remain untouched by the search rollout. */
+    /** @test */
+    public function no_seller_landlord_or_offer_component_carries_the_search_trait(): void
+    {
+        foreach ([
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
+            'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
             'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         ] as $relative) {
@@ -690,7 +758,7 @@ class HireBuyerGeographySearchTest extends TestCase
             $this->assertStringNotContainsString(
                 'HasGeographySearch',
                 (string) file_get_contents(base_path($relative)),
-                "{$relative}: M2 is Hire Buyer only."
+                "{$relative}: the search rollout does not reach this surface."
             );
         }
     }

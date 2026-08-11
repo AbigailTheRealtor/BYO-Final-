@@ -28,6 +28,7 @@ class TenantAgentAuctionEdit extends Component
     use \App\Http\Livewire\Concerns\HandlesGooglePlacesAddress; // A3.20-A3.25: shared Google Places address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut seeding the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
 
     /**
@@ -2579,6 +2580,15 @@ class TenantAgentAuctionEdit extends Component
             // Phase 1c — decide whether the cascade runs, AFTER user_type is assigned (the
             // workflow map reads it) and BEFORE loadAuctionData() hydrates from the document.
             $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+            // M2 — AFTER the cascade's boot, whose flag the search gate reads.
+            //
+            // THIS IS THE EDIT SURFACE THE REAL HIRE WORKFLOW USES: both
+            // `hire/agent/auction/edit/{auctionId}/{user_type}` and
+            // `buyer/agent/auction/edit/{auctionId}/{user_type?}` route here. Until now a Buyer
+            // could create a listing with search and then edit it without — the same workflow
+            // offering two different geography surfaces. This closes that.
+            $this->bootGeographySearch();
 
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             
