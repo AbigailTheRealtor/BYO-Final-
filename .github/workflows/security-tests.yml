@@ -1,0 +1,157 @@
+name: Security Tests
+
+# Runs the application's PHPUnit security suite.
+#
+# WHY THIS EXISTS. Until this workflow, no CI job executed the application test suite at all:
+# migration-tests.yml runs `--filter MigrationFreshTest`, incremental-migration-tests.yml migrates
+# a populated schema, and the remaining jobs are lint or shell-hook checks. A security fix could
+# therefore go green on every required check without a single one of its regression tests having
+# been run. This job closes that gap for tests/Feature/Security.
+#
+# WHAT IT RUNS. Every *Test.php in tests/Feature/Security, except the files named in EXCLUDED
+# below. The default is INCLUSION: a new security test file is picked up by this gate the moment
+# it merges, with no workflow change and nobody needing to remember. That is deliberate — an
+# allowlist would silently fail to cover exactly the tests someone forgot to register.
+#
+# NOTHING IS SUPPRESSED. There is no `|| true`, no continue-on-error, and no grep-based success
+# masking. If any included file fails, the job fails. The two exclusions are file-level, named
+# individually, and carry their reason; they are not a blanket pattern, and the job fails if one
+# of them ever stops existing so a stale exclusion cannot outlive the problem it documents.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  security-suite:
+    name: Run security regression tests
+    runs-on: ubuntu-latest
+
+    # SQLite in-memory, matching the repository convention. phpunit.xml forces
+    # DB_CONNECTION=sqlite and DB_DATABASE=:memory: with force="true", so these tests need no
+    # database service — and adding one would not change what they exercise. APP_KEY still has to
+    # exist, which the .env step below provides exactly as migration-tests.yml does.
+    env:
+      APP_ENV: testing
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      TELESCOPE_ENABLED: false
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo, pdo_sqlite, sqlite3, mbstring, xml, ctype, fileinfo, json, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      # A normal install into the checkout under test. This is the whole point of running here
+      # rather than trusting a developer worktree: a symlinked vendor directory resolves
+      # Composer's PSR-4 base path through the symlink, so `App\` can silently load from a
+      # different tree and a test run can report on code that is not the code under review.
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare environment file
+        run: cp .env.example .env && php artisan key:generate --force
+
+      # Fails loudly if App classes do not resolve from this checkout, rather than producing a
+      # confident green from somebody else's code.
+      - name: Verify autoload resolves from this checkout
+        run: |
+          php -r '
+            require "vendor/autoload.php";
+            $f = (new ReflectionClass("App\\Http\\Livewire\\TenantAgentAuction"))->getFileName();
+            $expected = getcwd() . "/app/Http/Livewire/TenantAgentAuction.php";
+            if (realpath($f) !== realpath($expected)) {
+                fwrite(STDERR, "Autoload resolved to $f, expected $expected\n");
+                exit(1);
+            }
+            echo "Autoload verified: $f\n";
+          '
+
+      - name: Run security regression tests
+        run: |
+          set -uo pipefail
+
+          # Files excluded from the gate, each with the reason it is excluded.
+          #
+          # Both fail on current main for the SAME pre-existing cause, unrelated to any security
+          # behaviour: schema/factory drift. The factories omit a column the schema declares NOT
+          # NULL, e.g.
+          #
+          #     SQLSTATE[23000]: NOT NULL constraint failed: buyer_agent_auctions.title
+          #
+          # Excluded rather than suppressed: the gate must be able to pass on a clean main, and a
+          # permanently-red required check trains everyone to ignore it. Fixing the drift means
+          # changing factories, which is application work and does not belong in a CI change.
+          # When it is fixed, delete the entry — the file is then picked up automatically.
+          #
+          # Cost of each exclusion, recorded so it is not forgotten:
+          #   Phase1AuthorizationTest.php          19 of 23 tests currently pass and are not run
+          #   CounteredTermsAuthorizationTest.php   6 of 10 tests currently pass and are not run
+          EXCLUDED=(
+            "Phase1AuthorizationTest.php"
+            "CounteredTermsAuthorizationTest.php"
+          )
+
+          # A stale exclusion must not outlive its file: if one is renamed or deleted, this list
+          # is silently protecting nothing and needs revisiting.
+          for name in "${EXCLUDED[@]}"; do
+            if [ ! -f "tests/Feature/Security/$name" ]; then
+              echo "Excluded file no longer exists: $name — update EXCLUDED in this workflow."
+              exit 1
+            fi
+          done
+
+          mapfile -t ALL < <(find tests/Feature/Security -name '*Test.php' | sort)
+
+          FILES=()
+          for f in "${ALL[@]}"; do
+            skip=0
+            for name in "${EXCLUDED[@]}"; do
+              [ "$(basename "$f")" = "$name" ] && skip=1
+            done
+            [ "$skip" -eq 0 ] && FILES+=("$f")
+          done
+
+          # A glob that selects nothing must not read as success.
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "No security test files selected — refusing to report success."
+            exit 1
+          fi
+
+          echo "Security files in this gate: ${#FILES[@]} (of ${#ALL[@]} present, ${#EXCLUDED[@]} excluded)"
+          printf '  %s\n' "${FILES[@]}"
+          echo
+
+          failed=()
+          for f in "${FILES[@]}"; do
+            echo "::group::$f"
+            # The exact command, visible per file in the log.
+            php vendor/bin/phpunit --testdox "$f" || failed+=("$f")
+            echo "::endgroup::"
+          done
+
+          echo
+          if [ "${#failed[@]}" -ne 0 ]; then
+            echo "FAILED (${#failed[@]}):"
+            printf '  %s\n' "${failed[@]}"
+            exit 1
+          fi
+
+          echo "All ${#FILES[@]} security test files passed."
