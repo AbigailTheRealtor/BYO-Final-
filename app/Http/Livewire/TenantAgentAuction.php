@@ -32,6 +32,7 @@ class TenantAgentAuction extends Component
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
     use \App\Http\Livewire\Concerns\ResolvesOwnedAuction;            // S3: object-level ownership on the write paths
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia;        // S4: record-derived, validated media deletion target
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -5347,15 +5348,18 @@ class TenantAgentAuction extends Component
             };
 
             if ($this->listingId && $auctionClass) {
-                $auction = $auctionClass::find($this->listingId);
+                // S4 — owner-scoped, mirroring the guard above rather than relying on it: the
+                // row this deletes from must be owner-bound at the point of use, not by
+                // inheritance from an earlier statement.
+                $auction = $auctionClass::where('user_id', Auth::id())->find($this->listingId);
                 if ($auction) {
-                    if ($this->photo && is_string($this->photo)) {
-                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
-                    }
-                    $auction->deleteMeta('photo');
+                    // S4 — the filename comes from the record and is validated. $this->photo is
+                    // client-controlled and no longer decides what is deleted.
+                    $this->deleteOwnedListingMedia($auction, 'photo', 'auction/images');
                 }
             }
 
+            // UI state only — never the deletion authority.
             $this->photo = null;
             $this->photoDeleted = true;
             session()->flash('message', 'Photo deleted successfully.');
@@ -5379,15 +5383,16 @@ class TenantAgentAuction extends Component
             };
 
             if ($this->listingId && $auctionClass) {
-                $auction = $auctionClass::find($this->listingId);
+                // S4 — owner-scoped at the point of use. See deletePhoto() above.
+                $auction = $auctionClass::where('user_id', Auth::id())->find($this->listingId);
                 if ($auction) {
-                    if ($this->video && is_string($this->video)) {
-                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/videos/' . $this->video);
-                    }
-                    $auction->deleteMeta('video');
+                    // S4 — record-derived, validated. 'auction/videos' matches where this
+                    // component's save path stores video.
+                    $this->deleteOwnedListingMedia($auction, 'video', 'auction/videos');
                 }
             }
 
+            // UI state only — never the deletion authority.
             $this->video = null;
             $this->videoDeleted = true;
             session()->flash('message', 'Video deleted successfully.');
