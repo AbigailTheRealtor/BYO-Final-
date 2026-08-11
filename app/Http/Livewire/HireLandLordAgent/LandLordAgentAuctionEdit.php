@@ -5,6 +5,7 @@ namespace App\Http\Livewire\HireLandLordAgent;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
+use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use App\Models\LandlordAgentAuction as HirelandLordAgentAuction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ class LandLordAgentAuctionEdit extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
+    use ResolvesPropertyCoordinates;                           // G6: shared property-coordinate ladder hook
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -1411,6 +1413,24 @@ class LandLordAgentAuctionEdit extends Component
 
             $this->saveAllMetadata($auction);
 
+            // Resolve the coordinate on drafts too, so the answer and its
+            // provenance are already on the row by the time the listing
+            // publishes. Deliberately does NOT dispatch Location DNA — an
+            // unpublished draft has no consumer for it, and drafts are saved
+            // repeatedly. The publish boundary in update() is where dispatch
+            // happens (G6).
+            if ($this->address) {
+                try {
+                    $this->resolvePropertyCoordinates($auction, 'landlord_agent');
+                } catch (\Throwable $coordEx) {
+                    \Log::warning('[HIRE LANDLORD AGENT EDIT DRAFT] coordinate resolution failed', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $coordEx->getMessage(),
+                        'exception'  => get_class($coordEx),
+                    ]);
+                }
+            }
+
             session()->flash('success', 'Draft saved successfully. You can return later to complete your listing.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
@@ -2551,6 +2571,23 @@ class LandLordAgentAuctionEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            // Publish boundary (G6). Resolve BEFORE dispatching so the
+            // pipeline's pre_lat/pre_lng branch receives the coordinate and its
+            // provenance instead of re-deriving one.
+            if ($this->address) {
+                try {
+                    $this->resolvePropertyCoordinates($auction, 'landlord_agent');
+
+                    \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[HIRE LANDLORD AGENT UPDATE] coordinate resolution or ComputeLocationDna dispatch failed', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
+                    ]);
+                }
+            }
 
             session()->flash('success', 'Listing updated successfully!');
 
