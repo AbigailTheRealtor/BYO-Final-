@@ -28,6 +28,7 @@ class TenantAgentAuctionEdit extends Component
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia;        // S4: record-derived, validated media deletion target
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2482,15 +2483,12 @@ class TenantAgentAuctionEdit extends Component
 
         // Ensure the auction exists
         if ($auction) {
-            // Delete the photo from storage if it exists
-            if ($this->photo && is_string($this->photo)) {
-                app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
-            }
+            // S4 — the filename comes from the owner-scoped record above and is validated;
+            // $this->photo is client-controlled and no longer decides what is deleted. This
+            // also clears the 'photo' meta.
+            $this->deleteOwnedListingMedia($auction, 'photo', 'auction/images');
 
-            // Remove the photo path from the database
-            $auction->deleteMeta('photo');
-
-            // Reset the $photo property
+            // UI state only — never the deletion authority.
             $this->photo = null;
 
             // Optionally, show a success message
@@ -2517,15 +2515,17 @@ class TenantAgentAuctionEdit extends Component
         $auction = $auctionClass::where('user_id', Auth::id())->find($this->auctionId);
         // Ensure the auction exists
         if ($auction) {
-            // Delete the photo from storage if it exists
-            if ($this->video && is_string($this->video)) {
-                app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->video);
-            }
+            // S4 — record-derived and validated, as in deletePhoto() above.
+            //
+            // THE DIRECTORY IS 'auction/images' AND THAT IS PRESERVED, NOT ENDORSED. This
+            // component's save path stores video under 'auction/videos' (~line 4166), so this
+            // delete has never removed the file it names — a pre-existing functional bug, and
+            // fixing it here would be a behaviour change outside a security remediation. It is
+            // recorded as a deferred item. Security-wise this is sound either way: the value is
+            // validated to be a bare filename, so nothing outside this directory is reachable.
+            $this->deleteOwnedListingMedia($auction, 'video', 'auction/images');
 
-            // Remove the video path from the database
-            $auction->deleteMeta('video');
-
-            // Reset the $video property
+            // UI state only — never the deletion authority.
             $this->video = null;
 
             // Optionally, show a success message

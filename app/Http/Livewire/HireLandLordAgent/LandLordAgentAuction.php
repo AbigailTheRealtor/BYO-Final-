@@ -21,6 +21,7 @@ class LandLordAgentAuction extends Component
     use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
     use ResolvesPropertyCoordinates;                           // G6: shared property-coordinate ladder hook
     use \App\Http\Livewire\Concerns\ResolvesOwnedAuction;       // S1: object-level ownership on the write paths
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia;   // S4: record-derived, validated media deletion target
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -3093,16 +3094,20 @@ class LandLordAgentAuction extends Component
 
     public function deletePhoto()
     {
+        // S4 — ownership, ahead of the try. The hydrate() guard above is not sufficient on its
+        // own here: Livewire applies client syncInput updates AFTER the hydration hooks run, so a
+        // listingId tampered between requests reaches this method having already passed hydrate.
+        // resolveWritableAuction() aborts 403, and HttpException extends \Exception, so a call
+        // inside the try below would be swallowed into a flash and report success.
+        $auction = $this->listingId ? $this->resolveWritableAuction() : null;
+
         try {
-            if ($this->listingId) {
-                $auction = HirelandLordAgentAuction::find($this->listingId);
-                if ($auction) {
-                    if ($this->photo && is_string($this->photo)) {
-                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
-                    }
-                    $auction->deleteMeta('photo');
-                }
+            if ($auction && $auction->exists) {
+                // S4 — the filename comes from the owned record and is validated; $this->photo is
+                // client-controlled and no longer decides what is deleted. Also clears the meta.
+                $this->deleteOwnedListingMedia($auction, 'photo', 'auction/images');
             }
+            // UI state only — never the deletion authority.
             $this->photo = null;
             session()->flash('success', 'Photo deleted successfully.');
         } catch (\Exception $e) {
