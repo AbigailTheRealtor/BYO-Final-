@@ -1,15 +1,37 @@
 {{-- MLS Import Modal — shared across all four Create Offer Listing forms --}}
 {{--
+    TWO INDEPENDENT IMPORT MECHANISMS live in this modal. They are presented as
+    separate, clearly-titled sections because they are genuinely different
+    things, not two spellings of the same one:
+
+      1. "Import by MLS #"  — Bridge/Stellar OData lookup. Needs ONLY the MLS
+                              number: no URL, no pasted text, no MLS or Matrix
+                              login. Seller/Landlord only, behind the
+                              mls_direct_import.prefill_enabled flag.
+      2. "Import from a listing link" — the original scraper. Fetches a public
+                              listing URL, or parses text the user pastes.
+                              All four roles, never feature-gated, unchanged.
+
+    Both converge on the SAME preview table and the same Apply Selected step, so
+    the review-before-write behaviour is identical whichever one was used.
+
+    Do not relabel the URL field as an MLS # field — the two are not
+    interchangeable, and a user who pastes a URL into the MLS # box (or types a
+    bare number into the URL box) gets an error from the wrong subsystem.
+
     Required Livewire public properties on the host component:
       $showImportModal   (bool)
       $importUrlInput    (string)
       $importRawText     (string)
+      $importMlsNumber   (string)
       $importPreviewData (array)
       $importError       (string)
       $importSuccess     (bool)
 
     Required Livewire methods on the host component:
       importListingFromUrl()
+      importListingByMlsNumber()
+      mlsNumberImportAvailable()
       applyImportedFields(array $selected, array $overrideKeys)
       closeImportModal()
 --}}
@@ -30,8 +52,51 @@
 
             <div class="modal-body">
 
-                {{-- ── Step 1: URL / Raw Text Input ── --}}
+                {{-- ── Step 1: input ── --}}
                 @if(empty($importPreviewData))
+
+                {{-- ── Option 1: Bridge lookup by MLS # (Seller/Landlord, flagged) ── --}}
+                @if($this->mlsNumberImportAvailable())
+                <div class="mb-4">
+                    <h6 class="fw-bold text-uppercase text-secondary small mb-2">Import by MLS #</h6>
+
+                    <label for="mls-import-number" class="form-label fw-semibold">MLS #</label>
+                    <div class="d-flex gap-2 align-items-start">
+                        <input type="text" id="mls-import-number" class="form-control"
+                               style="max-width:20rem;"
+                               maxlength="64"
+                               placeholder="e.g. A4567890"
+                               autocomplete="off"
+                               wire:model.defer="importMlsNumber"
+                               wire:keydown.enter.prevent="importListingByMlsNumber">
+                        <button type="button" class="btn btn-primary text-nowrap"
+                                style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;"
+                                wire:click="importListingByMlsNumber"
+                                wire:loading.attr="disabled"
+                                wire:target="importListingByMlsNumber">
+                            <span wire:loading.remove wire:target="importListingByMlsNumber">
+                                <i class="fas fa-search me-1"></i>Find Listing
+                            </span>
+                            <span wire:loading wire:target="importListingByMlsNumber">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>Searching…
+                            </span>
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        Enter the MLS number to find the listing through our MLS data connection.
+                        No listing URL or login required.
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center my-4">
+                    <hr class="flex-grow-1 my-0">
+                    <span class="px-3 text-muted small text-uppercase fw-semibold">Or</span>
+                    <hr class="flex-grow-1 my-0">
+                </div>
+
+                <h6 class="fw-bold text-uppercase text-secondary small mb-2">Or import from a listing link</h6>
+                @endif
+
                 <div class="mb-3">
                     <label for="mls-import-url" class="form-label fw-semibold">Public MLS / Matrix Listing URL</label>
                     <input type="url" id="mls-import-url" class="form-control"

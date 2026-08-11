@@ -1,0 +1,319 @@
+<?php
+
+namespace Tests\Unit\ListingImport;
+
+use App\Services\ListingImport\MlsListingPrefillService;
+use App\Services\Property\PropertyCandidate;
+use Tests\TestCase;
+
+/**
+ * MlsListingPrefillService — the facts-only boundary for Seller/Landlord prefill.
+ *
+ * The compliance tests here are the reason this class exists. PropertyCandidate
+ * deliberately enforces no allow-list and carries the untouched Bridge record in
+ * $raw, so if this service ever started reading $raw — for a fallback, for one
+ * missing field — remarks, agent details and media URLs would begin flowing into
+ * a publishable listing form. These tests are what make that a failing build
+ * rather than a licensing incident.
+ */
+class MlsListingPrefillServiceTest extends TestCase
+{
+    private function service(): MlsListingPrefillService
+    {
+        return new MlsListingPrefillService();
+    }
+
+    /**
+     * A candidate carrying every restricted field a real Stellar record would.
+     * The restricted values are distinctive strings so a leak is unmistakable.
+     */
+    private function candidate(array $overrides = [], array $raw = []): PropertyCandidate
+    {
+        $defaults = [
+            'source'                => 'bridge',
+            'sourceRecordId'        => '42',
+            'mlsNumber'             => 'A4567890',
+            'listingKey'            => 'STELLAR-MFR-4567890',
+            'standardStatus'        => 'Active',
+            'mlsStatus'             => 'Active',
+            'propertyType'          => 'Residential',
+            'propertySubType'       => 'Single Family Residence',
+            'listPrice'             => 459000.0,
+            'unparsedAddress'       => '123 Main St, Tampa, FL 33601',
+            'city'                  => 'Tampa',
+            'stateOrProvince'       => 'FL',
+            'postalCode'            => '33601',
+            'countyOrParish'        => 'Hillsborough',
+            'bedrooms'              => 4,
+            'bathrooms'             => 3,
+            'livingAreaSqft'        => 2450,
+            'lotSizeSqft'           => 8712,
+            'yearBuilt'             => 1998,
+            'latitude'              => 27.9506,
+            'longitude'             => -82.4572,
+            'associationFee'        => 250.0,
+            'taxAnnualAmount'       => 5400.0,
+            'petsAllowed'           => 'Yes',
+            'pool'                  => true,
+            'garage'                => true,
+            'waterfront'            => false,
+            'view'                  => null,
+            'waterView'             => null,
+            'seniorCommunity'       => false,
+            'association'           => true,
+            'newConstruction'       => false,
+            'cdd'                   => false,
+            'modificationTimestamp' => '2026-08-01 12:00:00',
+            'raw'                   => array_merge([
+                'PublicRemarks'       => 'RESTRICTED_PUBLIC_REMARKS stunning move-in ready home!',
+                'PrivateRemarks'      => 'RESTRICTED_PRIVATE_REMARKS lockbox code 1234',
+                'ShowingInstructions' => 'RESTRICTED_SHOWING call first',
+                'ListAgentFullName'   => 'RESTRICTED_AGENT Jane Agent',
+                'ListAgentEmail'      => 'RESTRICTED_AGENT_EMAIL jane@example.com',
+                'ListAgentDirectPhone' => 'RESTRICTED_AGENT_PHONE 813-555-0100',
+                'ListOfficeName'      => 'RESTRICTED_BROKER Acme Realty',
+                'ListOfficePhone'     => 'RESTRICTED_BROKER_PHONE 813-555-0199',
+                'Media'               => ['RESTRICTED_PHOTO https://cdn.example.com/1.jpg'],
+                'VirtualTourURLUnbranded' => 'RESTRICTED_TOUR https://tour.example.com',
+            ], $raw),
+        ];
+
+        return new PropertyCandidate(...array_merge($defaults, $overrides));
+    }
+
+    // ── Result shape ─────────────────────────────────────────────────────────
+
+    public function test_returns_import_service_result_shape(): void
+    {
+        $result = $this->service()->fromCandidate($this->candidate());
+
+        $this->assertArrayHasKey('success', $result);
+        $this->assertArrayHasKey('data', $result);
+        $this->assertArrayHasKey('error', $result);
+        $this->assertTrue($result['success']);
+        $this->assertSame('', $result['error']);
+        $this->assertIsArray($result['data']);
+    }
+
+    public function test_null_candidate_is_a_failure_not_a_crash(): void
+    {
+        $result = $this->service()->fromCandidate(null);
+
+        $this->assertFalse($result['success']);
+        $this->assertSame([], $result['data']);
+        $this->assertNotSame('', $result['error']);
+    }
+
+    // ── Field mapping ────────────────────────────────────────────────────────
+
+    public function test_maps_every_expected_factual_field(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate())['data'];
+
+        $this->assertSame('123 Main St, Tampa, FL 33601', $data['address']);
+        $this->assertSame('Tampa',        $data['city']);
+        $this->assertSame('FL',           $data['state']);
+        $this->assertSame('33601',        $data['zip']);
+        $this->assertSame('Hillsborough', $data['county']);
+        $this->assertSame('4',            $data['bedrooms']);
+        $this->assertSame('3',            $data['bathrooms']);
+        $this->assertSame('2450',         $data['heated_sqft']);
+        $this->assertSame('8712',         $data['lot_size_sqft']);
+        $this->assertSame('1998',         $data['year_built']);
+        $this->assertSame('459000',       $data['price']);
+        $this->assertSame('Residential',  $data['property_type']);
+        $this->assertSame('Single Family Residence', $data['property_sub_type']);
+        $this->assertSame('Active',       $data['mls_status']);
+        $this->assertSame('A4567890',     $data['mls_number']);
+        $this->assertSame('STELLAR-MFR-4567890', $data['mls_listing_key']);
+    }
+
+    public function test_coordinates_are_mapped_and_trimmed(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate())['data'];
+
+        $this->assertSame('27.9506',  $data['latitude']);
+        $this->assertSame('-82.4572', $data['longitude']);
+    }
+
+    public function test_whole_number_price_has_no_trailing_decimal(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate(['listPrice' => 350000.0]))['data'];
+
+        $this->assertSame('350000', $data['price']);
+    }
+
+    public function test_absent_fields_are_omitted_rather_than_blank(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'countyOrParish' => null,
+            'yearBuilt'      => null,
+            'lotSizeSqft'    => null,
+        ]))['data'];
+
+        $this->assertArrayNotHasKey('county',        $data);
+        $this->assertArrayNotHasKey('year_built',    $data);
+        $this->assertArrayNotHasKey('lot_size_sqft', $data);
+    }
+
+    // ── Coordinate pair atomicity ────────────────────────────────────────────
+
+    /**
+     * Half a coordinate pair is not a partial location — and it is worse than
+     * none, because a populated property_lat suppresses the geocoding fallback.
+     *
+     * @dataProvider brokenCoordinateProvider
+     */
+    public function test_incomplete_or_invalid_coordinates_are_dropped_as_a_pair(
+        ?float $lat,
+        ?float $lng,
+        string $why
+    ): void {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'latitude'  => $lat,
+            'longitude' => $lng,
+        ]))['data'];
+
+        $this->assertArrayNotHasKey('latitude',  $data, $why);
+        $this->assertArrayNotHasKey('longitude', $data, $why);
+    }
+
+    public static function brokenCoordinateProvider(): array
+    {
+        return [
+            'latitude missing'   => [null,     -82.4572, 'a lone longitude is not a location'],
+            'longitude missing'  => [27.9506,  null,     'a lone latitude is not a location'],
+            'both missing'       => [null,     null,     'nothing to import'],
+            'zero latitude'      => [0.0,      -82.4572, 'a feed zero is an unset column, not Null Island'],
+            'zero longitude'     => [27.9506,  0.0,      'a feed zero is an unset column, not Null Island'],
+            'both zero'          => [0.0,      0.0,      'Null Island'],
+            'latitude past pole' => [91.0,     -82.4572, 'out of range'],
+            'longitude too big'  => [27.9506,  181.0,    'out of range'],
+        ];
+    }
+
+    public function test_valid_negative_coordinates_survive(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'latitude'  => -33.8688,
+            'longitude' => -70.6693,
+        ]))['data'];
+
+        $this->assertSame('-33.8688', $data['latitude']);
+        $this->assertSame('-70.6693', $data['longitude']);
+    }
+
+    // ── FACTS ONLY — the compliance boundary ─────────────────────────────────
+
+    /**
+     * Not one restricted value may appear anywhere in the returned data, under
+     * any key. Scans the serialized result rather than named keys, so a leak
+     * under an unexpected key is caught too.
+     *
+     * @dataProvider restrictedMarkerProvider
+     */
+    public function test_restricted_source_fields_never_reach_import_data(string $marker, string $what): void
+    {
+        $result = $this->service()->fromCandidate($this->candidate());
+
+        $this->assertStringNotContainsString(
+            $marker,
+            json_encode($result),
+            "{$what} leaked into prefill data — this is a Stellar MLS licensing boundary"
+        );
+    }
+
+    public static function restrictedMarkerProvider(): array
+    {
+        return [
+            'public remarks'   => ['RESTRICTED_PUBLIC_REMARKS',  'PublicRemarks'],
+            'private remarks'  => ['RESTRICTED_PRIVATE_REMARKS', 'PrivateRemarks'],
+            'showing instr.'   => ['RESTRICTED_SHOWING',         'ShowingInstructions'],
+            'agent name'       => ['RESTRICTED_AGENT',           'listing agent name'],
+            'agent email'      => ['RESTRICTED_AGENT_EMAIL',     'listing agent email'],
+            'agent phone'      => ['RESTRICTED_AGENT_PHONE',     'listing agent phone'],
+            'broker name'      => ['RESTRICTED_BROKER',          'broker/office name'],
+            'broker phone'     => ['RESTRICTED_BROKER_PHONE',    'broker phone'],
+            'photos'           => ['RESTRICTED_PHOTO',           'media/photo URL'],
+            'virtual tour'     => ['RESTRICTED_TOUR',            'virtual tour URL'],
+        ];
+    }
+
+    /**
+     * The allow-list is the mechanism, so its contents are pinned. Adding a
+     * field here is a licensing decision — this assertion makes that decision
+     * visible in review instead of arriving as a silent mapping tweak.
+     */
+    public function test_allow_list_contents_are_pinned(): void
+    {
+        $this->assertSame([
+            'mlsNumber'       => 'mls_number',
+            'listingKey'      => 'mls_listing_key',
+            'unparsedAddress' => 'address',
+            'city'            => 'city',
+            'stateOrProvince' => 'state',
+            'postalCode'      => 'zip',
+            'countyOrParish'  => 'county',
+            'latitude'        => 'latitude',
+            'longitude'       => 'longitude',
+            'bedrooms'        => 'bedrooms',
+            'bathrooms'       => 'bathrooms',
+            'livingAreaSqft'  => 'heated_sqft',
+            'lotSizeSqft'     => 'lot_size_sqft',
+            'yearBuilt'       => 'year_built',
+            'propertyType'    => 'property_type',
+            'propertySubType' => 'property_sub_type',
+            'mlsStatus'       => 'mls_status',
+            'listPrice'       => 'price',
+        ], MlsListingPrefillService::ALLOWED_FIELDS);
+    }
+
+    /**
+     * A new restricted field appearing in the feed must not appear in the
+     * output. This is the fail-closed property an allow-list has and a denylist
+     * does not.
+     */
+    public function test_an_unknown_future_raw_field_cannot_leak(): void
+    {
+        $result = $this->service()->fromCandidate($this->candidate([], [
+            'SomeBrandNewAgentNotesField' => 'RESTRICTED_FUTURE_FIELD seller is motivated, will take less',
+        ]));
+
+        $this->assertStringNotContainsString('RESTRICTED_FUTURE_FIELD', json_encode($result));
+    }
+
+    /**
+     * Every key the service can emit is one the allow-list names. Guards against
+     * a future edit adding an ad-hoc key outside the constant.
+     */
+    public function test_output_keys_are_a_subset_of_the_allow_list(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate())['data'];
+
+        $this->assertEmpty(
+            array_diff(array_keys($data), array_values(MlsListingPrefillService::ALLOWED_FIELDS)),
+            'prefill emitted a canonical key that is not in ALLOWED_FIELDS'
+        );
+    }
+
+    // ── Degenerate candidate ─────────────────────────────────────────────────
+
+    public function test_candidate_with_only_record_handles_is_a_failure(): void
+    {
+        $result = $this->service()->fromCandidate(new PropertyCandidate(
+            source: 'bridge', sourceRecordId: '1',
+            mlsNumber: 'A1', listingKey: 'K1',
+            standardStatus: null, mlsStatus: null, propertyType: null, propertySubType: null,
+            listPrice: null,
+            unparsedAddress: null, city: null, stateOrProvince: null, postalCode: null, countyOrParish: null,
+            bedrooms: null, bathrooms: null, livingAreaSqft: null, lotSizeSqft: null, yearBuilt: null,
+            latitude: null, longitude: null,
+            associationFee: null, taxAnnualAmount: null,
+            petsAllowed: null, pool: null, garage: null, waterfront: null, view: null, waterView: null,
+            seniorCommunity: null, association: null, newConstruction: null, cdd: null,
+        ));
+
+        $this->assertFalse($result['success'], 'a record with no property facts is not a usable import');
+        $this->assertNotSame('', $result['error']);
+    }
+}
