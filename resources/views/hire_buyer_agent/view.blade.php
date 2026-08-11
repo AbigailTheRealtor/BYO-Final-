@@ -527,36 +527,229 @@
          | Everything is behind the flag: with the redesign off for this role the array stays empty,
          | no bar renders, no anchors are emitted and no script is pushed.
          */
-        $byaNavSections = [];
+        /*
+         | M7 Phase 6 — THE GUARDS THE RESOLVER OWES, and the two large sections that had none.
+         |
+         | `!= null` THROUGHOUT, mirroring the rows rather than using
+         | ListingDisplayHelper::anyHasValue(). Landlord can use the helper because its rows are
+         | x-hire-agent.field components that apply hasValue() themselves, so there the helper IS
+         | the row's rule. Buyer's rows are hand-written `!= null` checks and have not been
+         | migrated to the field component, so the helper would be a stricter second opinion: it
+         | rejects the literal string 'null' and placeholder text that `!= null` accepts, and a
+         | guard stricter than its rows hides a card that still has a row in it.
+         |
+         | `!= null` IS ALSO CORRECT FOR THE MULTI-SELECT ROWS, which is why one operator covers
+         | both shapes. In PHP `[] == null` is true, so an empty array fails `!= null` exactly as
+         | the rows' own `count(...) > 0` companion checks intend. No special case is needed.
+         |
+         | THE LISTS ARE COMPLETE, AND COMPLETENESS IS THE SAFETY PROPERTY. They were derived by
+         | extracting every `$auction->get->*` read inside each section's line range rather than
+         | written from memory. A key omitted here is not cosmetic: the section would be judged
+         | empty and hidden while still holding a row that renders.
+         |
+         | HireAgentBuyerSectionNavTest exercises every key in both large sections ONE AT A TIME
+         | and asserts the section renders AND carries at least one row — which catches the
+         | omission in one direction and the empty card in the other.
+         */
+        $byaAnyPresent = function (array $values): bool {
+            foreach ($values as $value) {
+                if ($value != null) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        /*
+         | Property Preferences, plus the Assets and Income & Investment Metrics blocks that fold
+         | into the same card as sub-headings rather than becoming sections of their own.
+         |
+         | ONLY KEYS THAT CAN TRIGGER A ROW ON THEIR OWN. The list started as every
+         | `$auction->get->*` read inside the section and was then reduced: seventeen of them are
+         | "Other" companions or nested answers that render only INSIDE a parent row —
+         | `other_bedrooms` inside `bedrooms == 'Other'`, the five pet detail rows inside
+         | `pets != null`, `assets_other` inside `assets`, and so on. Setting one alone made this
+         | boolean true while the section rendered nothing, which is a bordered, titled, empty card.
+         |
+         | REMOVING THEM IS SAFE IN THE ONE DIRECTION THAT MATTERS, because every one of them has a
+         | parent that IS listed here. A row can only appear through its parent, so the parent
+         | answers for it. That is the same reasoning — and the same conclusion — the note above
+         | $byaHasBrokerCompData records for `lease_value` / `purchase_value`, which were added,
+         | probed, found unable to trigger content alone, and reverted.
+         |
+         | Established by probe rather than by reading: each key was rendered in isolation and the
+         | card inspected for content. HireAgentBuyerSectionNavTest keeps that probe as a test.
+         */
+        $byaHasProperty = $byaAnyPresent([
+            @$auction->get->cities, @$auction->get->counties, @$auction->get->zipCodes,
+            @$auction->get->state,
+            @$auction->get->property_type, @$auction->get->property_items,
+            @$auction->get->other_property_items,
+            @$auction->get->condition_prop_buyer, @$auction->get->other_property_condition,
+            @$auction->get->business_type, @$auction->get->business_type_selected,
+            @$auction->get->bedrooms, @$auction->get->bathrooms,
+            @$auction->get->minimum_heated_square, @$auction->get->total_acreage,
+            @$auction->get->carport_needed, @$auction->get->garage_needed,
+            @$auction->get->garage_parking_spaces,
+            @$auction->get->view_preference,
+            @$auction->get->leasing_55_plus,
+            @$auction->get->non_negotiable_amenities,
+            @$auction->get->pets,
+            // The Assets and Metrics sub-blocks — same card, so the same guard.
+            @$auction->get->assets, @$auction->get->real_estate_purchase,
+            @$auction->get->unit_size, @$auction->get->number_of_unit_type,
+            @$auction->get->minimum_annual_net_income, @$auction->get->minimum_cap_rate,
+            @$auction->get->preferance_details,
+        ]);
+
+        /*
+         | Purchasing Terms. Reduced by the same probe for the same reason: the assignment fee
+         | fields and both `sale_provision` companions render only inside the sale-provision loop,
+         | so `sale_provision` answers for all four.
+         */
+        $byaHasTerms = $byaAnyPresent([
+            @$auction->get->sale_provision,
+            @$auction->get->maximum_budget, @$auction->get->target_closing_date,
+        ]);
+
+        /* Services — the LISTING's, not a bid's. See the audience note below. */
+        $byaHasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
+
+        /* Additional Details. */
+        $byaHasAdditionalDetails = @$auction->get->additional_details != null;
+
+        /*
+         | Referral & Cooperation. HOISTED from just above its section, verbatim, for the reason
+         | every other guard was hoisted: the bar is built here and the section is built hundreds
+         | of lines below, and a value computed beside its section is not available to the bar.
+         |
+         | It issues a query when the listing carries no referral_percentage of its own. Hoisting
+         | moves that query earlier in the request; it does not add one. Landlord records the same
+         | note for the same block.
+         */
+        $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+        if ($referralPct === '') {
+            $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+            if ($_firstBid) {
+                $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
+            }
+            unset($_firstBid);
+        }
+        $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+
+        /*
+         | Owner / Buyer's Info heading. Hoisted so the bar entry and the card carry ONE string
+         | rather than two expressions that have to be kept in agreement. It was already resolved
+         | in PHP because a bound attribute containing `&&` is not parseable by Blade's attribute
+         | compiler.
+         */
+        $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+            ? "Agent's Info"
+            : "Buyer's Info";
+
+        /*
+         | AGENT CREDENTIALS & CONTACT INFO — a new section, not a migrated one.
+         |
+         | THE LISTING OWNER'S credentials, and only when that owner is an agent. Not the viewer's
+         | own — an agent has no use for their own licence number — and not the hired agent's. This
+         | is the agent-posted request, the same case the Owner Info heading above already flips
+         | for, and it pairs with Referral & Cooperation because both are agent-to-agent business.
+         |
+         | THE OWNER'S AGENT-NESS IS ASKED OF THE AUDIENCE SERVICE, not tested here. That service
+         | knows all three agent user_types; the inline check one line above knows only 'agent',
+         | which is a latent defect this file records elsewhere and does not repeat in new code.
+         | The service is asked about the OWNER, which is a different question from the audience —
+         | it answers "is this user an agent", with no relationship test, and that is exactly what
+         | this section needs.
+         |
+         | The contact fields are read off the User record, where `info()` resolves them from EAV
+         | with the column as a fallback. Guarded on the four fields the section can render, so an
+         | agent-owned listing whose owner filled none of them shows no empty card.
+         */
+        $byaOwnerIsAgent = $auction->user
+            && app(\App\Services\HireAgent\HireAgentDetailAudience::class)->isAgentUser($auction->user);
+
+        $byaHasAgentCredentials = $byaOwnerIsAgent && $byaAnyPresent([
+            @$auction->user->brokerage,
+            @$auction->user->license_no,
+            @$auction->user->phone,
+            @$auction->user->email,
+        ]);
+
+        /*
+         | THE ROLE-INFO HEADING, CORRECTED — IN THE REDESIGN BRANCH ONLY.
+         |
+         | $_ownerInfoHeading above tests `user_type === 'agent'` and therefore misses buyer_agent
+         | and seller_agent, both of which are storable user types this application treats as
+         | agents. That is the latent defect HireAgentDetailAudienceTest records rather than fixes,
+         | because correcting it changes what a legacy page says about a real user — and the legacy
+         | branch is required to be untouched by this change.
+         |
+         | It cannot simply be left alone HERE, though, because the redesign now renders two things
+         | that would disagree about the same listing: an "Agent Credentials & Contact Info" card,
+         | which uses the correct three-type check, under a heading reading "Buyer's Info", which
+         | uses the one-type check. One page, two opinions about whether the owner is an agent.
+         |
+         | So the redesign branch gets the correct heading and the legacy branch keeps the old one,
+         | which is the narrowest way to be coherent where it shows without moving the flag-off
+         | page. Both variables exist deliberately and they converge the moment the underlying
+         | check is fixed for all four roles, at which point $_ownerInfoHeading and this become the
+         | same expression and one of them goes.
+         */
+        $byaRoleInfoHeading = $byaOwnerIsAgent ? "Agent's Info" : "Buyer's Info";
+
+        /*
+         | M7 Phase 6 — THE SECTION SET, RESOLVED ONCE.
+         |
+         | This replaces the hand-built nav array below. The bar and every section card now read
+         | ONE value: the bar renders array_values($byaSections) and each card asks
+         | isset($byaSections['hla-section-…']). There is no second expression to drift from, which
+         | is what the hand-copying discipline was approximating.
+         |
+         | THE AUDIENCE IS PASSED, NEVER TESTED. `$hlaAudience` arrives resolved from the
+         | controller and this file never compares it to anything — no `=== 'agent'`, no match().
+         | The guards above are computed unconditionally and audience-blind; the resolver drops the
+         | ones this viewer's tier does not admit, and a dropped section never reaches this array,
+         | so neither its card nor its bar entry can render. An audience test in Blade would be a
+         | second opinion about a rule that already has an owner, and a nav bar is where such a
+         | drift becomes a disclosure — the bar names the section it links to.
+         |
+         | Everything stays behind the redesign flag: with it off the array is empty, no bar
+         | renders, no anchors are emitted and every section falls back to its legacy branch.
+         */
+        $byaSections = [];
 
         if ($byaDetailRedesign) {
-            /* M7 Phase 5. First in the array because it is first on the page — the bar follows
-               document order, not importance. The section and this entry are driven by the ONE
-               boolean above rather than by two expressions that have to be kept in agreement; a
-               card that hides itself by a route the bar cannot see is the failure the whole
-               hoist-then-mirror design exists to prevent. */
-            if ($byaHasListingDetails) {
-                $byaNavSections[] = ['id' => 'hla-section-listing-details', 'label' => 'Listing Details'];
-            }
-
-            /* Verbatim from the section's own condition at the Financing Details card. Both
-               operands are available here: the boolean is built above and `offered_financing` is a
-               direct meta read. Reading only $hasAnyFinancingDetails would omit an entry for a
-               section that renders — the card's guard is the disjunction, not the boolean. */
-            if ($hasAnyFinancingDetails || @$auction->get->offered_financing != null) {
-                $byaNavSections[] = ['id' => 'hla-section-financing', 'label' => 'Financing Details'];
-            }
-
-            /* $repRows is the single source of truth for all three consumers: this entry, the
-               section's own guard, and the rows it renders. There is no derived boolean to drift
-               from. */
-            if (! empty($repRows)) {
-                $byaNavSections[] = [
-                    'id'    => 'hla-section-representation',
-                    'label' => 'Representation Preferences',
-                ];
-            }
+            $byaSections = app(\App\Support\HireAgent\HireAgentDetailSections::class)->resolveForRole(
+                'buyer',
+                $hlaAudience,
+                [
+                    'listing-details'    => $byaHasListingDetails,
+                    'property'           => $byaHasProperty,
+                    'terms'              => $byaHasTerms,
+                    'financing'          => $hasAnyFinancingDetails || @$auction->get->offered_financing != null,
+                    'additional-details' => $byaHasAdditionalDetails,
+                    'representation'     => ! empty($repRows),
+                    'role-info'          => $byaHasOwnerInfo,
+                    'services'           => $byaHasServices,
+                    'compensation'       => $byaHasBrokerCompData,
+                    'referral'           => $referralPctDisplay !== '',
+                    'agent-credentials'  => $byaHasAgentCredentials,
+                ],
+                ['role-info' => $byaRoleInfoHeading],
+            );
         }
+
+        /*
+         | Retained for the section cards, which ask `isset()` on the resolved set. A tiny helper
+         | rather than repeating the array lookup eleven times, and it is the ONLY thing the cards
+         | consult — no card re-derives its own visibility.
+         */
+        $byaShows = function (string $key) use (&$byaSections): bool {
+            return isset($byaSections[\App\Support\HireAgent\HireAgentDetailSections::ID_PREFIX . $key]);
+        };
+
     @endphp
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
@@ -565,7 +758,7 @@
             {{-- M7 Phase 4. Outside the wrapper and above it, so the bar spans the column and sticks
                  to the top of the reading area rather than to the inside of a card. --}}
             @if ($byaDetailRedesign)
-                <x-viho.section-nav :items="$byaNavSections" ariaLabel="Listing sections" />
+                <x-viho.section-nav :items="array_values($byaSections)" ariaLabel="Listing sections" />
             @endif
             {{--
                 M3. Was `div.card.description` wrapping `card-header.section-header` + an
@@ -629,7 +822,7 @@
 
      The trailing colon is passed and stripped by the component in the card branch only; the legacy
      branch never sees this title at all. --}}
-@if (! ($byaDetailRedesign ?? false) || $byaHasListingDetails)
+@if (! ($byaDetailRedesign ?? false) || $byaShows('listing-details'))
 <x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
@@ -688,9 +881,23 @@
                         </div>
 </x-hire-agent.detail-section>
 @endif
-                          <hr>
-                        {{-- M3: sub-section header inside the single Listing Details card. --}}
-                        <x-viho.section-header title="Property Preferences:" tag="h4" />
+@if (! ($byaDetailRedesign ?? false))                          <hr>
+@endif
+                        {{-- M3: sub-section header inside the single Listing Details card.
+
+                             M7 Phase 6: it becomes the card's own heading. The component emits this
+                             exact header in the legacy branch — legacy-header defaults true — so the
+                             flag-off page is unchanged, and renders it as a card title with the
+                             colon stripped when the redesign is on.
+
+                             THE CARD SPANS THREE BLOCKS. Property Preferences, "Required Property or
+                             Business Assets" and the Income & Investment Metrics rows are divisions
+                             within one subject, so they share a card and keep their own sub-headings
+                             inside it — the same shape landlord uses for its eleven compensation
+                             sub-headings. One guard covers all three, which is why $byaHasProperty
+                             lists their keys together. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('property'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" id="hla-section-property" title="Property Preferences:" icon="fa-solid fa-house">
 
                         <div class="row" style="flex-wrap: wrap;">
 
@@ -1045,7 +1252,8 @@
                              there. --}}
 
                         @if ($buyerHasAssets || $buyerHasRealEstate)
-                        <hr>
+@if (! ($byaDetailRedesign ?? false))                        <hr>
+@endif
                         <x-viho.section-header title="Required Property or Business Assets" tag="h4" />
                         <div class="row" style="flex-wrap: wrap;">
                             @if ($buyerHasRealEstate)
@@ -1122,8 +1330,14 @@
                             @endif
                         </div>
                         @endif
-                        <hr>
-                            <x-viho.section-header title="Purchasing Terms:" tag="h4" />
+</x-hire-agent.detail-section>
+@endif
+@if (! ($byaDetailRedesign ?? false))                        <hr>
+@endif
+{{-- M7 Phase 6 — Purchasing Terms becomes a card. The header the component emits in the legacy
+     branch is byte-identical to the one that stood here. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('terms'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" id="hla-section-terms" title="Purchasing Terms:" icon="fa-solid fa-file-contract">
 
                             <!-- Special Sale Provisions -->
                             @php
@@ -1206,6 +1420,8 @@
                                  hoisted to the block at the top of this section, because the nav needs
                                  $hasAnyFinancingDetails and the grouped displays further down need the
                                  individual flags. Definitions moved verbatim; see the note there. --}}
+</x-hire-agent.detail-section>
+@endif
 
 {{-- M7 Phase 2 — Financing Details becomes a section card.
 
@@ -1234,7 +1450,7 @@
      DISPLAY value — it prints as the loan-type sub-heading's text — so it belongs beside the markup
      that renders it rather than in the preparation block. That is the difference from $repRows,
      which had to move because the nav needs the row set itself. --}}
-@if (! ($byaDetailRedesign ?? false) || $hasAnyFinancingDetails || @$auction->get->offered_financing != null)
+@if (! ($byaDetailRedesign ?? false) || $byaShows('financing'))
 <x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-financing" title="Financing Details:" icon="fa-solid fa-file-contract">
                             @if($hasAnyFinancingDetails || @$auction->get->offered_financing != null)
                             {{-- The legacy heading, and the `col-12` wrapper that is unique to this
@@ -1859,13 +2075,28 @@
 
 
 
-                        <hr>
+@if (! ($byaDetailRedesign ?? false))                        <hr>
+@endif
 
                         @php
-                        // Check if services exist before showing the section
-                        $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
+                        // M7 Phase 6 — hoisted to the preparation block as $byaHasServices, where
+                        // the resolver reads it. This assignment keeps the name the condition below
+                        // already uses, so the legacy guard is untouched and there is one source of
+                        // truth.
+                        $hasServices = $byaHasServices;
                         @endphp
 
+{{-- M7 Phase 6 — SERVICES BECOMES A PARTICIPANT SECTION.
+     The listing's OWN services: what this client is asking an agent to do. Not an agent's
+     proposal — those are rendered on the per-bid cards further down and narrowed by
+     HireAgentProposalAccess, and are untouched by this. Two bodies of data with similar names.
+
+     Under the redesign the resolver decides whether this card exists at all, and it withholds it
+     from the public tier: a passer-by has no business with the checklist proposals are measured
+     against, while the client evaluating those proposals and the agents writing them do. The
+     legacy branch is unchanged and still renders it to everyone. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('services'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-services" title="Services:" icon="fa-solid fa-list-check">
                         @if ($hasServices)
                         {{-- The dropped `services-section-header` contributed one rule,
                              `margin-top: 0.75rem !important`, overriding the framework's
@@ -1873,7 +2104,8 @@
                              spacing now, so carrying it would have re-introduced an override
                              against the system being adopted. Landlord and Seller dropped it here
                              too; this keeps the three migrated roles identical. --}}
-                        <x-viho.section-header title="Services:" tag="h4" />
+@if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header title="Services:" tag="h4" />
+@endif
 
                         @php
                         // Use ServicesFormatter to order services according to canonical order
@@ -1960,15 +2192,24 @@
                             @endif
                         </div>
                         @endif
-                        <hr>
+</x-hire-agent.detail-section>
+@endif
+@if (! ($byaDetailRedesign ?? false))                        <hr>
+@endif
+{{-- M7 Phase 6 — Additional Details becomes a card. Public tier: it is part of the request. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('additional-details'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
                         @if (@$auction->get->additional_details != null)
-                            <x-viho.section-header title="Additional Details:" tag="h4" />
+@if (! ($byaDetailRedesign ?? false))                            <x-viho.section-header title="Additional Details:" tag="h4" />
+@endif
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details: <span
                                     class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
                             </div>
                         @endif
+</x-hire-agent.detail-section>
+@endif
 
                         {{-- C9: Representation Preferences & Compatibility display (public; parity with
                              tenant hire view). The builder — closures, accumulator and all fourteen
@@ -1978,7 +2219,7 @@
 
 {{-- $repRows is the single source of truth for all three consumers: nav visibility, section
      visibility and the rendered rows. There is no derived boolean beside it to drift from. --}}
-@if (! ($byaDetailRedesign ?? false) || !empty($repRows))
+@if (! ($byaDetailRedesign ?? false) || $byaShows('representation'))
 <x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
                         @if (!empty($repRows))
 @if (! ($byaDetailRedesign ?? false))                        <hr />
@@ -2004,11 +2245,30 @@
                             // section's own guard is untouched and there is one source of truth.
                             $hasBrokerCompData = $byaHasBrokerCompData;
                         @endphp
+{{-- M7 Phase 6 — BROKER COMPENSATION BECOMES A PARTICIPANT SECTION.
+
+     The LISTING's compensation — what this client is offering — not a bid's. An agent's own
+     proposed terms live on the per-bid cards and in the "Private Compensation & Agreement Terms"
+     modal, gated by HireAgentProposalAccess, and are untouched here.
+
+     THE LEGACY `@auth` STAYS EXACTLY WHERE IT IS and is not replaced by the audience. Under the
+     redesign the resolver has already withheld this whole card from anyone below the owner tier,
+     so the inner check is redundant there — but it is the ONLY gate in the legacy branch, and
+     removing it would widen the flag-off page to anonymous visitors. It is left untouched for
+     that reason, not by oversight.
+
+     The card opens OUTSIDE the `@if ($hasBrokerCompData)` that wrapped only the heading, because
+     it has to span the rows below too — those sit outside that conditional and outside `@auth`
+     both, which is the "closing early" shape this file's wrapper note describes. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('compensation'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-compensation" title="Broker Compensation & Agency Agreement Terms:" icon="fa-solid fa-dollar-sign">
                         @if ($hasBrokerCompData)
-                        <hr />
+@if (! ($byaDetailRedesign ?? false))                        <hr />
+@endif
                         {{-- Trailing colon retained: Buyer's heading text differs from Seller's and
                              Landlord's here, and normalising it would be a copy change. --}}
-                        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms:" tag="h4" />
+@if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header title="Broker Compensation & Agency Agreement Terms:" tag="h4" />
+@endif
                         @endif
 
                         @auth
@@ -2233,35 +2493,49 @@
 @if (! ($byaDetailRedesign ?? false))                        </div>
 @endif
                         <!-- End Broker Compensation Section -->
-                        @php
-                            $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
-                            if ($referralPct === '') {
-                                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
-                                if ($_firstBid) {
-                                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
-                                }
-                                unset($_firstBid);
-                            }
-                            $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
-                        @endphp
+</x-hire-agent.detail-section>
+@endif
+                        {{-- M7 Phase 6 — $referralPct / $referralPctDisplay are hoisted to the
+                             preparation block, where the resolver reads them. Moved verbatim,
+                             query included; see the note there. --}}
+{{-- M7 Phase 6 — REFERRAL & COOPERATION BECOMES AN AGENT-ONLY SECTION.
+
+     A referral fee is agent-to-agent business: it is what one agent pays another for handing over
+     a client. It renders to every visitor today, anonymous included, which is the widest it could
+     possibly be. Under the redesign the resolver withholds it from the public AND the owner tiers.
+
+     THE OWNER IS EXCLUDED DELIBERATELY, and it is the surprising half. The owner tier is not
+     "everyone who is logged in and relevant" — it is the client evaluating proposals, and a
+     referral arrangement between two agents is not part of that evaluation. The registry is where
+     that decision lives; this file only asks whether the section survived.
+
+     Legacy is untouched: with the redesign off this still renders for everyone, exactly as it
+     always has, and its heading stays pinned in the flag-off order. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('referral'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
                         @if ($referralPctDisplay !== '')
-                        <hr />
-                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
+@if (! ($byaDetailRedesign ?? false))                        <hr />
+@endif
+@if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
+@endif
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Referral Fee:
                             <span class="removeBold">{{ $referralPctDisplay }}</span>
                         </div>
                         @endif
-                        <hr />
-                        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is
-                             not parseable by Blade's attribute compiler. Same expression, same two
-                             outcomes. --}}
-                        @php
-                            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
-                                ? "Agent's Info"
-                                : "Buyer's Info";
-                        @endphp
-                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
+</x-hire-agent.detail-section>
+@endif
+{{-- M7 Phase 6 — ROLE INFO becomes a card.
+
+     Public tier: who posted the request is part of the request. Its heading is the one label that
+     is a fact about a LISTING rather than a role — "Buyer's Info" or "Agent's Info" — so the
+     resolver receives it as an override rather than reading it from config. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaShows('role-info'))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-role-info" :title="$byaRoleInfoHeading" icon="fa-solid fa-id-card">
+@if (! ($byaDetailRedesign ?? false))                        <hr />
+@endif
+@if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
+@endif
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
                                 Name:
@@ -2370,6 +2644,57 @@
                             @endif
 
                         </div>
+</x-hire-agent.detail-section>
+@endif
+
+{{-- M7 Phase 6 — AGENT CREDENTIALS & CONTACT INFO. A NEW SECTION, not a migrated one.
+
+     No Hire Agent detail view renders anything like this today, so there is no legacy branch to
+     preserve: the whole block sits inside the redesign guard and emits nothing with the flag off.
+     That is why it carries none of the `@if (! $byaDetailRedesign)` fallbacks every section above
+     it has.
+
+     THE LISTING OWNER'S credentials, and only when that owner is an agent — never the viewer's own
+     and never the hired agent's. It is the counterpart to Referral & Cooperation directly above:
+     the terms of a referral, and who the agent on the other side of it is. $byaHasAgentCredentials
+     carries both halves of that (the owner is an agent, and has at least one field to show), and
+     the resolver additionally withholds the section from anyone below the agent tier.
+
+     The fields are read off the User record, where `info()` resolves each from EAV meta with the
+     column as a fallback. Each row guards itself, so a partly filled profile shows what it has.
+     Nothing here is new data: these are the same values author.blade.php already publishes on the
+     public profile page. --}}
+@if ($byaDetailRedesign && $byaShows('agent-credentials'))
+<x-hire-agent.detail-section :redesign="true" :legacy-header="false" id="hla-section-agent-credentials" title="Agent Credentials & Contact Info" icon="fa-solid fa-address-card">
+                        @if (@$auction->user->brokerage != null)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Brokerage:
+                                <span class="removeBold">{{ $auction->user->brokerage }}</span>
+                            </div>
+                        @endif
+
+                        @if (@$auction->user->license_no != null)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                License No.:
+                                <span class="removeBold">{{ $auction->user->license_no }}</span>
+                            </div>
+                        @endif
+
+                        @if (@$auction->user->phone != null)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Phone:
+                                <span class="removeBold">{{ $auction->user->phone }}</span>
+                            </div>
+                        @endif
+
+                        @if (@$auction->user->email != null)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Email:
+                                <span class="removeBold">{{ $auction->user->email }}</span>
+                            </div>
+                        @endif
+</x-hire-agent.detail-section>
+@endif
             {{-- M3: this closed `div.card.description`; the card closes here instead. The closer
                  above it still ends the final row, and the inner card-body keeps whatever closer
                  the parser already pairs it with — neither is touched.

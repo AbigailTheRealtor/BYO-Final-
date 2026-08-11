@@ -202,6 +202,56 @@ return [
             ],
         ],
 
+        /*
+         | ── TIERS ARE INTERLEAVED, AND THAT IS FORCED BY THE LEGACY PAGE ─────
+         |
+         | An earlier draft grouped the tiers — every public section, then the
+         | participant pair, then the agent pair — so that each audience's page
+         | was a clean PREFIX of the next one's. That is a nicer property and it
+         | had to go.
+         |
+         | ARRAY ORDER IS DOCUMENT ORDER, and document order is not free: with the
+         | redesign OFF these same sections render in the order the four views
+         | have always rendered them, and
+         | HireAgentSectionCardDomEquivalenceTest pins that order verbatim for
+         | every role. Reordering the registry to group the tiers would have meant
+         | physically moving blocks in the role views, which changes the legacy
+         | order too and breaks that pin. The legacy page is not negotiable, so
+         | the registry follows it.
+         |
+         | Services and Broker Compensation therefore sit where they have always
+         | sat — between Financing and Additional Details, and after
+         | Representation — and the two agent sections sit at the end. One order
+         | serves all four roles: landlord's already-migrated nav is
+         | listing-details, property, terms, services, additional-details,
+         | representation, compensation, referral, role-info, and seller, buyer
+         | and tenant render the same sequence with their own labels.
+         |
+         | The cost is only that a narrower viewer's page has gaps where a section
+         | was withheld. Nothing renders in a gap, so there is nothing to see.
+         */
+
+        /*
+         | Services. What the client is asking an agent to do — the checklist a
+         | proposal is measured against, and a scored matching dimension.
+         |
+         | NOT superseded by Representation Preferences, which was the reasoning
+         | for briefly removing it. Representation states HOW the client wants to
+         | be worked with; Services states WHAT they want done. A bid is evaluated
+         | against the second.
+         */
+        [
+            'id'       => 'services',
+            'audience' => 'participant',
+            'icon'     => 'fa-solid fa-list-check',
+            'labels'   => [
+                'seller'   => 'Services',
+                'buyer'    => 'Services',
+                'landlord' => 'Services',
+                'tenant'   => 'Services',
+            ],
+        ],
+
         [
             'id'       => 'additional-details',
             'audience' => 'public',
@@ -232,59 +282,6 @@ return [
                 'buyer'    => 'Representation Preferences',
                 'landlord' => 'Representation Preferences',
                 'tenant'   => 'Representation Preferences',
-            ],
-        ],
-
-        /*
-         | Who posted the request.
-         |
-         | THESE LABELS ARE THE CONSUMER DEFAULT AND ARE OVERRIDDEN PER LISTING.
-         | The heading flips to "Agent's Info" when the listing owner is an agent,
-         | which is a fact about one row rather than about a role, so it cannot
-         | live in config. The caller passes the resolved heading as a label
-         | override; see HireAgentDetailSections::resolve().
-         */
-        [
-            'id'       => 'role-info',
-            'audience' => 'public',
-            'icon'     => 'fa-solid fa-id-card',
-            'labels'   => [
-                'seller'   => "Seller's Info",
-                'buyer'    => "Buyer's Info",
-                'landlord' => "Landlord's Info",
-                'tenant'   => "Tenant's Info",
-            ],
-        ],
-
-        /*
-         | ── PARTICIPANT-ONLY FROM HERE ───────────────────────────────────────
-         |
-         | The page's audience tiers widen monotonically down the document:
-         | public sections, then participant, then agent. That is deliberate and
-         | it is worth keeping — it means each audience's page is a PREFIX of the
-         | next one's, so a narrower viewer never sees a gap where a section was
-         | withheld, and "the agent page is the owner page plus two" is a property
-         | of the ordering rather than a coincidence the tests have to check.
-         */
-
-        /*
-         | Services. What the client is asking an agent to do — the checklist a
-         | proposal is measured against, and a scored matching dimension.
-         |
-         | NOT superseded by Representation Preferences, which was the reasoning
-         | for briefly removing it. Representation states HOW the client wants to
-         | be worked with; Services states WHAT they want done. A bid is evaluated
-         | against the second.
-         */
-        [
-            'id'       => 'services',
-            'audience' => 'participant',
-            'icon'     => 'fa-solid fa-list-check',
-            'labels'   => [
-                'seller'   => 'Services',
-                'buyer'    => 'Services',
-                'landlord' => 'Services',
-                'tenant'   => 'Services',
             ],
         ],
 
@@ -330,6 +327,27 @@ return [
                 'buyer'    => 'Referral & Cooperation',
                 'landlord' => 'Referral & Cooperation',
                 'tenant'   => 'Referral & Cooperation',
+            ],
+        ],
+
+        /*
+         | Who posted the request.
+         |
+         | THESE LABELS ARE THE CONSUMER DEFAULT AND ARE OVERRIDDEN PER LISTING.
+         | The heading flips to "Agent's Info" when the listing owner is an agent,
+         | which is a fact about one row rather than about a role, so it cannot
+         | live in config. The caller passes the resolved heading as a label
+         | override; see HireAgentDetailSections::resolve().
+         */
+        [
+            'id'       => 'role-info',
+            'audience' => 'public',
+            'icon'     => 'fa-solid fa-id-card',
+            'labels'   => [
+                'seller'   => "Seller's Info",
+                'buyer'    => "Buyer's Info",
+                'landlord' => "Landlord's Info",
+                'tenant'   => "Tenant's Info",
             ],
         ],
 

@@ -623,11 +623,13 @@ class HireAgentDetailAudienceTest extends TestCase
      * what "handed to the view, consumed by nothing" means, and unlike a rendered diff it cannot
      * be satisfied by coincidence.
      *
-     * THIS TEST IS EXPECTED TO CHANGE, DELIBERATELY, when the audience-gated sections ship — the
-     * same shape as the flag-consumer list in HireAgentDetailRedesignFlagTest. A file appearing
-     * here before then means something started gating on the audience without that being decided.
+     * THE LIST GREW, DELIBERATELY. It shipped empty — the audience was decided and handed over
+     * with nothing rendering from it, so the narrowing could not ride along inside a UI change.
+     * Buyer is the first consumer, added with its migration; seller, landlord and tenant follow in
+     * their own. A fourth entry appearing is the signal, not a failure to fix by widening this
+     * list — the same contract HireAgentDetailRedesignFlagTest holds for the rollout flag.
      */
-    public function test_no_view_consumes_the_audience_yet(): void
+    public function test_the_audience_consumers_are_exactly_the_migrated_views(): void
     {
         $consumers = [];
 
@@ -644,12 +646,38 @@ class HireAgentDetailAudienceTest extends TestCase
         sort($consumers);
 
         $this->assertSame(
-            [],
+            ['resources/views/hire_buyer_agent/view.blade.php'],
             $consumers,
-            'The audience is decided and handed over in this step; nothing renders from it. A view '
-            . 'reading it means an audience-gated section shipped inside the authorization change, '
-            . 'which is the sequencing this step exists to keep apart.'
+            'The set of views consuming the audience must stay known.'
         );
+    }
+
+    /**
+     * The one consumer PASSES the audience and never tests it.
+     *
+     * Reading the value is fine; comparing it is not. A Blade file branching on the tier would be a
+     * second opinion about a rule that already has an owner, and a nav bar is where such a drift
+     * becomes a disclosure. The resolver exists so a view never has to ask.
+     */
+    public function test_the_consuming_view_passes_the_audience_without_testing_it(): void
+    {
+        $src = (string) file_get_contents(resource_path('views/hire_buyer_agent/view.blade.php'));
+
+        $this->assertStringContainsString('$hlaAudience', $src, 'Precondition: it is consumed.');
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/\$hlaAudience\s*(===|!==|==|!=)/',
+            $src,
+            'The view compared the audience directly instead of passing it to the resolver.'
+        );
+
+        foreach (['AUDIENCE_AGENT', 'AUDIENCE_OWNER', 'AUDIENCE_PUBLIC'] as $constant) {
+            $this->assertStringNotContainsString(
+                $constant,
+                $src,
+                "The view named [{$constant}], which is a tier decision living in markup."
+            );
+        }
     }
 
     /**

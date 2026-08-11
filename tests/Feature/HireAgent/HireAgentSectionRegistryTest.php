@@ -120,31 +120,70 @@ class HireAgentSectionRegistryTest extends TestCase
     }
 
     /**
-     * The owner page is the public page plus Services and Broker Compensation.
+     * The owner page is the public page plus Services and Broker Compensation, and nothing else.
      *
-     * Stated as a relationship, so the owner tier can never silently LOSE a public section — the
-     * failure two independent lists would allow.
+     * A SET RELATIONSHIP, NOT A CONCATENATION, and the difference is forced by the page rather than
+     * chosen. An earlier draft asserted `owner === public + participant` as an APPENDED list, which
+     * required grouping the tiers at the end of the registry. Array order is document order, and
+     * with the redesign off these sections render in the order the four views have always rendered
+     * them — an order HireAgentSectionCardDomEquivalenceTest pins verbatim per role. Grouping the
+     * tiers would have meant physically moving blocks in the views, changing the legacy order and
+     * breaking that pin. So Services and Compensation sit interleaved among the public sections,
+     * where they have always sat, and the relationship is asserted as a set difference.
+     *
+     * Document order is asserted separately, below.
      */
     public function test_the_owner_page_is_the_public_page_plus_the_participant_sections(): void
     {
         foreach (self::ROLES as $role) {
+            $public = $this->keysFor($role, $this->public_());
+            $owner  = $this->keysFor($role, $this->owner());
+
             $this->assertSame(
-                array_merge($this->keysFor($role, $this->public_()), self::PARTICIPANT_SECTIONS),
-                $this->keysFor($role, $this->owner()),
-                "{$role}: the owner set must be the public set followed by the participant sections."
+                self::PARTICIPANT_SECTIONS,
+                array_values(array_diff($owner, $public)),
+                "{$role}: the owner tier must add exactly the participant sections."
             );
+            $this->assertSame([], array_values(array_diff($public, $owner)), "{$role}: owner lost a public section.");
         }
     }
 
-    /** And the agent page is the owner page plus the two agent-only sections. */
+    /** And the agent page is the owner page plus the two agent-only sections, and nothing else. */
     public function test_the_agent_page_is_the_owner_page_plus_the_agent_sections(): void
     {
         foreach (self::ROLES as $role) {
+            $owner = $this->keysFor($role, $this->owner());
+            $agent = $this->keysFor($role, $this->agent());
+
             $this->assertSame(
-                array_merge($this->keysFor($role, $this->owner()), self::AGENT_ONLY_SECTIONS),
-                $this->keysFor($role, $this->agent()),
-                "{$role}: the agent set must be the owner set followed by the agent-only sections."
+                self::AGENT_ONLY_SECTIONS,
+                array_values(array_diff($agent, $owner)),
+                "{$role}: the agent tier must add exactly the agent-only sections."
             );
+            $this->assertSame([], array_values(array_diff($owner, $agent)), "{$role}: agent lost an owner section.");
+        }
+    }
+
+    /**
+     * The full document order, per role, written out.
+     *
+     * The registry's order IS the page's order in both flag states, so it is pinned here rather
+     * than left implicit in the tier assertions above. It matches landlord's already-migrated nav
+     * exactly — listing-details, property, terms, services, additional-details, representation,
+     * compensation, referral, role-info — which is what makes one registry serve four views whose
+     * legacy order was fixed long before this registry existed.
+     */
+    public function test_the_full_document_order_is_the_legacy_order(): void
+    {
+        $expected = [
+            'seller'   => ['listing-details', 'property', 'terms', 'financing', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
+            'buyer'    => ['listing-details', 'property', 'terms', 'financing', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
+            'landlord' => ['listing-details', 'property', 'terms', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
+            'tenant'   => ['listing-details', 'property', 'terms', 'pre-screening', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
+        ];
+
+        foreach ($expected as $role => $keys) {
+            $this->assertSame($keys, $this->keysFor($role, $this->agent()), "{$role}: document order drifted.");
         }
     }
 
@@ -560,12 +599,15 @@ class HireAgentSectionRegistryTest extends TestCase
     }
 
     /**
-     * Nothing renders from the registry yet.
+     * The set of views resolving sections is KNOWN, and grows one migration at a time.
      *
-     * Structure alone; the Blade migrations are the following steps. Expected to change
-     * deliberately when they land, like the audience consumer list beside it.
+     * It shipped as an empty list when the registry was structure alone. Buyer is the first
+     * consumer, added deliberately with its migration; seller, landlord and tenant follow in their
+     * own changes. A fourth entry appearing without that decision is the signal, not a failure to
+     * fix by widening this list — the same contract HireAgentDetailRedesignFlagTest holds for the
+     * rollout flag.
      */
-    public function test_no_view_consumes_the_resolver_yet(): void
+    public function test_the_resolver_consumers_are_exactly_the_migrated_views(): void
     {
         $consumers = [];
 
@@ -579,6 +621,48 @@ class HireAgentSectionRegistryTest extends TestCase
             }
         }
 
-        $this->assertSame([], $consumers, 'The registry ships as structure; the UI migrations consume it.');
+        sort($consumers);
+
+        $this->assertSame(
+            ['resources/views/hire_buyer_agent/view.blade.php'],
+            $consumers,
+            'The set of views resolving sections must stay known.'
+        );
+    }
+
+    /**
+     * No view tests the audience itself.
+     *
+     * The resolver exists so a view never has to. A Blade file comparing `$hlaAudience` to a tier
+     * name would be a second opinion about a rule that already has an owner — and a nav bar is
+     * where such a drift becomes a disclosure, because the bar names the section it links to.
+     * Asserted at source across every view, not just the migrated ones.
+     */
+    public function test_no_view_tests_the_audience_value(): void
+    {
+        $offenders = [];
+
+        $items = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(base_path('resources/views'), \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($items as $item) {
+            if (! $item->isFile()) {
+                continue;
+            }
+
+            $src = (string) file_get_contents($item->getPathname());
+
+            // A comparison of the audience variable against anything at all.
+            if (preg_match('/\$hlaAudience\s*(===|!==|==|!=)/', $src)) {
+                $offenders[] = str_replace(base_path() . '/', '', $item->getPathname());
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $offenders,
+            'A view compared the audience directly. Pass it to the resolver and read the result.'
+        );
     }
 }

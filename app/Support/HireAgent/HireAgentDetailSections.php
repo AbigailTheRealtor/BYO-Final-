@@ -146,6 +146,82 @@ class HireAgentDetailSections
     }
 
     /**
+     * Resolve from a guard map covering every section this ROLE has, whatever the audience.
+     *
+     * THE ENTRY POINT VIEWS USE, and the reason it exists rather than views calling resolve()
+     * directly: resolve() demands guards for exactly the sections in scope for one audience, so a
+     * caller would have to know which audience it was serving in order to decide which guards to
+     * compute. In a Blade file that is `@if ($audience === 'agent')`, which is audience logic in a
+     * view — the one thing this whole design forbids.
+     *
+     * So the view computes every guard its role has, unconditionally and audience-blind, and this
+     * method drops the ones the viewer's tier does not admit. Computing a guard reveals nothing: it
+     * is a read of the listing's own meta that emits no markup, and the withheld sections never
+     * reach the returned array.
+     *
+     * THE LOUD FAILURE SURVIVES, and is if anything stricter: the map must cover every section
+     * scoped to the role — including ones only an agent will ever see — so a section cannot be
+     * added to the registry and left without a guard by a view that happens to be rendering for a
+     * narrower audience that day.
+     *
+     * @param  array<string, bool>   $guards         short section id => has content, for EVERY
+     *                                               section this role has
+     * @param  array<string, string> $labelOverrides see resolve()
+     * @return array<string, array{id: string, key: string, label: string, icon: ?string}>
+     */
+    public function resolveForRole(string $role, string $audience, array $guards, array $labelOverrides = []): array
+    {
+        $this->assertViewerAudience($audience);
+
+        $expected = $this->sectionKeysForRole($role);
+        $given    = array_keys($guards);
+
+        $missing = array_values(array_diff($expected, $given));
+        $extra   = array_values(array_diff($given, $expected));
+
+        if ($missing !== []) {
+            throw new InvalidArgumentException(
+                "Hire Agent sections for role [{$role}] are missing a visibility answer for: "
+                . implode(', ', $missing) . '. Every section this role has needs one, including '
+                . 'sections only a wider audience will see — otherwise a section can be added to '
+                . 'the registry and go unguarded in a view that happens to render for a narrower '
+                . 'audience.'
+            );
+        }
+
+        if ($extra !== []) {
+            throw new InvalidArgumentException(
+                "Hire Agent sections for role [{$role}] were given a visibility answer for sections "
+                . 'this role does not have: ' . implode(', ', $extra) . '.'
+            );
+        }
+
+        // Narrow to the tier, then hand the exact map resolve() demands. Going through resolve()
+        // rather than duplicating its body is what keeps one implementation of "is it visible".
+        $inScope = array_keys($this->inScopeFor($role, $audience));
+
+        return $this->resolve($role, $audience, array_intersect_key($guards, array_flip($inScope)), $labelOverrides);
+    }
+
+    /**
+     * Every section key scoped to this role, in document order, ignoring audience entirely.
+     *
+     * The set of guards a role view owes. Distinct from inScopeFor(), which also narrows by tier.
+     */
+    public function sectionKeysForRole(string $role): array
+    {
+        $out = [];
+
+        foreach ($this->registry() as $section) {
+            if (isset($section['labels'][$role])) {
+                $out[] = $section['id'];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * The section keys this role and audience may render, in document order, before content is
      * considered.
      *

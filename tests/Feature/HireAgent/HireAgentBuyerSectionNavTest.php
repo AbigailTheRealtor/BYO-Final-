@@ -3,6 +3,7 @@
 namespace Tests\Feature\HireAgent;
 
 use App\Models\BuyerAgentAuction;
+use App\Models\BuyerAgentAuctionBid;
 use App\Models\User;
 use DOMDocument;
 use DOMXPath;
@@ -10,83 +11,103 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 /**
- * M7 Phase 4 — the buyer detail page's wrapper decomposition and its section navigation.
+ * The buyer detail page, rendered — the first role wired to the section resolver.
  *
- * The landlord equivalent is HireAgentSectionNavTest. This is a separate file rather than a fifth
- * data set on that one because the two pages are at DIFFERENT POINTS of the same migration and a
- * shared fixture would have to lie about one of them: landlord has nine section cards and buyer has
- * three, so "every section has an entry" is the same invariant over deliberately different sets.
- * The count here is expected to keep changing as sections migrate, which is why every expectation
- * below is derived from sectionMeta() rather than written out.
+ * HireAgentSectionRegistryTest proves the registry and the resolver agree about who may read what.
+ * This file proves the PAGE does: that the tiers the registry declares actually reach the browser,
+ * for real viewers, on real listings, with the audience resolved by the controller rather than
+ * asserted into place.
  *
- * THREE CLAIMS, AND THEY ARE DIFFERENT CLAIMS.
+ * THE FOUR VIEWERS, AND WHY EACH IS HERE:
  *
- * 1. THE FLAG IS REAL. With the redesign off for buyer the page must carry no bar, no anchors, no
- *    script and no offset declaration. A flag that gates the markup but leaks the anchors, or
- *    pushes the scroll listener regardless, is not off — it is merely invisible, and the difference
- *    shows up the first time something else on the page collides with it. The flag-off DOM as a
- *    whole is pinned by HireAgentSectionCardDomEquivalenceTest; what is added here is the
- *    navigation, which that file predates.
+ *   guest             — anonymous. The route carries no auth, so this is a real visitor.
+ *   unrelated agent   — an agent user_type with no connection to this listing. THE DISCRIMINATING
+ *                       CASE: they are the reason "agent" is a relationship and not a user type,
+ *                       and they must read exactly what the guest reads.
+ *   owner             — the client evaluating proposals. Adds Services and Broker Compensation.
+ *   qualifying agent  — has proposed on this listing. Adds Referral and Agent Credentials.
  *
- * 2. THE WRAPPER IS GONE IN THE REDESIGN BRANCH. This is the substance of the decomposition and the
- *    reason it had to happen before any further section migrates. Phase 2 gave buyer two section
- *    cards and Phase 3 made them reachable, so with the wrapper still unconditional the page
- *    rendered a card inside a card — each drawing its own border, radius and shadow, a shape the
- *    reference page has nowhere. Nesting is asserted directly rather than inferred from a card
- *    count, because a count passes just as happily when the wrapper is gone AND a section failed to
- *    render.
+ * EVERY DENIAL IS ASSERTED NEXT TO ITS COMPLEMENT. "A guest does not see Broker Compensation"
+ * passes just as happily when the section is broken for everybody, which is the vacuous pass
+ * HireAgentDetailViewPrivacyTest records falling into for real. So each withheld section is also
+ * shown to arrive for the viewer who should have it, built from the same fixture.
  *
- * 3. EVERY NAV ENTRY HAS A SECTION AND EVERY SECTION HAS AN ENTRY. The nav conditions are a
- *    hand-copied duplicate of the section conditions — the deliberate design the Phase 1 hoist
- *    enabled — and a duplicate is exactly the thing that drifts. So the assertion is not "the
- *    expected labels appear"; it is that the two sets derived from the RENDERED HTML are equal, in
- *    document order. A drift in either direction fails: a link to a section that did not render, or
- *    a section the bar forgot.
- *
- * WHAT THIS FILE DELIBERATELY DOES NOT ASSERT: that buyer offers entries for Property Preferences,
- * Purchasing Terms, Services, Additional Details, Broker Compensation, Referral or Owner Info.
- * Those seven are not migrated, carry no anchor, and an entry for one would be a link to nothing.
- * Listing Details left that list in M7 Phase 5 — it is the section the decomposition created, by
- * taking away the wrapper whose title had been serving as its heading.
- * They arrive one at a time, each in the change that gives it a card. The bare-listing case below
- * is what keeps that honest in the meantime — it fails if an id is ever emitted without an entry.
+ * WHAT THIS FILE IS NOT ABOUT. The per-bid proposal cards carry the AGENT's own services and
+ * compensation and are narrowed by HireAgentProposalAccess. They are a different body of data with
+ * a similar name, they are untouched by the registry, and there is one test at the end that says
+ * so rather than leaving it to inference.
  */
 class HireAgentBuyerSectionNavTest extends TestCase
 {
     use DatabaseTransactions;
 
+    /** Sections every viewer of a populated listing reads. */
+    private const PUBLIC_SECTIONS = [
+        'hla-section-listing-details',
+        'hla-section-property',
+        'hla-section-terms',
+        'hla-section-financing',
+        'hla-section-additional-details',
+        'hla-section-representation',
+        'hla-section-role-info',
+    ];
+
+    /** What the owner tier adds — the material proposals are evaluated against. */
+    private const PARTICIPANT_SECTIONS = ['hla-section-services', 'hla-section-compensation'];
+
+    /** What the agent tier adds on top — agent-to-agent business. */
+    private const AGENT_SECTIONS = ['hla-section-referral', 'hla-section-agent-credentials'];
+
     // ── Fixtures ─────────────────────────────────────────────────────────────
 
     /**
-     * The listing every test starts from: enough to render the page, NO section satisfied.
+     * Every section populated, keyed by the anchor it produces.
      *
-     * Buyer listings hold `address` as a native column (CLAUDE.md's schema asymmetry) and the rest
-     * as EAV meta. forceCreate because the model guards mass assignment.
-     *
-     * M7 PHASE 5 EMPTIED THIS FIXTURE, and the emptying is load-bearing rather than tidying. It
-     * used to plant `listing_title`, `auction_type` and `expiration_date` as page furniture — and
-     * all three are Listing Details keys, so once that section acquired a guard the "bare" listing
-     * would have satisfied it and `test_absent_sections_are_offered_no_entries` would have been
-     * asserting against a page that renders a card. What is left is `property_type`, which the
-     * services formatter reads and which no section guard tests, and `first_name`, which belongs to
-     * the unmigrated Owner Info section and therefore cannot produce an anchor.
+     * Keyed so the expectations below are derived from the fixture rather than hand-written twice.
+     * `agent-credentials` is absent here on purpose: it depends on the listing OWNER being an
+     * agent, not on listing meta, so it is supplied by the fixture that creates such an owner.
      */
-    private function makeListing(array $meta = []): BuyerAgentAuction
+    private function sectionMeta(): array
     {
-        $owner = User::factory()->create(['user_type' => 'seller']);
+        return [
+            'hla-section-listing-details'    => ['auction_type' => 'Traditional'],
+            'hla-section-property'           => ['cities' => json_encode(['Tampa, FL'])],
+            'hla-section-terms'              => ['maximum_budget' => '500000'],
+            'hla-section-financing'          => ['offered_financing' => json_encode(['Cash'])],
+            'hla-section-additional-details' => ['additional_details' => 'Evenings only.'],
+            'hla-section-representation'     => ['compatibility_preferences' => json_encode([
+                'buyer_specific' => ['primary_transaction_goal' => 'Primary residence'],
+            ])],
+            'hla-section-role-info'          => ['first_name' => 'Abby'],
+            'hla-section-services'           => ['services' => json_encode(['List on the MLS'])],
+            'hla-section-compensation'       => ['commission_structure' => 'Percentage'],
+            'hla-section-referral'           => ['referral_percentage' => '25'],
+        ];
+    }
+
+    private function everySectionMeta(): array
+    {
+        return array_merge(...array_values($this->sectionMeta()));
+    }
+
+    private function makeListing(array $meta = [], ?User $owner = null): BuyerAgentAuction
+    {
+        $owner ??= User::factory()->create(['user_type' => 'buyer']);
 
         $listing = BuyerAgentAuction::forceCreate([
             'user_id'     => $owner->id,
-            'title'       => 'Buyer section-nav listing',
+            'title'       => 'Buyer section listing',
             'address'     => '100 Shell Street',
             'is_draft'    => false,
             'is_approved' => true,
             'is_sold'     => false,
         ]);
 
+        // NOTHING BEYOND workflow_type. `property_type` was here as page furniture and had to go:
+        // it renders an "Acceptable Property Type" row, so it belongs to the property guard, and
+        // planting it on every fixture made the property card render on listings meant to be bare.
+        // The services formatter reads it with a 'Residential' fallback, so its absence is safe.
         $listing->saveMeta('workflow_type', 'hire_agent');
-        $listing->saveMeta('property_type', 'Residential Property');
-        $listing->saveMeta('first_name', 'Abby');
 
         foreach ($meta as $key => $value) {
             $listing->saveMeta($key, $value);
@@ -95,54 +116,17 @@ class HireAgentBuyerSectionNavTest extends TestCase
         return $listing->fresh();
     }
 
-    /**
-     * One answer per migrated section, each the cheapest field that satisfies that section's guard.
-     *
-     * Keyed by anchor id so the fixture and the expectations cannot drift: every test below derives
-     * its expected ids from these keys rather than repeating a hand-written list, so a section added
-     * here without a test, or tested without a fixture, does not silently pass.
-     *
-     * `auction_type` answers Listing Details. Any one of its seven keys would; this is the cheapest
-     * and it is deliberately NOT `expiration_date`, which other suites plant as page furniture and
-     * which would therefore read as incidental rather than as the point of the fixture.
-     *
-     * `offered_financing` alone answers the financing card: its guard is
-     * `$hasAnyFinancingDetails || offered_financing != null`, so the second operand is enough and
-     * using it states plainly that the disjunction — not the boolean — is what the nav mirrors.
-     *
-     * `compatibility_preferences.buyer_specific` is what builds $repRows. The key is BUYER_SPECIFIC,
-     * not landlord_specific: the two pages read different sub-objects out of the same meta, and a
-     * fixture copied from the landlord suite would populate nothing here and pass vacuously.
-     *
-     * @return array<string, array<string, string>>
-     */
-    private function sectionMeta(): array
+    /** An agent who has proposed on this listing, and therefore reads it as the agent audience. */
+    private function qualifyingAgent(BuyerAgentAuction $listing, string $type = 'agent'): User
     {
-        return [
-            'hla-section-listing-details' => [
-                'auction_type' => 'Traditional',
-            ],
-            'hla-section-financing' => [
-                'offered_financing' => json_encode(['Cash']),
-            ],
-            'hla-section-representation' => [
-                'compatibility_preferences' => json_encode([
-                    'buyer_specific' => ['primary_transaction_goal' => 'Primary residence'],
-                ]),
-            ],
-        ];
-    }
+        $agent = User::factory()->create(['user_type' => $type]);
 
-    /** Every migrated section satisfied. */
-    private function everySectionMeta(): array
-    {
-        return array_merge(...array_values($this->sectionMeta()));
-    }
+        BuyerAgentAuctionBid::forceCreate([
+            'buyer_agent_auction_id' => $listing->id,
+            'user_id'                => $agent->id,
+        ]);
 
-    /** The anchor ids every migrated section renders, in document order. */
-    private function everySectionId(): array
-    {
-        return array_keys($this->sectionMeta());
+        return $agent;
     }
 
     private function url(BuyerAgentAuction $listing): string
@@ -150,7 +134,6 @@ class HireAgentBuyerSectionNavTest extends TestCase
         return route('buyer.view-auction', $listing->id);
     }
 
-    /** The master switch AND the allowlist, because both must agree for a role to have it. */
     private function enableRedesign(): void
     {
         config([
@@ -167,15 +150,22 @@ class HireAgentBuyerSectionNavTest extends TestCase
         ]);
     }
 
-    private function renderAsOwner(BuyerAgentAuction $listing): string
+    /** Guards must be CLEARED, not merely omitted — actingAs persists for the whole test method. */
+    private function asGuest(BuyerAgentAuction $listing): string
     {
-        return $this->actingAs($listing->user)
-            ->get($this->url($listing))
-            ->assertOk()
-            ->getContent();
+        auth()->logout();
+        $this->app->get('auth')->forgetGuards();
+        $this->assertGuest();
+
+        return $this->get($this->url($listing))->assertOk()->getContent();
     }
 
-    // ── Readers over the rendered HTML ───────────────────────────────────────
+    private function asUser(User $viewer, BuyerAgentAuction $listing): string
+    {
+        return $this->actingAs($viewer)->get($this->url($listing))->assertOk()->getContent();
+    }
+
+    // ── Readers ──────────────────────────────────────────────────────────────
 
     /** The section ids the bar OFFERS, in document order. */
     private function navTargets(string $html): array
@@ -183,7 +173,6 @@ class HireAgentBuyerSectionNavTest extends TestCase
         preg_match_all('/<a\b[^>]*\bdata-viho-section-nav-link\b[^>]*>/i', $html, $anchors);
 
         $ids = [];
-
         foreach ($anchors[0] as $anchor) {
             if (preg_match('/href="#([^"]+)"/', $anchor, $href)) {
                 $ids[] = $href[1];
@@ -201,13 +190,6 @@ class HireAgentBuyerSectionNavTest extends TestCase
         return $matches[1];
     }
 
-    /**
-     * Just the nav element.
-     *
-     * Assertions about what the bar does or does not NAME have to be scoped to the bar: the section
-     * titles are ordinary vocabulary elsewhere on this page, so a page-wide string assertion would
-     * be testing the wrong thing and would fail for a reason unrelated to the nav.
-     */
     private function navMarkup(string $html): string
     {
         return preg_match('/<nav\b[^>]*data-viho-section-nav\b.*?<\/nav>/is', $html, $m) ? $m[0] : '';
@@ -224,274 +206,356 @@ class HireAgentBuyerSectionNavTest extends TestCase
         return new DOMXPath($doc);
     }
 
-    /** Whole-token class match — `contains(@class, 'viho-card')` also matches viho-card-head. */
     private function classQuery(string $class): string
     {
         return "//*[contains(concat(' ', normalize-space(@class), ' '), ' {$class} ')]";
     }
 
-    // ── 1. The flag ──────────────────────────────────────────────────────────
+    /** Does this section card contain anything at all beyond its header? */
+    private function cardHasContent(DOMXPath $x, string $id): bool
+    {
+        $card = $x->query("//*[@id='{$id}']")->item(0);
+
+        if ($card === null) {
+            return false;
+        }
+
+        $body = $x->query('.//*[contains(concat(" ", normalize-space(@class), " "), " hla-field-grid ")]', $card)->item(0);
+
+        return $body !== null && trim($body->textContent) !== '';
+    }
+
+    // ── 1. Legacy is untouched ───────────────────────────────────────────────
 
     /**
-     * Flag off: no bar, no anchors, no script, no offset declaration.
+     * Flag off: no bar, no anchors, no script, no offset, one card, the original headings.
      *
-     * Asserted against a listing where BOTH migrated sections are populated, so everything the
-     * redesign would produce is suppressed by the flag alone rather than by having nothing to show.
+     * Asserted against a fully populated listing viewed by the OWNER — the widest audience — so
+     * everything the redesign would produce is suppressed by the flag alone rather than by having
+     * nothing to show or nobody to show it to.
      */
-    public function test_the_flag_off_page_carries_no_navigation_at_all(): void
+    public function test_the_flag_off_page_is_unchanged(): void
     {
         $this->disableRedesign();
 
-        $html = $this->renderAsOwner($this->makeListing($this->everySectionMeta()));
+        $owner   = User::factory()->create(['user_type' => 'buyer']);
+        $listing = $this->makeListing($this->everySectionMeta(), $owner);
+        $html    = $this->asUser($owner, $listing);
 
-        // `data-viho-section-nav` covers both halves at once: it is the attribute the bar renders
-        // AND the selector the highlighting script looks for, so its absence means neither shipped.
-        $this->assertStringNotContainsString('data-viho-section-nav', $html, 'No bar and no script with the flag off.');
-        $this->assertStringNotContainsString('hla-section-', $html, 'No anchors with the flag off.');
+        $this->assertStringNotContainsString('data-viho-section-nav', $html, 'No bar and no script.');
+        $this->assertStringNotContainsString('hla-section-', $html, 'No anchors.');
+        $this->assertDoesNotMatchRegularExpression('/--viho-section-nav-offset:\s*\d/', $html, 'No sticky offset.');
 
-        // The offset must not be DECLARED. The shared VIHO stylesheet legitimately mentions the
-        // custom property — it READS it, as `var(--viho-section-nav-offset, 0px)` — because that
-        // stylesheet ships for every viewer and is inert without markup to style. What the flag
-        // gates is this page declaring a value for it, so that is what is asserted.
-        $this->assertDoesNotMatchRegularExpression(
-            '/--viho-section-nav-offset:\s*\d/',
-            $html,
-            'The consumer must declare no sticky offset with the flag off.'
-        );
+        $x = $this->xpath($html);
 
-        $this->assertSame([], $this->navTargets($html));
-        $this->assertSame([], $this->anchorIds($html));
-        $this->assertSame('', $this->navMarkup($html));
+        $this->assertSame(1, $x->query($this->classQuery('viho-card'))->length, 'The single legacy listing card.');
+
+        $headings = [];
+        foreach ($x->query($this->classQuery('viho-section-header-title')) as $node) {
+            $headings[] = trim(preg_replace('/\s+/', ' ', $node->textContent));
+        }
+
+        $this->assertSame([
+            'Listing Details:',
+            'Property Preferences:',
+            'Purchasing Terms:',
+            'Financing Details:',
+            'Services:',
+            'Additional Details:',
+            'Representation Preferences & Compatibility:',
+            'Broker Compensation & Agency Agreement Terms:',
+            'Referral & Cooperation Terms',
+            "Buyer's Info",
+        ], $headings, 'The flag-off headings and their order must not move.');
     }
 
-    /** Flag on: the bar renders, with the behaviour the product owns attached to it. */
-    public function test_the_flag_on_page_renders_the_navigation(): void
+    /** Flag off shows Services and Compensation to everyone, exactly as it always has. */
+    public function test_the_flag_off_page_still_shows_services_and_compensation_to_a_guest(): void
     {
-        $this->enableRedesign();
+        $this->disableRedesign();
 
-        $html = $this->renderAsOwner($this->makeListing($this->everySectionMeta()));
+        $html = $this->asGuest($this->makeListing($this->everySectionMeta()));
 
-        $this->assertStringContainsString('data-viho-section-nav', $html);
-        $this->assertStringContainsString('viho-section-nav-link', $html);
-        $this->assertNotEmpty($this->navTargets($html));
+        // Compared against the DECODED document text: Blade escapes `&` to `&amp;` and `'` to
+        // `&#039;`, so a raw-markup search for a heading containing either would fail for a reason
+        // that has nothing to do with visibility.
+        $text = $this->xpath($html)->document->textContent;
+
+        $this->assertStringContainsString('Services:', $text);
+        $this->assertStringContainsString('Referral & Cooperation Terms', $text);
+    }
+
+    // ── 2. The public tier ───────────────────────────────────────────────────
+
+    /** @return array<string, array{0: string}> */
+    public static function publicViewers(): array
+    {
+        return ['guest' => ['guest'], 'unrelated buyer' => ['buyer'], 'unrelated agent' => ['agent']];
     }
 
     /**
-     * The offset the primitive refuses to guess is supplied here, at both breakpoints.
+     * A public viewer reads the request and nothing private.
      *
-     * x-viho.section-nav declares `position: sticky` and leaves `top` unset because only the host
-     * page knows the height of the chrome above the bar. Buyer is a host page, so buyer answers —
-     * and the answers must match landlord's, because both render through the same layout.
+     * The 'unrelated agent' case is the discriminating one: an agent user_type with no relationship
+     * to this listing must read exactly what an anonymous visitor reads. If being an agent were
+     * sufficient, this is the row that would fail while every other assertion still passed.
+     *
+     * @dataProvider publicViewers
      */
-    public function test_the_consumer_supplies_the_sticky_offset_for_both_breakpoints(): void
+    public function test_a_public_viewer_sees_no_private_section(string $viewer): void
     {
         $this->enableRedesign();
 
-        $html = $this->renderAsOwner($this->makeListing($this->everySectionMeta()));
+        $listing = $this->makeListing($this->everySectionMeta());
 
-        $this->assertMatchesRegularExpression(
-            '/--viho-section-nav-offset:\s*0px/',
-            $html,
-            'Desktop has no fixed chrome above the bar, so the offset is 0.'
-        );
-        $this->assertMatchesRegularExpression(
-            '/--viho-section-nav-offset:\s*104px/',
-            $html,
-            'Tablet and mobile must clear the 104px header bar.'
-        );
-        $this->assertStringContainsString('max-width: 991.98px', $html);
+        $html = $viewer === 'guest'
+            ? $this->asGuest($listing)
+            : $this->asUser(User::factory()->create(['user_type' => $viewer]), $listing);
 
-        // The bar's own height is a SEPARATE token from the offset, and the separation is the fix
-        // M7.2 shipped without: a scroll target must clear the chrome AND the bar it is scrolled
-        // underneath, so reusing one value leaves the target short by the bar's height — 0px of
-        // clearance on desktop. Buyer inherits the fix rather than the bug.
-        $this->assertMatchesRegularExpression(
-            '/--viho-section-nav-height:\s*3\.5rem/',
-            $html,
-            'The scroll target needs the bar height as its own token.'
-        );
+        $anchors = $this->anchorIds($html);
+
+        $this->assertSame(self::PUBLIC_SECTIONS, $anchors, "{$viewer}: wrong section set.");
+
+        foreach (array_merge(self::PARTICIPANT_SECTIONS, self::AGENT_SECTIONS) as $private) {
+            $this->assertNotContains($private, $anchors, "{$viewer} reached [{$private}].");
+            $this->assertNotContains($private, $this->navTargets($html), "{$viewer} was offered [{$private}].");
+        }
+
+        // The bar must not NAME them either — an entry is a disclosure in its own right.
+        $nav = $this->navMarkup($html);
+        foreach (['Services', 'Broker Compensation', 'Referral', 'Agent Credentials'] as $label) {
+            $this->assertStringNotContainsString($label, $nav, "{$viewer}: the bar named [{$label}].");
+        }
     }
 
-    // ── 2. The decomposition ─────────────────────────────────────────────────
-
-    /**
-     * Flag ON: the legacy wrapper card is gone.
-     *
-     * The count is the whole point. Before the decomposition the page rendered the wrapper PLUS one
-     * card per migrated section; now it renders the sections alone, so with every one populated the
-     * reading column holds exactly as many cards as there are migrated sections and no more.
-     */
-    public function test_flag_on_replaces_the_wrapper_card_with_sibling_section_cards(): void
+    /** And the page body carries no compensation copy for them either. */
+    public function test_a_public_viewer_is_served_no_compensation_content(): void
     {
         $this->enableRedesign();
 
-        $x = $this->xpath($this->renderAsOwner($this->makeListing($this->everySectionMeta())));
+        $html = $this->asGuest($this->makeListing($this->everySectionMeta()));
 
-        $this->assertSame(
-            $this->everySectionId(),
-            array_map(
-                fn ($n) => $n->getAttribute('id'),
-                iterator_to_array($x->query('//*[starts-with(@id, "hla-section-")]'))
-            ),
-            'Every migrated section must render as a card, in document order.'
-        );
+        $this->assertStringNotContainsString('Broker Compensation & Agency Agreement Terms', $html);
+        $this->assertStringNotContainsString("Buyer's Broker Commission Structure", $html);
+    }
 
-        $this->assertSame(
-            count($this->everySectionId()),
-            $x->query($this->classQuery('viho-card'))->length,
-            'Exactly the section cards — the wrapper must contribute none.'
-        );
+    // ── 3. The owner tier ────────────────────────────────────────────────────
+
+    /**
+     * The owner reads everything public plus Services and Broker Compensation — the material a
+     * proposal is measured against — and NOT the agent-to-agent appendix.
+     */
+    public function test_the_owner_sees_services_and_compensation_but_not_the_agent_sections(): void
+    {
+        $this->enableRedesign();
+
+        $owner   = User::factory()->create(['user_type' => 'buyer']);
+        $listing = $this->makeListing($this->everySectionMeta(), $owner);
+        $html    = $this->asUser($owner, $listing);
+
+        $anchors = $this->anchorIds($html);
+
+        foreach (self::PARTICIPANT_SECTIONS as $private) {
+            $this->assertContains($private, $anchors, "The owner must reach [{$private}].");
+            $this->assertContains($private, $this->navTargets($html), "The owner must be offered [{$private}].");
+        }
+
+        foreach (self::AGENT_SECTIONS as $agentOnly) {
+            $this->assertNotContains($agentOnly, $anchors, "The owner reached [{$agentOnly}].");
+        }
+
+        $this->assertStringContainsString("Buyer's Broker Commission Structure", $html, 'The rows, not just the card.');
+    }
+
+    // ── 4. The agent tier ────────────────────────────────────────────────────
+
+    /**
+     * A qualifying agent reads everything, including Referral & Cooperation.
+     *
+     * Agent Credentials needs an AGENT-OWNED listing and is asserted separately below; on a
+     * client-owned request there is no agent whose credentials it could show, so its absence here
+     * is correct rather than a gap.
+     */
+    public function test_a_qualifying_agent_sees_services_compensation_and_referral(): void
+    {
+        $this->enableRedesign();
+
+        $listing = $this->makeListing($this->everySectionMeta());
+        $agent   = $this->qualifyingAgent($listing);
+        $html    = $this->asUser($agent, $listing);
+
+        $anchors = $this->anchorIds($html);
+
+        foreach (array_merge(self::PARTICIPANT_SECTIONS, ['hla-section-referral']) as $key) {
+            $this->assertContains($key, $anchors, "A qualifying agent must reach [{$key}].");
+            $this->assertContains($key, $this->navTargets($html), "…and be offered it.");
+        }
+
+        $this->assertStringContainsString('Referral Fee:', $html);
+    }
+
+    /** All three agent user types qualify — not just 'agent'. */
+    public function test_every_agent_user_type_reaches_the_agent_sections(): void
+    {
+        foreach (['agent', 'buyer_agent', 'seller_agent'] as $type) {
+            $this->enableRedesign();
+
+            $listing = $this->makeListing($this->everySectionMeta());
+            $agent   = $this->qualifyingAgent($listing, $type);
+
+            $this->assertContains(
+                'hla-section-referral',
+                $this->anchorIds($this->asUser($agent, $listing)),
+                "[{$type}] must reach the agent sections."
+            );
+        }
     }
 
     /**
-     * No card is nested inside another.
+     * Agent Credentials renders on an AGENT-OWNED request, for a qualifying agent only.
      *
-     * This is the defect the decomposition removes, asserted directly rather than through a count:
-     * a count is satisfied by the wrapper vanishing even if a section also failed to render, and
-     * this is not.
+     * The whole section in one test, because its two halves are inseparable: it needs an agent
+     * owner to have anything to show, and an agent viewer to be allowed to show it.
      */
+    public function test_agent_credentials_renders_for_an_agent_viewing_an_agent_owned_request(): void
+    {
+        $this->enableRedesign();
+
+        $agentOwner = User::factory()->create(['user_type' => 'seller_agent']);
+        $agentOwner->saveMeta('brokerage', 'Acme Realty');
+        $agentOwner->saveMeta('license_no', 'SL123456');
+
+        $listing = $this->makeListing($this->everySectionMeta(), $agentOwner);
+        $agent   = $this->qualifyingAgent($listing);
+
+        $html = $this->asUser($agent, $listing);
+
+        $this->assertContains('hla-section-agent-credentials', $this->anchorIds($html));
+        $this->assertContains('hla-section-agent-credentials', $this->navTargets($html));
+        $this->assertStringContainsString('Acme Realty', $html);
+        $this->assertStringContainsString('SL123456', $html);
+
+        // The heading above it agrees that the owner is an agent — one opinion per page.
+        $this->assertStringContainsString("Agent's Info", $this->xpath($html)->document->textContent);
+
+        // A guest on the same listing gets neither the credentials nor the licence number.
+        $guestHtml = $this->asGuest($listing);
+        $this->assertNotContains('hla-section-agent-credentials', $this->anchorIds($guestHtml));
+        $this->assertStringNotContainsString('SL123456', $guestHtml, 'A licence number leaked to an anonymous visitor.');
+    }
+
+    /** A client-owned request has no credentials section, whoever asks. */
+    public function test_agent_credentials_is_absent_when_the_owner_is_not_an_agent(): void
+    {
+        $this->enableRedesign();
+
+        $listing = $this->makeListing($this->everySectionMeta());
+        $agent   = $this->qualifyingAgent($listing);
+
+        $this->assertNotContains('hla-section-agent-credentials', $this->anchorIds($this->asUser($agent, $listing)));
+    }
+
+    // ── 5. The invariant, per audience ───────────────────────────────────────
+
+    /**
+     * Every entry has a section and every section has an entry — for every viewer.
+     *
+     * Derived from the rendered HTML in both directions, so a drift fails rather than a hand-written
+     * list going stale. Asserted PER AUDIENCE because that is where an audience-gated section with
+     * an ungated nav entry would show up: as a bar naming something the page did not render.
+     */
+    public function test_the_bar_and_the_sections_agree_for_every_audience(): void
+    {
+        $this->enableRedesign();
+
+        $owner   = User::factory()->create(['user_type' => 'buyer']);
+        $listing = $this->makeListing($this->everySectionMeta(), $owner);
+        $agent   = $this->qualifyingAgent($listing);
+        $other   = User::factory()->create(['user_type' => 'agent']);
+
+        $pages = [
+            'owner'           => $this->asUser($owner, $listing),
+            'agent'           => $this->asUser($agent, $listing),
+            'unrelated agent' => $this->asUser($other, $listing),
+            'guest'           => $this->asGuest($listing),
+        ];
+
+        foreach ($pages as $label => $html) {
+            $this->assertSame(
+                $this->anchorIds($html),
+                $this->navTargets($html),
+                "{$label}: the bar and the rendered sections disagree."
+            );
+            $this->assertNotEmpty($this->navTargets($html), "{$label}: a populated listing must offer entries.");
+        }
+    }
+
+    /** No card is nested inside another, for any audience. */
     public function test_section_cards_are_siblings_not_nested(): void
     {
         $this->enableRedesign();
 
-        $x = $this->xpath($this->renderAsOwner($this->makeListing($this->everySectionMeta())));
+        $owner   = User::factory()->create(['user_type' => 'buyer']);
+        $listing = $this->makeListing($this->everySectionMeta(), $owner);
+
+        $x = $this->xpath($this->asUser($owner, $listing));
 
         $this->assertSame(
             0,
             $x->query($this->classQuery('viho-card') . '//*[contains(concat(" ", normalize-space(@class), " "), " viho-card ")]')->length,
-            'A section card rendered inside another card — the wrapper is still wrapping.'
+            'A section card rendered inside another card.'
         );
     }
 
-    /**
-     * Flag OFF: the wrapper is exactly as it was.
-     *
-     * The other direction of the same change, and the one a decomposition is most able to break.
-     * HireAgentSectionCardDomEquivalenceTest pins the whole legacy DOM for all four roles; this
-     * states the single-card property here too, so a failure lands in the file that changed it.
-     */
-    public function test_flag_off_keeps_the_single_legacy_wrapper_card(): void
-    {
-        $this->disableRedesign();
-
-        $x = $this->xpath($this->renderAsOwner($this->makeListing($this->everySectionMeta())));
-
-        $this->assertSame(
-            1,
-            $x->query($this->classQuery('viho-card'))->length,
-            'Flag off must render the single legacy listing card.'
-        );
-    }
-
-    // ── 3. The claim that matters ────────────────────────────────────────────
-
-    /**
-     * Every entry has a section and every section has an entry — both sections populated.
-     *
-     * Set equality in both directions, derived from the HTML rather than from a hard-coded list, so
-     * this fails on drift rather than on a list somebody forgot to update. Order is asserted too:
-     * the bar follows the reading order of the page, not merely the same membership.
-     */
-    public function test_nav_entries_and_rendered_sections_agree_exactly(): void
+    /** A bare listing renders no section and no bar. */
+    public function test_a_bare_listing_offers_nothing(): void
     {
         $this->enableRedesign();
 
-        $html = $this->renderAsOwner($this->makeListing($this->everySectionMeta()));
+        $owner   = User::factory()->create(['user_type' => 'buyer']);
+        $listing = $this->makeListing([], $owner);
+        $html    = $this->asUser($owner, $listing);
 
-        $nav     = $this->navTargets($html);
-        $anchors = $this->anchorIds($html);
-
-        $this->assertNotEmpty($nav, 'A populated listing must offer entries.');
-
-        $this->assertSame(
-            [],
-            array_values(array_diff($nav, $anchors)),
-            'The bar offers a section that did not render — a link to nothing.'
-        );
-        $this->assertSame(
-            [],
-            array_values(array_diff($anchors, $nav)),
-            'A section rendered with no nav entry — the bar is incomplete.'
-        );
-
-        $this->assertSame($anchors, $nav, 'The bar must follow the document order of the sections.');
-    }
-
-    /**
-     * The same equality with NEITHER section populated: no anchors, no entries, no bar.
-     *
-     * This is the half that catches an entry hard-coded into the bar, and the half that catches an
-     * unmigrated section acquiring an id without acquiring an entry.
-     */
-    public function test_absent_sections_are_offered_no_entries(): void
-    {
-        $this->enableRedesign();
-
-        $html = $this->renderAsOwner($this->makeListing());
-
-        $this->assertSame([], $this->anchorIds($html), 'Neither section should render.');
+        $this->assertSame([], $this->anchorIds($html));
         $this->assertSame([], $this->navTargets($html));
-
-        // x-viho.section-nav renders nothing at all for an empty list, so there is no empty bar
-        // sitting at the top of the column either.
         $this->assertSame('', $this->navMarkup($html), 'An empty list must produce no bar.');
     }
 
     /**
-     * Each section independently: its entry appears with it and only with it.
+     * Each section, alone: it renders, it is offered, and no other section comes with it.
      *
-     * This is also the no-empty-card assertion, stated per section rather than as its own test. A
-     * listing answering one section renders that section's card ALONE — so the other two, whose
-     * guards are false, contributed no bordered, titled, empty box. That is the failure the guards
-     * exist to prevent, and it is only visible when the sections are exercised one at a time.
+     * VIEWED BY A QUALIFYING AGENT, because that is the only tier that admits every section. Using
+     * the owner would have withheld the agent-only sections and made those rows fail for the right
+     * reason at the wrong assertion — the tier rules are exercised above, and what this test is
+     * about is that one populated section produces exactly one card and one entry.
      */
     public function test_each_section_brings_its_own_entry_and_no_others(): void
     {
         $this->enableRedesign();
 
         foreach ($this->sectionMeta() as $id => $meta) {
-            $html = $this->renderAsOwner($this->makeListing($meta));
+            $listing = $this->makeListing($meta);
+            $viewer  = $this->qualifyingAgent($listing);
+            $html    = $this->asUser($viewer, $listing);
 
             $this->assertSame([$id], $this->anchorIds($html), "{$id} should be the only section.");
             $this->assertSame([$id], $this->navTargets($html), "{$id} should be the only entry.");
         }
     }
 
-    /**
-     * The complement: a listing answering the OTHER sections renders no Listing Details card.
-     *
-     * The per-section loop above proves each guard is sufficient. This proves the Listing Details
-     * guard is necessary — that its card is absent on a page that is otherwise fully populated,
-     * rather than tagging along with whatever else rendered. It is asserted for this section
-     * specifically because it is the one whose rows sat unconditionally inside the wrapper before
-     * M7 Phase 5, so "renders regardless" is exactly the behaviour it is coming from.
-     */
-    public function test_listing_details_is_absent_when_none_of_its_seven_keys_is_answered(): void
-    {
-        $this->enableRedesign();
-
-        $meta = $this->everySectionMeta();
-        unset($meta['auction_type']);
-
-        $html = $this->renderAsOwner($this->makeListing($meta));
-
-        $this->assertNotContains('hla-section-listing-details', $this->anchorIds($html), 'An empty Listing Details card rendered.');
-        $this->assertNotContains('hla-section-listing-details', $this->navTargets($html), 'A dead Listing Details entry was offered.');
-        $this->assertSame($this->anchorIds($html), $this->navTargets($html));
-    }
+    // ── 6. The guards are complete, and produce no empty card ────────────────
 
     /**
-     * Every one of the seven keys brings the section back on its own.
+     * Every key the Listing Details rows read brings the section back on its own, with content.
      *
      * The guard is only safe while it enumerates the section's WHOLE field set: a key the rows read
-     * and the guard omits hides a card that still has a row in it. Enumerating them here is what
-     * turns "the list looks complete" into something that fails when it stops being.
+     * and the guard omits hides a card that still has a row in it. Asserting CONTENT as well as
+     * presence catches the other direction — a key listed in the guard that cannot actually produce
+     * a row would render a bordered, titled, empty box.
      */
-    public function test_each_listing_details_key_renders_the_section_on_its_own(): void
+    public function test_every_listing_details_key_renders_a_non_empty_section(): void
     {
-        $this->enableRedesign();
-
-        foreach ([
+        $this->assertKeysRenderSection('hla-section-listing-details', [
             'listing_title'           => 'A title',
             'working_with_agent'      => 'Not represented',
             'desired_agent_hire_date' => '2026-09-01',
@@ -499,67 +563,119 @@ class HireAgentBuyerSectionNavTest extends TestCase
             'expiration_date'         => '2026-12-01',
             'auction_type'            => 'Traditional',
             'meeting_Preference'      => 'Video call',
-        ] as $key => $value) {
-            $html = $this->renderAsOwner($this->makeListing([$key => $value]));
+        ]);
+    }
+
+    /** The same for Purchasing Terms. */
+    public function test_every_terms_key_renders_a_non_empty_section(): void
+    {
+        $this->assertKeysRenderSection('hla-section-terms', [
+            'sale_provision'      => json_encode(['Subject to inspection']),
+            'maximum_budget'      => '500000',
+            'target_closing_date' => '2026-10-01',
+        ]);
+    }
+
+    /**
+     * And for Property Preferences, whose guard is the largest on the page.
+     *
+     * Forty-odd keys across three sub-blocks that share one card. This is the guard most likely to
+     * have a hole in it and the one where a hole is most expensive, because the section is the
+     * substance of a buyer's request.
+     */
+    public function test_every_property_key_renders_a_non_empty_section(): void
+    {
+        $this->assertKeysRenderSection('hla-section-property', [
+            'cities'                         => json_encode(['Tampa, FL']),
+            'counties'                       => json_encode(['Hillsborough']),
+            'zipCodes'                       => json_encode(['33601']),
+            'property_type'                  => 'Commercial Property',
+            'property_items'                 => json_encode(['Warehouse']),
+            'condition_prop_buyer'           => 'Any',
+            'other_property_condition'       => 'Needs a roof',
+            'business_type'                  => json_encode(['Retail']),
+            'business_type_selected'         => 'Retail',
+            'other_property_items'           => 'Silo',
+            'state'                          => 'FL',
+            'bedrooms'                       => '3',
+            'bathrooms'                      => '2',
+            'minimum_heated_square'          => '1500',
+            'total_acreage'                  => '2',
+            'carport_needed'                 => 'Yes',
+            'garage_needed'                  => 'Yes',
+            'garage_parking_spaces'          => '2',
+            'view_preference'                => json_encode(['Water']),
+            'leasing_55_plus'                => 'No',
+            'non_negotiable_amenities'       => json_encode(['Pool']),
+            'pets'                           => 'Yes',
+            'real_estate_purchase'           => 'Business and real estate',
+            'assets'                         => json_encode(['Equipment']),
+            'unit_size'                      => '4',
+            'number_of_unit_type'            => json_encode(['Duplex']),
+            'minimum_annual_net_income'      => '50000',
+            'minimum_cap_rate'               => '6',
+            'preferance_details'             => 'Corner lot preferred',
+        ]);
+    }
+
+    /**
+     * @param  array<string, string>  $keys  meta key => a value that makes its row render
+     */
+    private function assertKeysRenderSection(string $id, array $keys): void
+    {
+        $this->enableRedesign();
+
+        foreach ($keys as $key => $value) {
+            $owner   = User::factory()->create(['user_type' => 'buyer']);
+            $listing = $this->makeListing([$key => $value], $owner);
+            $html    = $this->asUser($owner, $listing);
 
             $this->assertSame(
-                ['hla-section-listing-details'],
+                [$id],
                 $this->anchorIds($html),
-                "[{$key}] renders a row, so it must render the section."
+                "[{$key}] renders a row in {$id}, so it must render that section and only that one."
             );
-            $this->assertSame(['hla-section-listing-details'], $this->navTargets($html));
-        }
-    }
 
-    /**
-     * The bar names no section that is not on the page.
-     *
-     * The seven unmigrated sections still render as sub-headings with no anchor. An entry naming one
-     * would be a dead link; worse, for compensation it would name a section whose rows sit behind an
-     * auth block. Asserted against the bar's own markup so the sub-headings themselves do not
-     * trigger it.
-     */
-    public function test_the_bar_names_no_unmigrated_section(): void
-    {
-        $this->enableRedesign();
-
-        $nav = $this->navMarkup($this->renderAsOwner($this->makeListing($this->everySectionMeta())));
-
-        $this->assertNotSame('', $nav, 'Precondition: the bar rendered.');
-
-        foreach ([
-            'Property Preferences',
-            'Purchasing Terms',
-            'Services',
-            'Additional Details',
-            'Broker Compensation',
-            'Referral',
-            "Buyer's Info",
-        ] as $unmigrated) {
-            $this->assertStringNotContainsString(
-                $unmigrated,
-                $nav,
-                "The bar must not name [{$unmigrated}] — it has no anchor to reach."
+            $this->assertTrue(
+                $this->cardHasContent($this->xpath($html), $id),
+                "[{$key}] made {$id} render an EMPTY card — the guard lists a key that produces no row."
             );
         }
     }
 
+    // ── 7. The bid cards are a different surface, and are untouched ──────────
+
     /**
-     * A guest gets the same agreement as the owner.
+     * The proposal cards still behave exactly as HireAgentProposalAccess decides.
      *
-     * Neither migrated section is auth-gated, so the point is not that a guest sees less — it is
-     * that the invariant is asserted PER VIEWER rather than once for the most privileged one. That
-     * is the property that will matter the moment compensation migrates.
+     * The registry governs the LISTING's services and compensation. Each agent's PROPOSAL carries
+     * its own, on the per-bid cards, and those are narrowed server-side. Stated here because the
+     * two are easy to conflate and this migration is precisely where conflating them would show.
      */
-    public function test_the_invariant_holds_for_an_anonymous_viewer(): void
+    public function test_the_proposal_cards_are_unchanged_by_the_section_migration(): void
     {
         $this->enableRedesign();
 
-        $listing = $this->makeListing($this->everySectionMeta());
+        $owner    = User::factory()->create(['user_type' => 'buyer']);
+        $listing  = $this->makeListing($this->everySectionMeta(), $owner);
+        $mine     = $this->qualifyingAgent($listing);
+        $rival    = $this->qualifyingAgent($listing);
 
-        $html = $this->get($this->url($listing))->assertOk()->getContent();
+        $ownerHtml = $this->asUser($owner, $listing);
+        $rivalHtml = $this->asUser($rival, $listing);
 
-        $this->assertSame($this->anchorIds($html), $this->navTargets($html));
-        $this->assertNotEmpty($this->navTargets($html), 'A guest reaches both migrated sections.');
+        // The owner is served both proposals; a competing agent is served only their own.
+        $countBids = function (string $html): int {
+            preg_match_all('/data-target="bidCollapse-(\d+)"/', $html, $m);
+
+            return count(array_unique($m[1] ?? []));
+        };
+
+        $this->assertSame(2, $countBids($ownerHtml), 'The owner reviews every proposal.');
+        $this->assertSame(1, $countBids($rivalHtml), 'A competing agent sees only their own.');
+
+        // And the redesign did not remove the surface for the owner.
+        $this->assertStringContainsString('hla-bid-accordion-header', $ownerHtml);
+        $this->assertNotSame(0, $mine->id);
     }
 }
