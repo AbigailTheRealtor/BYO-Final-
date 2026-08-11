@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\CounterTerm;
+use App\Services\HireAgent\HireAgentDetailAudience;
 use App\Services\HireAgent\HireAgentProposalAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -452,6 +453,14 @@ class BuyerAgentAuctionController extends Controller
         $proposalAccess = app(HireAgentProposalAccess::class);
         $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
 
+        // Which audience is reading this page. Decided here, beside the proposal access above,
+        // because the sections it gates — Referral & Cooperation and Agent Credentials — are
+        // agent-to-agent business that renders for everyone today, so gating them narrows what is
+        // published rather than merely rearranging it. The view is handed the answer and asks no
+        // question of its own; see HireAgentDetailAudience for why a user_type check in Blade is
+        // the specific thing this replaces. Nothing consumes it yet.
+        $hlaAudience = app(HireAgentDetailAudience::class)->audienceFor(auth()->user(), $auction);
+
         $page_data['title'] = $auction->address;
         $counties = County::all();
         $page_data['id'] = $id;
@@ -460,7 +469,7 @@ class BuyerAgentAuctionController extends Controller
         // Gates the owner-only empty state — a bid count is itself a disclosure.
         $canReviewAllProposals = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
 
-        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals'));
+        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals', 'hlaAudience'));
     }
 
     public function buyerAgentAuctionsAdmin(Request $request)

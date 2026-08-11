@@ -24,6 +24,7 @@ use App\Models\SellerAgentAuctionBid;
 use App\Models\AgentDefaultProfile;
 use App\Models\AcceptedBidSummary;
 use App\Services\AcceptedBidSummaryService;
+use App\Services\HireAgent\HireAgentDetailAudience;
 use App\Services\HireAgent\HireAgentProposalAccess;
 use App\Services\SellerAcceptedBidSummaryService;
 use App\Notifications\BidAcceptedNotification;
@@ -501,6 +502,14 @@ class SellerAgentAuctionController extends Controller
         // bid only; everyone else gets nothing.
         $proposalAccess = app(HireAgentProposalAccess::class);
         $proposalAccess->restrictLoadedProposals(auth()->id(), $auction);
+
+        // Which audience is reading this page. Decided here, beside the proposal access above,
+        // because the sections it gates — Referral & Cooperation and Agent Credentials — are
+        // agent-to-agent business that renders for everyone today, so gating them narrows what is
+        // published rather than merely rearranging it. The view is handed the answer and asks no
+        // question of its own; see HireAgentDetailAudience for why a user_type check in Blade is
+        // the specific thing this replaces. Nothing consumes it yet.
+        $page_data["hlaAudience"] = app(HireAgentDetailAudience::class)->audienceFor(auth()->user(), $auction);
 
         $page_data['title']    = $auction->address ?? 'Listing Details';
         $page_data['counties'] = County::all();
