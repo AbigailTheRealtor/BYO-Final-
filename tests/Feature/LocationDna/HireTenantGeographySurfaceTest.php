@@ -172,51 +172,95 @@ class HireTenantGeographySurfaceTest extends TestCase
     }
 
     /**
-     * The behavioural claim, with EVERY GATE FORCED OPEN — deliberately more permissive than any
-     * environment will be. Tenant maps to a null workflow, so the cascade is off no matter what
-     * the configuration says, and the view opt-in above changes nothing about that.
+     * Boot a component as a tenant and hand back its cascade state.
      *
-     * @dataProvider catchAllComponents
-     * @test
+     * @return array{workflow: ?string, enabled: bool, tier: bool}
      */
-    public function a_tenant_resolves_to_no_workflow_even_with_every_gate_open(string $class): void
+    private function bootTenant(string $class): array
     {
-        config([
-            'criteria_location_dna.geography_cascade_enabled'   => true,
-            'criteria_location_dna.geography_cascade_workflows' => ['hire_buyer', 'hire_tenant'],
-            'criteria_location_dna.geography_source'            => 'census',
-            'criteria_location_dna.neighborhood_tier_enabled'   => true,
-            'criteria_location_dna.geography_search_enabled'    => true,
-        ]);
-
         $component = (new ReflectionClass($class))->newInstanceWithoutConstructor();
         $component->user_type = 'tenant';
 
         $workflow = new \ReflectionMethod($class, 'geographyCascadeWorkflow');
         $workflow->setAccessible(true);
 
-        $this->assertNull($workflow->invoke($component), "{$class} must not map tenant to a workflow");
-
         $boot = new \ReflectionMethod($class, 'bootGeographyCascade');
         $boot->setAccessible(true);
-        $boot->invoke($component, $workflow->invoke($component));
+        $boot->invoke($component, $key = $workflow->invoke($component));
 
-        $this->assertFalse($component->geoCascadeEnabled, "{$class}: the cascade must stay off for tenant");
-        $this->assertFalse($component->geoNeighborhoodTierEnabled);
+        return [
+            'workflow' => $key,
+            'enabled'  => $component->geoCascadeEnabled,
+            'tier'     => $component->geoNeighborhoodTierEnabled,
+        ];
     }
 
-    /** The mapping itself, pinned in source — `hire_tenant` is a later, separate decision. */
+    /**
+     * THE SHIPPED STATE, and the one that matters: the map claims `hire_tenant`, the scope list
+     * withholds it, so the cascade is off for Tenant with the MASTER SWITCH ON.
+     *
+     * This is what every environment runs today. The claim is a code change; switching it on is a
+     * config decision made per environment.
+     *
+     * @dataProvider catchAllComponents
+     * @test
+     */
+    public function a_tenant_is_off_under_the_shipped_scope_even_with_the_master_switch_on(string $class): void
+    {
+        config([
+            'criteria_location_dna.geography_cascade_enabled' => true,
+            'criteria_location_dna.geography_source'          => 'census',
+            'criteria_location_dna.neighborhood_tier_enabled' => true,
+            'criteria_location_dna.geography_search_enabled'  => true,
+            // geography_cascade_workflows deliberately NOT overridden — the shipped value is the
+            // subject of this test.
+        ]);
+
+        $state = $this->bootTenant($class);
+
+        $this->assertSame('hire_tenant', $state['workflow'], "{$class} must claim the tenant key");
+        $this->assertFalse($state['enabled'], "{$class}: the scope list must still hold the cascade off");
+        $this->assertFalse($state['tier']);
+    }
+
+    /**
+     * THE SCOPE LIST IS THE ONLY REMAINING GATE, asserted by opening it.
+     *
+     * Documents precisely what step 5 flips, and proves the claim above is held off by
+     * configuration rather than by something that would keep Tenant off after the config moved.
+     *
+     * @dataProvider catchAllComponents
+     * @test
+     */
+    public function adding_the_key_to_the_scope_list_is_what_turns_tenant_on(string $class): void
+    {
+        config([
+            'criteria_location_dna.geography_cascade_enabled'   => true,
+            'criteria_location_dna.geography_cascade_workflows' => ['hire_buyer', 'hire_tenant'],
+            'criteria_location_dna.geography_source'            => 'census',
+        ]);
+
+        $state = $this->bootTenant($class);
+
+        $this->assertSame('hire_tenant', $state['workflow']);
+        $this->assertTrue($state['enabled'], "{$class}: the key must be all that stands between Tenant and the cascade");
+    }
+
+    /** The mapping itself, pinned in source. Seller and Landlord stay absent from it entirely. */
     /** @test */
-    public function the_workflow_map_still_names_buyer_only(): void
+    public function the_workflow_map_claims_buyer_and_tenant(): void
     {
         foreach (['app/Http/Livewire/TenantAgentAuction.php', 'app/Http/Livewire/TenantAgentAuctionEdit.php'] as $relative) {
             $source = (string) file_get_contents(base_path($relative));
             $start  = strpos($source, 'protected function geographyCascadeWorkflow(): ?string');
             $body   = substr($source, (int) $start, (int) strpos($source, "\n    }", (int) $start) - (int) $start);
 
-            $this->assertStringContainsString("'buyer' => 'hire_buyer',", $body);
-            $this->assertStringContainsString('default => null,', $body);
-            $this->assertStringNotContainsString("'tenant' =>", $body, 'this step renders the surface; it does not enable it');
+            $this->assertMatchesRegularExpression("/'buyer'\s*=>\s*'hire_buyer',/", $body, $relative);
+            $this->assertMatchesRegularExpression("/'tenant'\s*=>\s*'hire_tenant',/", $body, $relative);
+            $this->assertMatchesRegularExpression('/default\s*=>\s*null,/', $body, $relative);
+
+            $this->assertStringNotContainsString("'seller' =>", $body, 'Seller has no geography surface');
+            $this->assertStringNotContainsString("'landlord' =>", $body, 'Landlord has no geography surface');
         }
     }
 
@@ -342,32 +386,25 @@ class HireTenantGeographySurfaceTest extends TestCase
     }
 
     /**
-     * TODAY'S SHIPPED BEHAVIOUR, asserted end to end: Tenant is off, so the tab renders the legacy
-     * widget exactly as it did before this change. This is the test that says the step is inert.
+     * TODAY'S SHIPPED BEHAVIOUR, asserted end to end: the key is claimed but out of scope, so the
+     * tab renders the legacy widget exactly as it did before. This is the test that says step 4 is
+     * inert for users.
      *
      * @test
      */
-    public function the_tenant_surface_is_unchanged_while_the_workflow_stays_unwired(): void
+    public function the_tenant_surface_is_unchanged_while_the_key_stays_out_of_scope(): void
     {
         $config = require base_path('config/criteria_location_dna.php');
 
         $this->assertNotContains('hire_tenant', $config['geography_cascade_workflows']);
 
-        $component = (new ReflectionClass(TenantAgentAuction::class))->newInstanceWithoutConstructor();
-        $component->user_type = 'tenant';
-
-        $workflow = new \ReflectionMethod(TenantAgentAuction::class, 'geographyCascadeWorkflow');
-        $workflow->setAccessible(true);
-
-        $boot = new \ReflectionMethod(TenantAgentAuction::class, 'bootGeographyCascade');
-        $boot->setAccessible(true);
-        $boot->invoke($component, $workflow->invoke($component));
+        $state = $this->bootTenant(TenantAgentAuction::class);
 
         // `$geoCascadeEnabled` false is what the tab's guard reads, so the cascade does not render
         // and the widget receives false — the legacy tier inputs.
-        $this->assertFalse($component->geoCascadeEnabled);
+        $this->assertFalse($state['enabled']);
 
-        $html = $this->renderMapInput($component->geoCascadeEnabled);
+        $html = $this->renderMapInput($state['enabled']);
 
         foreach (self::TIER_CONTROLS as $control) {
             $this->assertStringContainsString($control, $html, "{$control} must still render for Tenant today");

@@ -134,7 +134,7 @@ class HireBuyerGeographyCascadeWiringTest extends TestCase
      * switch them on.
      */
     /** @test */
-    public function the_catch_all_components_map_only_buyer_to_a_workflow(): void
+    public function the_catch_all_components_map_no_seller_or_landlord_to_a_workflow(): void
     {
         foreach ([
             'app/Http/Livewire/TenantAgentAuction.php',
@@ -142,8 +142,10 @@ class HireBuyerGeographyCascadeWiringTest extends TestCase
         ] as $relative) {
             $body = $this->workflowMapBody($relative);
 
-            $this->assertStringContainsString("'buyer' => 'hire_buyer',", $body);
-            $this->assertStringContainsString('default => null,', $body);
+            // Whitespace-tolerant: the arms are `=>`-aligned, so alignment shifts whenever one is
+            // added. Buyer and Tenant are both claimed now; what this guard is about is who ISN'T.
+            $this->assertMatchesRegularExpression("/'buyer'\s*=>\s*'hire_buyer',/", $body);
+            $this->assertMatchesRegularExpression('/default\s*=>\s*null,/', $body);
 
             // Scoped to this method's body on purpose: both components map `user_type` in several
             // unrelated `match` expressions (draft model class, redirect routes), so a whole-file
@@ -161,18 +163,30 @@ class HireBuyerGeographyCascadeWiringTest extends TestCase
         }
     }
 
-    /** `hire_tenant` is not wired in this slice and must not be claimed anywhere. */
-    /** @test */
-    public function the_tenant_workflow_is_not_yet_claimed(): void
+    /**
+     * `hire_tenant` IS NOW CLAIMED — by both catch-all surfaces, or neither.
+     *
+     * This assertion used to require the opposite. It was written when Hire Tenant was an
+     * unstarted slice, and its warning — that the tab opt-in and the scope entry must not diverge
+     * — has since been satisfied from the other direction: the tab renders the cascade, and the
+     * scope list still withholds the key, so claiming it enables nothing.
+     *
+     * What matters now is that the two surfaces agree. A create component that claimed the key
+     * while the edit component did not would let a tenant build a listing with the cascade and
+     * edit it with the legacy inputs.
+     *
+     * @test
+     */
+    public function the_tenant_workflow_is_claimed_by_both_surfaces(): void
     {
         foreach ([
             'app/Http/Livewire/TenantAgentAuction.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $relative) {
-            $this->assertStringNotContainsString(
-                "'tenant' => 'hire_tenant'",
+            $this->assertMatchesRegularExpression(
+                "/'tenant'\s*=>\s*'hire_tenant',/",
                 $this->read($relative),
-                'Hire Tenant is slice 2; its tab opt-in and scope entry must land together.'
+                "{$relative}: both catch-all surfaces claim hire_tenant, or neither does."
             );
         }
     }
@@ -406,16 +420,17 @@ class HireBuyerGeographyCascadeWiringTest extends TestCase
     /** @test */
     public function seller_and_landlord_remain_structurally_excluded_from_the_tier(): void
     {
-        // Unchanged by this slice: the catch-all still maps only `buyer` to a workflow, and the
-        // tier rides on the cascade, so a null workflow excludes it before any flag is consulted.
+        // The catch-all claims `buyer` and `tenant`; seller and landlord fall through to null, and
+        // the tier rides on the cascade, so a null workflow excludes it before any flag is
+        // consulted. Adding the tenant arm did not change that — `default` is what excludes them.
         foreach ([
             'app/Http/Livewire/TenantAgentAuction.php',
             'app/Http/Livewire/TenantAgentAuctionEdit.php',
         ] as $relative) {
             $body = $this->read($relative);
 
-            $this->assertStringContainsString("'buyer' => 'hire_buyer',", $body);
-            $this->assertStringContainsString('default => null,', $body);
+            $this->assertMatchesRegularExpression("/'buyer'\s*=>\s*'hire_buyer',/", $body);
+            $this->assertMatchesRegularExpression('/default\s*=>\s*null,/', $body);
             $this->assertStringNotContainsString('geoNeighborhood', $body, 'No role component may reference the tier directly.');
         }
     }

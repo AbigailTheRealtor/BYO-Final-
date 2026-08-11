@@ -43,15 +43,28 @@ class TenantAgentAuction extends Component
      * cascade on for them — the scope list is consulted only after a non-null key exists. Their
      * tabs carry no geography surface, so there is nothing for the cascade to replace.
      *
-     * `tenant` deliberately returns null in this slice: `hire_tenant` becomes a live key only
-     * when the Hire Tenant tab renders the cascade, and the tab opt-in and the scope entry must
-     * land together or a workflow would state four empty geography keys over stored data.
+     * `tenant` NOW CLAIMS `hire_tenant`, and claiming a key is not switching a cascade on. The
+     * scope list is consulted after this returns, and it still names `hire_buyer` alone — so a
+     * tenant resolves to a workflow that is out of scope, `geographyCascadeIsEnabledFor()`
+     * returns false, and the tab renders exactly what it rendered before. Turning it on is a
+     * config decision, made per environment, after the manual verification this repository has no
+     * browser coverage to stand in for.
+     *
+     * THE TWO PREREQUISITES THE KEY DEPENDS ON ARE ALREADY IN PLACE, which is what makes claiming
+     * it safe rather than merely inert:
+     *
+     *   - the Hire Tenant tab renders the cascade and suppresses the widget's tier inputs, so the
+     *     key cannot state four empty geography keys over stored data;
+     *   - `HasSearchAreas` backfills the legacy `zipCodes` mirror into the blob, so this being the
+     *     one workflow in `HasGeographyCascade::ZIP_MIRROR_WORKFLOWS` cannot empty a tenant's
+     *     stored ZIP list the first time the cascade takes ownership of `$zipCodes`.
      */
     protected function geographyCascadeWorkflow(): ?string
     {
         return match ($this->user_type) {
-            'buyer' => 'hire_buyer',
-            default => null,
+            'buyer'  => 'hire_buyer',
+            'tenant' => 'hire_tenant',
+            default  => null,
         };
     }
 

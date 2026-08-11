@@ -709,16 +709,19 @@ class HireBuyerGeographySearchTest extends TestCase
     }
 
     /**
-     * WIRING THE TRAIT IS NOT ENABLING THE ROLE.
+     * CLAIMING A WORKFLOW KEY IS NOT ENABLING THE ROLE.
      *
-     * Commit A adds the seam; `hire_tenant` is a separate decision with its own data-safety work.
-     * Until the workflow map names it, a tenant resolves to no workflow, the cascade is off, and
-     * the search gate is off with it — so this pins that the trait's arrival changed nothing for
-     * Tenant, Seller or Landlord.
+     * The map now names `hire_tenant` alongside `hire_buyer` — step 4 of the Tenant rollout. That
+     * is still not enablement: the scope list is consulted only after a non-null key exists, and
+     * it names `hire_buyer` alone, so a tenant resolves to a workflow that is out of scope and
+     * both the cascade and the search gate above it stay off.
+     *
+     * Seller and Landlord remain absent from the map entirely, which is the stronger guarantee —
+     * no value of `CRITERIA_LDNA_CASCADE_WORKFLOWS` can reach a role that has no key.
      *
      * @test
      */
-    public function wiring_the_catch_all_does_not_enable_any_new_role(): void
+    public function the_catch_all_map_claims_buyer_and_tenant_and_no_one_else(): void
     {
         foreach ([
             'app/Http/Livewire/TenantAgentAuction.php',
@@ -728,13 +731,17 @@ class HireBuyerGeographySearchTest extends TestCase
             $start  = strpos($source, 'protected function geographyCascadeWorkflow(): ?string');
             $body   = substr($source, (int) $start, (int) strpos($source, "\n    }", (int) $start) - (int) $start);
 
-            $this->assertStringContainsString("'buyer' => 'hire_buyer',", $body);
-            $this->assertStringContainsString('default => null,', $body);
-            $this->assertStringNotContainsString("'tenant' =>", $body, 'hire_tenant is a later, separate decision');
+            // Whitespace-tolerant: the arms are `=>`-aligned, and alignment shifts whenever an
+            // arm is added. A literal-with-one-space match would fail on formatting alone.
+            $this->assertMatchesRegularExpression("/'buyer'\s*=>\s*'hire_buyer',/", $body, $relative);
+            $this->assertMatchesRegularExpression("/'tenant'\s*=>\s*'hire_tenant',/", $body, $relative);
+            $this->assertMatchesRegularExpression('/default\s*=>\s*null,/', $body, $relative);
+
             $this->assertStringNotContainsString("'seller' =>", $body);
             $this->assertStringNotContainsString("'landlord' =>", $body);
         }
 
+        // The gate that keeps the claim inert. This is the line that moves in step 5.
         $config = require base_path('config/criteria_location_dna.php');
         $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
     }

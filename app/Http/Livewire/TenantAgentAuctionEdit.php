@@ -40,14 +40,22 @@ class TenantAgentAuctionEdit extends Component
      * edits. It must stay in lockstep with the create surfaces or a listing created with the
      * cascade would be edited with the legacy inputs.
      *
-     * Mirrors {@see \App\Http\Livewire\TenantAgentAuction::geographyCascadeWorkflow()}: seller and
-     * landlord resolve to null structurally, and `tenant` joins when its tab renders the cascade.
+     * Mirrors {@see \App\Http\Livewire\TenantAgentAuction::geographyCascadeWorkflow()}, where the
+     * reasoning for each arm lives: seller and landlord resolve to null structurally, and `tenant`
+     * now claims `hire_tenant` — a key still outside the shipped scope list, so claiming it
+     * enables nothing.
+     *
+     * THE MIRRORING IS THE POINT ON THIS SURFACE. Both edit routes resolve here, so a map that
+     * lagged the create component would let a tenant build a listing with the cascade and then
+     * edit it with the legacy inputs — the same split that left the Buyer edit path without its
+     * search box.
      */
     protected function geographyCascadeWorkflow(): ?string
     {
         return match ($this->user_type) {
-            'buyer' => 'hire_buyer',
-            default => null,
+            'buyer'  => 'hire_buyer',
+            'tenant' => 'hire_tenant',
+            default  => null,
         };
     }
 
