@@ -261,6 +261,13 @@ class LocationDnaPipelineRunner
             'zip'     => (string) ($listing->info('property_zip') ?: ''),
             'pre_lat' => (string) ($listing->info('property_lat') ?: ''),
             'pre_lng' => (string) ($listing->info('property_lng') ?: ''),
+
+            // Coordinate provenance (G5), when the resolver ladder produced the
+            // pre-coordinate above. Null for a legacy autocomplete value, whose
+            // origin cannot be proven and must keep its legacy handling.
+            'provenance' => PropertyCoordinateMeta::readProvenance(
+                static fn (string $key) => $listing->info($key)
+            ),
         ];
     }
 
@@ -284,6 +291,13 @@ class LocationDnaPipelineRunner
             'zip'     => (string) ($listing->info('property_zip') ?: ''),
             'pre_lat' => (string) ($listing->info('property_lat') ?: ''),
             'pre_lng' => (string) ($listing->info('property_lng') ?: ''),
+
+            // Coordinate provenance (G5), when the resolver ladder produced the
+            // pre-coordinate above. Null for a legacy autocomplete value, whose
+            // origin cannot be proven and must keep its legacy handling.
+            'provenance' => PropertyCoordinateMeta::readProvenance(
+                static fn (string $key) => $listing->info($key)
+            ),
         ];
     }
 

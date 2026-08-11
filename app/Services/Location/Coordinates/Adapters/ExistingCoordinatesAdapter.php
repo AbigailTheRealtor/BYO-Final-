@@ -210,7 +210,24 @@ final class ExistingCoordinatesAdapter implements CoordinateProviderAdapterInter
         }
 
         $geocodeSource = (string) ($record->geocode_source ?? '');
-        $precision     = self::PRECISION_BY_GEOCODE_SOURCE[$geocodeSource] ?? null;
+
+        // Prefer the precision the row actually records (G4 column) over the one
+        // inferred from `geocode_source`.
+        //
+        // The inference exists because older rows have nothing better. But a row
+        // written from the resolver ladder knows its real tier, and the two can
+        // disagree in the dangerous direction: such a row carries
+        // `geocode_source = 'saved_meta'` — accurate, a caller did supply the
+        // coordinate — and the allow-list grades that Parcel, while the point
+        // may actually be a street-range Interpolation. Reading it back one tier
+        // too precise would launder an estimate into something flood-zone work
+        // treats as the property.
+        //
+        // Stored value first, inference only as a fallback, and an unparseable
+        // stored value falls through to the inference rather than to a guess.
+        $precision = $this->storedPrecision($record)
+            ?? self::PRECISION_BY_GEOCODE_SOURCE[$geocodeSource]
+            ?? null;
 
         if ($precision === null) {
             return PropertyCoordinateResult::unresolved('existing_precision_unprovable', $normalized);
@@ -229,6 +246,28 @@ final class ExistingCoordinatesAdapter implements CoordinateProviderAdapterInter
             confidence:        null,
             resolvedAt:        $this->storedResolvedAt($record),
         );
+    }
+
+    /**
+     * The precision this row explicitly records, or null when it records none
+     * this release can read.
+     *
+     * Null is the honest answer for a legacy row, for a partially-applied
+     * migration, and for a tier written by some future release — and it sends
+     * the caller to the `geocode_source` inference rather than to a default.
+     * Silently substituting a tier here would defeat the allow-list above.
+     */
+    private function storedPrecision(PropertyLocationDna $record): ?CoordinatePrecision
+    {
+        // The column only exists once the G4 provenance migration has run; the
+        // attribute is simply absent before then.
+        $stored = $record->geocode_precision ?? null;
+
+        if (! is_string($stored) || trim($stored) === '') {
+            return null;
+        }
+
+        return CoordinatePrecision::tryFrom(trim($stored));
     }
 
     /**

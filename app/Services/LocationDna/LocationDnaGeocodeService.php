@@ -3,7 +3,9 @@
 namespace App\Services\LocationDna;
 
 use App\Models\PropertyLocationDna;
+use App\Services\Schema\ProvenanceSchemaReadiness;
 use GuzzleHttp\ClientInterface;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -119,6 +121,26 @@ class LocationDnaGeocodeService
                 $record->geocode_status = 'geocoded';
                 $record->geocode_error  = null;
                 $record->geocoded_at    = now();
+
+                // Carry the resolver ladder's provenance when the caller supplied
+                // it (G5). Without this the pre-coordinate branch flattens every
+                // supplied coordinate to 'saved_meta', which loses the two facts
+                // a consumer actually needs: which provider answered, and how
+                // precisely the point identifies the property. A Census street
+                // interpolation and an MLS parcel coordinate are not the same
+                // thing, and CoordinatePrecision exists to keep them apart.
+                //
+                // `geocode_source` deliberately stays 'saved_meta'. It remains
+                // literally accurate — a caller did supply this coordinate — and
+                // ExistingCoordinatesAdapter reads it through a strict allow-list,
+                // so writing anything else here would make that rung refuse the
+                // very coordinate it just stored.
+                //
+                // Absent provenance keeps the legacy behaviour untouched: a
+                // coordinate from the autocomplete widget has no provable origin,
+                // and inventing one for it would be worse than recording none.
+                $this->applyResolverProvenance($record, $addressData['provenance'] ?? null);
+
                 $record->save();
 
                 $output = $this->geocodedOutput($listingType, $listingId, $preLat, $preLng, 'saved_meta');
@@ -375,5 +397,39 @@ class LocationDnaGeocodeService
             'source'       => null,
             'error'        => $error,
         ];
+    }
+
+    /**
+     * Record where a supplied coordinate came from, when that is provable.
+     *
+     * @param array{precision: string, provider: string, source: string, normalized_address: string}|null $provenance
+     */
+    private function applyResolverProvenance(PropertyLocationDna $record, ?array $provenance): void
+    {
+        if ($provenance === null) {
+            return;
+        }
+
+        // The columns only exist once the G4 provenance migration has run.
+        // Writing them before that raises SQLSTATE[42703] inside whatever
+        // request triggered the pipeline, so the shared guard decides — the same
+        // guard every other provenance writer consults, rather than a second
+        // opinion implemented here.
+        if (! ProvenanceSchemaReadiness::isReady()) {
+            Log::warning('location_dna_provenance_skipped', [
+                'reason'          => ProvenanceSchemaReadiness::REASON_NOT_READY,
+                'listing_type'    => $record->listing_type,
+                'listing_id'      => $record->listing_id,
+                'missing_columns' => ProvenanceSchemaReadiness::missingColumns(),
+            ]);
+
+            return;
+        }
+
+        $record->geocode_precision  = $provenance['precision'];
+        $record->geocode_provider   = $provenance['provider'];
+        $record->normalized_address = $provenance['normalized_address'] !== ''
+            ? $provenance['normalized_address']
+            : null;
     }
 }
