@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\OfferListing\Seller;
 
 use Livewire\Component;
+use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use Livewire\WithFileUploads;
 use App\Models\OfferAuction;
 use App\Models\SellerAgentAuction as SellerAgentAuctionModel;
@@ -24,6 +25,8 @@ use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 
 class SellerOfferListing extends Component
 {
+    use ResolvesPropertyCoordinates;
+
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
@@ -4263,6 +4266,10 @@ class SellerOfferListing extends Component
 
             if ($this->address) {
                 try {
+                    // Resolve the coordinate BEFORE dispatching, so the pipeline's
+                    // pre_lat/pre_lng branch receives it and its provenance (G5).
+                    $this->resolvePropertyCoordinates($auction, 'seller_agent');
+
                     \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
                     \Log::warning('[SELLER STORE] ComputeLocationDna dispatch or inline execution failed', [
