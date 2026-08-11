@@ -80,15 +80,49 @@
     </div>
 </div> --}}
 
+{{-- Phase 1c — the geography cascade, for the wired workflow only.
+
+     When the cascade is enabled it renders the geography tiers from the bound corpus, and the
+     shared widget below suppresses its own tier inputs (and therefore the Google place
+     autocomplete that drives them) so the two editors never both write the same blob keys.
+
+     RENDERING THE SURFACE IS NOT ENABLING THE WORKFLOW, AND THAT SEPARATION IS THE POINT
+     ------------------------------------------------------------------------------------
+     `$geoCascadeEnabled` is false for Tenant today, because `geographyCascadeWorkflow()` in the
+     catch-all components returns null for every role but Buyer. So this include is inert on
+     arrival: the tab renders exactly what it rendered before, and `hire_tenant` stays a separate
+     decision with its own data-safety work behind it. The alternative — landing the view opt-in
+     and the config scope together — is what `SellerLandlordCascadeExclusionTest` exists to
+     prevent in the other direction, and it would put an unverified surface in front of users the
+     moment the flag moved.
+
+     WHY THE NULL COALESCE IS LOAD-BEARING AND NOT DEFENSIVE CLUTTER
+     ---------------------------------------------------------------
+     THIS TAB IS INCLUDED BY FIVE HOST VIEWS — the buyer, seller, landlord and tenant hire views
+     plus the tenant edit view — every one of them behind `@if ($user_type === 'tenant')`, so the
+     role guard is already upstream. The coalesce guards the OTHER axis: `SellerAgentAuction` and
+     `LandLordAgentAuction` declare no `$geoCascadeEnabled` at all, and a host that says nothing
+     must keep rendering what it always did rather than fatal on an undefined variable. The
+     catch-all adds a second, independent guard in its workflow map, which returns null for
+     seller and landlord — so no config value can reach them either. --}}
+@if ($geoCascadeEnabled ?? false)
+    @include('partials.location-dna.geography-cascade')
+@endif
+
 {{-- 9D: Search Areas — single editing surface (replaces the legacy Acceptable
      Cities/Counties/State inputs). Preferred Cities/ZIP/Counties/State live in the
      location_dna_preferences blob; discrete state/counties/cities meta are mirrored
-     server-side by HasSearchAreas for Ask AI, matching, filtering, and display. --}}
+     server-side by HasSearchAreas for Ask AI, matching, filtering, and display.
+
+     `ldnaGeographyCascade` is what makes the cascade the ACTIVE geography editor rather than a
+     second one beside the widget's own tier inputs: with it true the widget renders the map, the
+     draw tools and Important Places, and nothing that writes the four tier keys. --}}
 @include('partials.location-dna.map-input', [
     'existingLocationDna'     => $existingLocationDna ?? [],
     'mapPanelId'              => 'ldna-map-hire-tenant',
     'enableImportantPlaces'   => true,
     'existingImportantPlaces' => $existingImportantPlaces ?? [],
+    'ldnaGeographyCascade'    => $geoCascadeEnabled ?? false,
 ])
 @include('partials.location-dna.search-areas-bridge')
 
