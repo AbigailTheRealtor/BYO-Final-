@@ -70,7 +70,12 @@ class HireBuyerGeographyCascadeWiringTest extends TestCase
     {
         $config = require base_path('config/criteria_location_dna.php');
 
-        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
+        // `create_buyer` joined the list in the slice that wired Create Buyer end to end — both
+        // Offer components carry the traits and their shared tab renders the cascade. The rule this
+        // assertion exists to protect is "listed implies rendered", and that rule is asserted
+        // directly and independently by
+        // SellerLandlordCascadeExclusionTest::every_configured_workflow_already_renders_the_cascade.
+        $this->assertSame(['hire_buyer', 'create_buyer'], $config['geography_cascade_workflows']);
     }
 
     /** The source default is untouched by this slice — census stays opt-in. */

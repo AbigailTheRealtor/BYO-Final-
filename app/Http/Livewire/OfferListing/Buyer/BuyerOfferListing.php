@@ -30,6 +30,30 @@ class BuyerOfferListing extends Component
     // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
     use HasSearchAreas;
 
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // search shortcut that seeds the cascade above
+
+    /**
+     * The cascade workflow key for the role this component is serving.
+     *
+     * A METHOD RATHER THAN A CONST, WHICH IS THE ONE SHAPE DIFFERENCE FROM HIRE BUYER
+     * -------------------------------------------------------------------------------
+     * `BuyerAgentAuction` names its key in a const because it serves exactly one role. This
+     * component defaults `$user_type` to 'buyer' but RE-DERIVES it from the stored record in
+     * loadDraft(), so the key has to be recomputed at that point rather than fixed at class load.
+     * Returning null for anything else disables the cascade by the TYPE of the argument rather
+     * than by the contents of a config file — there is no string an operator can put in
+     * CRITERIA_LDNA_CASCADE_WORKFLOWS that turns it on for a non-buyer record.
+     *
+     * `create_buyer` is deliberately its own key rather than a reuse of `hire_buyer`: the two are
+     * separate record families and separate rollout steps, and one scope entry must never switch
+     * on a workflow nobody verified.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return $this->user_type === 'buyer' ? 'create_buyer' : null;
+    }
+
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
 
@@ -824,6 +848,15 @@ class BuyerOfferListing extends Component
     public function mount($listingId = null)
     {
         $this->addService();
+
+        // Decide whether the geography cascade runs for this workflow. `$user_type` is 'buyer'
+        // here by default and is re-derived from the stored record in loadDraft(), which re-boots.
+        // With the master gate off this sets one boolean and does nothing else.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+        // AFTER the cascade's boot, which is what the search gate reads. Called before it, search
+        // would resolve false on first render and true on every request after.
+        $this->bootGeographySearch();
 
         // Set listing_date to today's date by default (only if creating new listing)
         // loadDraft() will overwrite this with the saved value if loading a draft
@@ -1974,6 +2007,30 @@ class BuyerOfferListing extends Component
                 ));
             }
 
+            // Hydrate the cascade from the document assembled immediately above.
+            //
+            // RE-BOOTED HERE, NOT JUST IN mount(), because the LOADED record's user_type is the
+            // authoritative one — the route may supply nothing, but the stored value decides which
+            // workflow this listing belongs to. $this->user_type was reassigned from the record
+            // earlier in this method, so the workflow key is only correct from this point on.
+            //
+            // PLACED AFTER THE LEGACY MERGES ABOVE ON PURPOSE. The legacy `cities` migration and
+            // the 9B-2 state/counties prefill both add geography to $existingLocationDna that the
+            // stored blob lacks; hydrating before them would hand the cascade a thinner document
+            // and silently drop a legacy record's locations on the next save.
+            //
+            // Inert unless the buyer role's workflow is in scope. Anything the corpus cannot match
+            // is carried as preserved history rather than discarded.
+            $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+            // Re-booted with the cascade, never apart from it: the search gate reads
+            // $geoCascadeEnabled, so a cascade re-boot that changed it would leave the search flag
+            // describing the PREVIOUS workflow. Every boot site in the shipped Hire family pairs
+            // these two calls for this reason.
+            $this->bootGeographySearch();
+
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
             // Sale Provision
             $saleProvisionRaw = $auction->get->sale_provision ?? null;
             $this->sale_provision = $saleProvisionRaw ? (is_string($saleProvisionRaw) ? json_decode($saleProvisionRaw, true) ?? [] : (array)$saleProvisionRaw) : [];
@@ -2431,6 +2488,20 @@ class BuyerOfferListing extends Component
     protected function saveAllMetadata($auction)
     {
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
+
+        // Merge the cascade's four geography keys into the bridged payload, in the same label
+        // format the previous editor produced. A MERGE rather than a rebuild, so the widget's
+        // polygons, radius searches, flexible flag and notes survive untouched.
+        //
+        // THIS SEAM IS WHAT COVERS THE DRAFT FLOWS. store() projects again before its own
+        // validation, but saveDraft() never calls store() — it reaches this method directly, and
+        // a projection placed only on the validation path would skip every draft save. The call is
+        // idempotent, so running it on both paths costs nothing.
+        //
+        // ORDERING IS LOAD-BEARING: it must precede hydrateDiscreteLocationFromBlob() below, which
+        // derives the discrete state/counties meta from this payload, and it must be the last write
+        // to $location_dna_preferences_json before that payload is persisted.
+        $this->applyGeographyCascadeToPayload();
 
         $auction->saveMeta('workflow_type', 'offer_listing');
         $auction->saveMeta('user_type', $this->user_type);
@@ -2947,6 +3018,13 @@ class BuyerOfferListing extends Component
         session()->forget('success');
 
         try {
+            // Project the cascade into the bridged payload BEFORE the hydrate below, so the
+            // discrete $state / $counties the `required` rules read are the ones the user actually
+            // chose. Without this ordering the hydrate re-reads the widget's server-seeded blob and
+            // validation judges the STORED geography rather than the edited selection. Idempotent,
+            // and inert while the cascade is off.
+            $this->applyGeographyCascadeToPayload();
+
             // 9B-3: hydrate state/counties from the Search Areas blob before validation,
             // since the discrete Acceptable State/Counties inputs were removed.
             $this->hydrateDiscreteLocationFromBlob();

@@ -122,12 +122,36 @@ return [
     | alongside its tab, which keeps "listed" and "wired" the same statement at
     | every commit rather than only at the end of the rollout.
     |
-    | Valid keys are the four Buyer/Tenant workflows: `hire_buyer`, `hire_tenant`,
-    | `create_tenant`, `create_buyer`. The last three are NOT YET WIRED and must
-    | not be added here until they are. Seller and Landlord are excluded
-    | STRUCTURALLY, not by this list — their tabs carry no geography surface, and
-    | the shared catch-all component maps their user types to no workflow at all,
-    | so no value here can reach them.
+    | Valid keys are the four Buyer/Tenant workflows. Their status:
+    |
+    |   `hire_buyer`     WIRED and LISTED. Slice 1.
+    |
+    |   `create_buyer`   WIRED and LISTED. Both BuyerOfferListing and
+    |                    BuyerOfferListingEdit carry the cascade and search traits,
+    |                    their shared property-preferences tab renders the cascade
+    |                    behind `$geoCascadeEnabled`, and the widget's own tier
+    |                    inputs are suppressed when it does. Deliberately its own
+    |                    key rather than a reuse of `hire_buyer`: separate record
+    |                    family, separate rollout step. This family writes no
+    |                    `zipCodes` mirror and declares no `$zipCodes` property, so
+    |                    it is correctly absent from ZIP_MIRROR_WORKFLOWS — the same
+    |                    answer as `hire_buyer`, for the same structural reason.
+    |
+    |   `hire_tenant`    WIRED but NOT LISTED. Its components and tab carry the
+    |                    cascade already; listing it is a separate rollout decision
+    |                    that has not been taken. Being wired is what makes adding
+    |                    it SAFE, not what makes it due.
+    |
+    |   `create_tenant`  NOT WIRED. Must not be added here. Its components own live
+    |                    `$zipCodes` state and write a legacy `zipCodes` mirror from
+    |                    that property, while its load path never folds that legacy
+    |                    key into the Location DNA blob — so a cascade attached today
+    |                    would hydrate empty and overwrite a populated field with an
+    |                    empty one. The load-side normalization has to land first.
+    |
+    | Seller and Landlord are excluded STRUCTURALLY, not by this list — their tabs
+    | carry no geography surface, and every component that serves them maps their
+    | user types to no workflow at all, so no value here can reach them.
     |
     | Note that the master gate above still ships OFF, so listing a workflow here
     | does not turn anything on by itself. Both must agree.
@@ -136,7 +160,7 @@ return [
 
     'geography_cascade_workflows' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer'))
+        explode(',', (string) env('CRITERIA_LDNA_CASCADE_WORKFLOWS', 'hire_buyer,create_buyer'))
     ))),
 
     /*

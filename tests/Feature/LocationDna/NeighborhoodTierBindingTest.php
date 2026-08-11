@@ -158,6 +158,9 @@ class NeighborhoodTierBindingTest extends TestCase
 
         $this->assertSame('eloquent', $config['geography_source']);
         $this->assertFalse($config['geography_cascade_enabled']);
-        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
+        // `create_buyer` was added by the Create Buyer slice, not by this phase. The claim this
+        // test makes — that the neighbourhood phase moved neither the source nor the master gate —
+        // is unaffected: both are still asserted above and both are still shipped off.
+        $this->assertSame(['hire_buyer', 'create_buyer'], $config['geography_cascade_workflows']);
     }
 }

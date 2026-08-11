@@ -132,18 +132,52 @@
 </div>
 
 
+{{-- The geography cascade for Create Buyer.
+
+     Identical in shape to the Hire Buyer and Hire Tenant tabs, and deliberately so: all three
+     render the same partial from the same trait, so the workflows cannot drift into different
+     geography experiences. When the cascade is enabled for `create_buyer` it renders the four
+     tiers from the bound corpus — and the search box above them, behind its own flag — while the
+     shared widget below suppresses its own tier inputs and the place autocomplete that drives
+     them, so the two editors never both write the same blob keys.
+
+     WHY THE NULL COALESCE IS LOAD-BEARING AND NOT DEFENSIVE CLUTTER
+     ---------------------------------------------------------------
+     THIS TAB IS INCLUDED BY SIX ROOT BLADES:
+
+       - offer-listing/buyer/offer-buyer-listing{,-edit}  -> BuyerOfferListing{,Edit}  (carry the traits)
+       - offer-listing/tenant/offer-tenant-listing{,-edit} -> TenantOfferListing{,Edit} (do NOT)
+       - offer-listing/seller/offer-seller-listing         -> SellerOfferListing        (does NOT)
+       - offer-listing/landlord/offer-landlord-listing     -> LandlordOfferListing      (does NOT)
+
+     The four non-Buyer components declare no $geoCascadeEnabled at all. Defaulting it to false
+     here is what keeps them rendering exactly what they rendered before rather than fataling on
+     an undefined variable — and it is why enabling the flag cannot leak the cascade into a
+     workflow that was never wired. The Buyer components add a second, independent guard: their
+     workflow map returns null for any role but buyer, so no config value reaches them either.
+
+     Disabled, this renders nothing and the widget behaves exactly as it always has. --}}
+@if ($geoCascadeEnabled ?? false)
+    @include('partials.location-dna.geography-cascade')
+@endif
+
 {{-- 9D: Search Areas — single editing surface (replaces the legacy discrete
      Acceptable Counties / Acceptable State inputs, matching the approved Hire
      Agent flow). Preferred Cities/ZIP/Counties/State now live in the
      location_dna_preferences blob; the discrete state/counties/cities meta are
      mirrored server-side (hydrateDiscreteLocationFromBlob) so Ask AI, matching,
-     filtering, and public display keep working. --}}
+     filtering, and public display keep working.
+
+     `ldnaGeographyCascade` is what makes the cascade the ACTIVE geography editor rather than a
+     second one beside the widget's own tier inputs: with it true the widget renders the map, the
+     draw tools and Important Places, and nothing that writes the four tier keys. --}}
 
 @include('partials.location-dna.map-input', [
     'existingLocationDna'    => $existingLocationDna ?? [],
     'mapPanelId'             => 'ldna-map-buyer',
     'enableImportantPlaces'  => true,
     'existingImportantPlaces'=> $existingImportantPlaces ?? [],
+    'ldnaGeographyCascade'   => $geoCascadeEnabled ?? false,
 ])
 @include('partials.location-dna.search-areas-bridge')
 

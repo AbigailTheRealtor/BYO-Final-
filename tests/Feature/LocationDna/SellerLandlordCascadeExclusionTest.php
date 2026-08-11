@@ -477,7 +477,15 @@ class SellerLandlordCascadeExclusionTest extends TestCase
 
         $this->assertFalse($config['geography_cascade_enabled'], 'The master gate must still ship off.');
         $this->assertFalse($config['neighborhood_tier_enabled'], 'The neighbourhood tier must still ship off.');
-        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows'], 'No workflow may be added by this commit.');
+        // `create_buyer` is the one addition, made by the Create Buyer slice with its tab rendering
+        // the cascade in the same change — the ordering that
+        // every_configured_workflow_already_renders_the_cascade above enforces directly. No Seller
+        // or Landlord key was added, which is what this suite exists to guarantee.
+        $this->assertSame(
+            ['hire_buyer', 'create_buyer'],
+            $config['geography_cascade_workflows'],
+            'Only Buyer-family workflows may appear in the shipped scope.'
+        );
         $this->assertSame('eloquent', $config['geography_source'], 'The source default must stay eloquent.');
     }
 }

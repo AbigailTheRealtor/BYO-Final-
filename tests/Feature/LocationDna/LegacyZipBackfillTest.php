@@ -488,12 +488,21 @@ class LegacyZipBackfillTest extends TestCase
         $this->assertFalse($host->geoCascadeEnabled);
     }
 
-    /** This suite must not have moved the shipped configuration. */
+    /**
+     * This suite must not have moved the shipped configuration.
+     *
+     * `create_buyer` is present because the Create Buyer slice added it. It is irrelevant to this
+     * suite's subject: the Buyer family writes no `zipCodes` mirror and declares no `$zipCodes`
+     * property, so no backfill behaviour is reachable through it. The entries this suite cares
+     * about are the ZIP-mirroring ones, and neither `hire_tenant` nor `create_tenant` is listed.
+     */
     /** @test */
-    public function the_shipped_workflow_scope_is_still_buyer_only(): void
+    public function the_shipped_workflow_scope_adds_no_zip_mirroring_workflow(): void
     {
         $config = require base_path('config/criteria_location_dna.php');
 
-        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
+        $this->assertSame(['hire_buyer', 'create_buyer'], $config['geography_cascade_workflows']);
+        $this->assertNotContains('hire_tenant', $config['geography_cascade_workflows']);
+        $this->assertNotContains('create_tenant', $config['geography_cascade_workflows']);
     }
 }

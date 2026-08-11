@@ -742,21 +742,44 @@ class HireBuyerGeographySearchTest extends TestCase
         }
 
         // The gate that keeps the claim inert. This is the line that moves in step 5.
+        //
+        // It moved for `create_buyer`, which is a different workflow family from the catch-all map
+        // asserted above: the map here belongs to the HIRE components and still claims only
+        // `hire_buyer` and `hire_tenant`. Create Buyer's key comes from the Offer components' own
+        // map, so nothing above is weakened by this entry.
         $config = require base_path('config/criteria_location_dna.php');
-        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
+        $this->assertSame(['hire_buyer', 'create_buyer'], $config['geography_cascade_workflows']);
     }
 
-    /** Seller, Landlord and the Offer components remain untouched by the search rollout. */
+    /**
+     * Seller, Landlord and the still-unwired Offer components remain untouched by the search
+     * rollout.
+     *
+     * TWO DIFFERENT CLAIMS LIVE IN THIS LIST, AND ONLY ONE OF THEM IS PERMANENT
+     * -------------------------------------------------------------------------
+     * For Seller and Landlord it is a STRUCTURAL guarantee: those workflows have no geography
+     * surface, so search must never reach them and these four entries never leave this list.
+     *
+     * For the Offer components it was only ever a statement of ROLLOUT SCOPE at the time search
+     * shipped. `BuyerOfferListing` has since been wired deliberately — it carries both traits, its
+     * tab renders the cascade, and `create_buyer` is in the scope list — so asserting its absence
+     * would now be asserting that an approved slice had not happened.
+     *
+     * `TenantOfferListing` stays listed, and that is the entry doing real work: Create Tenant is
+     * NOT wired, because its legacy `zipCodes` meta never reaches the Location DNA blob on its load
+     * path. Until that normalization lands, a cascade there would hydrate empty and overwrite a
+     * populated field. This line is what keeps that from being wired by accident.
+     */
     /** @test */
-    public function no_seller_landlord_or_offer_component_carries_the_search_trait(): void
+    public function no_seller_landlord_or_unwired_offer_component_carries_the_search_trait(): void
     {
         foreach ([
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
-            'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
             'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         ] as $relative) {
             if (! file_exists(base_path($relative))) {
                 continue;

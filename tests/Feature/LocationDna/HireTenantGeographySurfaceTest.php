@@ -269,7 +269,11 @@ class HireTenantGeographySurfaceTest extends TestCase
     {
         $config = require base_path('config/criteria_location_dna.php');
 
-        $this->assertSame(['hire_buyer'], $config['geography_cascade_workflows']);
+        // `create_buyer` was added by the Create Buyer slice. What this test is actually guarding —
+        // that HIRE TENANT is still absent from the shipped scope — is unchanged and is the
+        // assertion that matters here.
+        $this->assertSame(['hire_buyer', 'create_buyer'], $config['geography_cascade_workflows']);
+        $this->assertNotContains('hire_tenant', $config['geography_cascade_workflows']);
         $this->assertFalse($config['geography_search_enabled']);
     }
 
