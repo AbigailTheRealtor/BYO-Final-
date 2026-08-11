@@ -150,6 +150,250 @@
 @section('content')
     @php
         $auth_id = auth()->user() ? auth()->user()->id : 0;
+
+        /*
+         | M7 Phase 3 — the buyer view becomes a real consumer of the detail redesign flag.
+         |
+         | Phases 1 and 2 built the redesign branch — the hoisted guards, and the Financing Details
+         | and Representation Preferences section cards — and every one of those sites gates on
+         | `$byaDetailRedesign ?? false`. Nothing assigned it, so the coalesce answered false every
+         | time and the whole branch was unreachable: migrated, reviewed, and dead. This line is the
+         | wiring that makes it reachable, and it is the ONLY thing this step changes.
+         |
+         | THE ROLE IS PASSED, NOT TESTED, exactly as the landlord view states it. There is no
+         | equality check against a role name here and no second opinion about rollout scope — the
+         | `redesign_roles` allowlist in config remains the only thing that grants a role the
+         | redesign, and it ships as `landlord` alone. Adding this line therefore turns nothing on;
+         | it makes buyer capable of being turned on by a config change rather than a code change.
+         |
+         | enabledFor(), NEVER enabled(). The master switch alone would let the page body render
+         | redesign markup while the shared shell — which gates on enabledFor($role) — withheld the
+         | stylesheet that lays it out. That disagreement is the M7.1 failure the landlord view's
+         | note records, and HireAgentDetailRedesignFlagTest asserts at source that no view repeats
+         | it. The `?? false` at the nine consuming sites is left as written: it is now redundant
+         | rather than load-bearing, and rewriting nine lines to prove that is churn this step
+         | should not carry.
+         */
+        $byaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('buyer');
+
+        /*
+         | M7 Phase 1 — the section guards, hoisted, and why they are here rather than beside the
+         | sections they describe.
+         |
+         | The section navigation is emitted near the TOP of the main column and the sections it
+         | points at are built hundreds of lines below it. Blade runs top to bottom, so a value
+         | computed beside its section is not available to the nav — which is how a nav entry and
+         | its section end up disagreeing about whether the section exists. Landlord's M7.2/M7.4
+         | notes state the rule these follow: the nav and the section must agree BY CONSTRUCTION,
+         | reading one value, rather than by two authors remembering to.
+         |
+         | NOTHING APPLIES THEM YET. Phase 1 only establishes the values; the nav array and the
+         | section conditions arrive with the decomposition. Both booleans are therefore computed
+         | and unused, deliberately, and flag-off rendering is unchanged because a value nothing
+         | reads cannot change a page.
+         |
+         | EACH LIST IS THE SECTION'S WHOLE FIELD SET, NOT A SAMPLE. That is the condition that
+         | makes hiding safe: an incomplete list would hide a card that still had a row in it.
+         */
+
+        /*
+         | Broker Compensation. The expression is the one that already lived beside the section,
+         | moved here verbatim; the site below now reads this value so there is one source of truth.
+         |
+         | ON AUTH: DATA-ONLY, DECIDED. This boolean answers "does the data exist" and deliberately
+         | does NOT include Auth::check(), so it matches the condition the heading already uses and
+         | introduces no access-control change as part of the redesign. Landlord differs — its nav
+         | entry is `Auth::check() && $hasLandlordBrokerCompData` because its section is auth-gated
+         | whole — and buyer is intentionally not being made to match.
+         |
+         | The consequence is worth stating rather than discovering: buyer's rows live inside an auth
+         | block further down, so for an anonymous viewer this boolean can be TRUE while the section
+         | body renders nothing. Today that surfaces as a bare heading; under the redesign it would
+         | be an empty card. That is existing behaviour preserved, not a defect introduced here.
+         |
+         | COVERAGE AUDITED, AND THE ANSWER IS THAT THE ELEVEN ARE ALREADY COMPLETE. The section
+         | renders fourteen rows and reads thirty-four meta keys, so the eleven tests below look far
+         | too few. Every row was mapped to what actually makes it render:
+         |
+         |   · Nine rows read a listed key directly (commission_structure, interested_lease_option,
+         |     interested_lease_option_agreement, protection_period, early_termination_fee_option,
+         |     retainer_fee_option, agency_agreement_timeframe, brokerage_relationship,
+         |     additional_details_broker).
+         |   · Two fee rows read $purchaseFeeCombined / $leaseFeeCombined. Both strings initialise to
+         |     an em dash and are only replaced when `purchase_fee_type` / `lease_fee_type` is set —
+         |     both listed.
+         |   · "Retainer Fee Application" is nested under `retainer_fee_option` in ['yes'] — listed.
+         |   · The two lease-option compensation rows read `lease_value` / `purchase_value`, which
+         |     are NOT listed, and that looked like the gap. It is not: both sit inside
+         |     `@if (interested_lease_option_agreement === 'Yes')`, which IS listed, so neither row
+         |     can render while all eleven tests are false.
+         |
+         | ADDING `lease_value` / `purchase_value` HERE WAS TRIED AND REVERTED. A probe rendering a
+         | listing with only those keys set produced no row at all, proving they cannot trigger
+         | content on their own — so listing them made this boolean true where nothing renders, and
+         | because it also gates the legacy heading it would have put a heading above an empty
+         | section. Over-reporting is a real cost, not a safe default.
+         |
+         | The remaining twenty-odd keys are VALUES displayed inside a row whose existence one of the
+         | eleven already covers, which is why the list is shorter than the key count.
+         */
+        $byaHasBrokerCompData =
+            !empty(@$auction->get->commission_structure) ||
+            !empty(@$auction->get->purchase_fee_type) ||
+            !empty(@$auction->get->interested_lease_option) ||
+            !empty(@$auction->get->lease_fee_type) ||
+            !empty(@$auction->get->interested_lease_option_agreement) ||
+            !empty(@$auction->get->protection_period) ||
+            !empty(@$auction->get->early_termination_fee_option) ||
+            !empty(@$auction->get->retainer_fee_option) ||
+            !empty(@$auction->get->agency_agreement_timeframe) ||
+            !empty(@$auction->get->brokerage_relationship) ||
+            !empty(@$auction->get->additional_details_broker);
+
+        /*
+         | Owner / Buyer's Info. Unconditional today — heading and rows render for every viewer,
+         | including an anonymous one — which was survivable while it was a trailing sub-heading and
+         | is not once it becomes the LAST CARD on the page. Landlord's M7.4 note records the same
+         | reasoning for the same section.
+         |
+         | FIVE FIELDS, AND EACH TEST MIRRORS THE ROW'S OWN GUARD rather than being normalised.
+         | `photo` is isset() because the img row is isset() — a filename is a filename and the
+         | placeholder rules do not apply to it; landlord records this same exception. Using a
+         | uniform helper here would disagree with the rows for exactly one field, which is the
+         | kind of near-miss that hides a card that still has content in it.
+         |
+         | The photo test carries NO `@` suppression, unlike every other test here, because it
+         | cannot: isset() takes a variable and `@expr` is an expression, so `isset(@$x)` is a
+         | fatal parse error rather than a lenient read. The img row's own guard is written the
+         | same way for the same reason, so mirroring it is also what makes this parse.
+         |
+         | `current_status` has no landlord counterpart; it is buyer's own row and is included
+         | because the list has to be complete to be safe.
+         |
+         | The commented-out `isset($auction->get->video)` block above the live video row is dead
+         | markup and is deliberately NOT counted — it renders nothing in either flag state.
+         */
+        $byaHasOwnerInfo =
+            !empty(@$auction->get->first_name) ||
+            !empty(@$auction->get->current_status) ||
+            !empty(@$auction->get->video) ||
+            isset($auction->get->photo) ||
+            !empty(@$auction->get->video_link);
+
+        /*
+         | THE BUILDERS BELOW ARE HOISTED, NOT COPIED. Each block moved here verbatim from beside
+         | the section that used it, under the SAME variable names, and the block it came from is
+         | gone — so the deep conditions that read these names now read the one definition rather
+         | than a second opinion. Re-deriving a lighter test up here was tried and rejected: two
+         | expressions answering one question is exactly the drift the landlord notes warn about.
+         |
+         | They are safe to run this early because every input is a read of `$auction->get` or
+         | `$auction->info` — none of them depends on a value computed further down the page, which
+         | is what made a verbatim move possible rather than a rewrite.
+         |
+         | Order matters within the financing block only: $financingArray is built first because the
+         | $hasAnyFinancingDetails test intersects it.
+         */
+
+        /* Required Property or Business Assets — was immediately after the Property Preferences row. */
+        $buyerHasAssets = !empty(@$auction->get->assets) && count((array) @$auction->get->assets) > 0;
+        $buyerHasRealEstate = !empty(@$auction->get->real_estate_purchase);
+        $buyerHasMetrics = !empty(@$auction->get->property_criteria)
+            || !empty(@$auction->get->unit_size)
+            || (!empty(@$auction->get->number_of_unit_type) && count((array) @$auction->get->number_of_unit_type) > 0)
+            || !empty(@$auction->get->minimum_annual_net_income)
+            || !empty(@$auction->get->minimum_cap_rate)
+            || !empty(@$auction->get->preferance_details);
+
+        /* Financing Details — was inside the Purchasing Terms region. $financingArray and the seven
+           per-type flags are also read by conditions much further down (the grouped displays), so
+           they are hoisted whole rather than reduced to the one boolean the nav needs. */
+        // Prepare financing items array for conditional checks
+        $financingForChecks = @$auction->get->offered_financing;
+        $_fDecoded = is_string($financingForChecks) ? json_decode($financingForChecks, true) : $financingForChecks;
+        // Ensure always an array regardless of JSON encoding (string vs array)
+        if (is_array($_fDecoded)) {
+            $financingArray = $_fDecoded;
+        } elseif (is_null($_fDecoded) || $_fDecoded === false) {
+            $financingArray = is_string($financingForChecks) && !empty($financingForChecks) ? [$financingForChecks] : [];
+        } else {
+            $financingArray = [$_fDecoded]; // scalar (string decoded from JSON string)
+        }
+
+        // Check if each financing type has data for grouped display
+        $hasSellerFinancingData = !empty(@$auction->get->purchase_price) || !empty(@$auction->get->down_payment_amount) || !empty(@$auction->get->seller_financing_amount) || !empty(@$auction->get->interest_rate) || !empty(@$auction->get->loan_duration) || !empty(@$auction->get->seller_amortization_type) || !empty(@$auction->get->seller_payment_frequency) || !empty(@$auction->get->seller_late_fee_amount) || !empty(@$auction->get->balloon_payment) || !empty(@$auction->get->balloon_payment_amount) || !empty(@$auction->get->balloon_payment_date) || !empty(@$auction->get->prepayment_penalty) || !empty(@$auction->get->prepayment_penalty_amount);
+
+        $hasAssumableData = !empty(@$auction->get->assumable_interest) || !empty(@$auction->get->assumable_max_interest_rate) || !empty(@$auction->get->assumable_max_monthly_payment) || !empty(@$auction->get->assumable_bridge_gap_cash);
+
+        $hasExchangeData = !empty(@$auction->get->exchange_item) || !empty(@$auction->get->exchange_item_value) || !empty(@$auction->get->exchange_item_condition) || !empty(@$auction->get->additional_cash) || !empty(@$auction->get->value_determination) || !empty(@$auction->get->exchange_transfer_method) || !empty(@$auction->get->exchange_liens) || !empty(@$auction->get->exchange_inspection_rights);
+
+        $hasLeaseOptionData = !empty(@$auction->get->lease_option_price) || !empty(@$auction->get->lease_option_terms) || !empty(@$auction->get->lease_option_duration) || !empty(@$auction->get->lease_option_payment) || !empty(@$auction->get->lease_option_conditions) || !empty(@$auction->get->has_option_fee) || !empty(@$auction->get->option_fee_amount) || !empty(@$auction->get->lease_option_fee_credit) || !empty(@$auction->get->lease_option_fee_credit_percentage) || !empty(@$auction->get->lease_option_maintenance) || !empty(@$auction->get->lease_option_extension_terms);
+
+        $hasLeasePurchaseData = !empty(@$auction->get->lease_purchase_price) || !empty(@$auction->get->lease_purchase_terms) || !empty(@$auction->get->lease_purchase_duration) || !empty(@$auction->get->lease_purchase_payment) || !empty(@$auction->get->lease_purchase_conditions) || !empty(@$auction->get->lease_purchase_option_fee) || !empty(@$auction->get->lease_purchase_option_fee_amount) || !empty(@$auction->get->lease_purchase_maintenance) || !empty(@$auction->get->lease_purchase_extension_terms) || !empty(@$auction->get->lease_purchase_rent_credit) || !empty(@$auction->get->lease_purchase_rent_credit_amount) || !empty(@$auction->get->lease_purchase_deposit);
+
+        $hasCryptoData = !empty(@$auction->get->cryptocurrency_type) || !empty(@$auction->get->crypto_percentage) || !empty(@$auction->get->cash_percentage_crypto) || !empty(@$auction->get->crypto_exchange_method) || !empty(@$auction->get->crypto_custodian_wallet) || !empty(@$auction->get->crypto_transaction_fees) || !empty(@$auction->get->crypto_transfer_timing);
+
+        $hasNftData = !empty(@$auction->get->nft_description) || !empty(@$auction->get->nft_percentage) || !empty(@$auction->get->cash_percentage_nft) || !empty(@$auction->get->nft_valuation_method) || !empty(@$auction->get->nft_transfer_method) || !empty(@$auction->get->nft_gas_fees);
+
+        // Check if any financing details section should be shown
+        $hasAnyFinancingDetails =
+            (in_array('Seller Financing', $financingArray) && $hasSellerFinancingData) ||
+            (in_array('Assumable', $financingArray) && $hasAssumableData) ||
+            (in_array('Exchange/Trade', $financingArray) && $hasExchangeData) ||
+            (in_array('Lease Option', $financingArray) && $hasLeaseOptionData) ||
+            (in_array('Lease Purchase', $financingArray) && $hasLeasePurchaseData) ||
+            (in_array('Cryptocurrency', $financingArray) && $hasCryptoData) ||
+            (in_array('Non-Fungible Token (NFT)', $financingArray) && $hasNftData) ||
+            (in_array('Cash', $financingArray) && @$auction->get->cash_budget) ||
+            (count(array_intersect($financingArray, ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'])) > 0 && (@$auction->get->pre_approved || @$auction->get->pre_approval_amount));
+
+        /* C9: Representation Preferences & Compatibility display (public; parity with tenant hire view).
+
+           Hoisted whole — the closures, the accumulator and all fourteen repAdd calls — rather than
+           reduced to a boolean. $repRows IS the value three separate things need: whether the nav
+           offers an entry, whether the section renders, and what rows it renders. Deriving a
+           lighter "does it have anything" test up here would have made the first two read one
+           expression and the third read another, which is the drift this hoist exists to remove.
+           `!empty($repRows)` is therefore the guard, and the rows are the same array. */
+        $rawCompatView = $auction->info('compatibility_preferences');
+        $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+            ? (json_decode($rawCompatView, true) ?? [])
+            : [];
+        $bsView = $compatView['buyer_specific'] ?? [];
+
+        $repResolve = function(string $val, string $otherVal): string {
+            return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
+        };
+        $repResolveArr = function(array $vals, string $otherVal): array {
+            return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+            }, $vals)));
+        };
+        $repRows = [];
+        $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
+            if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+            $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+            if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
+        };
+
+        // Phase 5/6 QA Follow-up (Buyer Rep & Compatibility): full listing
+        // parity — every captured field renders here when populated, with
+        // "Other" custom values resolved for Primary Transaction Goal,
+        // Representation Priorities and Preferred Agent Working Style.
+        $repAdd('Primary Transaction Goal', $bsView['primary_transaction_goal'] ?? '', $bsView['primary_transaction_goal_other'] ?? '');
+        $repAdd('Representation Priorities', $bsView['representation_priorities'] ?? [], $bsView['representation_priorities_other'] ?? '');
+        $repAdd('Risk Tolerance Level', $bsView['risk_tolerance'] ?? '', '');
+        $repAdd('Decision-Making Style', $bsView['decision_making_style'] ?? '', '');
+        $repAdd('Timeline Flexibility', $bsView['timeline_flexibility'] ?? '', '');
+        $repAdd('Communication Style', $bsView['communication_style'] ?? '', '');
+        $repAdd('Preferred Contact Method', $bsView['preferred_contact_method'] ?? '', '');
+        $repAdd('Availability / Best Times to Reach You', $bsView['availability_windows'] ?? '', '');
+        $repAdd('Meeting / Showing Preference', $bsView['communication_frequency'] ?? '', '');
+        $repAdd('Negotiation Style', $bsView['negotiation_style'] ?? '', '');
+        $repAdd('Preferred Agent Working Style', $bsView['preferred_agent_working_style'] ?? '', $bsView['preferred_agent_working_style_other'] ?? '');
+        $repAdd('Expected Level of Agent Support', $bsView['support_level'] ?? '', '');
+        $repAdd('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
+        $repAdd('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
     @endphp
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
@@ -583,16 +827,10 @@
 
                         </div>{{-- end Property Preferences row --}}
 
-                        @php
-                            $buyerHasAssets = !empty(@$auction->get->assets) && count((array) @$auction->get->assets) > 0;
-                            $buyerHasRealEstate = !empty(@$auction->get->real_estate_purchase);
-                            $buyerHasMetrics = !empty(@$auction->get->property_criteria)
-                                || !empty(@$auction->get->unit_size)
-                                || (!empty(@$auction->get->number_of_unit_type) && count((array) @$auction->get->number_of_unit_type) > 0)
-                                || !empty(@$auction->get->minimum_annual_net_income)
-                                || !empty(@$auction->get->minimum_cap_rate)
-                                || !empty(@$auction->get->preferance_details);
-                        @endphp
+                        {{-- M7 Phase 2 — $buyerHasAssets / $buyerHasRealEstate / $buyerHasMetrics are
+                             hoisted to the block at the top of this section so the nav reads the same
+                             values these conditions do. The definitions moved verbatim; see the note
+                             there. --}}
 
                         @if ($buyerHasAssets || $buyerHasRealEstate)
                         <hr>
@@ -752,52 +990,50 @@
                                 </div>
                             @endif
 
-                            @php
-                                // Prepare financing items array for conditional checks
-                                $financingForChecks = @$auction->get->offered_financing;
-                                $_fDecoded = is_string($financingForChecks) ? json_decode($financingForChecks, true) : $financingForChecks;
-                                // Ensure always an array regardless of JSON encoding (string vs array)
-                                if (is_array($_fDecoded)) {
-                                    $financingArray = $_fDecoded;
-                                } elseif (is_null($_fDecoded) || $_fDecoded === false) {
-                                    $financingArray = is_string($financingForChecks) && !empty($financingForChecks) ? [$financingForChecks] : [];
-                                } else {
-                                    $financingArray = [$_fDecoded]; // scalar (string decoded from JSON string)
-                                }
-                                
-                                // Check if each financing type has data for grouped display
-                                $hasSellerFinancingData = !empty(@$auction->get->purchase_price) || !empty(@$auction->get->down_payment_amount) || !empty(@$auction->get->seller_financing_amount) || !empty(@$auction->get->interest_rate) || !empty(@$auction->get->loan_duration) || !empty(@$auction->get->seller_amortization_type) || !empty(@$auction->get->seller_payment_frequency) || !empty(@$auction->get->seller_late_fee_amount) || !empty(@$auction->get->balloon_payment) || !empty(@$auction->get->balloon_payment_amount) || !empty(@$auction->get->balloon_payment_date) || !empty(@$auction->get->prepayment_penalty) || !empty(@$auction->get->prepayment_penalty_amount);
-                                
-                                $hasAssumableData = !empty(@$auction->get->assumable_interest) || !empty(@$auction->get->assumable_max_interest_rate) || !empty(@$auction->get->assumable_max_monthly_payment) || !empty(@$auction->get->assumable_bridge_gap_cash);
-                                
-                                $hasExchangeData = !empty(@$auction->get->exchange_item) || !empty(@$auction->get->exchange_item_value) || !empty(@$auction->get->exchange_item_condition) || !empty(@$auction->get->additional_cash) || !empty(@$auction->get->value_determination) || !empty(@$auction->get->exchange_transfer_method) || !empty(@$auction->get->exchange_liens) || !empty(@$auction->get->exchange_inspection_rights);
-                                
-                                $hasLeaseOptionData = !empty(@$auction->get->lease_option_price) || !empty(@$auction->get->lease_option_terms) || !empty(@$auction->get->lease_option_duration) || !empty(@$auction->get->lease_option_payment) || !empty(@$auction->get->lease_option_conditions) || !empty(@$auction->get->has_option_fee) || !empty(@$auction->get->option_fee_amount) || !empty(@$auction->get->lease_option_fee_credit) || !empty(@$auction->get->lease_option_fee_credit_percentage) || !empty(@$auction->get->lease_option_maintenance) || !empty(@$auction->get->lease_option_extension_terms);
-                                
-                                $hasLeasePurchaseData = !empty(@$auction->get->lease_purchase_price) || !empty(@$auction->get->lease_purchase_terms) || !empty(@$auction->get->lease_purchase_duration) || !empty(@$auction->get->lease_purchase_payment) || !empty(@$auction->get->lease_purchase_conditions) || !empty(@$auction->get->lease_purchase_option_fee) || !empty(@$auction->get->lease_purchase_option_fee_amount) || !empty(@$auction->get->lease_purchase_maintenance) || !empty(@$auction->get->lease_purchase_extension_terms) || !empty(@$auction->get->lease_purchase_rent_credit) || !empty(@$auction->get->lease_purchase_rent_credit_amount) || !empty(@$auction->get->lease_purchase_deposit);
-                                
-                                $hasCryptoData = !empty(@$auction->get->cryptocurrency_type) || !empty(@$auction->get->crypto_percentage) || !empty(@$auction->get->cash_percentage_crypto) || !empty(@$auction->get->crypto_exchange_method) || !empty(@$auction->get->crypto_custodian_wallet) || !empty(@$auction->get->crypto_transaction_fees) || !empty(@$auction->get->crypto_transfer_timing);
-                                
-                                $hasNftData = !empty(@$auction->get->nft_description) || !empty(@$auction->get->nft_percentage) || !empty(@$auction->get->cash_percentage_nft) || !empty(@$auction->get->nft_valuation_method) || !empty(@$auction->get->nft_transfer_method) || !empty(@$auction->get->nft_gas_fees);
-                                
-                                // Check if any financing details section should be shown
-                                $hasAnyFinancingDetails = 
-                                    (in_array('Seller Financing', $financingArray) && $hasSellerFinancingData) ||
-                                    (in_array('Assumable', $financingArray) && $hasAssumableData) ||
-                                    (in_array('Exchange/Trade', $financingArray) && $hasExchangeData) ||
-                                    (in_array('Lease Option', $financingArray) && $hasLeaseOptionData) ||
-                                    (in_array('Lease Purchase', $financingArray) && $hasLeasePurchaseData) ||
-                                    (in_array('Cryptocurrency', $financingArray) && $hasCryptoData) ||
-                                    (in_array('Non-Fungible Token (NFT)', $financingArray) && $hasNftData) ||
-                                    (in_array('Cash', $financingArray) && @$auction->get->cash_budget) ||
-                                    (count(array_intersect($financingArray, ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'])) > 0 && (@$auction->get->pre_approved || @$auction->get->pre_approval_amount));
-                            @endphp
+                            {{-- M7 Phase 2 — the financing array and the seven per-type data flags are
+                                 hoisted to the block at the top of this section, because the nav needs
+                                 $hasAnyFinancingDetails and the grouped displays further down need the
+                                 individual flags. Definitions moved verbatim; see the note there. --}}
 
+{{-- M7 Phase 2 — Financing Details becomes a section card.
+
+     THE CONDITION IS THE SECTION'S OWN, UNCHANGED, and it has two clauses for a reason the audit
+     measured: $hasAnyFinancingDetails alone does NOT cover everything this section renders. Two
+     pieces escape it — the "Offered Financing/Currency" row, which triggers on `offered_financing`
+     alone, and the loan-type sub-heading, which triggers on $hasAnyLoanType while the boolean's loan
+     clause additionally demands pre_approved or pre_approval_amount. Gating the card on the boolean
+     alone would hide both. The second clause covers them, and in fact subsumes the first: every
+     clause of $hasAnyFinancingDetails needs $financingArray to be non-empty, and $financingArray is
+     derived solely from `offered_financing`. The `||` is kept rather than reduced because the two
+     clauses mean different things — "has substantive detail" versus "named a financing type" — and
+     collapsing them would throw away a distinction a later nav decision may want.
+
+     THE NAV MUST USE THIS SAME EXPRESSION. Reading only $hasAnyFinancingDetails would omit an entry
+     for a section that renders, which is the both-directions invariant HireAgentSectionNavTest
+     enforces. Both operands are available before the nav: the boolean is hoisted to the top block
+     and `offered_financing` is a direct meta read.
+
+     NO EMPTY CARD IS REACHABLE. Whenever either clause is true, `offered_financing` is set, and the
+     "Offered Financing/Currency" row renders unconditionally on it — so the card always has at
+     least one row. Verified by rendering every financing type in isolation.
+
+     $hasAnyLoanType / $selectedLoanTypes STAY WHERE THEY ARE, at their original site below. Nothing
+     here needs hoisting: the first is subsumed by the second clause above, and the second is a
+     DISPLAY value — it prints as the loan-type sub-heading's text — so it belongs beside the markup
+     that renders it rather than in the preparation block. That is the difference from $repRows,
+     which had to move because the nav needs the row set itself. --}}
+@if (! ($byaDetailRedesign ?? false) || $hasAnyFinancingDetails || @$auction->get->offered_financing != null)
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-financing" title="Financing Details:" icon="fa-solid fa-file-contract">
                             @if($hasAnyFinancingDetails || @$auction->get->offered_financing != null)
+                            {{-- The legacy heading, and the `col-12` wrapper that is unique to this
+                                 section's header. Suppressed under the redesign, where the card
+                                 title supplies the heading — emitting both would show it twice. --}}
+                            @if (! ($byaDetailRedesign ?? false))
                                 <hr>
                                 <div class="col-12">
                                     <x-viho.section-header title="Financing Details:" tag="h4" />
                                 </div>
+                            @endif
                             @endif
 
                             <!-- Offered Financing/Currency - Now inside Financing Details section -->
@@ -1397,6 +1633,12 @@
                                     </div>
                                 @endif
                             @endif
+{{-- End of the Financing Details section. The nine financing sub-headings above stay h6
+     sub-headings INSIDE this one card rather than becoming cards of their own: they are divisions
+     within a single subject, and landlord's decomposition kept its eleven compensation sub-headings
+     the same way. --}}
+</x-hire-agent.detail-section>
+@endif
 
 
 
@@ -1516,54 +1758,23 @@
                             </div>
                         @endif
 
-                        {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
-                        @php
-                            $rawCompatView = $auction->info('compatibility_preferences');
-                            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
-                                ? (json_decode($rawCompatView, true) ?? [])
-                                : [];
-                            $bsView = $compatView['buyer_specific'] ?? [];
+                        {{-- C9: Representation Preferences & Compatibility display (public; parity with
+                             tenant hire view). The builder — closures, accumulator and all fourteen
+                             repAdd calls — is hoisted to the block at the top of this section so the
+                             nav, this section's condition and these rows all read the one $repRows.
+                             It moved verbatim; see the note there. --}}
 
-                            $repResolve = function(string $val, string $otherVal): string {
-                                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
-                            };
-                            $repResolveArr = function(array $vals, string $otherVal): array {
-                                return array_values(array_filter(array_map(function($v) use ($otherVal) {
-                                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
-                                }, $vals)));
-                            };
-                            $repRows = [];
-                            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
-                                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
-                                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
-                                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
-                            };
-
-                            // Phase 5/6 QA Follow-up (Buyer Rep & Compatibility): full listing
-                            // parity — every captured field renders here when populated, with
-                            // "Other" custom values resolved for Primary Transaction Goal,
-                            // Representation Priorities and Preferred Agent Working Style.
-                            $repAdd('Primary Transaction Goal', $bsView['primary_transaction_goal'] ?? '', $bsView['primary_transaction_goal_other'] ?? '');
-                            $repAdd('Representation Priorities', $bsView['representation_priorities'] ?? [], $bsView['representation_priorities_other'] ?? '');
-                            $repAdd('Risk Tolerance Level', $bsView['risk_tolerance'] ?? '', '');
-                            $repAdd('Decision-Making Style', $bsView['decision_making_style'] ?? '', '');
-                            $repAdd('Timeline Flexibility', $bsView['timeline_flexibility'] ?? '', '');
-                            $repAdd('Communication Style', $bsView['communication_style'] ?? '', '');
-                            $repAdd('Preferred Contact Method', $bsView['preferred_contact_method'] ?? '', '');
-                            $repAdd('Availability / Best Times to Reach You', $bsView['availability_windows'] ?? '', '');
-                            $repAdd('Meeting / Showing Preference', $bsView['communication_frequency'] ?? '', '');
-                            $repAdd('Negotiation Style', $bsView['negotiation_style'] ?? '', '');
-                            $repAdd('Preferred Agent Working Style', $bsView['preferred_agent_working_style'] ?? '', $bsView['preferred_agent_working_style_other'] ?? '');
-                            $repAdd('Expected Level of Agent Support', $bsView['support_level'] ?? '', '');
-                            $repAdd('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
-                            $repAdd('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
-                        @endphp
-
+{{-- $repRows is the single source of truth for all three consumers: nav visibility, section
+     visibility and the rendered rows. There is no derived boolean beside it to drift from. --}}
+@if (! ($byaDetailRedesign ?? false) || !empty($repRows))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
                         @if (!empty($repRows))
-                        <hr />
+@if (! ($byaDetailRedesign ?? false))                        <hr />
+@endif
                         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
                              rendered text is unchanged. Passing &amp; here would double-escape it. --}}
-                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
+@if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
+@endif
                         @foreach ($repRows as $repRow)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             {{ $repRow['label'] }}:
@@ -1571,20 +1782,15 @@
                         </div>
                         @endforeach
                         @endif
+</x-hire-agent.detail-section>
+@endif
 
                         @php
-                            $hasBrokerCompData =
-                                !empty(@$auction->get->commission_structure) ||
-                                !empty(@$auction->get->purchase_fee_type) ||
-                                !empty(@$auction->get->interested_lease_option) ||
-                                !empty(@$auction->get->lease_fee_type) ||
-                                !empty(@$auction->get->interested_lease_option_agreement) ||
-                                !empty(@$auction->get->protection_period) ||
-                                !empty(@$auction->get->early_termination_fee_option) ||
-                                !empty(@$auction->get->retainer_fee_option) ||
-                                !empty(@$auction->get->agency_agreement_timeframe) ||
-                                !empty(@$auction->get->brokerage_relationship) ||
-                                !empty(@$auction->get->additional_details_broker);
+                            // M7 Phase 1 — hoisted to the block at the top of this section, where
+                            // the nav can also read it. The expression moved verbatim; this
+                            // assignment keeps the name the condition below already uses, so the
+                            // section's own guard is untouched and there is one source of truth.
+                            $hasBrokerCompData = $byaHasBrokerCompData;
                         @endphp
                         @if ($hasBrokerCompData)
                         <hr />
