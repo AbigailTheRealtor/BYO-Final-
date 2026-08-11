@@ -771,15 +771,23 @@ class HireBuyerGeographySearchTest extends TestCase
      * populated field. This line is what keeps that from being wired by accident.
      */
     /** @test */
-    public function no_seller_landlord_or_unwired_offer_component_carries_the_search_trait(): void
+    public function no_seller_or_landlord_component_carries_the_search_trait(): void
     {
         foreach ([
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
-            'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+            // The Tenant Offer components were listed here while Create Tenant was unwired. T2
+            // wired them deliberately — they carry both traits, resolve `create_tenant` for the
+            // tenant role only, and stay gated by config — so asserting their absence would now
+            // assert that an approved step had not happened. Their exclusion rules are asserted
+            // where they belong, in CreateTenantGeographyWiringTest.
+            //
+            // WHAT REMAINS IS THE PERMANENT CLAIM. Seller and Landlord have no geography surface at
+            // all, so search must never reach them, and these four entries never leave this list.
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php',
         ] as $relative) {
             if (! file_exists(base_path($relative))) {
                 continue;

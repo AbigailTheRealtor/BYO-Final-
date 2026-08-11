@@ -534,31 +534,58 @@ class CreateTenantLegacyGeographyBackfillTest extends TestCase
     // 5 · NOTHING WAS ENABLED
     // ═════════════════════════════════════════════════════════════════════════
 
-    /** T1 is a precondition, not the wiring. @test */
-    public function create_tenant_is_still_unwired(): void
+    /**
+     * The backfill introduced no coupling to the cascade, and enabled nothing.
+     *
+     * WHAT THIS TEST USED TO ASSERT, AND WHY IT NO LONGER CAN
+     * -------------------------------------------------------
+     * It originally required the two Tenant components to carry neither cascade trait — true while
+     * T1 stood alone, and the point of that assertion was that a PRECONDITION had not quietly
+     * become the WIRING. T2 is the wiring step and adds both traits deliberately, so keeping the
+     * old form would assert that an approved step had not happened.
+     *
+     * What survives is the claim that belongs to T1 specifically: the backfill is a blob-merging
+     * rule that knows nothing about geography selection, and it did not switch anything on. The
+     * wiring's own invariants — role mapping, boot order, gating — are asserted directly by
+     * {@see CreateTenantGeographyWiringTest}, which is where they belong.
+     *
+     * @test
+     */
+    public function the_backfill_introduced_no_cascade_coupling_and_enabled_nothing(): void
     {
-        foreach ([TenantOfferListing::class, TenantOfferListingEdit::class] as $component) {
-            $source = $this->sourceOf($component);
+        $trait = (string) file_get_contents(
+            base_path('app/Http/Livewire/Concerns/HasSearchAreas.php')
+        );
 
-            // The WIRING markers, not the word. T1's own comments name `create_tenant` to explain
-            // what they are a precondition for, so a raw string search would fail on the
-            // documentation rather than on the thing it is meant to catch.
-            $this->assertStringNotContainsString('HasGeographyCascade', $source, $component);
-            $this->assertStringNotContainsString('HasGeographySearch', $source, $component);
+        // The backfill lives in HasSearchAreas and must stay ignorant of the cascade: it merges a
+        // blob, it does not resolve, project or validate a geography selection.
+        //
+        // CODE COUPLING, NOT PROSE. The trait legitimately NAMES the cascade three times in
+        // comments — to explain why the ZIP backfill is a precondition, and why the non-array guard
+        // mirrors the one in applyGeographyCascadeToPayload(). Those cross-references are the point
+        // of the documentation, so a bare string search would forbid exactly the explanation that
+        // makes this file understandable. What must not appear is a `use` of the trait or a read of
+        // any of its state.
+        foreach ([
+            'use \App\Http\Livewire\Concerns\HasGeographyCascade',
+            'use HasGeographyCascade',
+            '$this->geo',                 // geoCascadeEnabled, geoStateId, geoZipCodes, …
+            '$this->geographyProjection',
+            '$this->applyGeographyCascadeToPayload',
+        ] as $marker) {
             $this->assertStringNotContainsString(
-                'function geographyCascadeWorkflow',
-                $source,
-                "{$component}: no workflow map may exist yet"
-            );
-            $this->assertStringNotContainsString(
-                "return \$this->user_type === 'tenant' ? 'create_tenant'",
-                $source,
-                "{$component}: the workflow key must not be claimed yet"
+                $marker,
+                $trait,
+                "HasSearchAreas must not couple to the cascade ({$marker})."
             );
         }
 
+        // And T1 enabled nothing — still true, and still worth asserting from this suite because
+        // the backfill is what makes enabling SAFE, which is exactly when it is tempting to do both
+        // in one step.
         $config = require base_path('config/criteria_location_dna.php');
         $this->assertNotContains('create_tenant', $config['geography_cascade_workflows']);
+        $this->assertFalse($config['geography_cascade_enabled']);
     }
 
     /** The preservation constraints this task was given, asserted rather than assumed. @test */
