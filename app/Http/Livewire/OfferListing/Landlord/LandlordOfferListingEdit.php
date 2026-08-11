@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\OfferListing\Landlord;
 
 use Livewire\Component;
+use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use Livewire\WithFileUploads;
 use App\Models\LandlordAgentAuction as HirelandLordAgentAuction;
 use App\Models\AcceptedBidSummary;
@@ -23,6 +24,8 @@ use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 
 class LandlordOfferListingEdit extends Component
 {
+    use ResolvesPropertyCoordinates;
+
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
@@ -2249,6 +2252,10 @@ class LandlordOfferListingEdit extends Component
 
             if ($dnaShouldFire) {
                 try {
+                    // Resolve the coordinate BEFORE dispatching, so the pipeline's
+                    // pre_lat/pre_lng branch receives it and its provenance (G5).
+                    $this->resolvePropertyCoordinates($auction, 'landlord_agent');
+
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
                     \Log::warning('[LANDLORD DRAFT-EDIT] ComputeLocationDna dispatch or inline execution failed', [
@@ -2315,6 +2322,10 @@ class LandlordOfferListingEdit extends Component
 
             if ($dnaShouldFire) {
                 try {
+                    // Resolve the coordinate BEFORE dispatching, so the pipeline's
+                    // pre_lat/pre_lng branch receives it and its provenance (G5).
+                    $this->resolvePropertyCoordinates($auction, 'landlord_agent');
+
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
                     \Log::warning('[LANDLORD DRAFT] ComputeLocationDna dispatch or inline execution failed', [
@@ -3883,6 +3894,10 @@ class LandlordOfferListingEdit extends Component
 
             if ($dnaShouldFire) {
                 try {
+                    // Resolve the coordinate BEFORE dispatching, so the pipeline's
+                    // pre_lat/pre_lng branch receives it and its provenance (G5).
+                    $this->resolvePropertyCoordinates($auction, 'landlord_agent');
+
                     \App\Jobs\ComputeLocationDna::dispatch('landlord_agent', $this->listingId);
                 } catch (\Throwable $dnaEx) {
                     \Log::warning('[LANDLORD EDIT] ComputeLocationDna dispatch or inline execution failed', [

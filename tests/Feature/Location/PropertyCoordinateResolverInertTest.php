@@ -181,10 +181,44 @@ class PropertyCoordinateResolverInertTest extends TestCase
             $source = file_get_contents($file);
 
             $this->assertIsString($source);
-            $this->assertStringNotContainsString('ComputeLocationDna', $source, basename($file));
-            $this->assertStringNotContainsString('dispatch(', $source, basename($file));
+
+            $code = $this->codeWithoutComments($source);
+
+            $this->assertStringNotContainsString('ComputeLocationDna', $code, basename($file));
+            $this->assertStringNotContainsString('dispatch(', $code, basename($file));
         }
     }
+
+    /**
+     * PHP source with comments removed.
+     *
+     * The dispatch scan has to run against what executes. Scanning raw text
+     * failed on a docblock that explains *why* this namespace must not dispatch
+     * Location DNA work — a check that cannot tell a prohibition from an
+     * instance of the thing prohibited would force the explanation to be deleted
+     * to make it pass.
+     */
+    private function codeWithoutComments(string $source): string
+    {
+        $code = '';
+
+        foreach (token_get_all($source) as $token) {
+            if (is_array($token)) {
+                if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
+                    continue;
+                }
+
+                $code .= $token[1];
+
+                continue;
+            }
+
+            $code .= $token;
+        }
+
+        return $code;
+    }
+
 
     public function test_the_new_namespace_contains_no_outbound_client_construction(): void
     {
