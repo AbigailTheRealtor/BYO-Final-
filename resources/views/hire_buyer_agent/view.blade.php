@@ -145,6 +145,63 @@
             box-shadow: none;
         }
 </style>
+
+{{-- M7 Phase 4 — the product half of the section navigation. Flag-gated, so with the redesign off
+     this page pushes no additional CSS at all.
+
+     THE ROLE-AWARE READER, NOT THE MASTER SWITCH. This block sits above @section('content'), so
+     $byaDetailRedesign does not exist yet and the flag is re-read here rather than threaded down —
+     the landlord view resolves its own style block the same way for the same reason. Reading the
+     master switch instead would declare the offsets for a role the shell has withheld the layout
+     from, which is the M7.1 disagreement in miniature. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('buyer'))
+<style>
+/* THE STICKY OFFSET, SUPPLIED BY THE CONSUMER.
+   x-viho.section-nav declares `position: sticky` and deliberately leaves `top` unset, because the
+   only correct value is the height of whatever fixed chrome the host page puts above the bar —
+   which the primitive cannot know and must not guess. This page is that host, so this page answers.
+
+   The values are landlord's, and they are the same values because the CHROME is the same: both
+   pages render through layouts.main, which has no fixed header above the reading column on desktop
+   and a 104px header bar below the lg breakpoint. They are declared here rather than shared from
+   the framework stylesheet because that file may read --viho tokens and this one declares them;
+   the boundary is the same one M7.1 and M7.2 hit and moved rules across rather than widened.
+
+   TWO VARIABLES, NOT ONE, AND THE ARITHMETIC IS THE REASON. The bar sticks at the height of the
+   chrome above it. A scroll target must clear the chrome AND the bar itself, because the bar is
+   what it is being scrolled underneath. Reusing one value for both leaves the target short by
+   exactly the bar's own height — 0px of clearance on desktop, where the chrome is 0 and the bar is
+   not. Landlord shipped that bug in M7.2 and M7.4 measured it; buyer inherits the fix rather than
+   the bug. */
+:root {
+    --viho-section-nav-offset: 0px;
+
+    /* The bar's own height. Generous on purpose: measured at 46.9px on the landlord page, declared
+       at 3.5rem (56px). Overshooting parks the card a few pixels below the bar, which reads as
+       breathing room; undershooting clips the header, which is the bug this avoids. */
+    --viho-section-nav-height: 3.5rem;
+}
+@media (max-width: 991.98px) {
+    :root {
+        --viho-section-nav-offset: 104px;
+    }
+}
+
+/* The rule that CONSUMES these two is not here and cannot be — it reads --viho tokens, and
+   hire_agent/framework/styles.blade.php is the only product file permitted to. That file already
+   emits `.hla-detail-page [id^="hla-section-"] { scroll-margin-top: … }` for any role the shell
+   resolves the redesign for, so buyer gets it by declaring these and nothing else. */
+
+/* Smooth scrolling is CSS here, not script. The nav emits real hrefs, so the browser performs the
+   scroll itself and honours the reader's motion preference. */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+</style>
+@endif
 @endpush
 
 @section('content')
@@ -195,6 +252,46 @@
          | EACH LIST IS THE SECTION'S WHOLE FIELD SET, NOT A SAMPLE. That is the condition that
          | makes hiding safe: an incomplete list would hide a card that still had a row in it.
          */
+
+        /*
+         | M7 Phase 5 — Listing Details, which became a section by being decomposed.
+         |
+         | It was the WRAPPER card's heading rather than a section of its own, so Phase 4 — which
+         | made the wrapper conditional — left these seven rows with no heading at all in the
+         | redesign branch. Giving them a card gives them their heading back, and it is the last
+         | foundation-level gap the decomposition opened.
+         |
+         | SEVEN TESTS FOR SEVEN ROWS, ONE TO ONE. Each row below the section's own markup is
+         | guarded by `!= null` on exactly one meta key, and each key appears here exactly once.
+         | The correspondence is total in both directions, which is what makes hiding safe: no key
+         | is listed that cannot produce a row (over-reporting would render an empty card), and no
+         | row reads a key that is missing here (under-reporting would hide a card that still has
+         | content in it).
+         |
+         | `!= null` RATHER THAN ListingDisplayHelper::anyHasValue(), AND THE DIFFERENCE IS REAL.
+         | Landlord's equivalent guard uses the helper because landlord's rows are
+         | x-hire-agent.field components, which apply hasValue() themselves — so there the helper
+         | IS the row's own rule, asked one step earlier. Buyer's rows are hand-written `!= null`
+         | checks and have not been migrated to the field component, so the helper would be a
+         | SECOND, stricter opinion here: it rejects placeholder text that `!= null` accepts, and
+         | the two disagreeing is precisely how a card gets hidden while a row inside it renders.
+         | The rule is "mirror the row", not "use the helper", and these two only coincide once the
+         | rows themselves migrate.
+         |
+         | `listing_title` IS INCLUDED even though landlord's M7.3 found its own listing_title meta
+         | to be dead — written to a native column and read here as meta. Whether buyer's is
+         | likewise dead is not established, and it does not matter for safety: the row and this
+         | test read the identical key, so they cannot disagree in either direction. Removing the
+         | row is a content decision and is not this change.
+         */
+        $byaHasListingDetails =
+            @$auction->get->listing_title != null ||
+            @$auction->get->working_with_agent != null ||
+            @$auction->get->desired_agent_hire_date != null ||
+            @$auction->get->listing_date != null ||
+            @$auction->get->expiration_date != null ||
+            @$auction->get->auction_type != null ||
+            @$auction->get->meeting_Preference != null;
 
         /*
          | Broker Compensation. The expression is the one that already lived beside the section,
@@ -394,11 +491,82 @@
         $repAdd('Expected Level of Agent Support', $bsView['support_level'] ?? '', '');
         $repAdd('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
         $repAdd('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
+
+        /*
+         | M7 Phase 4 — SECTION NAVIGATION.
+         |
+         | Built HERE, at the bottom of the preparation block, because both entries read values the
+         | block above computes — $hasAnyFinancingDetails and $repRows — and Blade runs top to
+         | bottom. That ordering is the whole reason Phase 1 hoisted those guards: a value computed
+         | beside its section is not available to a bar rendered hundreds of lines above it.
+         |
+         | EACH ENTRY REPEATS ITS SECTION'S CONDITION CHARACTER FOR CHARACTER. That duplication is
+         | the point, not an oversight: the alternative is a second, looser expression that means
+         | roughly the same thing, and "roughly" is how a nav ends up linking to a section that did
+         | not render. Anything changing a section's visibility must change the matching line here.
+         | The landlord view states the same rule at its own nav block, and
+         | HireAgentBuyerSectionNavTest asserts the two agree in both directions for every viewer it
+         | can construct.
+         |
+         | THE BAR LISTS TWO SECTIONS BECAUSE THE PAGE HAS TWO SECTION CARDS. Financing Details and
+         | Representation Preferences are the only sections migrated to
+         | x-hire-agent.detail-section, so they are the only ones carrying an `hla-section-*` id and
+         | therefore the only ones an in-page link can reach. The remaining seven still render as
+         | x-viho.section-header sub-headings with no anchor of their own; offering an entry for one
+         | would be a link to nothing, and giving one an id without migrating it would be a section
+         | the bar has to account for and cannot describe. Each becomes an entry as it is migrated,
+         | in the same change that gives it a card — never before.
+         |
+         | THERE IS NO COMPENSATION ENTRY, AND ITS ABSENCE IS NOT AN OVERSIGHT. Buyer's compensation
+         | section is not migrated, so it has no anchor; when it is, its entry must carry the same
+         | auth condition its rows sit behind, exactly as landlord's does. A bar naming "Broker
+         | Compensation" to an anonymous visitor leaks both the existence and the name of a section
+         | they are never served, in the most prominent place on the page — the one mistake the
+         | primitive is built to be incapable of making on its own, because it cannot see the viewer.
+         |
+         | Everything is behind the flag: with the redesign off for this role the array stays empty,
+         | no bar renders, no anchors are emitted and no script is pushed.
+         */
+        $byaNavSections = [];
+
+        if ($byaDetailRedesign) {
+            /* M7 Phase 5. First in the array because it is first on the page — the bar follows
+               document order, not importance. The section and this entry are driven by the ONE
+               boolean above rather than by two expressions that have to be kept in agreement; a
+               card that hides itself by a route the bar cannot see is the failure the whole
+               hoist-then-mirror design exists to prevent. */
+            if ($byaHasListingDetails) {
+                $byaNavSections[] = ['id' => 'hla-section-listing-details', 'label' => 'Listing Details'];
+            }
+
+            /* Verbatim from the section's own condition at the Financing Details card. Both
+               operands are available here: the boolean is built above and `offered_financing` is a
+               direct meta read. Reading only $hasAnyFinancingDetails would omit an entry for a
+               section that renders — the card's guard is the disjunction, not the boolean. */
+            if ($hasAnyFinancingDetails || @$auction->get->offered_financing != null) {
+                $byaNavSections[] = ['id' => 'hla-section-financing', 'label' => 'Financing Details'];
+            }
+
+            /* $repRows is the single source of truth for all three consumers: this entry, the
+               section's own guard, and the rows it renders. There is no derived boolean to drift
+               from. */
+            if (! empty($repRows)) {
+                $byaNavSections[] = [
+                    'id'    => 'hla-section-representation',
+                    'label' => 'Representation Preferences',
+                ];
+            }
+        }
     @endphp
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="buyer" :auction="$auction">
         <x-slot name="main">
+            {{-- M7 Phase 4. Outside the wrapper and above it, so the bar spans the column and sticks
+                 to the top of the reading area rather than to the inside of a card. --}}
+            @if ($byaDetailRedesign)
+                <x-viho.section-nav :items="$byaNavSections" ariaLabel="Listing sections" />
+            @endif
             {{--
                 M3. Was `div.card.description` wrapping `card-header.section-header` + an
                 `h4.section-title`. The heading level stays h4: typography is migrating, the
@@ -417,10 +585,52 @@
                 outside it today. Keeping it changes no field row at all, which is the requirement.
                 The cost is one extra nesting level and Buyer's existing ragged left edge, both of
                 which are preserved exactly as they render today.
+
+                M7 PHASE 4 — THE WRAPPER IS NOW A BRANCH, NOT A CARD. Everything above still
+                describes the flag-OFF page exactly, including the inner `div.card-body` and the
+                ragged left edge; what changes is that the wrapper card itself only exists in that
+                branch. x-hire-agent.detail-body emits it when the redesign is off and nothing at
+                all when it is on.
+
+                WHY THAT MATTERS MORE THAN IT LOOKS. Phase 2 migrated Financing Details and
+                Representation Preferences to x-hire-agent.detail-section, which renders each as an
+                x-viho.card. With this wrapper unconditional, those two cards rendered INSIDE
+                another card — a card in a card, each drawing its own border, radius and shadow,
+                which is not a shape the reference page (Offer Listing) has anywhere. Phase 3 made
+                that branch reachable, so the nesting stopped being theoretical. Decomposing the
+                wrapper is what turns them into top-level siblings of the column, which is what the
+                reference renders and what lets a nav link land on a card header.
+
+                THE SECTIONS THAT ARE NOT MIGRATED KEEP THEIR SUB-HEADINGS AND LOSE THEIR CARD in
+                the redesign branch, and that is a deliberate intermediate state rather than a
+                finished page: this step builds the foundation, and each remaining section becomes a
+                card in its own change. It is invisible to every environment because
+                `redesign_roles` ships as landlord alone — buyer's redesign branch is reachable by
+                config and reached by nobody. Landlord did the same decomposition and its eight
+                section migrations in one milestone; buyer separates them so the wrapper change and
+                the nav can be reviewed on their own.
             --}}
-            <x-viho.card title="Listing Details:" title-tag="h4">
+            <x-hire-agent.detail-body :redesign="$byaDetailRedesign" title="Listing Details:">
 @if (! ($byaDetailRedesign ?? false))                    <div class="card-body">
 @endif
+{{-- M7 Phase 5 — Listing Details becomes a section card.
+
+     THE GUARD IS THE SAME BOOLEAN THE NAV ENTRY READS, and the `! $byaDetailRedesign ||` arm is
+     what keeps the legacy branch unconditional: with the redesign off these rows render exactly as
+     they always have, whether or not any of them has an answer, because emptiness only became a
+     reason to hide something once it became a bordered box. Landlord's M7.4 uses the same idiom for
+     the same section.
+
+     legacy-header IS FALSE, and this is the one section on the page where it must be. The wrapper
+     card's own title "Listing Details:" IS this section's heading in the legacy branch, so emitting
+     a header here would put a duplicate heading directly beneath the title it duplicates. With the
+     redesign on the wrapper is gone and the card title supplies the heading instead — which is the
+     entire point of this change.
+
+     The trailing colon is passed and stripped by the component in the card branch only; the legacy
+     branch never sees this title at all. --}}
+@if (! ($byaDetailRedesign ?? false) || $byaHasListingDetails)
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -476,6 +686,8 @@
                             @endif
 
                         </div>
+</x-hire-agent.detail-section>
+@endif
                           <hr>
                         {{-- M3: sub-section header inside the single Listing Details card. --}}
                         <x-viho.section-header title="Property Preferences:" tag="h4" />
@@ -2160,8 +2372,12 @@
                         </div>
             {{-- M3: this closed `div.card.description`; the card closes here instead. The closer
                  above it still ends the final row, and the inner card-body keeps whatever closer
-                 the parser already pairs it with — neither is touched. --}}
-            </x-viho.card>
+                 the parser already pairs it with — neither is touched.
+
+                 M7 Phase 4: the closer follows its opener into x-hire-agent.detail-body. The card
+                 it closes is emitted by that component in the flag-off branch only; with the
+                 redesign on there is no wrapper here to close. --}}
+            </x-hire-agent.detail-body>
                 {{-- Milestone 5A.2-B: a third </div> closed .leftCol here, before the review card
                      below. That made "card review" a direct child of the .row despite having no
                      col-* class, and left the row's own closer to land before .rightCol — so the
@@ -4234,5 +4450,19 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
     });
 });
 </script>
+
+{{-- M7 Phase 4 — active section highlighting. Flag-gated: with the redesign off this page pushes
+     no additional script, so there is no new behaviour to regress.
+
+     THE ROLE-AWARE READER, NOT THE MASTER SWITCH. This script drives the bar emitted under the same
+     gate; reading a different flag than the markup it operates on is how a page ends up binding
+     behaviour to elements that were never rendered. See the $byaDetailRedesign note.
+
+     The partial is shared with landlord rather than copied — it was extracted from that view as
+     groundwork for exactly this adoption, and it carries no gate of its own on purpose, so the
+     decision stays here with the markup. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('buyer'))
+@include('hire_agent.framework.section-nav-behaviour')
+@endif
 @endpush
 

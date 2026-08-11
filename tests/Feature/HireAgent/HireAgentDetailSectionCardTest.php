@@ -43,10 +43,32 @@ class HireAgentDetailSectionCardTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /** @return array<string, array{0: string}> */
+    /**
+     * The roles that render no redesign markup at all, whatever the config says.
+     *
+     * BUYER LEFT THIS LIST IN M7 PHASE 4, AND THAT IS THE DELIBERATE DECISION THE ASSERTION BELOW
+     * ASKS FOR RATHER THAN A WIDENING TO GO GREEN.
+     *
+     * The premise the list encoded — "scope here is enforced by which files render the component,
+     * only the landlord view does" — stopped being true in stages, and Phase 4 is where it stops
+     * describing anything. Phase 2 gave the buyer view two x-hire-agent.detail-section call sites;
+     * Phase 3 assigned $byaDetailRedesign so that branch became reachable by config; Phase 4
+     * decomposes the wrapper card, so with the redesign on for buyer the legacy single card is
+     * exactly what must NOT render. Asserting that it does would be asserting the bug.
+     *
+     * Seller and tenant are unmigrated and stay: neither file names the section component, so
+     * neither can decompose no matter what the allowlist holds. A third entry leaving this list is
+     * the signal that another role started migrating, and should be answered the same way.
+     *
+     * Buyer's redesigned branch is covered by HireAgentBuyerSectionNavTest, and its flag-OFF page is
+     * still held to the single legacy card by HireAgentSectionCardDomEquivalenceTest — the property
+     * this list used to carry for buyer is therefore not lost, only moved to where it is true.
+     *
+     * @return array<string, array{0: string}>
+     */
     public static function nonPilotRoles(): array
     {
-        return ['seller' => ['seller'], 'buyer' => ['buyer'], 'tenant' => ['tenant']];
+        return ['seller' => ['seller'], 'tenant' => ['tenant']];
     }
 
     /** @return array{0: class-string, 1: string} */
@@ -714,11 +736,16 @@ class HireAgentDetailSectionCardTest extends TestCase
     // ── Rollout scope ────────────────────────────────────────────────────────
 
     /**
-     * The other three roles emit no section card even with the master switch on.
+     * The UNMIGRATED roles emit no section card even with the master switch on and their own name
+     * in the allowlist.
      *
-     * Scope here is enforced by which files render the component — only the landlord view does —
-     * rather than by the role allowlist, which governs the shared shell's grid. That distinction
-     * matters for rollback and is asserted rather than assumed.
+     * Scope here is enforced by which files render the component — seller's and tenant's views do
+     * not name it — rather than by the role allowlist, which governs the shared shell's grid. That
+     * distinction matters for rollback and is asserted rather than assumed: an allowlist entry
+     * added by mistake must not be able to decompose a page nobody has migrated.
+     *
+     * The provider held buyer until M7 Phase 4 decomposed its wrapper; see the note there for why
+     * it is no longer a role this claim is true of.
      *
      * @dataProvider nonPilotRoles
      */
