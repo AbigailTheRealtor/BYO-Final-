@@ -28,6 +28,7 @@ class LandlordOfferListing extends Component
 
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use \App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation; // publish gate required-field contract (parity with edit)
@@ -3996,21 +3997,47 @@ class LandlordOfferListing extends Component
         $this->emit('landlordDocRowFileRemoved', $index);
     }
 
+    /** S5 — see SellerOfferListing::deletePropertyPhoto(); identical contract. */
     public function deletePropertyPhoto($index)
     {
-        if (isset($this->propertyPhotos[$index])) {
-            $filename = $this->propertyPhotos[$index];
-            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $filename);
-            array_splice($this->propertyPhotos, $index, 1);
-            if ($this->listingId) {
-                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
-                if (empty($this->propertyPhotos)) {
-                    $auction->deleteMeta('property_photos');
-                } else {
-                    $auction->saveMeta('property_photos', $this->propertyPhotos);
-                }
-            }
+        if (! isset($this->propertyPhotos[$index])) {
+            return;
         }
+
+        $selected = $this->propertyPhotos[$index];
+        $auction  = $this->resolveOwnedMediaListing();
+
+        if ($auction !== null) {
+            $this->deleteOwnedListingMediaFromCollection($auction, 'property_photos', 'auction/images', $selected);
+            $stored  = $auction->fresh()->info('property_photos');
+            $decoded = is_string($stored) ? json_decode($stored, true) : (is_array($stored) ? $stored : []);
+            $this->propertyPhotos = is_array($decoded) ? array_values($decoded) : [];
+
+            return;
+        }
+
+        array_splice($this->propertyPhotos, $index, 1);
+    }
+
+    /**
+     * S5 — the listing this component may delete media from, or null when none exists yet.
+     *
+     * Re-resolved at the action boundary rather than inherited from hydrate(), which runs before
+     * client syncInput updates are applied. Fails closed with 403.
+     */
+    private function resolveOwnedMediaListing(): ?HirelandLordAgentAuction
+    {
+        if (empty($this->listingId)) {
+            return null;
+        }
+
+        $auction = HirelandLordAgentAuction::where('id', $this->listingId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        abort_if($auction === null, 403, 'You are not authorized to access this listing.');
+
+        return $auction;
     }
 
     public function reorderPhotos(array $orderedFilenames): void
@@ -4060,17 +4087,21 @@ class LandlordOfferListing extends Component
         }
     }
 
+    /**
+     * S5 — documents are deleted from the PRIVATE disk only, where storePrivate() puts them.
+     *
+     * The companion deletePublic() call is dropped: fed a client value it was a traversal vector
+     * into public storage, and legacy public duplicates are a maintenance concern rather than
+     * something a per-user delete should sweep.
+     */
     public function deleteListingDocument()
     {
-        if ($this->listingDocuments && is_string($this->listingDocuments)) {
-            // HI-05A — transitional: new uploads are private; legacy copies may still be public.
-            app(\App\Support\Storage\ListingStorageWriter::class)->deletePrivate('auction/documents/' . $this->listingDocuments);
-            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/documents/' . $this->listingDocuments);
-            if ($this->listingId) {
-                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
-                $auction->deleteMeta('listing_documents');
-            }
+        $auction = $this->resolveOwnedMediaListing();
+
+        if ($auction !== null) {
+            $this->deleteOwnedListingMedia($auction, 'listing_documents', 'auction/documents', true);
         }
+
         $this->listingDocuments = null;
     }
 
@@ -4273,15 +4304,15 @@ class LandlordOfferListing extends Component
 
     public function deletePhoto()
     {
+        // S5 — ownership ahead of the try: resolveOwnedMediaListing() aborts 403, and
+        // HttpException extends \Exception, so a call inside the try would be swallowed into a
+        // flash that reports success.
+        $auction = $this->resolveOwnedMediaListing();
+
         try {
-            if ($this->listingId) {
-                $auction = HirelandLordAgentAuction::find($this->listingId);
-                if ($auction) {
-                    if ($this->photo && is_string($this->photo)) {
-                        app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
-                    }
-                    $auction->deleteMeta('photo');
-                }
+            if ($auction !== null) {
+                // S5 — filename from the owned record and validated; $this->photo is UI state.
+                $this->deleteOwnedListingMedia($auction, 'photo', 'auction/images');
             }
             $this->photo = null;
             session()->flash('success', 'Photo deleted successfully.');

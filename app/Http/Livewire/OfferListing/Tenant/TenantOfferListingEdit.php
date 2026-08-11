@@ -28,6 +28,7 @@ class TenantOfferListingEdit extends Component
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use HasImportantPlaces;
     // Phase 9D Search Areas plumbing, shared with the four Hire Agent components. Adopted here
     // in place of a private hydrateDiscreteLocationFromBlob() copy; loadSearchAreas() and
@@ -2293,48 +2294,59 @@ class TenantOfferListingEdit extends Component
 
     public function deletePhoto()
     {
+        // S5 — ownership on the (table, row) pair. See resolveOwnedMediaListing().
+        $auction = $this->resolveOwnedMediaListing();
 
-
-
-        $auctionClass = match ($this->user_type) {
-            'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HirelandLordAgentAuction::class,
-            'buyer'    => HireBuyerAgentAuction::class,
-            'seller'   => HireSellerAgentAuction::class,
-            default    => null,
-        };
-
-        if (!$auctionClass) {
-            throw new \Exception("Invalid user_type: {$this->user_type}");
-        }
-
-        $auction = $auctionClass::find($this->auctionId);
-
-        // Fetch the auction object using the ID
-        // $auction = HireTenantAgentAuction::find($this->auctionId);
-
-        // Ensure the auction exists
         if ($auction) {
-            // Delete the photo from storage if it exists
-            if ($this->photo && is_string($this->photo)) {
-                app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->photo);
-            }
+            // S5 — filename from the owned record and validated; $this->photo is UI state.
+            $this->deleteOwnedListingMedia($auction, 'photo', 'auction/images');
 
-            // Remove the photo path from the database
-            $auction->deleteMeta('photo');
-
-            // Reset the $photo property
             $this->photo = null;
 
-            // Optionally, show a success message
             session()->flash('message', 'Photo deleted successfully.');
         } else {
             session()->flash('error', 'Auction not found.');
         }
     }
+
     public function deleteVideo()
     {
-        // Fetch the auction object using the ID
+        // S5 — ownership on the (table, row) pair. See resolveOwnedMediaListing().
+        $auction = $this->resolveOwnedMediaListing();
+
+        if ($auction) {
+            // S5 — 'auction/videos', corrected. This deleted from 'auction/images' while the save
+            // path stores video under 'auction/videos', so an owner's video was never removed.
+            // Corrected here rather than deferred because this method's deletion directory is
+            // becoming server-controlled in the same change, and shipping a known-wrong literal
+            // as the new authoritative value would be worse than leaving it client-supplied.
+            $this->deleteOwnedListingMedia($auction, 'video', 'auction/videos');
+
+            $this->video = null;
+
+            session()->flash('message', 'Video deleted successfully.');
+        } else {
+            session()->flash('error', 'Auction not found.');
+        }
+    }
+
+    /**
+     * S5 — the listing this component may delete media from, or null when none exists yet.
+     *
+     * Keyed on the (table, row) pair because both $user_type and $auctionId are public Livewire
+     * properties: one picks the table, the other the row, and guarding only one leaves the other
+     * free. The same pair the delete then uses, so no combination authorizes one record and
+     * writes another. Unrecognised user_type fails closed rather than defaulting to a table.
+     *
+     * Resolved at the action boundary rather than inherited from hydrate(), which runs before
+     * client syncInput updates are applied. Aborts 403.
+     */
+    private function resolveOwnedMediaListing()
+    {
+        if (empty($this->auctionId)) {
+            return null;
+        }
+
         $auctionClass = match ($this->user_type) {
             'tenant'   => HireTenantAgentAuction::class,
             'landlord' => HirelandLordAgentAuction::class,
@@ -2343,29 +2355,15 @@ class TenantOfferListingEdit extends Component
             default    => null,
         };
 
-        if (!$auctionClass) {
-            throw new \Exception("Invalid user_type: {$this->user_type}");
-        }
+        abort_if($auctionClass === null, 403, 'You are not authorized to access this listing.');
 
-        $auction = $auctionClass::find($this->auctionId);
-        // Ensure the auction exists
-        if ($auction) {
-            // Delete the photo from storage if it exists
-            if ($this->video && is_string($this->video)) {
-                app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $this->video);
-            }
+        $auction = $auctionClass::where('id', $this->auctionId)
+            ->where('user_id', Auth::id())
+            ->first();
 
-            // Remove the video path from the database
-            $auction->deleteMeta('video');
+        abort_if($auction === null, 403, 'You are not authorized to access this listing.');
 
-            // Reset the $video property
-            $this->video = null;
-
-            // Optionally, show a success message
-            session()->flash('message', 'Photo deleted successfully.');
-        } else {
-            session()->flash('error', 'Auction not found.');
-        }
+        return $auction;
     }
 
 

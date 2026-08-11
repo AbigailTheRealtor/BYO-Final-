@@ -29,6 +29,7 @@ class SellerOfferListing extends Component
 
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
@@ -4052,21 +4053,59 @@ class SellerOfferListing extends Component
         $this->emit('docRowFileRemoved', $index);
     }
 
+    /**
+     * S5 — the client picks WHICH photo; the owned record decides what is deleted.
+     *
+     * $index selects an entry in the client's own array, whose value is then matched against the
+     * listing's persisted property_photos. The path handed to storage comes back out of that
+     * persisted collection, never from the request.
+     */
     public function deletePropertyPhoto($index)
     {
-        if (isset($this->propertyPhotos[$index])) {
-            $filename = $this->propertyPhotos[$index];
-            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $filename);
-            array_splice($this->propertyPhotos, $index, 1);
-            if ($this->listingId) {
-                $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
-                if (empty($this->propertyPhotos)) {
-                    $auction->deleteMeta('property_photos');
-                } else {
-                    $auction->saveMeta('property_photos', $this->propertyPhotos);
-                }
-            }
+        if (! isset($this->propertyPhotos[$index])) {
+            return;
         }
+
+        $selected = $this->propertyPhotos[$index];
+
+        // Ownership before anything is read or deleted. Aborts 403 on a foreign listingId.
+        $auction = $this->resolveOwnedMediaListing();
+
+        if ($auction !== null) {
+            $this->deleteOwnedListingMediaFromCollection($auction, 'property_photos', 'auction/images', $selected);
+            // Mirror the record's collection back into UI state so the two agree.
+            $stored = $auction->fresh()->info('property_photos');
+            $decoded = is_string($stored) ? json_decode($stored, true) : (is_array($stored) ? $stored : []);
+            $this->propertyPhotos = is_array($decoded) ? array_values($decoded) : [];
+
+            return;
+        }
+
+        // Unsaved draft with no listing row yet: nothing persisted to authorize against, and no
+        // stored file to remove — only the in-memory list shrinks.
+        array_splice($this->propertyPhotos, $index, 1);
+    }
+
+    /**
+     * S5 — the listing this component may delete media from, or null when none exists yet.
+     *
+     * Re-resolved at the action boundary rather than inherited from hydrate(): Livewire applies
+     * client syncInput updates AFTER the hydration hooks run, so a listingId tampered between
+     * requests reaches an action having already passed hydrate. Fails closed with 403.
+     */
+    private function resolveOwnedMediaListing(): ?SellerAgentAuctionModel
+    {
+        if (empty($this->listingId)) {
+            return null;
+        }
+
+        $auction = SellerAgentAuctionModel::where('id', $this->listingId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        abort_if($auction === null, 403, 'You are not authorized to access this listing.');
+
+        return $auction;
     }
 
     public function reorderPhotos(array $orderedFilenames): void
@@ -4116,15 +4155,21 @@ class SellerOfferListing extends Component
         }
     }
 
+    /**
+     * S5 — documents are deleted from the PRIVATE disk, where storePrivate() puts them.
+     *
+     * This previously deleted from the public disk, so it never removed the real file and its
+     * path was a traversal vector into public storage. The filename now comes from the owned
+     * record's listing_documents meta; $this->listingDocuments is UI state.
+     */
     public function deleteListingDocument()
     {
-        if ($this->listingDocuments && is_string($this->listingDocuments)) {
-            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/documents/' . $this->listingDocuments);
-            if ($this->listingId) {
-                $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
-                $auction->deleteMeta('listing_documents');
-            }
+        $auction = $this->resolveOwnedMediaListing();
+
+        if ($auction !== null) {
+            $this->deleteOwnedListingMedia($auction, 'listing_documents', 'auction/documents', true);
         }
+
         $this->listingDocuments = null;
     }
 
