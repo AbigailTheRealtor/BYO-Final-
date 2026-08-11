@@ -37,7 +37,15 @@ class CreateOfferCoordinateWiringTest extends TestCase
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php' => 3,
     ];
 
-    private const APP_WIDE_DISPATCH_BASELINE = 17;
+    /**
+     * 17 before G6, 21 after. G6 added four — the Hire Agent publish boundaries,
+     * which had no Location DNA dispatch at all. The Create Offer nine above are
+     * unchanged, which is what {@see self::DISPATCH_SITES} pins independently;
+     * this number exists to catch a dispatch appearing anywhere else.
+     *
+     * @see \Tests\Feature\HireAgent\HireAgentCoordinateWiringTest
+     */
+    private const APP_WIDE_DISPATCH_BASELINE = 21;
 
     private function source(string $path): string
     {
@@ -148,7 +156,15 @@ class CreateOfferCoordinateWiringTest extends TestCase
         }
     }
 
-    public function test_the_trait_is_used_by_exactly_the_four_create_offer_components(): void
+    /**
+     * Four Create Offer components (G5) plus four Hire Agent components (G6).
+     *
+     * The point of the assertion is unchanged and is not about the number: the
+     * trait resolves ONE property's coordinate, so it may only ever reach flows
+     * that have one property. Buyer and Tenant carry multi-area search criteria
+     * and no property_lat at all, and must never appear in this list.
+     */
+    public function test_the_trait_is_used_by_exactly_the_seller_landlord_property_components(): void
     {
         $users = [];
 
@@ -167,7 +183,12 @@ class CreateOfferCoordinateWiringTest extends TestCase
         }
 
         sort($users);
-        $expected = array_keys(self::DISPATCH_SITES);
+        $expected = array_merge(array_keys(self::DISPATCH_SITES), [
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php',
+            'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
+            'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
+            'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
+        ]);
         sort($expected);
 
         $this->assertSame($expected, $users, 'Buyer and Tenant must not acquire coordinate resolution');

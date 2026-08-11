@@ -5,6 +5,7 @@ namespace App\Http\Livewire\HireSellerAgent;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
+use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use App\Models\SellerAgentAuction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ class SellerAgentAuctionEdit extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
+    use ResolvesPropertyCoordinates;                           // G6: shared property-coordinate ladder hook
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -1184,6 +1186,24 @@ class SellerAgentAuctionEdit extends Component
             $newDraft->saveMeta('parent_draft_id',    $parentDraftId);
             $newDraft->deleteMeta('draft_payload_hash');
 
+            // Resolve against the NEW version's row (G6). Step 3 cloned the
+            // source's meta, so an unchanged address arrives here already
+            // carrying its coordinate and normalized-address key and the
+            // service skips without spending a request. A drafted address
+            // change resolves once, here. No dispatch: drafts have no consumer
+            // for Location DNA — update() is the publish boundary.
+            if ($this->address) {
+                try {
+                    $this->resolvePropertyCoordinates($newDraft, 'seller_agent');
+                } catch (\Throwable $coordEx) {
+                    \Log::warning('[HIRE SELLER AGENT EDIT DRAFT] coordinate resolution failed', [
+                        'listing_id' => $newDraft->id,
+                        'reason'     => $coordEx->getMessage(),
+                        'exception'  => get_class($coordEx),
+                    ]);
+                }
+            }
+
             $this->listingId = $newDraft->id;
             $this->auctionId = $newDraft->id;
 
@@ -2045,6 +2065,23 @@ class SellerAgentAuctionEdit extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            // Publish boundary (G6). Resolve BEFORE dispatching so the
+            // pipeline's pre_lat/pre_lng branch receives the coordinate and its
+            // provenance instead of re-deriving one.
+            if ($this->address) {
+                try {
+                    $this->resolvePropertyCoordinates($auction, 'seller_agent');
+
+                    \App\Jobs\ComputeLocationDna::dispatch('seller_agent', $this->listingId);
+                } catch (\Throwable $dnaEx) {
+                    \Log::warning('[HIRE SELLER AGENT UPDATE] coordinate resolution or ComputeLocationDna dispatch failed', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $dnaEx->getMessage(),
+                        'exception'  => get_class($dnaEx),
+                    ]);
+                }
+            }
 
             session()->flash('success', 'Listing updated successfully!');
 
