@@ -46,46 +46,69 @@ return [
     | Pre-Screening applies to tenant for the same reason. One fact, one place.
     |
     |
-    | ── AUDIENCE ─────────────────────────────────────────────────────────────
+    | ── AUDIENCE, AND THE DISTINCTION THAT DRIVES IT ─────────────────────────
     |
-    | 'both'  — every viewer of the page.
-    | 'agent' — only a viewer HireAgentDetailAudience resolves to the agent
-    |           audience: an agent user type WITH a relationship to this listing.
+    | PUBLIC WEBSITE VISIBILITY IS NOT PRIVATE BID VISIBILITY. This page is both
+    | things at once: a listing anyone can open — the route carries `web` and no
+    | auth — and the host of a private proposal workflow where a client accepts,
+    | rejects or counters agent bids. A single "logged in or not" gate cannot
+    | serve both, and the page's history is the proof: Services renders to
+    | anonymous visitors today, and Broker Compensation sits behind a bare
+    | Auth::check() that admits any logged-in stranger.
     |
-    | The two agent-only sections are the two that are agent-to-agent business —
-    | a referral fee, and the counterparty's licence and contact details. They
-    | render for everyone today, so gating them narrows what is published. That
-    | narrowing is an authorization decision and it is NOT made here: this file
-    | records which sections carry it, and HireAgentDetailAudience decides who
-    | satisfies it. A registry that could see the viewer would be a second
-    | opinion about a rule that already has an owner.
+    | So a section declares the LOWEST audience tier that may read it, and every
+    | wider tier inherits. The tiers are strictly nested — public ⊂ owner ⊂ agent
+    | — so nothing is ever shown to a narrower audience and withheld from a wider
+    | one.
+    |
+    | 'public'      — every viewer, including anonymous. The request itself: what
+    |                 is wanted, where, on what terms.
+    | 'participant' — the listing OWNER and qualifying AGENTS, and nobody else.
+    |                 The material a proposal is evaluated against.
+    | 'agent'       — qualifying agents only. Agent-to-agent business.
+    |
+    | The narrowing is an authorization decision and it is NOT made here: this
+    | file records which tier each section carries, and HireAgentDetailAudience
+    | decides which tier a viewer is in. A registry that could see the viewer
+    | would be a second opinion about a rule that already has an owner.
     |
     |
-    | ── WHAT IS ABSENT, AND WHY ABSENCE IS THE MECHANISM ─────────────────────
+    | ── WHY SERVICES AND BROKER COMPENSATION ARE 'participant' ───────────────
     |
-    | BROKER COMPENSATION AND SERVICES ARE NOT HERE. Not present-and-disabled,
-    | not audience => 'none' — absent. A registry entry is what makes a section
-    | capable of existing on the redesigned page, so removal means having no
-    | entry. A disabled entry would be a switch someone could flip.
+    | They were briefly removed from this registry altogether, on the reasoning
+    | that compensation belongs to the hire agreement and that Representation
+    | Preferences & Compatibility supersedes Services. That was right about the
+    | PUBLIC page and wrong about the private one, and the correction is the
+    | reason the 'participant' tier exists.
     |
-    |   · Broker Compensation — compensation belongs to the hire agreement and
-    |     the transaction workflow, not to the details of a request.
-    |     AcceptedBidSummaryService already carries it there. Its presence on
-    |     this page has been an open question since M5.0b, recorded in
-    |     docs/investigations/hire-agent-compensation-visibility-decision.md,
-    |     where the gate is authentication rather than authorization — every
-    |     logged-in user, including a competing agent, can read it. Removing the
-    |     surface answers the question rather than continuing to defer it.
+    | A client reading proposals on their own request needs both: they are what a
+    | bid is measured against, and without them "accept, reject or counter" is a
+    | decision made blind. An agent weighing whether to propose needs them for the
+    | same reason. A passer-by needs neither, and today gets both.
     |
-    |   · Services — Representation Preferences & Compatibility supersedes it as
-    |     the statement of what the client wants from an agent.
+    | NOTE WHICH DATA THIS IS. These sections render the LISTING's own answers —
+    | `$auction->get->services`, `$auction->get->commission_structure` — the
+    | client's request and offer. The AGENT'S proposal carries its own services
+    | and compensation, rendered on the per-bid cards and in the "Private
+    | Compensation & Agreement Terms" modal further down the page, and narrowed
+    | server-side by HireAgentProposalAccess. That surface is untouched by this
+    | registry and was already correct: owner sees every proposal, an agent sees
+    | their own, a competitor sees nothing. Two different bodies of data with
+    | similar names, and conflating them is how one of them ends up public.
     |
-    | NEITHER REMOVAL DELETES ANY DATA. Services remain a weighted dimension in
+    | NET EFFECT VERSUS TODAY, both narrowings:
+    |   · Services      public → owner and qualifying agents
+    |   · Compensation  any authenticated user → owner and qualifying agents
+    |
+    | The second closes the question left open since M5.0b in
+    | docs/investigations/hire-agent-compensation-visibility-decision.md, whose
+    | unanswered row was "a competing agent bidding on the same listing can read
+    | the compensation terms". Under the participant tier they still can, because
+    | they are a participant — but a logged-in stranger no longer can.
+    |
+    | NO DATA IS DELETED OR MOVED. Services remain a weighted dimension in
     | config/match_scoring.php, remain on agent proposals, and both remain in the
-    | accepted-bid summary. This file governs one page's presentation and nothing
-    | else. HireAgentDetailSections rejects either id by name, with a message
-    | pointing here, so an attempt to reintroduce one fails loudly rather than
-    | reappearing.
+    | accepted-bid summary.
     |
     | LEGACY RENDERING IS UNTOUCHED. Both sections still render with the redesign
     | off, exactly as they always have, and
@@ -102,7 +125,7 @@ return [
          */
         [
             'id'       => 'listing-details',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-file-lines',
             'labels'   => [
                 'seller'   => 'Listing Details',
@@ -125,7 +148,7 @@ return [
          */
         [
             'id'       => 'property',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-house',
             'labels'   => [
                 'seller'   => 'Property Details',
@@ -142,7 +165,7 @@ return [
          */
         [
             'id'       => 'terms',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-file-contract',
             'labels'   => [
                 'seller'   => 'Sale Terms',
@@ -158,7 +181,7 @@ return [
          */
         [
             'id'       => 'financing',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-money-check-dollar',
             'labels'   => [
                 'seller' => 'Financing Details',
@@ -172,7 +195,7 @@ return [
          */
         [
             'id'       => 'pre-screening',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-clipboard-check',
             'labels'   => [
                 'tenant' => 'Pre-Screening',
@@ -181,7 +204,7 @@ return [
 
         [
             'id'       => 'additional-details',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-circle-info',
             'labels'   => [
                 'seller'   => 'Additional Details',
@@ -202,7 +225,7 @@ return [
          */
         [
             'id'       => 'representation',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-handshake',
             'labels'   => [
                 'seller'   => 'Representation Preferences',
@@ -223,13 +246,65 @@ return [
          */
         [
             'id'       => 'role-info',
-            'audience' => 'both',
+            'audience' => 'public',
             'icon'     => 'fa-solid fa-id-card',
             'labels'   => [
                 'seller'   => "Seller's Info",
                 'buyer'    => "Buyer's Info",
                 'landlord' => "Landlord's Info",
                 'tenant'   => "Tenant's Info",
+            ],
+        ],
+
+        /*
+         | ── PARTICIPANT-ONLY FROM HERE ───────────────────────────────────────
+         |
+         | The page's audience tiers widen monotonically down the document:
+         | public sections, then participant, then agent. That is deliberate and
+         | it is worth keeping — it means each audience's page is a PREFIX of the
+         | next one's, so a narrower viewer never sees a gap where a section was
+         | withheld, and "the agent page is the owner page plus two" is a property
+         | of the ordering rather than a coincidence the tests have to check.
+         */
+
+        /*
+         | Services. What the client is asking an agent to do — the checklist a
+         | proposal is measured against, and a scored matching dimension.
+         |
+         | NOT superseded by Representation Preferences, which was the reasoning
+         | for briefly removing it. Representation states HOW the client wants to
+         | be worked with; Services states WHAT they want done. A bid is evaluated
+         | against the second.
+         */
+        [
+            'id'       => 'services',
+            'audience' => 'participant',
+            'icon'     => 'fa-solid fa-list-check',
+            'labels'   => [
+                'seller'   => 'Services',
+                'buyer'    => 'Services',
+                'landlord' => 'Services',
+                'tenant'   => 'Services',
+            ],
+        ],
+
+        /*
+         | Broker Compensation & Agency Agreement Terms — the listing's own, not a
+         | bid's. What the client is offering, which is what makes a proposal's
+         | own compensation terms comparable to anything.
+         |
+         | Today this sits behind a bare Auth::check(), so any logged-in stranger
+         | reads it. The participant tier is the narrowing that gate never had.
+         */
+        [
+            'id'       => 'compensation',
+            'audience' => 'participant',
+            'icon'     => 'fa-solid fa-dollar-sign',
+            'labels'   => [
+                'seller'   => 'Broker Compensation',
+                'buyer'    => 'Broker Compensation',
+                'landlord' => 'Broker Compensation',
+                'tenant'   => 'Broker Compensation',
             ],
         ],
 
@@ -299,23 +374,28 @@ return [
     | THIS IS NOT THE LIST OF AUDIENCES A VIEWER CAN BE, and the two were briefly
     | conflated while this was written. They are different vocabularies:
     |
-    |   · a SECTION declares 'both' or 'agent' — who it is for;
-    |   · a VIEWER resolves to 'consumer' or 'agent' — who they are.
+    |   · a SECTION declares the lowest tier that may read it —
+    |     'public', 'participant' or 'agent';
+    |   · a VIEWER resolves to the tier they are in —
+    |     'public', 'owner' or 'agent'.
     |
-    | No section is ever declared 'consumer' (a consumer-facing section is 'both',
-    | because agents see it too) and no viewer is ever 'both'. Validating one
-    | against the other rejects every real call, which is exactly what happened.
-    | The viewer vocabulary belongs to HireAgentDetailAudience, which produces it;
-    | only this list is registry policy.
+    | They overlap in two words and differ in the middle one, which is exactly
+    | the shape that invites a mix-up. No section is ever declared 'owner' — a
+    | section for the owner is 'participant', because qualifying agents read it
+    | too — and no viewer is ever 'participant', because 'participant' names a
+    | pair of tiers rather than one. Validating one vocabulary against the other
+    | rejects every real call, which is what happened on the first run.
     |
-    | 'both' is this file's own word. The agent name is imported from the service
-    | so the one value the two vocabularies share cannot drift into a string that
-    | matches nothing on one side.
+    | The viewer vocabulary belongs to HireAgentDetailAudience, which produces
+    | it; only this list is registry policy. 'public' and 'participant' are this
+    | file's own words, and the agent name is imported from the service so the
+    | one value the two vocabularies genuinely share cannot drift on one side.
     |
     */
 
     'section_audiences' => [
-        'both',
+        'public',
+        'participant',
         HireAgentDetailAudience::AUDIENCE_AGENT,
     ],
 

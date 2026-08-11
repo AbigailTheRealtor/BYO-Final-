@@ -6,15 +6,26 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Which AUDIENCE is reading this Hire Agent listing — the consumer side, or an agent?
+ * Which AUDIENCE is reading this Hire Agent listing — the public, its owner, or an agent?
  *
  * WHY THIS CLASS EXISTS
  * ---------------------
- * The redesigned detail page shows two sections to agents that it shows to nobody else:
- * Referral & Cooperation Terms, and Agent Credentials & Contact Info. Both are agent-to-agent
- * business — a referral fee and the counterparty's licence details — and both render today for
- * every visitor including anonymous ones. Gating them NARROWS what is published, which makes
- * this an authorization decision wearing a layout decision's clothes.
+ * This page is two things at once, and that is the whole difficulty. It is a PUBLIC listing — the
+ * route carries `web` and no auth, so anonymous visitors reach it — and it is also the host of a
+ * PRIVATE bid workflow, where a client reads proposals and accepts, rejects or counters them.
+ * Public-website visibility and private bid visibility are not the same question, and a page that
+ * answers only one of them either publishes what it should not or withholds what its owner needs.
+ *
+ * So there are four sections whose audience is narrower than the page:
+ *
+ *   · Services and Broker Compensation — what proposals are evaluated against. The client needs
+ *     them; a passer-by has no business with them. Today Services is fully public and compensation
+ *     sits behind a bare Auth::check(), which admits any logged-in stranger.
+ *   · Referral & Cooperation Terms and Agent Credentials & Contact Info — agent-to-agent business,
+ *     a referral fee and the counterparty's licence details. Both render for every visitor today.
+ *
+ * Every one of those is a NARROWING, which makes this an authorization decision wearing a layout
+ * decision's clothes.
  *
  * So it is decided HERE, server-side, and the four controllers resolve it beside the proposal
  * access they already resolve. A view renders what it was handed and asks no question of its own.
@@ -75,15 +86,29 @@ use Illuminate\Database\Eloquent\Model;
 class HireAgentDetailAudience
 {
     /**
-     * The audience names.
+     * The audience names, in increasing order of what they may read.
      *
-     * Strings rather than a bool because the section registry keys on them, and because
-     * `audience === 'agent'` reads as a fact about the reader where `$isAgent === true` reads as
-     * a fact about the person. A third audience is a real possibility later; a boolean would have
-     * to be replaced to admit one.
+     * THERE ARE THREE, AND THE THIRD ARRIVED BECAUSE TWO COULD NOT EXPRESS THE RULE. The first
+     * draft had 'consumer' and 'agent', which conflated two viewers who are not alike: an
+     * anonymous passer-by, and the client evaluating proposals on their own request. Those two
+     * need different pages. The Hire Agent detail page is publicly reachable — its route carries
+     * `web` and no auth — while also hosting the private bid workflow, so "not an agent" covers
+     * both a stranger and the person the proposals were written for.
+     *
+     *   · public — anonymous, or authenticated with no connection to this listing. Sees the
+     *              request: what is wanted, where, on what terms.
+     *   · owner  — the client who posted it and receives the proposals. Sees the above plus the
+     *              Services and Broker Compensation they are evaluating bids against.
+     *   · agent  — an agent with a relationship to it. Sees everything the owner sees, plus the
+     *              agent-to-agent appendix: referral terms and the counterparty's credentials.
+     *
+     * STRICTLY NESTED, and the registry depends on it: public ⊂ owner ⊂ agent. Nothing is shown to
+     * a narrower audience and withheld from a wider one, so a section's audience names the LOWEST
+     * tier that may read it and every tier above inherits.
      */
-    public const AUDIENCE_AGENT    = 'agent';
-    public const AUDIENCE_CONSUMER = 'consumer';
+    public const AUDIENCE_PUBLIC = 'public';
+    public const AUDIENCE_OWNER  = 'owner';
+    public const AUDIENCE_AGENT  = 'agent';
 
     /**
      * Every `user_type` this application considers an agent.
@@ -95,17 +120,56 @@ class HireAgentDetailAudience
      */
     public const AGENT_USER_TYPES = ['agent', 'buyer_agent', 'seller_agent'];
 
+    public function __construct(private HireAgentProposalAccess $proposalAccess)
+    {
+    }
+
     /**
      * The audience this viewer belongs to for this listing.
      *
-     * The primary entry point. Callers that want to branch read this; the boolean below exists
-     * for the call sites where a condition reads better than a comparison.
+     * The primary entry point. Callers that want to branch read this; the booleans below exist for
+     * the call sites where a condition reads better than a comparison.
+     *
+     * WIDEST MATCH WINS, AND THE ORDER OF THESE TWO CHECKS IS THE WHOLE RULE. An agent who posted
+     * the request satisfies both — they own it, and they are an agent with a relationship to it —
+     * and they must resolve to `agent`, the wider tier, or the referral terms and credentials on
+     * their own agent-to-agent listing would be withheld from them. Testing ownership first would
+     * do exactly that, silently, for the one viewer the agent sections exist to serve.
      */
     public function audienceFor(?User $viewer, ?Model $listing): string
     {
-        return $this->isAgentAudience($viewer, $listing)
-            ? self::AUDIENCE_AGENT
-            : self::AUDIENCE_CONSUMER;
+        if ($this->isAgentAudience($viewer, $listing)) {
+            return self::AUDIENCE_AGENT;
+        }
+
+        if ($this->isOwnerAudience($viewer, $listing)) {
+            return self::AUDIENCE_OWNER;
+        }
+
+        return self::AUDIENCE_PUBLIC;
+    }
+
+    /**
+     * Is this viewer the client who posted the request?
+     *
+     * NO USER TYPE TEST, deliberately. Ownership is the relationship that matters here — the
+     * person receiving the proposals is the person who may read what they are being evaluated
+     * against, whatever their account says they are. An agent who owns the listing is caught by
+     * the agent branch above before reaching this one.
+     *
+     * DELEGATED RATHER THAN REIMPLEMENTED. HireAgentProposalAccess has answered "is this viewer
+     * the owner" correctly since M5.4 — it refuses a null viewer, refuses a null owner, and
+     * compares as integers — and the reason the four detail views once had two subtly different
+     * copies of that test is that copies are what happens. A second correct implementation is
+     * still a second implementation.
+     */
+    public function isOwnerAudience(?User $viewer, ?Model $listing): bool
+    {
+        if ($viewer === null || $listing === null) {
+            return false;
+        }
+
+        return $this->proposalAccess->isListingOwner((int) $viewer->getKey(), $listing);
     }
 
     /**
@@ -125,7 +189,7 @@ class HireAgentDetailAudience
             return false;
         }
 
-        return $this->ownsListing($viewer, $listing)
+        return $this->isOwnerAudience($viewer, $listing)
             || $this->hasSubmittedProposal($viewer, $listing);
     }
 
@@ -151,26 +215,6 @@ class HireAgentDetailAudience
     }
 
     // ── internals ────────────────────────────────────────────────────────────
-
-    /**
-     * Compared as integers, and a null owner is refused.
-     *
-     * The same defect HireAgentProposalAccess::isListingOwner() was written to close: `user_id`
-     * is nullable on these tables and arrives as a string from some of them, so a loose compare
-     * against a guest's 0 would make every anonymous visitor the owner of an unowned listing.
-     * Guests cannot reach this method — isAgentAudience() has already refused a null viewer — but
-     * the comparison is written correctly anyway rather than relying on that.
-     */
-    private function ownsListing(User $viewer, Model $listing): bool
-    {
-        $ownerId = $listing->getAttribute('user_id');
-
-        if ($ownerId === null) {
-            return false;
-        }
-
-        return (int) $ownerId === (int) $viewer->getKey();
-    }
 
     /**
      * Has this viewer submitted a proposal on this listing?

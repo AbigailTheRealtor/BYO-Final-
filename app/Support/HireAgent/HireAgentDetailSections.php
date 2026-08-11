@@ -63,17 +63,41 @@ class HireAgentDetailSections
      */
     public const ID_PREFIX = 'hla-section-';
 
-    /** The registry's own word for "every viewer". The agent name belongs to the audience service. */
-    public const AUDIENCE_BOTH = 'both';
+    /**
+     * The audience a SECTION may declare — the lowest viewer tier that may read it.
+     *
+     * These are the registry's words, not the audience service's. See assertViewerAudience() for
+     * why the two vocabularies are separate and what happened when they were not.
+     */
+    public const AUDIENCE_PUBLIC      = 'public';
+    public const AUDIENCE_PARTICIPANT = 'participant';
 
     /**
-     * Sections deliberately removed from the redesigned page.
+     * Which VIEWER tiers each SECTION tier admits.
      *
-     * Named here ONLY so that an attempt to reintroduce one fails with an explanation instead of
-     * the generic "unknown section" error. They are absent from the registry, which is what makes
-     * them impossible to render; this list makes the absence self-documenting at the call site.
+     * The whole visibility rule, in one table, because a rule spread across three conditionals is
+     * a rule with three places to get it wrong. Read it as "a section declaring the row is visible
+     * to the viewers in it".
+     *
+     * THE TIERS ARE NESTED — public ⊂ owner ⊂ agent — so every row contains the rows below it. An
+     * agent reads everything an owner reads; an owner reads everything the public reads. That
+     * property is what lets each audience's page be a prefix of the next one's, and a table that
+     * broke it would produce a page with a hole in the middle for one class of viewer.
      */
-    public const REMOVED_SECTIONS = ['services', 'compensation'];
+    private const VISIBLE_TO = [
+        self::AUDIENCE_PUBLIC => [
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
+            HireAgentDetailAudience::AUDIENCE_OWNER,
+            HireAgentDetailAudience::AUDIENCE_AGENT,
+        ],
+        self::AUDIENCE_PARTICIPANT => [
+            HireAgentDetailAudience::AUDIENCE_OWNER,
+            HireAgentDetailAudience::AUDIENCE_AGENT,
+        ],
+        HireAgentDetailAudience::AUDIENCE_AGENT => [
+            HireAgentDetailAudience::AUDIENCE_AGENT,
+        ],
+    ];
 
     /**
      * The sections to render, in document order, keyed by anchor id.
@@ -144,12 +168,7 @@ class HireAgentDetailSections
                 continue;
             }
 
-            if ($section['audience'] === self::AUDIENCE_BOTH) {
-                $out[$section['id']] = $section;
-                continue;
-            }
-
-            if ($section['audience'] === $audience) {
+            if (in_array($audience, self::VISIBLE_TO[$section['audience']] ?? [], true)) {
                 $out[$section['id']] = $section;
             }
         }
@@ -219,19 +238,23 @@ class HireAgentDetailSections
      * Validate a VIEWER audience — the value HireAgentDetailAudience produced.
      *
      * NOT THE SAME VOCABULARY AS A SECTION'S, and conflating them was a real bug in the first
-     * draft of this class: a section declares 'both' or 'agent', a viewer resolves to 'consumer' or
-     * 'agent'. No section is ever 'consumer' — a consumer-facing section is 'both', because agents
-     * see it too — and no viewer is ever 'both'. Checking a viewer against the section list
-     * rejected every consumer, which the tests caught immediately.
+     * draft of this class. A section declares the lowest tier that may read it — 'public',
+     * 'participant', 'agent'. A viewer resolves to the tier they are in — 'public', 'owner',
+     * 'agent'. The two overlap in two words and differ in the middle one, which is exactly the
+     * shape that invites a mix-up: no section is ever 'owner' (a section for the owner is
+     * 'participant', because qualifying agents read it too) and no viewer is ever 'participant'
+     * (it names a pair of tiers, not one). Checking a viewer against the section list rejected
+     * every non-agent, which the tests caught on the first run.
      *
      * The permitted values come from the audience service rather than from config, because it is
-     * the thing that produces them. A config list here would be a second place to add a third
-     * audience, and one of the two would be forgotten.
+     * the thing that produces them. A config list here would be a second place to add a fourth
+     * tier, and one of the two would be forgotten.
      */
     private function assertViewerAudience(string $audience): void
     {
         $permitted = [
-            HireAgentDetailAudience::AUDIENCE_CONSUMER,
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
+            HireAgentDetailAudience::AUDIENCE_OWNER,
             HireAgentDetailAudience::AUDIENCE_AGENT,
         ];
 
@@ -264,11 +287,16 @@ class HireAgentDetailSections
      * A MISSING answer is a section that was put in the registry and never given a guard. Left to
      * default it would never render, and nothing would say so.
      *
-     * An EXTRA answer is a guard for a section that cannot render on this page — a typo, a section
-     * scoped to another role, or a leftover from something that was removed. The last of those is
-     * why Services and Broker Compensation are named specifically: passing one is not a typo, it is
-     * an attempt to reintroduce a section that was deliberately taken out, and it deserves an error
-     * that says so rather than "unknown key".
+     * An EXTRA answer is a guard for a section that cannot render for THIS role and THIS audience —
+     * a typo, a section scoped to another role, or a section the viewer's tier does not admit. The
+     * last of those is the one worth naming: passing a `services` guard while resolving for the
+     * public audience is not a typo, it is an attempt to compute a participant-only section for a
+     * viewer who may not read it, and the message says so rather than "unknown key".
+     *
+     * AN EARLIER DRAFT NAMED SERVICES AND COMPENSATION AS PERMANENTLY REMOVED and refused them
+     * outright. That was wrong about the private page: they are participant sections, not deleted
+     * ones. The refusal survives in the narrower and more useful form below, keyed on the tier
+     * rather than on a list of section names.
      */
     private function assertVisibilityCoversScope(string $role, string $audience, array $inScope, array $visible): void
     {
@@ -290,15 +318,25 @@ class HireAgentDetailSections
             return;
         }
 
-        $removed = array_values(array_intersect($extra, self::REMOVED_SECTIONS));
+        // Is this section real, but withheld from this viewer's tier? That is a different mistake
+        // from a typo, and it is the one with a disclosure behind it, so it gets its own message.
+        $withheld = [];
 
-        if ($removed !== []) {
+        foreach ($extra as $key) {
+            $rolesFor = $this->rolesFor($key);
+
+            if ($rolesFor !== [] && in_array($role, $rolesFor, true)) {
+                $withheld[] = $key;
+            }
+        }
+
+        if ($withheld !== []) {
             throw new InvalidArgumentException(
-                'These sections were removed from the redesigned Hire Agent detail page and cannot '
-                . 'be reintroduced by passing a visibility answer for them: ' . implode(', ', $removed)
-                . '. Compensation belongs to the hire agreement workflow and Representation '
-                . 'Preferences & Compatibility supersedes Services; see config/hire_agent_sections.php. '
-                . 'Legacy rendering of both is unaffected.'
+                "Hire Agent sections for role [{$role}] were given a visibility answer for sections "
+                . 'the [' . $audience . '] audience may not read: ' . implode(', ', $withheld)
+                . '. These exist for this role but sit at a narrower tier — see the audience notes '
+                . 'in config/hire_agent_sections.php. Resolve them for the audience that may read '
+                . 'them rather than computing them for one that may not.'
             );
         }
 

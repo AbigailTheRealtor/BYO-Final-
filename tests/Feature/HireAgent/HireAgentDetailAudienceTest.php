@@ -240,7 +240,7 @@ class HireAgentDetailAudienceTest extends TestCase
             "{$role}: an unconnected agent must not reach the agent audience."
         );
         $this->assertSame(
-            HireAgentDetailAudience::AUDIENCE_CONSUMER,
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
             $this->audience()->audienceFor($stranger, $listing)
         );
     }
@@ -313,21 +313,90 @@ class HireAgentDetailAudienceTest extends TestCase
     }
 
     /**
-     * A CONSUMER who owns the request is not — ownership alone does not qualify.
+     * A CONSUMER who owns the request reaches the OWNER tier, not the agent one.
      *
      * The complement of the test above, and the one that proves the agent half of the owner branch
-     * is load-bearing rather than decorative.
+     * is load-bearing rather than decorative. The owner tier is what gives the client Services and
+     * Broker Compensation — the material they evaluate proposals against — without giving them the
+     * agent-to-agent appendix.
      *
      * @dataProvider roles
      */
-    public function test_a_consumer_who_owns_the_listing_is_still_a_consumer(string $role): void
+    public function test_a_client_who_owns_the_listing_is_the_owner_audience(string $role): void
     {
         $owner   = $this->user('buyer');
         $listing = $this->makeListing($role, $owner);
 
         $this->assertFalse(
             $this->audience()->isAgentAudience($owner, $listing),
-            "{$role}: the client reading their own request is a consumer."
+            "{$role}: the client reading their own request is not an agent."
+        );
+        $this->assertTrue($this->audience()->isOwnerAudience($owner, $listing));
+        $this->assertSame(
+            HireAgentDetailAudience::AUDIENCE_OWNER,
+            $this->audience()->audienceFor($owner, $listing),
+            "{$role}: the client evaluating bids on their own request is the owner audience."
+        );
+    }
+
+    /**
+     * An AGENT who owns the request resolves to the wider tier, not the narrower one.
+     *
+     * They satisfy both branches — they own it, and they are an agent with a relationship to it —
+     * and the order of the checks in audienceFor() is the only thing deciding which wins. Testing
+     * ownership first would withhold the referral terms and credentials from the one viewer the
+     * agent sections exist to serve, silently, on their own agent-to-agent listing.
+     *
+     * @dataProvider roles
+     */
+    public function test_an_agent_who_owns_the_listing_resolves_to_the_wider_agent_tier(string $role): void
+    {
+        $agentOwner = $this->user('agent');
+        $listing    = $this->makeListing($role, $agentOwner);
+
+        $this->assertTrue($this->audience()->isOwnerAudience($agentOwner, $listing), 'Precondition: they own it.');
+
+        $this->assertSame(
+            HireAgentDetailAudience::AUDIENCE_AGENT,
+            $this->audience()->audienceFor($agentOwner, $listing),
+            "{$role}: an agent-owned request must resolve to the agent tier, not the owner tier."
+        );
+    }
+
+    /**
+     * A viewer who owns nothing and proposed nothing is the public tier, whatever their account is.
+     *
+     * @dataProvider roles
+     */
+    public function test_an_unrelated_authenticated_viewer_is_the_public_audience(string $role): void
+    {
+        $listing  = $this->makeListing($role, $this->user('buyer'));
+        $stranger = $this->user('buyer');
+
+        $this->assertFalse($this->audience()->isOwnerAudience($stranger, $listing));
+        $this->assertSame(
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
+            $this->audience()->audienceFor($stranger, $listing),
+            "{$role}: a logged-in stranger reads the public page."
+        );
+    }
+
+    /**
+     * Owning ANOTHER listing does not make you this one's owner.
+     *
+     * @dataProvider roles
+     */
+    public function test_owning_another_listing_does_not_qualify(string $role): void
+    {
+        $person = $this->user('buyer');
+        $mine   = $this->makeListing($role, $person);
+        $theirs = $this->makeListing($role, $this->user('buyer'));
+
+        $this->assertTrue($this->audience()->isOwnerAudience($person, $mine), 'Precondition.');
+        $this->assertFalse($this->audience()->isOwnerAudience($person, $theirs));
+        $this->assertSame(
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
+            $this->audience()->audienceFor($person, $theirs)
         );
     }
 
@@ -373,7 +442,7 @@ class HireAgentDetailAudienceTest extends TestCase
 
         $this->assertFalse($this->audience()->isAgentAudience(null, $listing));
         $this->assertSame(
-            HireAgentDetailAudience::AUDIENCE_CONSUMER,
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
             $this->audience()->audienceFor(null, $listing)
         );
     }
@@ -382,7 +451,7 @@ class HireAgentDetailAudienceTest extends TestCase
     {
         $this->assertFalse($this->audience()->isAgentAudience($this->user('agent'), null));
         $this->assertSame(
-            HireAgentDetailAudience::AUDIENCE_CONSUMER,
+            HireAgentDetailAudience::AUDIENCE_PUBLIC,
             $this->audience()->audienceFor($this->user('agent'), null)
         );
     }
@@ -510,17 +579,22 @@ class HireAgentDetailAudienceTest extends TestCase
 
         $agent = $this->user('agent');
 
-        // Consumer first: the owner reading their own request.
+        // A guest reads the public page.
+        $this->get(route($route, $listing->id))
+            ->assertOk()
+            ->assertViewHas('hlaAudience', HireAgentDetailAudience::AUDIENCE_PUBLIC);
+
+        // The client reading their own request is the owner tier.
         $this->actingAs($owner)
             ->get(route($route, $listing->id))
             ->assertOk()
-            ->assertViewHas('hlaAudience', HireAgentDetailAudience::AUDIENCE_CONSUMER);
+            ->assertViewHas('hlaAudience', HireAgentDetailAudience::AUDIENCE_OWNER);
 
-        // An unconnected agent is also a consumer — the discriminating case, through the wiring.
+        // An unconnected agent is still public — the discriminating case, through the wiring.
         $this->actingAs($agent)
             ->get(route($route, $listing->id))
             ->assertOk()
-            ->assertViewHas('hlaAudience', HireAgentDetailAudience::AUDIENCE_CONSUMER);
+            ->assertViewHas('hlaAudience', HireAgentDetailAudience::AUDIENCE_PUBLIC);
 
         // Now attach them.
         $this->makeProposal($role, $listing, $agent);
