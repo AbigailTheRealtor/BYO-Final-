@@ -34,16 +34,51 @@ trait HasSearchAreas
     public $location_dna_preferences_json = '';
 
     /**
-     * Load the `location_dna_preferences` blob into the component + partial prefill array,
-     * merging legacy discrete `cities` / `zipCodes` / `state` / `counties` meta into the
-     * in-memory blob (non-empty guards) so records saved before the map widget tracked those
-     * fields still pre-populate their tags. The DB blob is NOT mutated here — only on an
-     * explicit save.
+     * Merge legacy discrete `cities` / `zipCodes` meta into a decoded Location DNA blob.
+     *
+     * WHY THIS IS A METHOD RATHER THAN INLINE IN loadSearchAreas()
+     * ------------------------------------------------------------
+     * Two families need this rule and only one of them can call `loadSearchAreas()`. The Hire
+     * components load through that method and get the backfill for free. The Create Offer
+     * components decode the blob INLINE — their load paths are interleaved with role-specific
+     * hydration and a distinct 9B-2 prefill, so routing them through `loadSearchAreas()` wholesale
+     * would change four components' behaviour at once. Extracting the rule lets both callers share
+     * one implementation without either adopting the other's surrounding logic.
+     *
+     * It takes the blob and returns the merged blob rather than mutating `$this`, so a caller can
+     * apply it at whatever point in its own load sequence is correct without inheriting an
+     * assignment to `$existingLocationDna` it may not want yet.
+     *
+     * PURE WITH RESPECT TO STORAGE. Nothing here writes. The merged value reaches the database only
+     * through an explicit save, via the JS bridge that re-serialises this array — so loading a
+     * record and navigating away changes nothing.
+     *
+     * IDEMPOTENT by the emptiness guards: a blob that already carries a key is left alone, so
+     * repeated loads converge and a real blob value never loses to a stale legacy mirror.
+     *
+     * THE PARAMETER IS DELIBERATELY UNTYPED, AND THE GUARD BELOW IS WHY
+     * -----------------------------------------------------------------
+     * Every caller builds this argument as `$raw ? (json_decode($raw, true) ?? []) : []`, and that
+     * expression does NOT guarantee an array: a stored blob holding a JSON scalar — `5`, `"text"`,
+     * `true` — decodes to a scalar, and `?? []` only catches null. Declaring `array $ldna` would
+     * turn that into a TypeError at the boundary, i.e. a hard failure on exactly the malformed
+     * records this method exists to rescue, and it would do so on the shipped Hire surfaces that
+     * reach here through `loadSearchAreas()`.
+     *
+     * Normalising to `[]` rather than passing the scalar through is what the rest of the stack
+     * already does with such a value — `$blob['state'] ?? ''` on an int yields null either way —
+     * and it matches the guard in `HasGeographyCascade::applyGeographyCascadeToPayload()`. It also
+     * removes a latent fatal that predates this method: the old inline code would raise "Cannot use
+     * a scalar value as an array" the moment it tried to assign `$ldna['cities']`.
+     *
+     * @param  mixed  $ldna  decoded `location_dna_preferences`; anything non-array is treated as {}
+     * @return array<string, mixed>  the blob with legacy values merged in
      */
-    protected function loadSearchAreas($auction): void
+    protected function mergeLegacyGeographyIntoBlob($ldna, $auction): array
     {
-        $ldnaRaw = $auction->info('location_dna_preferences');
-        $ldna    = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+        if (! is_array($ldna)) {
+            $ldna = [];
+        }
 
         // Legacy `cities` meta → in-memory blob when the blob lacks cities.
         if (empty($ldna['cities'] ?? [])) {
@@ -68,23 +103,20 @@ trait HasSearchAreas
         // -----------------------------------------------------------------------------------
         // Cities had this backfill from the start; ZIPs never did. That asymmetry was harmless
         // while the blob was only a prefill source, and stops being harmless the moment a
-        // workflow joins `HasGeographyCascade::ZIP_MIRROR_WORKFLOWS`: the cascade hydrates its
-        // ZIP selection from `zip_codes` in THIS array and then mirrors the projection back over
-        // the host's `$zipCodes` property, which is what the legacy meta is written from. With no
-        // ZIPs in the blob the cascade hydrates nothing, projects nothing, and the legacy list is
-        // overwritten with `[]` on the next save — silently, since nothing compares the copies.
+        // workflow's tab renders the cascade: the cascade hydrates its ZIP selection from
+        // `zip_codes` in THIS array and projects all four geography keys back out on save. With no
+        // ZIPs in the blob it hydrates nothing and projects an empty list over whatever the blob
+        // held — silently, since nothing compares the copies.
         //
-        // So this is the precondition for enabling any further ZIP-mirroring workflow, not a
-        // change of behaviour for the ones running today. It also closes the same gap for Buyer,
-        // whose blob is likewise missing ZIPs on records that predate the map widget.
+        // It is sharper still for a workflow in `HasGeographyCascade::ZIP_MIRROR_WORKFLOWS`, where
+        // the projection is also mirrored back over the host's `$zipCodes` property and from there
+        // into the legacy meta the property was loaded from.
         //
-        // IN-MEMORY ONLY, exactly like the cities block: the stored blob is not rewritten here.
-        // The value reaches storage only through an explicit save, via the JS bridge that
-        // re-serialises this array — so loading a record and navigating away changes nothing.
+        // So this is the precondition for rendering the cascade on any surface that owns legacy ZIP
+        // state, not a change of behaviour for the ones running today.
         //
-        // IDEMPOTENT by the emptiness guard: a blob that already carries ZIPs is left alone, so
-        // repeated loads converge on the same array and a blob value never loses to a stale
-        // mirror. `zip_codes` is the blob's key; `zipCodes` is the legacy meta's. They differ.
+        // IDEMPOTENT by the emptiness guard. `zip_codes` is the blob's key; `zipCodes` is the
+        // legacy meta's. They differ, and that is not a typo.
         if (empty($ldna['zip_codes'] ?? [])) {
             $legacyZipsRaw = $auction->info('zipCodes');
             if ($legacyZipsRaw) {
@@ -108,6 +140,23 @@ trait HasSearchAreas
                 }
             }
         }
+
+        return $ldna;
+    }
+
+    /**
+     * Load the `location_dna_preferences` blob into the component + partial prefill array,
+     * merging legacy discrete `cities` / `zipCodes` / `state` / `counties` meta into the
+     * in-memory blob (non-empty guards) so records saved before the map widget tracked those
+     * fields still pre-populate their tags. The DB blob is NOT mutated here — only on an
+     * explicit save.
+     */
+    protected function loadSearchAreas($auction): void
+    {
+        $ldnaRaw = $auction->info('location_dna_preferences');
+        $ldna    = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+
+        $ldna = $this->mergeLegacyGeographyIntoBlob($ldna, $auction);
 
         $this->existingLocationDna           = $ldna;
         $this->location_dna_preferences_json = $ldnaRaw ?? '';

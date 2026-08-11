@@ -3328,6 +3328,25 @@ class TenantOfferListing extends Component
             $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+            // T1 — fold legacy discrete `cities` / `zipCodes` meta into the in-memory blob.
+            //
+            // The Hire family has had this since it adopted loadSearchAreas(); this component
+            // decodes the blob inline and so never ran it. That gap is invisible today and stops
+            // being invisible the moment this tab renders the geography cascade: the cascade
+            // hydrates from THIS array and projects all four geography keys back out on save, so a
+            // record whose ZIPs live only in the legacy meta would hydrate none, show the user an
+            // empty ZIP tier, and project an empty list over the blob.
+            //
+            // Landing it AHEAD of the cascade wiring is the point — it is the precondition, not
+            // part of the wiring. `create_tenant` remains unwired and absent from every scope list.
+            //
+            // IN-MEMORY ONLY and idempotent: the stored blob is untouched until an explicit save,
+            // and a blob that already carries a key is left alone.
+            $this->existingLocationDna = $this->mergeLegacyGeographyIntoBlob(
+                $this->existingLocationDna,
+                $auction
+            );
+
             // 9B-2 prefill: seed the Search Areas blob's Preferred State / counties from
             // the discrete meta when the blob lacks them, so the partial pre-populates
             // (in-memory only; the JS bridge carries the merged blob back on save).

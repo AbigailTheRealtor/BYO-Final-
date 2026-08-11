@@ -2484,6 +2484,18 @@ class TenantOfferListingEdit extends Component
         $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
         $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+        // T1 — fold legacy discrete `cities` / `zipCodes` meta into the in-memory blob.
+        //
+        // Must match TenantOfferListing exactly. Create and edit are one workflow to a user, and a
+        // backfill that ran on one surface but not the other would make a record's ZIP tier depend
+        // on which door it was opened through.
+        //
+        // IN-MEMORY ONLY and idempotent — see HasSearchAreas::mergeLegacyGeographyIntoBlob().
+        $this->existingLocationDna = $this->mergeLegacyGeographyIntoBlob(
+            $this->existingLocationDna,
+            $auction
+        );
+
         // 9B-2 prefill: seed the Search Areas blob's Preferred State / counties from
         // the discrete meta when the blob lacks them, so the partial pre-populates
         // (in-memory only; the JS bridge carries the merged blob back on save).
