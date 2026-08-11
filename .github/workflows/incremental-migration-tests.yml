@@ -35,16 +35,22 @@ jobs:
     name: Migrate a populated previous-release schema to head
     runs-on: ubuntu-latest
 
+    # PostgreSQL, matching production. The existing migrate:fresh job runs
+    # MySQL, but the deployed application is pgsql (see .replit / config)
+    # — and an incremental-migration gate that exercises a different engine
+    # from production is testing migrations nobody runs. PG 16 mirrors the
+    # deployed server version.
     services:
-      mysql:
-        image: mysql:8.0
+      postgres:
+        image: postgres:16
         env:
-          MYSQL_ROOT_PASSWORD: secret
-          MYSQL_DATABASE: byo_test
+          POSTGRES_PASSWORD: secret
+          POSTGRES_USER: postgres
+          POSTGRES_DB: byo_test
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -52,11 +58,15 @@ jobs:
     env:
       APP_ENV: testing
       APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-      DB_CONNECTION: mysql
+      # DATABASE_URL must be blank: config/database.php resolves the default
+      # connection to pgsql whenever it is non-empty, and would then read the
+      # url instead of these values.
+      DATABASE_URL: ""
+      DB_CONNECTION: pgsql
       DB_HOST: 127.0.0.1
-      DB_PORT: 3306
+      DB_PORT: 5432
       DB_DATABASE: byo_test
-      DB_USERNAME: root
+      DB_USERNAME: postgres
       DB_PASSWORD: secret
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -75,7 +85,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: pdo, pdo_mysql, mbstring, xml, ctype, fileinfo, json, bcmath
+          extensions: pdo, pdo_pgsql, mbstring, xml, ctype, fileinfo, json, bcmath
           coverage: none
 
       - name: Cache Composer packages
