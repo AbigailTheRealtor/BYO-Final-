@@ -174,4 +174,37 @@ return [
 
     'neighborhood_tier_enabled' => (bool) env('CRITERIA_LDNA_NEIGHBORHOOD_TIER_ENABLED', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Geography search (M2)
+    |--------------------------------------------------------------------------
+    |
+    | Master gate for the search box that SEEDS the cascade: type "Clearwater",
+    | pick the result, and the state/county/city tiers are filled in as though
+    | the three selects had been used in order.
+    |
+    | DEFAULT OFF. With the gate closed the cascade renders exactly as it does
+    | today and `App\Http\Livewire\Concerns\HasGeographySearch` runs no query.
+    |
+    | IT ALSO REQUIRES THE CASCADE, AND THAT IS NOT A SECOND SWITCH TO REMEMBER —
+    | it is enforced in `geographySearchIsEnabled()`. Search fills the cascade's
+    | tiers; where those tiers do not render there is nothing to fill, and a
+    | search box above the legacy free-text inputs would populate selections no
+    | surface shows. So Seller and Landlord stay excluded here for exactly the
+    | reason they are excluded from the cascade, with no second rule to keep in
+    | step.
+    |
+    | IT REQUIRES `geography_source = census` IN PRACTICE, though nothing here
+    | asserts it: `GeographySearchRepository` binds to the null object under any
+    | other source, so search returns nothing rather than identifiers the
+    | cascade cannot hold.
+    |
+    | NEIGHBOURHOODS ARE NOT SEARCHED regardless of this flag — the tier above
+    | governs that, and the search surface requests only state, county, city and
+    | ZIP.
+    |
+    */
+
+    'geography_search_enabled' => (bool) env('CRITERIA_LDNA_SEARCH_ENABLED', false),
+
 ];

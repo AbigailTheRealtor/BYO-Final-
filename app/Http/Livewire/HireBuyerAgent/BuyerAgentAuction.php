@@ -22,6 +22,7 @@ class BuyerAgentAuction extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
     use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut that seeds the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
 
     /**
@@ -756,6 +757,10 @@ class BuyerAgentAuction extends Component
         // Called FIRST so loadDraft() below can hydrate it from the stored document. With the
         // flag off this sets one boolean and does nothing else.
         $this->bootGeographyCascade(self::GEOGRAPHY_CASCADE_WORKFLOW);
+
+        // M2 — AFTER the cascade's boot, which is what the search gate reads. See
+        // HasGeographySearch::bootGeographySearch().
+        $this->bootGeographySearch();
 
         $this->addService();
 

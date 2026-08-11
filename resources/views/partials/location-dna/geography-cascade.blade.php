@@ -16,6 +16,13 @@
 
 <div class="mb-3" id="geo-cascade" wire:key="geo-cascade">
 
+    {{-- M2 — the search shortcut. Defaults off, and a host that does not carry
+         `HasGeographySearch` never declares the property, so the null coalesce keeps every
+         existing surface rendering exactly what it rendered before. --}}
+    @if ($geoSearchEnabled ?? false)
+        @include('partials.location-dna.geography-search')
+    @endif
+
     <label class="fw-bold d-block mb-2" style="font-size:.95rem;">
         Location Preferences<span class="text-danger">*</span>
         <small class="text-muted d-block fw-normal" style="font-size:.8rem;">

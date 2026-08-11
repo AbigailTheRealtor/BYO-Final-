@@ -112,12 +112,17 @@ class GeographySearchBindingTest extends TestCase
     }
 
     /**
-     * M1 IS A SEAM, NOT A FEATURE. Nothing renders it, so no Blade view may reference it yet —
-     * a UI arriving without its own milestone would bypass the flag work M2 exists to do.
+     * EXACTLY ONE VIEW CONSUMES THE SEAM, AND IT IS THE M2 SEARCH PARTIAL.
+     *
+     * This replaces M1's `no_view_consumes_the_search_seam_yet`, which asserted that NOTHING
+     * rendered the seam and was written to fail the moment a UI arrived. It has now done its job.
+     * The successor keeps the same property under guard rather than dropping it: the surface is
+     * still enumerated, so a second view reaching the search layer — a Tenant tab, an Offer tab, a
+     * legacy criteria page — fails here instead of quietly widening a Hire-Buyer-only milestone.
      *
      * @test
      */
-    public function no_view_consumes_the_search_seam_yet(): void
+    public function only_the_search_partial_consumes_the_search_seam(): void
     {
         $hits = [];
 
@@ -134,10 +139,41 @@ class GeographySearchBindingTest extends TestCase
             $source = (string) file_get_contents($file->getPathname());
 
             if (str_contains($source, 'GeographySearchRepository') || str_contains($source, 'GeographyQuery')) {
-                $hits[] = $file->getPathname();
+                $hits[] = str_replace(resource_path('views').'/', '', $file->getPathname());
             }
         }
 
-        $this->assertSame([], $hits, 'M1 adds no UI; a view reaching the seam belongs to M2.');
+        $this->assertSame(
+            ['partials/location-dna/geography-search.blade.php'],
+            $hits,
+            'M2 is Hire Buyer only; a second view reaching the search layer widens it silently.'
+        );
+    }
+
+    /**
+     * The search partial renders only from the cascade, and only behind its own flag.
+     *
+     * Two independent gates, asserted structurally: the include is wrapped, and the wrapper
+     * null-coalesces so a host that never declares the property renders exactly what it rendered
+     * before. That default is what keeps the catch-all `TenantAgentAuction` — which also renders
+     * the Buyer tab, and does NOT carry the search trait — unchanged.
+     *
+     * @test
+     */
+    public function the_search_partial_is_included_behind_its_own_flag(): void
+    {
+        $cascade = (string) file_get_contents(
+            resource_path('views/partials/location-dna/geography-cascade.blade.php')
+        );
+
+        $this->assertStringContainsString('@if ($geoSearchEnabled ?? false)', $cascade);
+        $this->assertStringContainsString("@include('partials.location-dna.geography-search')", $cascade);
+
+        $gate    = strpos($cascade, '@if ($geoSearchEnabled ?? false)');
+        $include = strpos($cascade, "@include('partials.location-dna.geography-search')");
+
+        $this->assertNotFalse($gate);
+        $this->assertNotFalse($include);
+        $this->assertLessThan($include, $gate, 'the include must sit inside the gate');
     }
 }
