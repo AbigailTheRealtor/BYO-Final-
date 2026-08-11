@@ -92,14 +92,15 @@ trait DeletesOwnedListingMedia
      * @param  mixed   $auction    an auction resolved owner-scoped by the caller
      * @param  string  $metaKey    'photo' | 'video'
      * @param  string  $directory  storage-relative media directory, without trailing slash
+     * @param  bool    $private    delete from the private disk instead of the public one
      */
-    private function deleteOwnedListingMedia($auction, string $metaKey, string $directory): void
+    private function deleteOwnedListingMedia($auction, string $metaKey, string $directory, bool $private = false): void
     {
         // The record is the only source of the filename. The Livewire property is display state.
         $storedFilename = $auction->info($metaKey);
 
         if ($this->isDeletableStoredMediaFilename($storedFilename)) {
-            app(ListingStorageWriter::class)->deletePublic($directory . '/' . $storedFilename);
+            $this->deleteOwnedMediaFile($directory, $storedFilename, $private);
         } elseif ($storedFilename !== false && $storedFilename !== null && $storedFilename !== '') {
             // Present but unusable. Refused rather than repaired — see the class note.
             Log::warning('[LISTING MEDIA] refused to delete a malformed stored media path', [
@@ -110,5 +111,112 @@ trait DeletesOwnedListingMedia
         }
 
         $auction->deleteMeta($metaKey);
+    }
+
+    /**
+     * S5 — delete ONE entry from a collection-backed media meta, then rewrite the remainder.
+     *
+     * WHY THIS IS NOT THE SCALAR METHOD. `property_photos` holds a JSON array, and the user is
+     * choosing WHICH of several photos to remove. That makes the client's value a SELECTOR — a
+     * legitimate and necessary input — where the scalar case has no client input at all. The
+     * distinction this method draws is between selecting and authorizing:
+     *
+     *   · the client says WHICH entry;
+     *   · the owned record decides WHETHER that entry exists and WHAT string is used as a path.
+     *
+     * So the selector is matched against the persisted array with a strict in_array(), and the
+     * value actually concatenated into the path is the one read back OUT of that array — never
+     * the one that arrived. A selector that is not a member is refused outright. Array position
+     * is not used as authority: the client's local ordering can legitimately drift from the
+     * persisted order (reordering, unsaved additions), and deleting by index would then remove a
+     * different photo than the one the user clicked.
+     *
+     * @param  mixed   $auction    an auction resolved owner-scoped by the caller
+     * @param  string  $metaKey    'property_photos'
+     * @param  string  $directory  storage-relative media directory, without trailing slash
+     * @param  mixed   $selected   the client's chosen entry — selector only, never a path
+     * @param  bool    $private    delete from the private disk instead of the public one
+     * @return bool                true when an entry was removed from the collection
+     */
+    private function deleteOwnedListingMediaFromCollection(
+        $auction,
+        string $metaKey,
+        string $directory,
+        $selected,
+        bool $private = false
+    ): bool {
+        if (! is_string($selected) || $selected === '') {
+            return false;
+        }
+
+        $stored = $auction->info($metaKey);
+
+        $entries = [];
+        if (is_array($stored)) {
+            $entries = $stored;
+        } elseif (is_string($stored) && $stored !== '') {
+            $decoded = json_decode($stored, true);
+            $entries = is_array($decoded) ? $decoded : [];
+        }
+
+        // Membership of the owned set is the whole authorization. Strict comparison so a
+        // loosely-equal value cannot stand in for a stored one.
+        $position = array_search($selected, $entries, true);
+        if ($position === false) {
+            Log::warning('[LISTING MEDIA] refused to delete an entry absent from the owned collection', [
+                'auction_id' => $auction->id ?? null,
+                'meta_key'   => $metaKey,
+            ]);
+
+            return false;
+        }
+
+        // Read the path back OUT of the persisted collection rather than reusing the input.
+        $storedFilename = $entries[$position];
+
+        if ($this->isDeletableStoredMediaFilename($storedFilename)) {
+            $this->deleteOwnedMediaFile($directory, $storedFilename, $private);
+        } else {
+            // Refused rather than repaired, exactly as in the scalar case. The entry is still
+            // dropped below: the record should stop pointing at something unusable.
+            Log::warning('[LISTING MEDIA] refused to delete a malformed stored collection entry', [
+                'auction_id' => $auction->id ?? null,
+                'meta_key'   => $metaKey,
+                'directory'  => $directory,
+            ]);
+        }
+
+        array_splice($entries, $position, 1);
+
+        if (empty($entries)) {
+            $auction->deleteMeta($metaKey);
+        } else {
+            $auction->saveMeta($metaKey, array_values($entries));
+        }
+
+        return true;
+    }
+
+    /**
+     * The single place a media path is handed to storage.
+     *
+     * Both callers above have already established two things: the directory is a server-side
+     * literal, and the filename came out of the owned record and passed
+     * isDeletableStoredMediaFilename(). Neither the disk nor the directory is ever client-supplied
+     * — this method takes a bool, not a disk name, precisely so no call site can be talked into
+     * writing one in.
+     */
+    private function deleteOwnedMediaFile(string $directory, string $filename, bool $private): void
+    {
+        $writer = app(ListingStorageWriter::class);
+        $path   = $directory . '/' . $filename;
+
+        if ($private) {
+            $writer->deletePrivate($path);
+
+            return;
+        }
+
+        $writer->deletePublic($path);
     }
 }
