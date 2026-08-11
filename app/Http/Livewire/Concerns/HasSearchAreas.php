@@ -35,9 +35,10 @@ trait HasSearchAreas
 
     /**
      * Load the `location_dna_preferences` blob into the component + partial prefill array,
-     * merging legacy discrete `cities` / `state` / `counties` meta into the in-memory blob
-     * (non-empty guards) so records saved before the map widget tracked those fields still
-     * pre-populate their tags. The DB blob is NOT mutated here — only on an explicit save.
+     * merging legacy discrete `cities` / `zipCodes` / `state` / `counties` meta into the
+     * in-memory blob (non-empty guards) so records saved before the map widget tracked those
+     * fields still pre-populate their tags. The DB blob is NOT mutated here — only on an
+     * explicit save.
      */
     protected function loadSearchAreas($auction): void
     {
@@ -57,6 +58,53 @@ trait HasSearchAreas
                 ));
                 if (!empty($legacyCities)) {
                     $ldna['cities'] = $legacyCities;
+                }
+            }
+        }
+
+        // Legacy `zipCodes` meta → in-memory blob `zip_codes` when the blob lacks ZIPs.
+        //
+        // WHY THIS EXISTS, GIVEN THE CITIES BLOCK ABOVE ALREADY DID THE SAME THING FOR CITIES
+        // -----------------------------------------------------------------------------------
+        // Cities had this backfill from the start; ZIPs never did. That asymmetry was harmless
+        // while the blob was only a prefill source, and stops being harmless the moment a
+        // workflow joins `HasGeographyCascade::ZIP_MIRROR_WORKFLOWS`: the cascade hydrates its
+        // ZIP selection from `zip_codes` in THIS array and then mirrors the projection back over
+        // the host's `$zipCodes` property, which is what the legacy meta is written from. With no
+        // ZIPs in the blob the cascade hydrates nothing, projects nothing, and the legacy list is
+        // overwritten with `[]` on the next save — silently, since nothing compares the copies.
+        //
+        // So this is the precondition for enabling any further ZIP-mirroring workflow, not a
+        // change of behaviour for the ones running today. It also closes the same gap for Buyer,
+        // whose blob is likewise missing ZIPs on records that predate the map widget.
+        //
+        // IN-MEMORY ONLY, exactly like the cities block: the stored blob is not rewritten here.
+        // The value reaches storage only through an explicit save, via the JS bridge that
+        // re-serialises this array — so loading a record and navigating away changes nothing.
+        //
+        // IDEMPOTENT by the emptiness guard: a blob that already carries ZIPs is left alone, so
+        // repeated loads converge on the same array and a blob value never loses to a stale
+        // mirror. `zip_codes` is the blob's key; `zipCodes` is the legacy meta's. They differ.
+        if (empty($ldna['zip_codes'] ?? [])) {
+            $legacyZipsRaw = $auction->info('zipCodes');
+            if ($legacyZipsRaw) {
+                $legacyZips = is_string($legacyZipsRaw)
+                    ? (json_decode($legacyZipsRaw, true) ?? [])
+                    : (array) $legacyZipsRaw;
+
+                // Cast rather than require `is_string` as the cities filter does, because a ZIP is
+                // the one label that legacy data plausibly stored as a NUMBER — `[33701]` rather
+                // than `["33701"]`. `GeographySelectionHydrator::labels()` accepts strings only
+                // and silently drops anything else, so an int-typed ZIP would not even reach the
+                // preserved-labels path that exists to keep unresolvable history. Casting here is
+                // what makes this backfill lossless for the records most in need of it.
+                $legacyZips = array_values(array_filter(array_map(
+                    fn($z) => is_scalar($z) ? trim((string) $z) : '',
+                    is_array($legacyZips) ? $legacyZips : []
+                ), fn($z) => $z !== ''));
+
+                if (!empty($legacyZips)) {
+                    $ldna['zip_codes'] = array_values(array_unique($legacyZips));
                 }
             }
         }
