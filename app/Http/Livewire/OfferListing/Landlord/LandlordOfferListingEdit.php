@@ -28,6 +28,7 @@ class LandlordOfferListingEdit extends Component
 
     use WithFileUploads;
     use ResolvesOwnedAuction;
+    use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use LandlordPublishValidation; // BYO-H1: shared publish rules (create + edit)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use GuidesPublishValidation;    // publish gate + guided correction (parity with create)
@@ -4073,22 +4074,50 @@ class LandlordOfferListingEdit extends Component
         }
     }
 
+    /** S5 — see SellerOfferListing::deletePropertyPhoto(); identical contract. */
     public function deletePropertyPhoto($index)
     {
-        if (isset($this->propertyPhotos[$index])) {
-            $filename = $this->propertyPhotos[$index];
-            app(\App\Support\Storage\ListingStorageWriter::class)->deletePublic('auction/images/' . $filename);
-            array_splice($this->propertyPhotos, $index, 1);
-            $_photoId = $this->auctionId ?? $this->listingId;
-            if ($_photoId) {
-                $auction = HirelandLordAgentAuction::findOrFail($_photoId);
-                if (empty($this->propertyPhotos)) {
-                    $auction->deleteMeta('property_photos');
-                } else {
-                    $auction->saveMeta('property_photos', $this->propertyPhotos);
-                }
-            }
+        if (! isset($this->propertyPhotos[$index])) {
+            return;
         }
+
+        $selected = $this->propertyPhotos[$index];
+        $auction  = $this->resolveOwnedMediaListing();
+
+        if ($auction !== null) {
+            $this->deleteOwnedListingMediaFromCollection($auction, 'property_photos', 'auction/images', $selected);
+            $stored  = $auction->fresh()->info('property_photos');
+            $decoded = is_string($stored) ? json_decode($stored, true) : (is_array($stored) ? $stored : []);
+            $this->propertyPhotos = is_array($decoded) ? array_values($decoded) : [];
+
+            return;
+        }
+
+        array_splice($this->propertyPhotos, $index, 1);
+    }
+
+    /**
+     * S5 — the listing this component may delete media from, or null when none exists yet.
+     *
+     * Re-resolved at the action boundary rather than inherited from hydrate(), which runs before
+     * client syncInput updates are applied. Mirrors hydrate()'s `auctionId ?: listingId`. Fails
+     * closed with 403.
+     */
+    private function resolveOwnedMediaListing(): ?HirelandLordAgentAuction
+    {
+        $id = $this->auctionId ?: $this->listingId;
+
+        if (empty($id)) {
+            return null;
+        }
+
+        $auction = HirelandLordAgentAuction::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        abort_if($auction === null, 403, 'You are not authorized to access this listing.');
+
+        return $auction;
     }
 
     public function reorderPhotos(array $orderedFilenames): void
