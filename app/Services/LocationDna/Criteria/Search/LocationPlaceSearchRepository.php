@@ -60,6 +60,30 @@ use Illuminate\Support\Facades\DB;
  */
 final class LocationPlaceSearchRepository implements GeographySearchRepository
 {
+    /**
+     * The LIKE escape character — deliberately NOT a backslash.
+     *
+     * WHY THIS IS `!` AND MUST NEVER GO BACK TO `\`
+     * ----------------------------------------------
+     * PDO scans a statement for `?` placeholders and has to skip over quoted literals to do it.
+     * Given `escape '\'` it reads the backslash as escaping the closing quote, decides the string
+     * literal is still open, and swallows every `?` that follows into it. The result is
+     * `SQLSTATE[HY093]: Invalid parameter number` on POSTGRES for any query that ORs more than one
+     * of these clauses together — which is every name-based tier this class has.
+     *
+     * A single clause survives, which is what made it look fine in isolation. The ZIP tier survived
+     * for a different reason: it uses the builder's native `like` and never emits an escape clause.
+     *
+     * SQLITE PARSES IT DIFFERENTLY AND DOES NOT FAIL, so the whole feature suite passed against
+     * code that was broken in production. That is the reason this constant exists rather than the
+     * literal being repeated at six call sites: the next person to touch these queries should have
+     * to read this note first. See `the_like_escape_character_is_not_a_backslash()`.
+     */
+    private const LIKE_ESCAPE = '!';
+
+    /** The escape character as it appears inside the SQL, quoted. */
+    private const LIKE_ESCAPE_SQL = "'".self::LIKE_ESCAPE."'";
+
     /** Digits in a state GEOID (STATEFP). */
     private const STATE_WIDTH = 2;
 
@@ -568,9 +592,9 @@ final class LocationPlaceSearchRepository implements GeographySearchRepository
         $escaped = $this->escapeLike($query->normalizedTerm());
 
         return $builder
-            ->whereRaw('lower('.$column.') like ? escape \'\\\'', [$escaped.'%'])
-            ->orWhereRaw('lower('.$column.') like ? escape \'\\\'', ['% '.$escaped.'%'])
-            ->orWhereRaw('lower('.$column.') like ? escape \'\\\'', ['%-'.$escaped.'%']);
+            ->whereRaw('lower('.$column.') like ? escape '.self::LIKE_ESCAPE_SQL, [$escaped.'%'])
+            ->orWhereRaw('lower('.$column.') like ? escape '.self::LIKE_ESCAPE_SQL, ['% '.$escaped.'%'])
+            ->orWhereRaw('lower('.$column.') like ? escape '.self::LIKE_ESCAPE_SQL, ['%-'.$escaped.'%']);
     }
 
     /**
@@ -604,9 +628,9 @@ final class LocationPlaceSearchRepository implements GeographySearchRepository
                 $escaped = $this->escapeLike($form);
 
                 foreach ($columns as $column) {
-                    $q->orWhereRaw('lower('.$column.') like ? escape \'\\\'', [$escaped.'%']);
-                    $q->orWhereRaw('lower('.$column.') like ? escape \'\\\'', ['% '.$escaped.'%']);
-                    $q->orWhereRaw('lower('.$column.') like ? escape \'\\\'', ['%-'.$escaped.'%']);
+                    $q->orWhereRaw('lower('.$column.') like ? escape '.self::LIKE_ESCAPE_SQL, [$escaped.'%']);
+                    $q->orWhereRaw('lower('.$column.') like ? escape '.self::LIKE_ESCAPE_SQL, ['% '.$escaped.'%']);
+                    $q->orWhereRaw('lower('.$column.') like ? escape '.self::LIKE_ESCAPE_SQL, ['%-'.$escaped.'%']);
                 }
             }
         });
@@ -617,10 +641,17 @@ final class LocationPlaceSearchRepository implements GeographySearchRepository
      *
      * Without this a term of `%` matches every row in the corpus and an `_` silently matches any
      * character. Both are things a user can type by accident, and both turn a search into a scan.
+     *
+     * The escape CHARACTER itself is escaped first, or a literal `!` in a place name would consume
+     * the character after it.
      */
     private function escapeLike(string $value): string
     {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+        return str_replace(
+            [self::LIKE_ESCAPE, '%', '_'],
+            [self::LIKE_ESCAPE.self::LIKE_ESCAPE, self::LIKE_ESCAPE.'%', self::LIKE_ESCAPE.'_'],
+            $value
+        );
     }
 
     // ═════════════════════════════════════════════════════════════════════════

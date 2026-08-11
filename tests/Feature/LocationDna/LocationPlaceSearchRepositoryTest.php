@@ -537,6 +537,94 @@ class LocationPlaceSearchRepositoryTest extends TestCase
         $this->assertTrue($this->repo->search(GeographyQuery::for('__'))->isEmpty());
     }
 
+    /**
+     * THE LIKE ESCAPE CHARACTER MUST NOT BE A BACKSLASH.
+     *
+     * This is a source assertion rather than a behavioural one, and that is deliberate: the bug it
+     * guards against is INVISIBLE TO THIS SUITE. PDO reads the backslash in `escape '\'` as
+     * escaping the closing quote, decides the literal is unterminated, and swallows the `?`
+     * placeholders that follow — so Postgres raises `SQLSTATE[HY093]: Invalid parameter number` for
+     * every tier that ORs more than one such clause together. SQLite parses the same statement
+     * without complaint, so all 26 tests here passed against code that could not run in production.
+     *
+     * A behavioural test cannot catch that on the suite's driver. A source guard can, and does.
+     *
+     * @test
+     */
+    public function the_like_escape_character_is_not_a_backslash(): void
+    {
+        $source = (string) file_get_contents(
+            base_path('app/Services/LocationDna/Criteria/Search/LocationPlaceSearchRepository.php')
+        );
+
+        $this->assertStringNotContainsString(
+            "escape \\'\\\\\\'",
+            $source,
+            'A backslash LIKE escape breaks placeholder parsing on Postgres. Use LIKE_ESCAPE.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            "/private const LIKE_ESCAPE\s*=\s*'!'/",
+            $source,
+            'The escape character must stay a non-backslash literal.'
+        );
+
+        // Every raw LIKE goes through the constant rather than an inline literal, so there is one
+        // place to change and one place to be wrong.
+        $total  = preg_match_all('/like \? escape /', $source);
+        $viaConst = preg_match_all("/like \? escape '\.self::LIKE_ESCAPE_SQL/", $source);
+
+        $this->assertGreaterThan(0, $total, 'the raw LIKE clauses should still be here');
+        $this->assertSame(
+            $total,
+            $viaConst,
+            'Every raw LIKE clause must reference LIKE_ESCAPE_SQL, never an inline quoted escape.'
+        );
+    }
+
+    /**
+     * A term containing the escape character itself still matches literally.
+     *
+     * The escape char has to be escaped FIRST in {@see LocationPlaceSearchRepository::escapeLike()},
+     * or a `!` typed by a user would consume the character after it and silently change the search.
+     *
+     * @test
+     */
+    public function a_literal_escape_character_in_the_term_is_matched_literally(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->county('12103', 'Pinellas County', 'Pinellas');
+        $this->place('Hi! Beach', '12', '1277777', ['12103']);
+        $this->place('Hix Beach', '12', '1277778', ['12103']);
+
+        $cities = $this->repo->search(GeographyQuery::for('Hi! Beach'))->ofKind(GeographyOption::KIND_CITY);
+
+        $this->assertCount(1, $cities, 'the `!` must be a literal, not an escape');
+        $this->assertSame('1277777', $cities[0]->option->id);
+    }
+
+    /**
+     * A multi-word term exercises the OR'd multi-pattern path — the shape that failed on Postgres.
+     *
+     * Kept as a behavioural companion to the source guard above: it proves the patterns still find
+     * what they should, on whichever driver the suite runs.
+     *
+     * @test
+     */
+    public function a_multi_word_term_still_matches_across_the_or_patterns(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->county('12103', 'Pinellas County', 'Pinellas');
+        $this->place('Palm Harbor', '12', '1254075', ['12103']);
+
+        foreach (['Palm Harbor', 'palm harbor', 'Harbor'] as $typed) {
+            $cities = $this->repo->search(GeographyQuery::for($typed))->ofKind(GeographyOption::KIND_CITY);
+
+            $this->assertCount(1, $cities, "`{$typed}` should match Palm Harbor");
+            $this->assertSame('1254075', $cities[0]->option->id);
+        }
+    }
+
     /** @test */
     public function searching_writes_nothing(): void
     {
