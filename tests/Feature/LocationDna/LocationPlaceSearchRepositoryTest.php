@@ -351,6 +351,106 @@ class LocationPlaceSearchRepositoryTest extends TestCase
         $this->assertSame('FL', $byUsps[0]->option->abbreviation);
     }
 
+    /**
+     * A state's exact name outranks a real city of the same name, and the city survives.
+     *
+     * Florida, Missouri is a real place. So are Florida, New York and Florida, Ohio.
+     *
+     * @test
+     */
+    public function an_exact_state_name_outranks_a_city_of_the_same_name(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->state('29', 'MO', 'Missouri');
+        $this->county('29137', 'Monroe County', 'Monroe');
+        $this->place('Florida', '29', '2926586', ['29137']);
+
+        $result = $this->repo->search(GeographyQuery::for('Florida'));
+
+        $this->assertSame(GeographyOption::KIND_STATE, $result->matches[0]->option->kind);
+        $this->assertSame('12', $result->matches[0]->option->id);
+
+        // Reordered, not filtered.
+        $cities = $result->ofKind(GeographyOption::KIND_CITY);
+        $this->assertCount(1, $cities, 'the Missouri city must still be findable');
+        $this->assertSame('2926586', $cities[0]->option->id);
+    }
+
+    /**
+     * AN EXACT ABBREVIATION IS AN EXACT MATCH, even though the state's NAME only prefix-matches it.
+     *
+     * This is the regression that made `FL` return the city of Flat, Alaska first: the abbreviation
+     * used to be consulted only when the name matched nothing, and "Florida" prefix-matches "fl",
+     * so the two-letter code was never examined and was recorded as a weak partial.
+     *
+     * @test
+     */
+    public function an_exact_state_abbreviation_ranks_above_prefix_matched_cities(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->state('02', 'AK', 'Alaska');
+        $this->county('02290', 'Yukon-Koyukuk Census Area', 'Yukon-Koyukuk');
+        $this->place('Flat', '02', '0225100', ['02290']);
+
+        $result = $this->repo->search(GeographyQuery::for('FL'));
+
+        $this->assertSame(GeographyOption::KIND_STATE, $result->matches[0]->option->kind);
+        $this->assertSame('12', $result->matches[0]->option->id);
+        $this->assertSame(
+            MatchType::Exact,
+            $result->matches[0]->matchType,
+            'the abbreviation is an exact match even when the name only prefixes'
+        );
+
+        $this->assertNotEmpty($result->ofKind(GeographyOption::KIND_CITY), 'Flat must still be offered');
+    }
+
+    /**
+     * The abbreviation is weighed ALONGSIDE the name rather than only when the name fails.
+     *
+     * Asserted on the match type directly, because the ranking assertion above would still pass if
+     * the state won for some unrelated reason.
+     *
+     * @test
+     */
+    public function a_state_abbreviation_is_classified_exact_even_when_the_name_prefix_matches(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+
+        $states = $this->repo->search(GeographyQuery::for('FL'))->ofKind(GeographyOption::KIND_STATE);
+
+        $this->assertCount(1, $states);
+        $this->assertSame(MatchType::Exact, $states[0]->matchType);
+    }
+
+    /**
+     * AMBIGUITY SURVIVES THE RANKING CHANGE.
+     *
+     * "Springfield" names no state, so nothing here promotes anything; the point is that the new
+     * bonus cannot collapse a genuinely ambiguous result into one row.
+     *
+     * @test
+     */
+    public function the_ranking_change_does_not_collapse_ambiguous_results(): void
+    {
+        $this->state('12', 'FL', 'Florida');
+        $this->state('17', 'IL', 'Illinois');
+        $this->state('29', 'MO', 'Missouri');
+        $this->county('12103', 'Pinellas County', 'Pinellas');
+        $this->county('17167', 'Sangamon County', 'Sangamon');
+        $this->county('29077', 'Greene County', 'Greene');
+        $this->place('Springfield', '12', '1267875', ['12103']);
+        $this->place('Springfield', '17', '1772000', ['17167']);
+        $this->place('Springfield', '29', '2970000', ['29077']);
+
+        $cities = $this->repo->search(GeographyQuery::for('Springfield'))->ofKind(GeographyOption::KIND_CITY);
+
+        $this->assertCount(3, $cities);
+
+        $breadcrumbs = array_map(static fn ($m): string => $m->breadcrumb, $cities);
+        $this->assertCount(3, array_unique($breadcrumbs), 'each candidate keeps distinguishing context');
+    }
+
     /** @test */
     public function a_zip_is_found_by_prefix_and_collapses_across_its_counties(): void
     {

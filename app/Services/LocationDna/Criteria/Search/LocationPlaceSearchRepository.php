@@ -382,15 +382,21 @@ final class LocationPlaceSearchRepository implements GeographySearchRepository
         $matches = [];
 
         foreach ($rows as $row) {
-            $type = TermMatcher::classify($this->text($row->name), $term);
+            // THE ABBREVIATION IS ITS OWN MATCH SURFACE, WEIGHED ALONGSIDE THE NAME.
+            //
+            // It used to be consulted only when the name matched nothing, which quietly lost the
+            // case it exists for: `FL` PREFIX-matches "Florida", so the name classifier returned a
+            // non-null answer, the abbreviation was never examined, and an exact two-letter code
+            // was recorded as a weak partial. Florida then ranked below every city beginning "Fl".
+            //
+            // Taking the stronger of the two makes an exact code exact, whatever the name did.
+            $type = $this->bestOf(
+                TermMatcher::classify($this->text($row->name), $term),
+                mb_strtolower($this->text($row->usps)) === $raw ? MatchType::Exact : null,
+            );
 
-            // An exact abbreviation matches even when the NAME does not — "FL" never resembles
-            // "Florida".
             if ($type === null) {
-                if (mb_strtolower($this->text($row->usps)) !== $raw) {
-                    continue;
-                }
-                $type = MatchType::Exact;
+                continue;
             }
 
             $matches[] = new GeographyMatch(

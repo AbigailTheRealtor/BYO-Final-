@@ -47,6 +47,30 @@ final class GeographyMatchRanker
     /** Awarded when the term itself named the tier, e.g. "Pinellas County". */
     private const NAMED_TIER_BONUS = 45;
 
+    /**
+     * Awarded to a state matched EXACTLY — by full name or by USPS abbreviation.
+     *
+     * WHY A STATE NEEDS THIS AND THE OTHER TIERS DO NOT
+     * -------------------------------------------------
+     * The tier bonuses below say that, all else equal, a city is the likelier intent than a state —
+     * which is right for a partial term, because far more searches end at a city. It is wrong for an
+     * exact one. There is a city called Florida in Monroe County, Missouri, and an "Iowa County" in
+     * Wisconsin; without this bonus, typing `Florida` returns the Missouri city first and typing
+     * `Iowa` returns the Wisconsin county first, because both beat the state on tier bonus alone
+     * while tying it on match strength.
+     *
+     * Someone who types a state's exact name or its two-letter code has told us which tier they
+     * mean as plainly as someone who types "Pinellas County" — so this is the state's counterpart to
+     * {@see self::NAMED_TIER_BONUS}, not a thumb on the scale.
+     *
+     * IT ONLY APPLIES TO EXACT MATCHES. A prefix hit like `Flo` is genuinely ambiguous between
+     * Florida and a hundred places beginning "Flo", and promoting the state there would make the
+     * common case worse to fix the rare one.
+     *
+     * IT REORDERS, IT NEVER FILTERS. The Missouri city of Florida is still returned, one row down.
+     */
+    private const EXACT_STATE_BONUS = 40;
+
     /** Awarded when the hit falls inside a scope the caller already established. */
     private const IN_SCOPE_BONUS = 35;
 
@@ -109,6 +133,10 @@ final class GeographyMatchRanker
 
         if ($match->option->is(GeographyOption::KIND_COUNTY) && $query->looksLikeCounty()) {
             $score += self::NAMED_TIER_BONUS;
+        }
+
+        if ($match->option->is(GeographyOption::KIND_STATE) && $match->matchType === MatchType::Exact) {
+            $score += self::EXACT_STATE_BONUS;
         }
 
         if ($this->isInScope($match, $query)) {

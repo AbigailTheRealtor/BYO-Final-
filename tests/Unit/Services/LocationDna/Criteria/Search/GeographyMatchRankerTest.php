@@ -94,6 +94,86 @@ class GeographyMatchRankerTest extends TestCase
         $this->assertSame(GeographyOption::KIND_COUNTY, $result->matches[0]->option->kind);
     }
 
+    /**
+     * An EXACT state beats an exact city of the same name — there really is a Florida, Missouri.
+     *
+     * Without the exact-state bonus the city wins on tier bonus alone while tying on match
+     * strength, so someone typing a state's name gets a village of 300 people first.
+     *
+     * @test
+     */
+    public function an_exact_state_outranks_an_exact_city_of_the_same_name(): void
+    {
+        $state = new GeographyMatch(GeographyOption::state('12', 'Florida', '12', 'FL'), MatchType::Exact);
+        $city  = new GeographyMatch($this->city('2926586', 'Florida', '29137'), MatchType::Exact, 'Monroe County, MO', ['29137']);
+
+        $result = $this->ranker->rank([$city, $state], GeographyQuery::for('Florida'));
+
+        $this->assertSame(GeographyOption::KIND_STATE, $result->matches[0]->option->kind);
+    }
+
+    /** Same for a county sharing the name — "Iowa County", Wisconsin. */
+    /** @test */
+    public function an_exact_state_outranks_an_exact_county_of_the_same_name(): void
+    {
+        $state  = new GeographyMatch(GeographyOption::state('19', 'Iowa', '19', 'IA'), MatchType::Exact);
+        $county = new GeographyMatch(
+            GeographyOption::county('55049', 'Iowa County', '55', '55049'),
+            MatchType::Exact,
+            'Wisconsin',
+            ['55']
+        );
+
+        $result = $this->ranker->rank([$county, $state], GeographyQuery::for('Iowa'));
+
+        $this->assertSame(GeographyOption::KIND_STATE, $result->matches[0]->option->kind);
+    }
+
+    /**
+     * REORDERING, NEVER FILTERING. The lower-ranked places must survive — a user looking for
+     * Florida, Missouri has to be able to find it.
+     *
+     * @test
+     */
+    public function promoting_the_state_does_not_remove_the_city_or_county(): void
+    {
+        $state  = new GeographyMatch(GeographyOption::state('12', 'Florida', '12', 'FL'), MatchType::Exact);
+        $city   = new GeographyMatch($this->city('2926586', 'Florida', '29137'), MatchType::Exact, 'Monroe County, MO', ['29137']);
+        $county = new GeographyMatch(
+            GeographyOption::county('36071', 'Orange County', '36', '36071'),
+            MatchType::Exact,
+            'New York',
+            ['36']
+        );
+
+        $result = $this->ranker->rank([$city, $state, $county], GeographyQuery::for('Florida'));
+
+        $this->assertSame(3, $result->count(), 'nothing may be dropped');
+        $this->assertNotEmpty($result->ofKind(GeographyOption::KIND_CITY));
+        $this->assertNotEmpty($result->ofKind(GeographyOption::KIND_COUNTY));
+    }
+
+    /**
+     * THE BONUS IS EXACT-ONLY. A prefix hit like "Flo" is genuinely ambiguous between Florida and
+     * every place beginning "Flo"; promoting the state there would make the common case worse in
+     * order to fix the rare one.
+     *
+     * @test
+     */
+    public function a_prefix_matched_state_is_not_promoted(): void
+    {
+        $state = new GeographyMatch(GeographyOption::state('12', 'Florida', '12', 'FL'), MatchType::Prefix);
+        $city  = new GeographyMatch($this->city('1700001', 'Flora', '17023'), MatchType::Prefix, 'Clay County, IL', ['17023']);
+
+        $result = $this->ranker->rank([$state, $city], GeographyQuery::for('Flo'));
+
+        $this->assertSame(
+            GeographyOption::KIND_CITY,
+            $result->matches[0]->option->kind,
+            'a partial state name carries no special claim'
+        );
+    }
+
     /** @test */
     public function a_hit_inside_the_callers_county_scope_outranks_one_outside_it(): void
     {
