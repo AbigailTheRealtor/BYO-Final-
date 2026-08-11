@@ -31,6 +31,7 @@ class TenantAgentAuction extends Component
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
+    use \App\Http\Livewire\Concerns\ResolvesOwnedAuction;            // S3: object-level ownership on the write paths
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -1867,6 +1868,91 @@ class TenantAgentAuction extends Component
         };
     }
 
+    /**
+     * S3 — the model class this component's WRITE paths resolve, for authorization.
+     *
+     * DELIBERATELY NOT draftModelClass(). That one falls back to the tenant model for an
+     * unrecognised user_type, which is the right answer for "which drafts do I list" and the
+     * wrong one for "which table am I about to be authorized against": it would authorize a
+     * caller against tenant rows while store()'s own match — which returns null in that case —
+     * refused to write at all. Two different answers to the same question is what this pair of
+     * methods exists to avoid. Null here, and the caller fails closed.
+     */
+    private function ownershipModelClassForUserType(): ?string
+    {
+        return match ($this->user_type) {
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HireLandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+            default    => null,
+        };
+    }
+
+    /**
+     * S3 — assert the authenticated user owns the listing this request is about to write to.
+     *
+     * THE VULNERABILITY THIS CLOSES. store(), saveDraft(), deletePhoto() and deleteVideo() each
+     * resolved their target with an unscoped `$auctionClass::find($this->listingId)`, and store()
+     * then assigned `user_id = Auth::id()`. BOTH inputs to that lookup are public Livewire
+     * properties, so both are client-controlled in the hydration payload:
+     *
+     *   · $listingId  picks the ROW
+     *   · $user_type  picks the TABLE
+     *
+     * An authenticated attacker could therefore point either at a victim's listing and both
+     * overwrite it and transfer ownership of the row to themselves, in any of the four tables.
+     * Proven by TenantAgentAuctionOwnershipTest before this guard existed.
+     *
+     * WHY THE GUARD IS KEYED ON BOTH PROPERTIES. It asks "does the caller own row {$listingId} in
+     * the table {$user_type} selects" — the same pair the write itself then uses. Guarding on the
+     * pair rather than on listingId alone is what closes user_type tampering: switching the table
+     * moves the authorization target with it, so there is no combination that authorizes against
+     * one row and writes to another.
+     *
+     * EMPTY listingId IS ALLOWED, and must be. That is the brand-new-listing flow — there is no
+     * row to authorize against yet, and every one of these entrypoints legitimately creates one.
+     * ResolvesOwnedAuction::userCanManageAuction() already encodes that rule; the early return
+     * here mirrors it rather than restating it, and the create path is covered by test.
+     *
+     * OWNER-ONLY, hence the null $assignedListingType — matching the two role-specific Hire Agent
+     * wizards hardened by PR #61. These are consumer-owned listings; the assigned-agent allowance
+     * belongs to the detail views, not to the authoring wizard.
+     *
+     * CALLERS MUST INVOKE THIS BEFORE THEIR try BLOCK. All four entrypoints wrap their body in
+     * `catch (\Exception)`, and Symfony's HttpException extends \Exception — so a guard called
+     * inside the try would have its abort(403) swallowed into a flash message and the caller
+     * would be told the operation succeeded. This mirrors the placement PR #61 used in the two
+     * legacy controllers, and TenantAgentAuctionOwnershipTest asserts the 403 escapes.
+     *
+     * NO hydrate() GUARD, AND WHY. The two role-specific wizards carry one; this component cannot
+     * safely. updatedUserType() does not clear $listingId, so a user who loads a draft and then
+     * switches the type selector legitimately arrives at the next request holding a listingId
+     * belonging to a different table — a hydrate guard keyed on that pair would 403 them mid-form.
+     * The write-boundary guards below are sufficient without it: every other DB write in this
+     * component (loadDraft, deleteDraft, deleteAllDrafts, getDrafts, and mount's draft lookup) is
+     * already scoped to Auth::id(), so these four were the whole of the exposure.
+     */
+    private function assertOwnsCurrentListing(): void
+    {
+        // Brand-new listing: nothing to authorize against yet.
+        if (empty($this->listingId)) {
+            return;
+        }
+
+        $modelClass = $this->ownershipModelClassForUserType();
+
+        // An unrecognised user_type with a listingId in hand cannot be authorized against any
+        // table, so it is refused rather than guessed at. The entrypoints raise their own
+        // "Invalid user_type" for this case, but that happens inside their try and would be
+        // swallowed; failing closed here is what makes the refusal observable.
+        if ($modelClass === null) {
+            abort(403, 'You are not authorized to access this listing.');
+        }
+
+        $this->assertCanManageAuction($modelClass, $this->listingId, null);
+    }
+
     public function updatedUserType()
     {
         $this->hasDrafts = $this->draftModelClass()::where('user_id', Auth::id())
@@ -2881,6 +2967,9 @@ class TenantAgentAuction extends Component
 
     public function saveDraft()
     {
+        // S3 — ownership, before the try. See assertOwnsCurrentListing().
+        $this->assertOwnsCurrentListing();
+
         try {
             \Log::info('[SAVE_DRAFT] TenantAgentAuction.php saveDraft fired', [
                 'component' => 'App\Http\Livewire\TenantAgentAuction',
@@ -5005,6 +5094,10 @@ class TenantAgentAuction extends Component
             'timestamp' => now()->toDateTimeString(),
         ]);
 
+        // S3 — ownership, before the try, for the same reason the Important Places check below
+        // is: the catch would swallow it. See assertOwnsCurrentListing().
+        $this->assertOwnsCurrentListing();
+
         // 9D: block submit when a started Important Place row is incomplete (Buyer/Tenant
         // only). Thrown BEFORE the try below so the ValidationException propagates to
         // Livewire instead of being swallowed into a generic error flash by the catch.
@@ -5241,6 +5334,9 @@ class TenantAgentAuction extends Component
 
     public function deletePhoto()
     {
+        // S3 — ownership, before the try. See assertOwnsCurrentListing().
+        $this->assertOwnsCurrentListing();
+
         try {
             $auctionClass = match ($this->user_type) {
                 'tenant'   => HireTenantAgentAuction::class,
@@ -5270,6 +5366,9 @@ class TenantAgentAuction extends Component
 
     public function deleteVideo()
     {
+        // S3 — ownership, before the try. See assertOwnsCurrentListing().
+        $this->assertOwnsCurrentListing();
+
         try {
             $auctionClass = match ($this->user_type) {
                 'tenant'   => HireTenantAgentAuction::class,
