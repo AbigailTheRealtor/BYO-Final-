@@ -165,7 +165,7 @@ class PropertyCoordinatePersistenceService
             return $this->outcome(self::OUTCOME_UNRESOLVED, $result->reason);
         }
 
-        $this->persist($listing, $result);
+        $this->persist($listing, $result, $address);
 
         return [
             'outcome'   => self::OUTCOME_RESOLVED,
@@ -221,14 +221,32 @@ class PropertyCoordinatePersistenceService
         return $recorded !== '' && $recorded === $address->coordinateLookupLine();
     }
 
-    private function persist(object $listing, PropertyCoordinateResult $result): void
-    {
+    private function persist(
+        object $listing,
+        PropertyCoordinateResult $result,
+        PropertyAddress $address
+    ): void {
         $listing->saveMeta(PropertyCoordinateMeta::LAT, (string) $result->latitude);
         $listing->saveMeta(PropertyCoordinateMeta::LNG, (string) $result->longitude);
 
         foreach (PropertyCoordinateMeta::provenanceFor($result) as $key => $value) {
             $listing->saveMeta($key, $value);
         }
+
+        // The change-detection key is the address we ASKED about, not the one the
+        // provider answered with.
+        //
+        // Those differ, and relying on the answer breaks the cache silently.
+        // Census normalizes "315 E Madison St" to "315 MADISON ST" — it drops the
+        // directional — so a stored answer would never equal the next request's
+        // lookup line, and every save would re-resolve and re-spend the budget
+        // while looking like it was working. The rungs also disagree among
+        // themselves: the Existing rung echoes the request, Bridge returns the
+        // feed record's own address. Only the request is deterministic.
+        $listing->saveMeta(
+            PropertyCoordinateMeta::NORMALIZED_ADDRESS,
+            $address->coordinateLookupLine()
+        );
     }
 
     /** Read one meta value as a string, tolerating either accessor shape. */
