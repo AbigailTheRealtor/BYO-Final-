@@ -606,10 +606,9 @@ class CreateTenantLegacyGeographyBackfillTest extends TestCase
             'HasGeographyCascade must know nothing of the backfill.'
         );
 
-        // The tenant tab still renders no cascade surface.
-        $tab = base_path(
-            'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php'
-        );
-        $this->assertStringNotContainsString('ldnaGeographyCascade', (string) file_get_contents($tab));
+        // The tenant tab's cascade surface is T3's business, not T1's, and it has since landed —
+        // guarded by `$geoCascadeEnabled ?? false` and inert while the workflow stays unlisted.
+        // What this suite still owns is that the BACKFILL enabled nothing, asserted above against
+        // the config rather than against the view.
     }
 }

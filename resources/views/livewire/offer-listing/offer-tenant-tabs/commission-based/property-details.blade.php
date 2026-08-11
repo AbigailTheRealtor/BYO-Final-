@@ -81,18 +81,64 @@
 </div> --}}
 
 
+{{-- The geography cascade for Create Tenant.
+
+     Identical in shape to the Hire Buyer, Hire Tenant and Create Buyer tabs, and deliberately so:
+     all four render the same partial from the same trait, so the workflows cannot drift into
+     different geography experiences. When the cascade is enabled for `create_tenant` it renders
+     the four tiers from the bound corpus — and the search box above them, behind its own flag —
+     while the shared widget below suppresses its own tier inputs and the place autocomplete that
+     drives them, so the two editors never both write the same blob keys.
+
+     RENDERING THE SURFACE IS NOT ENABLING THE WORKFLOW, AND THAT SEPARATION IS THE POINT
+     ------------------------------------------------------------------------------------
+     `create_tenant` is absent from the shipped scope list, so `$geoCascadeEnabled` is false here
+     on arrival and this include is inert: the tab renders exactly what it rendered before.
+     Enabling the workflow is a later, separate step with its own verification. The reverse order
+     is what `SellerLandlordCascadeExclusionTest::every_configured_workflow_already_renders_the_cascade`
+     forbids — a workflow listed in config whose tab has not opted in states four empty geography
+     keys over stored data — which is why the view opt-in has to land first.
+
+     WHY THE NULL COALESCE IS LOAD-BEARING AND NOT DEFENSIVE CLUTTER
+     ---------------------------------------------------------------
+     THIS TAB IS INCLUDED BY FIVE ROOT BLADES:
+
+       - offer-listing/tenant/offer-tenant-listing{,-edit} -> TenantOfferListing{,Edit} (carry the traits)
+       - offer-listing/buyer/offer-buyer-listing           -> BuyerOfferListing         (does NOT)
+       - offer-listing/seller/offer-seller-listing         -> SellerOfferListing        (does NOT)
+       - offer-listing/landlord/offer-landlord-listing     -> LandlordOfferListing      (does NOT)
+
+     The last three include it from an `@if ($user_type === 'tenant')` branch that is unreachable,
+     because each of those components pins `$user_type` to its own role — so the role guard is
+     already upstream. The coalesce guards the OTHER axis: `SellerOfferListing` and
+     `LandlordOfferListing` declare no `$geoCascadeEnabled` at all, and a host that says nothing
+     must keep rendering what it always did rather than fatal on an undefined variable.
+     `BuyerOfferListing` does declare it, but its own workflow map returns null for any role but
+     buyer, so no config value can switch this block on there either.
+
+     Disabled, this renders nothing and the widget behaves exactly as it always has. --}}
+@if ($geoCascadeEnabled ?? false)
+    @include('partials.location-dna.geography-cascade')
+@endif
+
 {{-- 9D: Search Areas — single editing surface (replaces the legacy discrete
      Acceptable Counties / Acceptable State inputs, matching the approved Hire
      Agent flow). Preferred Cities/ZIP/Counties/State now live in the
      location_dna_preferences blob; the discrete state/counties/cities meta are
      mirrored server-side (hydrateDiscreteLocationFromBlob) so Ask AI, matching,
-     filtering, and public display keep working. --}}
+     filtering, and public display keep working.
+
+     `ldnaGeographyCascade` is what makes the cascade the ACTIVE geography editor rather than a
+     second one beside the widget's own tier inputs: with it true the widget renders the map, the
+     draw tools and Important Places, and nothing that writes the four tier keys. With it false —
+     which is every path today — the widget renders exactly what it always has. --}}
 
 @include('partials.location-dna.map-input', [
     'existingLocationDna'    => $existingLocationDna ?? [],
     'mapPanelId'             => 'ldna-map-tenant',
     'enableImportantPlaces'  => true,
     'existingImportantPlaces'=> $existingImportantPlaces ?? [],
+    'ldnaGeographyCascade'   => $geoCascadeEnabled ?? false,
 ])
 @include('partials.location-dna.search-areas-bridge')
 

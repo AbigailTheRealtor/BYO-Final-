@@ -489,14 +489,31 @@ class CreateTenantGeographyWiringTest extends TestCase
             'T2 must not enable the workflow.'
         );
         $this->assertFalse($config['geography_cascade_enabled'], 'The master gate must still ship off.');
+    }
 
-        $tab = base_path(
+    /**
+     * The tab has opted in, and that is the SAFE half of the pair.
+     *
+     * This assertion used to require the opposite — that the tab carried no cascade surface — which
+     * was correct while T2 stood alone and the view opt-in had not landed. T3 added it, in that
+     * order deliberately: a workflow listed in config whose tab has NOT opted in states four empty
+     * geography keys over stored data, so the surface must precede the scope entry, never follow it.
+     *
+     * What still holds, and is asserted above, is that the workflow is not listed. Surface-without-
+     * workflow is inert and reversible; workflow-without-surface is data loss.
+     *
+     * @test
+     */
+    public function the_tab_has_opted_in_while_the_workflow_stays_unlisted(): void
+    {
+        $tab = (string) file_get_contents(base_path(
             'resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php'
-        );
-        $this->assertStringNotContainsString(
-            'ldnaGeographyCascade',
-            (string) file_get_contents($tab),
-            'T2 must not render the surface — the tab opt-in is a later step.'
-        );
+        ));
+
+        $this->assertStringContainsString('ldnaGeographyCascade', $tab, 'T3 opted the tab in.');
+        $this->assertStringContainsString("@if (\$geoCascadeEnabled ?? false)", $tab, 'and did so behind the flag.');
+
+        $config = require base_path('config/criteria_location_dna.php');
+        $this->assertNotContains('create_tenant', $config['geography_cascade_workflows']);
     }
 }
