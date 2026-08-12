@@ -132,20 +132,43 @@ class PropertyCoordinateResolverInertTest extends TestCase
     {
         $precedence = PropertyCoordinateResolver::INTENDED_PRECEDENCE;
 
-        $this->assertSame(CoordinateSource::Existing, $precedence[0]);
-        $this->assertSame(CoordinateSource::Mls,      $precedence[1]);
-        $this->assertSame(CoordinateSource::Geocoder, $precedence[2]);
-        $this->assertSame(CoordinateSource::Centroid, $precedence[3]);
+        $this->assertSame(CoordinateSource::Existing,     $precedence[0]);
+        $this->assertSame(CoordinateSource::Mls,          $precedence[1]);
+        $this->assertSame(CoordinateSource::AddressPoint, $precedence[2]);
+        $this->assertSame(CoordinateSource::Geocoder,     $precedence[3]);
+        $this->assertSame(CoordinateSource::Centroid,     $precedence[4]);
 
         $networkIndex = array_search(CoordinateSource::Geocoder, $precedence, true);
 
-        foreach ([CoordinateSource::Existing, CoordinateSource::Mls] as $local) {
+        foreach ([CoordinateSource::Existing, CoordinateSource::Mls, CoordinateSource::AddressPoint] as $local) {
             $this->assertLessThan(
                 $networkIndex,
                 array_search($local, $precedence, true),
                 'Every already-known coordinate must be consulted before a provider is paid'
             );
         }
+    }
+
+    public function test_the_mls_feed_outranks_the_address_point_corpus(): void
+    {
+        $precedence = PropertyCoordinateResolver::INTENDED_PRECEDENCE;
+
+        // Both are local and both are exact, so cost cannot order them. The MLS
+        // coordinate is attached to the listing record itself; a corpus row is
+        // matched by normalized address line, which is a match on the address
+        // rather than on the property. The more specific provenance wins.
+        $this->assertLessThan(
+            array_search(CoordinateSource::AddressPoint, $precedence, true),
+            array_search(CoordinateSource::Mls, $precedence, true),
+            'A coordinate carried by the listing record must outrank one matched by address line'
+        );
+    }
+
+    public function test_every_local_source_including_address_point_reports_itself_local(): void
+    {
+        $this->assertTrue(CoordinateSource::AddressPoint->isLocal(),
+            'Resolving from the imported corpus is a local table read — the import is what touches the network.');
+        $this->assertFalse(CoordinateSource::Geocoder->isLocal());
     }
 
     // ── no integration, no dispatch ─────────────────────────────────────────
