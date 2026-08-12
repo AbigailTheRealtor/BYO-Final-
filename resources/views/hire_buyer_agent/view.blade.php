@@ -751,9 +751,85 @@
         };
 
     @endphp
+    @php
+        // Buyer counterpart of the landlord view's $hlaListingUrl. Resolved once here because the
+        // Quick Actions band below uses it three times (share targets and the copy control), and a
+        // route() call repeated per tile is four chances for them to drift apart.
+        $byaListingUrl = route('buyer.view-auction', $auction->id);
+    @endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="buyer" :auction="$auction">
+        @if ($byaDetailRedesign)
+        {{-- Chrome parity with the landlord pilot. Full-width, above the grid — page-level actions,
+             not main-column content, which is what the shell's beforeGrid slot exists for. The
+             tiles are the landlord set with buyer routes and buyer wording; no tile is added and
+             none is dropped, so the two pages carry the same three affordances in the same order. --}}
+        <x-slot name="beforeGrid">
+            <x-viho.quick-actions label="Quick Actions" icon="fa-solid fa-bolt" ariaLabel="Quick actions">
+
+                {{-- 1. Send Message — authenticated user action; route enforces it. --}}
+                <x-viho.action-tile
+                    :href="route('auction-chat', ['buyer-agent', $auction->id])"
+                    icon="fa-solid fa-paper-plane"
+                    label="Send Message"
+                    description="Message the listing contact about this listing." />
+
+                {{-- 2. Share Listing — public action. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-share-nodes"
+                    label="Share Listing"
+                    description="Share this listing with agents or your network.">
+                    <x-slot name="action">
+                        <ul class="hla-quick-share">
+                            <li>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($byaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Facebook">
+                                    <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/intent/tweet?url={{ urlencode($byaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on X">
+                                    <i class="fa-brands fa-twitter" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://pinterest.com/pin/create/button/?url={{ urlencode($byaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Pinterest">
+                                    <i class="fa-brands fa-pinterest" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($byaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on LinkedIn">
+                                    <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </x-slot>
+                </x-viho.action-tile>
+
+                {{-- 3. Copy Link — public action, and wired. The behaviour partial that binds it is
+                     included with the page scripts below, exactly as the landlord view does. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-link"
+                    label="Copy Link"
+                    description="Copy a direct link to this listing.">
+                    <x-slot name="action">
+                        <x-viho.button
+                            variant="outline"
+                            icon="fa-solid fa-link"
+                            data-hla-copy-link="{{ $byaListingUrl }}">Copy Link</x-viho.button>
+                        <span class="hla-quick-copy-status" data-hla-copy-status role="status" aria-live="polite"></span>
+                    </x-slot>
+                </x-viho.action-tile>
+
+            </x-viho.quick-actions>
+        </x-slot>
+        @endif
+
         <x-slot name="main">
             {{-- M7 Phase 4. Outside the wrapper and above it, so the bar spans the column and sticks
                  to the top of the reading area rather than to the inside of a card. --}}
@@ -2746,7 +2822,11 @@
                 @endphp
                 <!-- Review  -->
                 @if($auser && $hlaOwnerName !== '')
-                <div class="card review">
+                {{-- Same chrome hook the landlord view carries (its M7.3), added only in the
+                     redesigned branch so the flag-off DOM is unchanged. Without it this card is the
+                     one node still rendering the theme's Bootstrap chrome beside a column of viho
+                     cards, which is what made it read as belonging to a different page. --}}
+                <div class="card review{{ $byaDetailRedesign ? ' hla-surface-card' : '' }}">
                     <div class="card-body d-flex align-items-center">
                         <div class="left d-flex align-items-center">
                             <x-avatar-img :avatar="$auser->avatar" alt="" class="w-25" />
@@ -2772,6 +2852,52 @@
         {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
              Extracting it is Milestone 5B. --}}
         <x-slot name="sidebar">
+    @php
+        // Hoisted out of the identity block below so this assignment happens in BOTH treatments.
+        // Later sidebar code reads $auth_id, and leaving it inside a block that the redesigned hero
+        // suppresses would silently change those reads the moment the hero is enabled for buyer.
+        // Mirrors the landlord view. The directive emits no output, so hoisting it cannot alter the
+        // legacy rendering.
+        $auth_id = auth()->id();
+    @endphp
+
+    {{--
+        THE SIDEBAR SURFACE — chrome parity with the landlord pilot (M7.5 there).
+
+        Everything from here to the proposal console is one card. Before this the buyer sidebar was
+        a bare stack — heading, badges, rules and buttons sitting directly on the page background
+        beside a main column made entirely of cards.
+
+        WHERE IT CLOSES. Above the proposal console, which stays a SIBLING rather than a child. The
+        console brings its own `.card` chrome, so nesting it would render border inside border and
+        shadow inside shadow; and its contents are gated by HireAgentProposalAccess, so keeping it
+        outside this wrapper means no geometry rule added here has a selector that can reach a
+        proposal card. That fence is deliberate and is not crossed by this change.
+
+        AND IT IS WHAT MAKES THE STICKY WORK. A sidebar column carrying a populated console is as
+        tall as the main column, and an element that is never shorter than its container never
+        sticks. This card is short by construction, because the thing that made the column tall is
+        now beside it rather than in it.
+
+        Redesign-only, so with the detail flag off the sidebar emits exactly the bytes it did before.
+    --}}
+    @if ($byaDetailRedesign)
+    <div class="hla-surface-card hla-sidebar-card hla-sidebar-sticky" data-hire-agent-sidebar-card>
+    @endif
+
+    {{--
+        The sidebar identity block.
+
+        Title, listing id, status and Edit Listing move INTO the hero when the hero redesign is on
+        for buyer, so this block renders only when it is off. What is avoided is duplication:
+        without this guard the page would carry two <h1> elements, two status pills and two Edit
+        controls, which is worse than either treatment alone.
+
+        Gated on the HERO flag, not the detail flag — the two roll out independently by design, and
+        this block's counterpart lives in the hero. Reading the detail flag here would suppress the
+        identity block for a role whose hero is still off, leaving the page with no title at all.
+    --}}
+    @unless (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('buyer'))
                 <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
                 @if(@$auction->listing_id)
                 <div class="mb-2">
@@ -2826,18 +2952,21 @@
                 </div>
                 @endif
 
-                @php
-                    $auth_id = auth()->id();
-                @endphp
                 @if($auth_id && $auth_id == @$auction->user_id)
                 <div class="mb-2">
-                    <a href="{{ route('buyer.edit-auction', ['auctionId' => $auction->id]) }}" 
+                    <a href="{{ route('buyer.edit-auction', ['auctionId' => $auction->id]) }}"
                        class="btn btn-outline-primary btn-sm">
                         <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
                     </a>
                 </div>
                 @endif
+    @endunless
+    {{-- This rule only ever separated the identity block from what follows. Under the redesign the
+         sidebar is a card, and the card's own edge and padding are the separation the rule stood in
+         for — so it is suppressed there and left exactly as-is for the legacy branch. --}}
+    @unless ($byaDetailRedesign)
                 <hr>
+    @endunless
 
 
 @inject('carbon', 'Carbon\Carbon')
@@ -2989,6 +3118,15 @@
                 $agentNumberMap[$orderedBid->id] = $agentUserNumberMap[$uid];
             }
         @endphp
+
+    {{-- The sidebar card closes HERE, above the proposal console. The console is its sibling, not
+         its child: it brings its own card chrome, and its contents are gated by
+         HireAgentProposalAccess. Nesting it would double the border and shadow, and would put a
+         geometry rule from this change in reach of a proposal card. See the block that opens the
+         wrapper for the full reasoning. --}}
+    @if ($byaDetailRedesign)
+    </div>
+    @endif
 
         {{--
             Milestone 2 — the "Agent N was the last bidder." line was removed here. It is not
@@ -4754,6 +4892,31 @@
             </div>
         </div>
         </x-slot>
+
+        {{--
+            The hero's Edit Listing control — the buyer counterpart of the landlord slot.
+
+            THE SLOT ITSELF IS CONDITIONAL, not just its contents. An always-emitted slot would be
+            `isset()` even when empty, and the legacy hero would then render an empty actions
+            wrapper — a DOM change on a page the flag is supposed to leave untouched.
+
+            The authorization test is the one this control has always carried in the sidebar,
+            unchanged: owner-only, by user id. `auth()->id()` is read directly rather than through
+            $auth_id so this does not depend on the sidebar slot having been captured first.
+
+            Route, params, label, icon and classes are identical to the sidebar control it replaces,
+            and the sidebar copy is suppressed under the same hero flag — so exactly one Edit
+            Listing renders in either flag state, never two and never none.
+        --}}
+        @if (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('buyer')
+            && auth()->id() && auth()->id() == @$auction->user_id)
+        <x-slot name="heroActions">
+            <a href="{{ route('buyer.edit-auction', ['auctionId' => $auction->id]) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
+            </a>
+        </x-slot>
+        @endif
     </x-hire-agent.detail-shell>
 @endsection
 
@@ -4798,6 +4961,11 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
      decision stays here with the markup. --}}
 @if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('buyer'))
 @include('hire_agent.framework.section-nav-behaviour')
+
+{{-- Binds the Quick Actions Copy Link control emitted in the beforeGrid slot. Gated by the same
+     role-aware reader as the markup it operates on: binding behaviour to elements that were never
+     rendered is the failure this pairing avoids. Shared with landlord rather than copied. --}}
+@include('hire_agent.framework.quick-actions-behaviour')
 @endif
 @endpush
 
