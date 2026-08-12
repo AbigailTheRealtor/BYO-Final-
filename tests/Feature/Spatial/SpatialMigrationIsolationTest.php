@@ -24,10 +24,10 @@ class SpatialMigrationIsolationTest extends TestCase
     ];
 
     /** @test */
-    public function the_spatial_subdirectory_holds_the_eleven_migrations(): void
+    public function the_spatial_subdirectory_holds_the_twelve_migrations(): void
     {
         $spatial = glob(base_path('database/migrations/spatial') . '/*_*.php');
-        $this->assertCount(11, $spatial, 'Expected exactly 11 spatial migrations.');
+        $this->assertCount(12, $spatial, 'Expected exactly 12 spatial migrations.');
     }
 
     /** @test */

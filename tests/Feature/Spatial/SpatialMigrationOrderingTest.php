@@ -39,7 +39,7 @@ class SpatialMigrationOrderingTest extends TestCase
     }
 
     /** @test */
-    public function there_are_exactly_eleven_migrations_in_the_documented_order(): void
+    public function there_are_exactly_twelve_migrations_in_the_documented_order(): void
     {
         $expected = [
             'spatial_core_enable_extensions',
@@ -53,6 +53,10 @@ class SpatialMigrationOrderingTest extends TestCase
             'spatial_core_create_addresses',
             'spatial_core_create_isochrone_cache',
             'spatial_core_create_corpus_imports',
+
+            // Extends `addresses` (09) with corpus versioning + the dedupe key.
+            // Must sort after it: it alters a table 09 creates.
+            'spatial_core_version_address_corpus',
         ];
 
         $actual = array_map(
@@ -108,14 +112,30 @@ class SpatialMigrationOrderingTest extends TestCase
     public function table_migrations_drop_with_cascade_on_rollback(): void
     {
         foreach (glob(base_path('database/migrations/spatial') . '/*_*.php') as $file) {
+            $src = file_get_contents($file);
+
             if (str_contains($file, 'enable_extensions')) {
                 // Extensions down() is a deliberate no-op (plan §7) — must NOT drop extensions.
-                $src = file_get_contents($file);
                 $this->assertStringNotContainsString('DROP EXTENSION', $src,
                     'The extensions migration must never DROP EXTENSION on rollback.');
                 continue;
             }
-            $this->assertStringContainsString('DROP TABLE IF EXISTS', file_get_contents($file),
+
+            // A migration that ALTERS a table it did not create must not drop
+            // it. `version_address_corpus` extends `addresses`; the table is
+            // owned by `create_addresses`, and that migration's down() is what
+            // drops it. Rolling back an extension must remove the extension,
+            // not the table underneath it — so the rule inverts here, and the
+            // assertion inverts with it rather than being skipped.
+            if (str_contains($src, 'ADD COLUMN IF NOT EXISTS')) {
+                $this->assertStringNotContainsString('DROP TABLE', $src,
+                    basename($file) . ' alters a table it does not own; it must never DROP TABLE.');
+                $this->assertStringContainsString('DROP COLUMN IF EXISTS', $src,
+                    basename($file) . ' must reverse the columns it added.');
+                continue;
+            }
+
+            $this->assertStringContainsString('DROP TABLE IF EXISTS', $src,
                 basename($file) . ' must drop its table on rollback.');
         }
     }
