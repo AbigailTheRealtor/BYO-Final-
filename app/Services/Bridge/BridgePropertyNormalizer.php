@@ -29,10 +29,7 @@ class BridgePropertyNormalizer
             ? Carbon::parse($record['ModificationTimestamp'])->toDateTimeString()
             : null;
 
-        $petsRaw     = $record['PetsAllowed'] ?? null;
-        $petsAllowed = is_array($petsRaw)
-            ? ($petsRaw[0] ?? null)
-            : (is_string($petsRaw) ? $petsRaw : null);
+        $petsAllowed = self::normalizePetsAllowed($record['PetsAllowed'] ?? null);
 
         return [
             'listing_key' => $listingKey,
@@ -153,5 +150,57 @@ class BridgePropertyNormalizer
             return null;
         }
         return filter_var($record[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    /**
+     * Flatten RESO `PetsAllowed` into the complete policy, as one string.
+     *
+     * WHAT THIS FIXES
+     * ---------------
+     * PetsAllowed is a multi-value RESO field. This method used to keep
+     * `$petsRaw[0]` and discard the rest, so a listing whose real policy was
+     * ["Cats OK", "Dogs OK", "Size Limit", "Yes"] was stored as "Cats OK" — a
+     * policy that permits cats, says nothing about dogs, and drops the size
+     * restriction entirely. Read back by a person that is not an abridged
+     * answer, it is a different and more permissive one.
+     *
+     * WHY A JOINED STRING AND NOT JSON
+     * --------------------------------
+     * The column is a plain string and its only consumer that reaches a form is
+     * the Landlord `pet_policy` target, which is a string too. Storing JSON here
+     * would push parsing into every reader for no gain, and would change the
+     * shape of a column other code already reads.
+     *
+     * The transformation is mechanical on purpose — the feed's own vocabulary,
+     * in the feed's own order, joined with ", ". Nothing is re-worded, inferred,
+     * or summarised: "Size Limit" does not become "size restrictions apply".
+     * Authored prose is exactly what the facts-only boundary excludes, and a
+     * normalizer is the wrong place to invent it.
+     *
+     * Order is source order rather than sorted, so the value stays a faithful
+     * record of what the feed said. Duplicates are collapsed and blanks dropped,
+     * both of which are noise rather than meaning.
+     */
+    public static function normalizePetsAllowed(mixed $raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        $values = is_array($raw) ? $raw : [$raw];
+
+        $clean = [];
+        foreach ($values as $v) {
+            if (is_array($v) || is_object($v)) {
+                continue;
+            }
+            $v = trim((string) $v);
+            if ($v === '' || in_array($v, $clean, true)) {
+                continue;
+            }
+            $clean[] = $v;
+        }
+
+        return $clean === [] ? null : implode(', ', $clean);
     }
 }
