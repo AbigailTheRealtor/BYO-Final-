@@ -364,7 +364,17 @@ class HireAgentBuyerSectionNavTest extends TestCase
             $this->assertNotContains($agentOnly, $anchors, "The owner reached [{$agentOnly}].");
         }
 
-        $this->assertStringContainsString("Buyer's Broker Commission Structure", $html, 'The rows, not just the card.');
+        // DECODED, and the reason is a change in ENCODING rather than in behaviour. The Broker
+        // Compensation rows now render through x-hire-agent.field, so a label reaches the page via
+        // `{{ $label }}` instead of sitting in the template as literal text — and the apostrophe in
+        // "Buyer's" is therefore emitted as `&#039;`. The row, its text and its position are
+        // unchanged; only the entity is. Decoding keeps this assertion about what it was written to
+        // ask — did the row render, not just the card — rather than about escaping.
+        $this->assertStringContainsString(
+            "Buyer's Broker Commission Structure",
+            html_entity_decode($html, ENT_QUOTES),
+            'The rows, not just the card.'
+        );
     }
 
     // ── 4. The agent tier ────────────────────────────────────────────────────

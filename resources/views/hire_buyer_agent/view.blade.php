@@ -2244,6 +2244,28 @@
                             // assignment keeps the name the condition below already uses, so the
                             // section's own guard is untouched and there is one source of truth.
                             $hasBrokerCompData = $byaHasBrokerCompData;
+
+                            /*
+                             | M7 Phase 7 — the sub-heading's cell width, decided once.
+                             |
+                             | Broker Compensation is the only section built from SUB-SECTIONS: six
+                             | h5 headings, each followed by its own rows and closed by a rule. Every
+                             | other section is a flat list of rows, which is why this is the only
+                             | place that needs the answer.
+                             |
+                             | `.hla-field-grid` is `display: flex; flex-wrap: wrap`, so a child with
+                             | no width class is sized to its CONTENT and shares a line with whatever
+                             | follows it. That is what put "Buyer's Broker Compensation:" in a narrow
+                             | left column with its own rows beside it. `col-12` makes the heading a
+                             | full-width flex item, so it owns its line and the rows begin below it.
+                             |
+                             | REDESIGN ONLY, and that is the whole reason it is a variable rather
+                             | than a class in the markup. The flag-off DOM is asserted attribute for
+                             | attribute by HireAgentSectionCardDomEquivalenceTest; adding a class
+                             | unconditionally would change every one of these headings on a page the
+                             | redesign is switched off for.
+                             */
+                            $byaSubheadClass = ($byaDetailRedesign ?? false) ? 'mt-3 mb-2 col-12' : 'mt-3 mb-2';
                         @endphp
 {{-- M7 Phase 6 — BROKER COMPENSATION BECOMES A PARTICIPANT SECTION.
 
@@ -2274,15 +2296,20 @@
                         @auth
                         <!-- Buyer's Broker Compensation Sub-section -->
                         @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
-                        <h5 class="mt-3 mb-2"><strong>Buyer's Broker Compensation:</strong></h5>
+                        <h5 class="{{ $byaSubheadClass }}"><strong>Buyer's Broker Compensation:</strong></h5>
                         @endif
-                        <div class="broker-compensation-section">
+{{-- THE WRAPPER IS LEGACY-ONLY. It carries no layout of its own — the framework stylesheet gives
+     `.broker-compensation-section` a colour and nothing else — but as a child of `.hla-field-grid`
+     with no width class it becomes a content-sized flex item, which is what pulled this
+     sub-section's rows up beside their own heading and clipped the rule below them to half the
+     card. Dropping it in the redesign lets these rows sit directly in the grid, exactly as every
+     other section's rows already do. Flag-off keeps it, so the legacy DOM is untouched. --}}
+@if (! ($byaDetailRedesign ?? false))                        <div class="broker-compensation-section">
+@endif
 
                         @if (@$auction->get->commission_structure != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Buyer's Broker Commission Structure:
-                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->commission_structure)) }}</span>
-                        </div>
+                        @php $byaCommissionStructure = str_replace('"', '', $toStr(@$auction->get->commission_structure)); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Buyer's Broker Commission Structure" :value="$byaCommissionStructure" />
                         @endif
 
                         @if (@$auction->get->purchase_fee_type != null)
@@ -2304,29 +2331,25 @@
                                 $purchaseFeeCombined = @$auction->get->purchase_fee_other ?? '—';
                             }
                         @endphp
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Buyer's Broker Purchase Fee:
-                            <span class="removeBold">{{ $purchaseFeeCombined }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Buyer's Broker Purchase Fee" :value="$purchaseFeeCombined" />
                         @endif
 
                         @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
                         @endif
 
-                        </div>
+@if (! ($byaDetailRedesign ?? false))                        </div>
+@endif
                         @endauth
 
                         <!-- Buyer's Broker Lease Fee Sub-section -->
                         @if (@$auction->get->interested_lease_option != null || @$auction->get->lease_fee_type != null)
-                        <h5 class="mt-3 mb-2"><strong>Buyer's Broker Lease Fee:</strong></h5>
+                        <h5 class="{{ $byaSubheadClass }}"><strong>Buyer's Broker Lease Fee:</strong></h5>
                         @endif
 
                         @if (@$auction->get->interested_lease_option != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Interested in a Lease Agreement:
-                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->interested_lease_option)) }}</span>
-                        </div>
+                        @php $byaInterestedLease = str_replace('"', '', $toStr(@$auction->get->interested_lease_option)); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Interested in a Lease Agreement" :value="$byaInterestedLease" />
                         @endif
 
                         @if (@$auction->get->interested_lease_option === 'Yes' && @$auction->get->lease_fee_type != null)
@@ -2362,10 +2385,7 @@
                                 $leaseFeeCombined = $leaseFeeType;
                             }
                         @endphp
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Buyer's Broker Lease Fee:
-                            <span class="removeBold">{{ $leaseFeeCombined }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Buyer's Broker Lease Fee" :value="$leaseFeeCombined" />
                         @endif
 
                         @if (@$auction->get->interested_lease_option != null || @$auction->get->lease_fee_type != null)
@@ -2374,88 +2394,83 @@
 
                         <!-- Lease-Option Details Sub-section -->
                         @if (@$auction->get->interested_lease_option_agreement != null)
-                        <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
+                        <h5 class="{{ $byaSubheadClass }}"><strong>Lease-Option Details:</strong></h5>
                         @endif
 
                         @if (@$auction->get->interested_lease_option_agreement != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Interested in a Lease-Option Agreement:
-                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->interested_lease_option_agreement)) }}</span>
-                        </div>
+                        @php $byaInterestedLeaseOption = str_replace('"', '', $toStr(@$auction->get->interested_lease_option_agreement)); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Interested in a Lease-Option Agreement" :value="$byaInterestedLeaseOption" />
                         @endif
 
                         @if (@$auction->get->interested_lease_option_agreement === 'Yes')
+                            {{-- Slot rather than :value — the amount is a percentage or a money
+                                 figure depending on a sibling field, so the row's value is markup
+                                 the caller composes. The legacy branch wraps a slot in the same
+                                 `.removeBold` span it wraps a value in, so this reproduces the
+                                 element tree these two rows already emit. --}}
                             @if (@$auction->get->lease_value != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Compensation for Creating the Lease-Option Agreement:
-                                <span class="removeBold">
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Compensation for Creating the Lease-Option Agreement">
                                     @if (@$auction->get->lease_type === 'percent')
                                         {{ @$auction->get->lease_value }}% of Total Purchase Price
                                     @else
                                         {{ \App\Support\Format::money(@$auction->get->lease_value) }}
                                     @endif
-                                </span>
-                            </div>
+                            </x-hire-agent.field>
                             @endif
 
                             @if (@$auction->get->purchase_value != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Compensation if Purchase Option is Exercised:
-                                <span class="removeBold">
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Compensation if Purchase Option is Exercised">
                                     @if (@$auction->get->purchase_type === 'percent')
                                         {{ @$auction->get->purchase_value }}% of Total Purchase Price
                                     @else
                                         {{ \App\Support\Format::money(@$auction->get->purchase_value) }}
                                     @endif
-                                </span>
-                            </div>
+                            </x-hire-agent.field>
                             @endif
                         @endif
 
+{{-- THE ONE SEPARATOR THAT NEVER ASKED WHETHER IT HAD ANYTHING TO SEPARATE.
+     Every other rule in this section is guarded by the same condition as the heading above it.
+     This one is not, so on a purchase listing — where Lease Fee and Lease-Option are both empty —
+     it rendered directly beneath the previous sub-section's rule, producing two lines with a band
+     of blank card between them. The guard is added on the REDESIGN side only: flag-off has always
+     emitted this rule unconditionally and its DOM is asserted, so widening the condition there
+     would change a page this work is not allowed to touch. --}}
+@if (! ($byaDetailRedesign ?? false) || @$auction->get->interested_lease_option_agreement != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+@endif
 
                         <!-- Legal Terms Sub-section -->
                         @if (@$auction->get->protection_period != null || @$auction->get->early_termination_fee_option != null || @$auction->get->retainer_fee_option != null || @$auction->get->agency_agreement_timeframe != null)
-                        <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+                        <h5 class="{{ $byaSubheadClass }}"><strong>Legal Terms:</strong></h5>
                         @endif
 
                         @if (@$auction->get->protection_period != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Protection Period Timeframe:
-                            <span class="removeBold">{{ @$auction->get->protection_period }} Days</span>
-                        </div>
+                        @php $byaProtectionPeriod = @$auction->get->protection_period . ' Days'; @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Protection Period Timeframe" :value="$byaProtectionPeriod" />
                         @endif
 
                         @if (@$auction->get->early_termination_fee_option != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Early Termination Fee:
-                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->early_termination_fee_option, @$auction->get->early_termination_fee_amount ? \App\Support\Format::money(@$auction->get->early_termination_fee_amount) : null) }}</span>
-                        </div>
+                        @php $byaEarlyTerminationFee = \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->early_termination_fee_option, @$auction->get->early_termination_fee_amount ? \App\Support\Format::money(@$auction->get->early_termination_fee_amount) : null); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Early Termination Fee" :value="$byaEarlyTerminationFee" />
                         @endif
 
                         @if (@$auction->get->retainer_fee_option != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Retainer Fee:
-                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->retainer_fee_option, @$auction->get->retainer_fee_amount ? \App\Support\Format::money(@$auction->get->retainer_fee_amount) : null) }}</span>
-                        </div>
+                        @php $byaRetainerFee = \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->retainer_fee_option, @$auction->get->retainer_fee_amount ? \App\Support\Format::money(@$auction->get->retainer_fee_amount) : null); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Retainer Fee" :value="$byaRetainerFee" />
                         @if (in_array(strtolower(@$auction->get->retainer_fee_option), ['yes']))
                             @if (@$auction->get->retainer_fee_application)
                             @php $formattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(@$auction->get->retainer_fee_application); @endphp
                             @if (!empty($formattedRetainer))
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Retainer Fee Application:
-                                <span class="removeBold">{{ $formattedRetainer }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Retainer Fee Application" :value="$formattedRetainer" />
                             @endif
                             @endif
                         @endif
                         @endif
 
                         @if (@$auction->get->agency_agreement_timeframe != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Buyer Agency Agreement Timeframe:
-                            <span class="removeBold">{{ @$auction->get->agency_agreement_timeframe === 'custom' ? @$auction->get->agency_agreement_custom : str_replace('"', '', $toStr(@$auction->get->agency_agreement_timeframe)) }}</span>
-                        </div>
+                        @php $byaAgencyTimeframe = @$auction->get->agency_agreement_timeframe === 'custom' ? @$auction->get->agency_agreement_custom : str_replace('"', '', $toStr(@$auction->get->agency_agreement_timeframe)); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Buyer Agency Agreement Timeframe" :value="$byaAgencyTimeframe" />
                         @endif
 
                         @if (@$auction->get->protection_period != null || @$auction->get->early_termination_fee_option != null || @$auction->get->retainer_fee_option != null || @$auction->get->agency_agreement_timeframe != null)
@@ -2464,14 +2479,12 @@
 
                         <!-- Brokerage Relationship Sub-section -->
                         @if (@$auction->get->brokerage_relationship != null)
-                        <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+                        <h5 class="{{ $byaSubheadClass }}"><strong>Brokerage Relationship:</strong></h5>
                         @endif
 
                         @if (@$auction->get->brokerage_relationship != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable Brokerage Relationship:
-                            <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->brokerage_relationship)) }}</span>
-                        </div>
+                        @php $byaBrokerageRelationship = str_replace('"', '', $toStr(@$auction->get->brokerage_relationship)); @endphp
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Acceptable Brokerage Relationship" :value="$byaBrokerageRelationship" />
                         @endif
 
                         @if (@$auction->get->brokerage_relationship != null)
@@ -2480,14 +2493,11 @@
 
                         <!-- Additional Terms Sub-section -->
                         @if (@$auction->get->additional_details_broker != null)
-                        <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
+                        <h5 class="{{ $byaSubheadClass }}"><strong>Additional Terms:</strong></h5>
                         @endif
 
                         @if (@$auction->get->additional_details_broker != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Additional Terms:
-                            <span class="removeBold">{{ @$auction->get->additional_details_broker }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Additional Terms" :value="@$auction->get->additional_details_broker" />
                         @endif
 
 @if (! ($byaDetailRedesign ?? false))                        </div>
