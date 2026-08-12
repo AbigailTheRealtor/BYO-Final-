@@ -64,13 +64,23 @@ use App\Services\Location\Coordinates\PropertyCoordinateResolver;
  * -----------------------------------------------
  * {@see BridgeMlsCoordinatesAdapter} answers only when the address carries an
  * exact `mlsListingKey`, because matching a feed record by address similarity
- * is guessing. Seller/Landlord Create Offer does not currently persist such a
- * key — its MLS import is a URL/text scrape (MlsListingImportService), not the
- * Bridge OData feed, and supplies no RESO ListingKey.
+ * is guessing.
  *
- * The rung is included anyway. It costs nothing when silent, it is correct the
- * moment a key exists, and leaving it out would mean discovering later that the
- * ladder skipped a free trusted coordinate in favour of a paid lookup.
+ * That key now exists in production. Seller/Landlord Create Offer gained an
+ * "Import by MLS #" entry point (gated by `MLS_DIRECT_IMPORT_PREFILL_ENABLED`)
+ * which looks the listing up through the Bridge OData feed and persists the RESO
+ * ListingKey to meta — so this rung resolves the MLS's own published coordinate
+ * on an ordinary save. Until that landed, nothing wrote the key and the rung
+ * returned `no_mls_listing_key` every time; the note that used to sit here said
+ * so, and described the older URL/text importer (`MlsListingImportService`) as
+ * the only path. That importer still exists and still supplies no ListingKey,
+ * but it is no longer the only way in.
+ *
+ * The rung was carried on this ladder through the whole period when it could
+ * never answer — it costs nothing when silent, and leaving it out would have
+ * meant discovering later that the ladder skipped a free trusted coordinate in
+ * favour of a paid lookup. That is also exactly the position
+ * {@see AddressPointCoordinateAdapter} is in today.
  */
 final class StandardCoordinateLadder
 {
