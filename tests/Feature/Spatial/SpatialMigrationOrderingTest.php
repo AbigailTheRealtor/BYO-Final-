@@ -39,7 +39,7 @@ class SpatialMigrationOrderingTest extends TestCase
     }
 
     /** @test */
-    public function there_are_exactly_twelve_migrations_in_the_documented_order(): void
+    public function there_are_exactly_thirteen_migrations_in_the_documented_order(): void
     {
         $expected = [
             'spatial_core_enable_extensions',
@@ -57,6 +57,11 @@ class SpatialMigrationOrderingTest extends TestCase
             // Extends `addresses` (09) with corpus versioning + the dedupe key.
             // Must sort after it: it alters a table 09 creates.
             'spatial_core_version_address_corpus',
+
+            // Indexes the column set the AddressPoint rung resolves on. Sorts
+            // after the migration that adds `corpus_version` — it indexes a
+            // column that migration creates.
+            'spatial_core_index_address_lookup',
         ];
 
         $actual = array_map(
@@ -132,6 +137,17 @@ class SpatialMigrationOrderingTest extends TestCase
                     basename($file) . ' alters a table it does not own; it must never DROP TABLE.');
                 $this->assertStringContainsString('DROP COLUMN IF EXISTS', $src,
                     basename($file) . ' must reverse the columns it added.');
+                continue;
+            }
+
+            // An index-only migration owns an index and nothing else. Same rule
+            // as above, one level down: reverse exactly what you created, and
+            // never reach for the table you merely indexed.
+            if (str_contains($src, 'CREATE INDEX') && ! str_contains($src, 'CREATE TABLE')) {
+                $this->assertStringNotContainsString('DROP TABLE', $src,
+                    basename($file) . ' only indexes a table it does not own; it must never DROP TABLE.');
+                $this->assertStringContainsString('DROP INDEX IF EXISTS', $src,
+                    basename($file) . ' must drop the index it created.');
                 continue;
             }
 
