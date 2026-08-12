@@ -3083,6 +3083,17 @@ class SellerOfferListingEdit extends Component
 
     public function updatedNewPropertyPhotos()
     {
+        // S6 — ownership BEFORE anything is stored, and AHEAD of the try. resolveOwnedMediaListing()
+        // aborts 403, HttpException extends \Exception, and the catch-all below would swallow it
+        // into a form error — a refusal the caller could not tell from success. Resolving first also
+        // means a refused upload writes no file, so nothing is left orphaned on the public disk.
+        $auction = $this->resolveOwnedMediaListing();
+
+        // The persisted collection is what an upload appends to; component state is not authority.
+        if ($auction !== null) {
+            $this->propertyPhotos = $this->persistedPropertyPhotos($auction);
+        }
+
         try {
             $this->validate(
             ['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:51200'],
@@ -3095,8 +3106,7 @@ class SellerOfferListingEdit extends Component
                 return;
             }
             $this->processPendingPhotoUploads();
-            if ($this->listingId) {
-                $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            if ($auction !== null) {
                 $auction->saveMeta('property_photos', $this->propertyPhotos);
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -3168,49 +3178,96 @@ class SellerOfferListingEdit extends Component
         return $auction;
     }
 
+    /**
+     * S6 — the listing's photo collection as PERSISTED, which is the only authority on membership.
+     *
+     * `$this->propertyPhotos` is a public Livewire property and therefore client input: the same
+     * request that calls a reorder may replace it wholesale. reorderPhotos()'s in_array() check
+     * used to compare the client's order against the client's collection, which confirmed only
+     * that the caller was consistent with themselves.
+     */
+    private function persistedPropertyPhotos($auction): array
+    {
+        $stored  = $auction->fresh()->info('property_photos');
+        $decoded = is_string($stored) ? json_decode($stored, true) : $stored;
+
+        return is_array($decoded) ? array_values($decoded) : [];
+    }
+
+    /**
+     * S6 — apply a requested order to an authoritative collection.
+     *
+     * The client array is a SELECTOR over $authoritative, never a replacement for it. Names absent
+     * from the record are dropped; names present but unmentioned keep their relative order at the
+     * end. That second pass is the pre-existing behaviour and is what stops a partial drag payload
+     * from silently deleting photos.
+     */
+    private function applyPhotoOrder(array $authoritative, array $requested): array
+    {
+        $ordered = [];
+        foreach ($requested as $fname) {
+            if (in_array($fname, $authoritative, true) && ! in_array($fname, $ordered, true)) {
+                $ordered[] = $fname;
+            }
+        }
+        foreach ($authoritative as $fname) {
+            if (! in_array($fname, $ordered, true)) {
+                $ordered[] = $fname;
+            }
+        }
+
+        return $ordered;
+    }
+
     public function reorderPhotos(array $orderedFilenames): void
     {
-        $current  = $this->propertyPhotos;
-        $newOrder = [];
-        foreach ($orderedFilenames as $fname) {
-            if (in_array($fname, $current, true)) {
-                $newOrder[] = $fname;
-            }
+        // S6 — ownership at the ACTION boundary. hydrate() ran two middleware stages before the
+        // client's syncInput was applied, so it cannot speak for the id this write uses.
+        $auction = $this->resolveOwnedMediaListing();
+
+        if ($auction === null) {
+            // Create flow: nothing persisted yet, so component state is the only collection there is.
+            $this->propertyPhotos = $this->applyPhotoOrder($this->propertyPhotos, $orderedFilenames);
+
+            return;
         }
-        foreach ($current as $fname) {
-            if (!in_array($fname, $newOrder, true)) {
-                $newOrder[] = $fname;
-            }
-        }
-        $this->propertyPhotos = $newOrder;
-        if ($this->listingId) {
-            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
-            $auction->saveMeta('property_photos', $this->propertyPhotos);
-        }
+
+        $this->propertyPhotos = $this->applyPhotoOrder($this->persistedPropertyPhotos($auction), $orderedFilenames);
+        $auction->saveMeta('property_photos', $this->propertyPhotos);
     }
 
     public function movePhotoUp(int $index): void
     {
-        if ($index <= 0 || !isset($this->propertyPhotos[$index])) {
+        $auction = $this->resolveOwnedMediaListing();
+        $photos  = $auction === null ? array_values($this->propertyPhotos) : $this->persistedPropertyPhotos($auction);
+
+        if ($index <= 0 || ! isset($photos[$index])) {
             return;
         }
-        [$this->propertyPhotos[$index - 1], $this->propertyPhotos[$index]] =
-            [$this->propertyPhotos[$index], $this->propertyPhotos[$index - 1]];
-        if ($this->listingId) {
-            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+
+        [$photos[$index - 1], $photos[$index]] = [$photos[$index], $photos[$index - 1]];
+        $this->propertyPhotos = $photos;
+
+        if ($auction !== null) {
             $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }
 
     public function movePhotoDown(int $index): void
     {
-        if (!isset($this->propertyPhotos[$index + 1])) {
+        $auction = $this->resolveOwnedMediaListing();
+        $photos  = $auction === null ? array_values($this->propertyPhotos) : $this->persistedPropertyPhotos($auction);
+
+        // A negative index mattered less when only component state was rewritten; now that the
+        // result is persisted, it would write a key that is not part of the collection.
+        if ($index < 0 || ! isset($photos[$index + 1])) {
             return;
         }
-        [$this->propertyPhotos[$index], $this->propertyPhotos[$index + 1]] =
-            [$this->propertyPhotos[$index + 1], $this->propertyPhotos[$index]];
-        if ($this->listingId) {
-            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+
+        [$photos[$index], $photos[$index + 1]] = [$photos[$index + 1], $photos[$index]];
+        $this->propertyPhotos = $photos;
+
+        if ($auction !== null) {
             $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }
