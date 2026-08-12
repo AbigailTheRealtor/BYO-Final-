@@ -2,9 +2,14 @@
 
 namespace App\Http\Livewire\OfferListing\Concerns;
 
+use App\Services\Bridge\BridgeApiService;
+use App\Services\Bridge\BridgeListingLookupService;
+use App\Services\Bridge\BridgeLookupResult;
 use App\Services\ListingImport\MlsListingImportService;
+use App\Services\ListingImport\MlsListingPrefillService;
 use App\Services\ListingImport\MlsFieldMap;
 use App\Services\LocationDna\LocationDnaGeocodeService;
+use Illuminate\Support\Facades\Log;
 
 trait HasMlsImport
 {
@@ -14,6 +19,29 @@ trait HasMlsImport
     public array  $importPreviewData = [];
     public string $importError       = '';
     public bool   $importSuccess     = false;
+
+    /**
+     * The MLS number typed into the "Import by MLS #" input.
+     *
+     * Entirely separate from $importUrlInput / $importRawText: this is the
+     * Bridge OData lookup, which needs no URL, no pasted text, and no MLS login.
+     * The two mechanisms share only the preview/apply machinery below.
+     */
+    public string $importMlsNumber = '';
+
+    /**
+     * True when the applied import came from Bridge AND carried a usable
+     * coordinate pair.
+     *
+     * This is the "do not geocode" signal. Bridge published this property's own
+     * coordinate, so sending its address to a geocoder afterwards would spend a
+     * request to obtain a worse answer than the one we already hold — and, in
+     * the case where the user declined the coordinate rows, would silently
+     * substitute a geocoded guess for the MLS's own figure.
+     *
+     * Both geocoding entry points consult it. See mlsGeocodeAddress() callers.
+     */
+    public bool $mlsBridgeCoordinatesAvailable = false;
 
     /**
      * Full parsed MLS payload (JSON) held across the preview → apply lifecycle.
@@ -46,8 +74,34 @@ trait HasMlsImport
         $this->importError       = '';
         $this->importUrlInput    = '';
         $this->importRawText     = '';
+        $this->importMlsNumber   = '';
         $this->importSuccess     = false;
         $this->mlsParsedDataJson = '';
+    }
+
+    // ─── Feature gate ────────────────────────────────────────────────────────
+
+    /**
+     * Whether the Bridge MLS # import is available on this component.
+     *
+     * Two conditions, both required: the master flag, and a role the feature is
+     * actually built for. The blade asks this before rendering the input and
+     * importListingByMlsNumber() asks it again before doing anything, so a
+     * stale DOM, a replayed request or a hand-crafted Livewire call all land on
+     * the same answer as the UI.
+     *
+     * Never gates the URL/text importer, which is not a Bridge feature and stays
+     * available in every environment regardless of this flag.
+     */
+    public function mlsNumberImportAvailable(): bool
+    {
+        if (! config('mls_direct_import.prefill_enabled', false)) {
+            return false;
+        }
+
+        $roles = (array) config('mls_direct_import.prefill_roles', []);
+
+        return in_array($this->resolveImportRole(), $roles, true);
     }
 
     // ─── Step 1: fetch + parse ────────────────────────────────────────────────
@@ -82,13 +136,149 @@ trait HasMlsImport
             'raw_fields' => $result['data'],
         ]);
 
+        $preview = $this->buildImportPreview($result['data']);
+
+        if (empty($preview)) {
+            $this->importError = 'No mappable fields were found for this listing type. Try pasting the raw text directly.';
+            return;
+        }
+
+        $this->importPreviewData = $preview;
+        $this->importError       = '';
+    }
+
+    // ─── Step 1 (alternate): Bridge lookup by MLS number ─────────────────────
+
+    /**
+     * Find a listing in the Bridge/Stellar feed by its human-facing MLS number
+     * and stage the factual fields for review.
+     *
+     * Deliberately produces exactly the same $importPreviewData the URL/text
+     * importer produces, and then stops. The form is NOT written here — the user
+     * still reviews the table and presses Apply Selected, which is the same
+     * confirmation step the other importer has always had. An MLS number is easy
+     * to mistype, and a wrong one that silently overwrote a half-completed form
+     * would be unrecoverable.
+     */
+    public function importListingByMlsNumber(): void
+    {
+        // Re-checked server-side: the blade hides the input when this is false,
+        // but a hidden input is not a closed door.
+        if (! $this->mlsNumberImportAvailable()) {
+            $this->importError = 'MLS # import is not available.';
+            return;
+        }
+
+        $mlsNumber = trim($this->importMlsNumber);
+
+        if ($mlsNumber === '') {
+            $this->importError = 'Please enter an MLS # before clicking Find Listing.';
+            return;
+        }
+
+        $this->importError       = '';
+        $this->mlsParsedDataJson = '';
+
+        /** @var BridgeListingLookupService $lookup */
+        $lookup = app(BridgeListingLookupService::class);
+        $result = $lookup->lookupByMlsNumber($mlsNumber);
+
+        if (! $result->isFound()) {
+            $this->importError = $this->mlsLookupErrorMessage($result, $mlsNumber);
+            return;
+        }
+
+        /** @var MlsListingPrefillService $prefill */
+        $prefill  = app(MlsListingPrefillService::class);
+        $prefilled = $prefill->fromCandidate($result->candidate);
+
+        if (! $prefilled['success']) {
+            $this->importError = $prefilled['error'];
+            return;
+        }
+
+        // Source is recorded as the MLS number rather than a URL so the stored
+        // snapshot says where these facts actually came from.
+        $this->mlsParsedDataJson = json_encode([
+            'source'     => 'bridge_mls:' . $mlsNumber,
+            'raw_fields' => $prefilled['data'],
+        ]);
+
+        // Remember whether Bridge gave us a real coordinate, so the apply step
+        // knows not to geocode. MlsListingPrefillService emits the pair only
+        // when both halves are present and usable.
+        $this->mlsBridgeCoordinatesAvailable =
+            isset($prefilled['data']['latitude'], $prefilled['data']['longitude']);
+
+        $preview = $this->buildImportPreview($prefilled['data']);
+
+        if (empty($preview)) {
+            $this->importError = 'That MLS listing was found, but none of its details map to this listing type.';
+            return;
+        }
+
+        $this->importPreviewData = $preview;
+        $this->importError       = '';
+    }
+
+    /**
+     * The message shown for a lookup that did not return a listing.
+     *
+     * The whole point of BridgeLookupResult is that these two sentences are not
+     * interchangeable. "We couldn't find it" tells the user to check the number;
+     * "we couldn't connect" tells them to try again later. Saying the first when
+     * the second is true sends someone to re-check a number that was correct.
+     *
+     * Nothing provider-derived is interpolated — no status code, no response
+     * body, no configuration value. The diagnostic detail is logged instead.
+     */
+    private function mlsLookupErrorMessage(BridgeLookupResult $result, string $mlsNumber): string
+    {
+        if ($result->isUnavailable()) {
+            Log::warning('MLS # import: Bridge lookup unavailable', [
+                'reason'     => $result->failureReason,
+                'role'       => $this->resolveImportRole(),
+                'mls_number' => $mlsNumber,
+            ]);
+
+            return 'We couldn\'t connect to the MLS data service right now. Please try again in a few minutes.';
+        }
+
+        if ($result->isInvalidInput()) {
+            return 'Please enter an MLS # before clicking Find Listing.';
+        }
+
+        return 'We couldn\'t find a listing matching that MLS #. Please check the number and try again.';
+    }
+
+    // ─── Shared preview builder ──────────────────────────────────────────────
+
+    /**
+     * Turn a canonical-key array into the preview rows the modal renders.
+     *
+     * Shared verbatim by both importers, which is the point: the URL/text path
+     * and the Bridge path differ only in how the canonical data was obtained,
+     * and everything after that — what is shown, what is pre-checked, how an
+     * existing value is flagged for overwrite — must not be able to drift apart
+     * between them.
+     *
+     * Keys with no field-map entry for this role, or whose target property does
+     * not exist on this component, are skipped. That is what keeps record
+     * handles like mls_listing_key out of the review table while leaving them in
+     * the underlying data for the apply step to persist.
+     *
+     * @param  array<string,mixed> $parsedData
+     * @return list<array<string,mixed>>
+     */
+    private function buildImportPreview(array $parsedData): array
+    {
         $role     = $this->resolveImportRole();
         $fieldMap = MlsFieldMap::forRole($role);
         $labels   = MlsFieldMap::fieldLabels();
 
         $preview = [];
 
-        foreach ($result['data'] as $canonicalKey => $value) {
+        foreach ($parsedData as $canonicalKey => $value) {
             if ($canonicalKey === 'listing_type_hint' || !isset($fieldMap[$canonicalKey])) {
                 continue;
             }
@@ -118,13 +308,7 @@ trait HasMlsImport
             ];
         }
 
-        if (empty($preview)) {
-            $this->importError = 'No mappable fields were found for this listing type. Try pasting the raw text directly.';
-            return;
-        }
-
-        $this->importPreviewData = $preview;
-        $this->importError       = '';
+        return $preview;
     }
 
     // ─── Step 2: apply selected fields ───────────────────────────────────────
@@ -288,6 +472,7 @@ trait HasMlsImport
                 if ($mls_address_raw !== '') {
                     $model->saveMeta('mls_address_raw', $mls_address_raw);
                 }
+                $this->saveMlsListingKeyMeta($model, $allParsedFields);
             }
         }
 
@@ -295,7 +480,12 @@ trait HasMlsImport
         // Requires an existing listing ID so coordinates can be persisted to EAV
         // meta immediately and avoid stale-state on the form.  On new/draft listings
         // (no ID yet) coordinates will be captured via Google Places autocomplete.
+        //
+        // A Bridge import that carried coordinates skips this entirely: the MLS
+        // published this property's own position, and geocoding its address would
+        // spend a request to replace a known coordinate with an inferred one.
         if ($listingId
+            && ! $this->mlsBridgeCoordinatesAvailable
             && in_array($role, ['seller', 'landlord'])
             && property_exists($this, 'property_lat')
             && ($this->property_lat === '' || $this->property_lat === null)
@@ -336,6 +526,11 @@ trait HasMlsImport
             if ($raw !== '') {
                 $auction->saveMeta('mls_address_raw', $raw);
             }
+
+            // The RESO ListingKey, for a listing whose import happened before it
+            // had an ID. Same write as the apply-time path; this is the branch
+            // that catches a brand-new draft.
+            $this->saveMlsListingKeyMeta($auction, $decoded['raw_fields'] ?? []);
         }
 
         // ── Save-time geocoding fallback ──────────────────────────────────────
@@ -346,13 +541,57 @@ trait HasMlsImport
     }
 
     /**
+     * Persist the Bridge record's RESO ListingKey as listing meta.
+     *
+     * WHY THIS ONE LINE MATTERS
+     * -------------------------
+     * {@see \App\Services\Location\Coordinates\Adapters\BridgeMlsCoordinatesAdapter}
+     * — rung 2 of the coordinate ladder that already runs on every Seller and
+     * Landlord save — looks a property up in `bridge_properties` by
+     * `listing_key` and by nothing else, deliberately: matching a feed record by
+     * address similarity would attach some other property's coordinate to this
+     * listing while reporting success.
+     *
+     * Before this feature nothing in production ever wrote that key, so the rung
+     * returned `no_mls_listing_key` on every real save and the ladder fell
+     * through to the network geocoder. Writing it here is what activates a rung
+     * that has been present, correct and silent all along — no new coordinate
+     * mechanism, no second persistence path, one meta key.
+     *
+     * Only ever written from a Bridge import; the URL/text parser has no
+     * ListingKey to offer, and an absent key correctly leaves the rung silent.
+     *
+     * @param  array<string,mixed> $parsedFields canonical-key data from the import
+     */
+    private function saveMlsListingKeyMeta(object $model, array $parsedFields): void
+    {
+        $listingKey = trim((string) ($parsedFields['mls_listing_key'] ?? ''));
+
+        if ($listingKey === '' || !method_exists($model, 'saveMeta')) {
+            return;
+        }
+
+        $model->saveMeta('mls_listing_key', $listingKey);
+    }
+
+    /**
      * Geocode the address at save time if: the listing's MLS import populated address
      * fields but property_lat has not yet been set (e.g. new draft, no ID at import
      * time).  Writes directly to the model meta so the value is persisted atomically.
+     *
+     * Never runs for a Bridge import that carried coordinates. In that case the
+     * listing also now carries `mls_listing_key`, so the coordinate ladder's
+     * Bridge rung resolves the MLS's own published coordinate on this very save
+     * — reaching for a geocoder as well would be spending a request to second-
+     * guess the authoritative source.
      */
     private function mlsGeocodeSaveTimeFallback(object $auction): void
     {
         try {
+            if ($this->mlsBridgeCoordinatesAvailable) {
+                return;
+            }
+
             $role = $this->resolveImportRole();
             if (!in_array($role, ['seller', 'landlord'])) {
                 return;
@@ -499,18 +738,35 @@ trait HasMlsImport
     /**
      * Assemble a human-readable "Street, City, State ZIP" string from parsed MLS
      * address fields.  Returns an empty string if no address components are present.
+     *
+     * The URL/text parser emits a street-only `address`, so the city/state/ZIP
+     * tail is appended to it. Bridge instead emits RESO `UnparsedAddress`, which
+     * is already the whole line — appending to that would produce
+     * "123 Main St, Tampa, FL 33601, Tampa, FL 33601". addressAlreadyContains()
+     * suppresses the duplicate tail without attempting to take the address
+     * apart; nothing here parses or splits an address.
      */
     private function buildMlsAddressRaw(array $parsedFields): string
     {
-        $parts = [];
+        $parts   = [];
+        $address = trim((string) ($parsedFields['address'] ?? ''));
 
-        if (!empty($parsedFields['address'])) {
-            $parts[] = trim((string) $parsedFields['address']);
+        if ($address !== '') {
+            $parts[] = $address;
         }
 
         $city  = trim((string) ($parsedFields['city']  ?? ''));
         $state = trim((string) ($parsedFields['state'] ?? ''));
         $zip   = trim((string) ($parsedFields['zip']   ?? ''));
+
+        // Already a complete address line — leave it exactly as the feed gave it.
+        if ($address !== ''
+            && $city !== ''
+            && $this->addressAlreadyContains($address, $city)
+            && ($state === '' || $this->addressAlreadyContains($address, $state))
+        ) {
+            return $address;
+        }
 
         $cityStateZip = implode(', ', array_filter([$city, $state]));
         if ($zip !== '') {
@@ -522,6 +778,26 @@ trait HasMlsImport
         }
 
         return implode(', ', $parts);
+    }
+
+    /**
+     * Case-insensitive whole-word containment test.
+     *
+     * Word-bounded on purpose: a substring test would find "FL" inside
+     * "FLAGLER" and conclude a state was already present when it was not.
+     */
+    private function addressAlreadyContains(string $address, string $needle): bool
+    {
+        $needle = trim($needle);
+
+        if ($needle === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/(?<![A-Za-z0-9])' . preg_quote($needle, '/') . '(?![A-Za-z0-9])/i',
+            $address
+        );
     }
 
     /**

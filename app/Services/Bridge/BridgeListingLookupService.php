@@ -64,6 +64,43 @@ class BridgeListingLookupService
     }
 
     /**
+     * findByMlsNumber(), with "not found" and "could not ask" told apart.
+     *
+     * Runs the lookup through findByMlsNumber() unchanged — same local-first
+     * order, same OData filter, same caching, same DNA dispatch rules — and then
+     * classifies a null return by asking the API client whether its last call
+     * actually failed. It adds a distinction; it does not add a second lookup
+     * path, and there is deliberately no behaviour here that findByMlsNumber()
+     * does not already have.
+     *
+     * The Seller/Landlord prefill entry point uses this. Match Check keeps
+     * calling findByMlsNumber() directly and is unaffected.
+     *
+     * A local cache hit never consults the failure reason: the candidate is
+     * non-null, so the API was not asked and its previous outcome is irrelevant.
+     */
+    public function lookupByMlsNumber(string $mlsNumber, bool $dispatchDna = true): BridgeLookupResult
+    {
+        if (trim($mlsNumber) === '') {
+            return BridgeLookupResult::invalidInput();
+        }
+
+        $candidate = $this->findByMlsNumber($mlsNumber, $dispatchDna);
+
+        if ($candidate !== null) {
+            return BridgeLookupResult::found($candidate);
+        }
+
+        // Null means the API was reached and had nothing, OR it was never
+        // reached at all. Only the client knows which.
+        $failure = $this->api->lastFailure();
+
+        return $failure !== null
+            ? BridgeLookupResult::unavailable($failure)
+            : BridgeLookupResult::notFound();
+    }
+
+    /**
      * Look up by globally-unique RESO ListingKey.
      * Local `listing_key` match first; then `ListingKey eq '...'` against the API.
      *

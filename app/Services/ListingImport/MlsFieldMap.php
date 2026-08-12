@@ -60,6 +60,13 @@ class MlsFieldMap
             'state'           => 'property_state',
             'zip'             => 'property_zip',
             'county'          => 'property_county',
+            // ── Coordinates (Bridge MLS # import only) ────────────────────────
+            // Populated exclusively by MlsListingPrefillService from the Bridge
+            // feed's own Latitude/Longitude. The URL/text parser emits neither
+            // canonical key, so these rows never appear in a URL/text preview —
+            // see MlsCoverageReporter's bridge-only exclusion note.
+            'latitude'        => 'property_lat',
+            'longitude'       => 'property_lng',
             // ── Property characteristics ──────────────────────────────────────
             'heating_fuel'        => '*heating_and_fuel',
             'roof_type'           => '*roof_type',
@@ -214,6 +221,10 @@ class MlsFieldMap
             'state'           => 'property_state',
             'zip'             => 'property_zip',
             'county'          => 'property_county',
+            // ── Coordinates (Bridge MLS # import only) ────────────────────────
+            // See the Seller map for the rationale; identical here.
+            'latitude'        => 'property_lat',
+            'longitude'       => 'property_lng',
             // ── Property characteristics ──────────────────────────────────────
             'heating_fuel'        => '*heating_fuel',
             'water'               => '*water',
@@ -407,6 +418,10 @@ class MlsFieldMap
             'state'               => 'State',
             'zip'                 => 'ZIP',
             'county'              => 'County',
+            'latitude'            => 'Latitude (from MLS)',
+            'longitude'           => 'Longitude (from MLS)',
+            'property_sub_type'   => 'Property Sub Type',
+            'mls_status'          => 'MLS Status',
             'waterfront'          => 'Waterfront',
             'water_access'        => 'Water Access',
             'water_view'          => 'Water View',
