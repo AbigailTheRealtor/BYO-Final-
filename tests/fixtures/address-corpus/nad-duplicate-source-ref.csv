@@ -1,0 +1,4 @@
+UUID,Add_Number,AddNo_Full,St_PreDir,St_Name,St_PosTyp,StNam_Full,Unit,SubAddress,County,Inc_Muni,Post_City,State,Zip_Code,Placement,Latitude,Longitude
+{00000000-0000-0000-0000-0000000000b1},100,100,,Repeat Ref,St,Repeat Ref St,,,Hillsborough,Tampa,Tampa,FL,33602,Structure - Rooftop,27.9475,-82.4570
+{00000000-0000-0000-0000-0000000000b1},200,200,,Second Row Same Uuid,St,Second Row Same Uuid St,,,Hillsborough,Tampa,Tampa,FL,33602,Structure - Rooftop,27.9480,-82.4575
+{00000000-0000-0000-0000-0000000000b2},300,300,,Distinct Ref,St,Distinct Ref St,,,Hillsborough,Tampa,Tampa,FL,33602,Structure - Rooftop,27.9485,-82.4580

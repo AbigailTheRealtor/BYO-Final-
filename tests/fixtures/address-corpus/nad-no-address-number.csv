@@ -1,0 +1,3 @@
+UUID,St_PreDir,St_Name,St_PosTyp,StNam_Full,Unit,SubAddress,County,Inc_Muni,Post_City,State,Zip_Code,Placement,Latitude,Longitude
+{00000000-0000-0000-0000-0000000000a1},E,Madison,St,E Madison St,,,Hillsborough,Tampa,Tampa,FL,33602,Structure - Rooftop,27.9475,-82.4570
+{00000000-0000-0000-0000-0000000000a2},,Gulf,Blvd,Gulf Blvd,,,Pinellas,St Pete Beach,Saint Pete Beach,FL,33706,Parcel - Centroid,27.7250,-82.7430

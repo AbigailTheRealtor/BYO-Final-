@@ -36,11 +36,44 @@ final class NadSourceReader
     /** Fields without which an import cannot proceed. */
     public const REQUIRED_HEADERS = ['UUID', 'StNam_Full', 'State', 'Latitude', 'Longitude'];
 
+    /**
+     * Groups where **at least one** member must be present.
+     *
+     * The address number is required per row — a row without one is rejected as
+     * `missing_address_number` — but NAD supplies it under two names and either
+     * will do: `AddNo_Full` carries prefix and suffix ("123 1/2"), `Add_Number`
+     * is the bare integer. Listing both as merely optional made a schema failure
+     * look like a data failure: a release that renamed both would scan the whole
+     * file and report 100% `missing_address_number`, which reads as "this corpus
+     * has no house numbers" rather than "we are looking for the wrong column".
+     * The distinction matters because one is a reason to stop and the other is a
+     * reason to change the mapping.
+     *
+     * @var array<string, list<string>>
+     */
+    public const REQUIRED_HEADER_GROUPS = [
+        'address number' => ['AddNo_Full', 'Add_Number'],
+    ];
+
     /** Fields the importer reads when present. Absence is reported, not fatal. */
     public const OPTIONAL_HEADERS = [
-        'AddNo_Full', 'Add_Number', 'SubAddress', 'Unit', 'Post_City',
+        'SubAddress', 'Unit', 'Post_City',
         'Inc_Muni', 'County', 'Zip_Code', 'Placement',
     ];
+
+    /**
+     * Every header this reader knows how to name canonically.
+     *
+     * @return list<string>
+     */
+    public static function knownHeaders(): array
+    {
+        return array_merge(
+            self::REQUIRED_HEADERS,
+            array_merge(...array_values(self::REQUIRED_HEADER_GROUPS)),
+            self::OPTIONAL_HEADERS
+        );
+    }
 
     private const DELIMITERS = [',', '|', "\t", ';'];
 
@@ -115,28 +148,40 @@ final class NadSourceReader
     /**
      * Refuses a source whose header does not carry the required fields.
      *
-     * @return array{ok: bool, missing_required: list<string>, missing_optional: list<string>, header: list<string>}
+     * @return array{ok: bool, missing_required: list<string>, missing_required_groups: list<string>, missing_optional: list<string>, header: list<string>}
      */
     public function assertSchema(): array
     {
         $header    = $this->header();
         $canonical = array_map(static fn (string $h) => strtolower(trim($h)), $header);
 
+        $present = static fn (string $f): bool => in_array(strtolower($f), $canonical, true);
+
         $missingRequired = array_values(array_filter(
             self::REQUIRED_HEADERS,
-            static fn (string $f) => ! in_array(strtolower($f), $canonical, true)
+            static fn (string $f) => ! $present($f)
         ));
+
+        // A group fails only when *every* member is absent.
+        $missingGroups = [];
+
+        foreach (self::REQUIRED_HEADER_GROUPS as $label => $members) {
+            if (array_filter($members, $present) === []) {
+                $missingGroups[] = $label . ' (one of: ' . implode(', ', $members) . ')';
+            }
+        }
 
         $missingOptional = array_values(array_filter(
             self::OPTIONAL_HEADERS,
-            static fn (string $f) => ! in_array(strtolower($f), $canonical, true)
+            static fn (string $f) => ! $present($f)
         ));
 
         return [
-            'ok'               => $missingRequired === [],
-            'missing_required' => $missingRequired,
-            'missing_optional' => $missingOptional,
-            'header'           => $header,
+            'ok'                      => $missingRequired === [] && $missingGroups === [],
+            'missing_required'        => $missingRequired,
+            'missing_required_groups' => $missingGroups,
+            'missing_optional'        => $missingOptional,
+            'header'                  => $header,
         ];
     }
 
@@ -284,7 +329,7 @@ final class NadSourceReader
     {
         $known = [];
 
-        foreach (array_merge(self::REQUIRED_HEADERS, self::OPTIONAL_HEADERS) as $field) {
+        foreach (self::knownHeaders() as $field) {
             $known[strtolower($field)] = $field;
         }
 
