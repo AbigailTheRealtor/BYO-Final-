@@ -224,13 +224,31 @@ final class PropertyAddress
     }
 
     /**
-     * Street line normalization: token floor plus USPS-style suffix and
-     * directional folding, so "123 North Main Street" and "123 N Main St"
-     * converge on one string.
+     * Street line normalization: token floor, then directional folding
+     * everywhere and suffix folding **only at the suffix position**, so
+     * "123 North Main Street" and "123 N Main St" converge on one string.
      *
-     * Intentionally a small, conservative map. It is not a USPS CASS
-     * implementation and does not try to be — a wrong expansion is worse than a
-     * missed one, because it changes the identity of a property.
+     * The vocabulary lives in {@see StreetSuffixMap}; which half of it applies to
+     * a given token is decided here, and only here.
+     *
+     * WHY POSITION MATTERS
+     * --------------------
+     * This used to fold every token against the whole vocabulary. That was
+     * survivable while the vocabulary was 16 common suffixes, and stopped being
+     * survivable when it became the full USPS Publication 28 Appendix C1 set:
+     * C1 contains `hill`, `mountain`, `view`, `forest`, `garden`, `lake`,
+     * `center` — words that are far more often part of a street's *name* than
+     * its type. `4600 Silver Hill Rd` came out as `4600 silver hl rd`;
+     * `100 Mountain View Drive` came out as `100 mtn vw dr`. Both are strings no
+     * geocoder, no county address file and no human ever wrote.
+     *
+     * A street line is `<number> <name…> <suffix> [directional]`. Only the
+     * suffix slot gets suffix folding. Directionals fold wherever they appear —
+     * they are a closed, unambiguous set, and folding them anywhere is what
+     * makes "N Green Bay Rd" and "North Green Bay Road" one string.
+     *
+     * Still not a USPS CASS implementation and still not trying to be. Knowing
+     * which token is last is not parsing an address.
      */
     private function normalizeStreet(string $value): string
     {
@@ -240,25 +258,56 @@ final class PropertyAddress
             return '';
         }
 
-        static $map = [
-            // directionals
-            'north' => 'n', 'south' => 's', 'east' => 'e', 'west' => 'w',
-            'northeast' => 'ne', 'northwest' => 'nw',
-            'southeast' => 'se', 'southwest' => 'sw',
-            // common suffixes
-            'street' => 'st', 'avenue' => 'ave', 'boulevard' => 'blvd',
-            'road' => 'rd', 'drive' => 'dr', 'lane' => 'ln', 'court' => 'ct',
-            'place' => 'pl', 'terrace' => 'ter', 'parkway' => 'pkwy',
-            'circle' => 'cir', 'highway' => 'hwy', 'trail' => 'trl',
-            'square' => 'sq',
-        ];
+        $tokens = array_values(array_filter(
+            explode(' ', $normalized),
+            static fn (string $t): bool => $t !== ''
+        ));
 
-        $parts = array_map(
-            static fn (string $part): string => $map[$part] ?? $part,
-            explode(' ', $normalized)
+        if ($tokens === []) {
+            return '';
+        }
+
+        $tokens = array_map(
+            static fn (string $t): string => StreetSuffixMap::foldDirectional($t),
+            $tokens
         );
 
-        return implode(' ', array_filter($parts, static fn ($p) => $p !== ''));
+        $suffixIndex = $this->suffixPosition($tokens);
+
+        if ($suffixIndex !== null) {
+            $tokens[$suffixIndex] = StreetSuffixMap::foldSuffix($tokens[$suffixIndex]);
+        }
+
+        return implode(' ', $tokens);
+    }
+
+    /**
+     * Which token, if any, occupies the street-type suffix slot.
+     *
+     * The trailing token, unless a directional trails it — "123 North Main
+     * Street NW" puts the suffix one place further left, and a quadrant
+     * directional after the type is standard in DC and much of the Midwest.
+     *
+     * Returns null rather than guessing when folding could only consume the
+     * street's name: a line short enough that the candidate slot is index 0 has
+     * no name left in front of it. `123 N` must stay `123 n`, not fold `123`.
+     *
+     * @param list<string> $tokens directionals already folded
+     */
+    private function suffixPosition(array $tokens): ?int
+    {
+        $last = count($tokens) - 1;
+
+        // A one-token line is a name, not a type.
+        if ($last < 1) {
+            return null;
+        }
+
+        if (StreetSuffixMap::isDirectional($tokens[$last])) {
+            return $last - 1 >= 1 ? $last - 1 : null;
+        }
+
+        return $last;
     }
 
     /**
