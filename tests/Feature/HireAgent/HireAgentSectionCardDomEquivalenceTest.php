@@ -76,15 +76,24 @@ class HireAgentSectionCardDomEquivalenceTest extends TestCase
      * set comparison and would still be a regression.
      *
      * Recorded as text, matching what a reader sees on the page.
+     *
+     * TWO ENTRIES WERE DELETED FROM EVERY ROLE, AND THAT IS NOT A RELAXATION OF THE PIN. 'Services:'
+     * and 'Broker Compensation & Agency Agreement Terms' sat between Terms and Additional Details,
+     * and after Representation, in all four lists. They are negotiation terms an agent proposes on
+     * a bid, not listing detail, so the sections were removed from the page — including from this
+     * flag-off branch, because a rule about what a listing IS cannot be conditional on a rollout
+     * switch. Every surviving heading keeps its recorded text and its recorded position; the
+     * deletions close the gaps without moving anything around them.
+     *
+     * The absence is asserted positively elsewhere rather than only implied by these lists —
+     * see HireAgentListingBidSeparationTest and HireAgentDetailFrameworkTest.
      */
     private const FLAG_OFF_HEADINGS = [
         'seller' => [
             'Listing Details:',
             'Property Details:',
             'Sale Terms',
-            'Services:',
             'Additional Details:',
-            'Broker Compensation & Agency Agreement Terms',
             'Referral & Cooperation Terms',
             'Seller Info',
         ],
@@ -92,9 +101,7 @@ class HireAgentSectionCardDomEquivalenceTest extends TestCase
             'Listing Details:',
             'Property Preferences:',
             'Purchasing Terms:',
-            'Services:',
             'Additional Details:',
-            'Broker Compensation & Agency Agreement Terms:',
             'Referral & Cooperation Terms',
             "Buyer's Info",
         ],
@@ -102,10 +109,8 @@ class HireAgentSectionCardDomEquivalenceTest extends TestCase
             'Listing Details:',
             'Property Details:',
             'Leasing Terms:',
-            'Services:',
             'Additional Details:',
             'Representation Preferences & Compatibility:',
-            'Broker Compensation & Agency Agreement Terms',
             'Referral & Cooperation Terms',
             "Landlord's Info",
         ],
@@ -114,9 +119,7 @@ class HireAgentSectionCardDomEquivalenceTest extends TestCase
             'Property Preferences:',
             'Leasing Terms:',
             'Pre-Screening:',
-            'Services:',
             'Additional Details:',
-            'Broker Compensation & Agency Agreement Terms:',
             'Referral & Cooperation Terms',
             "Tenant's Info",
         ],

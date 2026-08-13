@@ -40,6 +40,30 @@ class TenantOfferListing extends Component
     // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
     use HasSearchAreas;
 
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // search shortcut that seeds the cascade above
+
+    /**
+     * The cascade workflow key for the role this component is serving.
+     *
+     * THIS CLASS IS A FOUR-ROLE SWITCH, which is why the key cannot be a const as it is on the
+     * dedicated Hire Buyer component. `store()` maps `user_type` to four different auction models
+     * and the root blade picks a different property tab per role. Only the tenant role has a
+     * Create Tenant geography surface, so every other role resolves to NULL and is disabled by the
+     * TYPE of the argument rather than by the contents of a config file — there is no string an
+     * operator can put in CRITERIA_LDNA_CASCADE_WORKFLOWS that turns the cascade on for a seller.
+     *
+     * `create_tenant` is deliberately its own key rather than a reuse of `hire_tenant` or
+     * `create_buyer`: separate record family, separate rollout step, and — the reason that matters
+     * here — a DIFFERENT ZIP MIRROR ANSWER. `hire_tenant` is a member of
+     * HasGeographyCascade::ZIP_MIRROR_WORKFLOWS; `create_tenant` is not, and must not become one
+     * while that trait stays frozen. Sharing a key would silently adopt the wrong mirror rule.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return $this->user_type === 'tenant' ? 'create_tenant' : null;
+    }
+
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
 
@@ -1652,8 +1676,16 @@ class TenantOfferListing extends Component
         // Set user_type from route parameter, or default to 'tenant'
         $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
+        // Decide whether the cascade runs, AFTER user_type is known — the workflow map reads it —
+        // and BEFORE any draft load below can hydrate it. Seller, landlord and buyer resolve to no
+        // workflow at all, so this is a no-op for them. With the master gate off it sets one
+        // boolean and does nothing else.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
 
-
+        // AFTER the cascade's boot, whose flag the search gate reads. Called before it, search
+        // would resolve false on first render and true on every request after — a bug that only
+        // appears on the second keystroke.
+        $this->bootGeographySearch();
 
         $this->initializeFeeStructure();
         $this->addService();
@@ -3329,6 +3361,25 @@ class TenantOfferListing extends Component
             $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
             $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+            // T1 — fold legacy discrete `cities` / `zipCodes` meta into the in-memory blob.
+            //
+            // The Hire family has had this since it adopted loadSearchAreas(); this component
+            // decodes the blob inline and so never ran it. That gap is invisible today and stops
+            // being invisible the moment this tab renders the geography cascade: the cascade
+            // hydrates from THIS array and projects all four geography keys back out on save, so a
+            // record whose ZIPs live only in the legacy meta would hydrate none, show the user an
+            // empty ZIP tier, and project an empty list over the blob.
+            //
+            // Landing it AHEAD of the cascade wiring is the point — it is the precondition, not
+            // part of the wiring. `create_tenant` remains unwired and absent from every scope list.
+            //
+            // IN-MEMORY ONLY and idempotent: the stored blob is untouched until an explicit save,
+            // and a blob that already carries a key is left alone.
+            $this->existingLocationDna = $this->mergeLegacyGeographyIntoBlob(
+                $this->existingLocationDna,
+                $auction
+            );
+
             // 9B-2 prefill: seed the Search Areas blob's Preferred State / counties from
             // the discrete meta when the blob lacks them, so the partial pre-populates
             // (in-memory only; the JS bridge carries the merged blob back on save).
@@ -3341,6 +3392,27 @@ class TenantOfferListing extends Component
                     fn($c) => is_string($c) && trim($c) !== ''
                 ));
             }
+
+            // Hydrate the cascade from the document assembled immediately above.
+            //
+            // RE-BOOTED HERE, NOT JUST IN mount(), because the LOADED record's user_type is the
+            // authoritative one — the route may supply one, but the stored value decides which
+            // workflow this listing belongs to, and this method reassigns $this->user_type from
+            // the record well before this point. Search re-boots with it, never apart from it,
+            // because the search gate reads $geoCascadeEnabled.
+            //
+            // PLACED AFTER THE T1 BACKFILL AND THE 9B-2 PREFILL ON PURPOSE. Both add geography the
+            // stored blob lacks — the backfill legacy cities and ZIPs, the prefill state and
+            // counties. Hydrating before them would hand the cascade a thinner document and drop a
+            // legacy record's locations on the next save, which is the precise failure T1 exists
+            // to prevent.
+            //
+            // Inert unless the tenant role's workflow is in scope, which it is not yet: this is
+            // the wiring, not the enablement. Anything the corpus cannot match is carried as
+            // preserved history rather than discarded.
+            $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+            $this->bootGeographySearch();
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
 
             if (!empty($this->cities)) {
                 $this->cityFieldVisible = true;
@@ -4287,6 +4359,26 @@ class TenantOfferListing extends Component
 
     protected function saveAllMetadata($auction)
     {
+        // Merge the cascade's four geography keys into the bridged payload, in the same label
+        // format the previous editor produced. A MERGE rather than a rebuild, so the widget's
+        // polygons, radius searches, flexible flag and notes survive untouched.
+        //
+        // THIS SEAM IS WHAT COVERS THE DRAFT FLOWS. store() projects again before its own
+        // validation, but saveDraft() never calls store() — it reaches this method directly, and a
+        // projection placed only on the validation path would skip every draft save. Idempotent,
+        // so running it on both paths costs nothing.
+        //
+        // ORDERING IS LOAD-BEARING: it must precede hydrateDiscreteLocationFromBlob() further down,
+        // which derives the discrete state/counties meta from this payload, and it must be the last
+        // write to $location_dna_preferences_json before that payload is persisted.
+        //
+        // IT DOES NOT TOUCH $zipCodes. `create_tenant` is absent from
+        // HasGeographyCascade::ZIP_MIRROR_WORKFLOWS, so syncDiscreteLocationProps() leaves the
+        // property alone and the `zipCodes` meta written below keeps coming from the loader, not
+        // from the cascade. That is the property which makes wiring this surface safe while the
+        // trait stays frozen — see the workflow map above.
+        $this->applyGeographyCascadeToPayload();
+
         $this->normalizeOtherInArray($this->non_negotiable_amenities, $this->other_non_negotiable_amenities);
         $this->normalizeOtherInArray($this->lease_for, $this->other_lease_for);
         $this->normalizeOtherInArray($this->garage_parking_spaces_option, $this->other_parking_space_wrapper);
@@ -4970,10 +5062,21 @@ class TenantOfferListing extends Component
             'counties' => $this->counties ?? [],
             'timestamp' => now()->toDateTimeString(),
         ]);
-        
+
+        // A blocked submit must not inherit the previous action's success banner — see the same
+        // clear in TenantAgentAuction::store(). Before any validation, so it covers every refusal.
+        session()->forget('success');
+
         try {
 
             $this->isDraft = 0;
+
+            // Project the cascade into the bridged payload BEFORE the hydrate below, so the
+            // discrete $state / $counties the required-field rules read are the ones the user
+            // actually chose. Without this ordering the hydrate re-reads the widget's
+            // server-seeded blob and validation judges the STORED geography rather than the edited
+            // selection. Idempotent, and inert while the cascade is off.
+            $this->applyGeographyCascadeToPayload();
 
             // 9B-3: hydrate state/counties from the Search Areas blob before validation,
             // since the discrete Acceptable State/Counties inputs were removed.

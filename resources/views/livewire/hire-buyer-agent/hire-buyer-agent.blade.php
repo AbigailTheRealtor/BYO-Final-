@@ -2666,6 +2666,56 @@
             const saveButton = document.getElementById('save-button');
             const formContainer = document.getElementById('wizard-form-container');
 
+            // Fields that must NEVER block a Buyer submit, keyed the same way resolveBuyerFieldKey()
+            // keys them (wire:model first, then element id for the wire:ignore Select2 selects).
+            //
+            // These are matching preferences and a broker-status disclosure, not listing facts, and
+            // their server rules are `nullable` (or absent, for working_with_agent). Removing the
+            // `required` attributes in the Blade partials is the primary fix; this set is the
+            // backstop, because every consumer below — updateSaveButton(), validateAllTabsStrictly()
+            // and buyerGetInvalidItems(), whose caller calls preventDefault() — funnels through
+            // getAllRequiredFields(), so a `required` reintroduced by a Select2 re-init or a
+            // morphdom patch would silently restore the block on all three at once.
+            //
+            // BUYER ONLY, and enforced server-side rather than by convention: this view also
+            // renders the seller / tenant / landlord compatibility partials, which reuse the same
+            // `compat_*` element ids. Gating the list on $user_type means the exemption cannot
+            // reach another role's fields even if this view is ever rendered for one.
+            @php
+                // Built in a @php block rather than inline in @json: Blade's @json argument parser
+                // stops at the first ')' it finds and cannot span a multi-line array literal, which
+                // silently truncates the list to its first few entries.
+                $buyerNonBlockingKeys = $user_type === 'buyer' ? [
+                    'working_with_agent',
+                    'compat_primary_transaction_goal',
+                    'compat_representation_priorities',
+                    'compat_communication_style',
+                    'compat_negotiation_style',
+                    'compat_preferred_agent_working_style',
+                    // Pets renders as #pets (Residential) or #pets_income (Income); both bind to
+                    // the same `pets` property. Neither carries `required` today, so these two are
+                    // backstop only — the blocker that actually had to go was an explicit push in
+                    // the OTHER Hire Buyer shell (tenant-agent-auction.blade.php). Listed here so
+                    // this set is the whole answer to "what must not block a buyer submit".
+                    'pets',
+                    'pets_income',
+                ] : [];
+            @endphp
+            const BUYER_NON_BLOCKING_KEYS = new Set(@json($buyerNonBlockingKeys));
+
+            // True when the field is one of the Buyer fields that may not block submission.
+            function isBuyerNonBlockingField(field) {
+                if (!field) return false;
+                const key = field.getAttribute('wire:model')
+                    || field.getAttribute('wire:model.defer')
+                    || field.getAttribute('wire:model.lazy')
+                    || field.id
+                    || field.name
+                    || '';
+                return BUYER_NON_BLOCKING_KEYS.has(key)
+                    || BUYER_NON_BLOCKING_KEYS.has(key.replace(/\[\]$/, ''));
+            }
+
             // Get all required fields from only active tabs depending on service type
             function getAllRequiredFields() {
                 const requiredFields = [];
@@ -2689,7 +2739,10 @@
                     const tab = document.querySelector(selector);
                     if (!tab) return;
                     const fields = tab.querySelectorAll('[required]');
-                    fields.forEach(field => requiredFields.push(field));
+                    fields.forEach(field => {
+                        if (isBuyerNonBlockingField(field)) return;
+                        requiredFields.push(field);
+                    });
                 });
 
                 return requiredFields;
@@ -2942,23 +2995,22 @@
                                     items.push({ field: _ofEl || document.body, tab: _ofTab, fieldName: BUYER_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
                                 }
 
-                                // representation_priorities: required multi-select in compatibility tab
-                                var _compatBgi = _comp.get('compatibility_preferences');
-                                var _rpValBgi2 = (_compatBgi && _compatBgi.buyer_specific) ? _compatBgi.buyer_specific.representation_priorities : [];
-                                if (typeof _rpValBgi2 === 'string') { try { _rpValBgi2 = JSON.parse(_rpValBgi2); } catch(exRp2) {} }
-                                var _rpEmptyBgi = !_rpValBgi2 || (Array.isArray(_rpValBgi2) && _rpValBgi2.length === 0) || _rpValBgi2 === '[]';
-                                if (_rpEmptyBgi) {
-                                    var $rpDomBgi = $('#compat_representation_priorities');
-                                    if ($rpDomBgi.length) {
-                                        var _rpDomValBgi = $rpDomBgi.val();
-                                        if (_rpDomValBgi && Array.isArray(_rpDomValBgi) && _rpDomValBgi.length > 0) _rpEmptyBgi = false;
-                                    }
-                                }
-                                if (_rpEmptyBgi && !items.some(function(i) { return i.key === 'compat_representation_priorities'; })) {
-                                    var _rpElBgi = document.getElementById('compat_representation_priorities');
-                                    var _rpTabBgi = _rpElBgi ? _rpElBgi.closest('.tab-pane') : null;
-                                    items.push({ field: _rpElBgi || document.body, tab: _rpTabBgi, fieldName: BUYER_FIELD_LABELS['compat_representation_priorities'] || 'Representation Priorities', key: 'compat_representation_priorities' });
-                                }
+                                // representation_priorities: NO LONGER A SUBMIT BLOCKER.
+                                //
+                                // The client-side check that pushed `compat_representation_priorities`
+                                // into `items` was removed together with its server rule, which is now
+                                // `nullable|array`. Relaxing only the PHP would have changed nothing a
+                                // user could see: this list feeds `buyerGetInvalidItems()`, and the
+                                // form's submit listener calls `e.preventDefault()` whenever the list
+                                // is non-empty — so the browser refused the submit before Livewire was
+                                // ever reached, and the field appeared required no matter what the
+                                // server said.
+                                //
+                                // The multi-select itself is untouched: it still renders, still
+                                // initialises Select2, still round-trips through
+                                // `compatibility_preferences.buyer_specific.representation_priorities`,
+                                // and is still read by the match scorer when the buyer fills it in.
+                                // Optional means optional — not absent.
                             }
                         }
                     } catch(ex3) {}

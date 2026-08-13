@@ -30,9 +30,45 @@ class TenantAgentAuction extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut seeding the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
     use \App\Http\Livewire\Concerns\ResolvesOwnedAuction;            // S3: object-level ownership on the write paths
     use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia;        // S4: record-derived, validated media deletion target
+
+    /**
+     * Phase 1c — which cascade workflow this component is serving, or NULL for none.
+     *
+     * THIS IS WHERE SELLER AND LANDLORD ARE EXCLUDED, AND IT IS STRUCTURAL RATHER THAN
+     * CONFIGURED. This one component serves all four roles off `user_type`. Returning null for
+     * seller and landlord means no value of CRITERIA_LDNA_CASCADE_WORKFLOWS can switch the
+     * cascade on for them — the scope list is consulted only after a non-null key exists. Their
+     * tabs carry no geography surface, so there is nothing for the cascade to replace.
+     *
+     * `tenant` NOW CLAIMS `hire_tenant`, and claiming a key is not switching a cascade on. The
+     * scope list is consulted after this returns, and it still names `hire_buyer` alone — so a
+     * tenant resolves to a workflow that is out of scope, `geographyCascadeIsEnabledFor()`
+     * returns false, and the tab renders exactly what it rendered before. Turning it on is a
+     * config decision, made per environment, after the manual verification this repository has no
+     * browser coverage to stand in for.
+     *
+     * THE TWO PREREQUISITES THE KEY DEPENDS ON ARE ALREADY IN PLACE, which is what makes claiming
+     * it safe rather than merely inert:
+     *
+     *   - the Hire Tenant tab renders the cascade and suppresses the widget's tier inputs, so the
+     *     key cannot state four empty geography keys over stored data;
+     *   - `HasSearchAreas` backfills the legacy `zipCodes` mirror into the blob, so this being the
+     *     one workflow in `HasGeographyCascade::ZIP_MIRROR_WORKFLOWS` cannot empty a tenant's
+     *     stored ZIP list the first time the cascade takes ownership of `$zipCodes`.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return match ($this->user_type) {
+            'buyer'  => 'hire_buyer',
+            'tenant' => 'hire_tenant',
+            default  => null,
+        };
+    }
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -1816,6 +1852,20 @@ class TenantAgentAuction extends Component
         // Set user_type from route parameter, or default to 'tenant'
         $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
+        // Phase 1c — decide whether the cascade runs, AFTER user_type is known (the workflow map
+        // reads it) and BEFORE any draft load below can hydrate it. Seller and landlord resolve
+        // to no workflow at all, so this is a no-op for them.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+        // M2 — AFTER the cascade's boot, whose flag the search gate reads.
+        //
+        // THIS COMPONENT IS WHERE THE REAL HIRE WORKFLOW LIVES. `hire/agent/auction/{user_type?}`
+        // routes here, not to `HireBuyerAgent\BuyerAgentAuction` — which serves only
+        // `buyer/add-auction`. Wiring search here is what gives the Buyer EDIT path the search box
+        // its create path already had, and it is the seam Hire Tenant will use once its workflow
+        // key goes live. It changes nothing for any role whose workflow map returns null.
+        $this->bootGeographySearch();
+
         $this->initializeFeeStructure();
         $this->addService();
 
@@ -3150,6 +3200,12 @@ class TenantAgentAuction extends Component
             // discrete cities/counties/state loads above so the blob prefill guards see them.
             if (in_array($this->user_type, ['buyer', 'tenant'])) {
                 $this->loadSearchAreas($auction);
+
+                // Phase 1c — hydrate the cascade from the same decoded document. Inert unless
+                // this user_type maps to a wired workflow. Unresolvable stored labels are
+                // preserved rather than dropped.
+                $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
                 $this->loadImportantPlaces($auction);
             }
 
@@ -4115,8 +4171,21 @@ class TenantAgentAuction extends Component
             if (in_array($this->property_type, ['Residential', 'Commercial', 'Business'])) {
                 $rules['bathrooms'] = 'required';
             }
-            if (in_array($this->property_type, ['Residential', 'Income'])) {
-                $rules['pets'] = 'required';
+            // PETS IS OPTIONAL, AND THE PROPERTY-TYPE LIST IS SPELLED BOTH WAYS ON PURPOSE.
+            //
+            // Two separate problems lived on this one line. It was `required`, which made a
+            // matching preference block submission; and its list held only the SHORT property-type
+            // spellings while the input renders behind `$property_type === 'Residential Property'`
+            // (pre-screening / property-preferences partials). A buyer listing carrying the short
+            // form therefore had a required field with no visible input — unfillable, and blocking
+            // with an error pointing at a control that was not on the page.
+            //
+            // `nullable` removes the block; the widened list removes the mismatch, so the rule can
+            // never again apply to a state the UI cannot satisfy. Both spellings appear because the
+            // tenant and landlord branches above already accept both — this makes buyer consistent
+            // rather than inventing a new convention.
+            if (in_array($this->property_type, ['Residential Property', 'Residential', 'Income Property', 'Income'])) {
+                $rules['pets'] = 'nullable';
             }
             if ($this->property_type === 'Business') {
                 $rules['real_estate_purchase'] = 'required';
@@ -4128,11 +4197,24 @@ class TenantAgentAuction extends Component
             $rules['offered_financing']   = 'required|array|min:1';
 
             // Tab 6 – Representation Preferences & Compatibility
-            $rules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'required|string';
-            $rules['compatibility_preferences.buyer_specific.representation_priorities']     = 'required|array|min:1';
-            $rules['compatibility_preferences.buyer_specific.communication_style']           = 'required|string';
-            $rules['compatibility_preferences.buyer_specific.negotiation_style']             = 'required|string';
-            $rules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'required|string';
+            // OPTIONAL — these five are COMPATIBILITY/MATCHING PREFERENCES, not listing facts.
+            //
+            // They describe how a buyer would like to work with an agent. A listing without them is
+            // complete and matchable; it simply matches on fewer dimensions. Requiring them meant a
+            // buyer who had filled in every fact about the property they wanted could not submit.
+            //
+            // STILL VALIDATED WHEN PRESENT — `nullable|string` / `nullable|array` keeps the type
+            // contract, so a supplied value is still the shape the match scorer reads. Nothing is
+            // removed from the UI and nothing stops being persisted.
+            //
+            // BUYER ONLY. The seller, landlord and tenant branches of this same method keep their
+            // own `required` rules untouched; this class serves all four roles and this block runs
+            // only under `$this->user_type === 'buyer'`.
+            $rules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'nullable|string';
+            $rules['compatibility_preferences.buyer_specific.representation_priorities']     = 'nullable|array';
+            $rules['compatibility_preferences.buyer_specific.communication_style']           = 'nullable|string';
+            $rules['compatibility_preferences.buyer_specific.negotiation_style']             = 'nullable|string';
+            $rules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'nullable|string';
             // Optional buyer compat fields
             $rules['compatibility_preferences.buyer_specific.primary_transaction_goal_other']      = 'nullable|string|max:500';
             $rules['compatibility_preferences.buyer_specific.representation_priorities_other']      = 'nullable|string|max:500';
@@ -4378,6 +4460,11 @@ class TenantAgentAuction extends Component
         // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
         // written just above from the blob (the map is now the single editing surface).
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
+            // Phase 1c — merge the cascade's geography keys into the bridged payload. Must be
+            // the LAST write to $location_dna_preferences_json before saveSearchAreas() reads
+            // it; the Search Areas bridge re-serialises that property on every map interaction.
+            $this->applyGeographyCascadeToPayload();
+
             $this->saveSearchAreas($auction);
             $this->saveImportantPlaces($auction);
         }
@@ -5103,6 +5190,19 @@ class TenantAgentAuction extends Component
         // only). Thrown BEFORE the try below so the ValidationException propagates to
         // Livewire instead of being swallowed into a generic error flash by the catch.
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
+            // A blocked submit must not inherit the PREVIOUS action's success banner.
+            // `saveDraft()` flashes "Draft saved successfully (Version N)" and redirects, so
+            // without this a user who saves a draft and then submits sees that green banner
+            // sitting above a submit that did not happen — which is exactly how a blocked
+            // submit came to read as a successful one.
+            //
+            // SCOPED TO THE ROLES THE GUARD BELOW APPLIES TO. This class serves all four
+            // roles; seller and landlord neither render Important Places nor reach the throw,
+            // so clearing their flash would be an unrelated behaviour change in a shared
+            // method. Cleared immediately before the guard rather than at the top of the
+            // method for the same reason.
+            session()->forget('success');
+
             $this->assertImportantPlacesValid();
         }
 

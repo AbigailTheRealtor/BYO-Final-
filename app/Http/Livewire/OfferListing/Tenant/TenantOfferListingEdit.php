@@ -35,6 +35,24 @@ class TenantOfferListingEdit extends Component
     // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
     use HasSearchAreas;
 
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // search shortcut that seeds the cascade above
+
+    /**
+     * The cascade workflow key for the role this component is serving.
+     *
+     * Must match {@see \App\Http\Livewire\OfferListing\Tenant\TenantOfferListing::geographyCascadeWorkflow()}
+     * exactly. Create and edit are one workflow to a user, and a cascade that appeared on one and
+     * vanished on the other would be worse than one that appeared on neither.
+     *
+     * Every role but tenant resolves to NULL, which is what keeps the other three this class can
+     * serve structurally unreachable rather than merely unlisted.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return $this->user_type === 'tenant' ? 'create_tenant' : null;
+    }
+
     public $isLoadingData = false;
     private bool $_isDraftSave = false;
 
@@ -2417,6 +2435,16 @@ class TenantOfferListingEdit extends Component
             $this->auctionId = $auctionId;
             $this->user_type = $user_type;
 
+            // Decide whether the cascade runs, AFTER user_type is assigned (the workflow map reads
+            // it) and BEFORE loadAuctionData() hydrates from the document. That method re-derives
+            // the role from the stored record and re-boots, which supersedes this — but the boot
+            // has to exist here too, because the cascade's public properties must be initialised
+            // before any render can reach them.
+            $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+            // AFTER the cascade's boot, whose flag the search gate reads.
+            $this->bootGeographySearch();
+
             $this->assertCanManageAuction($this->tenantAuctionClass(), $auctionId, null);
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             $this->isListingDraft = (bool) $this->isDraft;
@@ -2482,6 +2510,18 @@ class TenantOfferListingEdit extends Component
         $this->existingLocationDna = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
         $this->location_dna_preferences_json = $ldnaRaw ?? '';
 
+        // T1 — fold legacy discrete `cities` / `zipCodes` meta into the in-memory blob.
+        //
+        // Must match TenantOfferListing exactly. Create and edit are one workflow to a user, and a
+        // backfill that ran on one surface but not the other would make a record's ZIP tier depend
+        // on which door it was opened through.
+        //
+        // IN-MEMORY ONLY and idempotent — see HasSearchAreas::mergeLegacyGeographyIntoBlob().
+        $this->existingLocationDna = $this->mergeLegacyGeographyIntoBlob(
+            $this->existingLocationDna,
+            $auction
+        );
+
         // 9B-2 prefill: seed the Search Areas blob's Preferred State / counties from
         // the discrete meta when the blob lacks them, so the partial pre-populates
         // (in-memory only; the JS bridge carries the merged blob back on save).
@@ -2494,6 +2534,22 @@ class TenantOfferListingEdit extends Component
                 fn($c) => is_string($c) && trim($c) !== ''
             ));
         }
+
+        // Hydrate the cascade from the document assembled immediately above.
+        //
+        // RE-BOOTED HERE because the LOADED record's user_type is authoritative: the route supplies
+        // one, but `$this->user_type = $auction->info('user_type') ?: $user_type` earlier in this
+        // method lets the stored value win, and the workflow key is only correct after that. Search
+        // re-boots with it, never apart from it, because the search gate reads $geoCascadeEnabled.
+        //
+        // PLACED AFTER THE T1 BACKFILL AND THE 9B-2 PREFILL, for the reason given on the create
+        // surface: both add geography the stored blob lacks, and hydrating first would hand the
+        // cascade a thinner document.
+        //
+        // Inert unless the tenant role's workflow is in scope, which it is not yet.
+        $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+        $this->bootGeographySearch();
+        $this->loadGeographyCascade($this->existingLocationDna ?? []);
 
         // Property Details
         $this->property_type = $auction->info('property_type');
@@ -3145,6 +3201,25 @@ class TenantOfferListingEdit extends Component
     {
 
         try {
+            // Merge the cascade's four geography keys into the bridged payload, in the same label
+            // format the previous editor produced. A MERGE rather than a rebuild, so the widget's
+            // polygons, radius searches, flexible flag and notes survive untouched.
+            //
+            // ONE CALL COVERS EVERYTHING ON THIS COMPONENT, unlike the create surface which needs
+            // two. There is no saveAllMetadata() here — update() both validates and persists
+            // inline — and saveDraftOnly() and saveDraft() each delegate to update() rather than
+            // reaching a separate seam. So placing it at the top of this try block puts it before
+            // the pre-validation hydrate below AND before the blob write further down, with
+            // nothing in between reassigning $location_dna_preferences_json.
+            //
+            // Before the hydrate specifically: otherwise the hydrate re-reads the widget's
+            // server-seeded blob and the required-field gate judges the STORED geography rather
+            // than the edited selection.
+            //
+            // IT DOES NOT TOUCH $zipCodes — `create_tenant` is absent from ZIP_MIRROR_WORKFLOWS,
+            // so the `zipCodes` meta written later still comes from the loader.
+            $this->applyGeographyCascadeToPayload();
+
             // 9B-3: hydrate state/counties from the Search Areas blob before validation,
             // since the discrete Acceptable State/Counties inputs were removed.
             $this->hydrateDiscreteLocationFromBlob();

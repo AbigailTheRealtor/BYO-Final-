@@ -27,8 +27,38 @@ class TenantAgentAuctionEdit extends Component
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror (Buyer/Tenant)
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut seeding the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows (Buyer/Tenant)
     use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia;        // S4: record-derived, validated media deletion target
+
+    /**
+     * Phase 1c — the workflow this edit surface is serving, or NULL for none.
+     *
+     * THE REACHABLE HIRE BUYER EDIT SURFACE. routes/web.php sends
+     * `/buyer/agent/auction/edit/{auctionId}/{user_type?}` here with `user_type` defaulting to
+     * `buyer`, so this — not HireBuyerAgent\BuyerAgentAuctionEdit — is what a buyer actually
+     * edits. It must stay in lockstep with the create surfaces or a listing created with the
+     * cascade would be edited with the legacy inputs.
+     *
+     * Mirrors {@see \App\Http\Livewire\TenantAgentAuction::geographyCascadeWorkflow()}, where the
+     * reasoning for each arm lives: seller and landlord resolve to null structurally, and `tenant`
+     * now claims `hire_tenant` — a key still outside the shipped scope list, so claiming it
+     * enables nothing.
+     *
+     * THE MIRRORING IS THE POINT ON THIS SURFACE. Both edit routes resolve here, so a map that
+     * lagged the create component would let a tenant build a listing with the cascade and then
+     * edit it with the legacy inputs — the same split that left the Buyer edit path without its
+     * search box.
+     */
+    protected function geographyCascadeWorkflow(): ?string
+    {
+        return match ($this->user_type) {
+            'buyer'  => 'hire_buyer',
+            'tenant' => 'hire_tenant',
+            default  => null,
+        };
+    }
 
     /** A3.21: Unit/Apt/Suite for the shared map-integrated address component */
     public $unit_address = '';
@@ -2555,6 +2585,19 @@ class TenantAgentAuctionEdit extends Component
             $this->auctionId = $auctionId;
             $this->user_type = $user_type;
 
+            // Phase 1c — decide whether the cascade runs, AFTER user_type is assigned (the
+            // workflow map reads it) and BEFORE loadAuctionData() hydrates from the document.
+            $this->bootGeographyCascade($this->geographyCascadeWorkflow());
+
+            // M2 — AFTER the cascade's boot, whose flag the search gate reads.
+            //
+            // THIS IS THE EDIT SURFACE THE REAL HIRE WORKFLOW USES: both
+            // `hire/agent/auction/edit/{auctionId}/{user_type}` and
+            // `buyer/agent/auction/edit/{auctionId}/{user_type?}` route here. Until now a Buyer
+            // could create a listing with search and then edit it without — the same workflow
+            // offering two different geography surfaces. This closes that.
+            $this->bootGeographySearch();
+
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             
             // Enforce Residential-only field cleanup for Commercial properties after load
@@ -2619,6 +2662,11 @@ class TenantAgentAuctionEdit extends Component
         // cities/counties/state loads above so the blob prefill guards see them.
         if (in_array($this->user_type, ['buyer', 'tenant'])) {
             $this->loadSearchAreas($auction);
+
+            // Phase 1c — hydrate the cascade from the same decoded document. Unresolvable stored
+            // labels are preserved rather than dropped, so editing a legacy record cannot delete
+            // a location the user never touched.
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
             $this->loadImportantPlaces($auction);
         }
 
@@ -3350,6 +3398,11 @@ class TenantAgentAuctionEdit extends Component
         // full submit only — draft saves skip it). Before the try so the ValidationException
         // propagates to Livewire rather than being caught by the handler below.
         if (!$this->_isDraftSave && in_array($this->user_type, ['buyer', 'tenant'])) {
+            // A blocked save-edit must not inherit the previous action's success banner — see
+            // the same clear in TenantAgentAuction::store(). Scoped by the SAME condition as
+            // the guard: seller and landlord are out, and a draft save owns its own flash.
+            session()->forget('success');
+
             $this->assertImportantPlacesValid();
         }
 
@@ -3454,6 +3507,11 @@ class TenantAgentAuctionEdit extends Component
             // the location_dna_preferences blob and re-mirrors the discrete cities/counties/state
             // written just above from the blob (the map is now the single editing surface).
             if (in_array($this->user_type, ['buyer', 'tenant'])) {
+                // Phase 1c — merge the cascade's geography keys into the bridged payload. Must
+                // be the LAST write to $location_dna_preferences_json before saveSearchAreas()
+                // reads it; the bridge re-serialises that property on every map interaction.
+                $this->applyGeographyCascadeToPayload();
+
                 $this->saveSearchAreas($auction);
                 $this->saveImportantPlaces($auction);
             }

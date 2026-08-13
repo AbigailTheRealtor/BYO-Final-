@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"name": "SYNTHETIC - parcel polygons, not address points. MUST BE REFUSED.",
+"features": [
+{ "type": "Feature", "properties": { "SITEADDID": "POLY-0001", "ADDRNUM": "315", "FULLNAME": "E Madison St", "POSTALCOMM": "Tampa", "ZIP": "33602", "STATUS": "Current" }, "geometry": { "type": "Polygon", "coordinates": [[[-82.4575, 27.9470], [-82.4565, 27.9470], [-82.4565, 27.9480], [-82.4575, 27.9480], [-82.4575, 27.9470]]] } }
+]
+}

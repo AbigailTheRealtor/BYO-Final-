@@ -234,17 +234,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
      | changes WHERE they are evaluated and nothing else — no condition altered, no
      | authorization changed, no output changed.
      |
-     | ON THE COMPENSATION GUARD: only the computation moved. `@if (Auth::check())` still
-     | wraps the section exactly where it did. Computing the flag for an anonymous visitor
-     | reveals nothing — it emits no markup — and the section remains as unreachable to them
-     | as before. Whether authenticated-but-unrelated viewers should see compensation at all
-     | is an open product question, recorded in
-     | docs/investigations/hire-agent-compensation-visibility-decision.md and deliberately
-     | untouched here.
+     | THE SERVICES AND COMPENSATION GUARDS THAT LIVED HERE ARE GONE, along with their
+     | sections. Neither is listing detail: they are negotiation terms an agent proposes and
+     | the client accepts, rejects or counters, so they belong to the bid workflow and to no
+     | audience tier of this page. The reversal is recorded in the section registry's own config.
+     | That also closes the open product question this comment used to record — "should
+     | authenticated-but-unrelated viewers see compensation" — by removing the section
+     | rather than by answering it. The bare `Auth::check()` that wrapped it is gone with it.
      */
-
-    // Services — moved from just above the Services section.
-    $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
 
     // Additional Details — moved from just above the Additional Details section.
     $additionalDetailsRaw = @$auction->get->additional_details ?? null;
@@ -289,20 +286,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
             $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
         @endphp
-
-@php
-    // Broker Compensation — moved from inside the Auth::check() wrapper, which stays put.
-    $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
-        || !empty(@$auction->get->tenant_broker_commission_structure)
-        || !empty(@$auction->get->broker_fee_timing)
-        || !empty(@$auction->get->renewal_fee_type)
-        || !empty(@$auction->get->protection_period)
-        || !empty(@$auction->get->agency_agreement_timeframe)
-        || !empty(@$auction->get->early_termination_fee_option)
-        || !empty(@$auction->get->interested_in_selling)
-        || !empty(@$auction->get->interested_lease_option_agreement)
-        || !empty(@$auction->get->interested_in_property_management);
-@endphp
 
 {{-- Referral & Cooperation — moved verbatim from above its section. Note it issues a query;
      hoisting moves that query earlier in the request, it does not add one. --}}
@@ -378,7 +361,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
      */
     $hlaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('landlord');
 
-    $hlaNavSections = [];
+    $hlaSections = [];
 
     if ($hlaDetailRedesign) {
         /*
@@ -421,9 +404,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @$auction->get->meeting_Preference,
         ]);
 
-        if ($hlaHasListingDetails) {
-            $hlaNavSections[] = ['id' => 'hla-section-listing-details', 'label' => 'Listing Details'];
-        }
         /*
          | M7.4 — the two big sections, guarded from RAW META rather than from the display values.
          |
@@ -509,33 +489,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @$auction->get->desired_lease_length,
         ]);
 
-        if ($hlaHasPropertyDetails) {
-            $hlaNavSections[] = ['id' => 'hla-section-property-details', 'label' => 'Property Details'];
-        }
-        if ($hlaHasLeasingTerms) {
-            $hlaNavSections[] = ['id' => 'hla-section-leasing-terms', 'label' => 'Leasing Terms'];
-        }
-
-        if ($hasServices) {
-            $hlaNavSections[] = ['id' => 'hla-section-services', 'label' => 'Services'];
-        }
-
-        if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null') {
-            $hlaNavSections[] = ['id' => 'hla-section-additional-details', 'label' => 'Additional Details'];
-        }
-
-        if (!empty($repRows)) {
-            $hlaNavSections[] = ['id' => 'hla-section-representation', 'label' => 'Representation Preferences'];
-        }
-
-        if (Auth::check() && $hasLandlordBrokerCompData) {
-            $hlaNavSections[] = ['id' => 'hla-section-compensation', 'label' => 'Broker Compensation'];
-        }
-
-        if ($referralPctDisplay !== '') {
-            $hlaNavSections[] = ['id' => 'hla-section-referral', 'label' => 'Referral & Cooperation'];
-        }
-
         /*
          | M7.2 — the Owner/Agent Info entry, and why it did not exist before.
          |
@@ -574,10 +527,76 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @$auction->get->video_link,
         ]) || isset($auction->get->photo);
 
-        if ($hlaHasOwnerInfo) {
-            $hlaNavSections[] = ['id' => 'hla-section-owner-info', 'label' => $_ownerInfoHeading];
-        }
+        /*
+         | M8 — AGENT CREDENTIALS, THE ONE GUARD THAT IS NEW RATHER THAN MOVED.
+         |
+         | The listing OWNER's credentials, when the owner is an agent — not the viewer's and not
+         | the hired agent's. Nothing on this page rendered them before, so unlike every other
+         | guard here there was no expression to hoist; this one is written.
+         |
+         | isAgentUser() rather than `user_type === 'agent'`, because three user types are agents
+         | and the bare comparison silently demotes buyer_agent and seller_agent to consumers. The
+         | service is asked about the OWNER, which is a different question from the audience: it
+         | answers "is this user an agent" with no relationship test, which is what this guard
+         | needs. $_ownerInfoHeading above still uses the one-type check — that is the latent
+         | defect HireAgentDetailAudienceTest records, and correcting it would change what the
+         | legacy page says about a real user, so it is left alone and this guard does not repeat
+         | it. The two converge when that check is fixed for all four roles.
+         */
+        $hlaOwnerIsAgent = $auction->user
+            && app(\App\Services\HireAgent\HireAgentDetailAudience::class)->isAgentUser($auction->user);
+
+        $hlaHasAgentCredentials = $hlaOwnerIsAgent && \App\Helpers\ListingDisplayHelper::anyHasValue([
+            @$auction->user->brokerage,
+            @$auction->user->license_no,
+            @$auction->user->phone,
+            @$auction->user->email,
+        ]);
+
+        /*
+         | M8 — THE SECTION SET, RESOLVED ONCE. This replaces the hand-built nav array that stood
+         | here, which is the pattern HireAgentDetailSections was written to retire: one boolean
+         | per section, hand-copied into a nav builder, with a test asserting the copies agree.
+         | Buyer migrated in M7 Phase 6; landlord is the last role that still mirrored by hand.
+         |
+         | THE AUDIENCE IS PASSED, NEVER TESTED. `$hlaAudience` arrives resolved from the
+         | controller — it has been passed to this view since M7 and went unread until now — and
+         | this file never compares it to anything. The guards below are computed unconditionally
+         | and audience-blind; the resolver drops the ones this viewer's tier does not admit, so a
+         | withheld section reaches neither its card nor the bar. An audience test in Blade would
+         | be a second opinion about a rule that already has an owner, and the bar is where such a
+         | drift becomes a disclosure, because the bar names the section it links to.
+         |
+         | THE GUARD MAP IS EIGHT ENTRIES, NOT TEN. Services and Broker Compensation are gone from
+         | the registry entirely — they are negotiation terms, not listing detail — so passing a
+         | guard for either would now be an error the resolver refuses by name.
+         */
+        $hlaSections = app(\App\Support\HireAgent\HireAgentDetailSections::class)->resolveForRole(
+            'landlord',
+            $hlaAudience,
+            [
+                'listing-details'    => $hlaHasListingDetails,
+                'property'           => $hlaHasPropertyDetails,
+                'terms'              => $hlaHasLeasingTerms,
+                'additional-details' => !empty($additionalDetailsStr) && $additionalDetailsStr !== 'null',
+                'representation'     => !empty($repRows),
+                'referral'           => $referralPctDisplay !== '',
+                'role-info'          => $hlaHasOwnerInfo,
+                'agent-credentials'  => $hlaHasAgentCredentials,
+            ],
+            ['role-info' => $_ownerInfoHeading],
+        );
     }
+
+    /*
+     | Retained for the section cards, which ask isset() on the resolved set. A tiny helper rather
+     | than repeating the array lookup eight times, and it is the ONLY thing the cards consult —
+     | no card re-derives its own visibility. With the redesign off $hlaSections stays empty, every
+     | card falls back to its legacy branch, and this closure is never reached.
+     */
+    $hlaShows = function (string $key) use (&$hlaSections): bool {
+        return isset($hlaSections[\App\Support\HireAgent\HireAgentDetailSections::ID_PREFIX . $key]);
+    };
 @endphp
 
 @php
@@ -743,7 +762,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             {{-- M5.2b. Outside the card and above it, so the bar spans the column and sticks to the
                  top of the reading area rather than to the inside of a card. --}}
             @if ($hlaDetailRedesign)
-                <x-viho.section-nav :items="$hlaNavSections" ariaLabel="Listing sections" />
+                <x-viho.section-nav :items="array_values($hlaSections)" ariaLabel="Listing sections" />
             @endif
             {{--
                 M3 pilot. Was `div.card.description` wrapping a bare `card-header` + inline-styled
@@ -769,7 +788,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             <x-hire-agent.detail-body :redesign="$hlaDetailRedesign" title="Listing Details:">
             {{-- M7.4 — flag off keeps the section unconditionally; the boolean only exists, and only
                  applies, when the redesign is on. See the nav block for why one value drives both. --}}
-            @if (! $hlaDetailRedesign || ($hlaHasListingDetails ?? true))
+            @if (! $hlaDetailRedesign || $hlaShows('listing-details'))
             <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines" :legacy-header="false">
                     <div class="row" style="flex-wrap: wrap;">
                         {{-- M7.3 — the "Listing Title" row is gone, and it could never have rendered.
@@ -825,8 +844,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
             @if (! $hlaDetailRedesign)<hr>@endif
             {{-- M7.4 — one boolean, shared with the nav entry above. --}}
-            @if (! $hlaDetailRedesign || ($hlaHasPropertyDetails ?? true))
-            <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-property-details" title="Property Details:" icon="fa-solid fa-house">
+            @if (! $hlaDetailRedesign || $hlaShows('property'))
+            <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-property" title="Property Details:" icon="fa-solid fa-house">
 
                     <div class="row" style="flex-wrap: wrap;">
 
@@ -1193,8 +1212,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
         @if (! $hlaDetailRedesign)<hr>@endif
         {{-- M7.4 — one boolean, shared with the nav entry above. --}}
-        @if (! $hlaDetailRedesign || ($hlaHasLeasingTerms ?? true))
-        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-leasing-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
+        @if (! $hlaDetailRedesign || $hlaShows('terms'))
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
         @php
             /*
              | M7.4 — Leasing Terms keeps its own row spelling on the legacy branch.
@@ -1424,279 +1443,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         </x-hire-agent.detail-section>
         @endif
-        @if (! $hlaDetailRedesign)<hr>@endif
-
-        @php
-        // Photo enhancements data — needed inside the services loop
-        $rawPhotoEnhancements = $auction->get->photo_enhancements ?? null;
-        $photoEnhancements = is_string($rawPhotoEnhancements)
-            ? (json_decode($rawPhotoEnhancements, true) ?? [])
-            : (is_array($rawPhotoEnhancements) ? $rawPhotoEnhancements : []);
-        $customEnhancement = $auction->get->custom_enhancement ?? null;
-        $enhancementOrder = [
-            'Basic edits (brightness, contrast, cropping)',
-            'Twilight conversion (convert daytime photo to sunset look)',
-            'Object removal (e.g., cars, trash cans, furniture, etc.)',
-            'Virtual twilight photography',
-            'Color correction or sky replacement',
-            'Other',
-        ];
-        @endphp
-
-        {{-- The card opens INSIDE $hasServices, so it exists exactly when the section does and an
-             empty card can never render. Same rule for every conditional section below. --}}
-        @if ($hasServices)
-        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-services" title="Services:" icon="fa-solid fa-list-check">
-
-        @php
-        // Landlord Residential service categories (exact match with listing creation form)
-        $landlordResidentialCategories = [
-            "📢 Rental Marketing & Listing Promotion" => [
-                "List the property on the local Multiple Listing Service (MLS)",
-                "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
-                "Create a branded flyer featuring the property's key highlights",
-                "Post the property on Facebook Marketplace",
-                "Post the property on Craigslist in the appropriate \"Homes for Rent\" category",
-                "Share the listing on Nextdoor in Neighborhood or Community Groups",
-                "Promote the listing on Facebook in Housing or Rental Groups",
-                "Share the listing on Instagram using posts, stories, or reels",
-                "Promote the listing on LinkedIn in Professional or Real Estate Groups",
-                "Upload a TikTok video walkthrough of the property",
-                "Upload a YouTube video walkthrough of the property",
-                "Launch a mass email campaign promoting the listing",
-                "Distribute printed flyers or postcards in target geographic areas",
-                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
-            ],
-            "📋 Listing Presentation & Preparation" => [
-                "Conduct a property walkthrough and provide recommendations for listing readiness",
-                "Provide a custom listing preparation checklist",
-                "Collect property details and prepare MLS remarks and a public listing description",
-                "Provide a visual consultation for interior layout, cleanliness, and presentation",
-                "Provide a curb appeal consultation focused on exterior presentation",
-                "Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only — no endorsement or warranty is made",
-            ],
-            "📸 Photography, Video & Virtual Media" => [
-                "Provide professional property photography",
-                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
-                "Provide a video walkthrough tour",
-                "Provide a 3D virtual tour",
-                "Provide virtual staging (digital enhancements only; no physical staging)",
-                "Provide digital photo enhancements",
-                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
-            ],
-            "🏡 Showings & Access Coordination" => [
-                "Ensure proper notice is given if the property is occupied",
-                "Install a real estate sign on the property",
-                "Install a lockbox for Agent access",
-                "Schedule and attend showings with prospective Tenants",
-                "Coordinate showings with Tenant's Agents",
-                "Collect and relay feedback to the Landlord after showings",
-            ],
-            "📝 Tenant Application Support" => [
-                "Provide a link to an online application platform with third-party screening tools (e.g., credit, background, and eviction checks)",
-                "Ensure compliance with Fair Housing laws and screening regulations throughout the application process",
-                "Collect and organize application documents submitted by prospective Tenants",
-                "Verify basic information provided in the application (e.g., employment, income, and references)",
-                "Present complete and organized application packages to the Landlord for review and final selection",
-            ],
-            "📃 Lease Preparation & Execution" => [
-                "Review lease offers submitted by prospective Tenants and summarize key terms",
-                "Coordinate lease negotiation with the Tenant or Tenant's Agent",
-                "Prepare a state-specific lease agreement using approved forms or templates",
-                "Assist with completing required lease disclosures and reviewing key lease terms",
-                "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
-                "Confirm receipt of required move-in funds and assist the Landlord in verifying amounts due, payment deadlines, and accepted payment methods",
-            ],
-            "🚚 Move-In Support & Coordination" => [
-                "Coordinate move-in date and key handoff logistics with the Tenant or Tenant's Agent",
-                "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
-                "Verify receipt of all required move-in funds prior to occupancy (e.g., deposit, rent, pet fees)",
-                "Provide a utility setup checklist and local provider resources for the Tenant",
-                "Share a move-in checklist for documentation and property condition review",
-            ],
-            "📑 Property Management" => [
-                "Provide ongoing property management services throughout the lease term (rent collection, maintenance coordination, Tenant communications, lease enforcement, renewals, etc.)",
-            ],
-            "💡 Leasing Strategy & Guidance" => [
-                "Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions",
-                "Advise on lease types and structures (e.g., month-to-month, annual, furnished, corporate, lease-option)",
-                "Provide general guidance on Landlord obligations and Tenant rights under state law",
-                "Provide general guidance on rental demand, local market conditions, and Tenant expectations",
-            ],
-        ];
-
-        // Landlord Commercial service categories (exact match with listing creation form)
-        $landlordCommercialCategories = [
-            "📢 Rental Marketing & Listing Promotion" => [
-                "List the property on the local Multiple Listing Service (MLS)",
-                "List the property on Crexi.com",
-                "List the property on LoopNet.com",
-                "Create a branded flyer featuring the property's key highlights",
-                "Post the property on Craigslist under the \"Office/Commercial\" category",
-                "Promote the listing on Facebook in Commercial Leasing or Business Startup Groups",
-                "Share the listing on Instagram using photos, stories, or reels",
-                "Promote the listing on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
-                "Upload a TikTok video walkthrough of the property",
-                "Upload a YouTube video walkthrough of the property",
-                "Launch a mass email campaign promoting the listing",
-                "Distribute printed flyers or postcards in target geographic areas",
-                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
-            ],
-            "📋 Listing Presentation & Preparation" => [
-                "Conduct a property walkthrough and provide recommendations for listing readiness",
-                "Provide a custom listing preparation checklist",
-                "Collect property details such as lease terms, square footage, property features, and allowable uses",
-                "Prepare a marketing packet including zoning, cap rate references, and permitted uses",
-                "Provide a visual consultation focused on interior layout, cleanliness, and presentation",
-                "Provide a curb appeal consultation for exterior appearance and signage opportunities",
-                "Provide referrals to third-party vendors (e.g., cleaners, sign installers, minor repair vendors). Vendor fees billed separately. Referrals only — no endorsement or warranty is made",
-            ],
-            "📸 Photography, Video & Virtual Media" => [
-                "Provide professional property photography",
-                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
-                "Provide a video walkthrough tour",
-                "Provide a 3D virtual tour",
-                "Provide virtual staging (digital enhancements only; no physical staging)",
-                "Provide digital photo enhancements",
-                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
-            ],
-            "🏢 Showings & Access Coordination" => [
-                "Ensure proper notice is given if the property is occupied",
-                "Install a real estate sign on the property",
-                "Install a lockbox for Agent access",
-                "Schedule and attend showings with prospective Tenants",
-                "Coordinate showings with Tenant's Agents",
-                "Collect and relay showing feedback to the Landlord",
-            ],
-            "📝 Tenant Application Support" => [
-                "Provide a link to an online application platform or share instructions with prospective Tenants or Tenant's Agents",
-                "Ensure compliance with applicable federal, state, and local commercial leasing and anti-discrimination laws",
-                "Collect and organize application documents (e.g., business licenses, financials, entity records, references)",
-                "Verify basic information provided in the application (e.g., business operations, income sources, references)",
-                "Present complete application packages to the Landlord for review and final selection",
-            ],
-            "📃 Lease Preparation, LOI & Execution" => [
-                "Coordinate lease negotiation with the Tenant or Tenant's Agent",
-                "Collect and organize Letters of Intent (LOIs) or draft lease proposals",
-                "Draft or assist with execution of the final lease agreement using approved forms or templates",
-                "Provide and review required lease disclosures and addenda based on state or municipal requirements",
-                "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
-                "Verify receipt of required deposits and track rent commencement and key lease dates to ensure move-in readiness",
-            ],
-            "🚚 Move-In Support & Coordination" => [
-                "Coordinate move-in date and key handoff logistics with the Tenant or Tenant's Agent",
-                "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or improvements",
-                "Verify receipt of all required move-in funds and documents prior to occupancy (e.g., rent, security deposit, insurance certificates)",
-                "Provide a utility setup checklist and local provider resources for the Tenant",
-                "Share a move-in checklist for documentation and property condition review",
-                "Assist with coordination of move-in logistics, including Certificate of Insurance (COI) and vendor access (as agreed)",
-            ],
-            "📑 Property Management" => [
-                "Provide ongoing property management services throughout the lease term (rent collection, maintenance coordination, Tenant communications, lease enforcement, renewals, etc.)",
-            ],
-            "💡 Leasing Strategy & Guidance" => [
-                "Provide a Comparable Lease Analysis with pricing recommendations based on similar properties, local vacancy trends, and current market conditions",
-                "Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences",
-                "Provide general guidance on Landlord obligations and Tenant rights under applicable commercial leasing laws",
-                "Provide general guidance on zoning, permitted uses, occupancy standards, or rent escalation terms",
-            ],
-        ];
-
-        $landlordCategories = $isCommercial ? $landlordCommercialCategories : $landlordResidentialCategories;
-        $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
-        $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
-        @endphp
-
-        <div class="col-md-12 col-12 pt-2">
-            @foreach ($landlordCategories as $categoryName => $categoryServices)
-                @php
-                    $matchedServices = [];
-                    foreach ($categoryServices as $catalogService) {
-                        $canonCatalog = trim($canon($catalogService));
-                        foreach ($allServices as $savedService) {
-                            if (trim($canon($savedService)) === $canonCatalog) {
-                                $matchedServices[] = $savedService;
-                                break;
-                            }
-                        }
-                    }
-                @endphp
-                @if (!empty($matchedServices))
-                <div class="mt-3">
-                    <strong>{{ $categoryName }}</strong>
-                    <ul class="services">
-                        @foreach ($matchedServices as $service)
-                        <li style="font-size: 16px;">{{ $service }}</li>
-                        @if (trim($canon($service)) === 'Provide digital photo enhancements' && !empty($photoEnhancements))
-                            <ul style="padding-left: 1.5rem; margin: 4px 0;">
-                                @foreach ($enhancementOrder as $enh)
-                                    @if (in_array($enh, $photoEnhancements))
-                                        @if ($enh === 'Other' && !empty($customEnhancement))
-                                            <li style="font-size: 14px;">{{ $customEnhancement }}</li>
-                                        @elseif ($enh !== 'Other')
-                                            <li style="font-size: 14px;">{{ $enh }}</li>
-                                        @endif
-                                    @endif
-                                @endforeach
-                            </ul>
-                        @endif
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
-            @endforeach
-
-            @if (!empty($otherServices))
-            <div class="mt-3">
-                <strong>✍️ Additional Services</strong>
-                <ul class="services">
-                    @foreach ($otherServices as $other_service)
-                    <li style="font-size: 16px;">{{ $other_service }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-            @php
-                /*
-                 | M7.3 — KEPT, and the reason is recorded here because it does not look kept-able.
-                 |
-                 | `client_custom_services` appears in NEITHER Hire Landlord Agent component and in
-                 | none of the questionnaire tabs, which is the same signature as the two fields
-                 | M7.3 removed from Property Details. It is not the same thing.
-                 |
-                 | It is written by HireAgentDirectController — the direct "Hire Me" entry path,
-                 | where a client hires a named agent without going through the auction
-                 | questionnaire. That is a real Hire Agent workflow, so the field is in scope for a
-                 | Hire Agent detail page; it simply arrives from the second door rather than the
-                 | first. Confirmed present on a live hire_agent listing.
-                 |
-                 | The rule M7.3 applies is "does this belong to the Hire Agent workflow", not "is
-                 | it in the questionnaire component". Checking only the component would have
-                 | deleted this.
-                 */
-                $ccsRawLandlord = @$auction->get->client_custom_services;
-                $clientCustomServicesLandlord = is_array($ccsRawLandlord)
-                    ? $ccsRawLandlord
-                    : (is_string($ccsRawLandlord) ? (json_decode($ccsRawLandlord, true) ?? []) : []);
-                $clientCustomServicesLandlord = array_values(array_filter($clientCustomServicesLandlord, fn($s) => is_string($s) && trim($s) !== ''));
-            @endphp
-            @if (!empty($clientCustomServicesLandlord))
-            <div class="mt-3">
-                <strong>📋 Client Requested Services</strong>
-                <ul class="services">
-                    @foreach ($clientCustomServicesLandlord as $ccs)
-                    <li style="font-size: 16px;">{{ $ccs }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-        </div>
-        </x-hire-agent.detail-section>@endif
 
         @if (! $hlaDetailRedesign)<hr>@endif
-        @if (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null')
+        @if ($hlaDetailRedesign ? $hlaShows('additional-details') : (!empty($additionalDetailsStr) && $additionalDetailsStr !== 'null'))
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
         {{-- M7.4 — full width. This is free prose the landlord typed, not a short answer, so a
@@ -1741,7 +1490,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
 
-        @if (!empty($repRows))
+        @if ($hlaDetailRedesign ? $hlaShows('representation') : (!empty($repRows)))
         @if (! $hlaDetailRedesign)<hr />@endif
         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
              text is unchanged. Passing &amp; here would double-escape it. --}}
@@ -1756,378 +1505,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endforeach
         </x-hire-agent.detail-section>@endif
 
-        @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
-        @if ($hasLandlordBrokerCompData)
-        @if (! $hlaDetailRedesign)<hr />@endif
-        {{-- Inside BOTH guards — Auth::check() above and $hasLandlordBrokerCompData — so the CARD
-             exists exactly when the section does, and the nav entry's matching pair of conditions
-             is what keeps the link from pointing at nothing. M7.2 moved the id from a bare span
-             onto the card; both guards are untouched and the card opens inside them, never around
-             them. An anonymous visitor reaches neither. --}}
-        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-compensation" title="Broker Compensation & Agency Agreement Terms" icon="fa-solid fa-dollar-sign">
-
-        <div class="broker-compensation-section">
-
-        <!-- Landlord's Broker Compensation Sub-section -->
-        @if (@$auction->get->purchase_fee_type != null)
-        <h5 class="mt-3 mb-2"><strong>Landlord's Broker Compensation:</strong></h5>
-        @endif
-
-        @if (@$auction->get->purchase_fee_type != null)
-        @php
-            // Build combined Landlord's Broker Lease Fee display
-            $landlordLeaseFeeType = $canon(@$auction->get->purchase_fee_type ?? '');
-            $landlordLeaseFeeCombined = '—';
-            
-            if ($landlordLeaseFeeType === 'Flat Fee' && @$auction->get->purchase_fee_flat) {
-                $landlordLeaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat);
-            } elseif ($landlordLeaseFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->purchase_fee_rental_period) {
-                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_rental_period) . " $rentalPeriodSuffix";
-            } elseif ($landlordLeaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->purchase_fee_percentage_combo) {
-                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Gross Lease Value';
-            } elseif ($landlordLeaseFeeType === "Percentage of the First Month's Rent" && @$auction->get->purchase_fee_flat_combo) {
-                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_flat_combo) . " of First Month's Rent";
-            } elseif ($landlordLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->purchase_fee_net_aggregate) {
-                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_net_aggregate) . ' of Net Aggregate Rent';
-            } elseif ($landlordLeaseFeeType === 'Percentage of the Gross Rent' && @$auction->get->purchase_fee_gross_rent) {
-                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_gross_rent) . ' of Gross Rent';
-            } elseif ($landlordLeaseFeeType === "Percentage of Month's Rent" && @$auction->get->purchase_fee_monthly_percentage) {
-                $display = $fmtPercent(@$auction->get->purchase_fee_monthly_percentage) . " of Month's Rent";
-                if (@$auction->get->purchase_fee_months) {
-                    $display .= ' x ' . @$auction->get->purchase_fee_months . ' Months';
-                }
-                $landlordLeaseFeeCombined = $display;
-            } elseif (strtolower($landlordLeaseFeeType) === 'other') {
-                $landlordLeaseFeeCombined = @$auction->get->purchase_fee_other ?? @$auction->get->purchase_fee_other_commercial ?? '—';
-            } elseif ($landlordLeaseFeeType) {
-                $landlordLeaseFeeCombined = $landlordLeaseFeeType;
-            }
-        @endphp
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Landlord's Broker Lease Fee" :value="$landlordLeaseFeeCombined" />
-        @endif
-
-        @if ($canon(@$auction->get->purchase_fee_type ?? '') === 'Percentage of the Gross Rent' && !empty(@$auction->get->sales_tax_option_gross) && @$auction->get->sales_tax_option_gross !== 'null')
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="@$auction->get->sales_tax_option_gross === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_gross === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_gross)" />
-        @endif
-
-        @if ($canon(@$auction->get->purchase_fee_type ?? '') === "Percentage of Month's Rent" && !empty(@$auction->get->sales_tax_option_monthly) && @$auction->get->sales_tax_option_monthly !== 'null')
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="@$auction->get->sales_tax_option_monthly === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_monthly === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_monthly)" />
-        @endif
-
-        @if ($canon(@$auction->get->purchase_fee_type ?? '') === 'Flat Fee' && !empty(@$auction->get->sales_tax_option_flat) && @$auction->get->sales_tax_option_flat !== 'null')
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="@$auction->get->sales_tax_option_flat === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_flat === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_flat)" />
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- Tenant's Broker Compensation Sub-section (Residential Only) -->
-        @if ($isResidential && @$auction->get->tenant_broker_commission_structure != null)
-        <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
-
-        @if (@$auction->get->tenant_broker_commission_structure != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Structure" :value="$auction->get->tenant_broker_commission_structure ?? ''" />
-        @endif
-
-        @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation' && @$auction->get->tenant_broker_commission_structure != "No Compensation Offered to the Tenant's Broker")
-        @php
-            // Build combined Tenant's Broker Fee display
-            $tenantFeeType = $canon(@$auction->get->tenant_broker_fee_structure ?? '');
-            $tenantFeeCombined = '—';
-            
-            if ($tenantFeeType === 'Flat Fee' && @$auction->get->tenant_broker_flat_fee) {
-                $tenantFeeCombined = $fmtMoney(@$auction->get->tenant_broker_flat_fee);
-            } elseif ($tenantFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->tenant_broker_percentage) {
-                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_percentage) . " $rentalPeriodSuffix";
-            } elseif ($tenantFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->tenant_broker_gross_lease) {
-                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_gross_lease) . ' of Gross Lease Value';
-            } elseif ($tenantFeeType === "Percentage of the First Month's Rent" && @$auction->get->tenant_broker_first_month_rent) {
-                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_first_month_rent) . " of First Month's Rent";
-            } elseif (strtolower($tenantFeeType) === 'other' && @$auction->get->tenant_broker_other) {
-                $tenantFeeCombined = @$auction->get->tenant_broker_other;
-            } elseif ($tenantFeeType) {
-                $tenantFeeCombined = $tenantFeeType;
-            }
-        @endphp
-        @if ($tenantFeeCombined !== '—')
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Fee" :value="$tenantFeeCombined" />
-        @endif
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-        @endif
-
-        <!-- Tenant's Broker Compensation Sub-section (Commercial Only) -->
-        @if (!$isResidential && @$auction->get->tenant_broker_commission_structure != null)
-        <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
-
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Structure" :value="$auction->get->tenant_broker_commission_structure ?? ''" />
-
-        @if (@$auction->get->tenant_broker_commission_structure != "No Compensation Offered to the Tenant's Broker")
-        @php
-            $commFeeType = $canon(@$auction->get->tenant_broker_fee_structure ?? '');
-            $commFeeCombined = null;
-
-            if ($commFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->tenant_broker_percentage) {
-                $commFeeCombined = $fmtPercent(@$auction->get->tenant_broker_percentage) . ' of Net Aggregate Rent';
-            } elseif ($commFeeType === 'Percentage of the Gross Rent' && @$auction->get->tenant_broker_gross_lease) {
-                $commFeeCombined = $fmtPercent(@$auction->get->tenant_broker_gross_lease) . ' of Gross Rent';
-            } elseif (strtolower($commFeeType) === 'flat fee' && @$auction->get->tenant_broker_flat_fee) {
-                $commFeeCombined = $fmtMoney(@$auction->get->tenant_broker_flat_fee);
-            } elseif (strtolower($commFeeType) === 'other' && @$auction->get->tenant_broker_other) {
-                $commFeeCombined = @$auction->get->tenant_broker_other;
-            }
-        @endphp
-        @if ($commFeeCombined !== null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Tenant's Broker Commission Fee" :value="$commFeeCombined" />
-        @endif
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-        @endif
-
-        <!-- Payment Timing & Renewal Terms Sub-section -->
-        @if (@$auction->get->broker_fee_timing != null || @$auction->get->renewal_fee_type != null || @$auction->get->expansion_commission_percentage != null)
-        <h5 class="mt-3 mb-2"><strong>Payment Timing & Renewal Terms:</strong></h5>
-        @endif
-
-        @if (@$auction->get->broker_fee_timing != null)
-        @php
-            $paymentTimingDisplay = @$auction->get->broker_fee_timing;
-            
-            $paymentTimingMap = [
-                'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
-            ];
-            if (isset($paymentTimingMap[$paymentTimingDisplay])) {
-                $paymentTimingDisplay = $paymentTimingMap[$paymentTimingDisplay];
-            }
-            
-            if ($paymentTimingDisplay === 'other' || $paymentTimingDisplay === 'Other') {
-                $paymentTimingDisplay = @$auction->get->broker_fee_timing_other ?? '';
-            }
-            
-            $canonTiming = $canon($paymentTimingDisplay);
-            if ($canonTiming === 'Paid Within Calendar Days After Executed Lease' && @$auction->get->broker_fee_days_after_lease) {
-                $paymentTimingDisplay = 'Paid Within ' . $auction->get->broker_fee_days_after_lease . ' Calendar Days After Executed Lease';
-            } elseif ($canonTiming === 'Paid Within Calendar Days of Tenant Rent Payment' && @$auction->get->broker_fee_days_after_rent) {
-                $paymentTimingDisplay = 'Paid Within ' . $auction->get->broker_fee_days_after_rent . ' Calendar Days of Tenant Rent Payment';
-            } elseif ($canonTiming === 'Deducted from Rent Collected' && @$auction->get->broker_fee_days_from_rent) {
-                $paymentTimingDisplay = 'Deducted from Rent Collected (' . $auction->get->broker_fee_days_from_rent . ' Calendar Days to Pay Balance)';
-            }
-        @endphp
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Payment Timing for Broker Fees" :value="$paymentTimingDisplay" />
-        @endif
-
-        @if (@$auction->get->broker_fee_days_after_due_event != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Days After Due Event" :value="$auction->get->broker_fee_days_after_due_event . ' days'" />
-        @endif
-
-        @if (@$auction->get->renewal_fee_type != null)
-        @php
-            // Build combined Lease Renewal/Extension Fee display
-            $renewalFeeType = $canon(@$auction->get->renewal_fee_type ?? '');
-            $renewalFeeCombined = '—';
-            
-            if ($renewalFeeType === 'Flat Fee' && @$auction->get->renewal_fee_flat_free) {
-                $renewalFeeCombined = $fmtMoney(@$auction->get->renewal_fee_flat_free);
-            } elseif ($renewalFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->renewal_fee_percentage) {
-                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_percentage) . " $rentalPeriodSuffix";
-            } elseif ($renewalFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->renewal_fee_lease_value) {
-                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_lease_value) . ' of Gross Lease Value';
-            } elseif ($renewalFeeType === "Percentage of the First Month's Rent" && @$auction->get->renewal_fee_first_month) {
-                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_first_month) . " of First Month's Rent";
-            } elseif ($renewalFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->renewal_fee_percentage) {
-                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_percentage) . ' of Net Aggregate Rent';
-            } elseif ($renewalFeeType === 'Percentage of the Gross Rent' && @$auction->get->renewal_fee_lease_value) {
-                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_lease_value) . ' of Gross Rent';
-            } elseif ($renewalFeeType === "Percentage of Month's Rent" && @$auction->get->renewal_fee_first_month) {
-                $display = $fmtPercent(@$auction->get->renewal_fee_first_month) . " of Month's Rent";
-                if (@$auction->get->renewal_fee_no_of_months) {
-                    $display .= ' x ' . @$auction->get->renewal_fee_no_of_months . ' Months';
-                }
-                $renewalFeeCombined = $display;
-            } elseif (strtolower($renewalFeeType) === 'other' && @$auction->get->renewal_fee_custom) {
-                $renewalFeeCombined = @$auction->get->renewal_fee_custom;
-            } elseif ($renewalFeeType) {
-                $renewalFeeCombined = $renewalFeeType;
-            }
-        @endphp
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Lease Renewal/Extension Fee" :value="$renewalFeeCombined" />
-        @endif
-
-        @php
-            $renewalSalesTax = null;
-            $canonRenewalType = $canon($renewalFeeType ?? '');
-            if (in_array($canonRenewalType, ['Percentage of the Gross Lease Value', 'Percentage of the Gross Rent'])) {
-                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_lease_value;
-            } elseif (in_array($canonRenewalType, ["Percentage of the First Month's Rent", "Percentage of Month's Rent"])) {
-                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_first_month;
-            } elseif ($canonRenewalType === 'Flat Fee') {
-                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_flat_fee;
-            } else {
-                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_lease_value ?? @$auction->get->renewal_fee_sales_tax_first_month ?? @$auction->get->renewal_fee_sales_tax_flat_fee ?? null;
-            }
-        @endphp
-        @if (!empty($renewalSalesTax) && $renewalSalesTax !== 'null')
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Sales Tax" :value="$renewalSalesTax === 'including' ? 'Including Sales Tax' : ($renewalSalesTax === 'excluding' ? 'Excluding Sales Tax' : $renewalSalesTax)" />
-        @endif
-
-        @if (@$auction->get->expansion_commission_percentage != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Expansion Commission for Lease Amendment" :value="$fmtPercent($auction->get->expansion_commission_percentage) . ' of original commission'" />
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- Property Management Sub-section -->
-        @if (@$auction->get->interested_in_property_management != null)
-        <h5 class="mt-3 mb-2"><strong>Property Management:</strong></h5>
-        @endif
-
-        @if (@$auction->get->interested_in_property_management != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Interested in Property Management" :value="$auction->get->interested_in_property_management === 'yes' ? 'Yes' : 'No'" />
-        @endif
-
-        @if (@$auction->get->interested_in_property_management === 'yes')
-        @php
-            // Build combined Property Management Fee display
-            $pmFeeType = @$auction->get->interested_in_property_management_fee ?? '';
-            $pmFeeCombined = '—';
-            
-            if ($pmFeeType === 'Flat Fee' && @$auction->get->interested_in_property_management_fee_flate_free) {
-                $pmFeeCombined = $fmtMoney(@$auction->get->interested_in_property_management_fee_flate_free);
-            } elseif ($pmFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->interested_in_property_management_fee_rental_periord) {
-                $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_rental_periord) . " $rentalPeriodSuffix";
-            } elseif ($pmFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->interested_in_property_management_fee_gross_lease) {
-                $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_gross_lease) . ' of Gross Lease Value';
-            } elseif (strtolower($pmFeeType) === 'other' && @$auction->get->interested_in_property_management_fee_other) {
-                $pmFeeCombined = @$auction->get->interested_in_property_management_fee_other;
-            } elseif ($pmFeeType) {
-                $pmFeeCombined = $pmFeeType;
-            }
-        @endphp
-        @if ($pmFeeCombined !== '—')
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Property Management Fee" :value="$pmFeeCombined" />
-        @endif
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- Lease-Option Details Sub-section -->
-        @if (@$auction->get->interested_lease_option_agreement != null)
-        <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
-        @endif
-
-        @if (@$auction->get->interested_lease_option_agreement != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Interested in Offering a Lease-Option Agreement" :value="$auction->get->interested_lease_option_agreement ?? ''" />
-        @endif
-
-        @if (@$auction->get->interested_lease_option_agreement === 'Yes')
-            @if (@$auction->get->lease_value != null)
-            <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Compensation for Creating the Lease-Option Agreement">
-                    @if (@$auction->get->lease_type === 'percent')
-                        {{ $fmtPercent($auction->get->lease_value) }} of Total Purchase Price
-                    @else
-                        {{ $fmtMoney($auction->get->lease_value) }}
-                    @endif
-                
-            </x-hire-agent.field>
-            @endif
-
-            @if (@$auction->get->purchase_value != null)
-            <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Compensation if Purchase Option is Exercised">
-                    @if (@$auction->get->purchase_type === 'percent')
-                        {{ $fmtPercent($auction->get->purchase_value) }} of Total Purchase Price
-                    @else
-                        {{ $fmtMoney($auction->get->purchase_value) }}
-                    @endif
-                
-            </x-hire-agent.field>
-            @endif
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- Purchase Fee Details Sub-section -->
-        @if (@$auction->get->interested_in_selling != null)
-        <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
-        @endif
-
-        @if (@$auction->get->interested_in_selling != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Interested in Selling" :value="$auction->get->interested_in_selling ?? ''" />
-        @endif
-
-        @if (@$auction->get->interested_in_selling === 'Yes')
-        @php
-            // Build combined Landlord's Broker Purchase Fee display
-            $purchaseFeeType = @$auction->get->interested_in_selling_type ?? '';
-            $purchaseFeeCombined = '—';
-            
-            if ($purchaseFeeType === 'Flat Fee' && @$auction->get->landlord_broker_flate_fee) {
-                $purchaseFeeCombined = $fmtMoney(@$auction->get->landlord_broker_flate_fee);
-            } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price' && @$auction->get->landlord_broker_purchase_price) {
-                $purchaseFeeCombined = $fmtPercent(@$auction->get->landlord_broker_purchase_price) . ' of Total Purchase Price';
-            } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                $purchaseFeeCombined = $joinParts([
-                    @$auction->get->landlord_broker_percentage_price ? ($fmtPercent(@$auction->get->landlord_broker_percentage_price) . ' of Total Purchase Price') : null,
-                    $fmtMoney(@$auction->get->landlord_broker_dollar_price),
-                ]) ?? '—';
-            } elseif (strtolower($purchaseFeeType) === 'other' && @$auction->get->landlord_broker_other) {
-                $purchaseFeeCombined = @$auction->get->landlord_broker_other;
-            } elseif ($purchaseFeeType) {
-                $purchaseFeeCombined = $purchaseFeeType;
-            }
-        @endphp
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Landlord's Broker Purchase Fee" :value="$purchaseFeeCombined" />
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- Legal Terms Sub-section -->
-        @if (@$auction->get->protection_period != null || @$auction->get->agency_agreement_timeframe != null || ($isResidential && @$auction->get->early_termination_fee_option != null))
-        <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
-        @endif
-
-        @if (@$auction->get->protection_period != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Protection Period Timeframe" :value="$auction->get->protection_period . ' days'" />
-        @endif
-
-        @if ($isResidential && @$auction->get->early_termination_fee_option != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Early Termination Fee">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(
-                $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No',
-                $auction->get->early_termination_fee_option == 'yes' && @$auction->get->early_termination_fee_amount ? $fmtMoney($auction->get->early_termination_fee_amount) : null
-            ) }}
-        </x-hire-agent.field>
-        @endif
-
-        @if (@$auction->get->agency_agreement_timeframe != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" span="full" label="Landlord Agency Agreement Timeframe">
-                {{ $auction->get->agency_agreement_timeframe === 'Other' ? $auction->get->agency_agreement_custom : $auction->get->agency_agreement_timeframe }}
-            
-        </x-hire-agent.field>
-        @endif
-
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- Brokerage Relationship Sub-section -->
-        @if (@$auction->get->brokerage_relationship != null)
-        <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
-        @endif
-
-        @if (@$auction->get->brokerage_relationship != null)
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Acceptable Brokerage Relationship" :value="$auction->get->brokerage_relationship ?? ''" />
-        @endif
-
-        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker))
-        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
-
-        <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Additional Terms" :value="$auction->get->additional_details_broker" />
-        @endif
-
-        </div> <!-- end broker-compensation-section -->
-        </x-hire-agent.detail-section>@endif
-        @endif {{-- /Auth::check() broker compensation --}}
-        @if ($referralPctDisplay !== '')
+        @if ($hlaDetailRedesign ? $hlaShows('referral') : ($referralPctDisplay !== ''))
         @if (! $hlaDetailRedesign)<hr />@endif
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
         {{-- M7.4 — the section's guard IS this field's emptiness test, and the nav shares it. --}}
@@ -2136,8 +1514,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (! $hlaDetailRedesign)<hr />@endif
         {{-- $_ownerInfoHeading is resolved near the nav block above, not here — M7.2 hoisted it so
              the nav entry and this heading are one value rather than two expressions. --}}
-        @if (! $hlaDetailRedesign || ($hlaHasOwnerInfo ?? true))
-        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-owner-info" :title="$_ownerInfoHeading" icon="fa-solid fa-id-card">
+        @if (! $hlaDetailRedesign || $hlaShows('role-info'))
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-role-info" :title="$_ownerInfoHeading" icon="fa-solid fa-id-card">
         {{-- M7.4 — the ONLY label/value field in this section. Everything below it is media: a
              video element, an image and a link embed, each in its own col-md-6 cell. Those are
              deliberately NOT routed through the field adapter — a 5/7 grid positions a short text
@@ -2242,6 +1620,36 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
      M7.2: "here" is now the last SECTION's close, followed by the body wrapper's. With the redesign
      off the wrapper still emits the single card these two used to be; with it on the wrapper emits
      nothing and the sections above are siblings. --}}
+</x-hire-agent.detail-section>
+@endif
+
+{{-- M8 — AGENT CREDENTIALS & CONTACT INFO. The listing OWNER's licence and contact detail, when
+     the owner is an agent — not the viewer's own and not the hired agent's. Agent-to-agent
+     business, so the registry scopes it to the agent tier and the resolver withholds it from the
+     public and owner tiers alike.
+
+     REDESIGN-ONLY, AND THAT IS DELIBERATE. This section is new rather than migrated: no legacy
+     branch ever rendered it, so `$hlaDetailRedesign &&` is a guard rather than a fallback, and
+     with the flag off the page is exactly what it was. Buyer's counterpart is gated the same way
+     for the same reason. The data lives on the User record and otherwise surfaces only on the
+     public profile page. --}}
+@if ($hlaDetailRedesign && $hlaShows('agent-credentials'))
+<x-hire-agent.detail-section :redesign="true" :legacy-header="false" id="hla-section-agent-credentials" title="Agent Credentials & Contact Info" icon="fa-solid fa-address-card">
+        @if (@$auction->user->brokerage != null)
+        <x-hire-agent.field :redesign="true" label="Brokerage" :value="$auction->user->brokerage" />
+        @endif
+
+        @if (@$auction->user->license_no != null)
+        <x-hire-agent.field :redesign="true" label="License No." :value="$auction->user->license_no" />
+        @endif
+
+        @if (@$auction->user->phone != null)
+        <x-hire-agent.field :redesign="true" label="Phone" :value="$auction->user->phone" />
+        @endif
+
+        @if (@$auction->user->email != null)
+        <x-hire-agent.field :redesign="true" label="Email" :value="$auction->user->email" />
+        @endif
 </x-hire-agent.detail-section>
 @endif
 </x-hire-agent.detail-body>
@@ -2980,145 +2388,8 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
      same gate; reading a different flag than the markup it operates on is how a page ends up
      binding behaviour to elements that were never rendered. See the $hlaDetailRedesign note. --}}
 @if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('landlord'))
-<script>
-/*
-    The behaviour half of the section navigation, and the reason x-viho.section-nav ships without
-    a script of its own: "which section am I reading" is a product question, and a primitive that
-    answered it would be answering it for every page that ever adopted the bar.
+@include('hire_agent.framework.section-nav-behaviour')
 
-    SCROLLING IS NOT HERE. The links are real hrefs and `scroll-behavior: smooth` is in the
-    stylesheet above, so the browser does the scrolling and respects prefers-reduced-motion. This
-    file only decides which link is marked current.
-
-    It reads --viho-section-nav-offset rather than repeating 0/104: the breakpoint lives in CSS,
-    where it can be seen next to the rule it belongs to, and a media query is the wrong thing to
-    duplicate in JavaScript.
-*/
-(function () {
-    var nav = document.querySelector('[data-viho-section-nav]');
-    if (!nav) { return; }
-
-    // Pair each link with the element it points at. A link whose target is missing is dropped
-    // rather than tracked — it cannot become current, and the nav is built so it cannot happen.
-    var pairs = [];
-    Array.prototype.forEach.call(nav.querySelectorAll('[data-viho-section-nav-link]'), function (link) {
-        var id = (link.getAttribute('href') || '').slice(1);
-        var el = id ? document.getElementById(id) : null;
-        if (el) { pairs.push({ link: link, el: el }); }
-    });
-
-    if (!pairs.length) { return; }
-
-    // The line a heading has to cross to count as "the section being read": the fixed chrome the
-    // page declares, plus the bar itself, which sits directly below it.
-    function readingLine() {
-        var declared = parseFloat(
-            getComputedStyle(document.documentElement).getPropertyValue('--viho-section-nav-offset')
-        );
-        return (isNaN(declared) ? 0 : declared) + nav.offsetHeight + 1;
-    }
-
-    function sync() {
-        ticking = false;
-
-        var line = readingLine();
-        var currentIndex = 0;
-
-        for (var i = 0; i < pairs.length; i++) {
-            if (pairs[i].el.getBoundingClientRect().top <= line) { currentIndex = i; }
-        }
-
-        // At the bottom of the document the last sections may be too short to ever reach the
-        // line, so the final entry would never light up. Award it explicitly at the end.
-        if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 2) {
-            currentIndex = pairs.length - 1;
-        }
-
-        for (var j = 0; j < pairs.length; j++) {
-            if (j === currentIndex) {
-                pairs[j].link.setAttribute('aria-current', 'true');
-            } else {
-                pairs[j].link.removeAttribute('aria-current');
-            }
-        }
-    }
-
-    // Scroll fires far more often than the page can repaint; coalesce to one update per frame.
-    var ticking = false;
-    function request() {
-        if (ticking) { return; }
-        ticking = true;
-        window.requestAnimationFrame(sync);
-    }
-
-    window.addEventListener('scroll', request, { passive: true });
-    window.addEventListener('resize', request);
-    sync();
-}());
-</script>
-
-<script>
-/*
-    M5.3 — Copy Link.
-
-    The behaviour half of the Quick Actions band. x-viho.quick-actions and x-viho.action-tile ship
-    no script by contract, so a caller that wants a control to DO something wires it here.
-
-    This is a new handler rather than a reuse: the sidebar's legacy Copy button carries a hook
-    class that nothing in the repository binds to. It is dead markup in this view and in about ten
-    others. Fixing all of them is not this milestone's scope, so this control gets its own working
-    handler and the legacy one is left exactly as it was.
-
-    Two paths, because the modern one is not always available: navigator.clipboard requires a
-    secure context, so it is absent on any environment served over plain HTTP. The textarea +
-    execCommand fallback is the same shape dashboard.blade.php already uses.
-*/
-(function () {
-    var buttons = document.querySelectorAll('[data-hla-copy-link]');
-    if (!buttons.length) { return; }
-
-    function confirmCopy(button, ok) {
-        var tile = button.closest('.viho-action-tile');
-        var status = tile ? tile.querySelector('[data-hla-copy-status]') : null;
-        if (!status) { return; }
-        status.textContent = ok ? 'Link copied' : 'Press Ctrl+C to copy';
-        window.setTimeout(function () { status.textContent = ''; }, 2500);
-    }
-
-    function legacyCopy(text) {
-        var field = document.createElement('textarea');
-        field.value = text;
-        // Kept in the viewport but visually inert: a field positioned off-screen is not always
-        // selectable, and display:none never is.
-        field.setAttribute('readonly', 'readonly');
-        field.style.position = 'fixed';
-        field.style.top = '0';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        var ok = false;
-        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-        document.body.removeChild(field);
-        return ok;
-    }
-
-    Array.prototype.forEach.call(buttons, function (button) {
-        button.addEventListener('click', function () {
-            var url = button.getAttribute('data-hla-copy-link');
-            if (!url) { return; }
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url).then(
-                    function () { confirmCopy(button, true); },
-                    function () { confirmCopy(button, legacyCopy(url)); }
-                );
-                return;
-            }
-
-            confirmCopy(button, legacyCopy(url));
-        });
-    });
-}());
-</script>
+@include('hire_agent.framework.quick-actions-behaviour')
 @endif
 @endpush

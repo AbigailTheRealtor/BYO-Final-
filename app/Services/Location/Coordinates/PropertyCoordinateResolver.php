@@ -58,10 +58,11 @@ final class PropertyCoordinateResolver implements PropertyCoordinateResolverInte
      * target; the constructor is what actually decides at runtime.
      */
     public const INTENDED_PRECEDENCE = [
-        CoordinateSource::Existing,   // already stored, address unchanged   — local
-        CoordinateSource::Mls,        // Bridge/MLS feed coordinates         — local
-        CoordinateSource::Geocoder,   // US Census, then commercial fallback — network
-        CoordinateSource::Centroid,   // ZIP / city centroid, coarse         — local
+        CoordinateSource::Existing,     // already stored, address unchanged   — local
+        CoordinateSource::Mls,          // Bridge/MLS feed coordinates         — local
+        CoordinateSource::AddressPoint, // our imported address-point corpus   — local
+        CoordinateSource::Geocoder,     // US Census, then commercial fallback — network
+        CoordinateSource::Centroid,     // ZIP / city centroid, coarse         — local
     ];
 
     /** @var list<CoordinateProviderAdapterInterface> */

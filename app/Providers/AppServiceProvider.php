@@ -36,6 +36,19 @@ use App\Services\AskAi\AskAiFinalResponseBuilderService;
 use App\Services\AskAi\AskAiFollowUpQuestionService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
+use App\Services\LocationDna\Criteria\CensusCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CensusCriteriaNeighborhoodRepository;
+use App\Services\LocationDna\Criteria\CriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\CriteriaNeighborhoodRepository;
+use App\Services\LocationDna\Criteria\EloquentCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\FakeCriteriaGeographyRepository;
+use App\Services\LocationDna\Criteria\FakeCriteriaNeighborhoodRepository;
+use App\Services\LocationDna\Criteria\NullCriteriaNeighborhoodRepository;
+use App\Services\LocationDna\Criteria\Search\FakeGeographySearchRepository;
+use App\Services\LocationDna\Criteria\Search\GeographySearchRepository;
+use App\Services\LocationDna\Criteria\Search\LocationPlaceSearchRepository;
+use App\Services\LocationDna\Criteria\Search\NullGeographySearchRepository;
+use InvalidArgumentException;
 use App\Contracts\BoundaryAdapterInterface;
 use App\Contracts\FloodZoneAdapterInterface;
 use App\Contracts\CommuteTimeAdapterInterface;
@@ -95,6 +108,100 @@ class AppServiceProvider extends ServiceProvider
         // Laravel's auto-wiring would also resolve this correctly today, but explicit DI is
         // safer: it is immune to future constructor changes in those dependencies and makes
         // the intent clear to anyone reading the service graph.
+        // Criteria geography cascade (Phase 1c, extended in Phase 1d-2). Read-only enumeration
+        // behind a config-selected implementation, so a test or a demo can compose the in-memory
+        // fixture without a database. The binding is unconditional — it costs nothing to register
+        // and the CASCADE, not the repository, is what the feature flag gates.
+        //
+        // EVERY ARM IS EXPLICIT, INCLUDING THE DEFAULT ONE.
+        // This was a ternary: `=== 'fake' ? Fake : Eloquent`. That made `eloquent` the
+        // fall-through, so every unrecognised value — a typo, an env var declared but never set,
+        // a source named before its class existed — silently served the legacy `us_*` tables.
+        // For a phase whose purpose is switching the source, "it worked" and "it did nothing"
+        // then look identical from the outside. An unknown value now fails loudly instead.
+        //
+        // NO DATABASE CHECK BELONGS HERE. Whether the census corpus is actually populated is a
+        // real question, and `census:verify-geography` is where it is asked; querying a table
+        // from a container binding would couple service resolution to database availability on
+        // every request. See config/criteria_location_dna.php.
+        $this->app->bind(CriteriaGeographyRepository::class, function () {
+            $source = config('criteria_location_dna.geography_source');
+
+            return match ($source) {
+                'eloquent' => new EloquentCriteriaGeographyRepository(),
+                'census'   => new CensusCriteriaGeographyRepository(),
+                'fake'     => new FakeCriteriaGeographyRepository(),
+                default    => throw new InvalidArgumentException(sprintf(
+                    'Unknown criteria_location_dna.geography_source %s. Expected one of: '
+                    .'eloquent, census, fake. Refusing to fall back — a silent fallback would '
+                    .'serve the legacy us_* tables and look exactly like success.',
+                    var_export($source, true)
+                )),
+            };
+        });
+
+        /**
+         * Phase 1d-5 — the neighbourhood tier.
+         *
+         * IT FAILS TO EMPTY, WHERE THE BINDING ABOVE FAILS LOUD, AND THE CONTRAST IS THE POINT.
+         *
+         * An unrecognised `geography_source` throws, because every alternative serves REAL DATA
+         * FROM THE WRONG CORPUS and is indistinguishable from success. Here the only alternative is
+         * an empty tier — which is precisely the behaviour of every environment before this phase
+         * existed, is what the flag shipping `false` already means, and cannot corrupt anything.
+         * Throwing would turn "this feature is off" into an outage.
+         *
+         * TWO CONDITIONS, BOTH REQUIRED, AND THE SECOND IS NOT A CONFIG VALUE ANYONE SETS. The tier
+         * joins a city option's id to `location_places.census_place_geoid`; those are the same
+         * value under `census` and unrelated under `eloquent`, where a city id is a `us_cities`
+         * surrogate key. So the source is checked HERE rather than trusted to an operator: an
+         * environment that turns the flag on without switching the source gets no neighbourhoods
+         * instead of neighbourhoods attached to the wrong cities.
+         */
+        $this->app->bind(CriteriaNeighborhoodRepository::class, function () {
+            if (! (bool) config('criteria_location_dna.neighborhood_tier_enabled', false)) {
+                return new NullCriteriaNeighborhoodRepository();
+            }
+
+            return match (config('criteria_location_dna.geography_source')) {
+                'census' => new CensusCriteriaNeighborhoodRepository(),
+                'fake'   => new FakeCriteriaNeighborhoodRepository(),
+                default  => new NullCriteriaNeighborhoodRepository(),
+            };
+        });
+
+        /**
+         * M1 — geography search.
+         *
+         * IT FAILS TO EMPTY, FOR THE SAME REASON THE TIER ABOVE DOES. The only alternative to
+         * search is no search, which is what every environment did before M1 and cannot corrupt
+         * anything. Only `census` can answer: a search over the `us_*` tables would return
+         * surrogate keys that the census-backed cascade resolves to different places or to none,
+         * and `us_cities.fips_code` is empty for all 25,830 rows so there is no stable identifier
+         * to hand back in the first place.
+         *
+         * The source key is `census` while the implementation reads `location_places` — the source
+         * names the IDENTIFIER LINEAGE, and the canonical layer is where those identifiers live
+         * alongside the supplemental places the published corpus omits.
+         *
+         * THE NEIGHBOURHOOD FLAG IS PASSED IN, NOT READ INSIDE THE REPOSITORY. Search must agree
+         * with the cascade about whether that tier exists — offering a neighbourhood the cascade
+         * has no tier to hold would produce a match a user can select and nothing can accept. The
+         * decision is made here, beside the identical one made for CriteriaNeighborhoodRepository,
+         * so the two cannot drift.
+         *
+         * Nothing renders this yet: M1 is the seam only, and no UI consumes it.
+         */
+        $this->app->bind(GeographySearchRepository::class, function () {
+            $neighborhoods = (bool) config('criteria_location_dna.neighborhood_tier_enabled', false);
+
+            return match (config('criteria_location_dna.geography_source')) {
+                'census' => new LocationPlaceSearchRepository($neighborhoods),
+                'fake'   => new FakeGeographySearchRepository(),
+                default  => new NullGeographySearchRepository(),
+            };
+        });
+
         $this->app->bind(BoundaryAdapterInterface::class, CensusTigerBoundaryAdapter::class);
         $this->app->bind(FloodZoneAdapterInterface::class, FemaFloodZoneAdapter::class);
         $this->app->bind(SchoolDistrictAdapterInterface::class, CensusSchoolDistrictAdapter::class);

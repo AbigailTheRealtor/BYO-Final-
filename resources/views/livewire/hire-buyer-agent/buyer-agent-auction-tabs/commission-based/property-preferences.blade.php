@@ -131,6 +131,30 @@
 </div>
 
 
+{{-- Phase 1c slice 1 — the geography cascade, for the wired workflow only.
+
+     When the cascade is enabled it renders the four geography tiers from the bound corpus, and
+     the shared widget below suppresses its own tier inputs (and therefore the place-autocomplete
+     that drives them) so the two editors never both write the same blob keys.
+
+     WHY THE NULL COALESCE IS LOAD-BEARING AND NOT DEFENSIVE CLUTTER
+     ---------------------------------------------------------------
+     THIS PARTIAL IS INCLUDED BY SIX VIEWS ACROSS ALL FOUR ROLES:
+
+       - hire-buyer-agent{,-edit}      -> BuyerAgentAuction{,Edit}   (carries the trait)
+       - tenant-agent-auction{,-edit}  -> TenantAgentAuction{,Edit}  (carries the trait)
+       - hire-seller-agent             -> SellerAgentAuction         (does NOT)
+       - hire-landlord-agent           -> LandLordAgentAuction       (does NOT)
+
+     The Seller and Landlord components declare no $geoCascadeEnabled at all. Defaulting it to
+     false here is what keeps those two rendering exactly what they rendered before, rather than
+     fataling on an undefined variable — and it is why enabling the flag cannot leak the cascade
+     into a role that was never wired. The catch-all component adds a second, independent guard:
+     its workflow map returns null for seller and landlord, so no config value reaches them. --}}
+@if ($geoCascadeEnabled ?? false)
+    @include('partials.location-dna.geography-cascade')
+@endif
+
 {{-- 9D: Search Areas — single editing surface (replaces the legacy Acceptable
      Cities/Counties/State inputs). Preferred Cities/ZIP/Counties/State live in the
      location_dna_preferences blob; discrete state/counties/cities meta are mirrored
@@ -140,6 +164,7 @@
     'mapPanelId'              => 'ldna-map-hire-buyer',
     'enableImportantPlaces'   => true,
     'existingImportantPlaces' => $existingImportantPlaces ?? [],
+    'ldnaGeographyCascade'    => $geoCascadeEnabled ?? false,
 ])
 @include('partials.location-dna.search-areas-bridge')
 

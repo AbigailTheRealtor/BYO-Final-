@@ -350,18 +350,39 @@ class HireAgentProposalConsoleTest extends TestCase
     // ── (5) Compensation is untouched ────────────────────────────────────────
 
     /**
-     * M5.5 is explicitly forbidden from answering the open compensation-visibility question. The
-     * body gate is authentication, not authorization, and it must survive this milestone exactly
-     * as it was — see docs/investigations/hire-agent-compensation-visibility-decision.md.
+     * THE COMPENSATION GATE IS GONE, BECAUSE THE SECTION IT GUARDED IS.
+     *
+     * This asserted that `@if (Auth::check())` still wrapped the landlord listing's Broker
+     * Compensation section, because M5.5 was forbidden from answering the open
+     * compensation-visibility question and had to leave the gate exactly as it found it.
+     *
+     * That question is now closed, and not by widening or narrowing the gate: Broker Compensation
+     * is a negotiation term an agent proposes on a bid, so it is not a listing section at any
+     * audience. The section and its bare authentication gate went together.
+     *
+     * INVERTED RATHER THAN DELETED. The gate returning would mean the section returned with it,
+     * which is exactly the regression this file is positioned to catch on the landlord view.
      */
-    public function test_the_body_compensation_gate_is_unchanged(): void
+    public function test_the_listing_compensation_section_and_its_gate_are_gone(): void
     {
         $view = file_get_contents(base_path('resources/views/hire_landlord_agent/view.blade.php'));
 
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             '@if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}',
             $view,
-            'The compensation gate is an open owner decision and may not be altered here.'
+            'The bare authentication gate returned, which means the listing section did too.'
+        );
+
+        $this->assertStringNotContainsString(
+            'id="hla-section-compensation"',
+            $view,
+            'Broker Compensation is a proposal term and must not be a listing section.'
+        );
+
+        $this->assertStringNotContainsString(
+            'id="hla-section-services"',
+            $view,
+            'Services is a proposal term and must not be a listing section.'
         );
     }
 

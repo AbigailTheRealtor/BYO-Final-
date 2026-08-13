@@ -749,12 +749,12 @@ class HireAgentFieldPresentationTest extends TestCase
 
         $this->assertSame(
             0,
-            $x->query('//*[@id="hla-section-property-details"]')->length,
+            $x->query('//*[@id="hla-section-property"]')->length,
             'A section holding only empty multi-selects must not render a card.'
         );
 
         $this->assertStringNotContainsString(
-            '#hla-section-property-details',
+            '#hla-section-property',
             $html,
             'The nav must not offer a section that did not render.'
         );
@@ -773,12 +773,12 @@ class HireAgentFieldPresentationTest extends TestCase
 
         $this->assertSame(
             1,
-            $x->query('//*[@id="hla-section-property-details"]')->length,
+            $x->query('//*[@id="hla-section-property"]')->length,
             'A populated multi-select must bring its section back.'
         );
 
         $this->assertStringContainsString(
-            '#hla-section-property-details',
+            '#hla-section-property',
             $html,
             'The nav must offer a section that rendered.'
         );
@@ -880,8 +880,8 @@ class HireAgentFieldPresentationTest extends TestCase
     public function dataProviderForGuardedSections(): array
     {
         return [
-            'property details' => ['hla-section-property-details', 'property_city', 'Redington Beach'],
-            'leasing terms'    => ['hla-section-leasing-terms', 'occupant_status', 'Tenant'],
+            'property details' => ['hla-section-property', 'property_city', 'Redington Beach'],
+            'leasing terms'    => ['hla-section-terms', 'occupant_status', 'Tenant'],
         ];
     }
 

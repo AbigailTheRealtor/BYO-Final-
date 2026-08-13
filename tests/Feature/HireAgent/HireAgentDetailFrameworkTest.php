@@ -463,11 +463,41 @@ class HireAgentDetailFrameworkTest extends TestCase
             }
         }
 
-        // Cards that genuinely are common to all four stay in all four.
+        // Cards that genuinely are common to all four stay in all four. Services and Broker
+        // Compensation left this list when they were recognised as negotiation terms rather than
+        // listing detail — they are asserted ABSENT below instead.
         foreach (self::VIEWS as $role => $rel) {
             $src = file_get_contents(base_path($rel));
-            foreach (['Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms', 'Referral & Cooperation Terms'] as $shared) {
+            foreach (['Additional Details', 'Referral & Cooperation Terms'] as $shared) {
                 $this->assertStringContainsString($shared, $src, "The {$role} view must keep the shared '{$shared}' card.");
+            }
+        }
+    }
+
+    /**
+     * No role view carries a Services or Broker Compensation listing CARD.
+     *
+     * Asserted at source across all four roles, and on the card markup rather than on the words:
+     * both subjects still appear in these files in the proposal region — an agent's offered
+     * services, a counter-offer's compensation terms — and that is the surface they belong to. What
+     * must not exist is a listing SECTION rendering the client's own answers.
+     */
+    public function test_no_role_view_carries_a_negotiation_term_card(): void
+    {
+        foreach (self::VIEWS as $role => $rel) {
+            $src = file_get_contents(base_path($rel));
+
+            foreach ([
+                'id="hla-section-services"',
+                'id="hla-section-compensation"',
+                '<x-viho.section-header title="Services:"',
+                '<x-viho.section-header title="Broker Compensation & Agency Agreement Terms:"',
+            ] as $cardMarkup) {
+                $this->assertStringNotContainsString(
+                    $cardMarkup,
+                    $src,
+                    "The {$role} view reintroduced a negotiation term as a listing card: {$cardMarkup}"
+                );
             }
         }
     }
