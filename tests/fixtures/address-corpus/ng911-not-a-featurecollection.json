@@ -1,0 +1,5 @@
+{
+"type": "Feature",
+"properties": { "SITEADDID": "SOLO-0001", "ADDRNUM": "315", "FULLNAME": "E Madison St", "STATUS": "Current" },
+"geometry": { "type": "Point", "coordinates": [-82.4570, 27.9475] }
+}

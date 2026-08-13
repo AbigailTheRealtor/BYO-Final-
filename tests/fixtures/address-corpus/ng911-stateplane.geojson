@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"name": "SYNTHETIC - coordinates left in EPSG:2237 (Florida West, US feet). MUST BE REFUSED.",
+"features": [
+{ "type": "Feature", "properties": { "SITEADDID": "SP-0001", "ADDRNUM": "315", "FULLNAME": "E Madison St", "POSTALCOMM": "Tampa", "ZIP": "33602", "POINTTYPE": "Location", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [578123.45, 1310987.65] } }
+]
+}

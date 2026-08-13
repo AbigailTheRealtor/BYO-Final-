@@ -1,0 +1,26 @@
+UUID,AddNum_Pre,Add_Number,AddNum_Suf,AddNo_Full,St_PreDir,St_Name,St_PosTyp,StNam_Full,Building,Floor,Unit,SubAddress,County,Inc_Muni,Post_City,State,Zip_Code,Placement,Latitude,Longitude
+{00000000-0000-0000-0000-000000000001},,315,,315,E,Madison,St,E Madison St,,,,,Hillsborough,Tampa,Tampa,FL,33602,Structure - Rooftop,27.9475,-82.4570
+{00000000-0000-0000-0000-000000000002},,4200,,4200,,Gulf,Blvd,Gulf Blvd,,,Unit 501,Unit 501,Pinellas,St Pete Beach,Saint Pete Beach,FL,33706,Parcel - Centroid,27.7250,-82.7430
+{00000000-0000-0000-0000-000000000003},,4200,,4200,,Gulf,Blvd,Gulf Blvd,,,,,Pinellas,St Pete Beach,Saint Pete Beach,FL,33706,Parcel - Centroid,27.7250,-82.7430
+{00000000-0000-0000-0000-000000000004},,1900,,1900,NW,Bayshore,Xing,NW Bayshore Xing,,,,,Pinellas,Clearwater,Clearwater,FL,33755,Structure - Rooftop,27.9660,-82.8000
+{00000000-0000-0000-0000-000000000005},,123,1/2,123 1/2,,Cypress Creek,Rd,Cypress Creek Rd,,,,,Pasco,Land O Lakes,Land O Lakes,FL,34638,Structure - Rooftop,28.2100,-82.4600
+{00000000-0000-0000-0000-000000000006},,7700,,7700,,Sunset Point,Rdg,Sunset Point Rdg,,,,,Pinellas,Largo,Largo,FL,33770-1234,Structure - Entrance,27.9090,-82.7870
+{00000000-0000-0000-0000-000000000007},,5,,5,,Palm Harbor,Ln,Palm Harbor Ln,,,,,Pinellas,,Palm Harbor,FL,34683,Structure - Rooftop,28.0780,-82.7640
+{00000000-0000-0000-0000-000000000008},,88,,88,,Unincorporated,Way,Unincorporated Way,,,,,Polk,Bartow Unincorporated Area,,FL,33830,Structure - Rooftop,27.8960,-81.8430
+{00000000-0000-0000-0000-000000000009},,600,,600,,Placement Absent,Dr,Placement Absent Dr,,,,,Orange,Orlando,Orlando,FL,32801,,28.5400,-81.3790
+{00000000-0000-0000-0000-000000000010},,601,,601,,Placement Odd,Dr,Placement Odd Dr,,,,,Orange,Orlando,Orlando,FL,32801,Site - Approximate,28.5410,-81.3800
+{00000000-0000-0000-0000-000000000011},,900,,900,,Duplicate Twin,Ave,Duplicate Twin Ave,,,,,Duval,Jacksonville,Jacksonville,FL,32202,Structure - Rooftop,30.3320,-81.6550
+{00000000-0000-0000-0000-000000000012},,900,,900,,Duplicate Twin,Avenue,Duplicate Twin Avenue,,,,,Duval,Jacksonville,Jacksonville,FL,32202,Structure - Rooftop,30.3325,-81.6558
+{00000000-0000-0000-0000-000000000013},,101,,101,,No Latitude,St,No Latitude St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,,-81.8720
+{00000000-0000-0000-0000-000000000014},,102,,102,,No Longitude,St,No Longitude St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,26.6400,
+{00000000-0000-0000-0000-000000000015},,103,,103,,Bad Latitude,St,Bad Latitude St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,not-a-number,-81.8720
+{00000000-0000-0000-0000-000000000016},,104,,104,,Bad Longitude,St,Bad Longitude St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,26.6400,nonsense
+{00000000-0000-0000-0000-000000000017},,105,,105,,Null Island,St,Null Island St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,0,0
+{00000000-0000-0000-0000-000000000018},,106,,106,,Out Of Range,St,Out Of Range St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,91.5,-81.8720
+{00000000-0000-0000-0000-000000000019},,107,,107,,Wrong State Coords,St,Wrong State Coords St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,39.7392,-104.9903
+{00000000-0000-0000-0000-000000000020},,,,,,Missing Number,St,Missing Number St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,26.6410,-81.8730
+{00000000-0000-0000-0000-000000000021},,108,,108,,,,,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,26.6420,-81.8740
+,,109,,109,,No Uuid,St,No Uuid St,,,,,Lee,Fort Myers,Fort Myers,FL,33901,Structure - Rooftop,26.6430,-81.8750
+{00000000-0000-0000-0000-000000000023},,200,,200,,Peachtree,St,Peachtree St,,,,,Fulton,Atlanta,Atlanta,GA,30303,Structure - Rooftop,33.7490,-84.3880
+{00000000-0000-0000-0000-000000000024},,300,,300,,Bourbon,St,Bourbon St,,,,,Orleans Parish,New Orleans,New Orleans,LA,70130,Structure - Rooftop,29.9584,-90.0644
+{00000000-0000-0000-0000-000000000025},,4600,,4600,S,Ocean,Blvd,S Ocean Blvd,,,Apt 12B,,Palm Beach,Palm Beach,Palm Beach,FL,33480,Structure - Rooftop,26.7050,-80.0360
