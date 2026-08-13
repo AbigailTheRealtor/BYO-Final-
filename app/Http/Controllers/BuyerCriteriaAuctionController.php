@@ -54,6 +54,16 @@ class BuyerCriteriaAuctionController extends Controller
             DB::beginTransaction();
             $auction = new BuyerCriteriaAuction();
             $auction->user_id = Auth::user()->id;
+            // buyer_id, title and max_price are NOT NULL with no default in
+            // create_buyer_criteria_auctions_table and were never assigned here, so
+            // every legitimate create failed the insert and was swallowed by the
+            // catch below as "Unable to add buyer criteria auction". The listing's
+            // real values live in meta (`titleListing`, `max_price`) — these keep
+            // the native columns consistent with them rather than duplicating
+            // ownership of the data.
+            $auction->buyer_id = Auth::user()->id;
+            $auction->title = $request->titleListing ?: 'Buyer Criteria';
+            $auction->max_price = (float) $request->max_price;
             $auction->auction_type = $request->auction_type;
             $auction->auction_length = $auction_length_days;
             $auction->save();
