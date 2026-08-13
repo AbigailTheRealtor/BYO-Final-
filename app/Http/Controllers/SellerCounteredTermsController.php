@@ -53,28 +53,6 @@ class SellerCounteredTermsController extends Controller
         $bid_id = $id;
         return view('seller_counter_terms.add', compact('pab', 'bid_id'));
     }
-    public function store(Request $request)
-    {
-        // Authorization (HIGH-5): only a party to the auction may submit counter
-        // terms — the listing owner, or an agent who has bid on the listing.
-        $auction = \App\Models\SellerAgentAuction::find($request->sellerId);
-        abort_unless(auth()->check() && $auction && (
-            (int) $auction->user_id === (int) auth()->id() ||
-            \App\Models\SellerAgentAuctionBid::where('seller_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
-        ), 403);
-
-        $counter = new SellerCounterTerm();
-        $counter->seller_auction_id = $request->sellerId;
-        $counter->timeframe = $request->timeframe;
-        $counter->commission = $request->commission;
-        $counter->sellerCommission = $request->sellerCommission;
-        $counter->services = json_encode($request->services);
-        $counter->other_services = $request->other_services;
-        $counter->additionalDetails = $request->additionalDetails;
-        $counter->status = 1;
-        $counter->save();
-        return redirect('hire/agent/seller/list')->with('success', 'Countered Terms Added Successfully!');
-    }
     public function edit(Request $request, $id)
     {
         $pab = SellerAgentAuctionBid::findOrFail($id);
@@ -82,39 +60,24 @@ class SellerCounteredTermsController extends Controller
 
         return view('seller_counter_terms.add', compact('pab', 'bid_id'));
     }
-    public function update(Request $request, $id)
-    {
-        $counter = SellerCounterTerm::findOrFail($id);
-        // Authorization (HIGH-5): only the listing owner or a bidding agent may update.
-        $auction = \App\Models\SellerAgentAuction::find($counter->seller_agent_auction_id);
-        abort_unless(auth()->check() && $auction && (
-            (int) $auction->user_id === (int) auth()->id() ||
-            \App\Models\SellerAgentAuctionBid::where('seller_agent_auction_id', $auction->id)->where('user_id', auth()->id())->exists()
-        ), 403);
-        // Update the attributes
-        $sellerCommission = '';
-        if ($request->sellerCommission != 'Yes') {
-            $sellerCommission = 'No'; // Set to empty strin
-        } else {
-            $sellerCommission = $request->sellerCommission;
-        }
-        $counter->update([
-            'seller_auction_id' => $counter->seller_auction_id,
-            'timeframe' => ($request->timeframe != '' ? $request->timeframe :   $counter->timeframe),
-            'commission' => ($request->commission != '' ? $request->commission : $counter->commission),
-            'sellerCommission' => ($sellerCommission != '' ? $sellerCommission : $counter->sellerCommission),
-            'services' => ($request->services != '' ? json_encode($request->services) : $counter->services),
-            'other_services' => ($request->other_services != '' ? $request->other_services : $counter->other_services),
-            'additionalDetails' => ($request->additionalDetails),
-            'status' => ($request->status != '' ? $request->status : $counter->status),
-        ]);
 
-        // Optionally, you can save the updated instance
-        $counter->save();
-        if ($request->status != '') {
-            return redirect('hire/agent/seller/list')->with('success', 'Countered Terms Status Hase Been Changed Successfully!');
-        } else {
-            return redirect('hire/agent/seller/list')->with('success', 'Countered Terms Has Been Updated Successfuly!');
-        }
-    }
+    // store() and update() were RETIRED.
+    //
+    // They were the last of the pre-EAV ("Gen 1") write path: they wrote
+    // `seller_auction_id`, `timeframe`, `commission`, `sellerCommission`, `services`,
+    // `other_services` and `additionalDetails`, none of which exist on the current
+    // `seller_counter_terms` table, and never set `user_id`,
+    // `seller_agent_auction_bid_id` or `seller_agent_auction_id`, all of which are
+    // NOT NULL. Every call therefore ended in
+    // "table seller_counter_terms has no column named seller_auction_id" and a 500 —
+    // including calls from the listing owner. Nothing in the UI posted to them: the
+    // add/edit screens below render the Livewire component, which is the real write
+    // path and is unaffected.
+    //
+    // Retired rather than repaired because repairing them would have re-implemented,
+    // in a second place with no users, what
+    // App\Http\Livewire\Seller\SellerAgentAuctionCounterTerm::submit() already does
+    // correctly against the current schema.
+    //
+    // @see tests/Feature/Security/CounteredTermsAuthorizationTest.php
 }

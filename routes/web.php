@@ -572,10 +572,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('seller/service/auction/update', [SellerServiceAuctionController::class, 'update'])->name('seller.service.auction.update');
     Route::get('seller/service/auction/list', [SellerServiceAuctionController::class, 'list'])->name('seller.service.auction.list');
     Route::post('/seller/service/auction/bid/accept', [SellerServiceAuctionBidController::class, 'acceptSSBid'])->name('seller.service.auction.bid.accept');
+    // The Counter Terms *screens* below stay: they render the Livewire component that
+    // actually writes. `seller/add-counter-terms` and `seller/update-counter-terms/{id}`
+    // were retired with SellerCounteredTermsController::store()/update() — a Gen-1 write
+    // path that 500'd for every caller and that no view posted to.
     Route::any('seller/counter-terms/{id}', [SellerCounteredTermsController::class, 'add'])->name('seller.counter-terms');
-    Route::any('seller/add-counter-terms', [SellerCounteredTermsController::class, 'store'])->name('seller.add-counter-terms');
     Route::any('seller/edit-counter-terms/{id}', [SellerCounteredTermsController::class, 'edit'])->name('seller.edit-counter-terms');
-    Route::any('seller/update-counter-terms/{id}', [SellerCounteredTermsController::class, 'update'])->name('seller.update-counter-terms');
     //  });
 
 
@@ -697,10 +699,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('hire/agent/auction/counter/bid/accept', [LandlordAgentAuctionBidController::class, 'accept_counter_bid'])->name('hire.agent.auction.counter.bid.accept');
         Route::post('hire/agent/auction/counter/bid/reject', [LandlordAgentAuctionBidController::class, 'reject_counter_bid'])->name('hire.agent.auction.counter.bid.reject');
 
+        // Screens stay (they render the Livewire component). `/add-counter-terms` and
+        // `/update-counter-terms/{id}` were retired with
+        // LandlordCounteredTermsController::store()/update() — a Gen-1 write path that
+        // 500'd for every caller, that no view posted to, and whose update() resolved
+        // ownership against the wrong table.
         Route::any('/counter-terms/{id}', [LandlordCounteredTermsController::class, 'add'])->name('counter-terms');
-        Route::any('/add-counter-terms', [LandlordCounteredTermsController::class, 'store'])->name('add-counter-terms');
         Route::any('/edit-counter-terms/{id}', [LandlordCounteredTermsController::class, 'edit'])->name('edit-counter-terms');
-        Route::any('/update-counter-terms/{id}', [LandlordCounteredTermsController::class, 'update'])->name('update-counter-terms');
     });
 
     Route::get('/hire/agent/auction/{user_type}/{listingId}', liverTenantAgentAuction::class)->name('hire.agent.auction.draft')->where('user_type', 'tenant|landlord|buyer|seller');
