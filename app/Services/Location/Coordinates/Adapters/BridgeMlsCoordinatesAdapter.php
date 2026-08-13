@@ -156,6 +156,12 @@ final class BridgeMlsCoordinatesAdapter implements CoordinateProviderAdapterInte
             // The feed reports no confidence score. Null is the honest value;
             // a fabricated 1.0 would read as certainty nobody asserted.
             confidence: null,
+            // The feed record this point came from. `listing_key` is the MLS's
+            // own stable identifier and the column this rung matched on, so it
+            // is exactly the "which upstream record said this" answer — recorded
+            // rather than reconstructed later from the listing's meta, which a
+            // subsequent edit could change.
+            sourceRef: (string) $record->listing_key,
         );
     }
 

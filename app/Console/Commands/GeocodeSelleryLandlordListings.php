@@ -19,6 +19,30 @@ class GeocodeSelleryLandlordListings extends Command
         $dryRun  = $this->option('dry-run');
         $limit   = (int) $this->option('limit');
 
+        // Google is not an approved coordinate source. Fail closed.
+        //
+        // The kill switch is the OUTERMOST guard and is checked BEFORE the
+        // credential, for the same reason it is in
+        // {@see \App\Services\LocationDna\LocationDnaGeocodeService}: a present
+        // GOOGLE_PLACES_API_KEY is not permission to geocode. Until this commit the
+        // only gate here was the credential below, so a key sitting in the
+        // environment was sufficient to send outbound Geocoding requests from this
+        // command even with GOOGLE_PLACES_ENABLED=false — the one property-coordinate
+        // path the kill switch did not cover.
+        //
+        // Checked ahead of --dry-run as well. Dry-run issues no request today, but
+        // the refusal belongs at the boundary rather than at each call site, so a
+        // future edit that moves work above the dry-run branch cannot reopen the
+        // hole.
+        //
+        // Containment only. This command remains legacy: the approved sources are
+        // Bridge, the address-point corpus and the Census geocoder, all reached
+        // through PropertyCoordinateResolver. Gating it does not endorse it.
+        if (! config('google_places.enabled', false)) {
+            $this->error('GOOGLE_PLACES_ENABLED is false. Refusing to geocode: no Google request will be made.');
+            return Command::FAILURE;
+        }
+
         if (!$apiKey) {
             $this->error('GOOGLE_PLACES_API_KEY is not configured. Cannot geocode.');
             return Command::FAILURE;
