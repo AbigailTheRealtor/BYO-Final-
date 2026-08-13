@@ -319,6 +319,56 @@ class MlsFieldMap
         ];
     }
 
+    // ─── Property-type applicability ──────────────────────────────────────────
+
+    /**
+     * Canonical keys whose form target is only rendered for SOME property types,
+     * as canonical key => the property_type values that render it.
+     *
+     * WHY THIS EXISTS
+     * ---------------
+     * A Livewire property exists on the component for every property type; the
+     * blade decides whether the user ever sees an input for it. Those two facts
+     * disagree for type-gated fields, and buildImportPreview() could previously
+     * only consult the first one. Offering "Pool: No" while creating a Vacant
+     * Land listing would write a value into state the form never displays and
+     * the user cannot correct — invisible data with the authority of an import.
+     *
+     * A KEY THAT IS ABSENT HERE IS APPLICABLE TO EVERY TYPE. That default is
+     * deliberate: it leaves every canonical key that existed before this map was
+     * introduced behaving exactly as it did, so this is an additive gate rather
+     * than a reinterpretation of the existing importer. Only list a key once you
+     * have read the blade and know which conditional wraps its input.
+     *
+     * The two role vocabularies are genuinely different and must not be merged:
+     * Seller uses `Residential` / `Income` / `Commercial` / `Business` /
+     * `Vacant Land`, while Landlord uses `Residential Property` /
+     * `Commercial Property`. A shared list would silently match nothing on one
+     * of the two roles, which reads exactly like the field being inapplicable.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function propertyTypeApplicability(string $role): array
+    {
+        return match ($role) {
+            // property-preferences.blade.php:
+            //   pool_needed    inside @if ($property_type === 'Residential' or $property_type === 'Income')
+            //   garage_needed  inside @if ($property_type === 'Residential')
+            //   waterfront     no conditional — every type
+            'seller' => [
+                'pool'   => ['Residential', 'Income'],
+                'garage' => ['Residential'],
+            ],
+            // property-preferences.blade.php:
+            //   pool_needed / garage_needed inside @if ($property_type === 'Residential Property')
+            'landlord' => [
+                'pool'   => ['Residential Property'],
+                'garage' => ['Residential Property'],
+            ],
+            default => [],
+        };
+    }
+
     // ─── Universal base field map ─────────────────────────────────────────────
 
     /**

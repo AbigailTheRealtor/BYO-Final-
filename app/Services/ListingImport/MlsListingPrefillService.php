@@ -88,6 +88,45 @@ class MlsListingPrefillService
 
         // ── Price ───────────────────────────────────────────────────────────
         'listPrice'       => 'price',
+
+        // ── Owner-side disclosures (Master Phase 1) ─────────────────────────
+        // Objective, publicly-advertised facts about the property itself, not
+        // about the transaction or the people in it. Every one of these already
+        // had a Seller AND Landlord form target in MlsFieldMap before this
+        // change; the only thing that was missing was permission to read the
+        // PropertyCandidate property the adapter has always populated.
+        //
+        // These four are property-type-neutral: their form targets live on the
+        // Tax / Legal / HOA tab, which renders no property_type conditional at
+        // all, so they are legitimate for all seven types.
+        'taxAnnualAmount' => 'annual_taxes',
+        'association'     => 'has_hoa',
+        'associationFee'  => 'association_fee_amount',
+        'cdd'             => 'has_cdd',
+
+        // ── Physical characteristics (Master Phase 1) ───────────────────────
+        // `waterfront` renders for every property type. `pool` and `garage`
+        // do NOT — see MlsFieldMap::propertyTypeApplicability(), which stops
+        // them being offered for a type whose form never shows them.
+        'waterfront'      => 'waterfront',
+        'pool'            => 'pool',
+        'garage'          => 'garage',
+
+        // DELIBERATELY ABSENT — `petsAllowed`.
+        // The candidate carries it and BridgePropertyNormalizer now preserves
+        // the complete policy, but the Landlord target it maps to (`pet_policy`)
+        // has NO wire:model binding in any Create Offer tab. Importing it would
+        // write a value the user can neither see nor correct. The normalizer
+        // fidelity fix ships here so the data is right the day the field is
+        // wired; the mapping does not. Same reason `rent_includes`,
+        // `tenant_pays`, `building_features_list` and `current_use_list` are
+        // absent — see MlsCoverageReporter's `no_form_binding` rows.
+        //
+        // DELIBERATELY ABSENT — `associationName`.
+        // Not carried by the candidate at all, and the feed's AssociationName is
+        // frequently a named individual sitting beside an AssociationPhone. That
+        // is contact data, which is outside the facts-only boundary regardless
+        // of the fact that a form field with a matching name exists.
     ];
 
     /**
