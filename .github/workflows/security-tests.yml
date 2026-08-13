@@ -98,38 +98,33 @@ jobs:
           # were added (property_auctions.is_draft, tenant_criteria_auctions.listing_id) and its
           # stale inline fixtures were repaired. It now runs in the gate at 23/23.
           #
-          # CounteredTermsAuthorizationTest.php — 9 of 10 tests pass and are not run.
+          # CounteredTermsAuthorizationTest.php was removed from this list once the Seller and
+          # Landlord legacy HTTP write endpoints were retired and the test's own defects were
+          # repaired. It now runs in the gate at 15/15.
           #
-          # This is NOT factory drift. The three BuyerAgentAuction fixtures that were missing
-          # `title` have been repaired; what remains is production/schema defects in Counter
-          # Terms itself, deferred to a separate follow-up audit:
+          # The reasons previously recorded here were investigated against main and two of them
+          # were wrong. Corrected for the record, because they misdirect anyone who reads them:
           #
-          #   1. Landlord (the one failing test). landlord_counter_terms declares an FK on
-          #      landlord_agent_auction_id -> landlord_agent_auctions.id, and the insert the
-          #      controller builds violates it:
-          #          SQLSTATE[23000]: FOREIGN KEY constraint failed
-          #      Forcing this green would mean fabricating a satisfying row, which would assert
-          #      that a broken write path works.
+          #   1. Landlord. The FK on landlord_counter_terms.landlord_agent_auction_id references
+          #      landlord_agent_auction_bids.id — NOT landlord_agent_auctions.id. The column
+          #      stores a BID id despite its name, which is how the whole application uses it.
+          #      The insert that violated the FK was the TEST FIXTURE's (it passed an auction id),
+          #      not one any controller built. The schema was correct throughout and is unchanged.
           #
-          #   2. Seller (latent — currently masked, no test asserts it). The controller writes a
-          #      column the table does not have:
-          #          SellerCounteredTermsController:67  $counter->seller_auction_id = ...
-          #          seller_counter_terms declares       seller_agent_auction_id
-          #      producing, on every seller counter-terms write:
+          #   2. Seller. The unknown-column write was real:
           #          SQLSTATE[HY000]: table seller_counter_terms has no column named seller_auction_id
-          #      The controller swallows the exception, so the test still passes on its 403/redirect
-          #      assertion while the write silently fails. Also seen alongside:
-          #          SQLSTATE[23000]: NOT NULL constraint failed: counter_terms.commission
+          #      but it was NOT swallowed. There is no try/catch on that path and Handler::render()
+          #      only remaps MethodNotAllowedHttpException, so the request 500'd. The test passed
+          #      because it asserted `assertNotSame(403, ...)`, and 500 is not 403.
+          #      The NOT NULL error on counter_terms.commission was a missing POST field in the
+          #      Buyer fixture — Buyer's columns all exist — and is fixed by supplying it.
           #
-          # Both are real product defects, not test defects, and fixing them is application work
-          # that does not belong in a CI change.
-          EXCLUDED=(
-            "CounteredTermsAuthorizationTest.php"
-          )
+          # Both endpoints are now gone rather than repaired; see the two controllers.
+          EXCLUDED=()
 
           # A stale exclusion must not outlive its file: if one is renamed or deleted, this list
           # is silently protecting nothing and needs revisiting.
-          for name in "${EXCLUDED[@]}"; do
+          for name in ${EXCLUDED[@]+"${EXCLUDED[@]}"}; do
             if [ ! -f "tests/Feature/Security/$name" ]; then
               echo "Excluded file no longer exists: $name — update EXCLUDED in this workflow."
               exit 1
@@ -141,7 +136,7 @@ jobs:
           FILES=()
           for f in "${ALL[@]}"; do
             skip=0
-            for name in "${EXCLUDED[@]}"; do
+            for name in ${EXCLUDED[@]+"${EXCLUDED[@]}"}; do
               [ "$(basename "$f")" = "$name" ] && skip=1
             done
             [ "$skip" -eq 0 ] && FILES+=("$f")
