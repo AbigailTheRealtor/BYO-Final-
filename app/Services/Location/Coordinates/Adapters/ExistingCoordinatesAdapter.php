@@ -79,57 +79,90 @@ use Throwable;
  *   `propertyIdentityLine()` still tells them apart. What is shared is where the
  *   building is, which is genuinely the same fact.
  *
- * PRECISION: WHAT THIS TABLE CAN AND CANNOT PROVE
- * -----------------------------------------------
- * There is no precision column. Nothing in `property_location_dna` records
- * whether a point is a rooftop, a parcel centroid or a street interpolation, so
- * precision has to be inferred from `geocode_source` — and the inference is
- * capped at {@see CoordinatePrecision::Parcel} for every source. Rooftop is
- * never claimed by this adapter, for two independent reasons, either of which
- * would be sufficient:
+ * WHAT THIS RUNG WILL AND WILL NOT VOUCH FOR
+ * ------------------------------------------
+ * Two independent gates, both of which must pass before a stored coordinate is
+ * reused. Together they are what stops this rung — which the resolver consults
+ * first — from freezing a listing on the worst coordinate it ever held.
  *
- *   1. The stored `source_address` is a street line with no unit — it is the
- *      same unit-free question `forBuilding()` exists to describe. We located a
- *      building.
- *   2. Google's Geocoding API reports its own `location_type` (ROOFTOP,
- *      RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE) and this codebase has
- *      never persisted it. A row written from an APPROXIMATE result is
- *      byte-for-byte indistinguishable from one written from a ROOFTOP result.
+ *   1. The originating rung must be one no later rung can improve upon, read
+ *      from the recorded `geocode_provider`. See {@see self::REUSABLE_PROVIDERS}.
+ *   2. The precision must be recorded in `geocode_precision`. It is never
+ *      inferred from a source name.
  *
- * A `geocode_source` this adapter does not recognise is not guessed at either:
- * it produces an unresolved result with `existing_precision_unprovable`, and
- * the ladder moves on to a rung that can vouch for what it returns. Returning
- * it as a coarse-but-resolved point would be worse than useless, because the
- * resolver stops at the first resolved result — a coordinate we cannot vouch
- * for would outrank an MLS coordinate we can.
+ * Anything short of both produces an unresolved result and the ladder moves on
+ * to a rung that can vouch for what it returns. Returning an unvouched-for point
+ * would be worse than useless, because the resolver stops at the first resolved
+ * result — a coordinate we cannot vouch for would outrank an MLS or corpus
+ * coordinate we can.
  *
- * Local by construction: one indexed SELECT, no HTTP client, no network.
+ * Rooftop is claimable only when the corpus recorded it. This rung never invents
+ * a tier: the stored `source_address` is a street line with no unit, and Google's
+ * own `location_type` (ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER,
+ * APPROXIMATE) was never persisted by this codebase — a row written from an
+ * APPROXIMATE result is byte-for-byte indistinguishable from a ROOFTOP one.
+ *
+ * Local by construction: one indexed SELECT, no HTTP client, no network. It
+ * consults no other rung and knows nothing about their availability — it only
+ * declines, and lets the resolver do what it already does.
  */
 final class ExistingCoordinatesAdapter implements CoordinateProviderAdapterInterface
 {
     /**
-     * The `geocode_source` values this adapter is willing to vouch for, and the
-     * most precise tier each one honestly supports.
+     * The `geocode_provider` values whose coordinates may short-circuit the rest
+     * of the ladder.
      *
-     * An allow-list rather than a default, so a `geocode_source` written by some
-     * future code path is refused until somebody decides what it means. The
-     * failure direction matters: an unknown source that silently inherited
-     * `Parcel` would feed an unvouched-for point into flood-zone and school
-     * boundary work, which is the exact failure this ladder exists to prevent.
+     * WHY THIS REPLACED THE `geocode_source` PRECISION INFERENCE
+     * ----------------------------------------------------------
+     * This rung used to grade an unprovenanced row by its `geocode_source` name:
+     * 'saved_meta' and 'google' both inherited {@see CoordinatePrecision::Parcel}.
+     * That inference is gone, and its removal is the point of this change.
      *
-     * @var array<string, CoordinatePrecision>
+     * `saved_meta` means only "a caller supplied this coordinate". The caller is
+     * usually the browser — `fillFromResolvedAddress()` accepts a latitude and a
+     * longitude from the client as unvalidated strings — so the inference took an
+     * unverified number, stamped Parcel on it, and returned it as resolved. The
+     * resolver stops at the first resolved rung, so from that moment on the
+     * browser's coordinate outranked Bridge and the address-point corpus
+     * permanently, for that address. `google` had the same defect with a
+     * different name on it.
+     *
+     * Precision is now read ONLY from the recorded `geocode_precision` column. A
+     * coordinate whose provenance was never written is not graded by guesswork;
+     * it is declined, and the ladder re-derives an answer it can vouch for.
+     *
+     * WHY REUSE IS KEYED ON THE ORIGINATING RUNG
+     * ------------------------------------------
+     * This rung is not a source. It is a cache of some earlier rung's answer, and
+     * it can only be as good as whatever produced the number. So the question is
+     * not "is this coordinate any good" but "can a rung below me still do better".
+     *
+     * Only the two rungs at or above the address-point corpus qualify:
+     *
+     *   bridge_mls     the listing record's own published coordinate. Nothing
+     *                  below it outranks it — that precedence is deliberate and
+     *                  is preserved exactly.
+     *   address_point  our imported NENA/NAD corpus, the most authoritative
+     *                  address-derived point this platform has.
+     *
+     * `us_census` is deliberately absent. A Census result is a house number
+     * interpolated along a street segment, and {@see CoordinatePrecision::isExact}
+     * grades Interpolated as exact — so a precision comparison alone would let a
+     * stored Census point keep blocking an authoritative corpus match forever.
+     * Declining here is what lets `AddressPointCoordinateAdapter` be consulted
+     * once a corpus exists, which is the whole reason the corpus is being built.
+     *
+     * Declining costs nothing that matters. {@see \App\Services\Location\PropertyCoordinatePersistenceService}
+     * short-circuits before the resolver whenever the listing already holds a
+     * coordinate for this exact normalized address, and it explicitly does NOT
+     * clear a stored coordinate when the ladder returns unresolved. A declined
+     * reuse therefore re-derives or changes nothing; it does not discard.
+     *
+     * @var list<string>
      */
-    private const PRECISION_BY_GEOCODE_SOURCE = [
-        // Written when a caller supplied pre-resolved coordinates for this exact
-        // record: a user-selected autocomplete address, or an MLS feed's own
-        // Latitude/Longitude. Both identify the property; neither proves a roof.
-        'saved_meta' => CoordinatePrecision::Parcel,
-
-        // A Google Geocoding API result for a full street address. Capped at
-        // Parcel because the API's location_type was never stored — see the
-        // class docblock. Reused, not re-requested: this is a database read, and
-        // no kill switch governs reading a number we already have.
-        'google'     => CoordinatePrecision::Parcel,
+    private const REUSABLE_PROVIDERS = [
+        'bridge_mls',
+        'address_point',
     ];
 
     public function providerId(): string
@@ -209,25 +242,24 @@ final class ExistingCoordinatesAdapter implements CoordinateProviderAdapterInter
             return PropertyCoordinateResult::unresolved('existing_address_changed', $normalized);
         }
 
-        $geocodeSource = (string) ($record->geocode_source ?? '');
+        // Which ladder rung originally produced this point. Written by the G4
+        // provenance work; absent on every row predating it, and on every row
+        // whose coordinate never came through the ladder at all.
+        $ladderProvider = trim((string) ($record->geocode_provider ?? ''));
 
-        // Prefer the precision the row actually records (G4 column) over the one
-        // inferred from `geocode_source`.
-        //
-        // The inference exists because older rows have nothing better. But a row
-        // written from the resolver ladder knows its real tier, and the two can
-        // disagree in the dangerous direction: such a row carries
-        // `geocode_source = 'saved_meta'` — accurate, a caller did supply the
-        // coordinate — and the allow-list grades that Parcel, while the point
-        // may actually be a street-range Interpolation. Reading it back one tier
-        // too precise would launder an estimate into something flood-zone work
-        // treats as the property.
-        //
-        // Stored value first, inference only as a fallback, and an unparseable
-        // stored value falls through to the inference rather than to a guess.
-        $precision = $this->storedPrecision($record)
-            ?? self::PRECISION_BY_GEOCODE_SOURCE[$geocodeSource]
-            ?? null;
+        if ($ladderProvider === '') {
+            return PropertyCoordinateResult::unresolved('existing_provenance_absent', $normalized);
+        }
+
+        // A rung below this one may still do better. See REUSABLE_PROVIDERS.
+        if (! in_array($ladderProvider, self::REUSABLE_PROVIDERS, true)) {
+            return PropertyCoordinateResult::unresolved('existing_provider_superseded', $normalized);
+        }
+
+        // Precision comes from the recorded column and from nowhere else. There
+        // is no longer a fallback that infers a tier from a source name — see
+        // REUSABLE_PROVIDERS for why that inference was the defect.
+        $precision = $this->storedPrecision($record);
 
         if ($precision === null) {
             return PropertyCoordinateResult::unresolved('existing_precision_unprovable', $normalized);
@@ -238,10 +270,17 @@ final class ExistingCoordinatesAdapter implements CoordinateProviderAdapterInter
             longitude:         $longitude,
             precision:         $precision,
             source:            CoordinateSource::Existing,
-            // The provider recorded is the one that originally produced the
+            // The provider recorded is the rung that originally produced the
             // point, not this adapter. "Where did this coordinate come from" has
             // one true answer, and reusing it does not change it.
-            provider:          $geocodeSource,
+            //
+            // Load-bearing for the round trip, not merely descriptive: this value
+            // is what the persistence service stores back as `geocode_provider`.
+            // Reporting anything else here — the `geocode_source` name this rung
+            // used to return, for instance — would overwrite the originating rung
+            // on every save, and the coordinate would fail its own reuse check on
+            // the very next resolution.
+            provider:          $ladderProvider,
             normalizedAddress: $normalized,
             confidence:        null,
             resolvedAt:        $this->storedResolvedAt($record),

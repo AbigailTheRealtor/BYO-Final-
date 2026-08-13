@@ -459,6 +459,12 @@ class HireAgentCoordinateIntegrationTest extends TestCase
             'geocoded_lat'   => 27.9506,
             'geocoded_lng'   => -82.4572,
             'geocode_source' => 'saved_meta',
+            // "Trusted" is now a property of the recorded ladder provenance, not
+            // of the `geocode_source` name. Without these the Existing rung
+            // declines, and the reuse path would be tested on a coordinate that
+            // no longer qualifies for reuse.
+            'geocode_provider'  => 'address_point',
+            'geocode_precision' => 'rooftop',
             'geocode_status' => 'geocoded',
             'geocoded_at'    => now(),
         ]);
@@ -476,7 +482,7 @@ class HireAgentCoordinateIntegrationTest extends TestCase
     }
 
     /** @dataProvider roles */
-    public function test_a_census_coordinate_is_not_read_back_inflated_to_parcel(string $role, string $listingType): void
+    public function test_a_persisted_census_coordinate_is_not_reused_by_the_existing_rung(string $role, string $listingType): void
     {
         config()->set('census_geocoder.enabled', true);
         Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
@@ -505,8 +511,7 @@ class HireAgentCoordinateIntegrationTest extends TestCase
         // short-circuits as UNCHANGED and the ladder never runs, so the rung
         // under test would not be consulted at all. Dropping it reproduces the
         // case that matters — a row whose only surviving coordinate is the one
-        // in property_location_dna, stored under geocode_source 'saved_meta',
-        // which infers Parcel unless the explicit precision wins.
+        // in property_location_dna, carrying honest Census provenance.
         $listing->deleteMeta(PropertyCoordinateMeta::LAT);
         $listing->deleteMeta(PropertyCoordinateMeta::LNG);
         $listing->deleteMeta(PropertyCoordinateMeta::NORMALIZED_ADDRESS);
@@ -516,21 +521,23 @@ class HireAgentCoordinateIntegrationTest extends TestCase
 
         $this->assertSame(
             PropertyCoordinatePersistenceService::OUTCOME_RESOLVED,
-            $outcome['outcome'],
-            'The Existing rung must answer from property_location_dna'
+            $outcome['outcome']
         );
 
         $listing->load('meta');
+        // The Existing rung must DECLINE a Census-derived point rather than hand
+        // it back and stop the ladder — that is what keeps a later authoritative
+        // address-point match reachable once a corpus exists.
         $this->assertSame(
-            'existing',
+            'geocoder',
             $listing->info(PropertyCoordinateMeta::SOURCE),
-            'The Existing rung answered, not Census'
+            'The Existing rung must decline a Census-derived point'
         );
 
         $this->assertSame(
             'interpolated',
             $outcome['precision'],
-            'The stored precision must win over the saved_meta inference'
+            'And it is still never inflated on the way back out'
         );
     }
 
