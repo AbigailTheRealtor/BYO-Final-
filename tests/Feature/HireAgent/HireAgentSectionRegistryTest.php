@@ -28,12 +28,17 @@ use Tests\TestCase;
  * STRICTLY NESTED — public ⊂ owner ⊂ agent — and the tests below assert that as a RELATIONSHIP
  * rather than as three independent lists, because three lists can drift and a relationship cannot.
  *
- * WHAT THESE SECTIONS ARE NOT. The Services and Compensation here are the LISTING's own answers:
- * what the client wants done and what they are offering. Each agent's PROPOSAL carries its own
- * services and compensation, rendered on the per-bid cards and in the "Private Compensation &
- * Agreement Terms" modal, and narrowed server-side by HireAgentProposalAccess. That surface is
- * untouched by this registry and was already correct. Two bodies of data with similar names, and
- * conflating them is how one of them ends up public.
+ * SERVICES AND BROKER COMPENSATION ARE NOT IN THIS REGISTRY AND MUST NOT COME BACK. They are
+ * negotiation terms an agent proposes and the client accepts, rejects or counters — not listing
+ * detail — so they belong to the bid workflow and to no audience tier of this page. They render on
+ * the per-bid cards and in the "Private Compensation & Agreement Terms" modal, narrowed
+ * server-side by HireAgentProposalAccess; that surface is untouched by this registry. Two bodies
+ * of data with similar names, and conflating them is how one of them ended up public.
+ * HireAgentListingBidSeparationTest holds both halves of that line.
+ *
+ * THE 'participant' TIER THEREFORE HAS NO MEMBERS. The machinery is kept as framework for a future
+ * owner-and-agents section, so the tests below assert the tier's BEHAVIOUR — that it is empty, and
+ * that the vocabulary still validates — rather than pretending it has content.
  */
 class HireAgentSectionRegistryTest extends TestCase
 {
@@ -49,8 +54,16 @@ class HireAgentSectionRegistryTest extends TestCase
         'role-info',
     ];
 
-    /** What the owner tier adds: the material a proposal is evaluated against. */
-    private const PARTICIPANT_SECTIONS = ['services', 'compensation'];
+    /**
+     * What the owner tier adds — EMPTY, and deliberately still named.
+     *
+     * Services and Compensation lived here until they were recognised as negotiation terms and
+     * removed from the registry outright. The constant survives as the seam a future
+     * owner-and-agents section would use, and the tests that consume it now assert emptiness,
+     * which is what makes "the owner page equals the public page" a checked property rather than
+     * an accident nobody would notice changing.
+     */
+    private const PARTICIPANT_SECTIONS = [];
 
     /** What the agent tier adds on top: agent-to-agent business. */
     private const AGENT_ONLY_SECTIONS = ['referral', 'agent-credentials'];
@@ -176,10 +189,10 @@ class HireAgentSectionRegistryTest extends TestCase
     public function test_the_full_document_order_is_the_legacy_order(): void
     {
         $expected = [
-            'seller'   => ['listing-details', 'property', 'terms', 'financing', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
-            'buyer'    => ['listing-details', 'property', 'terms', 'financing', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
-            'landlord' => ['listing-details', 'property', 'terms', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
-            'tenant'   => ['listing-details', 'property', 'terms', 'pre-screening', 'services', 'additional-details', 'representation', 'compensation', 'referral', 'role-info', 'agent-credentials'],
+            'seller'   => ['listing-details', 'property', 'terms', 'financing', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'buyer'    => ['listing-details', 'property', 'terms', 'financing', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'landlord' => ['listing-details', 'property', 'terms', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'tenant'   => ['listing-details', 'property', 'terms', 'pre-screening', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
         ];
 
         foreach ($expected as $role => $keys) {
@@ -293,23 +306,33 @@ class HireAgentSectionRegistryTest extends TestCase
     // ── 2. The public page withholds the private sections ────────────────────
 
     /**
-     * THE ASSERTION THIS FILE EXISTS FOR.
+     * THE ASSERTION THIS FILE EXISTS FOR: no tier of this page carries a negotiation term.
      *
-     * A public viewer gets neither Services nor Broker Compensation, for any role, however complete
-     * the listing. Today Services renders to anonymous visitors and compensation sits behind a bare
-     * Auth::check() that admits any logged-in stranger; this is the narrowing that replaces both.
+     * Services and Broker Compensation are not withheld from the public — they are ABSENT, from
+     * the registry and therefore from every audience. Asserted against the registry itself rather
+     * than against one resolved page, because a section that is gone cannot be tested by resolving
+     * it, and the failure this guards against is somebody adding it back at any tier at all.
+     *
+     * The per-audience half of this rule — that no rendered listing page shows either subject to a
+     * guest, an owner or a qualifying agent — is HireAgentListingBidSeparationTest's.
      */
-    public function test_the_public_audience_never_receives_the_participant_sections(): void
+    public function test_negotiation_terms_are_absent_from_the_registry_at_every_tier(): void
     {
-        foreach (self::ROLES as $role) {
-            $resolved = $this->sections()->resolve($role, $this->public_(), $this->allVisible($role, $this->public_()));
+        foreach (['services', 'compensation'] as $negotiationTerm) {
+            $this->assertSame(
+                [],
+                $this->sections()->rolesFor($negotiationTerm),
+                "[{$negotiationTerm}] is a negotiation term and must not be scoped to any role."
+            );
 
-            foreach (self::PARTICIPANT_SECTIONS as $private) {
-                $this->assertArrayNotHasKey(
-                    $this->sections()->anchorId($private),
-                    $resolved,
-                    "{$role}: a public viewer received [{$private}]."
-                );
+            foreach (self::ROLES as $role) {
+                foreach ([$this->public_(), $this->owner(), $this->agent()] as $audience) {
+                    $this->assertNotContains(
+                        $negotiationTerm,
+                        $this->keysFor($role, $audience),
+                        "{$role}/{$audience}: [{$negotiationTerm}] is in scope and must not be."
+                    );
+                }
             }
         }
     }
@@ -331,11 +354,24 @@ class HireAgentSectionRegistryTest extends TestCase
     }
 
     /**
-     * The owner DOES receive the participant sections — the complement, so the assertion above
-     * cannot pass by those sections being broken for everyone.
+     * The participant tier is EMPTY, and the owner page therefore equals the public page.
+     *
+     * The complement of the assertion above, and the reason it is worth stating rather than
+     * leaving implicit: the tier's machinery is retained as framework, so "no section declares
+     * participant" is a property that could silently stop holding. When a future section does
+     * declare it, this test is the one that fails and tells its author to update the expectation
+     * deliberately rather than discovering the owner page changed by accident.
      */
-    public function test_the_owner_receives_the_participant_sections(): void
+    public function test_the_participant_tier_is_empty_so_owner_equals_public(): void
     {
+        foreach (self::ROLES as $role) {
+            $this->assertSame(
+                $this->keysFor($role, $this->public_()),
+                $this->keysFor($role, $this->owner()),
+                "{$role}: with no participant sections the owner page must equal the public page."
+            );
+        }
+
         foreach (self::ROLES as $role) {
             $resolved = $this->sections()->resolve($role, $this->owner(), $this->allVisible($role, $this->owner()));
 
@@ -387,12 +423,12 @@ class HireAgentSectionRegistryTest extends TestCase
     public function test_an_empty_section_is_withheld_even_when_in_scope(): void
     {
         $visible = $this->allVisible('buyer', $this->agent());
-        $visible['compensation'] = false;
+        $visible['financing'] = false;
 
         $resolved = $this->sections()->resolve('buyer', $this->agent(), $visible);
 
-        $this->assertArrayNotHasKey($this->sections()->anchorId('compensation'), $resolved);
-        $this->assertArrayHasKey($this->sections()->anchorId('services'), $resolved, 'Its neighbours are unaffected.');
+        $this->assertArrayNotHasKey($this->sections()->anchorId('financing'), $resolved);
+        $this->assertArrayHasKey($this->sections()->anchorId('terms'), $resolved, 'Its neighbours are unaffected.');
     }
 
     /**
@@ -446,25 +482,31 @@ class HireAgentSectionRegistryTest extends TestCase
     }
 
     /**
-     * Computing a participant section for a PUBLIC viewer is refused, and by a message that names
-     * the tier rather than calling it unknown.
+     * A guard for a RETIRED section is refused — as out of scope, not as withheld.
      *
-     * This is the mistake with a disclosure behind it: the section is real, it exists for this
-     * role, and the only thing standing between it and the page is the audience. A caller doing
-     * this has almost certainly forgotten which audience they are resolving for.
+     * This test used to compute Services for a public viewer and assert the refusal named the
+     * tier ("may not read"), because the section was real and only the audience stood between it
+     * and the page. Both are now gone from the registry entirely, so the same call is refused by
+     * the other branch: not in scope, for any audience.
+     *
+     * WORTH KEEPING RATHER THAN DELETING. A view that still passed a `services` guard after the
+     * removal would be a view that had not finished migrating, and this is what makes that a loud
+     * failure at the resolver rather than a silently ignored array key.
      */
-    public function test_computing_a_participant_section_for_the_public_audience_is_refused(): void
+    public function test_a_guard_for_a_retired_negotiation_section_is_refused(): void
     {
-        foreach (self::PARTICIPANT_SECTIONS as $private) {
-            $visible = $this->allVisible('buyer', $this->public_());
-            $visible[$private] = true;
+        foreach (['services', 'compensation'] as $retired) {
+            foreach ([$this->public_(), $this->owner(), $this->agent()] as $audience) {
+                $visible = $this->allVisible('buyer', $audience);
+                $visible[$retired] = true;
 
-            try {
-                $this->sections()->resolve('buyer', $this->public_(), $visible);
-                $this->fail("Computing [{$private}] for the public audience should have been refused.");
-            } catch (InvalidArgumentException $e) {
-                $this->assertStringContainsString($private, $e->getMessage());
-                $this->assertStringContainsString('may not read', $e->getMessage());
+                try {
+                    $this->sections()->resolve('buyer', $audience, $visible);
+                    $this->fail("Computing the retired [{$retired}] for [{$audience}] should have been refused.");
+                } catch (InvalidArgumentException $e) {
+                    $this->assertStringContainsString($retired, $e->getMessage());
+                    $this->assertStringContainsString('not in scope', $e->getMessage());
+                }
             }
         }
     }
@@ -624,7 +666,10 @@ class HireAgentSectionRegistryTest extends TestCase
         sort($consumers);
 
         $this->assertSame(
-            ['resources/views/hire_buyer_agent/view.blade.php'],
+            [
+                'resources/views/hire_buyer_agent/view.blade.php',
+                'resources/views/hire_landlord_agent/view.blade.php',
+            ],
             $consumers,
             'The set of views resolving sections must stay known.'
         );

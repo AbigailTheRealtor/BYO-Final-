@@ -111,24 +111,12 @@
             font-weight: normal;
             color: #34465c;
         }
-    /* Broker Compensation subsection headers - breathing room */
-        .hla-detail-page h5.mt-3.mb-2 {
-            padding-top: var(--viho-space-md);
-            margin-top: 1rem !important;
-        }
     /* Fix blank space under section headers - reduce gap to first content */
         .hla-detail-page .card-body {
             padding-top: 12px !important;
         }
     .hla-detail-page .card-body > :first-child {
             margin-top: 0 !important;
-        }
-    /* Broker Compensation section text - match other section text color */
-        .hla-detail-page .broker-compensation-section,
-        .hla-detail-page .broker-compensation-section p,
-        .hla-detail-page .broker-compensation-section .col-md-12,
-        .hla-detail-page .broker-compensation-section .fw-bold {
-            color: #34465c !important;
         }
     .hla-detail-page ul {
             --icon-size: 1em;

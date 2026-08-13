@@ -60,9 +60,9 @@ class HireAgentSectionNavTest extends TestCase
      * compare sequences, not sets.
      */
     private const ALWAYS_PRESENT = [
-        'hla-section-property-details',
-        'hla-section-leasing-terms',
-        'hla-section-owner-info',
+        'hla-section-property',
+        'hla-section-terms',
+        'hla-section-role-info',
     ];
 
     // ── Fixtures ─────────────────────────────────────────────────────────────
@@ -353,42 +353,23 @@ class HireAgentSectionNavTest extends TestCase
         }
     }
 
-    // ── Compensation, in both directions ─────────────────────────────────────
+    // ── Negotiation terms, and the agent-only appendix ───────────────────────
 
     /**
-     * A guest is offered no compensation entry.
+     * NO VIEWER IS OFFERED A SERVICES OR BROKER COMPENSATION ENTRY.
      *
-     * The section itself sits behind Auth::check(), so an entry for it would advertise, by name, a
-     * section the viewer can never reach.
-     */
-    public function test_a_guest_is_offered_no_compensation_entry(): void
-    {
-        $this->enableRedesign();
-
-        $html = $this->get($this->url($this->listingWithEverySection()))->assertOk()->getContent();
-
-        $this->assertNotContains(
-            'hla-section-compensation',
-            $this->navTargets($html),
-            'A guest must not be offered the compensation section.'
-        );
-        $this->assertStringNotContainsString(
-            'Broker Compensation',
-            $this->navMarkup($html),
-            'The bar must not name a section an anonymous visitor is never served.'
-        );
-
-        // The nav must still agree with what did render.
-        $this->assertSame($this->anchorIds($html), $this->navTargets($html));
-    }
-
-    /**
-     * An authenticated viewer IS offered it.
+     * This pair of tests used to assert compensation in BOTH directions — withheld from a guest,
+     * offered to an authenticated viewer — because the section was real and the only question was
+     * who could reach it. Both sections are now gone from the page at every tier: they are
+     * negotiation terms an agent proposes on a bid, not listing detail.
      *
-     * Without this, the guest assertion above would pass just as well if the entry were broken for
-     * everyone — the vacuous-pass trap HireAgentDetailViewPrivacyTest fell into once already.
+     * ASSERTED FOR THE OWNER, NOT A GUEST, and that is the point. A guest assertion would pass
+     * just as happily if the entries were broken for everyone — the vacuous-pass trap
+     * HireAgentDetailViewPrivacyTest fell into once already. The owner is the WIDEST audience that
+     * could plausibly still be shown these, and the listing is fully populated, so if either
+     * survived anywhere it would surface here.
      */
-    public function test_an_authenticated_viewer_is_offered_the_compensation_entry(): void
+    public function test_no_negotiation_term_is_offered_to_the_listing_owner(): void
     {
         $this->enableRedesign();
 
@@ -398,10 +379,46 @@ class HireAgentSectionNavTest extends TestCase
 
         $html = $this->get($this->url($listing))->assertOk()->getContent();
 
-        $this->assertContains(
-            'hla-section-compensation',
-            $this->navTargets($html),
-            'The compensation section renders for an authenticated viewer, so it must be offered.'
-        );
+        foreach (['hla-section-services', 'hla-section-compensation'] as $retired) {
+            $this->assertNotContains(
+                $retired,
+                $this->navTargets($html),
+                "{$retired} is a negotiation term and must not be offered on the listing view."
+            );
+        }
+
+        foreach (['Services', 'Broker Compensation'] as $label) {
+            $this->assertStringNotContainsString(
+                $label,
+                $this->navMarkup($html),
+                "The bar must not name [{$label}] — it belongs to the proposal workflow."
+            );
+        }
+
+        // The nav must still agree with what did render.
+        $this->assertSame($this->anchorIds($html), $this->navTargets($html));
+    }
+
+    /**
+     * The bar still offers something, so the assertions above cannot pass vacuously.
+     *
+     * A page that rendered no nav at all would satisfy every "must not contain" above. This is the
+     * positive control: the owner of a fully populated listing is offered the real sections.
+     */
+    public function test_the_owner_is_still_offered_the_listing_sections(): void
+    {
+        $this->enableRedesign();
+
+        $listing = $this->listingWithEverySection();
+
+        $this->actingAs($listing->user);
+
+        $nav = $this->navTargets($this->get($this->url($listing))->assertOk()->getContent());
+
+        foreach (self::ALWAYS_PRESENT as $id) {
+            $this->assertContains($id, $nav, "{$id} must still be offered.");
+        }
+
+        $this->assertContains('hla-section-representation', $nav);
     }
 }

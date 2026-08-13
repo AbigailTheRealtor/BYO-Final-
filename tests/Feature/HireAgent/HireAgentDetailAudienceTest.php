@@ -646,7 +646,10 @@ class HireAgentDetailAudienceTest extends TestCase
         sort($consumers);
 
         $this->assertSame(
-            ['resources/views/hire_buyer_agent/view.blade.php'],
+            [
+                'resources/views/hire_buyer_agent/view.blade.php',
+                'resources/views/hire_landlord_agent/view.blade.php',
+            ],
             $consumers,
             'The set of views consuming the audience must stay known.'
         );

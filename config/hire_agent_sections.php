@@ -52,9 +52,9 @@ return [
     | things at once: a listing anyone can open — the route carries `web` and no
     | auth — and the host of a private proposal workflow where a client accepts,
     | rejects or counters agent bids. A single "logged in or not" gate cannot
-    | serve both, and the page's history is the proof: Services renders to
-    | anonymous visitors today, and Broker Compensation sits behind a bare
-    | Auth::check() that admits any logged-in stranger.
+    | serve both, and the page's history is the proof: Referral & Cooperation
+    | Terms rendered to anonymous visitors, and Broker Compensation sat behind a
+    | bare Auth::check() that admitted any logged-in stranger.
     |
     | So a section declares the LOWEST audience tier that may read it, and every
     | wider tier inherits. The tiers are strictly nested — public ⊂ owner ⊂ agent
@@ -64,7 +64,7 @@ return [
     | 'public'      — every viewer, including anonymous. The request itself: what
     |                 is wanted, where, on what terms.
     | 'participant' — the listing OWNER and qualifying AGENTS, and nobody else.
-    |                 The material a proposal is evaluated against.
+    |                 CURRENTLY UNUSED; see the note below.
     | 'agent'       — qualifying agents only. Agent-to-agent business.
     |
     | The narrowing is an authorization decision and it is NOT made here: this
@@ -73,47 +73,59 @@ return [
     | would be a second opinion about a rule that already has an owner.
     |
     |
-    | ── WHY SERVICES AND BROKER COMPENSATION ARE 'participant' ───────────────
+    | ── EVERY LISTING SECTION IS 'public' OR 'agent' ─────────────────────────
     |
-    | They were briefly removed from this registry altogether, on the reasoning
-    | that compensation belongs to the hire agreement and that Representation
-    | Preferences & Compatibility supersedes Services. That was right about the
-    | PUBLIC page and wrong about the private one, and the correction is the
-    | reason the 'participant' tier exists.
+    | THE 'participant' TIER HAS NO MEMBERS, and the machinery is kept anyway —
+    | the constant, the VISIBLE_TO row in HireAgentDetailSections, and its entry
+    | in `section_audiences` below. It is deliberately retained as framework for
+    | a future section that genuinely belongs to owner-and-agents, and removing
+    | it would be a refactor of the audience model for no behavioural gain.
     |
-    | A client reading proposals on their own request needs both: they are what a
-    | bid is measured against, and without them "accept, reject or counter" is a
-    | decision made blind. An agent weighing whether to propose needs them for the
-    | same reason. A passer-by needs neither, and today gets both.
+    | A consequence worth knowing while it holds: with no participant sections,
+    | the 'public' and 'owner' tiers resolve to IDENTICAL section sets for every
+    | role. The audience model is three-tier by construction and two-tier in
+    | practice. Nothing depends on that being true, and adding one participant
+    | section restores the distinction without touching any other code.
     |
-    | NOTE WHICH DATA THIS IS. These sections render the LISTING's own answers —
-    | `$auction->get->services`, `$auction->get->commission_structure` — the
-    | client's request and offer. The AGENT'S proposal carries its own services
-    | and compensation, rendered on the per-bid cards and in the "Private
-    | Compensation & Agreement Terms" modal further down the page, and narrowed
-    | server-side by HireAgentProposalAccess. That surface is untouched by this
-    | registry and was already correct: owner sees every proposal, an agent sees
-    | their own, a competitor sees nothing. Two different bodies of data with
-    | similar names, and conflating them is how one of them ends up public.
     |
-    | NET EFFECT VERSUS TODAY, both narrowings:
-    |   · Services      public → owner and qualifying agents
-    |   · Compensation  any authenticated user → owner and qualifying agents
+    | ── WHY SERVICES AND BROKER COMPENSATION ARE NOT HERE ────────────────────
     |
-    | The second closes the question left open since M5.0b in
-    | docs/investigations/hire-agent-compensation-visibility-decision.md, whose
-    | unanswered row was "a competing agent bidding on the same listing can read
-    | the compensation terms". Under the participant tier they still can, because
-    | they are a participant — but a logged-in stranger no longer can.
+    | THEY ARE NEGOTIATION TERMS, NOT LISTING DETAIL. A listing section describes
+    | the REQUEST: what the client wants, where, on what terms, and how they want
+    | to be worked with. Services and compensation are what an agent OFFERS in a
+    | proposal and what the client then accepts, rejects or counters. They belong
+    | to the bid workflow at every tier of viewer, including the listing's own
+    | owner, and no audience widening puts them back on this page.
+    |
+    | THIS REVERSES AN EARLIER DECISION RECORDED HERE, and the reversal is the
+    | reason this note is long. Both sections were once carried at 'participant',
+    | on the reasoning that a client reading proposals needs to see what those
+    | proposals are measured against. That argument mistook WHERE the material
+    | belongs for WHETHER the client may see it: the client does need to weigh
+    | services and compensation, and they do so on the proposal cards, against
+    | each agent's actual offer — not against a copy of their own request
+    | rendered as a listing section. One body of data, one surface.
+    |
+    | NOTE WHICH DATA THIS GOVERNS. It is the LISTING's own answers —
+    | `$auction->get->services`, `$auction->get->commission_structure`. The
+    | AGENT'S proposal carries its own services and compensation, rendered on the
+    | per-bid cards and in the "Private Compensation & Agreement Terms" modal,
+    | and narrowed server-side by HireAgentProposalAccess. That surface is
+    | untouched by this registry and is the one place either subject appears:
+    | owner sees every proposal, an agent sees their own, a competitor sees
+    | nothing. Two bodies of data with similar names, and conflating them is how
+    | one of them ended up public.
     |
     | NO DATA IS DELETED OR MOVED. Services remain a weighted dimension in
-    | config/match_scoring.php, remain on agent proposals, and both remain in the
-    | accepted-bid summary.
+    | config/match_scoring.php, remain on agent proposals, remain in the
+    | *_services_order.php display configs, and both remain in the accepted-bid
+    | summary. Only the listing-view SECTIONS are gone.
     |
-    | LEGACY RENDERING IS UNTOUCHED. Both sections still render with the redesign
-    | off, exactly as they always have, and
-    | HireAgentSectionCardDomEquivalenceTest pins their headings for all four
-    | roles. This registry describes the redesigned page only.
+    | THE LEGACY BRANCH GOES TOO. Unlike every other decision in this file, this
+    | one is not scoped to the redesigned page: the four role views no longer
+    | render either section with the redesign flag off either, and
+    | HireAgentSectionCardDomEquivalenceTest no longer pins their headings.
+    | A rule about what a listing IS cannot be conditional on a rollout switch.
     |
     */
 
@@ -203,54 +215,31 @@ return [
         ],
 
         /*
-         | ── TIERS ARE INTERLEAVED, AND THAT IS FORCED BY THE LEGACY PAGE ─────
-         |
-         | An earlier draft grouped the tiers — every public section, then the
-         | participant pair, then the agent pair — so that each audience's page
-         | was a clean PREFIX of the next one's. That is a nicer property and it
-         | had to go.
+         | ── ORDER IS DOCUMENT ORDER, AND IT FOLLOWS THE LEGACY PAGE ──────────
          |
          | ARRAY ORDER IS DOCUMENT ORDER, and document order is not free: with the
          | redesign OFF these same sections render in the order the four views
          | have always rendered them, and
          | HireAgentSectionCardDomEquivalenceTest pins that order verbatim for
-         | every role. Reordering the registry to group the tiers would have meant
-         | physically moving blocks in the role views, which changes the legacy
-         | order too and breaks that pin. The legacy page is not negotiable, so
-         | the registry follows it.
+         | every role. Reordering the registry would mean physically moving blocks
+         | in the role views, which changes the legacy order too and breaks that
+         | pin. The legacy page is not negotiable, so the registry follows it.
          |
-         | Services and Broker Compensation therefore sit where they have always
-         | sat — between Financing and Additional Details, and after
-         | Representation — and the two agent sections sit at the end. One order
-         | serves all four roles: landlord's already-migrated nav is
-         | listing-details, property, terms, services, additional-details,
-         | representation, compensation, referral, role-info, and seller, buyer
-         | and tenant render the same sequence with their own labels.
+         | The removal of Services and Broker Compensation did not disturb this.
+         | They sat between Financing and Additional Details, and after
+         | Representation; deleting an entry closes the gap without moving
+         | anything around it, and the surviving sequence is what the four views
+         | already rendered with those two blocks taken out.
          |
-         | The cost is only that a narrower viewer's page has gaps where a section
-         | was withheld. Nothing renders in a gap, so there is nothing to see.
+         | One order serves all four roles: listing-details, property, terms,
+         | [financing | pre-screening], additional-details, representation,
+         | referral, role-info, agent-credentials — each role rendering the
+         | subset it has labels for, with its own words.
+         |
+         | The tiers are interleaved rather than grouped, so a narrower viewer's
+         | page has gaps where an agent-only section was withheld. Nothing renders
+         | in a gap, so there is nothing to see.
          */
-
-        /*
-         | Services. What the client is asking an agent to do — the checklist a
-         | proposal is measured against, and a scored matching dimension.
-         |
-         | NOT superseded by Representation Preferences, which was the reasoning
-         | for briefly removing it. Representation states HOW the client wants to
-         | be worked with; Services states WHAT they want done. A bid is evaluated
-         | against the second.
-         */
-        [
-            'id'       => 'services',
-            'audience' => 'participant',
-            'icon'     => 'fa-solid fa-list-check',
-            'labels'   => [
-                'seller'   => 'Services',
-                'buyer'    => 'Services',
-                'landlord' => 'Services',
-                'tenant'   => 'Services',
-            ],
-        ],
 
         [
             'id'       => 'additional-details',
@@ -282,26 +271,6 @@ return [
                 'buyer'    => 'Representation Preferences',
                 'landlord' => 'Representation Preferences',
                 'tenant'   => 'Representation Preferences',
-            ],
-        ],
-
-        /*
-         | Broker Compensation & Agency Agreement Terms — the listing's own, not a
-         | bid's. What the client is offering, which is what makes a proposal's
-         | own compensation terms comparable to anything.
-         |
-         | Today this sits behind a bare Auth::check(), so any logged-in stranger
-         | reads it. The participant tier is the narrowing that gate never had.
-         */
-        [
-            'id'       => 'compensation',
-            'audience' => 'participant',
-            'icon'     => 'fa-solid fa-dollar-sign',
-            'labels'   => [
-                'seller'   => 'Broker Compensation',
-                'buyer'    => 'Broker Compensation',
-                'landlord' => 'Broker Compensation',
-                'tenant'   => 'Broker Compensation',
             ],
         ],
 

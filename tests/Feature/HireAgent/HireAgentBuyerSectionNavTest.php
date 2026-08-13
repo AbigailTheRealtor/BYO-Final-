@@ -53,7 +53,14 @@ class HireAgentBuyerSectionNavTest extends TestCase
     ];
 
     /** What the owner tier adds — the material proposals are evaluated against. */
-    private const PARTICIPANT_SECTIONS = ['hla-section-services', 'hla-section-compensation'];
+    /**
+     * The negotiation-term sections, kept named so the tests can assert they are GONE.
+     *
+     * These were the participant tier. They are no longer sections of this page at any tier —
+     * an agent proposes services and compensation on a bid, and the client accepts, rejects or
+     * counters there. The constant survives as the list of ids that must never reappear.
+     */
+    private const RETIRED_NEGOTIATION_SECTIONS = ['hla-section-services', 'hla-section-compensation'];
 
     /** What the agent tier adds on top — agent-to-agent business. */
     private const AGENT_SECTIONS = ['hla-section-referral', 'hla-section-agent-credentials'];
@@ -79,8 +86,6 @@ class HireAgentBuyerSectionNavTest extends TestCase
                 'buyer_specific' => ['primary_transaction_goal' => 'Primary residence'],
             ])],
             'hla-section-role-info'          => ['first_name' => 'Abby'],
-            'hla-section-services'           => ['services' => json_encode(['List on the MLS'])],
-            'hla-section-compensation'       => ['commission_structure' => 'Percentage'],
             'hla-section-referral'           => ['referral_percentage' => '25'],
         ];
     }
@@ -260,17 +265,26 @@ class HireAgentBuyerSectionNavTest extends TestCase
             'Property Preferences:',
             'Purchasing Terms:',
             'Financing Details:',
-            'Services:',
             'Additional Details:',
             'Representation Preferences & Compatibility:',
-            'Broker Compensation & Agency Agreement Terms:',
             'Referral & Cooperation Terms',
             "Buyer's Info",
         ], $headings, 'The flag-off headings and their order must not move.');
     }
 
-    /** Flag off shows Services and Compensation to everyone, exactly as it always has. */
-    public function test_the_flag_off_page_still_shows_services_and_compensation_to_a_guest(): void
+    /**
+     * FLAG OFF STILL SHOWS NO SERVICES AND NO BROKER COMPENSATION.
+     *
+     * This test asserted the opposite until the rule changed: the legacy branch rendered both to
+     * everyone, and the redesign was the only thing narrowing them. They are now gone from the
+     * page outright, because "a listing view does not carry negotiation terms" is a statement
+     * about what a listing IS and cannot be conditional on a rollout switch.
+     *
+     * THE FLAG-OFF PAGE IS WHERE THIS MATTERS MOST. Three of the four roles still render with the
+     * redesign off, so a rule that only held in the redesigned branch would leave the majority of
+     * production traffic unchanged.
+     */
+    public function test_the_flag_off_page_shows_no_negotiation_terms_to_a_guest(): void
     {
         $this->disableRedesign();
 
@@ -281,7 +295,11 @@ class HireAgentBuyerSectionNavTest extends TestCase
         // that has nothing to do with visibility.
         $text = $this->xpath($html)->document->textContent;
 
-        $this->assertStringContainsString('Services:', $text);
+        $this->assertStringNotContainsString('Services:', $text);
+        $this->assertStringNotContainsString('Broker Compensation', $text);
+
+        // The positive control: the legacy page still renders, so the absences above mean
+        // something. Referral is the neighbour that used to sit immediately after compensation.
         $this->assertStringContainsString('Referral & Cooperation Terms', $text);
     }
 
@@ -316,7 +334,7 @@ class HireAgentBuyerSectionNavTest extends TestCase
 
         $this->assertSame(self::PUBLIC_SECTIONS, $anchors, "{$viewer}: wrong section set.");
 
-        foreach (array_merge(self::PARTICIPANT_SECTIONS, self::AGENT_SECTIONS) as $private) {
+        foreach (array_merge(self::RETIRED_NEGOTIATION_SECTIONS, self::AGENT_SECTIONS) as $private) {
             $this->assertNotContains($private, $anchors, "{$viewer} reached [{$private}].");
             $this->assertNotContains($private, $this->navTargets($html), "{$viewer} was offered [{$private}].");
         }
@@ -342,10 +360,15 @@ class HireAgentBuyerSectionNavTest extends TestCase
     // ── 3. The owner tier ────────────────────────────────────────────────────
 
     /**
-     * The owner reads everything public plus Services and Broker Compensation — the material a
-     * proposal is measured against — and NOT the agent-to-agent appendix.
+     * The owner reads the request and NEITHER negotiation term, nor the agent-to-agent appendix.
+     *
+     * THE OWNER IS THE DISCRIMINATING CASE for the new rule. Withholding Services and Broker
+     * Compensation from a passer-by was never controversial; withholding them from the person the
+     * proposals were written for is the part that changed, and it is what makes this a statement
+     * about where the material belongs rather than about who may read it. The owner still weighs
+     * services and compensation — on each agent's proposal, against that agent's actual offer.
      */
-    public function test_the_owner_sees_services_and_compensation_but_not_the_agent_sections(): void
+    public function test_the_owner_sees_neither_negotiation_term_nor_the_agent_sections(): void
     {
         $this->enableRedesign();
 
@@ -355,26 +378,24 @@ class HireAgentBuyerSectionNavTest extends TestCase
 
         $anchors = $this->anchorIds($html);
 
-        foreach (self::PARTICIPANT_SECTIONS as $private) {
-            $this->assertContains($private, $anchors, "The owner must reach [{$private}].");
-            $this->assertContains($private, $this->navTargets($html), "The owner must be offered [{$private}].");
+        foreach (self::RETIRED_NEGOTIATION_SECTIONS as $retired) {
+            $this->assertNotContains($retired, $anchors, "The owner reached the retired [{$retired}].");
+            $this->assertNotContains($retired, $this->navTargets($html), "The owner was offered [{$retired}].");
         }
 
         foreach (self::AGENT_SECTIONS as $agentOnly) {
             $this->assertNotContains($agentOnly, $anchors, "The owner reached [{$agentOnly}].");
         }
 
-        // DECODED, and the reason is a change in ENCODING rather than in behaviour. The Broker
-        // Compensation rows now render through x-hire-agent.field, so a label reaches the page via
-        // `{{ $label }}` instead of sitting in the template as literal text — and the apostrophe in
-        // "Buyer's" is therefore emitted as `&#039;`. The row, its text and its position are
-        // unchanged; only the entity is. Decoding keeps this assertion about what it was written to
-        // ask — did the row render, not just the card — rather than about escaping.
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             "Buyer's Broker Commission Structure",
             html_entity_decode($html, ENT_QUOTES),
             'The rows, not just the card.'
         );
+
+        // Positive control: the owner still gets the real listing sections, so the absences above
+        // are a narrowing rather than a blank page.
+        $this->assertContains('hla-section-representation', $anchors);
     }
 
     // ── 4. The agent tier ────────────────────────────────────────────────────
@@ -386,7 +407,7 @@ class HireAgentBuyerSectionNavTest extends TestCase
      * client-owned request there is no agent whose credentials it could show, so its absence here
      * is correct rather than a gap.
      */
-    public function test_a_qualifying_agent_sees_services_compensation_and_referral(): void
+    public function test_a_qualifying_agent_sees_referral_but_no_negotiation_terms(): void
     {
         $this->enableRedesign();
 
@@ -396,12 +417,15 @@ class HireAgentBuyerSectionNavTest extends TestCase
 
         $anchors = $this->anchorIds($html);
 
-        foreach (array_merge(self::PARTICIPANT_SECTIONS, ['hla-section-referral']) as $key) {
-            $this->assertContains($key, $anchors, "A qualifying agent must reach [{$key}].");
-            $this->assertContains($key, $this->navTargets($html), "…and be offered it.");
-        }
-
+        $this->assertContains('hla-section-referral', $anchors, 'A qualifying agent must reach referral.');
+        $this->assertContains('hla-section-referral', $this->navTargets($html), '…and be offered it.');
         $this->assertStringContainsString('Referral Fee:', $html);
+
+        // The agent is the WIDEST tier, so if either negotiation term survived anywhere on the
+        // listing view it would surface here.
+        foreach (self::RETIRED_NEGOTIATION_SECTIONS as $retired) {
+            $this->assertNotContains($retired, $anchors, "A qualifying agent reached the retired [{$retired}].");
+        }
     }
 
     /** All three agent user types qualify — not just 'agent'. */

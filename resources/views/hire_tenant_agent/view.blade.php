@@ -642,43 +642,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                <hr>
 
-                @php
-                // Check if services exist before showing the section
-                $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
-                @endphp
-
-                @if ($hasServices)
-                {{-- The dropped `services-section-header` contributed one rule,
-                     `margin-top: 0.75rem !important`. VIHO owns section spacing now, so carrying
-                     it would re-introduce an override against the system being adopted. Landlord,
-                     Seller and Buyer all dropped it here too. --}}
-                <x-viho.section-header title="Services:" tag="h4" />
-
-                {{-- Use shared partial for services display - supports snapshot + canonical fallback --}}
-                @include('partials.tenant.services_snapshot', ['auction' => $auction])
-                @endif
-
-                @php
-                    $ccsRawTenant = @$auction->get->client_custom_services;
-                    $clientCustomServicesTenant = is_array($ccsRawTenant)
-                        ? $ccsRawTenant
-                        : (is_string($ccsRawTenant) ? (json_decode($ccsRawTenant, true) ?? []) : []);
-                    $clientCustomServicesTenant = array_values(array_filter($clientCustomServicesTenant, fn($s) => is_string($s) && trim($s) !== ''));
-                @endphp
-                @if (!empty($clientCustomServicesTenant))
-                <div class="col-md-12 col-12 pt-2">
-                    <div class="mt-3">
-                        <strong>📋 Client Requested Services</strong>
-                        <ul class="services">
-                            @foreach ($clientCustomServicesTenant as $ccs)
-                            <li style="font-size: 16px;">{{ $ccs }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-                @endif
                 <hr>
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
                 <x-viho.section-header title="Additional Details:" tag="h4" />
@@ -778,282 +742,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endforeach
                 @endif
 
-                @php
-                    $brokerSectionHasData = (
-                        !empty(@$auction->get->commission_structure) ||
-                        !empty(@$auction->get->lease_fee_type) ||
-                        !empty(@$auction->get->broker_fee_timing) ||
-                        !empty(@$auction->get->broker_fee_days_from_rent) ||
-                        !empty(@$auction->get->broker_fee_days_after_lease) ||
-                        !empty(@$auction->get->broker_fee_days_after_rent) ||
-                        !empty(@$auction->get->broker_fee_days_after_due_event) ||
-                        !empty(@$auction->get->interested_purchase_fee_type) ||
-                        !empty(@$auction->get->interested_lease_option_agreement) ||
-                        !empty(@$auction->get->protection_period) ||
-                        !empty(@$auction->get->early_termination_fee_option) ||
-                        !empty(@$auction->get->retainer_fee_option) ||
-                        !empty(@$auction->get->agency_agreement_timeframe) ||
-                        !empty(@$auction->get->brokerage_relationship) ||
-                        \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker)
-                    );
-                @endphp
-
-                {{-- R3/C10: gate broker compensation behind auth, matching seller/landlord/buyer hire views (was ungated → leaked to anonymous visitors). --}}
-                @if ($brokerSectionHasData && Auth::check())
-                <hr />
-                <x-viho.section-header title="Broker Compensation & Agency Agreement Terms:" tag="h4" />
-
-                <!-- Tenant's Broker Compensation Sub-section -->
-                <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
-                <div class="broker-compensation-section">
-
-                @if (@$auction->get->commission_structure != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant's Broker Commission Structure:
-                    <span class="removeBold">
-                        @php
-                            $commissionDisplay = @$auction->get->commission_structure;
-                            if ($commissionDisplay === 'Included in Offer') {
-                                $commissionDisplay = 'Requested From Landlord in the Offer';
-                            } elseif ($commissionDisplay === 'Out-of-Pocket Payment') {
-                                $commissionDisplay = 'Tenant Pays Out-of-Pocket';
-                            }
-                        @endphp
-                        {{ $commissionDisplay }}
-                    </span>
-                </div>
-                @endif
-
-@if (@$auction->get->lease_fee_type != null)
-                @php
-                    // Build combined Tenant's Broker Commission Fee display for listing
-                    $listingLeaseFeeType = @$auction->get->lease_fee_type ?? '';
-                    $listingLeaseFeeCombined = '-';
-                    
-                    if ($listingLeaseFeeType === 'Flat Fee' && @$auction->get->lease_fee_flat) {
-                        $listingLeaseFeeCombined = $fmtMoney(@$auction->get->lease_fee_flat);
-                    } elseif ($listingLeaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage) {
-                        $listingLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage) . ' of Gross Lease Value';
-                    } elseif ($listingLeaseFeeType === 'Percentage of Monthly Rent' && @$auction->get->lease_fee_percentage_monthly_rent) {
-                        $display = $fmtPercent(@$auction->get->lease_fee_percentage_monthly_rent) . ' of Monthly Rent';
-                        if (@$auction->get->lease_fee_percentage_monthly_number) {
-                            $display .= ' x ' . @$auction->get->lease_fee_percentage_monthly_number . ' Months';
-                        }
-                        $listingLeaseFeeCombined = $display;
-                    } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                        $listingLeaseFeeCombined = $joinParts([
-                            $fmtMoney(@$auction->get->lease_fee_flat_combo),
-                            @$auction->get->lease_fee_percentage_combo ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Gross Lease Value') : null,
-                        ]) ?? '-';
-                    } elseif ($listingLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net) {
-                        $listingLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
-                    } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
-                        $listingLeaseFeeCombined = $joinParts([
-                            $fmtMoney(@$auction->get->lease_fee_flat_combo_net),
-                            @$auction->get->lease_fee_percentage_combo_net ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo_net) . ' of Net Aggregate Rent') : null,
-                        ]) ?? '-';
-                    } elseif (strtolower($listingLeaseFeeType) === 'other' && @$auction->get->lease_fee_other) {
-                        $listingLeaseFeeCombined = @$auction->get->lease_fee_other;
-                    } elseif ($listingLeaseFeeType) {
-                        $listingLeaseFeeCombined = $listingLeaseFeeType;
-                    }
-                @endphp
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant's Broker Commission Fee:
-                    <span class="removeBold">{{ $listingLeaseFeeCombined }}</span>
-                </div>
-                @endif
-
-                @php
-                    $brokerTimingMap = [
-                        'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
-                        'half_execution_half_occupancy' => '50% due upon execution, 50% due upon occupancy of premises',
-                        'half_execution_half_commencement' => '50% due upon execution, 50% due upon commencement of agreement',
-                    ];
-                    $rawBrokerTiming = @$auction->get->broker_fee_timing;
-                    if ($rawBrokerTiming === 'other') {
-                        $displayBrokerTiming = $auction->get->broker_fee_timing_other ?? '';
-                    } else {
-                        $displayBrokerTiming = $brokerTimingMap[$rawBrokerTiming] ?? str_replace('_', ' ', ucfirst($rawBrokerTiming ?? ''));
-                    }
-                    $calendarDaysValue = collect([
-                        @$auction->get->broker_fee_days_from_rent,
-                        @$auction->get->broker_fee_days_after_lease,
-                        @$auction->get->broker_fee_days_after_rent,
-                        @$auction->get->broker_fee_days_after_due_event,
-                    ])->filter(fn($v) => $v !== null && $v !== '')->first();
-                    if ($calendarDaysValue) {
-                        if ($rawBrokerTiming === 'Paid Within Calendar Days After Executed Lease') {
-                            $displayBrokerTiming = 'Paid Within ' . $calendarDaysValue . ' Calendar Days After Executed Lease';
-                            $calendarDaysValue = null;
-                        } elseif ($rawBrokerTiming === 'Paid Within Calendar Days of Tenant Rent Payment') {
-                            $displayBrokerTiming = 'Paid Within ' . $calendarDaysValue . ' Calendar Days of Tenant Rent Payment';
-                            $calendarDaysValue = null;
-                        } elseif ($rawBrokerTiming === 'Deducted from Rent Collected') {
-                            $displayBrokerTiming = 'Deducted from Rent Collected (' . $calendarDaysValue . ' Calendar Days to Pay Balance)';
-                            $calendarDaysValue = null;
-                        }
-                    }
-                @endphp
-                @if ($rawBrokerTiming != null || $calendarDaysValue)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Payment Timing for Broker Fees:
-                    <span class="removeBold">
-                        @if ($calendarDaysValue)
-                            {{ $displayBrokerTiming }} — {{ $calendarDaysValue }} calendar days
-                        @else
-                            {{ $displayBrokerTiming }}
-                        @endif
-                    </span>
-                </div>
-                @endif
-
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-                <!-- Purchase Fee Details Sub-section -->
-                @if (@$auction->get->interested_purchase_fee_type != null)
-                <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Interested in Purchasing a Property:
-                    <span class="removeBold">{{ $auction->get->interested_purchase_fee_type ?? '' }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null)
-                @php
-                    // Build combined Purchase Fee display for listing
-                    $listingPurchaseFeeType = @$auction->get->purchase_fee_type ?? '';
-                    $listingPurchaseFeeCombined = '-';
-                    
-                    if ($listingPurchaseFeeType === 'Flat Fee') {
-                        $listingPurchaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat) ?? '-';
-                    } elseif ($listingPurchaseFeeType === 'Percentage of the Total Purchase Price') {
-                        $pct = @$auction->get->purchase_fee_percentage;
-                        $listingPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '-';
-                    } elseif ($listingPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                        $listingPurchaseFeeCombined = $joinParts([
-                            $fmtMoney(@$auction->get->purchase_fee_flat_combo),
-                            @$auction->get->purchase_fee_percentage_combo ? ($fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price') : null,
-                        ]) ?? '-';
-                    } elseif ($listingPurchaseFeeType === 'other') {
-                        $listingPurchaseFeeCombined = @$auction->get->purchase_fee_other ?? '-';
-                    }
-                @endphp
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Purchase Fee:
-                    <span class="removeBold">{{ $listingPurchaseFeeCombined }}</span>
-                </div>
-                @endif
-
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-                <!-- Lease-Option Details Sub-section -->
-                @if (@$auction->get->interested_lease_option_agreement != null)
-                <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Interested in a Lease-Option Agreement:
-                    <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->interested_lease_option_agreement === 'Yes')
-                @if (@$auction->get->lease_value != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Compensation for Creating the Lease-Option Agreement:
-                    <span class="removeBold">
-                        @if (@$auction->get->lease_type === 'percent')
-                            {{ $auction->get->lease_value }}% of Total Purchase Price
-                        @else
-                            ${{ number_format((float)str_replace(',', '', $auction->get->lease_value), 0) }}
-                        @endif
-                    </span>
-                </div>
-                @endif
-
-                @if (@$auction->get->purchase_value != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Compensation if Purchase Option is Exercised:
-                    <span class="removeBold">
-                        @if (@$auction->get->purchase_type === 'percent')
-                            {{ $auction->get->purchase_value }}% of Total Purchase Price
-                        @else
-                            ${{ number_format((float)str_replace(',', '', $auction->get->purchase_value), 0) }}
-                        @endif
-                    </span>
-                </div>
-                @endif
-
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-                <!-- Legal Terms Sub-section -->
-                @if (@$auction->get->protection_period != null || @$auction->get->early_termination_fee_option != null || @$auction->get->retainer_fee_option != null || @$auction->get->agency_agreement_timeframe != null)
-                <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
-                @endif
-
-                @if (@$auction->get->protection_period != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Protection Period Timeframe:
-                    <span class="removeBold">{{ $auction->get->protection_period ?? '' }} Days</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->early_termination_fee_option != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Early Termination Fee:
-                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->early_termination_fee_option, @$auction->get->early_termination_fee_amount ? '$' . number_format((float)str_replace(',', '', @$auction->get->early_termination_fee_amount), 0) : null) }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->retainer_fee_option != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Retainer Fee:
-                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->retainer_fee_option, @$auction->get->retainer_fee_amount ? '$' . number_format((float)str_replace(',', '', @$auction->get->retainer_fee_amount), 0) : null) }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->retainer_fee_option === 'Yes' && @$auction->get->retainer_fee_application != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Retainer Fee Application:
-                    <span class="removeBold">
-                        {{ $auction->get->retainer_fee_application === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}
-                    </span>
-                </div>
-                @endif
-
-                @if (@$auction->get->agency_agreement_timeframe != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant Agency Agreement Timeframe:
-                    <span class="removeBold">
-                        {{ $auction->get->agency_agreement_timeframe === 'Other' ? $auction->get->agency_agreement_custom : $auction->get->agency_agreement_timeframe }}
-                    </span>
-                </div>
-                @endif
-
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-                <!-- Brokerage Relationship Sub-section -->
-                @if (@$auction->get->brokerage_relationship != null)
-                <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Acceptable Brokerage Relationship:
-                    <span class="removeBold">{{ $auction->get->brokerage_relationship ?? '' }}</span>
-                </div>
-                @endif
-
-                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker))
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-                <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
-
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Additional Terms:
-                    <span class="removeBold">{{ $auction->get->additional_details_broker }}</span>
-                </div>
-                @endif
-
-                </div> <!-- end broker-compensation-section -->
-                @endif
-                @endif
 
                 @php
                     $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
@@ -1240,11 +928,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
     </div>
     @endif
-</div>
-{{-- Milestone 5A.2-T (1 of 2): .leftCol was never closed before .rightCol opened, so the entire
-     sidebar rendered INSIDE the eight-column main region instead of beside it. This closer ends
-     .leftCol so .rightCol becomes its sibling in the .row, matching Seller, Landlord and Buyer.
-     Paired with the removal of one now-excess closer further down — see (2 of 2). --}}
+{{-- THE 5A.2-T CLOSER IS GONE, AND REMOVING IT IS WHAT KEEPS THE SIDEBAR IN THE GRID.
+
+     A `</div>` stood here, added by Milestone 5A.2-T to end .leftCol because the sidebar was
+     rendering inside the main column. That was true when the role view emitted its own grid. It
+     stopped being true when x-hire-agent.detail-shell took the grid over: the shell now opens AND
+     closes .leftCol around {{ $main }}, so a closer inside the slot ends the column early and the
+     shell's own closer lands on .row instead — putting .rightCol outside the grid row entirely.
+
+     IT SURVIVED THAT LONG BECAUSE A SECOND BUG CANCELLED IT. The Broker Compensation block below
+     opened `.broker-compensation-section` unconditionally and closed it inside
+     `@if (interested_lease_option_agreement === 'Yes')`, so on every tenant listing without that
+     field the block leaked one unclosed div — which absorbed this closer and left the grid intact
+     by accident. Deleting the block as a negotiation term removed the leak and exposed this.
+
+     HireAgentShellStructureTest is what caught it: rendered sidebar depth moved from 1 to 0. The
+     two defects are recorded together because either one alone would have been visible, and it
+     was the pair that made the page look correct. --}}
         </x-slot>
 
         {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
