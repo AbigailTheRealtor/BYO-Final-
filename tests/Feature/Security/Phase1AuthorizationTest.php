@@ -55,6 +55,51 @@ class Phase1AuthorizationTest extends TestCase
         }
     }
 
+    /**
+     * A minimally valid property-auction row owned by $owner.
+     *
+     * `property_auctions` declares title, address, city_id, state_id and auction_type
+     * NOT NULL with no defaults, so a fixture supplying only user_id cannot be
+     * inserted — the test would die in setup before reaching the ownership guard it
+     * exists to check. Same approach as buyerCriteriaAttributes() below.
+     *
+     * None of these values carry meaning for any assertion here: ownership is keyed
+     * on user_id alone.
+     */
+    private function propertyAuctionAttributes(User $owner, array $overrides = []): array
+    {
+        return array_merge([
+            'user_id'      => $owner->id,
+            'title'        => 'Test Property',
+            'address'      => '1 Test Street',
+            'city_id'      => 1,
+            'state_id'     => 1,
+            'auction_type' => 'Normal',
+        ], $overrides);
+    }
+
+    /**
+     * A minimally valid buyer-criteria row owned by $owner.
+     *
+     * `buyer_criteria_auctions` declares user_id, buyer_id, max_price and title NOT NULL
+     * with no defaults, so a fixture supplying only user_id cannot be inserted at all —
+     * the test would die in setup before reaching the authorization it exists to check.
+     * Same approach as ListingDownloadAuthorizationTest, which lists the required
+     * columns per table rather than making the schema permissive.
+     *
+     * These values carry no meaning for any assertion here: ownership is keyed on
+     * user_id alone, and buyer_id is a plain NOT NULL bigint with no FK.
+     */
+    private function buyerCriteriaAttributes(User $owner, array $overrides = []): array
+    {
+        return array_merge([
+            'user_id'   => $owner->id,
+            'buyer_id'  => 0,
+            'max_price' => 0,
+            'title'     => 'Test Criteria',
+        ], $overrides);
+    }
+
     // =====================================================================
     // (A) HIGH-1 — AgentAuth must allow ONLY the agent persona (no DB)
     // =====================================================================
@@ -166,7 +211,7 @@ class Phase1AuthorizationTest extends TestCase
         $this->requireIsolatedDb();
         $owner    = User::factory()->create();
         $attacker = User::factory()->create();
-        $auction  = PropertyAuction::forceCreate(['user_id' => $owner->id]);
+        $auction  = PropertyAuction::forceCreate($this->propertyAuctionAttributes($owner));
 
         $this->actingAs($attacker)->post('/property/auction/end/' . $auction->id)->assertForbidden();
         $this->assertNotEquals(true, (bool) $auction->fresh()->auction_ended);
@@ -180,7 +225,7 @@ class Phase1AuthorizationTest extends TestCase
         $this->requireIsolatedDb();
         $owner    = User::factory()->create();
         $attacker = User::factory()->create();
-        $auction  = BuyerCriteriaAuction::forceCreate(['user_id' => $owner->id]);
+        $auction  = BuyerCriteriaAuction::forceCreate($this->buyerCriteriaAttributes($owner));
 
         $this->actingAs($attacker)
             ->post('/renew_buyer', ['id' => $auction->id, 'listing_date' => '2026-01-01', 'expiration_date' => '2026-02-01'])
@@ -260,9 +305,14 @@ class Phase1AuthorizationTest extends TestCase
     public function test_wf6_non_owner_cannot_toggle_bids_visibility(): void
     {
         $this->requireIsolatedDb();
-        $owner    = User::factory()->create();
-        $attacker = User::factory()->create();
-        $auction  = BuyerCriteriaAuction::forceCreate(['user_id' => $owner->id, 'display_bids' => 1]);
+        // The route group is auth + verified + AgentAuth, so both personas must
+        // be verified agents to reach the controller at all. The guard under
+        // test is what separates them once they are inside — same reasoning as
+        // the LandlordAuction WF-6 test below. With plain consumer personas
+        // AgentAuth redirects first and the ownership check is never exercised.
+        $owner    = User::factory()->asAgent()->create();
+        $attacker = User::factory()->asAgent()->create();
+        $auction  = BuyerCriteriaAuction::forceCreate($this->buyerCriteriaAttributes($owner, ['display_bids' => 1]));
 
         // Non-owner is forbidden and the flag is unchanged.
         $this->actingAs($attacker)

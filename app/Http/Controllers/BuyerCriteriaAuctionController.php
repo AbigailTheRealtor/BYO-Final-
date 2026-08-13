@@ -42,7 +42,6 @@ class BuyerCriteriaAuctionController extends Controller
 
     public function storeAuction(Request $request)
     {
-        // dd($request->all());
         try {
 
             if (str_contains(strtolower($request->auction_length), 'day')) {
@@ -54,6 +53,16 @@ class BuyerCriteriaAuctionController extends Controller
             DB::beginTransaction();
             $auction = new BuyerCriteriaAuction();
             $auction->user_id = Auth::user()->id;
+            // buyer_id, title and max_price are NOT NULL with no default in
+            // create_buyer_criteria_auctions_table and were never assigned here, so
+            // every legitimate create failed the insert and was swallowed by the
+            // catch below as "Unable to add buyer criteria auction". The listing's
+            // real values live in meta (`titleListing`, `max_price`) — these keep
+            // the native columns consistent with them rather than duplicating
+            // ownership of the data.
+            $auction->buyer_id = Auth::user()->id;
+            $auction->title = $request->titleListing ?: 'Buyer Criteria';
+            $auction->max_price = (float) $request->max_price;
             $auction->auction_type = $request->auction_type;
             $auction->auction_length = $auction_length_days;
             $auction->save();
@@ -325,7 +334,6 @@ class BuyerCriteriaAuctionController extends Controller
 
     public function addCounterBid(Request $request, $bid_id)
     {
-        // dd($bid_id);
         $criteria_bid = BuyerCriteriaAuctionBid::find($bid_id);
         $page_data['auction'] = $auction = BuyerCriteriaAuction::find($criteria_bid->buyer_criteria_auction_id);
         $page_data['title'] = "Add Counter Bid for Buyer's Criteria Auction - {$auction->address}";
@@ -792,7 +800,6 @@ class BuyerCriteriaAuctionController extends Controller
 
         $page_data['auctions'] = $auctions;
 
-        // dd($page_data['count_my_auctions']);
         return view('buyer_criteria.list', $page_data);
     }
 
@@ -849,7 +856,6 @@ class BuyerCriteriaAuctionController extends Controller
         $auctions_c = $auctions;
 
         $page_data['count'] = $auctions_c->count();
-        // dd($page_data['count']);
         $page_data['pAuctions'] = $auctions->paginate(12);
 
         $locationChips = [];
