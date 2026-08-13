@@ -210,6 +210,33 @@ class BladePublicMediaSeamTest extends TestCase
         );
     }
 
+    /**
+     * The two ways a view may satisfy this seam.
+     *
+     * `ListingMediaUrl::get` is the direct form and remains the default.
+     *
+     * `ListingGalleryView` is delegation, and it is accepted for a specific
+     * reason rather than as a loosening. When `property_photos` widened to hold
+     * MLS-sourced entries alongside upload filenames, a view could no longer
+     * decide a photo's URL from its own inline idiom — an MLS photograph is
+     * referenced at the provider and must NEVER be given a path under our
+     * storage, while an upload must still resolve through exactly the seam this
+     * suite guards. Leaving that choice in each view meant five copies of one
+     * rule, which is how the published pages came to silently drop imported
+     * photographs. ListingGalleryView makes the choice once and calls
+     * ListingMediaUrl::get itself for every local file.
+     *
+     * So a view naming it is not bypassing the resolver; it is reaching the
+     * resolver through the only component that also knows when NOT to. The
+     * prohibition itself is unaffected and is enforced repo-wide, on every Blade
+     * file including these, by
+     * {@see test_no_raw_public_storage_url_remains_in_any_blade_view()}.
+     */
+    private const APPROVED_SEAMS = [
+        'ListingMediaUrl::get',
+        'ListingGalleryView',
+    ];
+
     /** Every converted view still compiles and actually uses the resolver. */
     public function test_converted_views_compile_and_use_the_resolver(): void
     {
@@ -218,10 +245,19 @@ class BladePublicMediaSeamTest extends TestCase
             $this->assertFileExists($path);
 
             $source = (string) file_get_contents($path);
-            $this->assertStringContainsString(
-                'ListingMediaUrl::get',
-                $source,
-                "resolver missing in {$rel}"
+
+            $usesApprovedSeam = false;
+            foreach (self::APPROVED_SEAMS as $seam) {
+                if (str_contains($source, $seam)) {
+                    $usesApprovedSeam = true;
+                    break;
+                }
+            }
+
+            $this->assertTrue(
+                $usesApprovedSeam,
+                "resolver missing in {$rel}: expected ListingMediaUrl::get, or delegation to "
+                . 'ListingGalleryView which calls it.'
             );
 
             $this->assertNotEmpty(
@@ -229,6 +265,31 @@ class BladePublicMediaSeamTest extends TestCase
                 "Blade syntax broken in {$rel}"
             );
         }
+    }
+
+    /**
+     * Delegation is only acceptable while the thing delegated to still uses the seam.
+     *
+     * Without this, widening the assertion above would be a hole: a view could
+     * name ListingGalleryView, ListingGalleryView could later stop calling the
+     * resolver, and both halves would pass while the seam was gone.
+     */
+    public function test_the_delegated_resolver_still_uses_the_seam(): void
+    {
+        $rel = 'app/Support/Listing/ListingGalleryView.php';
+        $src = (string) file_get_contents(base_path($rel));
+
+        $this->assertStringContainsString(
+            'ListingMediaUrl::get',
+            $src,
+            "{$rel} is an approved seam for Blade views and must build local URLs through the resolver."
+        );
+
+        $this->assertSame(
+            0,
+            preg_match_all("/asset\(\s*['\"]storage\//", $src),
+            "{$rel} must build no raw storage URL."
+        );
     }
 
     /**

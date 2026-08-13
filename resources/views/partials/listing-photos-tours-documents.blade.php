@@ -1,21 +1,29 @@
 @php
-    // property_photos is stored as a JSON-encoded array of filenames.
-    // The EAV accessor may return a string (raw JSON) or an already-decoded array.
-    // Normalize to a plain PHP array in every case.
-    $rawPropertyPhotos = @$auction->get->property_photos ?? null;
-    if (is_string($rawPropertyPhotos) && !empty($rawPropertyPhotos)) {
-        $decoded = json_decode($rawPropertyPhotos, true);
-        $viewPropertyPhotos = is_array($decoded) ? $decoded : [$rawPropertyPhotos];
-    } elseif (is_array($rawPropertyPhotos)) {
-        $viewPropertyPhotos = $rawPropertyPhotos;
-    } else {
-        $viewPropertyPhotos = [];
-    }
-    // Remove any blank entries
-    $viewPropertyPhotos = array_values(array_filter($viewPropertyPhotos, fn($p) => !empty(trim((string) $p))));
+    /*
+     | property_photos may hold bare upload filenames OR structured MLS entries. Both shapes
+     | are resolved by ListingGalleryView, which decodes the meta in any of its stored forms,
+     | drops anything unusable, and hands back photographs that already know their URL.
+     |
+     | THE DEFECT THIS REPLACES, STATED SO IT IS NOT REINTRODUCED.
+     | This block used to normalise by hand and then filter with `trim((string) $p)`. Against a
+     | structured entry that cast an ARRAY to the literal string "Array" — emitting an
+     | array-to-string warning, passing the non-empty test, and then being concatenated into a
+     | storage path, so the page requested `auction/images/Array`. A scalar-shaped filter over
+     | a collection that is no longer guaranteed scalar is the whole bug; asking the entry
+     | model instead is the whole fix.
+     |
+     | The role is derived from the listing model rather than passed in, because this partial is
+     | shared and a caller that guessed wrong would be guessing about a licensing gate. An
+     | unrecognised model yields no role, and no role yields no MLS media — fail closed.
+     */
+    $viewGallery        = \App\Support\Listing\ListingGalleryView::forRole(
+        @$auction->get->property_photos ?? null,
+        \App\Support\Listing\ListingGalleryView::roleForAuction($auction ?? null),
+    );
+    $viewPropertyPhotos = $viewGallery->photos();
 
     // Keep singular alias for legacy $viewPropertyPhoto references (unused in this file now)
-    $viewPropertyPhoto   = !empty($viewPropertyPhotos) ? $viewPropertyPhotos[0] : null;
+    $viewPropertyPhoto   = $viewPropertyPhotos[0] ?? null;
 
     $viewVideoTourUrl     = @$auction->get->video_tour_url    ?? null;
     $viewVirtualTourUrl   = @$auction->get->virtual_tour_url  ?? null;
@@ -121,7 +129,7 @@
 
 <div class="row py-2 px-2">
 
-    {{-- Property Photos (stored as JSON array of filenames) --}}
+    {{-- Property Photos (resolved above; each already carries its final URL) --}}
     @if (!empty($viewPropertyPhotos))
     <div class="col-12 mb-3">
         <p class="fw-bold mb-1">
@@ -129,9 +137,9 @@
             Property Photo{{ count($viewPropertyPhotos) > 1 ? 's (' . count($viewPropertyPhotos) . ')' : '' }}
         </p>
         <div class="d-flex flex-wrap gap-2">
-            @foreach ($viewPropertyPhotos as $photoFilename)
-                <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $photoFilename) }}"
-                     alt="Property Photo"
+            @foreach ($viewPropertyPhotos as $viewPhoto)
+                <img src="{{ $viewPhoto->url }}"
+                     alt="{{ $viewPhoto->caption ?? 'Property Photo' }}"
                      class="img-fluid rounded"
                      style="max-height: 260px; max-width: 100%; object-fit: cover;" />
             @endforeach

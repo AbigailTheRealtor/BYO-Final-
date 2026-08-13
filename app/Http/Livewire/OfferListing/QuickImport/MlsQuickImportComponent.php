@@ -9,6 +9,7 @@ use App\Services\ListingImport\MlsPropertyDetailsPresenter;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
 use App\Services\ListingImport\QuickImport\MlsQuickImportResult;
 use App\Services\ListingImport\QuickImport\MlsQuickImportService;
+use App\Support\Listing\ListingGalleryView;
 use App\Support\Listing\ListingPhotoEntry;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -468,17 +469,20 @@ abstract class MlsQuickImportComponent extends Component
     {
         $auction = $this->listingId !== null ? $this->resolveOwnedDraft() : null;
 
+        // Re-derived from the OWNED record on every render, through the same
+        // resolver the published Seller and Landlord pages use.
+        //
+        // ListingGalleryView re-applies the media policy itself, so the flag is
+        // still checked here as well as at extraction and at write — three
+        // independent times, because a flag can change between an import and a
+        // page view and the answer that governs a render is the one that holds
+        // when the render happens. What has gone is this component's PRIVATE copy
+        // of that filter: a second implementation of the same gate is a second
+        // thing to keep correct, and the review screen disagreeing with the
+        // published page about a photograph is the exact defect being closed.
         $gallery = $auction !== null
-            ? ListingPhotoEntry::collection($auction->info('property_photos'))
+            ? ListingGalleryView::forRole($auction->info('property_photos'), $this->role())->photos()
             : [];
-
-        // Re-derived from the OWNED record on every render, and re-gated on the
-        // media flag here as well as at import time. A flag can change between
-        // an import and a page view, and the answer that matters when something
-        // is rendered is the one that holds when it is rendered.
-        if (! $this->quickImport()->mediaAvailableForRole($this->role())) {
-            $gallery = array_values(array_filter($gallery, fn (ListingPhotoEntry $e) => $e->isUser()));
-        }
 
         // Only once a draft exists does the record become the authority on the
         // count. Before that there is no gallery to count, and overwriting the

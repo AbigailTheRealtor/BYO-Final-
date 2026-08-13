@@ -386,22 +386,19 @@
             }
         }
 
-        /* ── Photos ── */
-        $propertyPhotos = $meta['property_photos'] ?? [];
-        if (is_string($propertyPhotos)) {
-            $d = json_decode($propertyPhotos, true);
-            $propertyPhotos = is_array($d) ? $d : [];
-        }
-        $heroPhotoUrls  = [];
-        $coverPhotoIdx  = 0;
-        $_hIdx          = 0;
-        foreach ($propertyPhotos as $_ph) {
-            $_fn = is_array($_ph) ? ($_ph['filename'] ?? '') : $_ph;
-            if (!$_fn) continue;
-            $heroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_fn);
-            if (is_array($_ph) && !empty($_ph['is_cover'])) $coverPhotoIdx = $_hIdx;
-            $_hIdx++;
-        }
+        /* ── Photos ──
+         *
+         * Resolved once by ListingGalleryView, identically to the seller page — the two must
+         * not be able to disagree about a photograph, which is what having a copy of the
+         * resolution idiom in each view made possible. A user upload still resolves through
+         * auction/images exactly as before; an MLS-sourced entry resolves to the provider's
+         * own URL and appears ONLY when the media policy permits it, which at the shipped
+         * defaults is never.
+         */
+        $galleryView    = \App\Support\Listing\ListingGalleryView::forRole($meta['property_photos'] ?? null, 'landlord');
+        $propertyPhotos = $galleryView->photos();
+        $heroPhotoUrls  = $galleryView->urls();
+        $coverPhotoIdx  = $galleryView->coverIndex();
 
         /* ── Hero meta chips ── */
         $heroBeds      = $orOther($str('bedrooms'),  $str('other_bedrooms'));
@@ -959,27 +956,21 @@
                         <a href="{{ $videoLinkUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $videoLinkUrl }}</a></p>
                 @endif
             @endif
+            {{-- Unusable entries were already dropped by ListingGalleryView, so this index
+                 counts rendered photographs and stays in step with the hero carousel. --}}
             @if(count($propertyPhotos))
-            @php $_galIdx = -1; @endphp
             <div class="d-flex flex-wrap gap-2 mt-2">
-                @foreach($propertyPhotos as $_photo)
-                @php
-                    $_fn    = is_array($_photo) ? ($_photo['filename'] ?? '') : $_photo;
-                    $_cover = is_array($_photo) && !empty($_photo['is_cover']);
-                    if ($_fn) $_galIdx++;
-                @endphp
-                @if($_fn)
+                @foreach($propertyPhotos as $_galIdx => $_photo)
                 <div class="text-center">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#lolPhotoModal"
-                       data-src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_fn) }}"
+                       data-src="{{ $_photo->url }}"
                        data-index="{{ $_galIdx }}" style="display:block;">
-                        <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $_fn) }}"
-                             alt="Photo {{ $_galIdx + 1 }}" class="photo-thumb"
+                        <img src="{{ $_photo->url }}"
+                             alt="{{ $_photo->caption ?? 'Photo ' . ($_galIdx + 1) }}" class="photo-thumb"
                              onerror="this.style.display='none'">
                     </a>
-                    @if($_cover)<div><span class="cover-badge">Cover</span></div>@endif
+                    @if($_photo->isCover)<div><span class="cover-badge">Cover</span></div>@endif
                 </div>
-                @endif
                 @endforeach
             </div>
             @endif

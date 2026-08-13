@@ -284,18 +284,16 @@
                 {{-- Photo gallery --}}
                 @if(count($gallery) > 0)
                     <div class="row g-2 mt-3">
+                        {{-- Each photo arrives already resolved by ListingGalleryView — the same
+                             resolver the published Seller and Landlord pages use. That is the point:
+                             the review screen and the published page must not be able to disagree
+                             about a photograph, and they can only be guaranteed not to if there is
+                             one rule rather than one per view. MLS media is referenced at the
+                             provider's own URL; nothing was ever copied to our storage. --}}
                         @foreach($gallery as $photo)
-                            @php
-                                /* MLS media is referenced at the provider's own URL — reference-only
-                                   hosting means no bytes were copied to our storage. A user upload
-                                   resolves through the normal public-media seam. */
-                                $src = $photo->isMls()
-                                    ? $photo->url
-                                    : \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $photo->filename);
-                            @endphp
                             <div class="col-6 col-md-3">
                                 <div class="position-relative border rounded overflow-hidden {{ $photo->isCover ? 'border-primary border-2' : '' }}">
-                                    <img src="{{ $src }}" alt="{{ $photo->caption ?? 'Listing photo' }}"
+                                    <img src="{{ $photo->url }}" alt="{{ $photo->caption ?? 'Listing photo' }}"
                                          class="w-100" style="aspect-ratio: 4/3; object-fit: cover;" loading="lazy">
 
                                     @if($photo->isCover)
@@ -303,12 +301,12 @@
                                     @else
                                         <button type="button"
                                                 class="btn btn-sm btn-light position-absolute bottom-0 start-0 m-1"
-                                                wire:click="setCoverPhoto(@js($photo->key()))">
+                                                wire:click="setCoverPhoto(@js($photo->key))">
                                             Make cover
                                         </button>
                                     @endif
 
-                                    @if($photo->isMls())
+                                    @if($photo->isMls)
                                         <span class="badge bg-dark-subtle text-dark-emphasis position-absolute top-0 end-0 m-1"
                                               title="Supplied by the MLS">MLS</span>
                                     @endif
