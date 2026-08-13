@@ -3,6 +3,7 @@
 namespace App\Services\Location\Coordinates;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 
 /**
  * The outcome of resolving one property address to a coordinate.
@@ -41,6 +42,36 @@ final class PropertyCoordinateResult
         public readonly ?float $confidence,
         public readonly ?DateTimeImmutable $resolvedAt,
         public readonly ?string $reason,
+        /**
+         * The upstream record this coordinate came from, where the source
+         * publishes a stable identifier — a NENA SITEADDID, a NAD UUID, an MLS
+         * listing key.
+         *
+         * Deliberately one opaque string and not a per-source field. The point of
+         * keeping it is to be able to ask, later, "which row in which import
+         * produced this point" without this type having to know what any source's
+         * identifiers look like. Null wherever a source publishes none, which is
+         * most of them.
+         */
+        public readonly ?string $sourceRef,
+        /**
+         * Who decided this coordinate, when a person did.
+         *
+         * Null for every automatic resolution, and that is the honest value —
+         * nobody decided a Census interpolation. See {@see self::manual()} for
+         * why this may not be filled in on an automatic result.
+         */
+        public readonly ?int $actorId,
+        /**
+         * Why a person overrode the automatic answer.
+         *
+         * Distinct from {@see self::$reason}, which records why a resolution
+         * FAILED. The two would be confusing to merge and impossible to tell
+         * apart once stored: one is a machine-readable failure code on an
+         * unresolved result, the other is a human justification on a resolved
+         * one.
+         */
+        public readonly ?string $overrideReason,
     ) {
     }
 
@@ -62,6 +93,7 @@ final class PropertyCoordinateResult
         ?string $normalizedAddress = null,
         ?float $confidence = null,
         ?DateTimeImmutable $resolvedAt = null,
+        ?string $sourceRef = null,
     ): self {
         return new self(
             resolved:          true,
@@ -74,6 +106,86 @@ final class PropertyCoordinateResult
             confidence:        $confidence,
             resolvedAt:        $resolvedAt ?? new DateTimeImmutable(),
             reason:            null,
+            sourceRef:         $sourceRef,
+            // An automatic resolution has no actor and no justification. Left
+            // null rather than defaulted to a system user id, because "the
+            // platform resolved this" and "a person chose this" are the exact
+            // two things a manual-override audit has to be able to separate.
+            actorId:           null,
+            overrideReason:    null,
+        );
+    }
+
+    /**
+     * A coordinate a person set deliberately, overriding what the ladder found.
+     *
+     * NOT IMPLEMENTED AS A FEATURE YET — this is the storage contract only. No
+     * UI, no route and no component produces one of these. It exists so that
+     * when the override is built, the shape it must record is already decided
+     * and already enforced here rather than at whatever call site gets written
+     * first.
+     *
+     * WHY EVERY ARGUMENT IS REQUIRED
+     * ------------------------------
+     * The failure this guards against is a coordinate acquiring the authority of
+     * a human decision without a human having made one. Today the browser
+     * supplies `property_lat`/`property_lng` through `fillFromResolvedAddress()`
+     * as unvalidated strings; if "manual" were merely a source name that any
+     * writer could stamp, an autocomplete pick would be indistinguishable from a
+     * surveyed correction, and it would outrank the address corpus while looking
+     * accountable.
+     *
+     * So a manual result cannot be constructed without an actor and a stated
+     * reason. There is no default and no nullable shortcut: an override nobody
+     * signed is not an override, and the type refuses to represent one.
+     *
+     * The precision is the caller's explicit claim about what they placed —
+     * a rooftop pin and a "somewhere on this parcel" pin are different
+     * assertions, and the person making one is the only party who knows which.
+     *
+     * @param int    $actorId        the user making the decision
+     * @param string $overrideReason why the automatic answer was wrong
+     */
+    public static function manual(
+        float $latitude,
+        float $longitude,
+        CoordinatePrecision $precision,
+        int $actorId,
+        string $overrideReason,
+        ?string $normalizedAddress = null,
+        ?DateTimeImmutable $resolvedAt = null,
+    ): self {
+        $overrideReason = trim($overrideReason);
+
+        if ($overrideReason === '') {
+            throw new InvalidArgumentException(
+                'A manual coordinate override requires a stated reason.'
+            );
+        }
+
+        if ($actorId <= 0) {
+            throw new InvalidArgumentException(
+                'A manual coordinate override requires the id of the user making it.'
+            );
+        }
+
+        return new self(
+            resolved:          true,
+            latitude:          $latitude,
+            longitude:         $longitude,
+            precision:         $precision,
+            source:            CoordinateSource::Manual,
+            // The provider is the person, expressed the same way every other
+            // provider is: a stable string a consumer can group by. It is not a
+            // rung, and no ladder produces it.
+            provider:          'manual_override',
+            normalizedAddress: $normalizedAddress,
+            confidence:        null,
+            resolvedAt:        $resolvedAt ?? new DateTimeImmutable(),
+            reason:            null,
+            sourceRef:         null,
+            actorId:           $actorId,
+            overrideReason:    $overrideReason,
         );
     }
 
@@ -94,6 +206,7 @@ final class PropertyCoordinateResult
         ?string $normalizedAddress = null,
         ?float $confidence = null,
         ?DateTimeImmutable $resolvedAt = null,
+        ?string $sourceRef = null,
     ): self {
         return self::resolved(
             latitude:          $latitude,
@@ -104,6 +217,7 @@ final class PropertyCoordinateResult
             normalizedAddress: $normalizedAddress,
             confidence:        $confidence,
             resolvedAt:        $resolvedAt,
+            sourceRef:         $sourceRef,
         );
     }
 
@@ -126,6 +240,9 @@ final class PropertyCoordinateResult
             confidence:        null,
             resolvedAt:        null,
             reason:            $reason,
+            sourceRef:         null,
+            actorId:           null,
+            overrideReason:    null,
         );
     }
 
