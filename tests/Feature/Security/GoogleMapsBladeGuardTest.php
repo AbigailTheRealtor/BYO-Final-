@@ -166,11 +166,19 @@ class GoogleMapsBladeGuardTest extends TestCase
             }
         }
 
+        // Floor lowered 40 -> 38 when the two orphaned counter-terms edit views were retired
+        // (resources/views/{seller,landlord}_counter_terms/edit.blade.php). Each carried one
+        // google-touching initialize(), so the guarded population legitimately fell 41 -> 39.
+        //
+        // This is an anti-vacuity floor on the POPULATION, not a relaxation of the guard: the
+        // assertion above still requires every remaining google-touching function to check the
+        // SDK before using it. Lower this only alongside a deletion you can name — a drop with
+        // no such explanation means the scanner broke, which is what this test exists to catch.
         $this->assertGreaterThanOrEqual(
-            40,
+            38,
             $checked,
-            "The scan found only {$checked} google-touching entry functions; 41 were guarded in Batch 5. "
-            . 'The scanner is broken and is not proving anything.',
+            "The scan found only {$checked} google-touching entry functions; 39 are expected after "
+            . 'the counter-terms edit views were retired. The scanner is broken and is not proving anything.',
         );
     }
 
