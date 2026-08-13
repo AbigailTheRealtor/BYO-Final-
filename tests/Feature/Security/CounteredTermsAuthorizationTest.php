@@ -53,6 +53,13 @@ use Tests\TestCase;
  *
  * Ownership uses the two-persona model: a single consumer account owns its
  * listing; an agent who has bid on the listing is the only other permitted party.
+ *
+ * FIXTURES: each `forceCreate` supplies the columns its own table declares NOT NULL
+ * without a default — `buyer_agent_auctions.title` is one, which the production
+ * create path sets too (HireBuyerAgent\BuyerAgentAuction). The seller, landlord and
+ * tenant tables require nothing beyond `user_id`, so their fixtures stay minimal
+ * rather than being padded for symmetry. Setup validity only: no assertion here
+ * depends on any of these values.
  */
 class CounteredTermsAuthorizationTest extends TestCase
 {
@@ -100,7 +107,7 @@ class CounteredTermsAuthorizationTest extends TestCase
     {
         $this->requireIsolatedDb();
         [$owner, $attacker] = [User::factory()->create(), User::factory()->create()];
-        $auction = BuyerAgentAuction::forceCreate(['user_id' => $owner->id]);
+        $auction = BuyerAgentAuction::forceCreate(['user_id' => $owner->id, 'title' => 'Buyer Agent Listing']);
 
         $this->actingAs($attacker)
             ->post('buyer/add-counter-terms', ['buyerId' => $auction->id])
@@ -170,7 +177,7 @@ class CounteredTermsAuthorizationTest extends TestCase
         $this->requireIsolatedDb();
         $owner  = User::factory()->create();
         $bidder = User::factory()->asAgent()->create();
-        $auction = BuyerAgentAuction::forceCreate(['user_id' => $owner->id]);
+        $auction = BuyerAgentAuction::forceCreate(['user_id' => $owner->id, 'title' => 'Buyer Agent Listing']);
         BuyerAgentAuctionBid::forceCreate([
             'buyer_agent_auction_id' => $auction->id,
             'user_id' => $bidder->id,
@@ -212,7 +219,7 @@ class CounteredTermsAuthorizationTest extends TestCase
     {
         $this->requireIsolatedDb();
         [$owner, $attacker] = [User::factory()->create(), User::factory()->create()];
-        $auction = BuyerAgentAuction::forceCreate(['user_id' => $owner->id]);
+        $auction = BuyerAgentAuction::forceCreate(['user_id' => $owner->id, 'title' => 'Buyer Agent Listing']);
         // CounteredTerms@update reads $counter->buyer_auction_id (counter_terms table).
         $counter = CounterTerm::forceCreate([
             'buyer_auction_id' => $auction->id,
