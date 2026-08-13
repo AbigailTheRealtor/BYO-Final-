@@ -17,7 +17,19 @@ class BuyerAgentAuctionEdit extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut that seeds the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
+
+    /**
+     * Phase 1c slice 1 — the same scope key the create surface registers under.
+     *
+     * NOTE: routes/web.php imports this component but routes nothing to it; the catch-all
+     * TenantAgentAuctionEdit is the reachable Hire Buyer edit surface. It is wired anyway so the
+     * two cannot diverge if it is ever routed — an unwired edit surface paired with a cascade
+     * create surface would be a broken round trip inside one user's own flow.
+     */
+    private const GEOGRAPHY_CASCADE_WORKFLOW = 'hire_buyer';
 
 
     // Livewire properties for form fields
@@ -1207,7 +1219,14 @@ class BuyerAgentAuctionEdit extends Component
    
     public function mount($auctionId = null)
     {
-       
+        // Phase 1c slice 1 — called FIRST so loadAuctionData() below can hydrate the cascade
+        // from the stored document. With the flag off this sets one boolean and nothing else.
+        $this->bootGeographyCascade(self::GEOGRAPHY_CASCADE_WORKFLOW);
+
+        // M2 — AFTER the cascade's boot, which is what the search gate reads. See
+        // HasGeographySearch::bootGeographySearch().
+        $this->bootGeographySearch();
+
         if ($auctionId) {
             $this->auctionId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
@@ -1317,6 +1336,12 @@ class BuyerAgentAuctionEdit extends Component
             // 9D: Search Areas + Important Places. Runs after the discrete cities/counties/state
             // loads above so the blob prefill guards see them.
             $this->loadSearchAreas($auction);
+
+            // Phase 1c — hydrate the cascade from the same decoded document. Unresolvable stored
+            // labels are preserved rather than dropped, so editing a legacy record cannot delete
+            // a location the user never touched.
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
             $this->loadImportantPlaces($auction);
 
             // Property details
@@ -1763,6 +1788,11 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
 
+        // Phase 1c — merge the cascade's geography keys into the bridged payload. Must be the
+        // LAST write to $location_dna_preferences_json before saveSearchAreas() reads it; the
+        // Search Areas bridge re-serialises that property on every map interaction.
+        $this->applyGeographyCascadeToPayload();
+
         // 9D: Search Areas + Important Places. saveSearchAreas() writes the
         // location_dna_preferences blob and re-mirrors the discrete cities/counties/state
         // written just above from the blob (the map is now the single editing surface).
@@ -2186,6 +2216,10 @@ class BuyerAgentAuctionEdit extends Component
             'cities' => $this->cities ?? [],
             'state' => $this->state ?? null,
         ]);
+
+        // A blocked save-edit must not inherit the previous action's success banner — see the
+        // same clear in TenantAgentAuction::store(). Before any validation.
+        session()->forget('success');
 
         // 9D: block save-edit when a started Important Place row is incomplete. Before the try
         // so the ValidationException propagates to Livewire rather than being swallowed.

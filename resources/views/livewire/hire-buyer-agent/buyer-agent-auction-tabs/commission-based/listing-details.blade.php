@@ -388,8 +388,10 @@
 
     <!-- Current Representation Agreement Status with Broker -->
     <div class="form-group">
-        <label class="fw-bold">Current Representation Agreement Status with Broker:<span
-                class="text-danger">*</span>
+        {{-- No `*`: the legend at the top of this tab defines the asterisk as "required", and this
+             field is not — see the note on the select below. Buyer only; the tenant, seller and
+             landlord copies of this tab keep both the asterisk and the attribute. --}}
+        <label class="fw-bold">Current Representation Agreement Status with Broker:
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                             title="Indicate whether the Buyer is currently under a signed agreement with a Broker. “Represented” means the Buyer has signed a Buyer representation agreement; “Not Represented” means no agreement has been signed, and the Buyer is free to hire a Broker.">
                             <i class="fa-solid fa-circle-info"></i>
@@ -406,8 +408,14 @@
         @else
             <div class="input-cover">
                 <i class="input-icon fa-solid fa-handshake"></i>
+                {{-- OPTIONAL: no server rule has ever required `working_with_agent` — it is saved
+                     as meta with whatever value it holds. The HTML `required` attribute was the
+                     only thing enforcing it, and `getAllRequiredFields()` collects `[required]`
+                     controls for the submit blocker, so it blocked submission on its own. The
+                     "Represented" business rule is unaffected: `checkRepresentationStatus()`
+                     still disables Next/Save when the buyer selects Represented. --}}
                 <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
-                    data-icon="fa-solid fa-handshake" required>
+                    data-icon="fa-solid fa-handshake">
                     <option value="">Select</option>
                     <option value="Represented">Represented</option>
                     <option value="Not Represented">Not Represented</option>

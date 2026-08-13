@@ -21,7 +21,17 @@ class BuyerAgentAuction extends Component
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HasSearchAreas;                  // 9D: Search Areas blob load/save + discrete state/counties/cities mirror
+    use \App\Http\Livewire\Concerns\HasGeographyCascade;             // Phase 1c: corpus-backed state → counties → cities → ZIPs
+    use \App\Http\Livewire\Concerns\HasGeographySearch;              // M2: search shortcut that seeds the cascade above
     use \App\Http\Livewire\OfferListing\Concerns\HasImportantPlaces; // 9D: Important Places repeatable rows
+
+    /**
+     * Phase 1c slice 1 — the key this workflow registers under in the cascade scope list.
+     *
+     * Named here rather than passed as a literal at each call site so the create and edit
+     * surfaces cannot drift apart and register under two different names.
+     */
+    private const GEOGRAPHY_CASCADE_WORKFLOW = 'hire_buyer';
 
 
     // Livewire properties for form fields
@@ -743,6 +753,15 @@ class BuyerAgentAuction extends Component
     // Methods
     public function mount($listingId = null)
     {
+        // Phase 1c slice 1 — decide whether the geography cascade runs for this workflow.
+        // Called FIRST so loadDraft() below can hydrate it from the stored document. With the
+        // flag off this sets one boolean and does nothing else.
+        $this->bootGeographyCascade(self::GEOGRAPHY_CASCADE_WORKFLOW);
+
+        // M2 — AFTER the cascade's boot, which is what the search gate reads. See
+        // HasGeographySearch::bootGeographySearch().
+        $this->bootGeographySearch();
+
         $this->addService();
 
         // Set listing_date to today's date by default (only if creating new listing)
@@ -1411,6 +1430,13 @@ class BuyerAgentAuction extends Component
             // 9D: Search Areas + Important Places. Runs after the discrete cities/counties/state
             // loads above so the blob prefill guards see them.
             $this->loadSearchAreas($auction);
+
+            // Phase 1c — hydrate the cascade from the SAME decoded document loadSearchAreas()
+            // just produced. Inert while the flag is off. Anything the corpus cannot match is
+            // carried as preserved history rather than dropped, so re-saving a legacy draft
+            // cannot quietly delete a location the user never touched.
+            $this->loadGeographyCascade($this->existingLocationDna ?? []);
+
             $this->loadImportantPlaces($auction);
 
             // Property details
@@ -1902,6 +1928,17 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
 
+        // Phase 1c — merge the cascade's four geography keys into the bridged payload, in the
+        // same label format the previous editor produced. Inert while the flag is off, and a
+        // MERGE rather than a rebuild so the widget's polygons, radius searches, flexible flag
+        // and notes survive untouched.
+        //
+        // ORDERING IS LOAD-BEARING: this must be the LAST write to
+        // $location_dna_preferences_json before saveSearchAreas() reads it. The Search Areas
+        // bridge re-serialises that property on every map interaction, so a merge performed any
+        // earlier would be overwritten by the next one and the geography would silently vanish.
+        $this->applyGeographyCascadeToPayload();
+
         // 9D: Search Areas + Important Places. saveSearchAreas() writes the
         // location_dna_preferences blob and re-mirrors the discrete cities/counties/state
         // written just above from the blob (the map is now the single editing surface).
@@ -2372,6 +2409,10 @@ class BuyerAgentAuction extends Component
             'state' => $this->state ?? null,
         ]);
 
+        // A blocked submit must not inherit the previous action's success banner — see the same
+        // clear in TenantAgentAuction::store(). Before any validation, so it covers every refusal.
+        session()->forget('success');
+
         // 9D: block submit when a started Important Place row is incomplete. Before the try
         // so the ValidationException propagates to Livewire rather than being swallowed.
         $this->assertImportantPlacesValid();
@@ -2406,11 +2447,18 @@ class BuyerAgentAuction extends Component
             ];
             // Representation Preferences & Compatibility required only for full_service buyer flow
             if ($this->service_type === 'full_service') {
-                $validationRules['compatibility_preferences.buyer_specific.communication_style']           = 'required|string';
-                $validationRules['compatibility_preferences.buyer_specific.negotiation_style']             = 'required|string';
-                $validationRules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'required|string';
-                $validationRules['compatibility_preferences.buyer_specific.representation_priorities']     = 'required|array|min:1';
-                $validationRules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'required|string';
+                // OPTIONAL — compatibility/matching preferences, not listing facts. See the same
+                // change in TenantAgentAuction::validateOnlyFilledFields(); both components serve
+                // Hire Buyer and had their own copy of these rules, so both had to move together
+                // or the flow would behave differently depending on which one rendered.
+                //
+                // `nullable|string` / `nullable|array` keeps the type contract for supplied values,
+                // so the match scorer still reads the same shapes. Buyer only.
+                $validationRules['compatibility_preferences.buyer_specific.communication_style']           = 'nullable|string';
+                $validationRules['compatibility_preferences.buyer_specific.negotiation_style']             = 'nullable|string';
+                $validationRules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'nullable|string';
+                $validationRules['compatibility_preferences.buyer_specific.representation_priorities']     = 'nullable|array';
+                $validationRules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'nullable|string';
             }
             
             // Add Bidding Period specific validation
@@ -2423,12 +2471,11 @@ class BuyerAgentAuction extends Component
                 'counties.min' => 'At least one county is required.',
                 'state.required' => 'State is required.',
                 'auction_time.required' => 'Bidding Period Length is required.',
-                'compatibility_preferences.buyer_specific.communication_style.required'           => 'Communication Style is required.',
-                'compatibility_preferences.buyer_specific.negotiation_style.required'             => 'Negotiation Style is required.',
-                'compatibility_preferences.buyer_specific.primary_transaction_goal.required'      => 'Primary Transaction Goal is required.',
-                'compatibility_preferences.buyer_specific.representation_priorities.required'     => 'Representation Priorities is required.',
-                'compatibility_preferences.buyer_specific.representation_priorities.min'          => 'Please select at least one Representation Priority.',
-                'compatibility_preferences.buyer_specific.preferred_agent_working_style.required' => 'Preferred Agent Working Style is required.',
+                // The five buyer-compatibility `.required` / `.min` messages that stood here were
+                // removed with the rules that raised them. A message for a rule that no longer
+                // exists is unreachable, and leaving it behind would state a requirement the
+                // validator does not enforce — the next reader would have to run the code to find
+                // out which was true.
             ]);
             
             $this->isDraft = 0;

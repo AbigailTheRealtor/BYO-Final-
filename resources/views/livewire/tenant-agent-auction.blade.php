@@ -5615,7 +5615,7 @@ $lease_types = [
                                     }
 
                                     // Buyer — bedrooms (Residential), bathrooms (Residential/Commercial/Business),
-                                    // pets (Residential/Income), real_estate_purchase (Business)
+                                    // real_estate_purchase (Business)
                                     if (_ptValBSub === 'Residential') {
                                         var _bedroomsVBS = comp.get('bedrooms');
                                         if ((!_bedroomsVBS || _bedroomsVBS === '') && !invalidItems.some(function(i) { return i.key === 'bedrooms'; })) {
@@ -5630,13 +5630,25 @@ $lease_types = [
                                             invalidItems.push({ field: _bathroomsElBS || document.body, tab: _bathroomsElBS ? _bathroomsElBS.closest('.tab-pane') : null, fieldName: TENANT_FIELD_LABELS['bathrooms'] || 'Minimum Bathrooms Needed', key: 'bathrooms' });
                                         }
                                     }
-                                    if (_ptValBSub === 'Residential' || _ptValBSub === 'Income') {
-                                        var _petsVBS = comp.get('pets');
-                                        if ((!_petsVBS || _petsVBS === '') && !invalidItems.some(function(i) { return i.key === 'pets'; })) {
-                                            var _petsElBS = document.getElementById('pets') || document.getElementById('pets_income');
-                                            invalidItems.push({ field: _petsElBS || document.body, tab: _petsElBS ? _petsElBS.closest('.tab-pane') : null, fieldName: TENANT_FIELD_LABELS['pets'] || 'Pets', key: 'pets' });
-                                        }
-                                    }
+                                    // pets: NO LONGER A BUYER SUBMIT BLOCKER.
+                                    //
+                                    // The buyer's server rule became `nullable` (see the PETS IS OPTIONAL note in
+                                    // TenantAgentAuction::validateOnlyFilledFields), but the block never reached it:
+                                    // this handler pushed `pets` into `invalidItems` and calls e.preventDefault()
+                                    // whenever that list is non-empty, so the browser refused the submit first and
+                                    // the field stayed required no matter what the validator said.
+                                    //
+                                    // The push had no counterpart in tenantGetInvalidItems(), so the banner listed
+                                    // Pets on the blocked submit and then dropped it on the next Livewire round-trip
+                                    // — the field the buyer was told to fix stopped being named while still blocking.
+                                    //
+                                    // BUYER ONLY: this sits inside the `curUT === 'buyer'` branch. The tenant and
+                                    // landlord branches never carried a pets check, in this handler or in the rules.
+                                    // The tenant Create Offer Listing flow keeps its own `$rules['pets'] = 'required'`
+                                    // (TenantOfferListing) — a different flow, untouched.
+                                    //
+                                    // Both selects still render (`#pets` Residential, `#pets_income` Income), still
+                                    // bind to the same property, and a supplied value is still saved and matched.
                                     if (_ptValBSub === 'Business') {
                                         var _repVBS = comp.get('real_estate_purchase');
                                         if ((!_repVBS || _repVBS === '') && !invalidItems.some(function(i) { return i.key === 'real_estate_purchase'; })) {
