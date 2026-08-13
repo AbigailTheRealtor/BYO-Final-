@@ -191,6 +191,7 @@ final class AddressPointCoordinateAdapter implements CoordinateProviderAdapterIn
             // The corpus reports no per-row confidence. Null is the honest
             // value; a fabricated 1.0 would read as certainty nobody asserted.
             confidence: null,
+            sourceRef: $point['source_ref'],
         );
     }
 
@@ -305,6 +306,14 @@ final class AddressPointCoordinateAdapter implements CoordinateProviderAdapterIn
                 'lat'       => $lat,
                 'lng'       => $lng,
                 'precision' => isset($row->precision) ? (string) $row->precision : null,
+                // The corpus row's stable upstream id — a NENA SITEADDID, a NAD
+                // UUID, whatever the jurisdiction publishes. Carried so a stored
+                // coordinate can be traced back to the exact import row that
+                // produced it. Kept opaque: this rung does not know or care what
+                // any source's identifiers look like.
+                'source_ref' => isset($row->source_ref) && (string) $row->source_ref !== ''
+                    ? (string) $row->source_ref
+                    : null,
             ];
         }
 
