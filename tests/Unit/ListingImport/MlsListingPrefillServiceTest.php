@@ -265,7 +265,49 @@ class MlsListingPrefillServiceTest extends TestCase
             'propertySubType' => 'property_sub_type',
             'mlsStatus'       => 'mls_status',
             'listPrice'       => 'price',
+            'taxAnnualAmount' => 'annual_taxes',
+            'association'     => 'has_hoa',
+            'associationFee'  => 'association_fee_amount',
+            'cdd'             => 'has_cdd',
+            'waterfront'      => 'waterfront',
+            'pool'            => 'pool',
+            'garage'          => 'garage',
         ], MlsListingPrefillService::ALLOWED_FIELDS);
+    }
+
+    /**
+     * Master Phase 1 deliberately stops short of three fields the candidate can
+     * already supply. Each exclusion is a decision, not an oversight, so each one
+     * is asserted — a future edit that "completes" the set has to delete a test
+     * with a reason written next to it.
+     *
+     * @dataProvider deliberatelyExcludedCandidateProperties
+     */
+    public function test_deliberately_excluded_candidate_properties_are_not_allow_listed(string $property, string $why): void
+    {
+        $this->assertArrayNotHasKey(
+            $property,
+            MlsListingPrefillService::ALLOWED_FIELDS,
+            $why
+        );
+    }
+
+    public static function deliberatelyExcludedCandidateProperties(): array
+    {
+        return [
+            'pets: no wire:model binding for pet_policy on any Create Offer tab' => [
+                'petsAllowed',
+                'pet_policy has no blade binding — importing it writes state the user cannot see or correct',
+            ],
+            'standardStatus: no form target on either role' => [
+                'standardStatus',
+                'no Livewire property and no form field accepts a listing status',
+            ],
+            'seniorCommunity: no form target on either role' => [
+                'seniorCommunity',
+                'leasing_55_plus is a different concept with its own vocabulary',
+            ],
+        ];
     }
 
     /**
@@ -293,6 +335,160 @@ class MlsListingPrefillServiceTest extends TestCase
         $this->assertEmpty(
             array_diff(array_keys($data), array_values(MlsListingPrefillService::ALLOWED_FIELDS)),
             'prefill emitted a canonical key that is not in ALLOWED_FIELDS'
+        );
+    }
+
+    // ── Master Phase 1: null vs false vs zero ────────────────────────────────
+
+    /**
+     * Absent is not "No". A feed that never populated GarageYN is telling us
+     * nothing about the garage, and writing "No" into the form would turn our
+     * ignorance into the seller's assertion — on a disclosure form, where that
+     * distinction is the whole point. Null must produce no row at all, leaving
+     * the field for a human.
+     *
+     * @dataProvider nullBearingPhaseOneProperties
+     */
+    public function test_a_null_phase_one_value_produces_no_key(string $property, string $canonicalKey): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([$property => null]))['data'];
+
+        $this->assertArrayNotHasKey(
+            $canonicalKey,
+            $data,
+            "null {$property} must not be translated into a value"
+        );
+    }
+
+    public static function nullBearingPhaseOneProperties(): array
+    {
+        return [
+            'association fee' => ['associationFee', 'association_fee_amount'],
+            'annual taxes'    => ['taxAnnualAmount', 'annual_taxes'],
+            'hoa'             => ['association', 'has_hoa'],
+            'cdd'             => ['cdd', 'has_cdd'],
+            'pool'            => ['pool', 'pool'],
+            'garage'          => ['garage', 'garage'],
+            'waterfront'      => ['waterfront', 'waterfront'],
+        ];
+    }
+
+    /**
+     * False, by contrast, IS an assertion — the feed says there is no pool — and
+     * must survive as the form's "No". The bug this guards against is treating
+     * false as empty, which every naive `if ($value)` does.
+     *
+     * @dataProvider falseBearingPhaseOneProperties
+     */
+    public function test_false_is_imported_as_no(string $property, string $canonicalKey): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([$property => false]))['data'];
+
+        $this->assertSame('No', $data[$canonicalKey] ?? null, "false {$property} must import as No");
+    }
+
+    public static function falseBearingPhaseOneProperties(): array
+    {
+        return [
+            'hoa'        => ['association', 'has_hoa'],
+            'cdd'        => ['cdd', 'has_cdd'],
+            'pool'       => ['pool', 'pool'],
+            'garage'     => ['garage', 'garage'],
+            'waterfront' => ['waterfront', 'waterfront'],
+        ];
+    }
+
+    public function test_true_is_imported_as_yes(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'association' => true,
+            'pool'        => true,
+            'waterfront'  => true,
+        ]))['data'];
+
+        $this->assertSame('Yes', $data['has_hoa']);
+        $this->assertSame('Yes', $data['pool']);
+        $this->assertSame('Yes', $data['waterfront']);
+    }
+
+    /**
+     * A zero-dollar HOA fee and a zero tax bill are facts, and both are falsy.
+     * Integer and float zero are separated because they fail differently: the
+     * float path also runs the whole-number branch that would otherwise render
+     * "0.0".
+     */
+    public function test_integer_zero_survives(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'associationFee'  => 0,
+            'taxAnnualAmount' => 0,
+        ]))['data'];
+
+        $this->assertSame('0', $data['association_fee_amount'] ?? null);
+        $this->assertSame('0', $data['annual_taxes'] ?? null);
+    }
+
+    public function test_decimal_zero_survives_and_is_not_rendered_as_a_float(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'associationFee'  => 0.0,
+            'taxAnnualAmount' => 0.00,
+        ]))['data'];
+
+        $this->assertSame('0', $data['association_fee_amount'] ?? null);
+        $this->assertSame('0', $data['annual_taxes'] ?? null);
+    }
+
+    public function test_a_fractional_amount_keeps_its_cents(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'taxAnnualAmount' => 1786.38,
+        ]))['data'];
+
+        $this->assertSame('1786.38', $data['annual_taxes']);
+    }
+
+    /**
+     * The listing the master audit was built on, as a fixed candidate. Guards the
+     * exact combination that made it a good specimen: a true, several falses, a
+     * fractional tax amount and a genuinely absent association fee.
+     */
+    public function test_audited_condo_tb8528949_produces_the_expected_facts(): void
+    {
+        $data = $this->service()->fromCandidate($this->candidate([
+            'mlsNumber'       => 'TB8528949',
+            'listingKey'      => 'e8ea2e5193b25dbab98d77f1e11e070d',
+            'unparsedAddress' => '2142 BRADFORD STREET UNIT 308',
+            'city'            => 'CLEARWATER',
+            'postalCode'      => '33760',
+            'countyOrParish'  => 'Pinellas',
+            'propertySubType' => 'Condominium',
+            'listPrice'       => 100000.0,
+            'bedrooms'        => 1,
+            'bathrooms'       => 1,
+            'livingAreaSqft'  => 480,
+            'lotSizeSqft'     => null,
+            'yearBuilt'       => 1986,
+            'taxAnnualAmount' => 1786.38,
+            'association'     => true,
+            'associationFee'  => null,
+            'cdd'             => false,
+            'pool'            => false,
+            'garage'          => false,
+            'waterfront'      => true,
+        ]))['data'];
+
+        $this->assertSame('1786.38', $data['annual_taxes']);
+        $this->assertSame('Yes', $data['has_hoa']);
+        $this->assertSame('No',  $data['has_cdd']);
+        $this->assertSame('No',  $data['pool']);
+        $this->assertSame('No',  $data['garage']);
+        $this->assertSame('Yes', $data['waterfront']);
+
+        $this->assertArrayNotHasKey(
+            'association_fee_amount',
+            $data,
+            'the feed carried no AssociationFee for this listing, so no row may claim one'
         );
     }
 

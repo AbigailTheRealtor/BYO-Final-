@@ -267,14 +267,29 @@ trait HasMlsImport
      * handles like mls_listing_key out of the review table while leaving them in
      * the underlying data for the apply step to persist.
      *
+     * A third skip applies to type-gated fields: a Livewire property exists for
+     * every property type, but the blade only renders an input for some of them,
+     * so property_exists() alone would happily offer "Pool" while the user is
+     * creating a Vacant Land listing and write a value into state they can never
+     * see. See MlsFieldMap::propertyTypeApplicability().
+     *
      * @param  array<string,mixed> $parsedData
      * @return list<array<string,mixed>>
      */
     private function buildImportPreview(array $parsedData): array
     {
-        $role     = $this->resolveImportRole();
-        $fieldMap = MlsFieldMap::forRole($role);
-        $labels   = MlsFieldMap::fieldLabels();
+        $role      = $this->resolveImportRole();
+        $fieldMap  = MlsFieldMap::forRole($role);
+        $labels    = MlsFieldMap::fieldLabels();
+        $typeScope = MlsFieldMap::propertyTypeApplicability($role);
+
+        // Whatever the user has chosen so far. Empty is the normal state when the
+        // modal is opened before the type is picked, and it must stay permissive:
+        // suppressing rows because nothing is selected yet would silently shrink
+        // the import for anyone who imports first and classifies second.
+        $currentType = property_exists($this, 'property_type')
+            ? trim((string) $this->property_type)
+            : '';
 
         $preview = [];
 
@@ -289,6 +304,17 @@ trait HasMlsImport
 
             // Only include fields that actually exist as public properties
             if (!property_exists($this, $propName)) {
+                continue;
+            }
+
+            // …and whose input this property type actually renders. A key absent
+            // from the scope map is applicable everywhere, so every canonical key
+            // that predates the map behaves exactly as it did before.
+            if (
+                $currentType !== ''
+                && isset($typeScope[$canonicalKey])
+                && !in_array($currentType, $typeScope[$canonicalKey], true)
+            ) {
                 continue;
             }
 
