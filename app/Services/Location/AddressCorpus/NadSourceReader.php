@@ -2,6 +2,7 @@
 
 namespace App\Services\Location\AddressCorpus;
 
+use App\Services\Location\AddressCorpus\Contracts\AddressSourceReader;
 use Generator;
 use RuntimeException;
 use ZipArchive;
@@ -31,7 +32,7 @@ use ZipArchive;
  * a column must stop the run rather than silently produce a corpus of rows with
  * empty streets.
  */
-final class NadSourceReader
+final class NadSourceReader implements AddressSourceReader
 {
     /** Fields without which an import cannot proceed. */
     public const REQUIRED_HEADERS = ['UUID', 'StNam_Full', 'State', 'Latitude', 'Longitude'];
@@ -82,6 +83,11 @@ final class NadSourceReader
         if (! is_file($this->path)) {
             throw new RuntimeException("Source file not found: {$this->path}");
         }
+    }
+
+    public function describe(): string
+    {
+        return 'NAD text distribution (streamed; .zip/.gz/.csv/.txt)';
     }
 
     /**

@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "SYNTHETIC Hillsborough-shaped NG911 sample - NOT REAL DATA",
+"features": [
+{ "type": "Feature", "properties": { "SITEADDID": "HIL-0001", "GlobalID": "{bbbb0001-0000-0000-0000-000000000001}", "ADDRNUM": "315", "FULLNAME": "E Madison Street", "UNITTYPE": null, "UNITID": null, "POSTALCOMM": "Tampa", "PLACENAME": "Tampa", "ZIP": "33602", "MUNICIPALITY": "Tampa", "POINTTYPE": "Location", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [-82.4570, 27.9475] } },
+{ "type": "Feature", "properties": { "SITEADDID": "HIL-0002", "GlobalID": "{bbbb0001-0000-0000-0000-000000000002}", "ADDRNUM": "600", "FULLNAME": "N Ashley Dr", "UNITTYPE": "Suite", "UNITID": "1200", "POSTALCOMM": "Tampa", "ZIP": "33602", "MUNICIPALITY": "Tampa", "POINTTYPE": "Unit, Condo, Office or Suite", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [-82.4600, 27.9500] } },
+{ "type": "Feature", "properties": { "SITEADDID": "HIL-0003", "GlobalID": "{bbbb0001-0000-0000-0000-000000000003}", "ADDRNUM": "600", "FULLNAME": "N Ashley Dr", "UNITTYPE": "Suite", "UNITID": "1400", "POSTALCOMM": "Tampa", "ZIP": "33602", "MUNICIPALITY": "Tampa", "POINTTYPE": "Unit, Condo, Office or Suite", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [-82.4600, 27.9500] } },
+{ "type": "Feature", "properties": { "SITEADDID": "HIL-0004", "GlobalID": "{bbbb0001-0000-0000-0000-000000000004}", "ADDRNUM": "1200", "FULLNAME": "Utility Access Rd", "POSTALCOMM": "Brandon", "ZIP": "33511", "POINTTYPE": "Utility", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [-82.2860, 27.9370] } },
+{ "type": "Feature", "properties": { "SITEADDID": "HIL-0005", "GlobalID": "{bbbb0001-0000-0000-0000-000000000005}", "ADDRNUM": "44", "FULLNAME": "Inactive Ct", "POSTALCOMM": "Plant City", "ZIP": "33563", "POINTTYPE": "Location", "STATUS": "Inactive" }, "geometry": { "type": "Point", "coordinates": [-82.1120, 28.0190] } },
+{ "type": "Feature", "properties": { "SITEADDID": "HIL-0006", "GlobalID": "{bbbb0001-0000-0000-0000-000000000006}", "ADDRNUM": "4600", "FULLNAME": "Silver Hill Rd", "POSTALCOMM": "Riverview", "ZIP": "33578", "POINTTYPE": "Location", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [-82.3260, 27.8660] } }
+]
+}

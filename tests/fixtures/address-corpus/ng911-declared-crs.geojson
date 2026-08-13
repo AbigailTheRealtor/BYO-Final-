@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::2237" } },
+"name": "SYNTHETIC - declares a non-WGS84 CRS. MUST BE REFUSED before any feature is read.",
+"features": [
+{ "type": "Feature", "properties": { "SITEADDID": "CRS-0001", "ADDRNUM": "315", "FULLNAME": "E Madison St", "POSTALCOMM": "Tampa", "ZIP": "33602", "STATUS": "Current" }, "geometry": { "type": "Point", "coordinates": [-82.4570, 27.9475] } }
+]
+}
