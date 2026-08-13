@@ -43,10 +43,32 @@ class HireAgentDetailSectionCardTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /** @return array<string, array{0: string}> */
+    /**
+     * The roles that render no redesign markup at all, whatever the config says.
+     *
+     * BUYER LEFT THIS LIST IN M7 PHASE 4, AND THAT IS THE DELIBERATE DECISION THE ASSERTION BELOW
+     * ASKS FOR RATHER THAN A WIDENING TO GO GREEN.
+     *
+     * The premise the list encoded — "scope here is enforced by which files render the component,
+     * only the landlord view does" — stopped being true in stages, and Phase 4 is where it stops
+     * describing anything. Phase 2 gave the buyer view two x-hire-agent.detail-section call sites;
+     * Phase 3 assigned $byaDetailRedesign so that branch became reachable by config; Phase 4
+     * decomposes the wrapper card, so with the redesign on for buyer the legacy single card is
+     * exactly what must NOT render. Asserting that it does would be asserting the bug.
+     *
+     * Seller and tenant are unmigrated and stay: neither file names the section component, so
+     * neither can decompose no matter what the allowlist holds. A third entry leaving this list is
+     * the signal that another role started migrating, and should be answered the same way.
+     *
+     * Buyer's redesigned branch is covered by HireAgentBuyerSectionNavTest, and its flag-OFF page is
+     * still held to the single legacy card by HireAgentSectionCardDomEquivalenceTest — the property
+     * this list used to carry for buyer is therefore not lost, only moved to where it is true.
+     *
+     * @return array<string, array{0: string}>
+     */
     public static function nonPilotRoles(): array
     {
-        return ['seller' => ['seller'], 'buyer' => ['buyer'], 'tenant' => ['tenant']];
+        return ['seller' => ['seller'], 'tenant' => ['tenant']];
     }
 
     /** @return array{0: class-string, 1: string} */
@@ -143,7 +165,7 @@ class HireAgentDetailSectionCardTest extends TestCase
      * through XPath and reassembling the declaration is more machinery than reading the source, and
      * the thing under test is the stylesheet the page ships.
      *
-     * @param string $viewer owner|guest|stranger
+     * @param string $viewer owner|guest|stranger|qualifying_agent
      */
     private function renderRaw(string $role, array $meta, string $viewer = 'owner'): string
     {
@@ -162,6 +184,15 @@ class HireAgentDetailSectionCardTest extends TestCase
                 $this->app->get('auth')->forgetGuards();
                 $this->assertGuest();
             }),
+            // The only tier that admits the agent-to-agent appendix. Ownership plus an agent
+            // user_type is the simplest qualifying relationship — HireAgentDetailAudience resolves
+            // an agent who posted the request to the agent tier, which is the agent-posted listing
+            // the Owner Info heading has always modelled.
+            'qualifying_agent' => (function () use ($owner) {
+                $owner->forceFill(['user_type' => 'agent'])->save();
+
+                return $this->actingAs($owner->fresh());
+            })(),
         };
 
         $response = $request->get(route($route, $listing->id));
@@ -252,14 +283,13 @@ class HireAgentDetailSectionCardTest extends TestCase
      */
     private const SECTION_ICONS = [
         'hla-section-listing-details'    => 'fa-solid fa-file-lines',
-        'hla-section-property-details'   => 'fa-solid fa-house',
-        'hla-section-leasing-terms'      => 'fa-solid fa-file-contract',
-        'hla-section-services'           => 'fa-solid fa-list-check',
+        'hla-section-property'   => 'fa-solid fa-house',
+        'hla-section-terms'      => 'fa-solid fa-file-contract',
         'hla-section-additional-details' => 'fa-solid fa-circle-info',
         'hla-section-representation'     => 'fa-solid fa-handshake',
-        'hla-section-compensation'       => 'fa-solid fa-dollar-sign',
         'hla-section-referral'           => 'fa-solid fa-share-nodes',
-        'hla-section-owner-info'         => 'fa-solid fa-id-card',
+        'hla-section-role-info'          => 'fa-solid fa-id-card',
+        'hla-section-agent-credentials'  => 'fa-solid fa-address-card',
     ];
 
     /** Every rendered section card carries exactly the icon approved for it — and every one does. */
@@ -267,7 +297,9 @@ class HireAgentDetailSectionCardTest extends TestCase
     {
         $this->enableRedesign();
 
-        $icons = $this->cardIcons($this->render('landlord', $this->richMeta()));
+        // AS A QUALIFYING AGENT, because that is the only tier admitting every section — the
+        // agent-to-agent appendix (referral, agent credentials) is withheld from owner and guest.
+        $icons = $this->cardIcons($this->render('landlord', $this->richMeta(), 'qualifying_agent'));
 
         // The rich fixture satisfies every guard, so the whole mapping should be exercised. A
         // section missing here would let a wrong icon go unasserted rather than fail.
@@ -470,7 +502,7 @@ class HireAgentDetailSectionCardTest extends TestCase
         $this->enableRedesign();
 
         $seen = [];
-        foreach (['owner', 'guest'] as $viewer) {
+        foreach (['owner', 'guest', 'qualifying_agent'] as $viewer) {
             $x = $this->render('landlord', $this->richMeta(), $viewer);
 
             foreach ($this->navTargets($x) as $target) {
@@ -488,17 +520,18 @@ class HireAgentDetailSectionCardTest extends TestCase
         $this->assertSame(
             [
                 'hla-section-additional-details',
-                'hla-section-compensation',
-                'hla-section-leasing-terms',
+                'hla-section-agent-credentials',
                 'hla-section-listing-details',
-                'hla-section-owner-info',
-                'hla-section-property-details',
+                'hla-section-property',
                 'hla-section-referral',
                 'hla-section-representation',
-                'hla-section-services',
+                'hla-section-role-info',
+                'hla-section-terms',
             ],
             array_keys($seen),
-            'All nine sections must be reachable from the nav across the viewers that may see them.'
+            'Every landlord listing section must be reachable from the nav across the viewers '
+            . 'that may see them. Services and Broker Compensation are absent by design — they '
+            . 'are proposal terms, not listing sections.'
         );
     }
 
@@ -561,10 +594,8 @@ class HireAgentDetailSectionCardTest extends TestCase
         $ids = $this->cardIds($this->render('landlord', $this->sparseMeta()));
 
         foreach ([
-            'hla-section-services',
             'hla-section-additional-details',
             'hla-section-representation',
-            'hla-section-compensation',
             'hla-section-referral',
         ] as $conditional) {
             $this->assertNotContains(
@@ -584,9 +615,9 @@ class HireAgentDetailSectionCardTest extends TestCase
 
         foreach ([
             'hla-section-listing-details',
-            'hla-section-property-details',
-            'hla-section-leasing-terms',
-            'hla-section-owner-info',
+            'hla-section-property',
+            'hla-section-terms',
+            'hla-section-role-info',
         ] as $unconditional) {
             $this->assertContains($unconditional, $ids, "[{$unconditional}] must always render.");
         }
@@ -599,7 +630,7 @@ class HireAgentDetailSectionCardTest extends TestCase
      * ─────────────────────────────────────────────────────────────────────────────────────────
      * A REAL FINDING, RECORDED RATHER THAN SILENTLY FIXED.
      *
-     * `hla-section-leasing-terms` and `hla-section-owner-info` render unconditionally while their
+     * `hla-section-terms` and `hla-section-role-info` render unconditionally while their
      * CONTENT is made entirely of @if blocks. On a listing sparse enough to satisfy none of them,
      * both emit a card with an empty body.
      *
@@ -671,54 +702,59 @@ class HireAgentDetailSectionCardTest extends TestCase
         );
     }
 
-    // ── Compensation visibility, unchanged by M7.2 ───────────────────────────
+    // ── Negotiation terms are not listing sections, at any tier ──────────────
 
-    /** Anonymous visitors reach neither the card nor the nav entry naming it. */
-    public function test_compensation_is_hidden_from_anonymous_visitors(): void
+    /**
+     * NO VIEWER REACHES A SERVICES OR BROKER COMPENSATION CARD, on a listing that has both.
+     *
+     * This block used to assert compensation's visibility in three directions — hidden from a
+     * guest, hidden without data, shown to any authenticated viewer — because the section was real
+     * and behind a bare `Auth::check()`. Both sections are gone from the page: an agent proposes
+     * services and compensation on a bid, and the client accepts, rejects or counters them there.
+     *
+     * EVERY TIER IS EXERCISED, including the qualifying agent, because the widest audience is
+     * where a surviving section would still be reachable. richMeta() populates both subjects, so
+     * the absences below are the rule holding rather than the fixture being empty.
+     */
+    public function test_no_viewer_reaches_a_negotiation_term_card(): void
     {
         $this->enableRedesign();
 
-        $x = $this->render('landlord', $this->richMeta(), 'guest');
-
-        $this->assertNotContains('hla-section-compensation', $this->cardIds($x), 'Guest saw the compensation card.');
-        $this->assertNotContains('hla-section-compensation', $this->navTargets($x), 'Guest saw the compensation nav entry.');
-    }
-
-    /** Authenticated, but the listing carries no compensation data: still nothing. */
-    public function test_compensation_is_hidden_when_the_listing_has_no_compensation_data(): void
-    {
-        $this->enableRedesign();
-
-        $x = $this->render('landlord', $this->sparseMeta(), 'owner');
-
-        $this->assertNotContains('hla-section-compensation', $this->cardIds($x));
-        $this->assertNotContains('hla-section-compensation', $this->navTargets($x));
-    }
-
-    /** Both conditions met: the card renders, for the owner and for another authenticated user. */
-    public function test_compensation_renders_when_authenticated_and_data_exists(): void
-    {
-        $this->enableRedesign();
-
-        foreach (['owner', 'stranger'] as $viewer) {
+        foreach (['guest', 'stranger', 'owner', 'qualifying_agent'] as $viewer) {
             $x = $this->render('landlord', $this->richMeta(), $viewer);
 
-            $this->assertContains(
-                'hla-section-compensation',
-                $this->cardIds($x),
-                "{$viewer}: compensation should render when both guards pass."
-            );
+            foreach (['hla-section-services', 'hla-section-compensation'] as $retired) {
+                $this->assertNotContains(
+                    $retired,
+                    $this->cardIds($x),
+                    "{$viewer}: reached the retired [{$retired}] card."
+                );
+                $this->assertNotContains(
+                    $retired,
+                    $this->navTargets($x),
+                    "{$viewer}: was offered the retired [{$retired}] nav entry."
+                );
+            }
+
+            // Positive control: the page rendered real sections for this viewer, so the absences
+            // above are a removal rather than a blank page.
+            $this->assertContains('hla-section-listing-details', $this->cardIds($x), "{$viewer}: nothing rendered.");
         }
     }
 
     // ── Rollout scope ────────────────────────────────────────────────────────
 
     /**
-     * The other three roles emit no section card even with the master switch on.
+     * The UNMIGRATED roles emit no section card even with the master switch on and their own name
+     * in the allowlist.
      *
-     * Scope here is enforced by which files render the component — only the landlord view does —
-     * rather than by the role allowlist, which governs the shared shell's grid. That distinction
-     * matters for rollback and is asserted rather than assumed.
+     * Scope here is enforced by which files render the component — seller's and tenant's views do
+     * not name it — rather than by the role allowlist, which governs the shared shell's grid. That
+     * distinction matters for rollback and is asserted rather than assumed: an allowlist entry
+     * added by mistake must not be able to decompose a page nobody has migrated.
+     *
+     * The provider held buyer until M7 Phase 4 decomposed its wrapper; see the note there for why
+     * it is no longer a role this claim is true of.
      *
      * @dataProvider nonPilotRoles
      */

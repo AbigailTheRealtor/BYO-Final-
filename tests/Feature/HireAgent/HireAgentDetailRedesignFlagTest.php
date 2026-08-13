@@ -149,12 +149,30 @@ class HireAgentDetailRedesignFlagTest extends TestCase
      * that non-pilot roles keep the legacy grid with the master switch ON.
      *
      * SO WHAT IS LEFT WORTH ASSERTING HERE, and it is not nothing: the set of readers is still
-     * KNOWN. A third consumer appearing means a file started gating on the redesign without that
-     * being decided, and the two entries below are exactly the two that should. The shell must
+     * KNOWN. A consumer appearing means a file started gating on the redesign without that
+     * being decided, and the entries below are exactly the ones that should. The shell must
      * read it through enabledFor() — a shell reading the master enabled() would flip all four
      * roles at once, and HireAgentDetailShellLayoutTest pins that too.
+     *
+     * M7 PHASE 3 ADDS THE BUYER VIEW, AND THIS IS THE DELIBERATE DECISION THE MESSAGE BELOW ASKS
+     * FOR — not a widening to go green.
+     *
+     * The buyer view had carried the redesign branch since Phase 2 (the Financing Details and
+     * Representation Preferences section cards) while assigning nothing to `$byaDetailRedesign`,
+     * so every one of its gates read the `?? false` fallback and the branch was unreachable. It
+     * was migrated markup behind a switch with no wire to it. Phase 3 assigns the variable from
+     * enabledFor('buyer'), which is what moved buyer from "contains redesign markup" to "consults
+     * the flag" and therefore into this list.
+     *
+     * THE LIST GROWING IS NOT THE ROLLOUT. `redesign_roles` still ships as landlord alone, so
+     * buyer reading the flag changes no rendered page; it makes buyer switchable by config rather
+     * than by code. That separation is the whole point of the allowlist, and it is why this entry
+     * can be added without any accompanying rollout decision.
+     *
+     * A FOURTH ENTRY IS STILL THE SIGNAL. Seller and tenant have not been migrated and must not
+     * appear here; if one does, the same question applies to it that Phase 3 answered for buyer.
      */
-    public function test_the_flag_consumers_are_exactly_the_landlord_view_and_the_shared_shell(): void
+    public function test_the_flag_consumers_are_exactly_the_migrated_views_and_the_shared_shell(): void
     {
         $consumers = [];
 
@@ -173,11 +191,12 @@ class HireAgentDetailRedesignFlagTest extends TestCase
         $this->assertSame(
             [
                 'resources/views/components/hire-agent/detail-shell.blade.php',
+                'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
             ],
             $consumers,
-            'The set of views gating on the detail redesign must stay known. BOTH read it through '
-            . 'enabledFor(), so role scope comes from config in either file. A third entry means a '
+            'The set of views gating on the detail redesign must stay known. ALL read it through '
+            . 'enabledFor(), so role scope comes from config in every file. A further entry means a '
             . 'file started gating on the redesign without that being decided — which is the signal, '
             . 'not a failure to fix by widening this list.'
         );
@@ -206,6 +225,7 @@ class HireAgentDetailRedesignFlagTest extends TestCase
     {
         foreach ([
             'resources/views/components/hire-agent/detail-shell.blade.php',
+            'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_landlord_agent/view.blade.php',
         ] as $path) {
             $this->assertStringNotContainsString(
