@@ -3,12 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Services\Location\AddressCorpus\AddressCorpusDryRunReport;
-use App\Services\Location\AddressCorpus\NadAddressRecord;
-use App\Services\Location\AddressCorpus\NadPlacementMap;
-use App\Services\Location\AddressCorpus\NadRowNormalizer;
-use App\Services\Location\AddressCorpus\NadSourceReader;
+use App\Services\Location\AddressCorpus\Contracts\AddressRowNormalizer;
+use App\Services\Location\AddressCorpus\Contracts\AddressSourceReader;
+use App\Services\Location\AddressCorpus\CorpusAddressRecord;
+use App\Services\Location\AddressCorpus\CorpusSourceRegistry;
 use App\Services\Location\AddressCorpus\StateFips;
 use Illuminate\Console\Command;
+use InvalidArgumentException;
 use RuntimeException;
 
 /**
@@ -70,23 +71,30 @@ use RuntimeException;
 class AddressImportCorpus extends Command
 {
     /**
-     * Sources this command can read.
+     * Sources this command can read, from {@see CorpusSourceRegistry}.
      *
-     * One entry, deliberately. `--source` exists so the source stops being
-     * implied by which class the command happens to construct — it is the third
-     * member of the eventual `UNIQUE (corpus_version, source, source_ref)` key,
-     * and a value that important should be stated by the operator rather than
-     * inferred. Adding OpenAddresses means adding a reader and a normalizer, not
-     * relaxing this list.
+     * `--source` exists so the source stops being implied by which class the
+     * command happens to construct — it is the third member of the eventual
+     * `UNIQUE (corpus_version, source, source_ref)` key, and a value that
+     * important should be stated by the operator rather than inferred.
+     *
+     * The list lives in the registry rather than here because this command must
+     * not learn what a jurisdiction is: adding a NENA county is a column map and
+     * a registry entry, never an edit to a console command.
+     *
+     * @return list<string>
      */
-    public const SUPPORTED_SOURCES = ['nad'];
+    public static function supportedSources(): array
+    {
+        return CorpusSourceRegistry::supported();
+    }
 
     /** `<source>-<YYYY>-<MM>-<state>`, e.g. `nad-2026-06-fl`. */
     private const CORPUS_VERSION_PATTERN = '/^([a-z0-9]+)-(\d{4})-(\d{2})-([a-z]{2})$/';
 
     protected $signature = 'address:import-corpus
-        {file : Path to the NAD text distribution (.zip, .csv, .txt or .gz)}
-        {--source= : Corpus source identifier — required. Only "nad" is supported.}
+        {file : Local source file — NAD text distribution (.zip/.gz/.csv/.txt) or NG9-1-1 GeoJSON}
+        {--source= : Corpus source identifier — required (nad, pinellas, hillsborough)}
         {--state-fips= : FIPS code of the jurisdiction to scan (e.g. 12 for Florida) — required}
         {--corpus-version= : corpus_version tag, <source>-<YYYY>-<MM>-<state> (e.g. nad-2026-06-fl) — required}
         {--dry-run : Scan and report only. No database connection is opened.}
@@ -96,7 +104,7 @@ class AddressImportCorpus extends Command
         {--spill-dir= : Where the collision spill file is written (default: system temp)}
         {--json= : Also write the full report as JSON to this path (overwrites)}';
 
-    protected $description = 'Stream a NAD address corpus and report what an import would hold (dry run; opens no database connection)';
+    protected $description = 'Stream an authoritative address corpus and report what an import would hold (dry run; opens no database connection)';
 
     public function handle(): int
     {
@@ -124,15 +132,15 @@ class AddressImportCorpus extends Command
 
         if ($source === '') {
             $this->error('[address:import-corpus] --source is required.');
-            $this->line('Supported: ' . implode(', ', self::SUPPORTED_SOURCES) . '. The source is one third of the');
+            $this->line('Supported: ' . implode(', ', self::supportedSources()) . '. The source is one third of the');
             $this->line('dedupe key a future import would use, so it is stated rather than inferred.');
 
             return self::FAILURE;
         }
 
-        if (! in_array($source, self::SUPPORTED_SOURCES, true)) {
+        if (! CorpusSourceRegistry::supports($source)) {
             $this->error("[address:import-corpus] --source [{$source}] is not supported.");
-            $this->line('Supported: ' . implode(', ', self::SUPPORTED_SOURCES) . '. Reading a source this command');
+            $this->line('Supported: ' . implode(', ', self::supportedSources()) . '. Reading a source this command');
             $this->line('does not understand would produce a report about a schema it never parsed.');
 
             return self::FAILURE;
@@ -161,8 +169,12 @@ class AddressImportCorpus extends Command
         }
 
         try {
-            $reader = new NadSourceReader($file);
-        } catch (RuntimeException $e) {
+            // The command does not know which reader or normalizer a source
+            // needs, and must not learn: that is what would turn every new
+            // jurisdiction into an edit here rather than a column map.
+            ['reader' => $reader, 'normalizer' => $normalizer, 'label' => $label]
+                = CorpusSourceRegistry::open($source, $file);
+        } catch (RuntimeException | InvalidArgumentException $e) {
             $this->error('[address:import-corpus] ' . $e->getMessage());
 
             return self::FAILURE;
@@ -171,7 +183,7 @@ class AddressImportCorpus extends Command
         $schema = $reader->assertSchema();
 
         if (! $schema['ok']) {
-            $this->error('[address:import-corpus] The source header is missing required NAD fields.');
+            $this->error('[address:import-corpus] The source does not match the schema this importer maps.');
 
             if ($schema['missing_required'] !== []) {
                 $this->line('  Missing: ' . implode(', ', $schema['missing_required']));
@@ -189,7 +201,17 @@ class AddressImportCorpus extends Command
             return self::FAILURE;
         }
 
-        return $this->dryRun($reader, $stateFips, $usps, $corpusVersion, $source, $file, $schema);
+        return $this->dryRun(
+            $reader,
+            $normalizer,
+            $stateFips,
+            $usps,
+            $corpusVersion,
+            $source,
+            $label,
+            $file,
+            $schema
+        );
     }
 
     /**
@@ -233,18 +255,22 @@ class AddressImportCorpus extends Command
     }
 
     private function dryRun(
-        NadSourceReader $reader,
+        AddressSourceReader $reader,
+        AddressRowNormalizer $normalizer,
         string $stateFips,
         string $usps,
         string $corpusVersion,
         string $source,
+        string $label,
         string $file,
         array $schema,
     ): int {
-        $normalizer = new NadRowNormalizer();
-        $report     = new AddressCorpusDryRunReport();
-        $limit      = (int) $this->option('limit');
-        $limited    = false;
+        // Which raw columns to count for presence is the one source-shaped input
+        // the report still needs — NAD's names against a NENA file would report
+        // every field missing on every row.
+        $report  = new AddressCorpusDryRunReport($this->trackedFieldsFor($source));
+        $limit   = (int) $this->option('limit');
+        $limited = false;
 
         $spill = $this->openSpill();
         $start = microtime(true);
@@ -313,16 +339,46 @@ class AddressImportCorpus extends Command
             $this->removeSpill();
         }
 
-        $this->render($report, $collisions, $elapsed, $file, $usps, $stateFips, $corpusVersion, $source, $schema, $limited, $limit);
+        $this->render($report, $collisions, $elapsed, $file, $usps, $stateFips, $corpusVersion, $source, $label, $schema, $limited, $limit);
 
         if (($path = trim((string) $this->option('json'))) !== '') {
             return $this->writeJson(
                 $path,
-                $this->reportArray($report, $collisions, $elapsed, $file, $usps, $stateFips, $corpusVersion, $source, $schema, $limited, $limit)
+                $this->reportArray($report, $collisions, $elapsed, $file, $usps, $stateFips, $corpusVersion, $source, $label, $schema, $limited, $limit)
             );
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The raw column names whose emptiness this source's report should count.
+     *
+     * Derived from the jurisdiction's column map for a NENA source, so adding a
+     * county does not add a branch here either.
+     *
+     * @return list<string>
+     */
+    private function trackedFieldsFor(string $source): array
+    {
+        $map = CorpusSourceRegistry::columnMap($source);
+
+        if ($map === null) {
+            return AddressCorpusDryRunReport::TRACKED_FIELDS;
+        }
+
+        return array_values(array_unique(array_filter([
+            $map->sourceRefColumn,
+            $map->numberColumn,
+            $map->streetColumn,
+            $map->unitIdColumn,
+            $map->cityColumn,
+            $map->zipColumn,
+            $map->stateColumn,
+            $map->countyColumn,
+            $map->placementColumn,
+            $map->statusColumn,
+        ])));
     }
 
     /**
@@ -337,7 +393,7 @@ class AddressImportCorpus extends Command
      * the field is an opaque id, the columns are positional, and a stray control
      * character in one row must not shift every column after it.
      */
-    private function spillLine(NadAddressRecord $record): string
+    private function spillLine(CorpusAddressRecord $record): string
     {
         $point = number_format($record->latitude, 6, '.', '')
             . ',' . number_format($record->longitude, 6, '.', '');
@@ -641,6 +697,7 @@ class AddressImportCorpus extends Command
         string $stateFips,
         string $corpusVersion,
         string $source,
+        string $label,
         array $schema,
         bool $limited,
         int $limit,
@@ -706,11 +763,25 @@ class AddressImportCorpus extends Command
         $this->newLine();
 
         foreach ($r->distinctValues('placement') as $value => $n) {
+            $resolution = $r->placementResolution($value === '(null)' ? '' : $value);
+
             $proposed = $value === '(null)'
                 ? 'UNMAPPED (decision open)'
-                : (NadPlacementMap::proposedPrecision($value)?->value ?? 'UNRECOGNISED');
+                : ($resolution['precision'] ?? 'UNRECOGNISED');
 
             $this->line(sprintf('    %-30s %10s  %5s%%   → %s', $value, number_format($n), $r->pctOfAccepted($n), $proposed));
+        }
+
+        $this->newLine();
+        $this->line('PRECISION (of accepted rows)');
+
+        foreach ($r->distinctValues('precision') as $value => $n) {
+            $this->line(sprintf('  %-16s %10s  %5s%%', $value, number_format($n), $r->pctOfAccepted($n)));
+        }
+
+        if ($r->injectedJurisdiction > 0) {
+            $this->line('  ' . number_format($r->injectedJurisdiction)
+                . ' row(s) took state/county from source configuration, not from the data.');
         }
 
         $this->newLine();
@@ -785,6 +856,7 @@ class AddressImportCorpus extends Command
         string $stateFips,
         string $corpusVersion,
         string $source,
+        string $label,
         array $schema,
         bool $limited,
         int $limit,
@@ -796,8 +868,8 @@ class AddressImportCorpus extends Command
                 'raw'        => $value,
                 'count'      => $n,
                 'pct'        => $r->pctOfAccepted($n),
-                'recognised' => $value !== '(null)' && NadPlacementMap::isRecognised($value),
-                'proposed'   => $value === '(null)' ? null : NadPlacementMap::proposedPrecision($value)?->value,
+                'recognised' => $value !== '(null)' && $r->placementResolution($value)['recognised'],
+                'proposed'   => $value === '(null)' ? null : $r->placementResolution($value)['precision'],
             ];
         }
 
@@ -810,6 +882,7 @@ class AddressImportCorpus extends Command
 
             'source' => [
                 'source'         => $source,
+                'label'          => $label,
                 'file'           => $file,
                 'bytes'          => is_file($file) ? (int) filesize($file) : 0,
                 'state'          => $usps,
@@ -827,7 +900,16 @@ class AddressImportCorpus extends Command
                 'accepted'       => $r->accepted,
                 'rejected'       => $r->rejected,
                 'reject_reasons' => $r->rejectReasons,
+                // Rows whose state/county came from source configuration rather
+                // than from the data. A single-county NENA feed publishes
+                // neither; supplying them is fine, not saying so would not be.
+                'injected_jurisdiction' => $r->injectedJurisdiction,
             ],
+
+            // What precision the accepted rows would carry. The number that
+            // decides whether Location DNA may measure from this corpus at all,
+            // and the one a reviewer should read before approving a load.
+            'precision' => $r->distinctValues('precision'),
             'coverage' => [
                 'counties'      => $r->distinctValues('county'),
                 'county_count'  => $r->distinctCount('county'),

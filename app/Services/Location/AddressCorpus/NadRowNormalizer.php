@@ -2,11 +2,12 @@
 
 namespace App\Services\Location\AddressCorpus;
 
+use App\Services\Location\AddressCorpus\Contracts\AddressRowNormalizer;
 use App\Services\Location\Coordinates\Adapters\CoordinateValidator;
 use App\Services\Location\Coordinates\PropertyAddress;
 
 /**
- * One raw NAD row → an accepted {@see NadAddressRecord}, or a counted reject.
+ * One raw NAD row → an accepted {@see CorpusAddressRecord}, or a counted reject.
  *
  * Pure: no database, no container, no clock, no filesystem. That is what lets
  * the dry run stream a national file through it and lets every edge case be a
@@ -28,20 +29,26 @@ use App\Services\Location\Coordinates\PropertyAddress;
  * exists to catch the failures that are catastrophic and obvious, not to verify
  * a location.
  */
-final class NadRowNormalizer
+final class NadRowNormalizer implements AddressRowNormalizer
 {
+    public const SOURCE = 'nad';
+
     // Reject reasons — stable strings, because they are reported and compared
-    // across runs.
-    public const REJECT_MISSING_UUID       = 'missing_uuid';
-    public const REJECT_MISSING_NUMBER     = 'missing_address_number';
-    public const REJECT_MISSING_STREET     = 'missing_street_name';
-    public const REJECT_MISSING_LATITUDE   = 'missing_latitude';
-    public const REJECT_MISSING_LONGITUDE  = 'missing_longitude';
-    public const REJECT_MALFORMED_LATITUDE = 'malformed_latitude';
-    public const REJECT_MALFORMED_LONGITUDE = 'malformed_longitude';
-    public const REJECT_COORDINATE_INVALID = 'coordinate_out_of_range';
-    public const REJECT_OUTSIDE_BOUNDS     = 'coordinate_outside_state_bounds';
-    public const REJECT_INSUFFICIENT       = 'insufficient_for_lookup';
+    // across runs. They now point at the shared vocabulary in
+    // {@see CorpusRejectReason}: a second source made one-vocabulary-per-source
+    // a reporting problem, since an operator comparing two jurisdictions needs
+    // one dimension and not two that happen to look alike. The names published
+    // here keep working.
+    public const REJECT_MISSING_UUID       = CorpusRejectReason::MISSING_UUID;
+    public const REJECT_MISSING_NUMBER     = CorpusRejectReason::MISSING_NUMBER;
+    public const REJECT_MISSING_STREET     = CorpusRejectReason::MISSING_STREET;
+    public const REJECT_MISSING_LATITUDE   = CorpusRejectReason::MISSING_LATITUDE;
+    public const REJECT_MISSING_LONGITUDE  = CorpusRejectReason::MISSING_LONGITUDE;
+    public const REJECT_MALFORMED_LATITUDE = CorpusRejectReason::MALFORMED_LATITUDE;
+    public const REJECT_MALFORMED_LONGITUDE = CorpusRejectReason::MALFORMED_LONGITUDE;
+    public const REJECT_COORDINATE_INVALID = CorpusRejectReason::COORDINATE_INVALID;
+    public const REJECT_OUTSIDE_BOUNDS     = CorpusRejectReason::OUTSIDE_BOUNDS;
+    public const REJECT_INSUFFICIENT       = CorpusRejectReason::INSUFFICIENT;
 
     public const REJECT_REASONS = [
         self::REJECT_MISSING_UUID,
@@ -57,20 +64,23 @@ final class NadRowNormalizer
     ];
 
     /**
-     * Generous bounding boxes per FIPS, as [minLat, maxLat, minLng, maxLng].
+     * Generous bounding boxes per FIPS.
      *
-     * Deliberately loose — they include offshore keys and territorial water, and
-     * they are a sanity check rather than a boundary test. A state absent from
-     * this list is simply not bounds-checked, which is the right failure
-     * direction: a missing box must not reject a valid address.
+     * Moved to {@see StateBounds} when a second source arrived — both
+     * normalizers ask the same question of the same coordinate, and two copies
+     * of a box would eventually disagree about where Florida is. Kept here as an
+     * alias because the constant was published.
      */
-    public const STATE_BOUNDS = [
-        '12' => [24.2, 31.2, -87.8, -79.8],   // Florida, incl. the Keys
-    ];
+    public const STATE_BOUNDS = StateBounds::BOXES;
+
+    public function source(): string
+    {
+        return self::SOURCE;
+    }
 
     /**
      * @param  array<string, string|null> $row header-keyed NAD row
-     * @return array{record: NadAddressRecord|null, reject: string|null}
+     * @return array{record: CorpusAddressRecord|null, reject: string|null}
      */
     public function normalize(array $row, string $stateFips): array
     {
@@ -163,8 +173,11 @@ final class NadRowNormalizer
             return $this->reject(self::REJECT_INSUFFICIENT);
         }
 
+        $placement = $this->rawValue($row, 'Placement');
+
         return [
-            'record' => new NadAddressRecord(
+            'record' => new CorpusAddressRecord(
+                source:         self::SOURCE,
                 sourceRef:      $uuid,
                 number:         $number,
                 street:         $street,
@@ -174,12 +187,24 @@ final class NadRowNormalizer
                 postcode:       $this->value($row, 'Zip_Code'),
                 latitude:       $latitude,
                 longitude:      $longitude,
-                stateFips:      $stateFips,
+                stateFips:      StateFips::normalizeFips($stateFips),
                 county:         $this->value($row, 'County'),
-                rawPlacement:   $this->rawValue($row, 'Placement'),
+                rawPlacement:   $placement,
                 localitySource: $localitySource,
                 unitSource:     $unitSource,
                 address:        $address,
+
+                // The placement decision is resolved here, by the source that
+                // owns the vocabulary, so the dry-run report never has to know
+                // NAD exists. `proposedPrecision()` returns null when it
+                // declines, and null must stay null — see NadPlacementMap.
+                placementLabel:      NadPlacementMap::normalize($placement),
+                placementRecognised: NadPlacementMap::isRecognised($placement),
+                precision:           NadPlacementMap::proposedPrecision($placement),
+
+                jurisdiction:     StateFips::toUsps($stateFips) ?? '',
+                stateProvenance:  'column',
+                countyProvenance: 'column',
             ),
             'reject' => null,
         ];
@@ -199,15 +224,7 @@ final class NadRowNormalizer
 
     private function withinStateBounds(float $lat, float $lng, string $stateFips): bool
     {
-        $box = self::STATE_BOUNDS[StateFips::normalizeFips($stateFips)] ?? null;
-
-        if ($box === null) {
-            return true;
-        }
-
-        [$minLat, $maxLat, $minLng, $maxLng] = $box;
-
-        return $lat >= $minLat && $lat <= $maxLat && $lng >= $minLng && $lng <= $maxLng;
+        return StateBounds::contains($lat, $lng, $stateFips);
     }
 
     /** @return array{record: null, reject: string} */

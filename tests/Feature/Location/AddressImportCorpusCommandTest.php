@@ -301,7 +301,7 @@ class AddressImportCorpusCommandTest extends TestCase
         $run = $this->dry([], self::RENAMED);
 
         $this->assertSame(1, $run['code']);
-        $this->assertStringContainsString('missing required NAD fields', $run['output']);
+        $this->assertStringContainsString('does not match the schema this importer maps', $run['output']);
         $this->assertStringContainsString('StNam_Full', $run['output']);
         $this->assertStringContainsString('AddressGUID', $run['output'], 'The actual header must be shown');
     }
@@ -315,7 +315,7 @@ class AddressImportCorpusCommandTest extends TestCase
         $run = $this->dry([], self::NO_NUMBER);
 
         $this->assertSame(1, $run['code']);
-        $this->assertStringContainsString('missing required NAD fields', $run['output']);
+        $this->assertStringContainsString('does not match the schema this importer maps', $run['output']);
         $this->assertStringContainsString('address number', $run['output']);
         $this->assertStringContainsString('AddNo_Full', $run['output']);
         $this->assertStringContainsString('Add_Number', $run['output']);
@@ -637,6 +637,165 @@ class AddressImportCorpusCommandTest extends TestCase
         $this->assertStringContainsString('COVERAGE', $out);
         $this->assertStringContainsString('Counties', $out);
         $this->assertStringContainsString('Postal cities', $out);
+    }
+
+    // ── source dispatch: the same command, three sources ────────────────────
+
+    /** @return array{code:int, output:string} */
+    private function ng911(string $source, array $options = [], ?string $file = null): array
+    {
+        $file ??= "tests/fixtures/address-corpus/ng911-{$source}-sample.geojson";
+
+        $code = Artisan::call('address:import-corpus', array_merge([
+            'file'             => $this->fixture($file),
+            '--source'         => $source,
+            '--state-fips'     => '12',
+            '--corpus-version' => "{$source}-2026-08-fl",
+            '--dry-run'        => true,
+            '--collisions'     => 'none',
+        ], $options));
+
+        return ['code' => $code, 'output' => Artisan::output()];
+    }
+
+    public function test_every_registered_source_is_dispatchable(): void
+    {
+        // The architectural claim, asserted rather than described: one command,
+        // three sources, no county named anywhere in it.
+        $this->assertSame(
+            ['nad', 'pinellas', 'hillsborough'],
+            \App\Services\Location\AddressCorpus\CorpusSourceRegistry::supported()
+        );
+    }
+
+    public function test_a_pinellas_ng911_source_runs_end_to_end(): void
+    {
+        $run = $this->ng911('pinellas');
+
+        $this->assertSame(0, $run['code']);
+        $this->assertStringContainsString('Rows scanned      10', $run['output']);
+        $this->assertStringContainsString('pinellas', $run['output']);
+    }
+
+    public function test_a_hillsborough_ng911_source_runs_end_to_end(): void
+    {
+        $run = $this->ng911('hillsborough');
+
+        $this->assertSame(0, $run['code']);
+        $this->assertStringContainsString('Rows scanned      6', $run['output']);
+    }
+
+    public function test_an_ng911_run_opens_no_connection_and_sends_nothing(): void
+    {
+        // The guarantee has to hold for every source, not just the one it was
+        // written for.
+        Http::fake();
+        $queries = [];
+        DB::listen(function ($q) use (&$queries) { $queries[] = $q->sql; });
+
+        $run = $this->ng911('hillsborough');
+
+        $this->assertSame(0, $run['code']);
+        $this->assertSame([], $queries);
+        Http::assertNothingSent();
+    }
+
+    public function test_ng911_rejects_are_reported_by_name(): void
+    {
+        $out = $this->ng911('pinellas')['output'];
+
+        foreach ([
+            'inactive_address_status',
+            'non_address_feature',
+            'missing_address_number',
+            'missing_source_ref',
+            'coordinate_outside_state_bounds',
+        ] as $reason) {
+            $this->assertStringContainsString($reason, $out, "Reject reason {$reason} must be reported");
+        }
+    }
+
+    public function test_ng911_precision_never_reads_as_rooftop(): void
+    {
+        $path = $this->tempDir() . '/report.json';
+        $this->ng911('hillsborough', ['--json' => $path]);
+
+        $data = json_decode((string) file_get_contents($path), true);
+        @unlink($path);
+
+        $precisions = $data['precision'] ?? [];
+
+        $this->assertArrayHasKey('parcel', $precisions);
+        $this->assertArrayNotHasKey('rooftop', $precisions);
+        $this->assertArrayNotHasKey('entrance', $precisions);
+    }
+
+    public function test_injected_jurisdiction_is_reported(): void
+    {
+        // Hillsborough publishes no state or county; the report must say that
+        // those values were configured rather than read.
+        $path = $this->tempDir() . '/report.json';
+        $this->ng911('hillsborough', ['--json' => $path]);
+
+        $data = json_decode((string) file_get_contents($path), true);
+        @unlink($path);
+
+        $this->assertGreaterThan(0, $data['scan']['injected_jurisdiction']);
+    }
+
+    public function test_a_projected_source_is_refused_at_the_schema_gate(): void
+    {
+        $run = $this->ng911('hillsborough', [], 'tests/fixtures/address-corpus/ng911-stateplane.geojson');
+
+        $this->assertSame(1, $run['code']);
+        $this->assertStringContainsString('does not match the schema this importer maps', $run['output']);
+    }
+
+    public function test_a_non_point_source_is_refused(): void
+    {
+        $run = $this->ng911('hillsborough', [], 'tests/fixtures/address-corpus/ng911-polygon.geojson');
+
+        $this->assertSame(1, $run['code']);
+    }
+
+    public function test_ng911_collisions_separate_units_from_disagreement(): void
+    {
+        // Pinellas fixture: 4200 Gulf Blvd units 501/502 share one point (a
+        // condo, harmless), while the two "Disagree Twin" rows sit at different
+        // points (the case that makes the rung return unresolved).
+        $path = $this->tempDir() . '/report.json';
+        $this->ng911('pinellas', ['--collisions' => 'exact', '--json' => $path]);
+
+        $data = json_decode((string) file_get_contents($path), true);
+        @unlink($path);
+
+        $n = $data['normalization'];
+
+        $this->assertTrue($n['measured']);
+        $this->assertSame(1, $n['repeated_agreeing'], 'the condo pair agrees on its point');
+        $this->assertSame(1, $n['repeated_disagreeing'], 'the twin pair disagrees on its point');
+    }
+
+    public function test_an_ng911_corpus_version_must_name_its_own_source(): void
+    {
+        $run = $this->ng911('pinellas', ['--corpus-version' => 'hillsborough-2026-08-fl']);
+
+        $this->assertSame(1, $run['code']);
+        $this->assertStringContainsString('names source [hillsborough]', $run['output']);
+    }
+
+    public function test_a_florida_county_source_cannot_be_scanned_for_another_state(): void
+    {
+        // FIPS 13 is Georgia. The map declares Florida, so no row qualifies —
+        // a county file cannot smuggle rows into a jurisdiction it never covered.
+        $run = $this->ng911('pinellas', [
+            '--state-fips'     => '13',
+            '--corpus-version' => 'pinellas-2026-08-ga',
+        ]);
+
+        $this->assertSame(0, $run['code']);
+        $this->assertStringContainsString('Rows in GA        0', $run['output']);
+        $this->assertStringContainsString('Accepted          0', $run['output']);
     }
 
     // ── the reader ──────────────────────────────────────────────────────────

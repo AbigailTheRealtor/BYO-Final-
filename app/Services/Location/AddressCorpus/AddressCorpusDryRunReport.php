@@ -18,6 +18,18 @@ namespace App\Services\Location\AddressCorpus;
  * the overflow instead. A truncated dimension says so in the report rather than
  * quietly reporting a subset as if it were the whole.
  *
+ * SOURCE-NEUTRAL BY CONSTRUCTION
+ * ------------------------------
+ * This class knows nothing about NAD, NENA, or any county. It counts a
+ * {@see CorpusAddressRecord}, and every field it reads was already resolved by
+ * whichever normalizer produced that record — including the placement label and
+ * the precision. It used to call `NadPlacementMap` directly, which quietly made
+ * the "generic" audit a NAD-only audit: a NENA county's `POINTTYPE` would have
+ * been scored against a vocabulary that has nothing to do with it.
+ *
+ * The one remaining source-shaped input is which raw column names to count for
+ * presence, and that is passed in by the caller rather than assumed.
+ *
  * WHAT THIS CLASS CANNOT DO
  * -------------------------
  * Duplicate-address detection is deliberately absent. Counting how many distinct
@@ -45,10 +57,29 @@ final class AddressCorpusDryRunReport
     /** @var array<string, int> field => count of rows where it was absent/empty */
     public array $missingFields = [];
 
+    /** The NAD column set, kept as the default so existing callers are unchanged. */
     public const TRACKED_FIELDS = [
         'UUID', 'AddNo_Full', 'StNam_Full', 'Post_City', 'Inc_Muni',
         'Zip_Code', 'Latitude', 'Longitude', 'Placement', 'SubAddress', 'Unit', 'County',
     ];
+
+    /**
+     * Raw column names whose emptiness this run counts.
+     *
+     * Passed in because it is the one genuinely source-shaped thing here: a NENA
+     * county publishes `POSTALCOMM` and `ADDRNUM`, and counting NAD's column
+     * names against it would report every field missing on every row — a report
+     * that looks like a catastrophic data problem and is actually a bug.
+     *
+     * @var list<string>
+     */
+    public readonly array $trackedFields;
+
+    /** @param list<string>|null $trackedFields */
+    public function __construct(?array $trackedFields = null)
+    {
+        $this->trackedFields = $trackedFields ?? self::TRACKED_FIELDS;
+    }
 
     // ── distinct dimensions ─────────────────────────────────────────────────
     /** @var array<string, array<string, int>> dimension => value => count */
@@ -71,6 +102,22 @@ final class AddressCorpusDryRunReport
     public int $placementRecognised  = 0;
     public int $placementUnrecognised = 0;
 
+    /**
+     * Rows whose state or county came from source configuration, not from data.
+     *
+     * A single-county NENA feed publishes neither, because inside that county
+     * both are obvious. Supplying them is legitimate; not saying so would not be,
+     * which is why this is a counter in the report rather than a silent default.
+     */
+    public int $injectedJurisdiction = 0;
+
+    /**
+     * Placement label => how the producing normalizer resolved it.
+     *
+     * @var array<string, array{recognised: bool, precision: string|null}>
+     */
+    private array $placementResolutions = [];
+
     public function countRowScanned(): void
     {
         $this->rowsScanned++;
@@ -81,10 +128,10 @@ final class AddressCorpusDryRunReport
         $this->rowsInState++;
     }
 
-    /** @param array<string, string|null> $row */
+    /** @param array<string, mixed> $row */
     public function countFieldPresence(array $row): void
     {
-        foreach (self::TRACKED_FIELDS as $field) {
+        foreach ($this->trackedFields as $field) {
             if (trim((string) ($row[$field] ?? '')) === '') {
                 $this->missingFields[$field] = ($this->missingFields[$field] ?? 0) + 1;
             }
@@ -97,13 +144,14 @@ final class AddressCorpusDryRunReport
         $this->rejectReasons[$reason] = ($this->rejectReasons[$reason] ?? 0) + 1;
     }
 
-    public function countAccepted(NadAddressRecord $record): void
+    public function countAccepted(CorpusAddressRecord $record): void
     {
         $this->accepted++;
 
         $this->addDistinct('county', $record->county !== '' ? $record->county : '(blank)');
         $this->addDistinct('zip', $record->address->normalizedZip5() ?: '(blank)');
         $this->addDistinct('city', $record->city !== '' ? strtolower($record->city) : '(blank)');
+        $this->addDistinct('precision', $record->precision?->value ?? '(undecided)');
 
         match ($record->localitySource) {
             'post_city' => $this->localityPostCity++,
@@ -117,22 +165,47 @@ final class AddressCorpusDryRunReport
             default      => $this->unitNone++,
         };
 
-        $raw = $record->rawPlacement;
+        if ($record->stateProvenance === 'injected' || $record->countyProvenance === 'injected') {
+            $this->injectedJurisdiction++;
+        }
 
-        if (trim((string) $raw) === '') {
+        // The placement classification arrives already resolved by whichever
+        // source owns that vocabulary. This class used to call NadPlacementMap
+        // directly, which meant the "generic" audit could only ever audit NAD —
+        // and a NENA county's `POINTTYPE` would have been scored against a
+        // vocabulary that has nothing to do with it.
+        if ($record->placementLabel === '') {
             $this->placementNull++;
             $this->addDistinct('placement', '(null)');
 
             return;
         }
 
-        $this->addDistinct('placement', NadPlacementMap::normalize($raw));
+        $this->addDistinct('placement', $record->placementLabel);
 
-        if (NadPlacementMap::isRecognised($raw)) {
+        // What each observed placement value resolved to, recorded once so the
+        // renderer can show it without asking a source-specific map. This is the
+        // last thing that used to force the report to know about NAD.
+        $this->placementResolutions[$record->placementLabel] ??= [
+            'recognised' => $record->placementRecognised,
+            'precision'  => $record->precision?->value,
+        ];
+
+        if ($record->placementRecognised) {
             $this->placementRecognised++;
         } else {
             $this->placementUnrecognised++;
         }
+    }
+
+    /**
+     * How a placement value resolved, as the producing normalizer decided.
+     *
+     * @return array{recognised: bool, precision: string|null}
+     */
+    public function placementResolution(string $label): array
+    {
+        return $this->placementResolutions[$label] ?? ['recognised' => false, 'precision' => null];
     }
 
     private function addDistinct(string $dimension, string $value): void
