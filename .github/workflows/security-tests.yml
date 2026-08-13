@@ -90,22 +90,40 @@ jobs:
 
           # Files excluded from the gate, each with the reason it is excluded.
           #
-          # Both fail on current main for the SAME pre-existing cause, unrelated to any security
-          # behaviour: schema/factory drift. The factories omit a column the schema declares NOT
-          # NULL, e.g.
-          #
-          #     SQLSTATE[23000]: NOT NULL constraint failed: buyer_agent_auctions.title
-          #
           # Excluded rather than suppressed: the gate must be able to pass on a clean main, and a
-          # permanently-red required check trains everyone to ignore it. Fixing the drift means
-          # changing factories, which is application work and does not belong in a CI change.
-          # When it is fixed, delete the entry — the file is then picked up automatically.
+          # permanently-red required check trains everyone to ignore it.
+          # When an entry's cause is fixed, delete it — the file is then picked up automatically.
           #
-          # Cost of each exclusion, recorded so it is not forgotten:
-          #   Phase1AuthorizationTest.php          19 of 23 tests currently pass and are not run
-          #   CounteredTermsAuthorizationTest.php   6 of 10 tests currently pass and are not run
+          # Phase1AuthorizationTest.php was removed from this list once its two missing columns
+          # were added (property_auctions.is_draft, tenant_criteria_auctions.listing_id) and its
+          # stale inline fixtures were repaired. It now runs in the gate at 23/23.
+          #
+          # CounteredTermsAuthorizationTest.php — 9 of 10 tests pass and are not run.
+          #
+          # This is NOT factory drift. The three BuyerAgentAuction fixtures that were missing
+          # `title` have been repaired; what remains is production/schema defects in Counter
+          # Terms itself, deferred to a separate follow-up audit:
+          #
+          #   1. Landlord (the one failing test). landlord_counter_terms declares an FK on
+          #      landlord_agent_auction_id -> landlord_agent_auctions.id, and the insert the
+          #      controller builds violates it:
+          #          SQLSTATE[23000]: FOREIGN KEY constraint failed
+          #      Forcing this green would mean fabricating a satisfying row, which would assert
+          #      that a broken write path works.
+          #
+          #   2. Seller (latent — currently masked, no test asserts it). The controller writes a
+          #      column the table does not have:
+          #          SellerCounteredTermsController:67  $counter->seller_auction_id = ...
+          #          seller_counter_terms declares       seller_agent_auction_id
+          #      producing, on every seller counter-terms write:
+          #          SQLSTATE[HY000]: table seller_counter_terms has no column named seller_auction_id
+          #      The controller swallows the exception, so the test still passes on its 403/redirect
+          #      assertion while the write silently fails. Also seen alongside:
+          #          SQLSTATE[23000]: NOT NULL constraint failed: counter_terms.commission
+          #
+          # Both are real product defects, not test defects, and fixing them is application work
+          # that does not belong in a CI change.
           EXCLUDED=(
-            "Phase1AuthorizationTest.php"
             "CounteredTermsAuthorizationTest.php"
           )
 
