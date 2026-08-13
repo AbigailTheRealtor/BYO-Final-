@@ -42,7 +42,6 @@ class BuyerCriteriaAuctionController extends Controller
 
     public function storeAuction(Request $request)
     {
-        // dd($request->all());
         try {
 
             if (str_contains(strtolower($request->auction_length), 'day')) {
@@ -335,7 +334,6 @@ class BuyerCriteriaAuctionController extends Controller
 
     public function addCounterBid(Request $request, $bid_id)
     {
-        // dd($bid_id);
         $criteria_bid = BuyerCriteriaAuctionBid::find($bid_id);
         $page_data['auction'] = $auction = BuyerCriteriaAuction::find($criteria_bid->buyer_criteria_auction_id);
         $page_data['title'] = "Add Counter Bid for Buyer's Criteria Auction - {$auction->address}";
@@ -802,7 +800,6 @@ class BuyerCriteriaAuctionController extends Controller
 
         $page_data['auctions'] = $auctions;
 
-        // dd($page_data['count_my_auctions']);
         return view('buyer_criteria.list', $page_data);
     }
 
@@ -859,7 +856,6 @@ class BuyerCriteriaAuctionController extends Controller
         $auctions_c = $auctions;
 
         $page_data['count'] = $auctions_c->count();
-        // dd($page_data['count']);
         $page_data['pAuctions'] = $auctions->paginate(12);
 
         $locationChips = [];
