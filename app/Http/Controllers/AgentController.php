@@ -569,18 +569,31 @@ class AgentController extends Controller
             }
         }
 
-        // `property_photos` may now also hold structured MLS entries. This view hands each
-        // element straight to ListingMediaUrl::get(string), so an array element would be a
-        // TypeError — a fatal on an agent's listing page — rather than a missing image.
+        // `property_photos` may also hold structured MLS entries, so the gallery is resolved
+        // through the same component the Seller and Landlord pages use. Each element becomes a
+        // ListingPhotoView carrying its final URL, which is also what stops an array element
+        // reaching ListingMediaUrl::get(string) — a TypeError, and a fatal on an agent's page.
         //
-        // Dropped rather than resolved, deliberately. This surface builds its URLs with a
-        // DIFFERENT convention from the public listing pages (it passes the stored value as a
-        // whole relative path, with no auction/images prefix), so routing it through
-        // ListingGalleryView would change how EXISTING user uploads resolve here — which is
-        // precisely the behaviour that must not move. Rendering MLS media on the agent view is
-        // therefore left as its own piece of work, gated by the same media policy, and until
-        // then this surface fails closed instead of fatally.
-        $propertyPhotos = array_values(array_filter($propertyPhotos, 'is_string'));
+        // StoredValueIsRelativeKey, NOT the public pages' prefixed convention. This view has
+        // always passed the stored value to the resolver unmodified, and several older
+        // controllers write a complete `auction/images/…` path into this meta. Prefixing here
+        // would produce auction/images/auction/images/… and break every existing agent-side
+        // photograph. Preserving that convention is the whole reason the choice is an explicit
+        // argument rather than a default. See ListingPhotoPathConvention.
+        //
+        // THE MEDIA GATE IS ASKED WITH THE STORED ROLE, NOT $role. $role above honours a
+        // ?role= query parameter, which makes it client-influenced; it is fine for choosing an
+        // edit link, but a licensing gate must not be movable from a query string. The role
+        // recorded on the listing is used instead, and an unrecognised one yields null — which
+        // ListingGalleryView reads as "no MLS media", the same fail-closed answer it gives any
+        // surface that cannot establish its role.
+        $mediaRole = in_array($metaRole, $allowedRoles, true) ? $metaRole : null;
+
+        $propertyPhotos = \App\Support\Listing\ListingGalleryView::forRoleWithConvention(
+            $propertyPhotos,
+            $mediaRole,
+            \App\Support\Listing\ListingPhotoPathConvention::StoredValueIsRelativeKey,
+        )->photos();
 
         $data = [
             // ── Identity & status ─────────────────────────────────────────

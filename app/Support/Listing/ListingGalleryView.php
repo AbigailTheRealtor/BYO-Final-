@@ -77,13 +77,38 @@ final class ListingGalleryView
      */
     public static function forRole(mixed $storedPhotos, ?string $role): self
     {
+        return self::forRoleWithConvention(
+            $storedPhotos,
+            $role,
+            ListingPhotoPathConvention::UploadDirectoryPrefixed,
+        );
+    }
+
+    /**
+     * As {@see forRole()}, but for a surface whose stored user-upload values are
+     * already complete relative keys.
+     *
+     * Separate rather than a parameter default because the choice is not a
+     * preference — it is a statement about the rows being read, and getting it
+     * wrong is a silently broken image. See {@see ListingPhotoPathConvention}.
+     *
+     * The convention affects USER uploads only. MLS entries are referenced at the
+     * provider and are gated, validated and emitted identically either way, which
+     * is the point of routing a second surface through here instead of giving it
+     * its own parser.
+     */
+    public static function forRoleWithConvention(
+        mixed $storedPhotos,
+        ?string $role,
+        ListingPhotoPathConvention $convention,
+    ): self {
         $policy     = app(MlsMediaPolicy::class);
         $mlsAllowed = $policy->enabledForRole($role);
 
         $photos = [];
 
         foreach (ListingPhotoEntry::collection($storedPhotos) as $entry) {
-            $view = self::resolve($entry, $policy, $mlsAllowed);
+            $view = self::resolve($entry, $policy, $mlsAllowed, $convention);
 
             if ($view !== null) {
                 $photos[] = $view;
@@ -120,8 +145,12 @@ final class ListingGalleryView
     /**
      * Resolve one entry, or null when it must not be shown.
      */
-    private static function resolve(ListingPhotoEntry $entry, MlsMediaPolicy $policy, bool $mlsAllowed): ?ListingPhotoView
-    {
+    private static function resolve(
+        ListingPhotoEntry $entry,
+        MlsMediaPolicy $policy,
+        bool $mlsAllowed,
+        ListingPhotoPathConvention $convention,
+    ): ?ListingPhotoView {
         if ($entry->isMls()) {
             // The gate, restated at render time. See the class note.
             if (! $mlsAllowed) {
@@ -152,8 +181,13 @@ final class ListingGalleryView
             return null;
         }
 
+        $relativeKey = match ($convention) {
+            ListingPhotoPathConvention::UploadDirectoryPrefixed  => self::UPLOAD_DIRECTORY . '/' . $entry->filename,
+            ListingPhotoPathConvention::StoredValueIsRelativeKey => (string) $entry->filename,
+        };
+
         return new ListingPhotoView(
-            url:     ListingMediaUrl::get(self::UPLOAD_DIRECTORY . '/' . $entry->filename),
+            url:     ListingMediaUrl::get($relativeKey),
             key:     $entry->key(),
             isMls:   false,
             isCover: $entry->isCover,

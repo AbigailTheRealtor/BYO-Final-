@@ -3,6 +3,7 @@
 namespace Tests\Unit\Support;
 
 use App\Support\Listing\ListingGalleryView;
+use App\Support\Listing\ListingPhotoPathConvention;
 use App\Support\Listing\ListingPhotoView;
 use App\Support\Storage\ListingMediaUrl;
 use Tests\TestCase;
@@ -357,6 +358,71 @@ class ListingGalleryViewTest extends TestCase
         }
 
         $this->assertCount(1, $gallery->photos());
+    }
+
+    // =====================================================================
+    // Path conventions — the two live shapes of a stored user-upload value
+    // =====================================================================
+
+    public function test_the_prefixed_convention_adds_the_upload_directory(): void
+    {
+        $gallery = ListingGalleryView::forRoleWithConvention(
+            ['a.jpg'],
+            'seller',
+            ListingPhotoPathConvention::UploadDirectoryPrefixed,
+        );
+
+        $this->assertSame(ListingMediaUrl::get('auction/images/a.jpg'), $gallery->photos()[0]->url);
+    }
+
+    public function test_the_stored_key_convention_uses_the_value_unmodified(): void
+    {
+        $gallery = ListingGalleryView::forRoleWithConvention(
+            ['auction/images/a.jpg'],
+            'seller',
+            ListingPhotoPathConvention::StoredValueIsRelativeKey,
+        );
+
+        $this->assertSame(ListingMediaUrl::get('auction/images/a.jpg'), $gallery->photos()[0]->url);
+
+        // The failure this convention exists to prevent.
+        $this->assertStringNotContainsString('auction/images/auction/images/', $gallery->photos()[0]->url);
+    }
+
+    public function test_forRole_is_the_prefixed_convention(): void
+    {
+        $this->assertSame(
+            ListingGalleryView::forRole(['a.jpg'], 'seller')->urls(),
+            ListingGalleryView::forRoleWithConvention(
+                ['a.jpg'],
+                'seller',
+                ListingPhotoPathConvention::UploadDirectoryPrefixed,
+            )->urls(),
+        );
+    }
+
+    public function test_the_convention_does_not_touch_an_mls_entry(): void
+    {
+        $this->allowMedia();
+
+        // An MLS photograph has no storage key under either convention, so both
+        // must produce the provider URL, byte for byte.
+        foreach (ListingPhotoPathConvention::cases() as $convention) {
+            $gallery = ListingGalleryView::forRoleWithConvention([$this->mlsEntry()], 'seller', $convention);
+
+            $this->assertSame('https://media.example-mls.test/photo-1.jpg', $gallery->photos()[0]->url);
+            $this->assertStringNotContainsString('auction/images', $gallery->photos()[0]->url);
+        }
+    }
+
+    public function test_the_media_gate_is_unaffected_by_the_convention(): void
+    {
+        // Flags at the shipped defaults: neither convention may emit MLS media.
+        foreach (ListingPhotoPathConvention::cases() as $convention) {
+            $gallery = ListingGalleryView::forRoleWithConvention([$this->mlsEntry()], 'seller', $convention);
+
+            $this->assertTrue($gallery->isEmpty());
+        }
     }
 
     // =====================================================================

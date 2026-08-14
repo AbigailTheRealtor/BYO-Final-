@@ -1071,14 +1071,17 @@
     <div class="col-12">
         <div class="text-muted small mb-2">Property Photos</div>
         <div class="row g-2">
+            {{-- Resolved by ListingGalleryView in the controller, under this page's own
+                 StoredValueIsRelativeKey convention, so an existing upload's URL is byte-for-byte
+                 what it was. Unusable entries were already dropped, so no per-item guard is
+                 needed here; MLS-sourced entries appear only when the media policy permits, and
+                 carry the provider's URL rather than any path under our storage. --}}
             @foreach($d['property_photos'] as $photo)
-            @if($photo)
             <div class="col-6 col-md-3">
-                <a href="{{ \App\Support\Storage\ListingMediaUrl::get($photo) }}" target="_blank">
-                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get($photo) }}" alt="Property Photo" class="img-fluid rounded shadow-sm" style="width:100%;height:140px;object-fit:cover;">
+                <a href="{{ $photo->url }}" target="_blank">
+                    <img src="{{ $photo->url }}" alt="{{ $photo->caption ?? 'Property Photo' }}" class="img-fluid rounded shadow-sm" style="width:100%;height:140px;object-fit:cover;">
                 </a>
             </div>
-            @endif
             @endforeach
         </div>
     </div>
