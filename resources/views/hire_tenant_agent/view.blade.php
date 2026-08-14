@@ -384,10 +384,98 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         return isset($tnaSections[\App\Support\HireAgent\HireAgentDetailSections::ID_PREFIX . $key]);
     };
 @endphp
+@php
+    // Tenant counterpart of buyer's $byaListingUrl. Resolved once because the Quick Actions band
+    // below uses it five times (four share targets and the copy control), and a route() call
+    // repeated per tile is five chances for them to drift apart.
+    //
+    // `tenant.agent.view.auction.view` rather than `tenant.agent.auction.view` deliberately: both
+    // resolve to TenantAgentAuctionController@view, and this is the one the page's existing copy
+    // control already hands out. A share tile that copied a different URL from the copy box beside
+    // it would be a new inconsistency invented by this band.
+    $tnaListingUrl = route('tenant.agent.view.auction.view', $auction->id);
+@endphp
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="tenant" :auction="$auction">
+        @if ($tnaDetailRedesign ?? false)
+        {{-- Chrome parity with buyer and landlord. Full-width, above the grid — page-level actions,
+             not main-column content, which is what the shell's beforeGrid slot exists for. The
+             tiles are the buyer set with tenant routes; no tile is added and none is dropped, so
+             the three pages carry the same three affordances in the same order. --}}
+        <x-slot name="beforeGrid">
+            <x-viho.quick-actions label="Quick Actions" icon="fa-solid fa-bolt" ariaLabel="Quick actions">
+
+                {{-- 1. Send Message — authenticated user action; route enforces it. The `tenant-agent`
+                     discriminator is the one this page already passes elsewhere. --}}
+                <x-viho.action-tile
+                    :href="route('auction-chat', ['tenant-agent', $auction->id])"
+                    icon="fa-solid fa-paper-plane"
+                    label="Send Message"
+                    description="Message the listing contact about this listing." />
+
+                {{-- 2. Share Listing — public action. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-share-nodes"
+                    label="Share Listing"
+                    description="Share this listing with agents or your network.">
+                    <x-slot name="action">
+                        <ul class="hla-quick-share">
+                            <li>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($tnaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Facebook">
+                                    <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/intent/tweet?url={{ urlencode($tnaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on X">
+                                    <i class="fa-brands fa-twitter" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://pinterest.com/pin/create/button/?url={{ urlencode($tnaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Pinterest">
+                                    <i class="fa-brands fa-pinterest" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($tnaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on LinkedIn">
+                                    <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </x-slot>
+                </x-viho.action-tile>
+
+                {{-- 3. Copy Link — public action, and wired. The behaviour partial that binds it is
+                     included with the page scripts below, exactly as buyer and landlord do. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-link"
+                    label="Copy Link"
+                    description="Copy a direct link to this listing.">
+                    <x-slot name="action">
+                        <x-viho.button
+                            variant="outline"
+                            icon="fa-solid fa-link"
+                            data-hla-copy-link="{{ $tnaListingUrl }}">Copy Link</x-viho.button>
+                        <span class="hla-quick-copy-status" data-hla-copy-status role="status" aria-live="polite"></span>
+                    </x-slot>
+                </x-viho.action-tile>
+
+            </x-viho.quick-actions>
+        </x-slot>
+        @endif
+
         <x-slot name="main">
+            {{-- Outside the wrapper and above it, so the bar spans the column and sticks to the top
+                 of the reading area rather than to the inside of a card. $tnaSections is the same
+                 registry the section cards consult, so a card and its nav entry cannot disagree
+                 about which sections exist. --}}
+            @if ($tnaDetailRedesign ?? false)
+                <x-viho.section-nav :items="array_values($tnaSections)" ariaLabel="Listing sections" />
+            @endif
             {{--
                 M3. Was `div.card.description` wrapping `card-header.section-header` + an
                 `h4.section-title` + `card-body`. The heading level stays h4: typography is
@@ -1134,6 +1222,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
              Extracting it is Milestone 5B. --}}
         <x-slot name="sidebar">
+    {{-- The redesigned sidebar surface, matching buyer and landlord. Redesign-only, so with the
+         detail flag off the sidebar emits exactly the bytes it did before. Closed symmetrically
+         at the end of this slot. --}}
+    @if ($tnaDetailRedesign ?? false)
+    <div class="hla-surface-card hla-sidebar-card hla-sidebar-sticky" data-hire-agent-sidebar-card>
+    @endif
+
+    {{-- Sidebar identity block is replaced by the redesigned hero when tenant hero redesign is enabled. --}}
+    @unless (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('tenant'))
     <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
     @if(@$auction->listing_id)
     <div class="mb-2">
@@ -1205,6 +1302,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         {{-- PDF download button hidden from UI (backend route preserved) --}}
     </div>
     @endif
+    @endunless
     <hr>
 
     @inject('carbon', 'Carbon\Carbon')
@@ -4388,7 +4486,45 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
     </div>
 </div>
+    {{-- Closes the redesigned sidebar surface opened at the top of this slot. --}}
+    @if ($tnaDetailRedesign ?? false)
+    </div>
+    @endif
         </x-slot>
+
+        {{--
+            The hero's Edit Listing control — the tenant counterpart of the buyer and landlord slots.
+
+            THE SLOT ITSELF IS CONDITIONAL, not just its contents. An always-emitted slot would be
+            `isset()` even when empty, and the legacy hero would then render an empty actions
+            wrapper — a DOM change on a page the flag is supposed to leave untouched.
+
+            THE AUTHORIZATION TEST IS TENANT'S OWN, NOT BUYER'S. Buyer and landlord gate on owner
+            alone; the tenant sidebar control has always required three things — owner, a
+            tenant-type listing, and no accepted bid — and all three are reproduced here verbatim.
+            Copying buyer's simpler test would show Edit Listing to an owner whose listing has
+            already accepted a bid, which the sidebar copy deliberately hides.
+
+            It is spelled inline rather than reusing $isOwnerOfListing and friends because those are
+            computed INSIDE the sidebar's @unless, which does not run when the hero redesign is on —
+            precisely the state this slot exists for. Same reason buyer and landlord read
+            `auth()->id()` directly instead of their own $auth_id.
+
+            Route, params, label, icon and classes are identical to the sidebar control it replaces,
+            and the sidebar copy is suppressed under the same hero flag — so exactly one Edit
+            Listing renders in either flag state, never two and never none.
+        --}}
+        @if (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('tenant')
+            && auth()->id() && auth()->id() == data_get($auction, 'user_id')
+            && in_array(strtolower(trim($auction->get->user_type ?? 'tenant')), ['tenant', ''])
+            && $auction->bids->where('accepted', 'accepted')->count() === 0)
+        <x-slot name="heroActions">
+            <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'tenant']) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
+            </a>
+        </x-slot>
+        @endif
     </x-hire-agent.detail-shell>
 @endsection
 
@@ -4468,4 +4604,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 </script>
+
+{{-- The behaviour half of the section navigation — sticky offset and scroll-spy. Gated by the same
+     role-aware reader as the markup it operates on, because binding behaviour to elements that were
+     never rendered is the failure this pairing avoids. The partial is shared with buyer and
+     landlord rather than copied, and carries no gate of its own on purpose, so the decision stays
+     here with the markup. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('tenant'))
+@include('hire_agent.framework.section-nav-behaviour')
+
+{{-- Binds the Quick Actions Copy Link control emitted in the beforeGrid slot. Gated by the same
+     role-aware reader as the markup it operates on: binding behaviour to elements that were never
+     rendered is the failure this pairing avoids. Shared with buyer and landlord rather than
+     copied. --}}
+@include('hire_agent.framework.quick-actions-behaviour')
+@endif
 @endpush
