@@ -4073,22 +4073,40 @@ class LandlordOfferListing extends Component
      * from the record are dropped; names present but unmentioned keep their relative order at the
      * end. That second pass is the pre-existing behaviour and is what stops a partial drag payload
      * from silently deleting photos.
+     *
+     * MLS-SOURCED ENTRIES. The collection may now hold structured MLS media alongside bare
+     * user-upload filenames, so membership is decided on ListingPhotoEntry::key() rather than on
+     * the stored value. For a user upload that key IS the filename, so a collection containing
+     * only uploads behaves exactly as it did before — same comparison, same result, byte-identical
+     * output. Without this, a strict in_array() against an array-shaped entry would find no match
+     * and the second pass would quietly relocate every MLS photo to the end of the gallery on the
+     * first reorder.
      */
     private function applyPhotoOrder(array $authoritative, array $requested): array
     {
+        $entries = \App\Support\Listing\ListingPhotoEntry::collection($authoritative);
+
         $ordered = [];
-        foreach ($requested as $fname) {
-            if (in_array($fname, $authoritative, true) && ! in_array($fname, $ordered, true)) {
-                $ordered[] = $fname;
-            }
-        }
-        foreach ($authoritative as $fname) {
-            if (! in_array($fname, $ordered, true)) {
-                $ordered[] = $fname;
+        $taken   = [];
+
+        foreach ($requested as $selector) {
+            foreach ($entries as $index => $entry) {
+                if (isset($taken[$index]) || ! $entry->matchesSelector($selector)) {
+                    continue;
+                }
+                $taken[$index] = true;
+                $ordered[]     = $entry;
+                break;
             }
         }
 
-        return $ordered;
+        foreach ($entries as $index => $entry) {
+            if (! isset($taken[$index])) {
+                $ordered[] = $entry;
+            }
+        }
+
+        return \App\Support\Listing\ListingPhotoEntry::toStorageCollection($ordered);
     }
 
     public function reorderPhotos(array $orderedFilenames): void

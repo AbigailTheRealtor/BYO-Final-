@@ -863,27 +863,23 @@
          ===================================================================== --}}
 
     @php
-        /* Resolve photos for hero + gallery */
-        $propertyPhotos = $meta['property_photos'] ?? [];
-        if (is_string($propertyPhotos)) {
-            $decoded = json_decode($propertyPhotos, true);
-            $propertyPhotos = is_array($decoded) ? $decoded : [];
-        }
-        $coverPhoto = null;
-        $heroPhotoUrls = [];
-        $coverPhotoIdx = 0;
-        $_hpTmpIdx = 0;
-        foreach ($propertyPhotos as $ph) {
-            $fn = is_array($ph) ? ($ph['filename'] ?? '') : $ph;
-            if (!$fn) continue;
-            $heroPhotoUrls[] = \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $fn);
-            if (is_array($ph) && !empty($ph['is_cover'])) {
-                $coverPhoto = $fn;
-                $coverPhotoIdx = $_hpTmpIdx;
-            }
-            if (!$coverPhoto) $coverPhoto = $fn;
-            $_hpTmpIdx++;
-        }
+        /* Resolve photos for hero + gallery.
+         *
+         * Every entry is resolved once, by ListingGalleryView, into an object that already
+         * carries its final URL. A user upload still resolves through auction/images exactly
+         * as it always did; an MLS-sourced entry resolves to the provider's own URL and is
+         * emitted ONLY when the media policy permits it — which, at the shipped defaults, is
+         * never. The page therefore renders identically to before for every existing listing.
+         *
+         * This replaced an inline `is_array($ph) ? ($ph['filename'] ?? '')` idiom that had a
+         * copy in each of the five listing views. For an MLS entry that idiom found no
+         * filename and skipped the photograph, so a gallery visible at review vanished on
+         * publish. The rule now lives in one class rather than five views.
+         */
+        $galleryView    = \App\Support\Listing\ListingGalleryView::forRole($meta['property_photos'] ?? null, 'seller');
+        $propertyPhotos = $galleryView->photos();
+        $heroPhotoUrls  = $galleryView->urls();
+        $coverPhotoIdx  = $galleryView->coverIndex();
 
         /* Hero: price — seller-appropriate field priority; no buyer fields */
         $heroPrice = null;
@@ -1304,31 +1300,26 @@
                 @endif
             @endif
 
+            {{-- Unusable entries were already dropped by ListingGalleryView, so the index here
+                 counts rendered photographs and needs no in-loop guard to stay in step with
+                 the hero carousel's own array. --}}
             @if(count($propertyPhotos))
-            @php $galleryIdx = -1; @endphp
             <div class="d-flex flex-wrap gap-2 mt-3">
-                @foreach($propertyPhotos as $photo)
-                @php
-                    $filename = is_array($photo) ? ($photo['filename'] ?? '') : $photo;
-                    $isCover  = is_array($photo) && !empty($photo['is_cover']);
-                    if ($filename) $galleryIdx++;
-                @endphp
-                @if($filename)
+                @foreach($propertyPhotos as $galleryIdx => $photo)
                 <div class="text-center">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#photoModal"
-                       data-src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $filename) }}"
+                       data-src="{{ $photo->url }}"
                        data-index="{{ $galleryIdx }}"
                        style="display:block;">
-                        <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $filename) }}"
-                             alt="Property photo {{ $galleryIdx + 1 }}"
+                        <img src="{{ $photo->url }}"
+                             alt="{{ $photo->caption ?? 'Property photo ' . ($galleryIdx + 1) }}"
                              class="photo-thumb"
                              onerror="this.style.display='none'">
                     </a>
-                    @if($isCover)
+                    @if($photo->isCover)
                         <div><span class="cover-badge">Cover</span></div>
                     @endif
                 </div>
-                @endif
                 @endforeach
             </div>
             @endif

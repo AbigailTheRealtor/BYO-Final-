@@ -1184,6 +1184,21 @@ Route::middleware(['auth'])->group(function () {
         \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class
     )->name('offer.listing.landlord');
 
+    // ── MLS quick-import routes (production) ───────────────────────────────
+    // The shortened creation path: MLS # → BidYourOffer questions → review →
+    // publish. Additive — the manual routes above are untouched and remain the
+    // path for anyone without an MLS number. The components abort(404) when the
+    // feature flags are off, so the routes existing does not make the feature
+    // reachable. Declared BEFORE any /{param} catch-all for the same reason the
+    // edit routes are.
+    Route::get('/offer-listing/seller/import-mls',
+        \App\Http\Livewire\OfferListing\QuickImport\SellerMlsQuickImport::class
+    )->name('offer.listing.seller.quick-import');
+
+    Route::get('/offer-listing/landlord/import-mls',
+        \App\Http\Livewire\OfferListing\QuickImport\LandlordMlsQuickImport::class
+    )->name('offer.listing.landlord.quick-import');
+
     // ── Offer Listing Edit routes (production) ─────────────────────────────
     // IMPORTANT: specific /edit/ routes must be declared BEFORE any catch-all
     // {user_type?} routes to prevent Laravel matching 'edit' as a route param.

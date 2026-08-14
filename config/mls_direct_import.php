@@ -46,4 +46,31 @@ return [
 
     'prefill_roles' => ['seller', 'landlord'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Quick-import flow
+    |--------------------------------------------------------------------------
+    |
+    | The shortened Seller/Landlord path: enter an MLS #, have the property
+    | portion of the listing built for you, answer only the BidYourOffer
+    | transaction questions, review, publish.
+    |
+    | Separate from `prefill_enabled` because they are different surfaces with
+    | different blast radii. `prefill_enabled` adds an input to a form the user
+    | is already filling in; this adds a whole creation path that writes a draft
+    | listing. Both must be on for the flow to be reachable — this is an
+    | additional gate, never a replacement one.
+    |
+    | Deliberately NOT tied to config/mls_media.php. The flow's core promise is
+    | delivered by the facts alone and is useful with the photo gallery switched
+    | off, which is what lets the media licence be settled on its own timetable
+    | without holding up the rest of the feature.
+    |
+    | Role scope is `prefill_roles` above — one list, so the two surfaces cannot
+    | drift into disagreeing about which roles the feature exists for.
+    |
+    */
+
+    'quick_import_enabled' => env('MLS_DIRECT_IMPORT_QUICK_IMPORT_ENABLED', false),
+
 ];

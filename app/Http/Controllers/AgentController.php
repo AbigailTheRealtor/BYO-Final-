@@ -569,6 +569,32 @@ class AgentController extends Controller
             }
         }
 
+        // `property_photos` may also hold structured MLS entries, so the gallery is resolved
+        // through the same component the Seller and Landlord pages use. Each element becomes a
+        // ListingPhotoView carrying its final URL, which is also what stops an array element
+        // reaching ListingMediaUrl::get(string) — a TypeError, and a fatal on an agent's page.
+        //
+        // StoredValueIsRelativeKey, NOT the public pages' prefixed convention. This view has
+        // always passed the stored value to the resolver unmodified, and several older
+        // controllers write a complete `auction/images/…` path into this meta. Prefixing here
+        // would produce auction/images/auction/images/… and break every existing agent-side
+        // photograph. Preserving that convention is the whole reason the choice is an explicit
+        // argument rather than a default. See ListingPhotoPathConvention.
+        //
+        // THE MEDIA GATE IS ASKED WITH THE STORED ROLE, NOT $role. $role above honours a
+        // ?role= query parameter, which makes it client-influenced; it is fine for choosing an
+        // edit link, but a licensing gate must not be movable from a query string. The role
+        // recorded on the listing is used instead, and an unrecognised one yields null — which
+        // ListingGalleryView reads as "no MLS media", the same fail-closed answer it gives any
+        // surface that cannot establish its role.
+        $mediaRole = in_array($metaRole, $allowedRoles, true) ? $metaRole : null;
+
+        $propertyPhotos = \App\Support\Listing\ListingGalleryView::forRoleWithConvention(
+            $propertyPhotos,
+            $mediaRole,
+            \App\Support\Listing\ListingPhotoPathConvention::StoredValueIsRelativeKey,
+        )->photos();
+
         $data = [
             // ── Identity & status ─────────────────────────────────────────
             'id'           => $auction->id,
