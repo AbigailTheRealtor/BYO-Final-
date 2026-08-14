@@ -467,11 +467,39 @@ class TenantAgentAuctionCounterTerm extends Component
 
     public ?int $counterTermId = null;   // <— track existing record for edit
 
+    /**
+     * Re-resolve the bid and its auction from the database and admit only a party
+     * to that negotiation — the listing owner or the bidding agent.
+     *
+     * Always re-queries rather than reading `$pab->auction`: that relation is
+     * declared `->withDefault()`, so a missing auction yields an empty model whose
+     * `user_id` is null instead of null itself, which would read as "owned by
+     * nobody" rather than failing closed.
+     *
+     * @return array{0: \App\Models\TenantAgentAuctionBid, 1: TenantAgentAuction}
+     */
+    private function authorizeParty($bidId): array
+    {
+        $bid = \App\Models\TenantAgentAuctionBid::find($bidId);
+        $auction = $bid ? TenantAgentAuction::find($bid->tenant_agent_auction_id) : null;
+
+        $isTenant = $auction && (int) $auction->user_id === (int) Auth::id();
+        $isAgent  = $bid && (int) $bid->user_id === (int) Auth::id();
+
+        abort_unless(Auth::check() && $bid && $auction && ($isTenant || $isAgent), 403, 'You are not authorized to submit counter terms for this bid.');
+
+        return [$bid, $auction];
+    }
+
     public function mount($pab, $bidId)
     {
+        // Guard independently of the controller: a Livewire component can be
+        // mounted from anywhere, so it cannot assume its caller checked.
+        $this->authorizeParty(is_object($pab) ? $pab->id : $bidId);
+
         $this->pab   = $pab;
         $this->bidId = $bidId;
-        
+
         // Get property_type from the auction (listing) that this bid belongs to
         $auction = $pab->auction ?? null;
         if ($auction && $auction->get) {
@@ -717,6 +745,36 @@ class TenantAgentAuctionCounterTerm extends Component
     }
     public function submit()
     {
+        // Action-time authorization. mount() does NOT re-run between Livewire
+        // requests, so a mount-time check alone protects nothing here: every
+        // public property below arrived from the client on THIS request.
+        //
+        // Anchored on the bid, re-read from the database — not on $this->auctionId
+        // or any other hydrated scalar. $this->bidId must agree with that bid, so a
+        // tampered bidId cannot steer the redirect or the services lookup below at
+        // a negotiation the caller is not party to.
+        [$bid, $auction] = $this->authorizeParty(is_object($this->pab) ? $this->pab->id : $this->bidId);
+
+        abort_unless((int) $this->bidId === (int) $bid->id, 403, 'You are not authorized to submit counter terms for this bid.');
+
+        // $counterTermId is a plain public property, so the client can set it to any
+        // value it likes — Livewire v2 has no equivalent of a locked property, and
+        // the payload checksum does not cover client-initiated property updates.
+        // Updating whatever row it names would let an authenticated party rewrite
+        // another user's counter terms, and because the update leaves user_id alone
+        // the rewrite would still be attributed to the victim. Verify ownership AND
+        // that the row belongs to this negotiation before any mutation.
+        if ($this->counterTermId) {
+            $existing = TenantCounterTerm::find($this->counterTermId);
+            abort_unless(
+                $existing
+                    && (int) $existing->user_id === (int) Auth::id()
+                    && (int) $existing->tenant_agent_auction_id === (int) $bid->tenant_agent_auction_id,
+                403,
+                'You are not authorized to modify these counter terms.'
+            );
+        }
+
         $this->validate();
 
         try {
