@@ -285,8 +285,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         return false;
     };
 
+    /*
+     | `listing_title` is NOT in this list, and its absence is the point. T2 removed the Listing
+     | Title row after establishing the meta key is never written — both tenant components store
+     | the answer in the auction's native `title` column, and `$auction->get` reads meta alone.
+     | The key was therefore always null here, contributing nothing to $tnaAnyPresent, so dropping
+     | it changes this guard's result for no listing. What it does change is that the list no
+     | longer advertises a field the section cannot render.
+     */
     $tnaHasListingDetails = $tnaAnyPresent([
-        @$auction->get->listing_title, @$auction->get->working_with_agent,
+        @$auction->get->working_with_agent,
         @$auction->get->desired_agent_hire_date, @$auction->get->listing_date,
         @$auction->get->expiration_date, @$auction->get->auction_type,
         @$auction->get->meeting_Preference,
@@ -397,57 +405,37 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" :legacy-header="false" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines">
                     <div class="row" style="flex-wrap: wrap;">
                         {{-- Listing Status removed from here - now only shown as badge above Listing ID in header --}}
-                        @if (@$auction->get->listing_title != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Listing Title:
-                            <span class="removeBold">{{ @$auction->get->listing_title }}</span>
-                        </div>
-                        @endif
+                        {{-- T2 — the "Listing Title" row is gone, and it could never have rendered.
+                             The questionnaire DOES ask for a listing title, but the component stores
+                             the answer in the auction's native `title` COLUMN — both
+                             TenantAgentAuction and TenantAgentAuctionEdit write
+                             `$auction->title = $this->listing_title` — and never as `listing_title`
+                             meta. `$auction->get` reads the meta table alone, so this row read a key
+                             nothing writes: the `!= null` guard was never satisfied and the row was
+                             dead in BOTH flag states. Buyer and landlord removed the identical row
+                             for the identical reason during their own conversions. --}}
                         @if (@$auction->get->working_with_agent != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Current Representation Status with Broker:
-                            <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" span="full" label="Current Representation Status with Broker" :value="@$auction->get->working_with_agent" />
                         @endif
 
                         @if (@$auction->get->desired_agent_hire_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Desired Agent Hire Date:
-                            <span class="removeBold">
-                                {{ date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Desired Agent Hire Date" :value="date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date))" />
                         @endif
                         @if (@$auction->get->listing_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Listing Date:
-                            <span
-                                class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->listing_date)) }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Listing Date" :value="date('F j, Y', strtotime(@$auction->get->listing_date))" />
                         @endif
                         @if (@$auction->get->expiration_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Expiration Date:
-                            <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->expiration_date)) }}
-                            </span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Expiration Date" :value="date('F j, Y', strtotime(@$auction->get->expiration_date))" />
                         @endif
                         @if (@$auction->get->auction_type != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Listing Type:
-                            <span class="removeBold"> {{ @$auction->get->auction_type }}
-                            </span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Listing Type" :value="@$auction->get->auction_type" />
                         @endif
 
                         {{-- Milestone 3: the "Bidding Period Length: 14 Days" row was removed
                              here. It is a bidding-period label describing a timer that no
                              longer exists or governs anything. --}}
                         @if (@$auction->get->meeting_Preference != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Meeting Preference:
-                            <span class="removeBold"> {{ @$auction->get->meeting_Preference }}
-                            </span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Meeting Preference" :value="@$auction->get->meeting_Preference" />
                         @endif
 
                     </div>
@@ -490,35 +478,48 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             if (is_string($rawZips)) { $rawZips = json_decode($rawZips, true); }
                             $rawZips = is_array($rawZips) ? array_filter($rawZips) : [];
                         @endphp
+                        {{-- ── PILLS vs TEXT, AND WHY THESE THREE ROWS RENDER AS TEXT ──────────
+                             The location rows below — Acceptable Cities, Counties and Zip Code —
+                             pass `listValue` and NOT `badges`, so the redesign branch renders them
+                             as ", "-joined text in an ordinary half-width cell. They then read
+                             exactly like Acceptable State sitting between them, and like every
+                             other multi-value row on this page.
+
+                             This follows BUYER, which moved these same three rows off `badges` and
+                             recorded why: the reference page's vocabulary is that a pill means
+                             STATE and plain text means DATA, and spending the page's strongest
+                             visual signal on a list of city names is not what that signal is for.
+                             Landlord still says `badges` on its own call sites and is untouched.
+
+                             `bareSlot` STAYS, and it is not a leftover: it governs the LEGACY
+                             branch only, emitting the pill run without a wrapping `.removeBold`,
+                             which is the element tree flag-off is asserted against. The pills
+                             cannot simply be deleted from the call site — flag-off output is
+                             asserted verbatim, and flag-off renders pills. One row, two
+                             renderings, neither branch aware of the other. --}}
                         @if (!empty($cleanCities))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable Cities:
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable Cities" :bare-slot="true" :list-value="$cleanCities">
                             @foreach ($cleanCities as $city)
                                 <span class="removeBold badge bg-secondary">{{ $city }}</span>
                             @endforeach
-                        </div>
+                        </x-hire-agent.field>
                         @endif
                         @if (!empty($cleanCounties))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable Counties:
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable Counties" :bare-slot="true" :list-value="$cleanCounties">
                             @foreach ($cleanCounties as $county)
                                 <span class="removeBold badge bg-secondary">{{ $county }}</span>
                             @endforeach
-                        </div>
+                        </x-hire-agent.field>
                         @endif
                         @if (!empty($stateVal))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Acceptable State:
-                            <span class="removeBold">{{ $stateVal }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable State" :value="$stateVal" />
                         @endif
                         @if (!empty($rawZips))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Zip Code:
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Zip Code" :bare-slot="true" :list-value="$rawZips">
                             @foreach ($rawZips as $zip)
                                 <span class="removeBold badge bg-secondary">{{ $zip }}</span>
                             @endforeach
-                        </div>
+                        </x-hire-agent.field>
                         @endif
                         {{-- @if (@$auction->get->state != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold"> State:
@@ -527,21 +528,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif --}}
 
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Acceptable Property Type:
-                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable Property Type" :value="\App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type)" />
                     @endif
                     @php
                         $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->property_items);
                     @endphp
                     @if (!empty($propertyStyleItems))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Acceptable Property Styles:
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable Property Styles" :bare-slot="true" :list-value="$propertyStyleItems">
                         @foreach ($propertyStyleItems as $psItem)
                         <span class="removeBold badge bg-secondary">{{ $psItem }}</span>
                         @endforeach
-                    </div>
+                    </x-hire-agent.field>
                     @endif
                     @php
                         $rawConditions = @$auction->get->condition_prop_buyer ?? null;
@@ -587,19 +584,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         }, array_filter($conditions));
                         $uniqueConditions = array_unique($mappedConditions);
                     @endphp
+                    {{-- $uniqueConditions comes from array_unique(), which PRESERVES the original
+                         keys, so it is not a sequential list. That is safe here: the component
+                         joins with array_map/array_filter/implode, all of which are key-agnostic,
+                         and the legacy @foreach never cared either. --}}
                     @if(!empty($uniqueConditions))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Acceptable Property Condition:
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable Property Condition" :bare-slot="true" :list-value="$uniqueConditions">
                         @foreach($uniqueConditions as $condition)
                             <span class="removeBold badge bg-secondary">{{ $condition }}</span>
                         @endforeach
-                    </div>
+                    </x-hire-agent.field>
                     @endif
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->leasing_space))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Acceptable Leasing Space:
-                        <span class="removeBold">{{ $auction->get->leasing_space }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Acceptable Leasing Space" :value="$auction->get->leasing_space" />
                     @endif
                     @php
                         $bedroomVal = @$auction->get->bedrooms;
@@ -608,10 +605,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         }
                     @endphp
                     @if (@$auction->get->property_type !== 'Commercial Property' && \App\Helpers\ListingDisplayHelper::hasValue($bedroomVal))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Bedrooms Needed:
-                        <span class="removeBold">{{ $bedroomVal }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Minimum Bedrooms Needed" :value="$bedroomVal" />
                     @endif
                     @php
                         $bathroomVal = @$auction->get->bathrooms;
@@ -620,23 +614,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         }
                     @endphp
                     @if (\App\Helpers\ListingDisplayHelper::hasValue($bathroomVal))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Bathrooms Needed:
-                        <span class="removeBold">{{ $bathroomVal }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Minimum Bathrooms Needed" :value="$bathroomVal" />
                     @endif
 
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_heated_square))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Sqft Needed:
-                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtNumber(@$auction->get->minimum_heated_square) }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Minimum Sqft Needed" :value="\App\Helpers\ListingDisplayHelper::fmtNumber(@$auction->get->minimum_heated_square)" />
                     @endif
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_leaseable))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Net Leasable Sqft Needed:
-                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtNumber(@$auction->get->minimum_leaseable) }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Minimum Net Leasable Sqft Needed" :value="\App\Helpers\ListingDisplayHelper::fmtNumber(@$auction->get->minimum_leaseable)" />
                     @endif
 
                     {{-- Garage/Parking Features Needed (Commercial only — merged single line) --}}
@@ -646,10 +631,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $parkingItems = ($garageNeeded === 'Yes')
                                 ? \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper)
                                 : [];
+
+                            /*
+                             | The one row on this page whose slot is not a single value OR a single
+                             | pill run — it is a "Yes" followed by a run of features. The redesign
+                             | branch cannot read that shape, so the same answer is composed here as
+                             | a flat list and passed as `listValue`: "Yes, Covered Parking, Garage".
+                             | Buyer builds its $byaParkingDisplay the same way for the same reason.
+                             | The slot is left exactly as it was and only the legacy branch reads
+                             | it, so flag-off is untouched.
+                             */
+                            $tnaParkingDisplay = ($garageNeeded === 'Yes' && !empty($parkingItems))
+                                ? array_merge(['Yes'], array_values($parkingItems))
+                                : ($garageNeeded !== '' ? [$garageNeeded] : []);
                         @endphp
                         @if ($garageNeeded !== '')
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Garage/Parking Features Needed:
+                        <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" span="full" label="Garage/Parking Features Needed" :bare-slot="true" :list-value="$tnaParkingDisplay">
                             @if ($garageNeeded === 'Yes' && !empty($parkingItems))
                                 <span class="removeBold">Yes</span>
                                 @if (count($parkingItems) === 1)
@@ -662,7 +659,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             @else
                                 <span class="removeBold">{{ $garageNeeded }}</span>
                             @endif
-                        </div>
+                        </x-hire-agent.field>
                         @endif
                     @endif
 
@@ -670,9 +667,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @php
                         $furnishingItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->tenant_require);
                     @endphp
+                    {{-- The two-spelling slot — one item renders plain, many render as pills — is
+                         preserved verbatim for the legacy branch. The redesign reads `listValue`
+                         and so renders text either way, which is where the two spellings were
+                         always heading. Buyer records the same note on its own conditions row. --}}
                     @if (@$auction->get->property_type === 'Residential Property' && !empty($furnishingItems))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Furnishings Needed:
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Furnishings Needed" :bare-slot="true" :list-value="$furnishingItems">
                         @if (count($furnishingItems) === 1)
                             <span class="removeBold">{{ $furnishingItems[0] }}</span>
                         @else
@@ -680,26 +680,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <span class="removeBold badge bg-secondary">{{ $fItem }}</span>
                             @endforeach
                         @endif
-                    </div>
+                    </x-hire-agent.field>
                     @endif
 
                     {{-- Carport Needed with merged spaces (Residential-only) --}}
                     @if (@$auction->get->property_type === 'Residential Property')
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Carport Needed:
-                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Carport Needed" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces')" />
                     @endif
                     @endif
 
                     {{-- Garage Needed with merged spaces (Residential) --}}
                     @if (@$auction->get->property_type === 'Residential Property')
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Garage Needed:
-                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Garage Needed" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces')" />
                     @endif
                     @endif
 
@@ -721,47 +715,49 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     ->filter(fn($v) => $v === true || $v === 1 || $v === '1' || $v === 'true')
                     ->keys()
                     ->implode(', ');
+
+                    /*
+                     | Two mutually exclusive @if/@elseif arms became one row. They always emitted
+                     | the SAME markup and differed only in the value, so composing the value here
+                     | and rendering one field is DOM-identical to what the pair produced — the
+                     | reader could never have seen both. A third state stays a third state: when
+                     | pool_needed is neither a qualifying "Yes" nor No/Optional this is null and
+                     | the row does not render, exactly as neither arm matching did before.
+                     */
+                    $tnaPoolDisplay = (optional($auction->get)->pool_needed === 'Yes' && $poolTypeList !== '')
+                        ? 'Yes (' . ucwords($poolTypeList) . ')'
+                        : (in_array(optional($auction->get)->pool_needed, ['No', 'Optional'], true)
+                            ? optional($auction->get)->pool_needed
+                            : null);
                     @endphp
 
-                    @if (optional($auction->get)->pool_needed === 'Yes' && $poolTypeList !== '')
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        
-                        Pool Needed:
-                        <span class="removeBold">Yes ({{ ucwords($poolTypeList) }})</span>
-                    </div>
-                    @elseif (in_array(optional($auction->get)->pool_needed, ['No', 'Optional'], true))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        
-                        Pool Needed:
-                        <span class="removeBold">{{ optional($auction->get)->pool_needed }}</span>
-                    </div>
+                    @if ($tnaPoolDisplay !== null)
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Pool Needed" :value="$tnaPoolDisplay" />
                     @endif
                     @endif
 
                     @php
                         $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
                     @endphp
+                    {{-- The legacy label was split across two source lines ("View" on the div, then
+                         "Preference Needed:") and rendered as one string once HTML collapsed the
+                         newline. It is passed here as the single label it always was. --}}
                     @if (!empty($viewPrefItems))
-                    <div class="col-md-12 col-12 pt-2 fw-bold"> View
-                        Preference Needed:
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" span="full" label="View Preference Needed" :bare-slot="true" :list-value="$viewPrefItems">
                         @foreach ($viewPrefItems as $item)
                             <span class="removeBold badge bg-secondary">{{ $item }}</span>
                         @endforeach
-                    </div>
+                    </x-hire-agent.field>
                     @endif
                     @if (@$auction->get->property_type === 'Residential Property' && !empty(@$auction->get->leasing_55_plus))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Age-Restricted Community:
-                        <span class="removeBold">{{ @$auction->get->leasing_55_plus }}</span>
-                    </div>
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Age-Restricted Community" :value="@$auction->get->leasing_55_plus" />
                     @endif
 
                     @php
                         $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
                     @endphp
                     @if (!empty($amenityItems))
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Non-Negotiable Amenities and Property Features:
+                    <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" span="full" label="Non-Negotiable Amenities and Property Features" :bare-slot="true" :list-value="$amenityItems">
                         @if (count($amenityItems) === 1)
                             <span class="removeBold">{{ $amenityItems[0] }}</span>
                         @else
@@ -769,7 +765,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                             @endforeach
                         @endif
-                    </div>
+                    </x-hire-agent.field>
                     @endif
                 </div>
                 </x-hire-agent.detail-section>
@@ -777,19 +773,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if (! ($tnaDetailRedesign ?? false))<hr>@endif
                 @if (! ($tnaDetailRedesign ?? false) || $tnaShows('terms'))
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
+                {{-- NOTE FOR ANYONE COMPARING WITH LANDLORD: its Leasing Terms rows carry `width`
+                     and `legacyRow` because that section spells its classes `col-12 fw-bold pt-2`
+                     and wraps EACH row in its own div.row. Tenant's does neither — these rows use
+                     the standard `col-md-12 col-12 pt-2 fw-bold` and share the section's flow — so
+                     every row here takes the component default and needs no override. --}}
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->budget))
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Maximum Monthly Lease Price:
-                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->budget) }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Maximum Monthly Lease Price" :value="\App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->budget)" />
                 @endif
 
                 @php
                     $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->lease_for, @$auction->get->other_lease_for);
                 @endphp
                 @if (!empty($leaseTermItems))
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Offered Lease Term:
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Offered Lease Term" :bare-slot="true" :list-value="$leaseTermItems">
                     @if (count($leaseTermItems) === 1)
                         <span class="removeBold">{{ $leaseTermItems[0] }}</span>
                     @else
@@ -797,13 +794,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             <span class="removeBold badge bg-secondary">{{ $ltItem }}</span>
                         @endforeach
                     @endif
-                </div>
+                </x-hire-agent.field>
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->lease_date))
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Offered Lease Date:
-                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->lease_date)) }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Offered Lease Date" :value="date('F j, Y', strtotime(@$auction->get->lease_date))" />
                 @endif
 
                 @php
@@ -817,72 +811,53 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     $leasingSpaceItems = \App\Helpers\ListingDisplayHelper::normalizeList($rawLeasingSpaces);
                 @endphp
                 @if (!empty($leasingSpaceItems))
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Leasing Space:
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Leasing Space" :bare-slot="true" :list-value="$leasingSpaceItems">
                     @foreach ($leasingSpaceItems as $lsItem)
                         <span class="removeBold badge bg-secondary">{{ $lsItem }}</span>
                     @endforeach
-                </div>
+                </x-hire-agent.field>
                 @endif
                 </x-hire-agent.detail-section>
                 @endif
                 @if (! ($tnaDetailRedesign ?? false))<hr>@endif
                 @if (! ($tnaDetailRedesign ?? false) || $tnaShows('pre-screening'))
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-pre-screening" title="Pre-Screening:" icon="fa-solid fa-clipboard-check">
+                {{-- "Number of Occupants" was another label split across two source lines; it is
+                     passed here as the one string it always rendered as. --}}
                 @if (@$auction->get->number_occupant)
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Number
-                    of Occupants:
-                    <span class="removeBold">
-                        {{ $auction->get->number_occupant ?? '' }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Number of Occupants" :value="$auction->get->number_occupant ?? ''" />
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->monthly_income))
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Estimated Monthly Net Household Income:
-                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->monthly_income) }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Estimated Monthly Net Household Income" :value="\App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->monthly_income)" />
                 @endif
                 {{-- Pets section (Residential-only) --}}
                 @if (@$auction->get->property_type === 'Residential Property')
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Pets:
-                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Pets" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets)" />
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Types:
-                    <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Pet Types" :value="@$auction->get->type_of_pets" />
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->breed_of_pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Breed of Pets:
-                    <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Breed of Pets" :value="@$auction->get->breed_of_pets" />
                 @endif
+                {{-- The " lbs" suffix lived OUTSIDE the interpolation but inside the span, so it
+                     is part of the value rather than the label and is composed as such here. --}}
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Weight (lbs):
-                    <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Pet Weight (lbs)" :value="@$auction->get->weight_of_pets . ' lbs'" />
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->service_animal))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Service Animal:
-                    <span class="removeBold">{{ @$auction->get->service_animal }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Service Animal" :value="@$auction->get->service_animal" />
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->support_animal))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Emotional Support Animal:
-                    <span class="removeBold">{{ @$auction->get->support_animal }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Emotional Support Animal" :value="@$auction->get->support_animal" />
                 @endif
                 @endif
                 @endif
 
                 @if (@$auction->get->screening_concerns != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Rental History Disclosure:
-                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->screening_concerns, @$auction->get->screening_concerns_explanation) }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" span="full" label="Rental History Disclosure" :value="\App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->screening_concerns, @$auction->get->screening_concerns_explanation)" />
                 @endif
 
 
@@ -892,10 +867,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if ($tnaDetailRedesign ? $tnaShows('additional-details') : \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Additional Details:<span class="removeBold">
-                        {{ $auction->get->additional_details }}</span>
-                </div>
+                {{-- The legacy label and span were written with NO space between them, and the
+                     rendered text only read "Additional Details: …" because of the newline INSIDE
+                     the span. The component's own newline after the label produces the same
+                     normalised text, so this row reads identically in the legacy branch. --}}
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" span="full" label="Additional Details" :value="$auction->get->additional_details" />
                 </x-hire-agent.detail-section>
                 @endif
 
@@ -910,11 +886,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
                      rendered text is unchanged. Passing &amp; here would double-escape it. --}}
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
+                {{-- $compatRows is already built as label/value pairs and every pair in it has a
+                     value: the builder drops empties before this loop, which is why
+                     !empty($compatRows) is a complete guard for the section and why the nav can
+                     share it. The rows still route through the adapter rather than emitting their
+                     own markup, so a pair that ever did arrive empty disappears here instead of
+                     printing a bare label. The label is passed WITHOUT its colon — the legacy
+                     branch appends one, matching what this loop spelled by hand. --}}
                 @foreach ($compatRows as $compatRow)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    {{ $compatRow['label'] }}:
-                    <span class="removeBold">{{ $compatRow['value'] }}</span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" :label="$compatRow['label']" :value="$compatRow['value']" />
                 @endforeach
                 </x-hire-agent.detail-section>
                 @endif
@@ -928,10 +908,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if ($tnaDetailRedesign ? $tnaShows('referral') : ($referralPctDisplay !== ''))
                 @if (! ($tnaDetailRedesign ?? false))<hr />@endif
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Referral Fee:
-                    <span class="removeBold">{{ $referralPctDisplay }}</span>
-                </div>
+                {{-- The section's guard IS this field's emptiness test, and the nav shares it, so
+                     the row needs no guard of its own. --}}
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="Referral Fee" :value="$referralPctDisplay" />
                 </x-hire-agent.detail-section>
                 @endif
 
@@ -946,13 +925,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if (! ($tnaDetailRedesign ?? false) || $tnaShows('role-info'))
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-role-info" :title="$_ownerInfoHeading" icon="fa-solid fa-id-card">
                 @if (!empty($auction->get->first_name))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> First
-                    Name:
-                    <span class="removeBold">
-                        {{ $auction->get->first_name }}
-                    </span>
-                </div>
+                <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" label="First Name" :value="$auction->get->first_name" />
                 @endif
+                {{-- THE MEDIA ROWS BELOW ARE DELIBERATELY NOT CONVERTED. Video, Photo and the three
+                     Video Link branches carry <video>, <img>, <iframe> and anchor markup at
+                     `col-md-6 col-6` — they are embedded media, not label/value pairs, and the 5/7
+                     grid has nothing to offer them. Buyer left its identical five rows alone for
+                     the same reason; tenant matches it. --}}
                 <div class="row">
                     {{-- @if (isset($auction->get->video))
                                 <div class="col-md-6 col-6 pt-2 fw-bold">Video:
@@ -1067,14 +1046,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                      card and it cannot render as an empty bordered box in the meantime. --}}
                 @if (($tnaDetailRedesign ?? false) && $tnaShows('agent-credentials'))
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-agent-credentials" title="Agent Credentials:" icon="fa-solid fa-address-card">
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Brokerage:
-                    <span class="removeBold">{{ $auction->user->info('brokerage') }}</span>
-                </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    License No:
-                    <span class="removeBold">{{ $auction->user->info('license_no') }}</span>
-                </div>
+                {{-- The redesign is not a branch here, it is the only branch: this section is gated
+                     `($tnaDetailRedesign ?? false) &&` above, so :redesign="true" is a statement of
+                     fact rather than a flag read. These rows carried legacy markup anyway, which
+                     made them the only ones on the page rendering the flag-off shape with no
+                     flag-off render to preserve. Buyer's and landlord's identical sections are the
+                     reference — same literal true.
+
+                     Neither row carries a guard of its own: the component declines to render a row
+                     whose value is absent, so an agent who has recorded one credential and not the
+                     other gets the one row rather than a bare label. --}}
+                <x-hire-agent.field :redesign="true" label="Brokerage" :value="$auction->user->info('brokerage')" />
+                <x-hire-agent.field :redesign="true" label="License No" :value="$auction->user->info('license_no')" />
                 </x-hire-agent.detail-section>
                 @endif
 
