@@ -7,13 +7,33 @@ use ReflectionClass;
 use Tests\TestCase;
 
 /**
- * The suggestion contracts ship inert.
+ * The suggestion layer stays inert at the edges.
  *
- * They exist so that an address suggestion has a typed shape before anything
- * produces one. Nothing implements the interface, nothing binds it, no route or
- * component calls it, and no file in the namespace can reach the network. These
- * assertions are what keep "a contract was added" from quietly becoming "a
- * keystroke now costs a request".
+ * The contracts exist so that an address suggestion has a typed shape before
+ * anything produces one. Nothing binds the interface, no route or component
+ * calls it, and no file in the namespace can reach the network. These assertions
+ * are what keep "a contract was added" from quietly becoming "a keystroke now
+ * costs a request".
+ *
+ * WHAT CHANGED WHEN THE FIRST PROVIDER LANDED
+ * -------------------------------------------
+ * Two assertions here used to say "no implementation exists yet": the namespace
+ * held exactly the two contract files, and nothing in `app/` implemented the
+ * interface. Both were true statements about a phase, not about a safety
+ * property — the safety property is that a suggestion cannot become a coordinate
+ * and cannot cost a request, and neither of those is expressed by counting
+ * files.
+ *
+ * {@see \App\Services\Location\Suggestions\AddressPointSuggestionProvider} is the
+ * separately-reviewed step those two assertions were guarding the door for, so
+ * they are replaced rather than deleted: the namespace inventory is still
+ * asserted exactly (a third file is still a diff somebody has to justify), and
+ * "nothing implements it" becomes "the only implementation is the local corpus
+ * one, and it declares itself local". A *network* provider is still a separate
+ * decision with its own review, and that is now what these assert.
+ *
+ * Everything else here is unchanged and still load-bearing: no container
+ * binding, no route or Http caller, no outbound client, no Google symbol.
  */
 class AddressSuggestionContractInertTest extends TestCase
 {
@@ -24,19 +44,23 @@ class AddressSuggestionContractInertTest extends TestCase
         return glob(base_path(self::NAMESPACE_DIR) . '/*.php') ?: [];
     }
 
-    public function test_the_namespace_holds_only_the_two_contracts(): void
+    public function test_the_namespace_holds_the_two_contracts_and_the_corpus_provider(): void
     {
         $names = array_map('basename', $this->namespaceFiles());
         sort($names);
 
         $this->assertSame(
-            ['AddressCandidate.php', 'AddressSuggestionProviderInterface.php'],
+            [
+                'AddressCandidate.php',
+                'AddressPointSuggestionProvider.php',
+                'AddressSuggestionProviderInterface.php',
+            ],
             $names,
-            'A provider implementation is a separate, reviewed step — not a side effect of adding a contract.'
+            'Another provider is a separate, reviewed step — not a side effect of adding one.'
         );
     }
 
-    public function test_nothing_implements_the_provider_interface(): void
+    public function test_the_only_provider_is_the_local_corpus_one(): void
     {
         $implementors = [];
 
@@ -44,11 +68,25 @@ class AddressSuggestionContractInertTest extends TestCase
             $source = file_get_contents($file);
 
             if (is_string($source) && str_contains($source, 'implements AddressSuggestionProviderInterface')) {
-                $implementors[] = $file;
+                $implementors[] = str_replace(base_path() . '/', '', $file);
             }
         }
 
-        $this->assertSame([], $implementors, 'No suggestion provider exists yet.');
+        $this->assertSame(
+            ['app/Services/Location/Suggestions/AddressPointSuggestionProvider.php'],
+            $implementors,
+            'A network suggestion provider is a separate decision with its own review.'
+        );
+    }
+
+    public function test_every_provider_that_exists_declares_itself_local(): void
+    {
+        // A suggestion surface fires per keystroke. The moment one of these
+        // returns true, somebody has decided a keystroke may cost a request —
+        // and that decision should arrive as a failing test, not as a bill.
+        $provider = new \App\Services\Location\Suggestions\AddressPointSuggestionProvider();
+
+        $this->assertFalse($provider->requiresNetwork());
     }
 
     public function test_the_provider_interface_is_bound_to_nothing(): void
