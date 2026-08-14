@@ -38,14 +38,32 @@ class CreateOfferCoordinateWiringTest extends TestCase
     ];
 
     /**
-     * 17 before G6, 21 after. G6 added four — the Hire Agent publish boundaries,
-     * which had no Location DNA dispatch at all. The Create Offer nine above are
-     * unchanged, which is what {@see self::DISPATCH_SITES} pins independently;
-     * this number exists to catch a dispatch appearing anywhere else.
+     * 17 before G6, 21 after, 22 today. G6 added four — the Hire Agent publish
+     * boundaries, which had no Location DNA dispatch at all. The Create Offer
+     * nine above are unchanged, which is what {@see self::DISPATCH_SITES} pins
+     * independently; this number exists to catch a dispatch appearing anywhere
+     * else.
+     *
+     * THE 22nd SITE
+     * -------------
+     * {@see \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::enrichLocation()},
+     * added by the MLS quick-import flow. A legitimate dispatch — a listing that
+     * publishes through quick import needs Location DNA exactly as one published
+     * through the wizard does — so the baseline moves rather than the invariant.
+     *
+     * It is accounted for here and NOT exempted anywhere else. Quick import
+     * dispatches without first resolving a coordinate through the ladder, so it
+     * has the gap the four Create Offer components no longer have: it persists an
+     * `mls_listing_key`, which is precisely what the Bridge rung needs, and then
+     * never asks. Closing that is a separate change with its own review; this
+     * constant only records that the dispatch exists and is expected.
+     *
+     * Deliberately still a hard number. A 23rd dispatch appearing anywhere must
+     * fail this test and be explained here before it is admitted.
      *
      * @see \Tests\Feature\HireAgent\HireAgentCoordinateWiringTest
      */
-    private const APP_WIDE_DISPATCH_BASELINE = 21;
+    private const APP_WIDE_DISPATCH_BASELINE = 22;
 
     /**
      * Where each component resolves a coordinate. Never fewer than its dispatch
