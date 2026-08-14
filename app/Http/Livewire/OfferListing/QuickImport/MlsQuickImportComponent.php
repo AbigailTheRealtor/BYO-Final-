@@ -519,6 +519,23 @@ abstract class MlsQuickImportComponent extends Component
             $this->photoCount = count($gallery);
         }
 
+        // `layouts.main` is the application shell every other full-page Livewire
+        // component in this codebase extends, and the only layout that carries
+        // @livewireStyles / @livewireScripts and the Bootstrap stylesheet this
+        // template's markup is written against.
+        //
+        // This used to say ->layout('layouts.app'), which is the untouched
+        // Laravel Breeze starter layout: Tailwind, no Bootstrap, and — the part
+        // that mattered — no Livewire assets. The page still rendered and still
+        // returned 200, so nothing looked wrong server-side, but the browser
+        // received a Livewire component with no Livewire runtime: wire:click
+        // never fired, so "Find My Listing" issued no request at all, and with
+        // @livewireStyles absent the [wire:loading] rule that hides the
+        // "Searching…" span was missing too, leaving it visible from page load.
+        // The result read as a hung lookup and was neither.
+        //
+        // ->extends()->section() rather than ->layout(): layouts.main is a
+        // @yield('content') layout, not a {{ $slot }} component layout.
         return view('livewire.offer-listing.quick-import.mls-quick-import', [
             'role'        => $this->role(),
             'gallery'     => $gallery,
@@ -526,7 +543,7 @@ abstract class MlsQuickImportComponent extends Component
             'methods'     => $this->availableMethods(),
             'mlsDetails'  => $this->mlsDetailsFor($auction),
             'priceField'  => $this->priceField(),
-        ])->layout('layouts.app');
+        ])->extends('layouts.main')->section('content');
     }
 
     // ─── Internals ───────────────────────────────────────────────────────────
