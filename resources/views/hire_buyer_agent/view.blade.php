@@ -284,8 +284,16 @@
          | test read the identical key, so they cannot disagree in either direction. Removing the
          | row is a content decision and is not this change.
          */
+        /*
+         | `listing_title` is NOT in this list, and its absence is load-bearing.
+         |
+         | The guard must enumerate exactly the keys the section's rows read — no more. The row that
+         | read `listing_title` is gone (see the note at the card, and landlord's M7.3 before it),
+         | and a guard still naming the key would open the card for a listing that has nothing to
+         | put in it: a bordered, titled, empty box. HireAgentBuyerSectionNavTest asserts precisely
+         | that, in both directions, and caught this the moment the row was removed.
+         */
         $byaHasListingDetails =
-            @$auction->get->listing_title != null ||
             @$auction->get->working_with_agent != null ||
             @$auction->get->desired_agent_hire_date != null ||
             @$auction->get->listing_date != null ||
@@ -843,58 +851,65 @@
 @if (! ($byaDetailRedesign ?? false) || $byaShows('listing-details'))
 <x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines">
                         <div class="row" style="flex-wrap: wrap;">
-                            @if (@$auction->get->listing_title != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Listing Title
-                                    <span class="removeBold">{{ @$auction->get->listing_title }}</span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->working_with_agent != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Current Representation Status with Broker:
-                                    <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
-                                </div>
-                            @endif
+                            {{-- The "Listing Title" row is gone, and it could never have rendered.
+                                 The questionnaire DOES ask for a listing title, but the component
+                                 stores the answer in the auction's native `title` COLUMN, not as
+                                 `listing_title` meta. This row read the meta key, which nothing
+                                 writes — measured at zero rows in buyer_agent_auction_metas — so
+                                 the `!= null` guard was never satisfied and the row was dead in
+                                 both flag states.
 
-                            @if (@$auction->get->desired_agent_hire_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Desired Agent Hire Date:
-                                    <span class="removeBold">
-                                        {{ date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->listing_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Listing Date:
-                                    <span
-                                        class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->listing_date)) }}</span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->expiration_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Expiration Date:
-                                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->expiration_date)) }}
-                                    </span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->auction_type != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Listing Type:
-                                    <span class="removeBold"> {{ @$auction->get->auction_type }}
-                                    </span>
-                                </div>
-                            @endif
+                                 It is removed rather than repointed at `$auction->title`, because
+                                 that value is already on the page: the hero renders it as the page
+                                 heading. Fixing the read would have produced a heading followed
+                                 immediately by a row repeating it. The one field, in the one place.
+
+                                 This mirrors the landlord view's M7.3 removal exactly, for the
+                                 same reason and on the same evidence. It ALSO could not have been
+                                 adapted as-is: this row is the only one in the section whose label
+                                 carries no trailing colon, and the component's legacy branch always
+                                 appends one — so converting it would have changed flag-off output.
+                                 A row that cannot render is the safest possible thing to delete. --}}
+                            @php
+                                /*
+                                 | Dates are formatted BEFORE the row, not inside it.
+                                 |
+                                 | The three date rows each wrapped date(…, strtotime($v)) in their
+                                 | own `!= null` guard, and the guard was doing double duty: it
+                                 | decided whether the row appeared AND it kept strtotime() away
+                                 | from a null, which is a deprecation in PHP 8.1+ and returns the
+                                 | epoch rather than nothing. Moving the emptiness decision into the
+                                 | row component would have removed the second job silently, so the
+                                 | formatting is resolved here and the component receives a finished
+                                 | string or nothing at all.
+                                 |
+                                 | ListingDisplayHelper::hasValue is the same rule the row applies,
+                                 | asked one step earlier — not a second opinion, the same call.
+                                 |
+                                 | Named to the buyer view's own prefix; the landlord view carries
+                                 | the identical closure as $hlaFmtDate. Two views, one page each,
+                                 | and no shared scope between them.
+                                 */
+                                $byaFmtDate = function ($value) {
+                                    return \App\Helpers\ListingDisplayHelper::hasValue($value)
+                                        ? date('F j, Y', strtotime($value))
+                                        : null;
+                                };
+
+                                $byaHireDate   = $byaFmtDate(@$auction->get->desired_agent_hire_date);
+                                $byaListDate   = $byaFmtDate(@$auction->get->listing_date);
+                                $byaExpiryDate = $byaFmtDate(@$auction->get->expiration_date);
+                            @endphp
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Current Representation Status with Broker" :value="@$auction->get->working_with_agent" />
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Desired Agent Hire Date" :value="$byaHireDate" />
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Listing Date" :value="$byaListDate" />
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Expiration Date" :value="$byaExpiryDate" />
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Listing Type" :value="@$auction->get->auction_type" />
 
                             {{-- Milestone 3: the "Bidding Period Length: 14 Days" row was removed
                                  here. It is a bidding-period label describing a timer that no
                                  longer exists or governs anything. --}}
-                            @if (@$auction->get->meeting_Preference != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Meeting Preference:
-                                    <span class="removeBold"> {{ @$auction->get->meeting_Preference }}
-                                    </span>
-                                </div>
-                            @endif
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Meeting Preference" :value="@$auction->get->meeting_Preference" />
 
                         </div>
 </x-hire-agent.detail-section>
@@ -919,59 +934,120 @@
 
                         <div class="row" style="flex-wrap: wrap;">
 
+                                    {{-- ── PILLS vs TEXT, AND WHICH ROWS GET WHICH ──────────────────
+                                         The three unbounded enumerations below — Cities, Counties,
+                                         ZIP Codes — keep their pills in BOTH branches (`badges` +
+                                         `bareSlot`). They are open-ended lists of short tokens, and
+                                         a forty-item comma list is genuinely worse to scan than
+                                         forty chips. This matches the landlord view, which keeps
+                                         pills on exactly these three rows and no others.
+
+                                         Every BOUNDED multi-select below instead passes `listValue`
+                                         alongside the pill run: the legacy branch reads only the
+                                         slot and keeps its pills untouched, while the redesign
+                                         branch reads `listValue` and renders ", "-joined text. That
+                                         is the reference page's vocabulary — a pill means STATE,
+                                         plain text means DATA — and it is why the pills cannot
+                                         simply be deleted from the call sites: flag-off output is
+                                         asserted verbatim, and flag-off renders pills. --}}
+                                    {{-- ── THE LOCATION ROWS RENDER AS TEXT, LIKE EVERY OTHER ROW ───
+                                         The three rows below — Acceptable Cities, Counties and ZIP
+                                         Codes — pass `listValue` and NOT `badges`, so the redesign
+                                         branch renders them as ", "-joined text in an ordinary
+                                         half-width cell. They now read exactly like Acceptable State
+                                         directly beneath them, and like the twenty-odd other
+                                         multi-value rows on this page.
+
+                                         WHY, AND WHY THE PROP-LEVEL ARGUMENT WAS THE WRONG ONE.
+                                         These rows briefly carried `badges` in order to match the
+                                         landlord call sites, which carry it. That matched landlord's
+                                         SOURCE and not landlord's PAGE: no landlord listing carries
+                                         acceptable-city data, so landlord's badge rows have never
+                                         rendered, and the landlord location block a reader actually
+                                         sees is City / County / State / Zip Code — four plain
+                                         `:value` rows. Chips here were the only chips on either
+                                         page. Parity is a property of what renders, so it has to be
+                                         measured against rendered output, not against props.
+
+                                         THE PILLS STAY IN THE SLOT AND THAT IS DELIBERATE. Flag-off
+                                         output is asserted verbatim and flag-off renders pills, so
+                                         the loops below cannot be deleted. The legacy branch reads
+                                         only the slot; the redesign branch reads only `listValue`.
+                                         One row, two renderings, neither branch aware of the other —
+                                         which is exactly what M7.6 built `listValue` for, and these
+                                         three rows are simply the last to adopt it.
+
+                                         `bareSlot` STAYS for the same reason: it governs the LEGACY
+                                         branch only, emitting the run without a wrapping
+                                         `.removeBold`, which is the element tree flag-off is
+                                         asserted against.
+
+                                         LANDLORD IS UNTOUCHED and still says `badges` on its own
+                                         three rows. If a landlord listing ever carries acceptable
+                                         areas, the two roles will diverge again — in the opposite
+                                         direction to before. That is a known, logged divergence, not
+                                         an oversight; closing it means changing landlord and the
+                                         landlord badge assertions in
+                                         HireAgentFieldPresentationTest, which is a separate call. --}}
                                     <!-- Location Information -->
                                     @if (@$auction->get->cities != null && count(@$auction->get->cities) > 0)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable Cities:
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Cities" :bare-slot="true" :list-value="\App\Helpers\ListingDisplayHelper::stripStateSuffixList(@$auction->get->cities ?? [])">
                                             @foreach (@$auction->get->cities as $item)
                                                 <span class="removeBold badge bg-secondary">{{ \App\Helpers\ListingDisplayHelper::stripStateSuffix($item) }}</span>
                                             @endforeach
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
                                     @if (@$auction->get->counties != null && count(@$auction->get->counties) > 0)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable Counties:
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Counties" :bare-slot="true" :list-value="\App\Helpers\ListingDisplayHelper::stripStateSuffixList(@$auction->get->counties ?? [])">
                                             @foreach (@$auction->get->counties as $item)
                                                 <span class="removeBold badge bg-secondary">{{ \App\Helpers\ListingDisplayHelper::stripStateSuffix($item) }}</span>
                                             @endforeach
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
                                     @if (@$auction->get->zipCodes != null && count(@$auction->get->zipCodes) > 0)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable ZIP Codes:
+                                        {{-- Included with Cities and Counties above, though visual
+                                             review named only those two — listing 107 stores an
+                                             empty zipCodes array, so this row simply has nothing to
+                                             show and has never appeared in review. It is the third
+                                             member of the same location family and takes the same
+                                             treatment; leaving it as chips would make it the only
+                                             pill run on the page the moment a listing named ZIPs.
+
+                                             No stripStateSuffixList here — a ZIP carries no ", FL"
+                                             suffix to strip, and running the mapper over it would
+                                             imply otherwise. --}}
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable ZIP Codes" :bare-slot="true" :list-value="@$auction->get->zipCodes ?? []">
                                             @foreach (@$auction->get->zipCodes as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
-                                    @if (@$auction->get->state != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable State:
-                                            <span class="removeBold">{{ @$auction->get->state }}</span>
-                                        </div>
-                                    @endif
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable State" :value="@$auction->get->state" />
 
                                     <!-- Property Type and Style -->
-                                    @if (@$auction->get->property_type != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable Property Type:
-                                            <span class="removeBold">{{ @$auction->get->property_type }}</span>
-                                        </div>
-                                    @endif
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Property Type" :value="@$auction->get->property_type" />
 
                                     @php
                                         $detailPropertyStyles = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->property_items, @$auction->get->other_property_items);
                                     @endphp
                                     @if (!empty($detailPropertyStyles))
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable Property Styles:
+                                        {{-- HALF SPAN, matching landlord's "Property Style", which is
+                                             the same question asked of the other side of the deal and
+                                             renders at the default half width. A bounded pick-list of
+                                             short names is a short answer: giving it the whole card
+                                             breaks the two-up rhythm for the fields around it and
+                                             leaves most of the row empty. `bareSlot` + `listValue`
+                                             stay — they carry the flag-off pills and the redesign
+                                             text respectively, and neither has anything to do with
+                                             width. --}}
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Property Styles" :bare-slot="true" :list-value="$detailPropertyStyles">
                                             @foreach ($detailPropertyStyles as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
                                     <!-- Business Type (if applicable) - check both business_type and business_type_selected -->
@@ -987,10 +1063,32 @@
                                             $businessTypeArray = [];
                                         }
                                         $businessTypeArray = array_filter($businessTypeArray, fn($v) => $v !== null && $v !== '');
+
+                                        /*
+                                         | The same list the pill loop below emits, resolved once so
+                                         | the redesign branch can render it as text. It is NOT a
+                                         | second opinion about what to show: it applies the loop's
+                                         | own two rules — "Other" is replaced by the custom text,
+                                         | and dropped entirely when that text is empty — so the two
+                                         | branches cannot disagree about which items exist. The
+                                         | loop is left exactly as it was because flag-off output is
+                                         | asserted verbatim.
+                                         */
+                                        $businessTypeDisplay = [];
+                                        foreach ($businessTypeArray as $businessTypeItem) {
+                                            if (strtolower($businessTypeItem) === 'other') {
+                                                if (!empty($otherBusinessType)) {
+                                                    $businessTypeDisplay[] = $otherBusinessType;
+                                                }
+                                            } else {
+                                                $businessTypeDisplay[] = $businessTypeItem;
+                                            }
+                                        }
                                     @endphp
                                     @if (!empty($businessTypeArray))
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Business Type:
+                                        {{-- Half span, same class of answer as Property Styles above:
+                                             a bounded pick-list of short names. --}}
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Business Type" :bare-slot="true" :list-value="$businessTypeDisplay">
                                             @foreach ($businessTypeArray as $businessTypeItem)
                                                 @if (strtolower($businessTypeItem) === 'other')
                                                     @if (!empty($otherBusinessType))
@@ -1000,7 +1098,7 @@
                                                     <span class="removeBold badge bg-secondary">{{ $businessTypeItem }}</span>
                                                 @endif
                                             @endforeach
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
                                     @php
@@ -1014,8 +1112,12 @@
                                     }, $detailConditions);
                                     @endphp
                                     @if (!empty($detailConditions))
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Acceptable Property Conditions:
+                                        {{-- The single-item case renders plain text rather than one
+                                             lone pill, and `bareSlot` carries that branch through to
+                                             flag-off untouched. The redesign reads `listValue` and
+                                             so renders text either way, which is where the two
+                                             spellings were always heading. --}}
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Property Conditions" :bare-slot="true" :list-value="$detailConditions">
                                             @if (count($detailConditions) === 1)
                                                 <span class="removeBold">{{ $detailConditions[0] }}</span>
                                             @else
@@ -1023,68 +1125,65 @@
                                                     <span class="removeBold badge bg-secondary">{{ $cItem }}</span>
                                                 @endforeach
                                             @endif
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
                                     <!-- Bedrooms and Bathrooms -->
-                                    @if (@$auction->get->bedrooms != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Minimum Bedrooms Needed:
-                                            <span class="removeBold">
-                                                @if (@$auction->get->bedrooms != 'Other')
-                                                    {{ @$auction->get->bedrooms }}
-                                                @else
-                                                    {{ @$auction->get->other_bedrooms }}
-                                                @endif
-                                            </span>
-                                        </div>
-                                    @endif
-
                                     @php
+                                        /*
+                                         | Resolved before the row for the same reason the dates in
+                                         | Listing Details are: the "Other" substitution was living
+                                         | inside the row's own markup, where a component cannot see
+                                         | it. Same two rules, same result, one step earlier.
+                                         */
+                                        $bedroomsDisplay = (@$auction->get->bedrooms != null && @$auction->get->bedrooms != 'Other')
+                                            ? @$auction->get->bedrooms
+                                            : (@$auction->get->bedrooms != null ? @$auction->get->other_bedrooms : null);
+
                                         $bathroomsDisplay = (@$auction->get->bathrooms === 'Other')
                                             ? @$auction->get->other_bathrooms
                                             : @$auction->get->bathrooms;
                                     @endphp
-                                    @if (!empty($bathroomsDisplay))
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Minimum Bathrooms Needed:
-                                            <span class="removeBold">{{ $bathroomsDisplay }}</span>
-                                        </div>
-                                    @endif
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Bedrooms Needed" :value="$bedroomsDisplay" />
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Bathrooms Needed" :value="$bathroomsDisplay" />
 
                                     <!-- Square Footage and Acreage -->
-                                    @if (@$auction->get->minimum_heated_square != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Minimum Heated SqFt Needed:
-                                            <span class="removeBold">{{ @$auction->get->minimum_heated_square }}</span>
-                                        </div>
-                                    @endif
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Heated SqFt Needed" :value="@$auction->get->minimum_heated_square" />
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Total Acreage Needed" :value="@$auction->get->total_acreage" />
 
-                                    @if (@$auction->get->total_acreage != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Minimum Total Acreage Needed:
-                                            <span class="removeBold">{{ @$auction->get->total_acreage }}</span>
-                                        </div>
-                                    @endif
-
-                                    @if (@$auction->get->carport_needed != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Carport Needed:
-                                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
-                                        </div>
-                                    @endif
-
-                                    @if (@$auction->get->garage_needed != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Garage Needed:
-                                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
-                                        </div>
-                                    @endif
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Carport Needed" :value="@$auction->get->carport_needed != null ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') : null" />
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Garage Needed" :value="@$auction->get->garage_needed != null ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') : null" />
 
                                     <!-- Garage/Parking Features for Commercial/Business -->
                                     @if (@$auction->get->garage_parking_spaces != null)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Garage Parking Features Needed:
+                                        @php
+                                            /*
+                                             | The same items the three guarded blocks below emit, in
+                                             | the same order, flattened for the redesign branch. It
+                                             | reproduces each of their rules rather than restating
+                                             | them: the main value is dropped when it is "Other" and
+                                             | custom text exists, an "Other" option is dropped for
+                                             | the same reason, and the custom text is appended last.
+                                             | The blocks themselves are untouched — flag-off renders
+                                             | a plain value followed by a pill run, and that mixed
+                                             | shape is exactly what is asserted.
+                                             */
+                                            $byaParkingDisplay = [];
+                                            if (!(@$auction->get->garage_parking_spaces === 'Other' && @$auction->get->other_parking_space_wrapper)) {
+                                                $byaParkingDisplay[] = @$auction->get->garage_parking_spaces;
+                                            }
+                                            if (@$auction->get->garage_parking_spaces_option && count(@$auction->get->garage_parking_spaces_option) > 0) {
+                                                foreach (@$auction->get->garage_parking_spaces_option as $byaParkingItem) {
+                                                    if (!($byaParkingItem === 'Other' && @$auction->get->other_parking_space_wrapper)) {
+                                                        $byaParkingDisplay[] = $byaParkingItem;
+                                                    }
+                                                }
+                                            }
+                                            if (@$auction->get->other_parking_space_wrapper) {
+                                                $byaParkingDisplay[] = @$auction->get->other_parking_space_wrapper;
+                                            }
+                                        @endphp
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Garage Parking Features Needed" :bare-slot="true" :list-value="$byaParkingDisplay">
                                             {{-- Skip "Other" in main value when custom text exists --}}
                                             @if (!(@$auction->get->garage_parking_spaces === 'Other' && @$auction->get->other_parking_space_wrapper))
                                                 <span class="removeBold">{{ @$auction->get->garage_parking_spaces }}</span>
@@ -1101,7 +1200,7 @@
                                             @if (@$auction->get->other_parking_space_wrapper)
                                                 <span class="removeBold badge bg-secondary">{{ @$auction->get->other_parking_space_wrapper }}</span>
                                             @endif
-                                        </div>
+                                        </x-hire-agent.field>
                                     @endif
 
                                     <!-- Pool -->
@@ -1124,22 +1223,48 @@
                                     ->implode(', ');
                             @endphp
 
-                            @if (optional($auction->get)->pool_needed === 'Yes')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Pool Needed:
-                                    <span class="removeBold">Yes{{ $poolTypeList !== '' ? ' (' . $poolTypeList . ')' : '' }}</span>
-                                </div>
-                            @elseif (in_array(optional($auction->get)->pool_needed, ['No', 'Optional'], true))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Pool Needed:
-                                    <span class="removeBold">{{ optional($auction->get)->pool_needed }}</span>
-                                </div>
-                            @endif
+                            @php
+                                /*
+                                 | Two mutually exclusive rows collapse into one value, because they
+                                 | were never two fields — they are one field with two spellings of
+                                 | its answer. "Yes" carries the pool types in parentheses; "No" and
+                                 | "Optional" stand alone; anything else renders nothing, which is
+                                 | what the absent @else already meant.
+                                 */
+                                $byaPoolNeeded = optional($auction->get)->pool_needed;
+                                $byaPoolDisplay = $byaPoolNeeded === 'Yes'
+                                    ? 'Yes' . ($poolTypeList !== '' ? ' (' . $poolTypeList . ')' : '')
+                                    : (in_array($byaPoolNeeded, ['No', 'Optional'], true) ? $byaPoolNeeded : null);
+                            @endphp
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pool Needed" :value="$byaPoolDisplay" />
 
+                        @php
+                            /*
+                             | Both lists below follow the same rule the questionnaire gives them:
+                             | the literal option "Other" is a prompt for free text, not an answer,
+                             | so it is dropped and the text the user typed takes its place at the
+                             | end. Resolved here so the redesign branch can render the result as
+                             | text while the pill loops stay exactly as flag-off asserts them.
+                             */
+                            $byaListWithOther = function ($items, $otherText) {
+                                $out = [];
+                                foreach ((array) $items as $byaListItem) {
+                                    if ($byaListItem != 'Other') {
+                                        $out[] = $byaListItem;
+                                    }
+                                }
+                                if ($otherText) {
+                                    $out[] = $otherText;
+                                }
+                                return $out;
+                            };
+
+                            $byaViewPreferences = $byaListWithOther(@$auction->get->view_preference, @$auction->get->other_preferences);
+                            $byaNonNegotiables  = $byaListWithOther(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
+                        @endphp
                         <!-- View Preferences -->
                         @if (@$auction->get->view_preference != null && count(@$auction->get->view_preference) > 0)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                View Preference Needed:
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="View Preference Needed" :bare-slot="true" :list-value="$byaViewPreferences">
                                 @foreach (@$auction->get->view_preference as $item)
                                     @if ($item != 'Other')
                                         <span class="removeBold badge bg-secondary">{{ $item }}</span>
@@ -1148,21 +1273,15 @@
                                 @if (@$auction->get->other_preferences)
                                     <span class="removeBold badge bg-secondary">{{ @$auction->get->other_preferences }}</span>
                                 @endif
-                            </div>
+                            </x-hire-agent.field>
                         @endif
 
                         <!-- 55+ Communities -->
-                        @if (@$auction->get->leasing_55_plus != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Age-Restricted Community:
-                                <span class="removeBold">{{ @$auction->get->leasing_55_plus }}</span>
-                            </div>
-                        @endif
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Age-Restricted Community" :value="@$auction->get->leasing_55_plus" />
 
                         <!-- Non-Negotiable Amenities -->
                         @if (@$auction->get->non_negotiable_amenities != null && count(@$auction->get->non_negotiable_amenities) > 0)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Non-Negotiable Amenities and Property Features:
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Non-Negotiable Amenities and Property Features" :bare-slot="true" :list-value="$byaNonNegotiables">
                                 @foreach (@$auction->get->non_negotiable_amenities as $item)
                                     @if ($item != 'Other')
                                         <span class="removeBold badge bg-secondary">{{ $item }}</span>
@@ -1171,94 +1290,36 @@
                                 @if (@$auction->get->other_non_negotiable_amenities)
                                     <span class="removeBold badge bg-secondary">{{ @$auction->get->other_non_negotiable_amenities }}</span>
                                 @endif
-                            </div>
+                            </x-hire-agent.field>
                         @endif
 
+                        {{-- The two pets blocks — this one and the `!= 'Income'` one below — carry
+                             identical content behind opposite halves of the same test, so exactly
+                             one of them renders for any listing. That duplication predates this
+                             migration and is left exactly as it is: collapsing them is a change to
+                             what the page decides, not to how it draws, and this pass is only the
+                             latter. Both blocks are adapted identically so neither can drift. --}}
                         @if (@$auction->get->property_type == 'Income' && @$auction->get->pets != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Pets:
-                                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pets" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets)" />
 
                             @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
-                                @if (@$auction->get->type_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Types:
-                                        <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->breed_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Breed of Pets:
-                                        <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->weight_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Weight (lbs):
-                                        <span class="removeBold">{{ @$auction->get->weight_of_pets }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->service_animal)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Service Animal:
-                                        <span class="removeBold">{{ @$auction->get->service_animal }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->emotional_support_animal)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Emotional Support Animal:
-                                        <span class="removeBold">{{ @$auction->get->emotional_support_animal }}</span>
-                                    </div>
-                                @endif
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pet Types" :value="@$auction->get->type_of_pets" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Breed of Pets" :value="@$auction->get->breed_of_pets" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pet Weight (lbs)" :value="@$auction->get->weight_of_pets" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Service Animal" :value="@$auction->get->service_animal" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Emotional Support Animal" :value="@$auction->get->emotional_support_animal" />
                             @endif
                         @endif
 
                         @if (@$auction->get->property_type != 'Income' && @$auction->get->pets != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Pets:
-                                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pets" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets)" />
 
                             @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
-                                @if (@$auction->get->type_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Types:
-                                        <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->breed_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Breed of Pets:
-                                        <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->weight_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Weight (lbs):
-                                        <span class="removeBold">{{ @$auction->get->weight_of_pets }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->service_animal)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Service Animal:
-                                        <span class="removeBold">{{ @$auction->get->service_animal }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->emotional_support_animal)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Emotional Support Animal:
-                                        <span class="removeBold">{{ @$auction->get->emotional_support_animal }}</span>
-                                    </div>
-                                @endif
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pet Types" :value="@$auction->get->type_of_pets" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Breed of Pets" :value="@$auction->get->breed_of_pets" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Pet Weight (lbs)" :value="@$auction->get->weight_of_pets" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Service Animal" :value="@$auction->get->service_animal" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Emotional Support Animal" :value="@$auction->get->emotional_support_animal" />
                             @endif
                         @endif
 
@@ -1272,18 +1333,46 @@
                         @if ($buyerHasAssets || $buyerHasRealEstate)
 @if (! ($byaDetailRedesign ?? false))                        <hr>
 @endif
+                        {{-- LEGACY ONLY, AND THE GATE IS THE FIX.
+                             ─────────────────────────────────────────────────────────────────────
+                             This was the one sub-heading on the page rendering in BOTH branches,
+                             and in the redesign branch it rendered at card-title weight. That is
+                             not a `tag` mistake to be corrected by asking for an h5: x-viho.section
+                             -header always emits `viho-section-header-title`, which its own docblock
+                             describes as "the same typography the card header uses". The element
+                             changes with `tag`; the size does not. So inside a card this heading was
+                             indistinguishable from the card's own title.
+
+                             MATCHING LANDLORD MEANS REMOVING IT, not shrinking it. Landlord's
+                             redesigned cards contain a title and fields — no intermediate heading
+                             anywhere in the view. There is nothing to shrink this to that landlord
+                             also has.
+
+                             IT ALSO SAID NOTHING NEW. The second field below carries the label
+                             "Required Property or Business Assets" verbatim, so the redesign branch
+                             was printing a heading immediately followed by a field repeating it. The
+                             grouping the heading provided is what the two full-width fields already
+                             do on their own.
+
+                             FLAG-OFF IS UNTOUCHED. The legacy page keeps the heading exactly where
+                             and as it was — it is load-bearing there, because the legacy branch has
+                             no card title above it to make it redundant.
+
+                             The nine `financing-subsection-header` h6 headings in the Financing card
+                             are deliberately NOT changed by this: they render below card-title
+                             weight already, they divide genuinely distinct financing types, and
+                             landlord has no Financing section to be compared against. --}}
+                        @if (! ($byaDetailRedesign ?? false))
                         <x-viho.section-header title="Required Property or Business Assets" tag="h4" />
+                        @endif
                         <div class="row" style="flex-wrap: wrap;">
-                            @if ($buyerHasRealEstate)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Business & Real Estate Purchase Requirements:
-                                    <span class="removeBold">{{ @$auction->get->real_estate_purchase }}</span>
-                                </div>
-                            @endif
+                            {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so
+                                 the rendered text is unchanged. Passing &amp; here would
+                                 double-escape it. Same rule as the Representation card below. --}}
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Business & Real Estate Purchase Requirements" :value="$buyerHasRealEstate ? @$auction->get->real_estate_purchase : null" />
 
                             @if ($buyerHasAssets)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Required Property or Business Assets:
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Required Property or Business Assets" :bare-slot="true" :list-value="$byaListWithOther(@$auction->get->assets, @$auction->get->assets_other)">
                                     @foreach (@$auction->get->assets as $item)
                                         @if ($item != 'Other')
                                             <span class="removeBold badge bg-secondary">{{ $item }}</span>
@@ -1292,7 +1381,7 @@
                                     @if (@$auction->get->assets_other)
                                         <span class="removeBold badge bg-secondary">{{ @$auction->get->assets_other }}</span>
                                     @endif
-                                </div>
+                                </x-hire-agent.field>
                             @endif
                         </div>
                         @endif
@@ -1300,22 +1389,26 @@
                         @if ($buyerHasMetrics)
                         <div class="row" style="flex-wrap: wrap;">
 
-                            @if (@$auction->get->unit_size != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Acceptable Number of Units:
-                                    <span class="removeBold">
-                                        @if (@$auction->get->unit_size != 'Other')
-                                            {{ @$auction->get->unit_size }}
-                                        @else
-                                            {{ @$auction->get->unit_size_other }}
-                                        @endif
-                                    </span>
-                                </div>
-                            @endif
+                            @php
+                                /*
+                                 | The "Other" substitution and the percent suffix both moved out of
+                                 | the row markup for the same reason as everywhere else in this
+                                 | pass: a component receives a finished value, and a value that is
+                                 | half-built inside a <span> is one the component cannot judge
+                                 | empty. Same rules, same output, resolved one step earlier.
+                                 */
+                                $byaUnitSize = @$auction->get->unit_size != null
+                                    ? (@$auction->get->unit_size != 'Other' ? @$auction->get->unit_size : @$auction->get->unit_size_other)
+                                    : null;
+
+                                $byaCapRate = @$auction->get->minimum_cap_rate != null
+                                    ? @$auction->get->minimum_cap_rate . '%'
+                                    : null;
+                            @endphp
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Number of Units" :value="$byaUnitSize" />
 
                             @if (@$auction->get->number_of_unit_type != null && count(@$auction->get->number_of_unit_type) > 0)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Acceptable Unit Type:
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Unit Type" :bare-slot="true" :list-value="@$auction->get->number_of_unit_type">
                                     @if (count(@$auction->get->number_of_unit_type) === 1)
                                         <span class="removeBold">{{ @$auction->get->number_of_unit_type[0] }}</span>
                                     @else
@@ -1323,29 +1416,12 @@
                                             <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                         @endforeach
                                     @endif
-                                </div>
+                                </x-hire-agent.field>
                             @endif
 
-                            @if (@$auction->get->minimum_annual_net_income != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Minimum Annual Net Income Needed:
-                                    <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->minimum_annual_net_income) }}</span>
-                                </div>
-                            @endif
-
-                            @if (@$auction->get->minimum_cap_rate != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Minimum Cap Rate Needed:
-                                    <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}%</span>
-                                </div>
-                            @endif
-
-                            @if (@$auction->get->preferance_details != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Additional Details:
-                                    <span class="removeBold">{{ $auction->get->preferance_details ?? '' }}</span>
-                                </div>
-                            @endif
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Annual Net Income Needed" :value="@$auction->get->minimum_annual_net_income != null ? \App\Support\Format::money(@$auction->get->minimum_annual_net_income) : null" />
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Cap Rate Needed" :value="$byaCapRate" />
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Additional Details" :value="@$auction->get->preferance_details" />
                         </div>
                         @endif
 </x-hire-agent.detail-section>
@@ -1370,8 +1446,25 @@
                                 }
                             @endphp
                             @if (!empty($saleProvisionArray) && count($saleProvisionArray) > 0)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Acceptable Special Sale Provisions:
+                                @php
+                                    /*
+                                     | The loop's own two rules, resolved for the redesign branch:
+                                     | quotes are stripped from a real provision, and "Other" is
+                                     | replaced in place by the custom text — in place, not at the
+                                     | end, because this loop substitutes rather than appends. That
+                                     | difference from the lists above is why this cannot share
+                                     | $byaListWithOther.
+                                     */
+                                    $byaSaleProvisions = [];
+                                    foreach ($saleProvisionArray as $byaSale) {
+                                        if ($byaSale != 'Other') {
+                                            $byaSaleProvisions[] = str_replace('"', '', $byaSale);
+                                        } elseif (@$auction->get->sale_provision_other) {
+                                            $byaSaleProvisions[] = @$auction->get->sale_provision_other;
+                                        }
+                                    }
+                                @endphp
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Acceptable Special Sale Provisions" :bare-slot="true" :list-value="$byaSaleProvisions">
                                     @foreach ($saleProvisionArray as $sale)
                                         @if ($sale != 'Other')
                                             @php $displaySale = str_replace('"', '', $sale); @endphp
@@ -1380,7 +1473,7 @@
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->sale_provision_other }}</span>
                                         @endif
                                     @endforeach
-                                </div>
+                                </x-hire-agent.field>
                             @endif
 
                             <!-- Assignment Contract Details -->
@@ -1389,29 +1482,38 @@
                                     @php
                                         $displayAssignment = str_replace('"', '', $toStr(@$auction->get->sale_provision_assignment));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer Open to Purchasing an Assignment Contract:
-                                        <span class="removeBold">{{ $displayAssignment }}</span>
-                                    </div>
+                                    {{-- Half span. The value is a Yes/No answer — structurally three
+                                         characters, not three characters on this listing — and a
+                                         full-width row gives the value column ~79% of the card for
+                                         it to sit in. That is the corridor of empty space the field
+                                         component's `badges` note describes, arrived at from the
+                                         other direction. The label column is 20.833% at full span
+                                         and 41.666% at half, which resolve to roughly the SAME
+                                         absolute width, so halving costs the long label nothing and
+                                         lets the field pair with its neighbour. Landlord has no
+                                         full-width field whose value is structurally short. --}}
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Buyer Open to Purchasing an Assignment Contract" :value="$displayAssignment" />
                                 @endif
 
                                 @if (@$auction->get->sale_provision_assignment === 'Yes' && @$auction->get->assignment_fee_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Assignment Fee to Broker:
-                                        <span class="removeBold">
-                                            @php
-                                                $feeType = @$auction->get->assignment_fee_type;
-                                                $feeAmount = @$auction->get->assignment_fee_amount;
-                                                if ($feeType === '$' || $feeType === 'dollar' || empty($feeType)) {
-                                                    echo $fmtMoney($feeAmount);
-                                                } elseif ($feeType === '%' || $feeType === 'percent') {
-                                                    echo $fmtPercent($feeAmount);
-                                                } else {
-                                                    echo $fmtMoney($feeAmount) . ' ' . $feeType;
-                                                }
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    @php
+                                        /*
+                                         | The fee formatter moved out of the row's <span> and into a
+                                         | value. It was the last place on this page still echoing
+                                         | from inside markup; the three branches are carried over
+                                         | unchanged and only their destination differs.
+                                         */
+                                        $feeType = @$auction->get->assignment_fee_type;
+                                        $feeAmount = @$auction->get->assignment_fee_amount;
+                                        if ($feeType === '$' || $feeType === 'dollar' || empty($feeType)) {
+                                            $byaAssignmentFee = $fmtMoney($feeAmount);
+                                        } elseif ($feeType === '%' || $feeType === 'percent') {
+                                            $byaAssignmentFee = $fmtPercent($feeAmount);
+                                        } else {
+                                            $byaAssignmentFee = $fmtMoney($feeAmount) . ' ' . $feeType;
+                                        }
+                                    @endphp
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Assignment Fee to Broker" :value="$byaAssignmentFee" />
                                 @endif
                             @endif
 
@@ -1420,19 +1522,11 @@
                                 @php
                                     $displayClosingDate = str_replace('"', '', $toStr(@$auction->get->target_closing_date));
                                 @endphp
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Target Closing Date:
-                                    <span class="removeBold">{{ $displayClosingDate }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Target Closing Date" :value="$displayClosingDate" />
                             @endif
 
                             <!-- Maximum Budget -->
-                            @if (@$auction->get->maximum_budget != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Maximum Budget:
-                                    <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->maximum_budget)) }}</span>
-                                </div>
-                            @endif
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Maximum Budget" :value="@$auction->get->maximum_budget != null ? '$' . number_format((float) str_replace(',', '', @$auction->get->maximum_budget)) : null" />
 
                             {{-- M7 Phase 2 — the financing array and the seven per-type data flags are
                                  hoisted to the block at the top of this section, because the nav needs
@@ -1497,8 +1591,7 @@
                                         return $aIdx - $bIdx;
                                     });
                                 @endphp
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Offered Financing/Currency:
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Offered Financing/Currency" :bare-slot="true" :list-value="$financingItems">
                                     @if (count($financingItems) === 1)
                                         <span class="removeBold">{{ $financingItems[0] }}</span>
                                     @else
@@ -1506,18 +1599,40 @@
                                             <span class="removeBold badge bg-secondary">{{ $fItem }}</span>
                                         @endforeach
                                     @endif
-                                </div>
+                                </x-hire-agent.field>
                             @endif
+
+                            @php
+                                /*
+                                 | Every money row in this section spelled the same conversion inline
+                                 | — strip the thousands separators the user typed, cast, re-format,
+                                 | prefix a dollar sign. Named once here so the eleven call sites
+                                 | below read as values rather than as arithmetic. It is the same
+                                 | expression each of them already carried, moved and not altered;
+                                 | $fmtMoney further up this file belongs to the Terms block and
+                                 | applies a different rule to a null, so it is deliberately not
+                                 | reused here.
+                                 */
+                                $byaMoney = function ($value) {
+                                    return \App\Helpers\ListingDisplayHelper::hasValue($value)
+                                        ? '$' . number_format((float) str_replace(',', '', $value))
+                                        : null;
+                                };
+
+                                /* Same shape for the percent rows, which appended a literal '%'. */
+                                $byaPercent = function ($value) {
+                                    return \App\Helpers\ListingDisplayHelper::hasValue($value)
+                                        ? $value . '%'
+                                        : null;
+                                };
+                            @endphp
 
                             <!-- Cash Financing Details -->
                             @if (in_array('Cash', $financingArray) && @$auction->get->cash_budget)
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="financing-subsection-header">Cash Terms</h6>
                                 </div>
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Offered Cash Amount:
-                                    <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->cash_budget)) }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Offered Cash Amount" :value="$byaMoney(@$auction->get->cash_budget)" />
                             @endif
 
                             <!-- Assumable Financing Details -->
@@ -1525,33 +1640,25 @@
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="financing-subsection-header">Assumable Financing Interest</h6>
                                 </div>
-                                @if (@$auction->get->assumable_interest)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Interested in Assumable Financing:
-                                        <span class="removeBold">{{ str_replace('"', '', $toStr(@$auction->get->assumable_interest)) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->assumable_max_interest_rate)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maximum Acceptable Interest Rate:
-                                        <span class="removeBold">{{ @$auction->get->assumable_max_interest_rate }}%</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->assumable_max_monthly_payment)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maximum Monthly Payment (P&amp;I):
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->assumable_max_monthly_payment)) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->assumable_bridge_gap_cash)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Cash Available to Bridge the Gap:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->assumable_bridge_gap_cash)) }}</span>
-                                    </div>
-                                @endif
+                                @php
+                                    /*
+                                     | Resolved in a block rather than inline, because the value
+                                     | strips a double quote and a double quote cannot appear inside
+                                     | a Blade attribute expression — it would close the attribute.
+                                     | Every other de-quoting row in this section is written the same
+                                     | way for the same reason.
+                                     */
+                                    $byaAssumableInterest = @$auction->get->assumable_interest
+                                        ? str_replace('"', '', $toStr(@$auction->get->assumable_interest))
+                                        : null;
+                                @endphp
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Interested in Assumable Financing" :value="$byaAssumableInterest" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Maximum Acceptable Interest Rate" :value="$byaPercent(@$auction->get->assumable_max_interest_rate)" />
+                                {{-- Literal & in the label: the legacy row spelled it as the HTML
+                                     entity because it WAS raw HTML. The component escapes the label,
+                                     so a literal here produces the identical entity on output. --}}
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Maximum Monthly Payment (P&I)" :value="$byaMoney(@$auction->get->assumable_max_monthly_payment)" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Cash Available to Bridge the Gap" :value="$byaMoney(@$auction->get->assumable_bridge_gap_cash)" />
                             @endif
 
                             @php
@@ -1563,12 +1670,15 @@
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="financing-subsection-header">{{ implode(' / ', $selectedLoanTypes) }}</h6>
                                 </div>
-                                @if (@$auction->get->pre_approved)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer Pre-Approved for a Loan:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->pre_approved, @$auction->get->pre_approval_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) : null) }}</span>
-                                    </div>
-                                @endif
+                                @php
+                                    $byaPreApproved = @$auction->get->pre_approved
+                                        ? \App\Helpers\ListingDisplayHelper::formatYesParenthetical(
+                                            @$auction->get->pre_approved,
+                                            $byaMoney(@$auction->get->pre_approval_amount)
+                                        )
+                                        : null;
+                                @endphp
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Buyer Pre-Approved for a Loan" :value="$byaPreApproved" />
                             @endif
 
                             <!-- Cryptocurrency Details - ONLY SHOW IF offered_financing IS "Cryptocurrency" -->
@@ -1576,74 +1686,49 @@
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="financing-subsection-header">Cryptocurrency Terms</h6>
                                 </div>
-                                @if (@$auction->get->cryptocurrency_type)
-                                    @php
-                                        $displayCryptoType = str_replace('"', '', $toStr(@$auction->get->cryptocurrency_type));
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Offered Cryptocurrency:
-                                        <span class="removeBold">{{ $displayCryptoType }}</span>
-                                    </div>
-                                @endif
+                                @php
+                                    /*
+                                     | The crypto rows each carried their own @php block computing a
+                                     | de-quoted display string; they are collected here so the rows
+                                     | below can be one line each. Every transform is the one that
+                                     | row already applied, and each stays behind the same emptiness
+                                     | test — expressed now as a ternary yielding null, which is the
+                                     | condition the component itself applies.
+                                     |
+                                     | These must live in a block rather than inline: they strip a
+                                     | double quote, which cannot appear in a Blade attribute.
+                                     */
+                                    $displayCryptoType      = @$auction->get->cryptocurrency_type ? str_replace('"', '', $toStr(@$auction->get->cryptocurrency_type)) : null;
+                                    $displayCryptoExchange  = @$auction->get->crypto_exchange_method ? str_replace('"', '', $toStr(@$auction->get->crypto_exchange_method)) : null;
+                                    $displayCryptoCustodian = @$auction->get->crypto_custodian_wallet ? str_replace('"', '', $toStr(@$auction->get->crypto_custodian_wallet)) : null;
+                                    $displayCryptoFees      = @$auction->get->crypto_transaction_fees ? str_replace('"', '', $toStr(@$auction->get->crypto_transaction_fees)) : null;
 
-                                @if (@$auction->get->crypto_percentage)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Purchase Price to be Paid with Cryptocurrency:
-                                        <span class="removeBold">{{ @$auction->get->crypto_percentage }}%</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->cash_percentage_crypto)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Purchase Price to be Paid with Cash:
-                                        <span class="removeBold">{{ @$auction->get->cash_percentage_crypto }}%</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_exchange_method)
-                                    @php
-                                        $displayCryptoExchange = str_replace('"', '', $toStr(@$auction->get->crypto_exchange_method));
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Exchange / Conversion Method:
-                                        <span class="removeBold">{{ $displayCryptoExchange }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_custodian_wallet)
-                                    @php
-                                        $displayCryptoCustodian = str_replace('"', '', $toStr(@$auction->get->crypto_custodian_wallet));
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Custodian / Wallet for Transfer:
-                                        <span class="removeBold">{{ $displayCryptoCustodian }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_transaction_fees)
-                                    @php
-                                        $displayCryptoFees = str_replace('"', '', $toStr(@$auction->get->crypto_transaction_fees));
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Transaction Fees Responsibility:
-                                        <span class="removeBold">{{ $displayCryptoFees }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_transfer_timing)
-                                    @php
-                                        $displayCryptoTiming = str_replace('"', '', $toStr(@$auction->get->crypto_transfer_timing));
-                                        $displayCryptoTimingOther = str_replace('"', '', $toStr(@$auction->get->crypto_transfer_timing_other ?? ''));
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Timing of Transfer:
-                                        @if (@$auction->get->crypto_transfer_timing === 'Other' && $displayCryptoTimingOther)
-                                            <span class="removeBold">{{ $displayCryptoTimingOther }}</span>
-                                        @else
-                                            <span class="removeBold">{{ $displayCryptoTiming }}</span>
-                                        @endif
-                                    </div>
-                                @endif
+                                    /*
+                                     | Timing keeps its two-branch rule: the custom text wins when
+                                     | the answer is "Other" AND that text exists, otherwise the
+                                     | answer itself. Collapsed to one value because it was always
+                                     | one field with two sources, never two fields.
+                                     */
+                                    $displayCryptoTiming      = @$auction->get->crypto_transfer_timing ? str_replace('"', '', $toStr(@$auction->get->crypto_transfer_timing)) : null;
+                                    $displayCryptoTimingOther = str_replace('"', '', $toStr(@$auction->get->crypto_transfer_timing_other ?? ''));
+                                    $byaCryptoTiming = (@$auction->get->crypto_transfer_timing === 'Other' && $displayCryptoTimingOther)
+                                        ? $displayCryptoTimingOther
+                                        : $displayCryptoTiming;
+                                @endphp
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Offered Cryptocurrency" :value="$displayCryptoType" />
+                                {{-- Half span, same reasoning as the assignment answer above: a
+                                     percentage is structurally three or four characters whatever the
+                                     listing says, so a full-width value column is empty by
+                                     construction. These two are also a natural pair — crypto share
+                                     and cash share of the same purchase price — and at half width
+                                     they sit side by side on one line, which reads as the pair they
+                                     are rather than as two unrelated rows. --}}
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Percentage of Purchase Price to be Paid with Cryptocurrency" :value="$byaPercent(@$auction->get->crypto_percentage)" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Percentage of Purchase Price to be Paid with Cash" :value="$byaPercent(@$auction->get->cash_percentage_crypto)" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Exchange / Conversion Method" :value="$displayCryptoExchange" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Custodian / Wallet for Transfer" :value="$displayCryptoCustodian" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Transaction Fees Responsibility" :value="$displayCryptoFees" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Timing of Transfer" :value="$byaCryptoTiming" />
                             @endif
 
                             <!-- Exchange/Trade Details - ONLY SHOW IF offered_financing IS "Exchange/Trade" -->
@@ -1658,73 +1743,59 @@
                                         $exchangeItemIsOther = is_array(@$auction->get->exchange_item)
                                             ? in_array('Other', @$auction->get->exchange_item)
                                             : (@$auction->get->exchange_item === 'Other');
+
+                                        /* One field, two sources — the same collapse as Timing of
+                                           Transfer above, and the same rule: custom text wins only
+                                           when the answer is "Other" AND that text exists. */
+                                        $byaExchangeItem = ($exchangeItemIsOther && @$auction->get->other_exchange_item)
+                                            ? $displayOtherExchange
+                                            : $displayExchangeItem;
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Acceptable Exchange Item:
-                                        @if ($exchangeItemIsOther && @$auction->get->other_exchange_item)
-                                            <span class="removeBold">{{ $displayOtherExchange }}</span>
-                                        @else
-                                            <span class="removeBold">{{ $displayExchangeItem }}</span>
-                                        @endif
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Acceptable Exchange Item" :value="$byaExchangeItem" />
                                 @endif
 
                                 @if (@$auction->get->exchange_item_value)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Estimated Value of Exchange/Trade Item:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->exchange_item_value)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Estimated Value of Exchange/Trade Item" :value="$byaMoney(@$auction->get->exchange_item_value)" />
                                 @endif
 
                                 @if (@$auction->get->exchange_item_condition)
                                     @php
                                         $displayExchangeCondition = str_replace('"', '', $toStr(@$auction->get->exchange_item_condition));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Condition of Exchange/Trade Item:
-                                        <span class="removeBold">{{ $displayExchangeCondition }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Condition of Exchange/Trade Item" :value="$displayExchangeCondition" />
                                 @endif
 
                                 @if (@$auction->get->additional_cash)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Additional Cash Buyer Will Offer:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->additional_cash)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Additional Cash Buyer Will Offer" :value="$byaMoney(@$auction->get->additional_cash)" />
                                 @endif
 
                                 @if (@$auction->get->value_determination)
                                     @php
                                         $displayValueDetermination = str_replace('"', '', $toStr(@$auction->get->value_determination));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Value of Exchange/Trade Item Determined By:
-                                        <span class="removeBold">{{ $displayValueDetermination }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Value of Exchange/Trade Item Determined By" :value="$displayValueDetermination" />
                                 @endif
 
                                 @if (@$auction->get->exchange_transfer_method)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Transfer Method / Logistics:
-                                        <span class="removeBold">{{ @$auction->get->exchange_transfer_method }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Transfer Method / Logistics" :value="@$auction->get->exchange_transfer_method" />
                                 @endif
 
                                 @if (@$auction->get->exchange_liens)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Liens / Encumbrances Disclosure:
-                                        <span class="removeBold">{{ @$auction->get->exchange_liens }}</span>
-                                        @if (@$auction->get->exchange_liens === 'Yes' && @$auction->get->exchange_liens_details)
-                                            <span class="removeBold">({{ @$auction->get->exchange_liens_details }})</span>
-                                        @endif
-                                    </div>
+                                    @php
+                                        /* The answer, with its detail in parentheses when there is
+                                           one — two spans in the legacy row, one value here. The
+                                           space between them is the one the browser rendered from
+                                           the newline separating the two spans. */
+                                        $byaExchangeLiens = @$auction->get->exchange_liens
+                                            . ((@$auction->get->exchange_liens === 'Yes' && @$auction->get->exchange_liens_details)
+                                                ? ' (' . @$auction->get->exchange_liens_details . ')'
+                                                : '');
+                                    @endphp
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Liens / Encumbrances Disclosure" :value="$byaExchangeLiens" />
                                 @endif
 
                                 @if (@$auction->get->exchange_inspection_rights)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Inspection / Verification Rights:
-                                        <span class="removeBold">{{ @$auction->get->exchange_inspection_rights }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Inspection / Verification Rights" :value="@$auction->get->exchange_inspection_rights" />
                                 @endif
                             @endif
 
@@ -1735,34 +1806,22 @@
                                 </div>
                                 {{-- 1. Buyer's Desired Offering Price --}}
                                 @if (@$auction->get->lease_option_price)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer's Desired Offering Price for Lease Option:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_option_price)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Buyer's Desired Offering Price for Lease Option" :value="$byaMoney(@$auction->get->lease_option_price)" />
                                 @endif
 
                                 {{-- 2. Monthly Payment --}}
                                 @if (@$auction->get->lease_option_payment)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Monthly Payment Buyer is Offering:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_option_payment)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Monthly Payment Buyer is Offering" :value="$byaMoney(@$auction->get->lease_option_payment)" />
                                 @endif
 
                                 {{-- 3. Proposed Duration --}}
                                 @if (@$auction->get->lease_option_duration)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Proposed Duration of Lease (Months):
-                                        <span class="removeBold">{{ @$auction->get->lease_option_duration }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Proposed Duration of Lease (Months)" :value="@$auction->get->lease_option_duration" />
                                 @endif
 
                                 {{-- 4. Offered Option Fee (inline with amount) --}}
                                 @if (@$auction->get->has_option_fee)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Offered Option Fee:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->has_option_fee, @$auction->get->option_fee_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->option_fee_amount)) : null) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Offered Option Fee" :value="\App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->has_option_fee, @$auction->get->option_fee_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->option_fee_amount)) : null)" />
                                 @endif
 
                                 {{-- 5. Option Fee Credit --}}
@@ -1770,18 +1829,12 @@
                                     @php
                                         $displayFeeCredit = str_replace('"', '', $toStr(@$auction->get->lease_option_fee_credit));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Option Fee Credit Toward Purchase Price:
-                                        <span class="removeBold">{{ $displayFeeCredit }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Option Fee Credit Toward Purchase Price" :value="$displayFeeCredit" />
                                 @endif
 
                                 {{-- 5a. Percentage of Option Fee Credited (conditional) --}}
                                 @if (@$auction->get->lease_option_fee_credit === 'Partial' && @$auction->get->lease_option_fee_credit_percentage)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Option Fee Credited:
-                                        <span class="removeBold">{{ @$auction->get->lease_option_fee_credit_percentage }}%</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Percentage of Option Fee Credited" :value="$byaPercent(@$auction->get->lease_option_fee_credit_percentage)" />
                                 @endif
 
                                 {{-- 6. Conditions or Requirements --}}
@@ -1789,10 +1842,7 @@
                                     @php
                                         $displayLeaseConditions = str_replace('"', '', $toStr(@$auction->get->lease_option_conditions));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Conditions or Requirements for Lease Option:
-                                        <span class="removeBold">{{ $displayLeaseConditions }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Conditions or Requirements for Lease Option" :value="$displayLeaseConditions" />
                                 @endif
 
                                 {{-- 7. Specific Terms Proposed --}}
@@ -1800,10 +1850,7 @@
                                     @php
                                         $displayLeaseTerms = str_replace('"', '', $toStr(@$auction->get->lease_option_terms));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Specific Terms Proposed for Lease Option:
-                                        <span class="removeBold">{{ $displayLeaseTerms }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Specific Terms Proposed for Lease Option" :value="$displayLeaseTerms" />
                                 @endif
 
                                 {{-- 8. Maintenance / Repair Responsibility --}}
@@ -1811,10 +1858,7 @@
                                     @php
                                         $displayMaintenance = str_replace('"', '', $toStr(@$auction->get->lease_option_maintenance));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maintenance / Repair Responsibility:
-                                        <span class="removeBold">{{ $displayMaintenance }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Maintenance / Repair Responsibility" :value="$displayMaintenance" />
                                 @endif
 
                                 {{-- 9. Extension Terms --}}
@@ -1822,10 +1866,7 @@
                                     @php
                                         $displayExtension = str_replace('"', '', $toStr(@$auction->get->lease_option_extension_terms));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Extension Terms:
-                                        <span class="removeBold">{{ $displayExtension }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Extension Terms" :value="$displayExtension" />
                                 @endif
                             @endif
 
@@ -1836,42 +1877,27 @@
                                 </div>
                                 {{-- 1. Buyer's Desired Offering Price --}}
                                 @if (@$auction->get->lease_purchase_price)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer's Desired Offering Price for Lease Purchase:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_price)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Buyer's Desired Offering Price for Lease Purchase" :value="$byaMoney(@$auction->get->lease_purchase_price)" />
                                 @endif
 
                                 {{-- 2. Monthly Payment --}}
                                 @if (@$auction->get->lease_purchase_payment)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Monthly Payment Buyer is Offering:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_payment)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Monthly Payment Buyer is Offering" :value="$byaMoney(@$auction->get->lease_purchase_payment)" />
                                 @endif
 
                                 {{-- 3. Proposed Duration --}}
                                 @if (@$auction->get->lease_purchase_duration)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Proposed Duration of Lease (Months):
-                                        <span class="removeBold">{{ @$auction->get->lease_purchase_duration }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Proposed Duration of Lease (Months)" :value="@$auction->get->lease_purchase_duration" />
                                 @endif
 
                                 {{-- 4. Rent Credit Toward Purchase Price (inline with amount) --}}
                                 @if (@$auction->get->lease_purchase_rent_credit)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Rent Credit Toward Purchase Price:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->lease_purchase_rent_credit, in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->lease_purchase_rent_credit_amount)) : null) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Rent Credit Toward Purchase Price" :value="\App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->lease_purchase_rent_credit, in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->lease_purchase_rent_credit_amount)) : null)" />
                                 @endif
 
                                 {{-- 5. Non-Refundable Deposit --}}
                                 @if (@$auction->get->lease_purchase_deposit)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Non-Refundable Deposit / Purchase Deposit:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_deposit)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Non-Refundable Deposit / Purchase Deposit" :value="$byaMoney(@$auction->get->lease_purchase_deposit)" />
                                 @endif
 
                                 {{-- 6. Conditions or Requirements --}}
@@ -1879,10 +1905,7 @@
                                     @php
                                         $displayLeasePurchaseConditions = str_replace('"', '', $toStr(@$auction->get->lease_purchase_conditions));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Conditions or Requirements for Lease Purchase:
-                                        <span class="removeBold">{{ $displayLeasePurchaseConditions }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Conditions or Requirements for Lease Purchase" :value="$displayLeasePurchaseConditions" />
                                 @endif
 
                                 {{-- 7. Specific Terms Proposed --}}
@@ -1890,10 +1913,7 @@
                                     @php
                                         $displayLeasePurchaseTerms = str_replace('"', '', $toStr(@$auction->get->lease_purchase_terms));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Specific Terms Proposed for Lease Purchase:
-                                        <span class="removeBold">{{ $displayLeasePurchaseTerms }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Specific Terms Proposed for Lease Purchase" :value="$displayLeasePurchaseTerms" />
                                 @endif
 
                                 {{-- 8. Maintenance / Repair Responsibility --}}
@@ -1901,10 +1921,7 @@
                                     @php
                                         $displayLPMaintenance = str_replace('"', '', $toStr(@$auction->get->lease_purchase_maintenance));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maintenance / Repair Responsibility:
-                                        <span class="removeBold">{{ $displayLPMaintenance }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Maintenance / Repair Responsibility" :value="$displayLPMaintenance" />
                                 @endif
 
                                 {{-- 9. Extension Terms --}}
@@ -1912,10 +1929,7 @@
                                     @php
                                         $displayLPExtension = str_replace('"', '', $toStr(@$auction->get->lease_purchase_extension_terms));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Extension Terms:
-                                        <span class="removeBold">{{ $displayLPExtension }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Extension Terms" :value="$displayLPExtension" />
                                 @endif
                             @endif
 
@@ -1928,54 +1942,36 @@
                                     @php
                                         $displayNFTDescription = str_replace('"', '', $toStr(@$auction->get->nft_description));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Offered Non-Fungible Token (NFT):
-                                        <span class="removeBold">{{ $displayNFTDescription }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Offered Non-Fungible Token (NFT)" :value="$displayNFTDescription" />
                                 @endif
 
                                 @if (@$auction->get->nft_percentage)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Purchase Price to be Paid with NFT:
-                                        <span class="removeBold">{{ @$auction->get->nft_percentage }}%</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Percentage of Purchase Price to be Paid with NFT" :value="$byaPercent(@$auction->get->nft_percentage)" />
                                 @endif
 
                                 @if (@$auction->get->cash_percentage_nft)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Purchase Price to be Paid with Cash:
-                                        <span class="removeBold">{{ @$auction->get->cash_percentage_nft }}%</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Percentage of Purchase Price to be Paid with Cash" :value="$byaPercent(@$auction->get->cash_percentage_nft)" />
                                 @endif
 
                                 @if (@$auction->get->nft_valuation_method)
                                     @php
                                         $displayNFTValuation = str_replace('"', '', $toStr(@$auction->get->nft_valuation_method));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        NFT Valuation Method:
-                                        <span class="removeBold">{{ $displayNFTValuation }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="NFT Valuation Method" :value="$displayNFTValuation" />
                                 @endif
 
                                 @if (@$auction->get->nft_transfer_method)
                                     @php
                                         $displayNFTTransfer = str_replace('"', '', $toStr(@$auction->get->nft_transfer_method));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        NFT Transfer Method:
-                                        <span class="removeBold">{{ $displayNFTTransfer }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="NFT Transfer Method" :value="$displayNFTTransfer" />
                                 @endif
 
                                 @if (@$auction->get->nft_gas_fees)
                                     @php
                                         $displayNFTGasFees = str_replace('"', '', $toStr(@$auction->get->nft_gas_fees));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Transaction Fees Responsibility (Gas Fees):
-                                        <span class="removeBold">{{ $displayNFTGasFees }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Transaction Fees Responsibility (Gas Fees)" :value="$displayNFTGasFees" />
                                 @endif
                             @endif
 
@@ -1985,98 +1981,85 @@
                                     <h6 class="financing-subsection-header">Seller Financing Terms</h6>
                                 </div>
                                 @if (@$auction->get->purchase_price)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Purchase Price:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->purchase_price)) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Desired Purchase Price" :value="$byaMoney(@$auction->get->purchase_price)" />
                                 @endif
 
+                                @php
+                                    /*
+                                     | These two rows are the only amounts on the page whose UNIT is
+                                     | itself an answer: the same number is a dollar figure or a
+                                     | percentage depending on a companion `_type` field, so the
+                                     | legacy markup composed three echoes — prefix, number, suffix
+                                     | — inside one span. That is why neither could go through
+                                     | $byaMoney or $byaPercent, and why both are built here instead
+                                     | of inline. The three parts and their conditions are carried
+                                     | over exactly; only the seam moved.
+                                     */
+                                    $byaTypedAmount = function ($type, $amount) {
+                                        $formatted = number_format((float) str_replace(',', '', $amount));
+                                        return $type === '%' ? $formatted . '%' : '$' . $formatted;
+                                    };
+                                @endphp
                                 @if (@$auction->get->down_payment_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Down Payment:
-                                        <span class="removeBold">{{ @$auction->get->down_payment_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->down_payment_amount)) }}{{ @$auction->get->down_payment_type === '%' ? '%' : '' }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Desired Down Payment" :value="$byaTypedAmount(@$auction->get->down_payment_type, @$auction->get->down_payment_amount)" />
                                 @endif
 
                                 @if (@$auction->get->seller_financing_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Seller Financing Amount:
-                                        <span class="removeBold">{{ @$auction->get->seller_financing_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->seller_financing_amount)) }}{{ @$auction->get->seller_financing_type === '%' ? '%' : '' }}</span>
-                                    </div>
+                                    {{-- Half span, to match "Desired Down Payment" directly above it.
+                                         Both rows are built by the same $byaTypedAmount closure and
+                                         carry the same shape of value — a formatted amount or a
+                                         percentage — so one of them rendering full width and the
+                                         other half was an inconsistency in this card rather than a
+                                         judgement about either field. --}}
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Desired Seller Financing Amount" :value="$byaTypedAmount(@$auction->get->seller_financing_type, @$auction->get->seller_financing_amount)" />
                                 @endif
 
                                 @if (@$auction->get->interest_rate)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Interest Rate:
-                                        <span class="removeBold">{{ @$auction->get->interest_rate }}%</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Desired Interest Rate" :value="$byaPercent(@$auction->get->interest_rate)" />
                                 @endif
 
                                 @if (@$auction->get->loan_duration)
                                     @php
                                         $displayLoanDuration = str_replace('"', '', $toStr(@$auction->get->loan_duration));
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Loan Duration:
-                                        <span class="removeBold">{{ $displayLoanDuration }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Desired Loan Duration" :value="$displayLoanDuration" />
                                 @endif
 
                                 {{-- Prepayment Penalty (inline with amount) --}}
                                 @if (@$auction->get->prepayment_penalty)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Prepayment Penalty:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->prepayment_penalty, @$auction->get->prepayment_penalty_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) : null) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Prepayment Penalty" :value="\App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->prepayment_penalty, @$auction->get->prepayment_penalty_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) : null)" />
                                 @endif
 
                                 {{-- Balloon Payment (inline with amount) --}}
                                 @if (@$auction->get->balloon_payment)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Balloon Payment:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->balloon_payment, @$auction->get->balloon_payment_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) : null) }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Balloon Payment" :value="\App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->balloon_payment, @$auction->get->balloon_payment_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) : null)" />
 
                                 @if (@$auction->get->balloon_payment === 'Yes')
                                     @if (@$auction->get->balloon_payment_date)
                                         @php
                                             $displayBalloonDate = str_replace('"', '', $toStr(@$auction->get->balloon_payment_date));
                                         @endphp
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Balloon Payment Due Date:
-                                            <span class="removeBold">{{ $displayBalloonDate }}</span>
-                                        </div>
+                                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Balloon Payment Due Date" :value="$displayBalloonDate" />
                                     @endif
                                 @endif
                                 @endif
 
-                                @if (@$auction->get->seller_amortization_type)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Amortization Type:
-                                        @if (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
-                                            <span class="removeBold">{{ @$auction->get->seller_amortization_other }}</span>
-                                        @else
-                                            <span class="removeBold">{{ @$auction->get->seller_amortization_type }}</span>
-                                        @endif
-                                    </div>
-                                @endif
+                                @php
+                                    /* The "Other" collapse once more, for the last two rows that
+                                       carried it in markup. Same rule, same output. */
+                                    $byaAmortizationType = (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
+                                        ? @$auction->get->seller_amortization_other
+                                        : @$auction->get->seller_amortization_type;
 
-                                @if (@$auction->get->seller_payment_frequency)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Payment Frequency:
-                                        @if (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
-                                            <span class="removeBold">{{ @$auction->get->seller_payment_frequency_other }}</span>
-                                        @else
-                                            <span class="removeBold">{{ @$auction->get->seller_payment_frequency }}</span>
-                                        @endif
-                                    </div>
-                                @endif
+                                    $byaPaymentFrequency = (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
+                                        ? @$auction->get->seller_payment_frequency_other
+                                        : @$auction->get->seller_payment_frequency;
+                                @endphp
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Amortization Type" :value="$byaAmortizationType" />
+                                <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Payment Frequency" :value="$byaPaymentFrequency" />
 
                                 @if (@$auction->get->seller_late_fee_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Late Payment Fee:
-                                        <span class="removeBold">{{ @$auction->get->seller_late_fee_amount }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Late Payment Fee" :value="@$auction->get->seller_late_fee_amount" />
                                 @endif
                             @endif
 {{-- End of the Financing Details section. The nine financing sub-headings above stay h6
@@ -2102,10 +2085,13 @@
 @if (! ($byaDetailRedesign ?? false))                            <x-viho.section-header title="Additional Details:" tag="h4" />
 @endif
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Details: <span
-                                    class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
-                            </div>
+                            {{-- Full width: this is free prose the buyer typed, not a short answer,
+                                 so a half-width cell would wrap it into a column two words wide.
+                                 The enclosing @if is kept rather than folded into the section
+                                 guard — unlike landlord's, it also gates the legacy section-header
+                                 above, and dropping it would print that heading over an empty
+                                 card whenever the flag is off. --}}
+                            <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" span="full" label="Additional Details" :value="$auction->get->additional_details ?? ''" />
                         @endif
 </x-hire-agent.detail-section>
 @endif
@@ -2127,11 +2113,14 @@
                              rendered text is unchanged. Passing &amp; here would double-escape it. --}}
 @if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
 @endif
+                        {{-- $repRows is already built as label/value pairs, and every pair in it has
+                             a value: the builder drops empties before this loop, which is why
+                             !empty($repRows) is a complete guard for the section and why the nav can
+                             share it. The rows still route through the adapter rather than emitting
+                             their own markup, so a pair that ever did arrive empty disappears here
+                             instead of printing a bare label. --}}
                         @foreach ($repRows as $repRow)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            {{ $repRow['label'] }}:
-                            <span class="removeBold">{{ $repRow['value'] }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" :label="$repRow['label']" :value="$repRow['value']" />
                         @endforeach
                         @endif
 </x-hire-agent.detail-section>
@@ -2176,10 +2165,10 @@
 @endif
 @if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
 @endif
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Referral Fee:
-                            <span class="removeBold">{{ $referralPctDisplay }}</span>
-                        </div>
+                        {{-- The section's guard IS this field's emptiness test, and the nav shares it,
+                             so the row needs no guard of its own. Landlord's counterpart is the same
+                             single line. --}}
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Referral Fee" :value="$referralPctDisplay" />
                         @endif
 </x-hire-agent.detail-section>
 @endif
@@ -2194,21 +2183,19 @@
 @endif
 @if (! ($byaDetailRedesign ?? false))                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
 @endif
-                        @if (!empty($auction->get->first_name))
-                            <div class="col-md-12 col-12 pt-2 fw-bold">First
-                                Name:
-                                <span class="removeBold">
-                                    {{ $auction->get->first_name }}
-                                </span>
-                            </div>
-                        @endif
+                        {{-- THE ONLY TWO LABEL/VALUE FIELDS IN THIS SECTION. Everything below is
+                             media: a video element, an image and a link embed, each in its own
+                             col-md-6 cell. Those are deliberately NOT routed through the field
+                             adapter — a 5/7 grid positions a short text answer beside its label, and
+                             putting a 29vh video in the value column would size the media to 58% of
+                             a half-width cell and label it like a data point. They keep their own
+                             markup and their own guards, exactly as landlord's do.
 
-                        @if (!empty($auction->get->current_status))
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer's Current Status:
-                                <span class="removeBold">{{ $auction->get->current_status }}</span>
-                            </div>
-                        @endif
+                             Buyer carries one field landlord does not: "Buyer's Current Status" has
+                             no landlord counterpart, and its presence is content rather than drift.
+                             $byaHasOwnerInfo already enumerates it, so the guard and the rows agree. --}}
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="First Name" :value="@$auction->get->first_name" />
+                        <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Buyer's Current Status" :value="@$auction->get->current_status" />
 
                        <div class="row">
                             {{-- @if (isset($auction->get->video))
@@ -2324,32 +2311,26 @@
      public profile page. --}}
 @if ($byaDetailRedesign && $byaShows('agent-credentials'))
 <x-hire-agent.detail-section :redesign="true" :legacy-header="false" id="hla-section-agent-credentials" title="Agent Credentials & Contact Info" icon="fa-solid fa-address-card">
+                        {{-- The redesign is not a branch here, it is the only branch: this section is
+                             gated `$byaDetailRedesign &&` above, so :redesign="true" is a statement of
+                             fact rather than a flag read. The rows carried legacy markup anyway, which
+                             made them the only ones on the page rendering the flag-off shape with no
+                             flag-off render to preserve. Landlord's identical section is the reference
+                             — same four fields, same order, same literal true. --}}
                         @if (@$auction->user->brokerage != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Brokerage:
-                                <span class="removeBold">{{ $auction->user->brokerage }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="true" label="Brokerage" :value="$auction->user->brokerage" />
                         @endif
 
                         @if (@$auction->user->license_no != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                License No.:
-                                <span class="removeBold">{{ $auction->user->license_no }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="true" label="License No." :value="$auction->user->license_no" />
                         @endif
 
                         @if (@$auction->user->phone != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Phone:
-                                <span class="removeBold">{{ $auction->user->phone }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="true" label="Phone" :value="$auction->user->phone" />
                         @endif
 
                         @if (@$auction->user->email != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Email:
-                                <span class="removeBold">{{ $auction->user->email }}</span>
-                            </div>
+                            <x-hire-agent.field :redesign="true" label="Email" :value="$auction->user->email" />
                         @endif
 </x-hire-agent.detail-section>
 @endif
