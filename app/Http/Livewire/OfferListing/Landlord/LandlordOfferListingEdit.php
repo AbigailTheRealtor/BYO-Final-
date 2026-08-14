@@ -4158,19 +4158,43 @@ class LandlordOfferListingEdit extends Component
      */
     private function applyPhotoOrder(array $authoritative, array $requested): array
     {
+        // MLS-SOURCED ENTRIES. Identical to the create component's implementation,
+        // and deliberately so — the two flows reorder the same collection and must
+        // not disagree about what a selector refers to.
+        //
+        // The client sends ListingPhotoEntry::key() values: a filename for a user
+        // upload, an MLS handle for a provider photograph. Membership is therefore
+        // decided by ListingPhotoEntry::matchesSelector() rather than by a strict
+        // in_array() against the stored value, which only ever worked while every
+        // entry WAS its own filename string. Against an array-shaped MLS entry no
+        // selector could match, so the second pass below silently relocated every
+        // MLS photo to the end of the gallery on the first reorder.
+        //
+        // For a collection of uploads alone the comparison, and the output, are
+        // byte-identical to the previous behaviour.
+        $entries = \App\Support\Listing\ListingPhotoEntry::collection($authoritative);
+
         $ordered = [];
-        foreach ($requested as $fname) {
-            if (in_array($fname, $authoritative, true) && ! in_array($fname, $ordered, true)) {
-                $ordered[] = $fname;
-            }
-        }
-        foreach ($authoritative as $fname) {
-            if (! in_array($fname, $ordered, true)) {
-                $ordered[] = $fname;
+        $taken   = [];
+
+        foreach ($requested as $selector) {
+            foreach ($entries as $index => $entry) {
+                if (isset($taken[$index]) || ! $entry->matchesSelector($selector)) {
+                    continue;
+                }
+                $taken[$index] = true;
+                $ordered[]     = $entry;
+                break;
             }
         }
 
-        return $ordered;
+        foreach ($entries as $index => $entry) {
+            if (! isset($taken[$index])) {
+                $ordered[] = $entry;
+            }
+        }
+
+        return \App\Support\Listing\ListingPhotoEntry::toStorageCollection($ordered);
     }
 
     public function reorderPhotos(array $orderedFilenames): void
