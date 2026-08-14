@@ -43,40 +43,30 @@ class HireAgentDetailSectionCardTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /**
-     * The roles that render no redesign markup at all, whatever the config says.
-     *
-     * BUYER LEFT THIS LIST IN M7 PHASE 4, AND THAT IS THE DELIBERATE DECISION THE ASSERTION BELOW
-     * ASKS FOR RATHER THAN A WIDENING TO GO GREEN.
-     *
-     * The premise the list encoded — "scope here is enforced by which files render the component,
-     * only the landlord view does" — stopped being true in stages, and Phase 4 is where it stops
-     * describing anything. Phase 2 gave the buyer view two x-hire-agent.detail-section call sites;
-     * Phase 3 assigned $byaDetailRedesign so that branch became reachable by config; Phase 4
-     * decomposes the wrapper card, so with the redesign on for buyer the legacy single card is
-     * exactly what must NOT render. Asserting that it does would be asserting the bug.
-     *
-     * Seller is unmigrated and stays: that file does not name the section component, so it cannot
-     * decompose no matter what the allowlist holds. The last entry leaving this list is the signal
-     * that the final role started migrating, and should be answered the same way.
-     *
-     * Buyer's redesigned branch is covered by HireAgentBuyerSectionNavTest, and its flag-OFF page is
-     * still held to the single legacy card by HireAgentSectionCardDomEquivalenceTest — the property
-     * this list used to carry for buyer is therefore not lost, only moved to where it is true.
-     *
-     * TENANT LEFT AT T2, for the same reason and by the same route as buyer. Its view now names
-     * x-hire-agent.detail-section, so "it cannot decompose" stopped being true of it the moment
-     * the sections were wrapped — which is precisely what this list is for detecting. Its
-     * flag-OFF page is still one legacy card, and that claim moved to the tenant DOM-equivalence
-     * coverage rather than being dropped. The allowlist still excludes tenant, so nothing renders
-     * differently in any environment; what changed is that the file is now CAPABLE of decomposing.
-     *
-     * @return array<string, array{0: string}>
+    /*
+     | THE `nonPilotRoles` PROVIDER AND ITS ASSERTION ARE GONE, AND THE LIST EMPTYING IS WHY.
+     |
+     | It named the roles that render no redesign markup at all, whatever the config says, and the
+     | premise it encoded was "scope here is enforced by which files render the component". Roles
+     | left it one at a time as that stopped being true of them: BUYER in M7 Phase 4 when its
+     | wrapper card decomposed, TENANT at T2 when its sections were wrapped, and SELLER at S1 — its
+     | view now names x-hire-agent.detail-section at nine call sites, so it is CAPABLE of
+     | decomposing and asserting that it cannot would be asserting the bug.
+     |
+     | Seller was the last entry. A data provider returning nothing is an error rather than a
+     | vacuous pass, so the pair is removed rather than emptied — and the claim is not dropped, it
+     | has nowhere left to point: all four role views render the component, so "which files render
+     | it" no longer distinguishes anybody. What still holds the line is unchanged and is asserted
+     | elsewhere for every role:
+     |
+     |   · the flag-OFF page is one legacy card — HireAgentSectionCardDomEquivalenceTest, which
+     |     parameterises all four roles;
+     |   · an allowlist entry added by mistake cannot decompose a page — that is now the ROLE
+     |     ALLOWLIST's job for every role alike, asserted by HireAgentDetailRedesignFlagTest.
+     |
+     | The distinction the old note drew between "which files exist" and "the allowlist" is
+     | genuinely over: from S1 on, rollout scope is configuration and nothing else.
      */
-    public static function nonPilotRoles(): array
-    {
-        return ['seller' => ['seller']];
-    }
 
     /** @return array{0: class-string, 1: string} */
     private function wiringFor(string $role): array
@@ -751,31 +741,70 @@ class HireAgentDetailSectionCardTest extends TestCase
 
     // ── Rollout scope ────────────────────────────────────────────────────────
 
-    /**
-     * The UNMIGRATED roles emit no section card even with the master switch on and their own name
-     * in the allowlist.
-     *
-     * Scope here is enforced by which files render the component — seller's and tenant's views do
-     * not name it — rather than by the role allowlist, which governs the shared shell's grid. That
-     * distinction matters for rollback and is asserted rather than assumed: an allowlist entry
-     * added by mistake must not be able to decompose a page nobody has migrated.
-     *
-     * The provider held buyer until M7 Phase 4 decomposed its wrapper; see the note there for why
-     * it is no longer a role this claim is true of.
-     *
-     * @dataProvider nonPilotRoles
+    /*
+     | test_non_pilot_roles_emit_no_section_cards lived here and retired at S1 with its provider.
+     | See the note where that provider stood, at the top of this class.
      */
-    public function test_non_pilot_roles_emit_no_section_cards(string $role): void
+
+    /**
+     * S1 — the seller page decomposes when the allowlist grants it, and its guard map is complete.
+     *
+     * THE POSITIVE HALF OF THE TEST THAT RETIRED ABOVE, and it is here rather than nowhere because
+     * retiring the negative one left seller's flag-ON branch with no coverage at all: no other test
+     * in this suite renders seller with the redesign enabled, so a scaffold that threw on every
+     * seller page would have gone green.
+     *
+     * IT IS MOSTLY A SMOKE TEST, AND DELIBERATELY SO. S1 wraps the sections and stops; the fields
+     * inside them are still legacy rows and the nav, quick actions and sidebar are not built yet.
+     * What can be asserted now is that the page renders, that the sections it claims are the ones
+     * the registry admits, and — the part with teeth — that resolveForRole() does not throw. That
+     * call demands a guard for EVERY section scoped to seller and refuses both a missing and an
+     * extra one, so this is what proves the nine-entry guard map matches the registry rather than
+     * approximately matching it.
+     *
+     * The expected ids are the sections richMeta() populates, in document order. Financing,
+     * representation, referral and agent-credentials are absent because that fixture answers
+     * none of them for a seller listing — their presence is a later milestone's assertion, not a
+     * gap here.
+     */
+    public function test_seller_decomposes_into_section_cards_when_allowlisted(): void
     {
-        $this->enableRedesign(['landlord', 'seller', 'buyer', 'tenant']);
+        $this->enableRedesign(['seller']);
 
-        $x = $this->render($role, $this->richMeta());
+        $x = $this->render('seller', $this->richMeta());
 
-        $this->assertSame([], $this->cardIds($x), "{$role} must not decompose into section cards.");
+        $this->assertSame(
+            [
+                'hla-section-listing-details',
+                'hla-section-property',
+                'hla-section-terms',
+                'hla-section-additional-details',
+                'hla-section-role-info',
+            ],
+            $this->cardIds($x),
+            'Seller must decompose into exactly the sections the registry admits for this listing.'
+        );
+    }
+
+    /**
+     * S1 — and it stays one legacy card while the allowlist withholds it.
+     *
+     * The half of the retired test that is still true of seller and still worth pinning: being
+     * CAPABLE of decomposing must not mean doing it. This is the same claim
+     * HireAgentSectionCardDomEquivalenceTest makes from the DOM side; asserted here too because
+     * this is the file where the capability was added.
+     */
+    public function test_seller_stays_one_card_while_the_allowlist_withholds_it(): void
+    {
+        $this->enableRedesign(['landlord']);
+
+        $x = $this->render('seller', $this->richMeta());
+
+        $this->assertSame([], $this->cardIds($x), 'Seller must not decompose off the allowlist.');
         $this->assertSame(
             1,
             $x->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' viho-card ')]")->length,
-            "{$role} must keep its single legacy listing card."
+            'Seller must keep its single legacy listing card.'
         );
     }
 

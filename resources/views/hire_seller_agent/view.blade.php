@@ -143,10 +143,353 @@
         box-shadow: none;
     }
 </style>
+
+{{-- S1 — THE STICKY OFFSET FOR THE SECTION NAV, SUPPLIED BY THE CONSUMER.
+
+     x-viho.section-nav declares `position: sticky` and deliberately leaves `top` unset, because the
+     only correct value is the height of whatever fixed chrome the host page puts above the bar —
+     which the primitive cannot know and must not guess. This page is that host, so this page
+     answers. The values are buyer's and landlord's, and they are the same values because the CHROME
+     is the same: all three render through layouts.main, which has no fixed header above the reading
+     column on desktop and a 104px header bar below the lg breakpoint.
+
+     Declared here rather than in the framework stylesheet because that file may READ --viho tokens
+     and this one DECLARES them; the rule that consumes both lives there and cannot move here.
+
+     TWO VARIABLES, NOT ONE, AND THE ARITHMETIC IS THE REASON. The bar sticks at the height of the
+     chrome above it. A scroll target must clear the chrome AND the bar itself, because the bar is
+     what it is being scrolled underneath. Reusing one value for both leaves the target short by
+     exactly the bar's own height — 0px of clearance on desktop, where the chrome is 0 and the bar is
+     not. Landlord shipped that bug in M7.2 and M7.4 measured it; seller inherits the fix.
+
+     Gated on the ROLE-AWARE reader, not the master switch: declaring offsets for a role the shell
+     has withheld the layout from is the M7.1 disagreement in miniature. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('seller'))
+<style>
+:root {
+    --viho-section-nav-offset: 0px;
+
+    /* The bar's own height. Generous on purpose: measured at 46.9px on the landlord page, declared
+       at 3.5rem (56px). Overshooting parks the card a few pixels below the bar, which reads as
+       breathing room; undershooting clips the header, which is the bug this avoids. */
+    --viho-section-nav-height: 3.5rem;
+}
+@media (max-width: 991.98px) {
+    :root {
+        --viho-section-nav-offset: 104px;
+    }
+}
+</style>
+@endif
 @endpush
 @section('content')
     @php
         $auth_id = auth()->user() ? auth()->user()->id : 0;
+    @endphp
+    @php
+        /*
+         | S1 — THE SELLER DETAIL REDESIGN, RESOLVED ONCE.
+         |
+         | Seller is the last of the four roles to adopt the framework. It took the shared shell in
+         | M5A.3 and nothing since, so until this milestone its whole main column was one
+         | x-viho.card holding eight sub-headings, and it consulted neither the section registry nor
+         | the flag.
+         |
+         | enabledFor('seller') rather than enabled(), for the reason the reader class states at
+         | length: the master switch answers "is the redesign on at all" and is not a gate. A view
+         | gating on it would hand seller the new layout on the switch that turns landlord on. The
+         | role is passed to the service and never tested here — no equality check against a role
+         | name lives in this file.
+         */
+        $hsaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('seller');
+
+        /*
+         | ── THE HOISTED DERIVATIONS ──────────────────────────────────────────────────────────
+         |
+         | Four blocks move up here from inside the main slot: the financing pill list, the
+         | representation rows, the referral percentage and the owner-info heading. They are pure
+         | reads of the listing that emit no markup, so hoisting them cannot change what the page
+         | renders — buyer and landlord hoisted the same expressions for the same reason.
+         |
+         | THE REASON IS THAT THE NAV IS BUILT BEFORE THE SECTIONS ARE. A guard has to answer
+         | "does this section have content" up here, and three of these sections derive the very
+         | values that answer it. Re-deriving them in two places is how a nav entry comes to point
+         | at a card that decided not to render.
+         */
+
+        /*
+         | Financing. Guarded from the resolved pill list rather than from the raw meta, because
+         | `offered_financing` can hold '[]' — a stored answer that normalises to nothing. Asking
+         | anyHasValue() of the raw key would call that a populated section and publish a nav entry
+         | above an empty card.
+         */
+        $hsaFinancingData  = @$auction->get->offered_financing;
+        $hsaFinancingArray = [];
+        if ($hsaFinancingData) {
+            $hsaFinancingArray = is_string($hsaFinancingData)
+                ? (json_decode($hsaFinancingData, true) ?? [])
+                : (is_array($hsaFinancingData) ? $hsaFinancingData : []);
+        }
+        $hsaFinancingArray = array_filter($hsaFinancingArray);
+        $hsaOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
+        $hsaFinancingPills = \App\Helpers\ListingDisplayHelper::normalizeList($hsaFinancingArray, $hsaOtherFinancing);
+
+        /*
+         | Owner info heading. Resolved in PHP rather than inline because a bound attribute
+         | containing `&&` is not parseable by Blade's attribute compiler. Same expression and same
+         | two outcomes as the copy it replaces further down.
+         |
+         | It keeps the one-type `user_type === 'agent'` check rather than isAgentUser(): that is
+         | the latent defect HireAgentDetailAudienceTest records for all four roles, and correcting
+         | it here would change what the legacy page calls a real user. The agent-credentials guard
+         | below deliberately does NOT repeat it.
+         */
+        $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+            ? "Agent's Info"
+            : "Seller Info";
+
+        /*
+         | Referral. Falls back to the FIRST bid's referral percentage when the listing carries
+         | none — business logic that predates this milestone and is reproduced verbatim.
+         */
+        $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+        if ($referralPct === '') {
+            $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+            if ($_firstBid) {
+                $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
+            }
+            unset($_firstBid);
+        }
+        $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+
+        /*
+         | Representation & Compatibility. The whole builder moves as one unit; every $repAdd call
+         | and its ordering is unchanged.
+         */
+        $rawCompatView = $auction->info('compatibility_preferences');
+        $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+            ? (json_decode($rawCompatView, true) ?? [])
+            : [];
+        $ssView = $compatView['seller_specific'] ?? [];
+
+        $repResolve = function(string $val, string $otherVal): string {
+            return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
+        };
+        $repResolveArr = function(array $vals, string $otherVal): array {
+            return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+            }, $vals)));
+        };
+        $repRows = [];
+        $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
+            if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+            $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+            if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
+        };
+
+        // Phase 5/6 QA Follow-up (Seller Rep & Compatibility): full listing-display parity — every
+        // field captured by the Seller representation form is rendered here when populated.
+        // Primary Transaction Goal resolves its "Other" custom value for display.
+        $repAdd('Primary Transaction Goal', $ssView['primary_transaction_goal'] ?? '', $ssView['primary_transaction_goal_other'] ?? '');
+        $repAdd('Target Sale Timeline', $ssView['target_sale_timeline'] ?? '', '');
+        $repAdd('Timeline Flexibility', $ssView['flexibility_on_timeline'] ?? '', '');
+        $repAdd('Post-Sale Plans', $ssView['post_sale_plan'] ?? '', '');
+        $repAdd('Representation Priorities', $ssView['representation_priorities'] ?? [], '');
+        $repAdd('Agent Qualities Most Important to You', $ssView['qualities_most_important'] ?? [], '');
+        $repAdd('Preferred Communication Style', $ssView['communication_style'] ?? '', '');
+        $repAdd('Preferred Contact Method', $ssView['preferred_contact_method'] ?? [], '');
+        $repAdd('Expected Agent Response Time', $ssView['response_time_expectation'] ?? '', '');
+        $repAdd('Negotiation Style', $ssView['negotiation_style'] ?? '', '');
+        $repAdd('Areas Willing to Negotiate On', $ssView['willing_to_negotiate_on'] ?? [], '');
+        $repAdd('Firm on Asking Price', $ssView['firm_on_price'] ?? '', '');
+        $repAdd('Preferred Agent Working Style', $ssView['preferred_agent_working_style'] ?? '', '');
+        $repAdd('Decision-Making Style', $ssView['decision_making_style'] ?? '', '');
+        $repAdd('Involvement Level', $ssView['involvement_level'] ?? '', '');
+        $repAdd('Decision Makers Involved', $ssView['additional_decision_makers'] ?? '', '');
+        $repAdd('Past Experience Working with a Real Estate Agent', $ssView['past_agent_experience'] ?? '', '');
+        $repAdd('What Did Not Work Well with Past Agents', $ssView['what_did_not_work_before'] ?? '', '');
+        $repAdd('Showing Availability', $ssView['showing_availability'] ?? [], '');
+        $repAdd('Open House Preference', $ssView['open_house_preference'] ?? '', '');
+        $repAdd('Additional Compatibility Notes', $ssView['additional_compatibility_notes'] ?? '', '');
+
+        $hsaSections = [];
+
+        if ($hsaDetailRedesign) {
+            /*
+             | ── THE SECTION GUARDS ──────────────────────────────────────────────────────────
+             |
+             | One boolean per section, computed UNCONDITIONALLY and AUDIENCE-BLIND. The resolver
+             | drops the ones this viewer's tier does not admit, so a withheld section reaches
+             | neither its card nor the bar. $hlaAudience arrives resolved from
+             | SellerAgentAuctionController and is passed, never compared — an audience test in
+             | Blade would be a second opinion about a rule that already has an owner, and the nav
+             | is where such a drift becomes a disclosure, because the bar names what it links to.
+             |
+             | THE LISTS ARE COMPLETE, AND COMPLETENESS IS THE SAFETY PROPERTY. A key omitted here
+             | is not a cosmetic miss — the section is judged empty and hidden while still holding
+             | a row that renders. Each was derived by enumerating every `$auction->get->` read
+             | inside the section's line range rather than written from memory.
+             */
+
+            /*
+             | `listing_title` is NOT in this list, and its absence is deliberate. Both Seller
+             | components write the answer to the auction's native `title` COLUMN
+             | (`$auction->title = $this->listing_title`) and never as `listing_title` meta, while
+             | `$auction->get` reads meta alone — so the key is always null and contributes
+             | nothing. Buyer, landlord and tenant each removed the same dead row during their own
+             | conversions; removing SELLER's row is T2's job, and the guard simply declines to
+             | advertise a field the section cannot render.
+             */
+            $hsaHasListingDetails = \App\Helpers\ListingDisplayHelper::anyHasValue([
+                @$auction->get->working_with_agent,
+                @$auction->get->desired_agent_hire_date,
+                @$auction->get->listing_date,
+                @$auction->get->expiration_date,
+                @$auction->get->auction_type,
+                @$auction->get->meeting_Preference,
+            ]);
+
+            /*
+             | Property Details — sixty keys, and the section is the largest on any of the four
+             | pages. It absorbs the "Business/Property Assets" and "Income & Investment Metrics"
+             | sub-headings rather than promoting them: the section registry's own config file
+             | records that decision by name, and buyer's "Required Property or Business Assets" is
+             | kept the same way. They are divisions within one subject.
+             |
+             | (That file is described rather than named, here and below. A guard asserts the
+             | resolver class is the only thing in app/, resources/views/ or routes/ whose source
+             | contains the config key — and prose counts, so naming it would register this view as
+             | a second reader of a registry it only consumes through the resolver.)
+             */
+            $hsaHasProperty = \App\Helpers\ListingDisplayHelper::anyHasValue([
+                @$auction->get->cities, @$auction->get->counties,
+                @$auction->get->property_city, @$auction->get->property_county,
+                @$auction->get->property_state, @$auction->get->state,
+                @$auction->get->property_zip, @$auction->get->zip_code,
+                @$auction->get->property_type, @$auction->get->property_items,
+                @$auction->get->other_property_style,
+                @$auction->get->business_type, @$auction->get->business_type_selected,
+                @$auction->get->other_business_type,
+                @$auction->get->condition_prop, @$auction->get->condition_prop_buyer,
+                @$auction->get->other_property_condition,
+                @$auction->get->bedrooms, @$auction->get->other_bedrooms,
+                @$auction->get->bathrooms, @$auction->get->other_bathrooms,
+                @$auction->get->minimum_heated_square, @$auction->get->total_square_feet,
+                @$auction->get->sqft_heated_source, @$auction->get->minimum_net_leasable_square,
+                @$auction->get->total_acreage,
+                @$auction->get->carportOptions, @$auction->get->custom_carport,
+                @$auction->get->garageOptions, @$auction->get->custom_garage,
+                @$auction->get->carport_needed, @$auction->get->other_carport_needed,
+                @$auction->get->garage_needed, @$auction->get->other_garage_needed,
+                @$auction->get->garage_parking_spaces_option,
+                @$auction->get->other_parking_space_wrapper,
+                @$auction->get->appliances, @$auction->get->other_appliances,
+                @$auction->get->pool_needed,
+                @$auction->get->view_preference, @$auction->get->other_preferences,
+                @$auction->get->leasing_55_plus,
+                @$auction->get->non_negotiable_amenities,
+                @$auction->get->other_non_negotiable_amenities,
+                @$auction->get->pets, @$auction->get->number_of_pets,
+                @$auction->get->type_of_pets, @$auction->get->weight_of_pets,
+                @$auction->get->breed_of_pets, @$auction->get->breed_restrictions,
+                @$auction->get->has_breed_restrictions,
+                @$auction->get->assets, @$auction->get->business_assets,
+                @$auction->get->assets_other,
+                @$auction->get->real_estate_purchase,
+                @$auction->get->minimum_annual_net_income, @$auction->get->minimum_cap_rate,
+                @$auction->get->unit_number, @$auction->get->unit_buildings,
+                @$auction->get->unit_type_configurations,
+            ]);
+
+            /*
+             | Sale Terms. `offered_financing` and `other_financing` are read inside this section's
+             | line range but belong to Financing below — they drive the pill list that opens it,
+             | not any Sale Terms row — so they are guarded there and not here.
+             */
+            $hsaHasTerms = \App\Helpers\ListingDisplayHelper::anyHasValue([
+                @$auction->get->sale_provision, @$auction->get->sale_provision_other,
+                @$auction->get->sale_provision_assignment,
+                @$auction->get->buyer_sell_contract,
+                @$auction->get->assignment_fee_amount, @$auction->get->assignment_fee_type,
+                @$auction->get->target_closing_date,
+                @$auction->get->occupant_status, @$auction->get->occupant_tenant,
+                @$auction->get->maximum_budget,
+            ]);
+
+            /*
+             | Financing. The section opens on the pill list and every config-driven sub-block
+             | renders inside it, so the pill list IS the guard — no separate enumeration of
+             | config/seller-financing-config.php field keys can make it truer.
+             */
+            $hsaHasFinancing = ! empty($hsaFinancingPills);
+
+            $hsaHasAdditionalDetails = \App\Helpers\ListingDisplayHelper::hasValue(
+                @$auction->get->additional_details
+            );
+
+            /*
+             | Owner info. The four values below ARE the section — first_name plus the three media
+             | fields — so the list is complete rather than representative. isset() for `photo`,
+             | matching the guard the img row itself uses: a filename is a filename and the
+             | placeholder rules do not apply to it.
+             |
+             | `current_status` is included because Seller renders a "Seller's Current Status" row
+             | that landlord has no counterpart for.
+             */
+            $hsaHasOwnerInfo = \App\Helpers\ListingDisplayHelper::anyHasValue([
+                @$auction->get->first_name,
+                @$auction->get->current_status,
+                @$auction->get->video,
+                @$auction->get->video_link,
+            ]) || isset($auction->get->photo);
+
+            /*
+             | Agent Credentials — the one guard that is new rather than hoisted. Seller renders no
+             | such section today; T4 adds the card, and the registry already carries the label, so
+             | the guard arrives with the scaffold rather than after it.
+             |
+             | isAgentUser() rather than `user_type === 'agent'`, because three user types are
+             | agents and the bare comparison silently demotes buyer_agent and seller_agent to
+             | consumers. It asks about the listing OWNER, which is a different question from the
+             | viewer's audience.
+             */
+            $hsaOwnerIsAgent = $auction->user
+                && app(\App\Services\HireAgent\HireAgentDetailAudience::class)->isAgentUser($auction->user);
+
+            $hsaHasAgentCredentials = $hsaOwnerIsAgent && \App\Helpers\ListingDisplayHelper::anyHasValue([
+                @$auction->user->brokerage,
+                @$auction->user->license_no,
+                @$auction->user->phone,
+                @$auction->user->email,
+            ]);
+
+            $hsaSections = app(\App\Support\HireAgent\HireAgentDetailSections::class)->resolveForRole(
+                'seller',
+                $hlaAudience,
+                [
+                    'listing-details'    => $hsaHasListingDetails,
+                    'property'           => $hsaHasProperty,
+                    'terms'              => $hsaHasTerms,
+                    'financing'          => $hsaHasFinancing,
+                    'additional-details' => $hsaHasAdditionalDetails,
+                    'representation'     => ! empty($repRows),
+                    'referral'           => $referralPctDisplay !== '',
+                    'role-info'          => $hsaHasOwnerInfo,
+                    'agent-credentials'  => $hsaHasAgentCredentials,
+                ],
+                ['role-info' => $_ownerInfoHeading],
+            );
+        }
+
+        /*
+         | Retained for the section cards, which ask isset() on the resolved set. A tiny helper
+         | rather than repeating the array lookup nine times, and it is the ONLY thing the cards
+         | consult — no card re-derives its own visibility. With the redesign off $hsaSections stays
+         | empty, every card falls back to its legacy branch, and this closure is never reached.
+         */
+        $hsaShows = function (string $key) use (&$hsaSections): bool {
+            return isset($hsaSections[\App\Support\HireAgent\HireAgentDetailSections::ID_PREFIX . $key]);
+        };
     @endphp
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
@@ -163,8 +506,20 @@
                 cards, which is what keeps the section order and nesting identical. Blade source
                 could not settle that question, because @if branches make div-counting
                 unreliable; it was resolved by rendering the page and reading real DOM.
+                S1 — the wrapper card becomes x-hire-agent.detail-body, which emits exactly this
+                x-viho.card with the flag off and nothing at all with it on. The sub-headings below
+                become x-hire-agent.detail-section, which emits exactly the x-viho.section-header
+                they already had with the flag off, and a card of their own with it on. Seller is
+                the last of the four roles to make this move; the note above describes what was
+                true until now and stays as the record of why one card was correct then.
             --}}
-            <x-viho.card title="Listing Details:" title-tag="h4">
+            <x-hire-agent.detail-body :redesign="$hsaDetailRedesign" title="Listing Details:">
+
+            {{-- The wrapper card's own title WAS this section's heading, so it emits no header of
+                 its own with the flag off — :legacy-header="false". With the flag on it becomes a
+                 card like any other and needs one. The single place in this file that passes it. --}}
+            @if (! $hsaDetailRedesign || $hsaShows('listing-details'))
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines" :legacy-header="false">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">Listing Title
@@ -216,9 +571,14 @@
 
 
                         </div>
-                          <hr>
-                        {{-- M3: sub-section header inside the single Listing Details card. --}}
-                        <x-viho.section-header title="Property Details:" tag="h4" />
+            </x-hire-agent.detail-section>
+            @endif
+            {{-- The rule stays with the caller: the section component emits no separator, because
+                 the four roles do not spell it the same way and encoding four spellings of a
+                 horizontal rule in a shared component is not an API. --}}
+            @if (! $hsaDetailRedesign)  <hr>@endif
+            @if (! $hsaDetailRedesign || $hsaShows('property'))
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-property" title="Property Details:" icon="fa-solid fa-house">
 
                         <div class="row" style="flex-wrap: wrap;">
 
@@ -699,10 +1059,34 @@
                                     $assetItems = \App\Helpers\ListingDisplayHelper::normalizeList($rawAssetsView, @$auction->get->assets_other);
                                 @endphp
                                 @if (!empty($assetItems))
+                                {{-- S1 — A SUB-HEADING, NOT A SECTION, and that is recorded rather
+                                     than chosen here: the section registry's config names
+                                     "Business/Property Assets" and "Income & Investment Metrics"
+                                     among the things that fold into Property Details rather than
+                                     becoming sections of their own, the same way buyer keeps
+                                     "Required Property or Business Assets" inside its property
+                                     card. They are divisions within one subject. (Described rather
+                                     than named — see the note in the prologue.)
+
+                                     The heading is suppressed under the flag for the reason buyer
+                                     recorded for its counterpart: x-viho.section-header always
+                                     emits card-title typography, so inside a card it is
+                                     indistinguishable from the card's own title. Landlord's
+                                     redesigned cards contain a title and fields and no
+                                     intermediate heading, and there is nothing to shrink this to
+                                     that landlord also has. The legacy branch keeps it exactly
+                                     where and as it was — it is load-bearing there, because there
+                                     is no card title above it to make it redundant.
+
+                                     The row break around it is legacy-only for the same reason:
+                                     with the flag on the cells sit directly in the section's
+                                     field grid, which is what supplies the layout. --}}
+                                @if (! $hsaDetailRedesign)
                                 </div>
                                 <hr>
                                 <x-viho.section-header title="Business/Property Assets" tag="h4" />
                                 <div class="row" style="flex-wrap: wrap;">
+                                @endif
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Included Property or Business Assets:
                                         @foreach ($assetItems as $asset)
@@ -730,10 +1114,15 @@
                                     $hasCapRate = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_cap_rate);
                                 @endphp
                                 @if ($hasNOI || $hasCapRate)
+                                {{-- S1 — a sub-heading, not a section. See the note on
+                                     "Business/Property Assets" above; the same registry decision
+                                     and the same legacy-only row break apply here unchanged. --}}
+                                @if (! $hsaDetailRedesign)
                                 </div>
                                 <hr>
                                 <x-viho.section-header title="Income & Investment Metrics" tag="h4" />
                                 <div class="row" style="flex-wrap: wrap;">
+                                @endif
                                     @if ($hasNOI)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Annual Net Income:
@@ -828,8 +1217,11 @@
                             @endif
 
                         </div>
-                        <hr>
-                        <x-viho.section-header title="Sale Terms" tag="h4" />
+            </x-hire-agent.detail-section>
+            @endif
+            @if (! $hsaDetailRedesign)<hr>@endif
+            @if (! $hsaDetailRedesign || $hsaShows('terms'))
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-terms" title="Sale Terms" icon="fa-solid fa-file-contract">
 
                         @php
                             $spRaw = @$auction->get->sale_provision;
@@ -929,17 +1321,20 @@
                         @endif
 
                         @php
-                            $financingData = @$auction->get->offered_financing;
-                            $financingArray = [];
-                            if ($financingData) {
-                                $financingArray = is_string($financingData) ? (json_decode($financingData, true) ?? []) : (is_array($financingData) ? $financingData : []);
-                            }
-                            $financingArray = array_filter($financingArray);
-                            $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
-                        @endphp
-
-                        @php
-                            $financingPills = \App\Helpers\ListingDisplayHelper::normalizeList($financingArray, $displayOtherFinancing);
+                            /*
+                             | S1 — the raw list and the resolved pills are hoisted to the prologue,
+                             | where the Financing section guard reads them. Only the display ORDER
+                             | is applied here: sorting is presentation and belongs beside the
+                             | markup, while "is there anything to show at all" is what the nav
+                             | needs before any of this runs. One derivation, two uses — re-deriving
+                             | it here is how a nav entry comes to point at a card that decided not
+                             | to render.
+                             |
+                             | $financingArray keeps its name because the config-driven term loop
+                             | below asks in_array() of it.
+                             */
+                            $financingArray = $hsaFinancingArray;
+                            $financingPills = $hsaFinancingPills;
                             $financingDisplayOrder = ['Assumable','Cash','Conventional','Cryptocurrency','Exchange/Trade','FHA','Jumbo','Lease Option','Lease Purchase','No-Doc','Non-QM','NFT','Non-Fungible Token (NFT)','Seller Financing','USDA','VA'];
                             usort($financingPills, function($a, $b) use ($financingDisplayOrder) {
                                 $aIdx = array_search($a, $financingDisplayOrder);
@@ -951,9 +1346,15 @@
                                 return $aIdx - $bIdx;
                             });
                         @endphp
-                        @if (!empty($financingPills))
-                            <hr>
-                            <x-viho.section-header title="Financing Details" tag="h4" />
+            </x-hire-agent.detail-section>
+            @endif
+            {{-- Financing was already guarded on its own content, so unlike the sections above it
+                 needs no `! $hsaDetailRedesign ||` half: with the flag off the pill list decides, and
+                 with it on $hsaShows('financing') decides — and that reads the SAME pill list one
+                 level up, so the card and its nav entry cannot disagree. --}}
+            @if ($hsaDetailRedesign ? $hsaShows('financing') : !empty($financingPills))
+            @if (! $hsaDetailRedesign)<hr>@endif
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-financing" title="Financing Details" icon="fa-solid fa-money-check-dollar">
                             <div class="row">
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1172,18 +1573,23 @@
                                 @endif
                             @endforeach
                             </div>
-                        @endif
+            </x-hire-agent.detail-section>
+            @endif
 
 
-                        <hr>
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
-                            <x-viho.section-header title="Additional Details:" tag="h4" />
+            {{-- Unconditional, and it was before this change too — the separator sits OUTSIDE the
+                 Additional Details guard, so a listing that answered neither Financing nor
+                 Additional Details still emits it. Reproduced rather than tidied. --}}
+            @if (! $hsaDetailRedesign)<hr>@endif
+            @if ($hsaDetailRedesign ? $hsaShows('additional-details') : \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details: <span
                                     class="removeBold">{{ $auction->get->additional_details }}</span>
                             </div>
-                        @endif
+            </x-hire-agent.detail-section>
+            @endif
 
                         {{-- M7.3 — Photos, Tours & Documents removed. See the full reasoning in
                              hire_landlord_agent/view.blade.php; it applies here unchanged.
@@ -1198,100 +1604,59 @@
                              OFFER Listing view keeps its own document link, which points at the
                              same untouched route. --}}
 
-                        {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
-                        @php
-                            $rawCompatView = $auction->info('compatibility_preferences');
-                            $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
-                                ? (json_decode($rawCompatView, true) ?? [])
-                                : [];
-                            $ssView = $compatView['seller_specific'] ?? [];
+                        {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view).
 
-                            $repResolve = function(string $val, string $otherVal): string {
-                                return ($val === 'Other' && !empty($otherVal)) ? $otherVal : $val;
-                            };
-                            $repResolveArr = function(array $vals, string $otherVal): array {
-                                return array_values(array_filter(array_map(function($v) use ($otherVal) {
-                                    return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
-                                }, $vals)));
-                            };
-                            $repRows = [];
-                            $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
-                                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
-                                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
-                                if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
-                            };
+                             S1 — the whole $repRows builder is hoisted to the prologue, where the
+                             section guard reads it. The rows, their order and their "Other"
+                             resolution are unchanged; only the line they are computed on moved. --}}
 
-                            // Phase 5/6 QA Follow-up (Seller Rep & Compatibility): full
-                            // listing-display parity — every field captured by the Seller
-                            // representation form is rendered here when populated. Primary
-                            // Transaction Goal resolves its "Other" custom value for display.
-                            $repAdd('Primary Transaction Goal', $ssView['primary_transaction_goal'] ?? '', $ssView['primary_transaction_goal_other'] ?? '');
-                            $repAdd('Target Sale Timeline', $ssView['target_sale_timeline'] ?? '', '');
-                            $repAdd('Timeline Flexibility', $ssView['flexibility_on_timeline'] ?? '', '');
-                            $repAdd('Post-Sale Plans', $ssView['post_sale_plan'] ?? '', '');
-                            $repAdd('Representation Priorities', $ssView['representation_priorities'] ?? [], '');
-                            $repAdd('Agent Qualities Most Important to You', $ssView['qualities_most_important'] ?? [], '');
-                            $repAdd('Preferred Communication Style', $ssView['communication_style'] ?? '', '');
-                            $repAdd('Preferred Contact Method', $ssView['preferred_contact_method'] ?? [], '');
-                            $repAdd('Expected Agent Response Time', $ssView['response_time_expectation'] ?? '', '');
-                            $repAdd('Negotiation Style', $ssView['negotiation_style'] ?? '', '');
-                            $repAdd('Areas Willing to Negotiate On', $ssView['willing_to_negotiate_on'] ?? [], '');
-                            $repAdd('Firm on Asking Price', $ssView['firm_on_price'] ?? '', '');
-                            $repAdd('Preferred Agent Working Style', $ssView['preferred_agent_working_style'] ?? '', '');
-                            $repAdd('Decision-Making Style', $ssView['decision_making_style'] ?? '', '');
-                            $repAdd('Involvement Level', $ssView['involvement_level'] ?? '', '');
-                            $repAdd('Decision Makers Involved', $ssView['additional_decision_makers'] ?? '', '');
-                            $repAdd('Past Experience Working with a Real Estate Agent', $ssView['past_agent_experience'] ?? '', '');
-                            $repAdd('What Did Not Work Well with Past Agents', $ssView['what_did_not_work_before'] ?? '', '');
-                            $repAdd('Showing Availability', $ssView['showing_availability'] ?? [], '');
-                            $repAdd('Open House Preference', $ssView['open_house_preference'] ?? '', '');
-                            $repAdd('Additional Compatibility Notes', $ssView['additional_compatibility_notes'] ?? '', '');
-                        @endphp
-
-                        @if (!empty($repRows))
-                        <hr />
-                        {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
-                             rendered text is unchanged. Passing &amp; here would double-escape it. --}}
-                        <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
+            {{-- Literal & in the title: Blade escapes it back to &amp; on output, so the rendered
+                 text is unchanged. Passing &amp; here would double-escape it. --}}
+            @if ($hsaDetailRedesign ? $hsaShows('representation') : !empty($repRows))
+            @if (! $hsaDetailRedesign)<hr />@endif
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
                         @foreach ($repRows as $repRow)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             {{ $repRow['label'] }}:
                             <span class="removeBold">{{ $repRow['value'] }}</span>
                         </div>
                         @endforeach
-                        @endif
+            </x-hire-agent.detail-section>
+            @endif
 
 
-                        @php
-                            $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
-                            if ($referralPct === '') {
-                                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
-                                if ($_firstBid) {
-                                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
-                                }
-                                unset($_firstBid);
-                            }
-                            $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
-                        @endphp
-                        @if ($referralPctDisplay !== '')
-                        <hr />
-                        <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
+            {{-- S1 — $referralPct / $referralPctDisplay are hoisted to the prologue, including the
+                 fallback to the first bid's referral percentage.
+
+                 THIS SECTION IS CARRIED AT AUDIENCE 'agent' IN THE REGISTRY, and with the flag off
+                 it is guarded on content alone — so a referral percentage is public today and
+                 becomes agent-only when the redesign is enabled for seller. That is the same
+                 narrowing buyer, landlord and tenant each took at this milestone, not a change
+                 invented here, and it is why the guard reads through $hsaShows rather than adding
+                 an audience test to this file. --}}
+            @if ($hsaDetailRedesign ? $hsaShows('referral') : $referralPctDisplay !== '')
+            @if (! $hsaDetailRedesign)<hr />@endif
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Referral Fee:
                             <span class="removeBold">{{ $referralPctDisplay }}</span>
                         </div>
-                        @endif
+            </x-hire-agent.detail-section>
+            @endif
 
-                        <hr />
-                        {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is
-                             not parseable by Blade's attribute compiler. Same expression, same two
-                             outcomes. --}}
-                        @php
-                            $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
-                                ? "Agent's Info"
-                                : "Seller Info";
-                        @endphp
-                        <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
+            {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is not
+                 parseable by Blade's attribute compiler. S1 hoisted the expression to the prologue,
+                 where the registry takes it as the `role-info` label override — the heading and the
+                 nav entry are now the same string by construction rather than by two authors
+                 remembering to match.
+
+                 UNCONDITIONAL WITH THE FLAG OFF, exactly as before. Its rows each decline to render
+                 when absent, so a listing answering none of them produced a heading with nothing
+                 under it — survivable as a trailing sub-heading, not survivable as the last CARD on
+                 the page, which is why $hsaHasOwnerInfo guards it on the redesign side only. --}}
+            @if (! $hsaDetailRedesign || $hsaShows('role-info'))
+            @if (! $hsaDetailRedesign)<hr />@endif
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" :title="$_ownerInfoHeading" id="hla-section-role-info" icon="fa-solid fa-id-card">
 
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
@@ -1404,8 +1769,11 @@
                                 @endif
                             @endif
                         </div>
-            {{-- M3: the former card-body close is gone with its opening tag; the card closes here. --}}
-            </x-viho.card>
+            </x-hire-agent.detail-section>
+            @endif
+            {{-- M3: the former card-body close is gone with its opening tag; the card closes here.
+                 S1: "here" is now the detail-body, which emits that same card with the flag off. --}}
+            </x-hire-agent.detail-body>
                 @inject('auctionUser', 'App\Models\User')
                 @php
                     $auser = $auctionUser::find(@$auction->user_id);

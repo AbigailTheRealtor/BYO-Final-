@@ -649,8 +649,13 @@ class HireAgentDetailAudienceTest extends TestCase
             [
                 'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
-                // T1. Tenant consumes the audience to resolve its section set. Like the other
-                // two it PASSES the value and never compares it — asserted below.
+                // S1. Seller is the LAST role to join, so this list is now all four views and
+                // stops distinguishing anybody. It is kept rather than retired because its job
+                // was never "which roles have migrated" — it is that no OTHER file starts
+                // reading the audience, and a fifth entry appearing here is the thing to catch.
+                // Like the other three it PASSES the value and never compares it — asserted
+                // below.
+                'resources/views/hire_seller_agent/view.blade.php',
                 'resources/views/hire_tenant_agent/view.blade.php',
             ],
             $consumers,
