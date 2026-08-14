@@ -56,19 +56,26 @@ class HireAgentDetailSectionCardTest extends TestCase
      * decomposes the wrapper card, so with the redesign on for buyer the legacy single card is
      * exactly what must NOT render. Asserting that it does would be asserting the bug.
      *
-     * Seller and tenant are unmigrated and stay: neither file names the section component, so
-     * neither can decompose no matter what the allowlist holds. A third entry leaving this list is
-     * the signal that another role started migrating, and should be answered the same way.
+     * Seller is unmigrated and stays: that file does not name the section component, so it cannot
+     * decompose no matter what the allowlist holds. The last entry leaving this list is the signal
+     * that the final role started migrating, and should be answered the same way.
      *
      * Buyer's redesigned branch is covered by HireAgentBuyerSectionNavTest, and its flag-OFF page is
      * still held to the single legacy card by HireAgentSectionCardDomEquivalenceTest — the property
      * this list used to carry for buyer is therefore not lost, only moved to where it is true.
      *
+     * TENANT LEFT AT T2, for the same reason and by the same route as buyer. Its view now names
+     * x-hire-agent.detail-section, so "it cannot decompose" stopped being true of it the moment
+     * the sections were wrapped — which is precisely what this list is for detecting. Its
+     * flag-OFF page is still one legacy card, and that claim moved to the tenant DOM-equivalence
+     * coverage rather than being dropped. The allowlist still excludes tenant, so nothing renders
+     * differently in any environment; what changed is that the file is now CAPABLE of decomposing.
+     *
      * @return array<string, array{0: string}>
      */
     public static function nonPilotRoles(): array
     {
-        return ['seller' => ['seller'], 'tenant' => ['tenant']];
+        return ['seller' => ['seller']];
     }
 
     /** @return array{0: class-string, 1: string} */

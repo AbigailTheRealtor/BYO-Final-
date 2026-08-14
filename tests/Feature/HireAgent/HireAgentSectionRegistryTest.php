@@ -669,6 +669,11 @@ class HireAgentSectionRegistryTest extends TestCase
             [
                 'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
+                // T1. Tenant resolves its section set behind the redesign flag, which the
+                // allowlist does not yet grant it — so the resolution runs only when the flag
+                // is on, and the flag is off. Declared because this list records which files
+                // call the resolver, not which roles are live.
+                'resources/views/hire_tenant_agent/view.blade.php',
             ],
             $consumers,
             'The set of views resolving sections must stay known.'

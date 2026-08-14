@@ -148,6 +148,233 @@
 <!-- DEBUG: Hire Tenant Actual Listing Display -->
 @php
 $auth_id = auth()->user() ? auth()->user()->id : 0;
+
+    /*
+     | T1 — the tenant view becomes a consumer of the detail redesign flag, and the three
+     | computations its section guards depend on move up here to meet it.
+     |
+     | WHY THEY MOVED. The section navigation T2 adds renders near the TOP of the main column,
+     | above every card it links to, so it must know which sections have content before any of
+     | them has rendered. Two of the nine answers were computed halfway down the page, beside the
+     | sections they describe — fine while nothing upstream asks, impossible once something does.
+     | Buyer hit this at its own M7 Phase 1 and resolved it the same way.
+     |
+     | MOVED, NOT COPIED, AND NOT REWRITTEN. A copy was tried first and rejected by
+     | HireAgentDetailAudienceTest: duplicating the owner-is-agent line gave this file a second
+     | inline check of one question, which is the drift that test exists to catch. A guard
+     | re-derived from the same source data would be the same mistake in a subtler form — $addRow
+     | skips any value empty() calls empty, so a re-derivation testing `!== null` would light the
+     | nav up for a card that renders nothing. One computation, one answer, one place.
+     |
+     | THE ORIGINAL SITES KEEP THEIR DIRECTIVE SHELLS, and that is not tidiness. Blade strips the
+     | newline after a closing php directive, so a block's leading indentation merges onto the
+     | line below it; deleting those lines outright removes padding that is part of the rendered
+     | page, which is measurable in a byte comparison of the flag-off render. An empty shell emits
+     | exactly what the full one did.
+     */
+
+                    // ── Representation Preferences & Compatibility display (Task #1128) ──────
+                    $rawCompatView = $auction->info('compatibility_preferences');
+                    $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+                        ? (json_decode($rawCompatView, true) ?? [])
+                        : [];
+                    $tsView = $compatView['tenant_specific'] ?? [];
+
+                    // Helper: resolve a single "Other" select value to its companion text.
+                    // If the stored value is "Other" and a companion string exists, the companion
+                    // text is returned instead, so the literal word "Other" never renders alone.
+                    $resolveOther = function(string $val, string $otherVal): string {
+                        if ($val === 'Other' && !empty($otherVal)) {
+                            return $otherVal;
+                        }
+                        return $val;
+                    };
+
+                    // Helper: resolve an array of values — if "Other" is in the list,
+                    // replace it with the companion text; filter empties.
+                    $resolveOtherArray = function(array $vals, string $otherVal): array {
+                        return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                            return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+                        }, $vals)));
+                    };
+
+                    // Build resolved display rows. Only include rows with a non-empty value.
+                    $compatRows = [];
+                    $addRow = function(string $label, $raw, string $otherVal = '') use (&$compatRows, $resolveOther, $resolveOtherArray) {
+                        if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                        if (is_array($raw)) {
+                            $display = implode(', ', $resolveOtherArray($raw, $otherVal));
+                        } else {
+                            $display = $resolveOther((string)$raw, $otherVal);
+                        }
+                        if (!empty($display)) {
+                            $compatRows[] = ['label' => $label, 'value' => $display];
+                        }
+                    };
+
+                    $addRow('Primary Rental Goal',
+                        $tsView['primary_rental_goal'] ?? '',
+                        $tsView['other_primary_rental_goal'] ?? '');
+                    $addRow('Representation Priorities',
+                        $tsView['representation_priorities'] ?? [],
+                        $tsView['other_representation_priorities'] ?? '');
+                    $addRow('Move-In Timeline Urgency',
+                        $tsView['timeline_urgency'] ?? '',
+                        $tsView['other_timeline_urgency'] ?? '');
+                    $addRow('Budget Flexibility',
+                        $tsView['budget_flexibility'] ?? '', '');
+                    $addRow('Preferred Communication Style',
+                        $tsView['communication_style'] ?? '',
+                        $tsView['other_communication_style'] ?? '');
+                    $addRow('Preferred Contact Frequency',
+                        $tsView['contact_frequency'] ?? '', '');
+                    $addRow('Preferred Contact Time of Day',
+                        $tsView['preferred_contact_method'] ?? '', '');
+                    $addRow('Preferred Agent Working Style',
+                        $tsView['preferred_agent_working_style'] ?? '', '');
+                    $addRow('Most Important Agent Traits',
+                        $tsView['most_important_agent_traits'] ?? [],
+                        $tsView['other_most_important_agent_traits'] ?? '');
+                    $addRow('Desired Level of Agent Involvement',
+                        $tsView['desired_level_of_agent_involvement'] ?? '',
+                        $tsView['other_desired_level_of_agent_involvement'] ?? '');
+                    $addRow('Negotiation Style',
+                        $tsView['negotiation_style'] ?? '', '');
+                    $addRow('Decision-Making Style',
+                        $tsView['decision_making_style'] ?? '', '');
+                    $addRow('Concerns or Barriers',
+                        $tsView['concerns_or_barriers'] ?? '', '');
+                    $addRow('Additional Compatibility Notes',
+                        $tsView['additional_compatibility_notes'] ?? '', '');
+
+                    $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+                    if ($referralPct === '') {
+                        $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+                        if ($_firstBid) {
+                            $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
+                        }
+                        unset($_firstBid);
+                    }
+                    $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+
+                    $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
+                        ? "Agent's Info"
+                        : "Tenant's Info";
+
+    /*
+     | enabledFor(), NEVER enabled(), and the role is passed rather than tested. The
+     | redesign_roles allowlist stays the only thing that grants a role the redesign, and it does
+     | not list tenant — so this line turns nothing on. It makes tenant CAPABLE of being turned on
+     | by a config change instead of a code change, which is how landlord and buyer were staged.
+     */
+    $tnaDetailRedesign = \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('tenant');
+
+    /*
+     | ONLY KEYS THAT CAN TRIGGER A ROW ON THEIR OWN, for the reason buyer records at length: a
+     | companion key like other_bedrooms renders only INSIDE its parent row, so listing it here
+     | would let a lone companion value light up a bordered, titled, empty card. Each parent
+     | answers for its children.
+     */
+    $tnaAnyPresent = function (array $values): bool {
+        foreach ($values as $value) {
+            if ($value != null) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    $tnaHasListingDetails = $tnaAnyPresent([
+        @$auction->get->listing_title, @$auction->get->working_with_agent,
+        @$auction->get->desired_agent_hire_date, @$auction->get->listing_date,
+        @$auction->get->expiration_date, @$auction->get->auction_type,
+        @$auction->get->meeting_Preference,
+    ]);
+
+    $tnaHasProperty = $tnaAnyPresent([
+        @$auction->get->cities, @$auction->get->counties, @$auction->get->zipCodes,
+        @$auction->get->state, @$auction->get->states,
+        @$auction->get->property_type, @$auction->get->property_items,
+        @$auction->get->condition_prop_buyer,
+        @$auction->get->bedrooms, @$auction->get->bathrooms,
+        @$auction->get->minimum_heated_square, @$auction->get->minimum_leaseable,
+        @$auction->get->tenant_require,
+        @$auction->get->carport_needed, @$auction->get->garage_needed,
+        @$auction->get->garage_parking_spaces, @$auction->get->garage_parking_spaces_option,
+        @$auction->get->view_preference, @$auction->get->non_negotiable_amenities,
+        @$auction->get->leasing_space, @$auction->get->leasing_55_plus,
+        @$auction->get->other_preferences,
+    ]);
+
+    $tnaHasTerms = $tnaAnyPresent([
+        @$auction->get->budget, @$auction->get->lease_date, @$auction->get->lease_for,
+        @$auction->get->leasing_spaces_tenant,
+    ]);
+
+    /*
+     | Pre-Screening is tenant-only — the lease counterpart to the financing section buyer and
+     | seller have. T4 audits its fields individually; T1 only needs to know whether the card has
+     | anything at all. property_type and additional_details are read inside that range but belong
+     | to other cards and are deliberately absent here: either alone would light this one up empty.
+     */
+    $tnaHasPreScreening = $tnaAnyPresent([
+        @$auction->get->number_occupant, @$auction->get->monthly_income,
+        @$auction->get->pets, @$auction->get->screening_concerns,
+    ]);
+
+    $tnaHasAdditionalDetails = @$auction->get->additional_details != null;
+
+    $tnaHasOwnerInfo = $tnaAnyPresent([
+        @$auction->get->first_name, @$auction->get->photo,
+        @$auction->get->video, @$auction->get->video_link,
+    ]);
+
+    /*
+     | Agent Credentials depends on the listing OWNER being an agent rather than on listing meta.
+     | It reuses $_ownerInfoHeading's answer rather than asking again: the heading above flips on
+     | exactly this condition, and a second inline read of the owner's user type in one file is
+     | what HireAgentDetailAudienceTest rejects — it counts occurrences by pattern, so the
+     | expression is described here rather than written, or this note would itself be the second
+     | one. The tenant view has no such card yet — T2 adds
+     | one. The guard is resolved now because resolveForRole() REQUIRES an answer for every
+     | section the role has: a missing one raises rather than silently dropping the card.
+     */
+    $tnaOwnerIsAgent = $_ownerInfoHeading === "Agent's Info";
+    $tnaHasAgentCredentials = $tnaOwnerIsAgent && $tnaAnyPresent([
+        @$auction->user->info('brokerage'), @$auction->user->info('license_no'),
+    ]);
+
+    /*
+     | Everything stays behind the flag: with it off the array is empty, no bar renders, no
+     | anchors are emitted, and every section keeps its legacy branch. That is what makes T1 inert
+     | rather than merely low-risk.
+     */
+    $tnaSections = [];
+
+    if ($tnaDetailRedesign) {
+        $tnaSections = app(\App\Support\HireAgent\HireAgentDetailSections::class)->resolveForRole(
+            'tenant',
+            $hlaAudience,
+            [
+                'listing-details'    => $tnaHasListingDetails,
+                'property'           => $tnaHasProperty,
+                'terms'              => $tnaHasTerms,
+                'pre-screening'      => $tnaHasPreScreening,
+                'additional-details' => $tnaHasAdditionalDetails,
+                'representation'     => ! empty($compatRows),
+                'referral'           => $referralPctDisplay !== '',
+                'role-info'          => $tnaHasOwnerInfo,
+                'agent-credentials'  => $tnaHasAgentCredentials,
+            ],
+            ['role-info' => $_ownerInfoHeading],
+        );
+    }
+
+    /* The only thing the section cards consult. No card re-derives its own visibility. */
+    $tnaShows = function (string $key) use (&$tnaSections): bool {
+        return isset($tnaSections[\App\Support\HireAgent\HireAgentDetailSections::ID_PREFIX . $key]);
+    };
 @endphp
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
@@ -160,7 +387,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 card-body wraps the whole card — so the wrapper drops and `viho-card-body` takes
                 its place one-for-one.
             --}}
-            <x-viho.card title="Listing Details:" title-tag="h4">
+            <x-hire-agent.detail-body :redesign="$tnaDetailRedesign ?? false" title="Listing Details:">
+                    {{-- legacy-header IS FALSE here and nowhere else on this page, for the reason
+                         buyer records: with the redesign off, the wrapper card's own title
+                         "Listing Details:" IS this section's heading, so emitting a header would
+                         put a duplicate directly beneath the title it duplicates. With the
+                         redesign on the wrapper is gone and the card title supplies it. --}}
+                    @if (! ($tnaDetailRedesign ?? false) || $tnaShows('listing-details'))
+                    <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" :legacy-header="false" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines">
                     <div class="row" style="flex-wrap: wrap;">
                         {{-- Listing Status removed from here - now only shown as badge above Listing ID in header --}}
                         @if (@$auction->get->listing_title != null)
@@ -217,11 +451,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endif
 
                     </div>
-                    <hr>
+                    </x-hire-agent.detail-section>
+                    @endif
+                    @if (! ($tnaDetailRedesign ?? false))<hr>@endif
                     {{-- M3: sub-section header inside the single Listing Details card. The source
                          heading carried a trailing space before </h4>; it is dropped here exactly
                          as the Landlord pilot dropped its own, and HTML collapses it either way. --}}
-                    <x-viho.section-header title="Property Preferences:" tag="h4" />
+                    @if (! ($tnaDetailRedesign ?? false) || $tnaShows('property'))
+                    <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-property" title="Property Preferences:" icon="fa-solid fa-house">
 
                     <div class="row" style="flex-wrap: wrap;">
 
@@ -535,8 +772,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                 </div>
-                <hr>
-                <x-viho.section-header title="Leasing Terms:" tag="h4" />
+                </x-hire-agent.detail-section>
+                @endif
+                @if (! ($tnaDetailRedesign ?? false))<hr>@endif
+                @if (! ($tnaDetailRedesign ?? false) || $tnaShows('terms'))
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->budget))
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Maximum Monthly Lease Price:
@@ -584,8 +824,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endforeach
                 </div>
                 @endif
-                <hr>
-                <x-viho.section-header title="Pre-Screening:" tag="h4" />
+                </x-hire-agent.detail-section>
+                @endif
+                @if (! ($tnaDetailRedesign ?? false))<hr>@endif
+                @if (! ($tnaDetailRedesign ?? false) || $tnaShows('pre-screening'))
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-pre-screening" title="Pre-Screening:" icon="fa-solid fa-clipboard-check">
                 @if (@$auction->get->number_occupant)
                 <div class="col-md-12 col-12 pt-2 fw-bold"> Number
                     of Occupants:
@@ -643,135 +886,65 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
 
-                <hr>
-                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
-                <x-viho.section-header title="Additional Details:" tag="h4" />
+                </x-hire-agent.detail-section>
+                @endif
+                @if (! ($tnaDetailRedesign ?? false))<hr>@endif
+                @if ($tnaDetailRedesign ? $tnaShows('additional-details') : \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Additional Details:<span class="removeBold">
                         {{ $auction->get->additional_details }}</span>
                 </div>
+                </x-hire-agent.detail-section>
                 @endif
 
                 @php
-                    // ── Representation Preferences & Compatibility display (Task #1128) ──────
-                    $rawCompatView = $auction->info('compatibility_preferences');
-                    $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
-                        ? (json_decode($rawCompatView, true) ?? [])
-                        : [];
-                    $tsView = $compatView['tenant_specific'] ?? [];
-
-                    // Helper: resolve a single "Other" select value to its companion text.
-                    // If the stored value is "Other" and a companion string exists, the companion
-                    // text is returned instead, so the literal word "Other" never renders alone.
-                    $resolveOther = function(string $val, string $otherVal): string {
-                        if ($val === 'Other' && !empty($otherVal)) {
-                            return $otherVal;
-                        }
-                        return $val;
-                    };
-
-                    // Helper: resolve an array of values — if "Other" is in the list,
-                    // replace it with the companion text; filter empties.
-                    $resolveOtherArray = function(array $vals, string $otherVal): array {
-                        return array_values(array_filter(array_map(function($v) use ($otherVal) {
-                            return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
-                        }, $vals)));
-                    };
-
-                    // Build resolved display rows. Only include rows with a non-empty value.
-                    $compatRows = [];
-                    $addRow = function(string $label, $raw, string $otherVal = '') use (&$compatRows, $resolveOther, $resolveOtherArray) {
-                        if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
-                        if (is_array($raw)) {
-                            $display = implode(', ', $resolveOtherArray($raw, $otherVal));
-                        } else {
-                            $display = $resolveOther((string)$raw, $otherVal);
-                        }
-                        if (!empty($display)) {
-                            $compatRows[] = ['label' => $label, 'value' => $display];
-                        }
-                    };
-
-                    $addRow('Primary Rental Goal',
-                        $tsView['primary_rental_goal'] ?? '',
-                        $tsView['other_primary_rental_goal'] ?? '');
-                    $addRow('Representation Priorities',
-                        $tsView['representation_priorities'] ?? [],
-                        $tsView['other_representation_priorities'] ?? '');
-                    $addRow('Move-In Timeline Urgency',
-                        $tsView['timeline_urgency'] ?? '',
-                        $tsView['other_timeline_urgency'] ?? '');
-                    $addRow('Budget Flexibility',
-                        $tsView['budget_flexibility'] ?? '', '');
-                    $addRow('Preferred Communication Style',
-                        $tsView['communication_style'] ?? '',
-                        $tsView['other_communication_style'] ?? '');
-                    $addRow('Preferred Contact Frequency',
-                        $tsView['contact_frequency'] ?? '', '');
-                    $addRow('Preferred Contact Time of Day',
-                        $tsView['preferred_contact_method'] ?? '', '');
-                    $addRow('Preferred Agent Working Style',
-                        $tsView['preferred_agent_working_style'] ?? '', '');
-                    $addRow('Most Important Agent Traits',
-                        $tsView['most_important_agent_traits'] ?? [],
-                        $tsView['other_most_important_agent_traits'] ?? '');
-                    $addRow('Desired Level of Agent Involvement',
-                        $tsView['desired_level_of_agent_involvement'] ?? '',
-                        $tsView['other_desired_level_of_agent_involvement'] ?? '');
-                    $addRow('Negotiation Style',
-                        $tsView['negotiation_style'] ?? '', '');
-                    $addRow('Decision-Making Style',
-                        $tsView['decision_making_style'] ?? '', '');
-                    $addRow('Concerns or Barriers',
-                        $tsView['concerns_or_barriers'] ?? '', '');
-                    $addRow('Additional Compatibility Notes',
-                        $tsView['additional_compatibility_notes'] ?? '', '');
+                    // T1 — moved to the top-of-content block; see the note there. The directive
+                    // shell stays deliberately: Blade strips the newline after the closing tag, so
+                    // deleting these lines would remove padding that is part of the rendered page.
                 @endphp
 
-                @if (!empty($compatRows))
-                <hr />
+                @if ($tnaDetailRedesign ? $tnaShows('representation') : (!empty($compatRows)))
+                @if (! ($tnaDetailRedesign ?? false))<hr />@endif
                 {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
                      rendered text is unchanged. Passing &amp; here would double-escape it. --}}
-                <x-viho.section-header title="Representation Preferences & Compatibility:" tag="h4" />
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
                 @foreach ($compatRows as $compatRow)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     {{ $compatRow['label'] }}:
                     <span class="removeBold">{{ $compatRow['value'] }}</span>
                 </div>
                 @endforeach
+                </x-hire-agent.detail-section>
                 @endif
 
 
                 @php
-                    $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
-                    if ($referralPct === '') {
-                        $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
-                        if ($_firstBid) {
-                            $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
-                        }
-                        unset($_firstBid);
-                    }
-                    $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+                    // T1 — moved to the top-of-content block; see the note there. The directive
+                    // shell stays deliberately: Blade strips the newline after the closing tag, so
+                    // deleting these lines would remove padding that is part of the rendered page.
                 @endphp
-                @if ($referralPctDisplay !== '')
-                <hr />
-                <x-viho.section-header title="Referral & Cooperation Terms" tag="h4" />
+                @if ($tnaDetailRedesign ? $tnaShows('referral') : ($referralPctDisplay !== ''))
+                @if (! ($tnaDetailRedesign ?? false))<hr />@endif
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Referral Fee:
                     <span class="removeBold">{{ $referralPctDisplay }}</span>
                 </div>
+                </x-hire-agent.detail-section>
                 @endif
 
-                <hr />
+                @if (! ($tnaDetailRedesign ?? false))<hr />@endif
                 {{-- Resolved in PHP rather than inline: a bound attribute containing `&&` is not
                      parseable by Blade's attribute compiler. Same expression, same two outcomes. --}}
                 @php
-                    $_ownerInfoHeading = ($auction->user && $auction->user->user_type === 'agent')
-                        ? "Agent's Info"
-                        : "Tenant's Info";
+                    // T1 — moved to the top-of-content block; see the note there. The directive
+                    // shell stays deliberately: Blade strips the newline after the closing tag, so
+                    // deleting these lines would remove padding that is part of the rendered page.
                 @endphp
-                <x-viho.section-header :title="$_ownerInfoHeading" tag="h4" />
+                @if (! ($tnaDetailRedesign ?? false) || $tnaShows('role-info'))
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-role-info" :title="$_ownerInfoHeading" icon="fa-solid fa-id-card">
                 @if (!empty($auction->get->first_name))
                 <div class="col-md-12 col-12 pt-2 fw-bold"> First
                     Name:
@@ -876,10 +1049,38 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
                 @endif
                 @endif
+                </x-hire-agent.detail-section>
+                @endif
+
+                {{-- T2 — Agent Credentials, container only.
+
+                     The tenant registry scopes this section to the role, so resolveForRole()
+                     demands a guard for it and $tnaHasAgentCredentials answers. What did not
+                     exist until now is anywhere to put it: the legacy tenant page has no such
+                     block, which is why this card appears ONLY in the redesign branch. There is
+                     no `! $tnaDetailRedesign ||` arm here on purpose — adding one would invent a
+                     legacy section that has never rendered, and flag-off equivalence is the one
+                     thing T2 may not spend.
+
+                     The rows come in T3. The guard already requires the owner to be an agent AND
+                     to carry at least one credential, so an owner with neither never reaches this
+                     card and it cannot render as an empty bordered box in the meantime. --}}
+                @if (($tnaDetailRedesign ?? false) && $tnaShows('agent-credentials'))
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-agent-credentials" title="Agent Credentials:" icon="fa-solid fa-address-card">
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    Brokerage:
+                    <span class="removeBold">{{ $auction->user->info('brokerage') }}</span>
+                </div>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    License No:
+                    <span class="removeBold">{{ $auction->user->info('license_no') }}</span>
+                </div>
+                </x-hire-agent.detail-section>
+                @endif
 
             </div>
     {{-- M3: the former card-body close is gone with its opening tag; the card closes here. --}}
-    </x-viho.card>
+    </x-hire-agent.detail-body>
     @inject('auctionUser', 'App\Models\User')
     @php
     $auser = $auctionUser::find(@$auction->user_id);

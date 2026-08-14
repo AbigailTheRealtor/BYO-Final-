@@ -649,6 +649,9 @@ class HireAgentDetailAudienceTest extends TestCase
             [
                 'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
+                // T1. Tenant consumes the audience to resolve its section set. Like the other
+                // two it PASSES the value and never compares it — asserted below.
+                'resources/views/hire_tenant_agent/view.blade.php',
             ],
             $consumers,
             'The set of views consuming the audience must stay known.'
