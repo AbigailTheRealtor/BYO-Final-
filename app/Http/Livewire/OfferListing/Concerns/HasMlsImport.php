@@ -8,6 +8,7 @@ use App\Services\Bridge\BridgeLookupResult;
 use App\Services\ListingImport\MlsListingImportService;
 use App\Services\ListingImport\MlsListingPrefillService;
 use App\Services\ListingImport\MlsFieldMap;
+use App\Services\ListingImport\QuickImport\MlsQuickImportService;
 use App\Services\LocationDna\LocationDnaGeocodeService;
 use Illuminate\Support\Facades\Log;
 
@@ -64,6 +65,75 @@ trait HasMlsImport
      * each component to ensure the snapshot is always written to meta.
      */
     public string $mlsImportSnapshotJson = '';
+
+    // ─── Entry point ─────────────────────────────────────────────────────────
+
+    /**
+     * What the "Import from MLS Listing" button on this form does when clicked.
+     *
+     * ONE BUTTON, TWO DESTINATIONS, DECIDED SERVER-SIDE.
+     * --------------------------------------------------
+     * With quick import live, the shortened path is simply what "import from
+     * MLS" means for Seller and Landlord, so the existing button leads there
+     * rather than to a second button beside it. The legacy modal is not removed
+     * and not weakened — it is what the same button still opens everywhere the
+     * quick import flow is not available (every role but Seller/Landlord, and
+     * Seller/Landlord with the flag off).
+     *
+     * The decision is taken here rather than only in the blade for the same
+     * reason mlsNumberImportAvailable() is re-asked inside
+     * importListingByMlsNumber(): a rendered page outlives a config change, and
+     * the answer that matters is the one that holds at click time.
+     *
+     * Deliberately not a redirect for the URL/text importer. That mechanism is
+     * ungated by design and has no quick-import equivalent, so with quick import
+     * off this method's whole job is to open the modal exactly as before.
+     */
+    public function startMlsImport()
+    {
+        if ($this->mlsQuickImportAvailable()) {
+            return redirect()->route($this->mlsQuickImportRouteName());
+        }
+
+        $this->showImportModal = true;
+
+        return null;
+    }
+
+    /**
+     * Is the shortened MLS creation path reachable from this component?
+     *
+     * Delegates to {@see MlsQuickImportService::availableForRole()} rather than
+     * re-reading the two flags here. One reader means the button and the page it
+     * leads to cannot disagree — a button that navigates to a 404 is worse than
+     * no button.
+     */
+    public function mlsQuickImportAvailable(): bool
+    {
+        if ($this->mlsQuickImportRouteName() === null) {
+            return false;
+        }
+
+        return app(MlsQuickImportService::class)
+            ->availableForRole($this->resolveImportRole());
+    }
+
+    /**
+     * The quick-import route for this component's role, or null if it has none.
+     *
+     * Buyer and Tenant listings describe search criteria across many areas, not
+     * one property, so there is nothing for an MLS number to build and no route
+     * exists. Returning null here is what keeps those two forms on the legacy
+     * modal regardless of how the flags are set.
+     */
+    public function mlsQuickImportRouteName(): ?string
+    {
+        return match ($this->resolveImportRole()) {
+            'seller'   => 'offer.listing.seller.quick-import',
+            'landlord' => 'offer.listing.landlord.quick-import',
+            default    => null,
+        };
+    }
 
     // ─── Modal control ───────────────────────────────────────────────────────
 

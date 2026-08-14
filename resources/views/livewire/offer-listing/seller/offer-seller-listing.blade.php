@@ -740,12 +740,29 @@
                 @endif
 
                 {{-- MLS Import Entry Point --}}
+                {{--
+                    ONE button, two destinations. startMlsImport() decides at click
+                    time: with the quick-import flow available it redirects to
+                    offer.listing.seller.quick-import (MLS # → confirm property →
+                    BidYourOffer questions → review → publish); otherwise it opens
+                    the legacy prefill modal exactly as before. The wording follows
+                    the destination — "pre-fill this form" is only true of the modal.
+                    The manual form below is untouched either way and remains the
+                    path for anyone without an MLS number.
+                --}}
                 <div class="container pt-3 pb-0">
                     <div class="d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-primary btn-sm"
                                 style="color:#0d6efd;"
-                                wire:click="$set('showImportModal', true)">
-                            <i class="fas fa-file-import me-1"></i>Have an MLS listing? Import it to pre-fill this form &rarr;
+                                wire:click="startMlsImport"
+                                wire:loading.attr="disabled"
+                                wire:target="startMlsImport">
+                            <i class="fas fa-file-import me-1"></i>Have an MLS listing?
+                            @if($this->mlsQuickImportAvailable())
+                                Import from MLS Listing &rarr;
+                            @else
+                                Import it to pre-fill this form &rarr;
+                            @endif
                         </button>
                     </div>
                 </div>
