@@ -4,6 +4,7 @@ namespace App\Http\Livewire\OfferListing\Landlord;
 
 use Livewire\Component;
 use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
+use App\Http\Livewire\OfferListing\Concerns\RecordsSelectedPropertyAddress;
 use Livewire\WithFileUploads;
 use App\Models\LandlordAgentAuction as HirelandLordAgentAuction;
 use App\Models\AcceptedBidSummary;
@@ -25,6 +26,7 @@ use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 class LandlordOfferListing extends Component
 {
     use ResolvesPropertyCoordinates;
+    use RecordsSelectedPropertyAddress; // the address pick is not a coordinate
 
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
@@ -3465,9 +3467,10 @@ class LandlordOfferListing extends Component
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
         $auction->saveMeta('unit_address', $this->unit_address);
-        $auction->saveMeta('property_lat', $this->property_lat);
-        $auction->saveMeta('property_lng', $this->property_lng);
-        $auction->saveMeta('google_place_id', $this->google_place_id);
+        // The address pick's own lat/lng is deliberately NOT written here.
+        // property_lat/property_lng are written only by the coordinate ladder,
+        // at the resolution boundary later in this same save.
+        $this->saveSelectedPropertyAddressMeta($auction);
         $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
         $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
         $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);
