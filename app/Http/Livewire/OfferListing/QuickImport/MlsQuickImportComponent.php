@@ -294,21 +294,28 @@ abstract class MlsQuickImportComponent extends Component
     }
 
     /**
-     * The listing methods this environment actually offers.
+     * The listing methods this role may choose from.
      *
-     * Bidding Period is gated by config/bya_beta.php exactly as the wizard gates
-     * it. Reading the same flag here is what stops this flow becoming a way in
-     * to a format the rest of the product is not showing yet.
+     * Both, unconditionally, because that is what the canonical Create Listing
+     * flow offers. `offer-seller-tabs/commission-based/listing-details.blade.php`
+     * and its landlord counterpart render the Listing Type select with
+     * "Bidding Period" and "Traditional" and NO flag around either — the
+     * bya_beta.bidding_period_enabled gate was deliberately lifted for Seller
+     * and Landlord (see the "restored for Seller/Landlord (Create Offer)" note
+     * on both partials) and now survives only as a mount() default for a blank
+     * auction_type. Buyer and Tenant remain Traditional-only via the gate in
+     * their own partials, and nothing here touches them.
+     *
+     * This used to consult that flag, which meant quick import silently offered
+     * a smaller set of listing methods than the manual wizard for the same role
+     * — a listing created through the shortened path could not be a Bidding
+     * Period listing at all. The requirements that come WITH the choice are
+     * unchanged: chooseMethod()/continueToTerms() still demand auction_time for
+     * a bidding format, exactly as the wizard does.
      */
     public function availableMethods(): array
     {
-        $methods = ['Traditional'];
-
-        if (config('bya_beta.bidding_period_enabled')) {
-            $methods[] = 'Bidding Period';
-        }
-
-        return $methods;
+        return ['Traditional', 'Bidding Period'];
     }
 
     public function backToMethod(): void

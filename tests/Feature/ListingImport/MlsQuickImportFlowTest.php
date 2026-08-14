@@ -685,8 +685,26 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertSame('7 Days', $listing->info('auction_time'));
     }
 
-    /** @test */
-    public function bidding_period_cannot_be_chosen_when_the_flag_hides_it(): void
+    /**
+     * @test
+     *
+     * REPLACES `bidding_period_cannot_be_chosen_when_the_flag_hides_it`, which
+     * asserted the opposite and was wrong about the product.
+     *
+     * That test encoded the belief that quick import should gate Bidding Period
+     * on bya_beta.bidding_period_enabled "exactly as the wizard gates it". The
+     * wizard does not gate it: the canonical Seller and Landlord Create Listing
+     * partials render the Listing Type select with both options and no
+     * condition around either — the gate was deliberately lifted for these two
+     * roles and survives only as a mount() default for a blank auction_type.
+     * Quick import reading the flag therefore offered a SMALLER set of listing
+     * methods than the manual flow for the same role, so a listing created
+     * through the shortened path could never be a Bidding Period listing.
+     *
+     * The flag is forced OFF here because that is the configuration under which
+     * the option used to disappear.
+     */
+    public function bidding_period_is_offered_regardless_of_the_beta_flag(): void
     {
         config(['bya_beta.bidding_period_enabled' => false]);
         $this->seedBridgeProperty(1);
@@ -697,8 +715,8 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('findListing')
             ->call('acceptProperty')
             ->call('chooseMethod', 'Bidding Period')
-            ->assertSet('auction_type', '')
-            ->assertSee('Please choose how you would like to sell');
+            ->assertSet('auction_type', 'Bidding Period')
+            ->assertSet('errorMessage', '');
     }
 
     /** @test */

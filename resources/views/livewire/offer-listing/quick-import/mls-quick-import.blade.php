@@ -12,6 +12,33 @@
     again on the review screen — as read-only summaries, never as a hundred
     editable inputs to click through. The only things this page asks for are the
     transaction questions MLS does not answer.
+
+    WHY THE FILLED BUTTONS CARRY INLINE COLOURS
+    -------------------------------------------
+    Not a style preference, and not something to "clean up" into a class.
+    public/css/app.css is the Mix build of Breeze's Tailwind and it ships
+    Preflight, which contains:
+
+        button, [type='button'], [type='reset'], [type='submit'] {
+            background-color: transparent; background-image: none;
+        }
+
+    layouts.main loads that file AFTER bootstrap.min.css, and `[type='button']`
+    has exactly the same specificity as `.btn` (0,1,0). The tie therefore breaks
+    on load order and every `<button type="button" class="btn btn-primary">` in
+    the application renders with no background — while `.btn-primary:hover`
+    (0,2,0) still wins, which is why such a button is invisible until the
+    pointer touches it.
+
+    An inline declaration outranks both, so it is the fix that does not require
+    editing global CSS. This is the convention the rest of the app already uses
+    for the same reason — see the filled buttons in
+    livewire/offer-listing/shared/mls-import-modal.blade.php, and the
+    !important rules for .wizard-step-next / #save-button in
+    public/assets/css/global.css.
+
+    Outline buttons are deliberately left alone: their background is meant to be
+    transparent, so Preflight changes nothing about how they look.
 --}}
 <div class="container py-4" style="max-width: 960px;">
 
@@ -61,6 +88,7 @@
                 </div>
 
                 <button type="button" class="btn btn-primary btn-lg"
+                        style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;"
                         wire:click="findListing" wire:loading.attr="disabled" wire:target="findListing">
                     <span wire:loading.remove wire:target="findListing"><i class="fas fa-search me-1"></i>Find My Listing</span>
                     <span wire:loading wire:target="findListing"><span class="spinner-border spinner-border-sm me-1"></span>Searching…</span>
@@ -126,7 +154,7 @@
                 </div>
             </div>
             <div class="card-footer bg-white d-flex gap-2">
-                <button type="button" class="btn btn-primary" wire:click="acceptProperty"
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="acceptProperty"
                         wire:loading.attr="disabled" wire:target="acceptProperty">
                     <span wire:loading.remove wire:target="acceptProperty">Yes, this is my property</span>
                     <span wire:loading wire:target="acceptProperty"><span class="spinner-border spinner-border-sm me-1"></span>Importing…</span>
@@ -150,6 +178,7 @@
                         <div class="col-md-6">
                             <button type="button"
                                     class="btn w-100 text-start p-3 h-100 {{ $auction_type === $method ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    @if($auction_type === $method) style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" @endif
                                     wire:click="chooseMethod('{{ $method }}')">
                                 <span class="fw-semibold d-block">{{ $method }}</span>
                                 <span class="small d-block mt-1 {{ $auction_type === $method ? 'text-white-50' : 'text-muted' }}">
@@ -177,7 +206,7 @@
                 @endif
             </div>
             <div class="card-footer bg-white d-flex gap-2">
-                <button type="button" class="btn btn-primary" wire:click="continueToTerms">Continue</button>
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToTerms">Continue</button>
             </div>
         </div>
     @endif
@@ -269,7 +298,7 @@
             </div>
             <div class="card-footer bg-white d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
-                <button type="button" class="btn btn-primary" wire:click="continueToReview">Review My Listing</button>
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
             </div>
         </div>
     @endif
@@ -301,6 +330,7 @@
                                     @else
                                         <button type="button"
                                                 class="btn btn-sm btn-light position-absolute bottom-0 start-0 m-1"
+                                                style="background-color:#f8f9fa; border-color:#f8f9fa; color:#212529;"
                                                 wire:click="setCoverPhoto(@js($photo->key))">
                                             Make cover
                                         </button>
@@ -401,7 +431,7 @@
 
         <div class="d-flex gap-2 mb-5">
             <button type="button" class="btn btn-outline-secondary" wire:click="backToTerms">Back to terms</button>
-            <button type="button" class="btn btn-success btn-lg" wire:click="publish"
+            <button type="button" class="btn btn-success btn-lg" style="background-color:#198754; border-color:#198754; color:#fff;" wire:click="publish"
                     wire:loading.attr="disabled" wire:target="publish">
                 <span wire:loading.remove wire:target="publish">Publish Listing</span>
                 <span wire:loading wire:target="publish"><span class="spinner-border spinner-border-sm me-1"></span>Publishing…</span>
