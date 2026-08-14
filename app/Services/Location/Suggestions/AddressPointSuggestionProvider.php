@@ -5,6 +5,7 @@ namespace App\Services\Location\Suggestions;
 use App\Services\Location\Coordinates\Adapters\CoordinateValidator;
 use App\Services\Location\Coordinates\CoordinatePrecision;
 use App\Services\Location\Coordinates\CoordinateProvenance;
+use App\Services\Location\Coordinates\PropertyAddress;
 use App\Services\Location\Coordinates\StreetSuffixMap;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -65,9 +66,30 @@ use Throwable;
  * everywhere, exactly as they do in the canonical normalizer.
  *
  * There is deliberately no second normalizer here. Query tokens go through
- * {@see StreetSuffixMap}, the same vocabulary the corpus's own `normalized`
- * column was written with; a suggestion layer with its own idea of what "st"
- * means is how a corpus stops being searchable by its own rules.
+ * {@see StreetSuffixMap} and {@see PropertyAddress}, the same vocabularies the
+ * corpus's own `normalized` column was written with; a suggestion layer with its
+ * own idea of what "st" or "florida" means is how a corpus stops being
+ * searchable by its own rules.
+ *
+ * WHAT THE CORPUS LINE DOES NOT CONTAIN, AND THE QUERY MUST THEREFORE DROP
+ * ------------------------------------------------------------------------
+ * `normalized` is `PropertyAddress::coordinateLookupLine()`, which drops the
+ * unit and truncates ZIP+4 to ZIP5 — deliberately, and that is not changed here.
+ * But a person typing their own address types the whole thing, so the query must
+ * shed exactly what the corpus line shed or every token would have to match a
+ * string that never contained it. A typed "Apt 4A" or a typed "-1234" would
+ * otherwise turn a correct address into zero results, which is the worst
+ * possible answer: it looks like "we have never heard of your house".
+ *
+ * WHY DIRECTIONALS FOLD IN PLACE AND STATES DO NOT
+ * ------------------------------------------------
+ * Every directional abbreviation is a *prefix* of its long form — `n`/`north`,
+ * `sw`/`southwest` — so folding one in place can only ever widen a word-start
+ * match. State codes have no such property: `texas`/`tx`, `virginia`/`va`,
+ * `pennsylvania`/`pa`, `maryland`/`md`. Folding those in place would make
+ * "Texas Ave", "Virginia St" and "Pennsylvania Ave" unfindable — real street
+ * names in most of the country. So a state code joins the suffix abbreviation as
+ * an *alternative* the token may also match, never a replacement for it.
  *
  * ORDERING IS TOTAL
  * -----------------
@@ -113,6 +135,40 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
      * query refused — the first several already narrow it far past the limit.
      */
     private const MAX_QUERY_TOKENS = 8;
+
+    /**
+     * How long a token must be before it is worth asking the corpus at all.
+     *
+     * Three, because that is what the index can answer. `addresses_trgm` is a
+     * GIN trigram index, and pg_trgm extracts no usable trigrams from a fragment
+     * shorter than three characters — a pattern like `% n%` degrades to a scan
+     * of the whole corpus. The sibling btree cannot cover the gap either: it was
+     * created with the default opclass, so it serves prefix `LIKE` only under a
+     * C collation, which is not something this code may assume.
+     *
+     * A typeahead fires on the first keystroke, so without a floor the very
+     * first one or two characters of every session are the most expensive
+     * queries the corpus will ever be asked. One token reaching three characters
+     * is enough — shorter tokens still narrow the result once a longer one has
+     * given the planner something indexable to start from.
+     */
+    public const MIN_TOKEN_LENGTH = 3;
+
+    /**
+     * Unit designators the *query* may drop.
+     *
+     * A strict subset of the vocabulary {@see PropertyAddress} folds inside
+     * `unitAddress`, and the two omissions are the point. `PropertyAddress` can
+     * safely treat `fl` and `no` as designators because it is looking at a field
+     * already known to hold a unit; a free-text query has no such field, and
+     * `fl` there is far more often Florida. Dropping it would delete the state
+     * from "Tampa FL 33602". `no` is excluded for the same reason at lower
+     * stakes. Everything else transfers unchanged.
+     */
+    private const UNIT_DESIGNATORS = [
+        'apartment', 'apt', 'unit', 'suite', 'ste',
+        'rm', 'room', 'bldg', 'building', 'floor', 'number',
+    ];
 
     public function providerId(): string
     {
@@ -194,7 +250,10 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
 
         $tokens = self::queryTokens($query);
 
-        if ($tokens === []) {
+        // Nothing typed, or nothing typed *yet* that the corpus index can
+        // answer. Both return before any query is issued — the floor exists to
+        // stop the request, not to discard its results afterwards.
+        if ($tokens === [] || ! self::reachesQueryFloor($tokens)) {
             return [];
         }
 
@@ -203,7 +262,7 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
         // to cover them would turn a mapping bug into a silently empty dropdown
         // that nobody ever notices.
         try {
-            $rows = $this->matchingRows($version, $tokens, self::normalizedQuery($query), self::boundedLimit($limit));
+            $rows = $this->matchingRows($version, $tokens, self::boundedLimit($limit));
         } catch (Throwable $e) {
             $this->reportFault($e);
 
@@ -228,10 +287,24 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
      * that makes "st." and "st" differ, replace remaining punctuation with a
      * space, collapse whitespace. `#` survives for the same reason it does
      * there: it is part of how people write units.
+     *
+     * ZIP+4 collapses to ZIP5 first, while the hyphen that identifies it is
+     * still there to see. A moment later that hyphen becomes a space and
+     * "33602-1234" is indistinguishable from two numbers somebody typed, so
+     * this is the only point at which the +4 can be recognised rather than
+     * guessed at. The truncation itself is `PropertyAddress::normalizedZip5()` —
+     * the same rule the corpus line was written with, not a second copy of it.
      */
     public static function normalizedQuery(string $query): string
     {
         $value = strtolower(trim($query));
+
+        $value = preg_replace_callback(
+            '/\b\d{5}-\d{4}\b/',
+            static fn (array $m): string => (new PropertyAddress(zip: $m[0]))->normalizedZip5(),
+            $value
+        ) ?? $value;
+
         $value = str_replace('.', '', $value);
         $value = preg_replace('/[^a-z0-9# ]+/', ' ', $value) ?? '';
 
@@ -239,10 +312,11 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
     }
 
     /**
-     * Query tokens, directionals folded, capped.
+     * Query tokens: unit dropped, directionals folded, capped.
      *
-     * Suffix folding is *not* applied here — see the class docblock. It is
-     * offered per token as an alternative at match time, where widening is safe.
+     * Suffix and state folding are *not* applied here — see the class docblock.
+     * They are offered per token as alternatives at match time, where widening
+     * is safe.
      *
      * @return list<string>
      */
@@ -259,12 +333,90 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
             static fn (string $t): bool => $t !== ''
         ));
 
+        $tokens = self::withoutUnit($tokens);
+
         $tokens = array_map(
             static fn (string $t): string => StreetSuffixMap::foldDirectional($t),
             $tokens
         );
 
         return array_slice($tokens, 0, self::MAX_QUERY_TOKENS);
+    }
+
+    /**
+     * The tokens with any unit designator and its identifier removed.
+     *
+     * `normalized` never contained the unit, so a token that only a unit could
+     * have produced can only ever fail to match. Removing it is what keeps
+     * "1200 N Main St Apt 4A Austin TX" finding the building instead of finding
+     * nothing.
+     *
+     * The identifier is only consumed when it reads like one — it carries a
+     * digit, or it is a lone letter ("Apt B"). Without that test, "Main St Apt
+     * Austin" would eat the city. A designator with nothing identifier-shaped
+     * after it is dropped on its own, because it is still a word the corpus line
+     * does not contain.
+     *
+     * This does not touch `PropertyAddress::coordinateLookupLine()` and does not
+     * make the unit part of coordinate identity — the unit still distinguishes
+     * two condos everywhere it did before, and a picked candidate still carries
+     * it into `propertyIdentityLine()`. This is only about what a *search* may
+     * require a unit-free string to contain.
+     *
+     * @param  list<string> $tokens
+     * @return list<string>
+     */
+    private static function withoutUnit(array $tokens): array
+    {
+        $kept  = [];
+        $count = count($tokens);
+
+        for ($i = 0; $i < $count; $i++) {
+            $token = $tokens[$i];
+
+            if ($token === '#' || in_array($token, self::UNIT_DESIGNATORS, true)) {
+                if (isset($tokens[$i + 1]) && self::readsAsUnitIdentifier($tokens[$i + 1])) {
+                    $i++;
+                }
+
+                continue;
+            }
+
+            // "#4a" — designator and identifier arrived as one token.
+            if (str_starts_with($token, '#')) {
+                continue;
+            }
+
+            $kept[] = $token;
+        }
+
+        return $kept;
+    }
+
+    /** True when a token could be a unit identifier rather than a word. */
+    private static function readsAsUnitIdentifier(string $token): bool
+    {
+        // Carries a digit and is short ("4a", "12", "b7"), or is a lone letter
+        // ("Apt B"). A city, a street name or a state never looks like either.
+        return preg_match('/^#?(?=.*\d)[a-z0-9]{1,6}$/', $token) === 1
+            || preg_match('/^#?[a-z]$/', $token) === 1;
+    }
+
+    /**
+     * True when at least one token is long enough for the corpus index to
+     * answer. See {@see self::MIN_TOKEN_LENGTH}.
+     *
+     * @param list<string> $tokens
+     */
+    public static function reachesQueryFloor(array $tokens): bool
+    {
+        foreach ($tokens as $token) {
+            if (strlen($token) >= self::MIN_TOKEN_LENGTH) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** The caller's limit, clamped into something a dropdown can hold. */
@@ -374,7 +526,7 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
      * @param  list<string> $tokens
      * @return list<object>
      */
-    private function matchingRows(string $version, array $tokens, string $normalizedQuery, int $limit): array
+    private function matchingRows(string $version, array $tokens, int $limit): array
     {
         $connection = DB::connection($this->connection());
 
@@ -384,18 +536,58 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
 
         foreach ($tokens as $token) {
             $query->where(function (Builder $group) use ($token): void {
-                self::tokenMatches($group, $token);
-
-                $folded = StreetSuffixMap::foldSuffix($token);
-
-                // Only ever an addition: see WHY TOKENS in the class docblock.
-                if ($folded !== $token) {
-                    self::tokenMatches($group, $folded);
+                foreach (self::tokenAlternatives($token) as $alternative) {
+                    self::tokenMatches($group, $alternative);
                 }
             });
         }
 
-        return $this->ordered($query, $normalizedQuery)->limit($limit)->get()->all();
+        return $this->ordered($query, $tokens)->limit($limit)->get()->all();
+    }
+
+    /**
+     * The forms one typed token is allowed to match.
+     *
+     * Always the token itself, plus its street-suffix abbreviation and its state
+     * code where those differ. Both extras are additions to an OR group and can
+     * therefore only widen — which is the entire reason they are safe. Replacing
+     * the token would fold "mountain view" into "mtn vw" and "Texas Ave" into
+     * "tx ave", and neither string exists anywhere.
+     *
+     * @return list<string>
+     */
+    private static function tokenAlternatives(string $token): array
+    {
+        $alternatives = [$token];
+
+        foreach ([StreetSuffixMap::foldSuffix($token), self::stateCode($token)] as $alternative) {
+            if ($alternative !== '' && ! in_array($alternative, $alternatives, true)) {
+                $alternatives[] = $alternative;
+            }
+        }
+
+        return $alternatives;
+    }
+
+    /**
+     * The two-letter code for a token that names a state, else ''.
+     *
+     * Answered by `PropertyAddress::normalizedState()` — the one place in this
+     * codebase that decides "Florida" and "FL" are the same state. A second copy
+     * of that table here would eventually disagree with the one the corpus line
+     * was written with, and the disagreement would surface as "this address is
+     * findable in some states and not others".
+     *
+     * Only single-word states resolve. "New York" and "North Carolina" arrive as
+     * two tokens and are left alone deliberately: joining adjacent tokens to try
+     * them as a pair would fold "New York Ave" in Washington DC into "ny ave",
+     * and a street named after a state is exactly the case this must not break.
+     */
+    private static function stateCode(string $token): string
+    {
+        $code = (new PropertyAddress(state: $token))->normalizedState();
+
+        return $code === $token ? '' : $code;
     }
 
     /**
@@ -426,11 +618,26 @@ final class AddressPointSuggestionProvider implements AddressSuggestionProviderI
      * "1315 e madison st" is. `id` last so the order is total — without it two
      * identical rows are ordered by the planner, and a dropdown reshuffles
      * between keystrokes.
+     *
+     * THE PREFIX IS BUILT FROM THE TOKENS, NOT FROM THE RAW QUERY
+     * -----------------------------------------------------------
+     * It has to be the same representation the WHERE clause matched on, or the
+     * ranking asks a question the corpus cannot answer. Somebody typing
+     * "1200 North Main" matches `1200 n main st …` through the folded token, and
+     * ranking that against a raw "1200 north main%" scores zero prefix hits
+     * forever — every correctly-matched row silently demoted for having been
+     * typed out in full. The unit is gone from the tokens for the same reason:
+     * `normalized` never contained one, so a prefix built from a query that
+     * mentions "Apt 4A" could never match either.
+     *
+     * @param list<string> $tokens
      */
-    private function ordered(Builder $query, string $normalizedQuery): Builder
+    private function ordered(Builder $query, array $tokens): Builder
     {
+        $prefix = self::escapeLike(implode(' ', $tokens)) . '%';
+
         return $query
-            ->orderByRaw('case when normalized like ? then 0 else 1 end', [self::escapeLike($normalizedQuery) . '%'])
+            ->orderByRaw('case when normalized like ? then 0 else 1 end', [$prefix])
             ->orderByRaw('length(normalized) asc')
             ->orderBy('normalized')
             ->orderBy('id');

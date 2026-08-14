@@ -111,11 +111,18 @@ class AddressPointSuggestionProviderTest extends TestCase
             // A unit, to prove the unit column survives into the candidate.
             ['1200', 'N Main St',           '4A', 'Austin',   'TX', '78701', 'fx-austin-1200-4a'],
 
-            // A pair sharing a house number where the shorter line is NOT the
-            // prefix hit — the only arrangement in which prefix-before-length
-            // is observable rather than merely asserted.
             ['12',   'W Washington Blvd',   '',   'Chicago',  'IL', '60602', 'fx-chicago-12'],
             ['12',   'Elm St',              '',   'West Palm Beach', 'FL', '33401', 'fx-wpb-12'],
+
+            // Matches "1200 n main" only through its ZIP, so it can never be a
+            // prefix hit — and it is SHORTER than the Austin row that can be.
+            // The only arrangement in which prefix-before-length is observable
+            // rather than merely asserted.
+            ['7',    'N Main St',           '',   'Albany',   'NY', '12005', 'fx-albany-7'],
+
+            // A second single-word state whose code is a prefix of its name,
+            // for the full-state-name tests.
+            ['500',  'Ocean Ave',           '',   'Santa Monica', 'CA', '90402', 'fx-santamonica-500'],
         ];
     }
 
@@ -492,15 +499,45 @@ class AddressPointSuggestionProviderTest extends TestCase
 
     public function test_a_prefix_hit_outranks_a_shorter_scattered_hit(): void
     {
-        // "12 w washington blvd chicago il 60602" starts with what was typed.
-        // "12 elm st west palm beach fl 33401" is three characters shorter and
-        // matched "w" only by way of "west", so length alone would invert these.
+        // "1200 n main st austin tx 78701" starts with what was typed.
+        // "7 n main st albany ny 12005" is three characters shorter and matched
+        // "1200" only by way of its ZIP, so length alone would invert these.
         $this->assertSame(
             [
-                '12 W Washington Blvd, Chicago, IL 60602',
-                '12 Elm St, West Palm Beach, FL 33401',
+                '1200 N Main St 4A, Austin, TX 78701',
+                '7 N Main St, Albany, NY 12005',
             ],
-            $this->displayLines($this->provider->suggest('12 w'))
+            $this->displayLines($this->provider->suggest('1200 n main'))
+        );
+    }
+
+    public function test_a_folded_directional_query_still_earns_its_prefix_rank(): void
+    {
+        // D5. The WHERE clause folds "north" to "n" and matches
+        // "1200 n main st …"; ranking against the raw "1200 north main%" would
+        // score zero prefix hits forever, silently demoting every correctly
+        // matched row for the crime of having been typed out in full.
+        $spelledOut  = $this->displayLines($this->provider->suggest('1200 north main'));
+        $abbreviated = $this->displayLines($this->provider->suggest('1200 n main'));
+
+        $this->assertSame($abbreviated, $spelledOut, 'Typing a directional in full must not reorder the list.');
+
+        $this->assertSame(
+            [
+                '1200 N Main St 4A, Austin, TX 78701',
+                '7 N Main St, Albany, NY 12005',
+            ],
+            $spelledOut
+        );
+    }
+
+    public function test_a_typed_unit_does_not_cost_the_row_its_prefix_rank(): void
+    {
+        // The unit is gone from the tokens, so the prefix built from them can
+        // still match a corpus line that never contained one.
+        $this->assertSame(
+            ['1200 N Main St 4A, Austin, TX 78701'],
+            $this->displayLines($this->provider->suggest('1200 n main st apt 4a austin'))
         );
     }
 
@@ -643,6 +680,180 @@ class AddressPointSuggestionProviderTest extends TestCase
             'hill' => ['4600 silver hill',  '4600 Silver Hill Road, Suitland, MD 20746'],
             'view' => ['100 mountain view', '100 Mountain View Drive, Denver, CO 80202'],
         ];
+    }
+
+    // ── D1. full state names ────────────────────────────────────────────────
+
+    /** @dataProvider fullStateNames */
+    public function test_a_full_state_name_finds_a_row_stored_with_its_code(
+        string $query,
+        string $expected,
+    ): void {
+        // The corpus stores "fl" / "ca" because coordinateLookupLine() folds a
+        // state to its code. A person types the whole word.
+        $this->assertSame([$expected], $this->displayLines($this->provider->suggest($query)));
+    }
+
+    public static function fullStateNames(): array
+    {
+        return [
+            'florida'    => ['315 e madison st tampa florida',        '315 E Madison St, Tampa, FL 33602'],
+            'california' => ['500 ocean santa monica california',     '500 Ocean Ave, Santa Monica, CA 90402'],
+        ];
+    }
+
+    /** @dataProvider abbreviatedStates */
+    public function test_an_abbreviated_state_keeps_working(string $query, string $expected): void
+    {
+        $this->assertSame([$expected], $this->displayLines($this->provider->suggest($query)));
+    }
+
+    public static function abbreviatedStates(): array
+    {
+        return [
+            'fl' => ['315 e madison st tampa fl',    '315 E Madison St, Tampa, FL 33602'],
+            'ca' => ['500 ocean santa monica ca',    '500 Ocean Ave, Santa Monica, CA 90402'],
+        ];
+    }
+
+    public function test_a_street_named_after_a_state_is_not_folded_out_of_existence(): void
+    {
+        // Why the state code is an alternative rather than a replacement. Unlike
+        // directionals, a state code is often NOT a prefix of its name —
+        // texas/tx, virginia/va, pennsylvania/pa — so folding in place would
+        // make these streets unfindable. Folding as an alternative cannot.
+        $this->assertSame(
+            ['12 W Washington Blvd, Chicago, IL 60602'],
+            $this->displayLines($this->provider->suggest('12 washington blvd chicago'))
+        );
+    }
+
+    // ── D2. typed units ─────────────────────────────────────────────────────
+
+    /** @dataProvider typedUnits */
+    public function test_a_typed_unit_does_not_erase_an_otherwise_valid_address(string $query): void
+    {
+        // `normalized` never contained the unit, so requiring these tokens to
+        // appear in it turns a correct address into "we have never heard of
+        // your house" — the worst answer a suggestion surface can give.
+        $this->assertSame(
+            ['1200 N Main St 4A, Austin, TX 78701'],
+            $this->displayLines($this->provider->suggest($query))
+        );
+    }
+
+    public static function typedUnits(): array
+    {
+        return [
+            'apt'        => ['1200 n main st apt 4a austin tx'],
+            'apartment'  => ['1200 n main st apartment 4a austin tx'],
+            'unit'       => ['1200 n main st unit 4a austin tx'],
+            'suite'      => ['1200 n main st suite 4a austin tx'],
+            'hash joined'=> ['1200 n main st #4a austin tx'],
+            'hash split' => ['1200 n main st # 4a austin tx'],
+            'lone letter'=> ['1200 n main st apt b austin tx'],
+        ];
+    }
+
+    public function test_a_word_after_a_designator_is_not_mistaken_for_a_unit(): void
+    {
+        // "Apt" followed by a city must not eat the city. A unit identifier
+        // carries a digit or is a lone letter; "austin" is neither.
+        $this->assertSame(
+            ['1200, n, main, st, austin'],
+            [implode(', ', AddressPointSuggestionProvider::queryTokens('1200 n main st apt austin'))]
+        );
+    }
+
+    public function test_the_state_abbreviation_is_not_treated_as_a_unit_designator(): void
+    {
+        // PropertyAddress folds "fl" inside `unitAddress` because that field is
+        // already known to hold a unit. A free-text query has no such field, and
+        // dropping "fl" here would delete the state from "Tampa FL 33602".
+        $this->assertContains(
+            'fl',
+            AddressPointSuggestionProvider::queryTokens('315 e madison st tampa fl 33602')
+        );
+    }
+
+    public function test_a_typed_unit_never_becomes_part_of_coordinate_identity(): void
+    {
+        // The unit is dropped from the *search*, not from the property. A picked
+        // candidate still carries it, and the lookup/identity split is untouched.
+        $address = $this->provider->suggest('1200 n main st apt 4a austin')[0]->toPropertyAddress();
+
+        $this->assertTrue($address->hasUnit());
+        $this->assertStringNotContainsString('4a', $address->coordinateLookupLine());
+        $this->assertStringContainsString('4a', $address->propertyIdentityLine());
+    }
+
+    // ── D4. ZIP+4 ───────────────────────────────────────────────────────────
+
+    public function test_a_typed_zip_plus_four_matches_a_row_stored_with_zip5(): void
+    {
+        $this->assertSame(
+            ['315 E Madison St, Tampa, FL 33602'],
+            $this->displayLines($this->provider->suggest('315 e madison st tampa 33602-1234'))
+        );
+    }
+
+    public function test_the_plus_four_is_truncated_rather_than_split_into_a_token(): void
+    {
+        $this->assertSame(
+            '315 e madison st tampa 33602',
+            AddressPointSuggestionProvider::normalizedQuery('315 E Madison St Tampa 33602-1234')
+        );
+    }
+
+    public function test_a_plain_zip5_is_untouched(): void
+    {
+        $this->assertSame(
+            '315 e madison st tampa 33602',
+            AddressPointSuggestionProvider::normalizedQuery('315 E Madison St Tampa 33602')
+        );
+    }
+
+    // ── D3. typeahead query floor ───────────────────────────────────────────
+
+    /** @dataProvider belowFloorQueries */
+    public function test_a_below_floor_query_returns_nothing_without_touching_the_corpus(string $query): void
+    {
+        // The floor exists to stop the request, not to discard its results.
+        // pg_trgm extracts no usable trigrams from a fragment under three
+        // characters, so `% n%` is a scan of the whole corpus — issued on the
+        // first keystroke of every session.
+        $queries = [];
+        DB::listen(function ($q) use (&$queries): void { $queries[] = $q->sql; });
+
+        $this->assertSame([], $this->provider->suggest($query));
+        $this->assertSame([], $queries, "A below-floor query must not reach the database: {$query}");
+    }
+
+    public static function belowFloorQueries(): array
+    {
+        return [
+            'one character'          => ['n'],
+            'two characters'         => ['12'],
+            'two short tokens'       => ['12 w'],
+            'folds below the floor'  => ['north'],
+            'several short tokens'   => ['n e w'],
+        ];
+    }
+
+    public function test_one_meaningful_token_is_enough_to_ask(): void
+    {
+        // Short tokens still narrow the result once a longer one has given the
+        // planner something indexable to start from.
+        $this->assertTrue(AddressPointSuggestionProvider::reachesQueryFloor(['315', 'e', 'mad']));
+        $this->assertNotEmpty($this->provider->suggest('315 e mad'));
+    }
+
+    public function test_the_floor_is_measured_after_folding(): void
+    {
+        // "north" is five characters and becomes "n". What the corpus is asked
+        // is what has to clear the floor.
+        $this->assertSame(['n'], AddressPointSuggestionProvider::queryTokens('north'));
+        $this->assertFalse(AddressPointSuggestionProvider::reachesQueryFloor(['n']));
     }
 
     public function test_tokens_may_be_typed_in_any_order(): void
