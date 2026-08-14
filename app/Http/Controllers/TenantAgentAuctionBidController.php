@@ -502,7 +502,13 @@ class TenantAgentAuctionBidController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
         
-        $latestTenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', $bid_id)
+        // Bid-scoped. This previously read
+        //   where('tenant_agent_auction_id', $bid_id)
+        // which compared a BID id against an AUCTION-id column. Those are two
+        // independent autoincrement sequences, so it matched a counter term
+        // belonging to an unrelated listing whenever the numbers happened to
+        // coincide — and the result was then used to seed parent_counter_id below.
+        $latestTenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_bid_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
@@ -557,9 +563,15 @@ class TenantAgentAuctionBidController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
         
-        // Get tenant's counter to agent (TenantCounterTerm)
+        // Get tenant's counter to agent (TenantCounterTerm), scoped to THIS BID.
+        //
+        // This previously filtered on the auction alone, with no bid filter. Every
+        // agent bidding on the listing therefore read the same row: a second agent
+        // opening their own counter screen — a legitimate request that the party
+        // check correctly admits — was served the terms the owner had written
+        // privately for a rival bidder.
         $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $bid->tenant_agent_auction_id)
+            ->where('tenant_agent_auction_bid_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         

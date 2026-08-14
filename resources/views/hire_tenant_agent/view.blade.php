@@ -1208,7 +1208,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $bidState = data_get($bid, 'accepted', 'active');
                             // Check for counter bids from both sources (agent counters and tenant counters)
                             $hasAgentCounterBids = \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->exists();
-                            $hasTenantCounterBids = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', data_get($bid, 'id'))->where('status', 1)->exists();
+                            // Bid-scoped, matching the TenantCounterBidding line above.
+                            // Was keyed on tenant_agent_auction_id (the AUCTION column),
+                            // so this badge fired from an unrelated listing's counter.
+                            $hasTenantCounterBids = \App\Models\TenantCounterTerm::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->where('status', 1)->exists();
                             $hasCounterBids = $hasAgentCounterBids || $hasTenantCounterBids;
                             $bidStatusLabel = match($bidState) {
                                 'accepted' => 'Accepted',
@@ -1359,10 +1362,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $listingOwnerUserId = $auction->user_id;
                             
                             // Get the latest counter from tenant (listing owner) — uses TenantCounterTerm directly.
-                            // TenantCounterTerm.tenant_agent_auction_id stores the BID ID (not the auction ID).
+                            // TenantCounterTerm.tenant_agent_auction_bid_id stores the BID ID.
+                            // TenantCounterTerm.tenant_agent_auction_id stores the AUCTION ID — the
+                            // comment previously here asserted the reverse, and this query matched it.
                             // TenantCounterTerm.user_id is the listing owner (tenant) who submitted the counter.
                             $latestTenantCounter = \App\Models\TenantCounterTerm::with('meta')
-                                ->where('tenant_agent_auction_id', $bid->id)
+                                ->where('tenant_agent_auction_bid_id', $bid->id)
                                 ->where('status', 1)
                                 ->latest('updated_at')
                                 ->first();
@@ -3286,9 +3291,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         ->where('tenant_agent_auction_bid_id', data_get($bid, 'id'))
                                         ->get();
                                     
-                                    // 2. TenantCounterTerm (tenant counter offers) - bid ID stored in tenant_agent_auction_id field
+                                    // 2. TenantCounterTerm (tenant counter offers) - bid ID stored in
+                                    //    tenant_agent_auction_bid_id. tenant_agent_auction_id is the
+                                    //    AUCTION reference; the earlier comment here had it backwards.
                                     $tenantCounterTerms = \App\Models\TenantCounterTerm::with('meta', 'user')
-                                        ->where('tenant_agent_auction_id', data_get($bid, 'id'))
+                                        ->where('tenant_agent_auction_bid_id', data_get($bid, 'id'))
                                         ->where('status', 1)
                                         ->get();
                                     

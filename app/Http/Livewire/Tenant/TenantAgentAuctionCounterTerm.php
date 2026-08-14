@@ -495,7 +495,11 @@ class TenantAgentAuctionCounterTerm extends Component
     {
         // Guard independently of the controller: a Livewire component can be
         // mounted from anywhere, so it cannot assume its caller checked.
-        $this->authorizeParty(is_object($pab) ? $pab->id : $bidId);
+        //
+        // The authorized bid is captured rather than discarded: the EDIT-mode
+        // lookup below must key off a bid re-read from the database, not off
+        // whatever $pab the caller handed in.
+        [$bid] = $this->authorizeParty(is_object($pab) ? $pab->id : $bidId);
 
         $this->pab   = $pab;
         $this->bidId = $bidId;
@@ -523,8 +527,19 @@ class TenantAgentAuctionCounterTerm extends Component
 
         // Check for existing active Tenant counter to determine if this is EDIT mode.
         // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
+        //
+        // Scoped to THIS BID, not to the auction. Keying on the auction meant one
+        // owner countering two agents on one listing shared a single row: opening
+        // Agent B's screen found the Agent A counter, entered EDIT mode, and the
+        // next submit overwrote the terms written for Agent A.
+        //
+        // Legacy rows (tenant_agent_auction_bid_id IS NULL, predating PR 2) are
+        // excluded automatically — SQL equality never matches NULL — which is the
+        // intended behaviour: an unscoped historical row must never be silently
+        // adopted as this bid's editable counter. Such a row stays visible in the
+        // archival view; it is simply not reusable here.
         $existingTenantCounter = TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $this->pab->tenant_agent_auction_id)
+            ->where('tenant_agent_auction_bid_id', $bid->id)
             ->where('user_id', Auth::id())
             ->where('status', 1)
             ->latest()
@@ -764,12 +779,24 @@ class TenantAgentAuctionCounterTerm extends Component
         // another user's counter terms, and because the update leaves user_id alone
         // the rewrite would still be attributed to the victim. Verify ownership AND
         // that the row belongs to this negotiation before any mutation.
+        //
+        // PR 2 adds the bid clause. The user and auction clauses are PR 1's and are
+        // retained exactly — this narrows the guard, it does not replace it. Until
+        // the bid column existed, "belongs to this negotiation" could only be
+        // approximated by the auction, which still admitted a sibling bid's row on
+        // the same listing.
+        //
+        // A legacy row (bid id NULL) fails this comparison and is refused, which is
+        // deliberate: an unscoped historical row must never be adopted as the
+        // editable counter for a specific bid.
         if ($this->counterTermId) {
             $existing = TenantCounterTerm::find($this->counterTermId);
             abort_unless(
                 $existing
                     && (int) $existing->user_id === (int) Auth::id()
-                    && (int) $existing->tenant_agent_auction_id === (int) $bid->tenant_agent_auction_id,
+                    && (int) $existing->tenant_agent_auction_id === (int) $bid->tenant_agent_auction_id
+                    && $existing->tenant_agent_auction_bid_id !== null
+                    && (int) $existing->tenant_agent_auction_bid_id === (int) $bid->id,
                 403,
                 'You are not authorized to modify these counter terms.'
             );
@@ -790,9 +817,11 @@ class TenantAgentAuctionCounterTerm extends Component
 
             // Integrity guard: log a warning if the canonical set is unexpectedly small
             // compared to what the bid offered so that silent drops can be investigated.
-            $bid = \App\Models\TenantAgentAuctionBid::find($this->bidId);
-            if ($bid) {
-                $bidRaw = $bid->get->services ?? [];
+            // Deliberately a separate variable: re-binding $bid here would shadow the
+            // authorized bid that the create below depends on for its bid id.
+            $bidForServices = \App\Models\TenantAgentAuctionBid::find($this->bidId);
+            if ($bidForServices) {
+                $bidRaw = $bidForServices->get->services ?? [];
                 if (is_string($bidRaw)) $bidRaw = json_decode($bidRaw, true) ?? [];
                 $bidBaseline = $this->filterServicesToCurrentCatalog(is_array($bidRaw) ? $bidRaw : []);
                 $baselineCount = count($bidBaseline);
@@ -820,9 +849,15 @@ class TenantAgentAuctionCounterTerm extends Component
                 ]);
             } else {
                 // CREATE new record
+                //
+                // The bid is taken from the authorized, database-re-read $bid rather
+                // than from $this->pab, which is a hydrated client-supplied property.
+                // Every new row is bid-scoped from here on; only rows predating PR 2
+                // may carry a NULL bid id.
                 $counterTerm = TenantCounterTerm::create([
                     'user_id' => Auth::id(),
-                    'tenant_agent_auction_id' => $this->pab->tenant_agent_auction_id,
+                    'tenant_agent_auction_id' => $bid->tenant_agent_auction_id,
+                    'tenant_agent_auction_bid_id' => $bid->id,
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id,
                     'status' => 1,
