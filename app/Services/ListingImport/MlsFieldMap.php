@@ -190,7 +190,21 @@ class MlsFieldMap
         return [
             // ── Core property fields ─────────────────────────────────────────
             'property_type'   => 'property_type',
+
+            // 'price' => 'desired_rental_amount' is correct for the RAW-TEXT importer
+            // this map also serves (a landlord pasting a lease listing wants the rent
+            // prefilled) and is asserted by MlsListingImportServiceTest. It is left
+            // exactly as it was.
+            //
+            // It is NOT sufficient on its own for the Bridge quick-import path, where
+            // the record may be a SALE listing whose ListPrice is a purchase price.
+            // That case is handled where the record's type is actually visible —
+            // LandlordMlsQuickImport::seededPrice() — which leaves the rent input
+            // empty unless the record is a lease. Because the rent question is
+            // required, publish is then unreachable until the landlord states a
+            // figure, and persistAnswers() writes THAT value over this one.
             'price'           => 'desired_rental_amount',
+
             'bedrooms'        => 'bedrooms',
             'bathrooms'       => 'bathrooms',
             'heated_sqft'     => 'minimum_heated_square',

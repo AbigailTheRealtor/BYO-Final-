@@ -32,24 +32,65 @@ class LandlordMlsQuickImport extends MlsQuickImportComponent
     /**
      * The asking rent.
      *
-     * `maximum_budget` is the existing meta key behind the landlord form's rent
-     * input, matching the Seller side's storage key. Not renamed here — a second
-     * spelling would be a second field to every downstream reader.
+     * `desired_rental_amount` — the SAME key the manual landlord wizard writes
+     * (LandlordOfferListing::saveMeta('desired_rental_amount', …)) and the only
+     * one the published landlord page reads, alongside starting_rent /
+     * reserve_rent / lease_now_price.
+     *
+     * THIS WAS `maximum_budget`, AND THAT WAS THE BUG.
+     * ------------------------------------------------
+     * The previous docblock asserted `maximum_budget` was "the existing meta key
+     * behind the landlord form's rent input". It is not. On the landlord side
+     * `maximum_budget` is a separate field, and the landlord view reads it ZERO
+     * times. So the rent a landlord typed was persisted somewhere nothing
+     * displays, while the hero fell through to `desired_rental_amount` — which
+     * the importer had filled with the MLS list price. A landlord entering
+     * $4,321/mo published a page advertising $100,000/mo, taken from the sale
+     * price of the property they imported.
+     *
+     * Copying the Seller side's key was the mistake: the two roles genuinely
+     * differ here, and "matching the Seller storage key" is not a reason when
+     * the landlord vocabulary already has its own.
      */
     public function priceField(): string
     {
-        return 'maximum_budget';
+        return 'desired_rental_amount';
+    }
+
+    /**
+     * A list price may pre-fill the rent box ONLY when the record is a lease.
+     *
+     * On a RESO lease record (`PropertyType` "Residential Lease", "Commercial
+     * Lease", …) ListPrice IS the periodic rent, so seeding it is a genuine
+     * convenience. On a sale record the same field is a purchase price, and
+     * putting it in a box labelled "Monthly Rent" invites exactly the outcome
+     * that made this fix necessary.
+     *
+     * Anything this method cannot positively identify as a lease returns null —
+     * the landlord types the rent. That is the fail-closed reading, and the cost
+     * of being wrong in this direction is one number typed, against advertising
+     * a property's sale price as its monthly rent.
+     */
+    protected function seededPrice(\App\Services\ListingImport\QuickImport\MlsQuickImportResult $result): ?string
+    {
+        $type = strtolower(trim((string) ($result->facts['property_type'] ?? '')));
+
+        if ($type === '' || ! str_contains($type, 'lease')) {
+            return null;
+        }
+
+        return parent::seededPrice($result);
     }
 
     public function questionSchema(): array
     {
         return [
-            'maximum_budget' => [
+            'desired_rental_amount' => [
                 'label'    => 'Monthly Rent',
                 'type'     => 'money',
                 'section'  => 'Rent',
                 'required' => true,
-                'help'     => 'Pre-filled from the MLS lease amount. Change it if you want to ask something different.',
+                'help'     => 'What you want to charge per month.',
             ],
             'lease_amount_frequency' => [
                 'label'   => 'Rent Frequency',

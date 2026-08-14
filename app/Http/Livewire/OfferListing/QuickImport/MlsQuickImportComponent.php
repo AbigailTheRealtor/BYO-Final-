@@ -120,6 +120,28 @@ abstract class MlsQuickImportComponent extends Component
     /** Price meta key for this role: what the user is asking for. */
     abstract public function priceField(): string;
 
+    /**
+     * The MLS-derived value that may pre-fill this role's price input, or null.
+     *
+     * Default: the record's list price. That is correct for a Seller — a sale
+     * record's ListPrice is the asking price, the same quantity the seller is
+     * about to state.
+     *
+     * It is NOT automatically correct for a Landlord, which is why this is a
+     * method rather than a fixed read of `facts['price']`. On a lease record
+     * ListPrice is the monthly rent; on a sale record it is the sale price, and
+     * pre-filling a rent box with a sale price is how a $100,000 condo came to be
+     * advertised at $100,000 per month. Returning null leaves the input empty,
+     * and because the rent question is required the flow then cannot reach
+     * publish until the landlord states a figure themselves.
+     */
+    protected function seededPrice(MlsQuickImportResult $result): ?string
+    {
+        $price = $result->facts['price'] ?? null;
+
+        return ($price === null || $price === '') ? null : (string) $price;
+    }
+
     // ─── Lifecycle ───────────────────────────────────────────────────────────
 
     public function mount(): void
@@ -205,11 +227,15 @@ abstract class MlsQuickImportComponent extends Component
         $this->headline   = $result->headline;
         $this->photoCount = $result->photoCount();
 
-        // Seed the price the user is asking from the MLS list price, as a
-        // starting point they can change — it is the one imported number that is
-        // a transaction term rather than a property fact.
-        if (! isset($this->terms[$this->priceField()]) || $this->terms[$this->priceField()] === '') {
-            $this->terms[$this->priceField()] = (string) ($result->facts['price'] ?? '');
+        // Seed the price the user is asking, as a starting point they can change.
+        // What may legitimately be seeded is role-specific — see seededPrice() —
+        // because the MLS list price means different things on a sale record and
+        // a lease record, and guessing wrong publishes a wrong number.
+        $seed = $this->seededPrice($result);
+
+        if ($seed !== null
+            && (! isset($this->terms[$this->priceField()]) || $this->terms[$this->priceField()] === '')) {
+            $this->terms[$this->priceField()] = $seed;
         }
 
         $this->step = self::STEP_METHOD;

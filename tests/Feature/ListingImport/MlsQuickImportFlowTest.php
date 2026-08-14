@@ -973,7 +973,9 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('acceptProperty')
             ->call('chooseMethod', 'Traditional')
             ->call('continueToTerms')
-            ->set('terms', ['maximum_budget' => '2400'])
+            // desired_rental_amount, not maximum_budget: the landlord rent key is the
+            // one the published page reads. See LandlordMlsQuickImport::priceField().
+            ->set('terms', ['desired_rental_amount' => '2400'])
             ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
             ->call('continueToReview')
             ->assertSet('step', 'review');
