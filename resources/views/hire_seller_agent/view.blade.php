@@ -521,40 +521,36 @@
             @if (! $hsaDetailRedesign || $hsaShows('listing-details'))
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-listing-details" title="Listing Details:" icon="fa-solid fa-file-lines" :legacy-header="false">
                         <div class="row" style="flex-wrap: wrap;">
-                            @if (@$auction->get->listing_title != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">Listing Title
-                                    <span class="removeBold">{{ @$auction->get->listing_title }}</span>
-                                </div>
-                            @endif
+                            {{-- S2 — the "Listing Title" row is gone, and it could never have
+                                 rendered. The questionnaire DOES ask for a listing title, but both
+                                 Seller components store the answer in the auction's native `title`
+                                 COLUMN — SellerAgentAuction and SellerAgentAuctionEdit each write
+                                 `$auction->title = $this->listing_title` — and never as
+                                 `listing_title` meta. `$auction->get` reads the meta table alone,
+                                 so this row read a key nothing writes: the `!= null` guard was
+                                 never satisfied and the row was dead in BOTH flag states.
+
+                                 Verified rather than inherited: no saveMeta('listing_title') call
+                                 anywhere in the app targets a SellerAgentAuction — the two that
+                                 exist write a TenantAgentAuction and an OfferAuction. Buyer,
+                                 landlord and tenant removed the identical row for the identical
+                                 reason during their own conversions. --}}
                             @if (@$auction->get->working_with_agent != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">Current Representation Status with Broker:
-                                    <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Current Representation Status with Broker" :value="@$auction->get->working_with_agent" />
                             @endif
 
 
                             @if (@$auction->get->desired_agent_hire_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">Desired Agent Hire Date:
-                                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Desired Agent Hire Date" :value="date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date))" />
                             @endif
                             @if (@$auction->get->listing_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">Listing Date:
-                                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->listing_date)) }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Listing Date" :value="date('F j, Y', strtotime(@$auction->get->listing_date))" />
                             @endif
                             @if (@$auction->get->expiration_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                   Expiration Date:
-                                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->expiration_date)) }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Expiration Date" :value="date('F j, Y', strtotime(@$auction->get->expiration_date))" />
                             @endif
                             @if (@$auction->get->auction_type != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                   Listing Type:
-                                    <span class="removeBold"> {{ @$auction->get->auction_type }}
-                                    </span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Listing Type" :value="@$auction->get->auction_type" />
                             @endif
 
 
@@ -562,11 +558,7 @@
                                  here. It is a bidding-period label describing a timer that no
                                  longer exists or governs anything. --}}
                             @if (@$auction->get->meeting_Preference != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                 Meeting Preference:
-                                    <span class="removeBold"> {{ @$auction->get->meeting_Preference }}
-                                    </span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Meeting Preference" :value="@$auction->get->meeting_Preference" />
                             @endif
 
 
@@ -615,47 +607,42 @@
                                 };
                             @endphp
 
+                            {{-- S2 — THESE PASS :value AND NOT :list-value, WHICH IS NOT AN
+                                 OVERSIGHT. Seller joins its city and county lists with "; " where
+                                 the component's listValue joins with ", ". Handing it the array
+                                 would silently re-punctuate a row that flag-off renders with
+                                 semicolons, so the join stays at the call site and the component
+                                 receives the finished string. Buyer's location rows read ", "
+                                 because buyer's own markup always did. --}}
                             @if (!empty($citiesArray))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">City:
-                                    <span class="removeBold">
-                                        {{ implode('; ', array_map($stripState, $citiesArray)) }}
-                                    </span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="City" :value="implode('; ', array_map($stripState, $citiesArray))" />
                             @elseif (!empty($propertyCityVal))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">City:
-                                    <span class="removeBold">{{ $stripState($propertyCityVal) }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="City" :value="$stripState($propertyCityVal)" />
                             @endif
 
                             @if (!empty($countiesArray))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">County:
-                                    <span class="removeBold">
-                                        {{ implode('; ', array_map($stripState, $countiesArray)) }}
-                                    </span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="County" :value="implode('; ', array_map($stripState, $countiesArray))" />
                             @elseif (!empty($propertyCountyVal))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">County:
-                                    <span class="removeBold">{{ $stripState($propertyCountyVal) }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="County" :value="$stripState($propertyCountyVal)" />
                             @endif
 
                             @if (!empty($stateVal))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">State:
-                                    <span class="removeBold">{{ $stateVal }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="State" :value="$stateVal" />
                             @endif
 
                             @if (!empty($zipVal))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">ZIP Code:
-                                    <span class="removeBold">{{ $zipVal }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="ZIP Code" :value="$zipVal" />
                             @endif
                             @php
                                 $propType = @$auction->get->property_type ?? '';
                             @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Property Type:<span class="removeBold"> {{ \App\Helpers\ListingDisplayHelper::normalizePropertyType($propType) }}</span>
-                            </div>
+                            {{-- S2 — THIS ROW WAS UNGUARDED AND IS NOW EMPTINESS-GUARDED BY THE
+                                 COMPONENT. normalizePropertyType() returns '' for a listing with no
+                                 property_type, so the hand-written row emitted a "Property Type:"
+                                 label above an empty span; the component declines to render a row
+                                 with no value, in both flag states. Landlord converted the same
+                                 unguarded row the same way at its own milestone. --}}
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Property Type" :value="\App\Helpers\ListingDisplayHelper::normalizePropertyType($propType)" />
                             @php
                                 $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(
                                     @$auction->get->property_items,
@@ -663,25 +650,38 @@
                                 );
                             @endphp
                             @if (!empty($propertyStyleItems))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Property Style:
-                                    <span class="removeBold">{{ implode(', ', $propertyStyleItems) }}</span>
-                                </div>
+                                {{-- :value, not :list-value — this row is plain ", "-joined text in
+                                     BOTH branches, and listValue is read only by the redesign one,
+                                     so passing it alone would leave the legacy branch with nothing
+                                     to render and hide the row. --}}
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Property Style" :value="implode(', ', $propertyStyleItems)" />
                             @endif
 
                             @php
                                 $businessTypeValue = @$auction->get->business_type_selected ?: @$auction->get->business_type;
                                 $otherBusinessType = @$auction->get->other_business_type;
+
+                                /*
+                                 | S2 — the "Other" resolution moves out of the markup and into one
+                                 | expression, because the row now has two renderings and the choice
+                                 | of WHICH value to show is common to both. The two-branch
+                                 | @if/@elseif it replaces produced exactly these values.
+                                 */
+                                $businessTypeDisplay = ($businessTypeValue != 'Other')
+                                    ? $businessTypeValue
+                                    : ($otherBusinessType ?: '');
                             @endphp
                             @if (!empty($businessTypeValue))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Business Type:
-                                    @if ($businessTypeValue != 'Other')
-                                        <span class="removeBold badge bg-secondary">{{ $businessTypeValue }}</span>
-                                    @elseif (!empty($otherBusinessType))
-                                        <span class="removeBold badge bg-secondary">{{ $otherBusinessType }}</span>
+                                {{-- A pill in legacy, plain text in the redesign — buyer's rule that
+                                     a pill means STATE and text means DATA, and a business type is
+                                     data. The pill markup is untouched and still emitted by this
+                                     call site; only the redesign branch reads $businessTypeDisplay
+                                     as text. --}}
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Business Type" :bare-slot="true" :list-value="$businessTypeDisplay">
+                                    @if ($businessTypeDisplay !== '')
+                                        <span class="removeBold badge bg-secondary">{{ $businessTypeDisplay }}</span>
                                     @endif
-                                </div>
+                                </x-hire-agent.field>
                             @endif
 
                             @php
@@ -717,103 +717,81 @@
                                 }
                             @endphp
                             @if (!empty($conditionItems) && $propType !== 'Vacant Land')
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Property Condition:
-                                <span class="removeBold">{{ implode(', ', $conditionItems) }}</span>
-                            </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Property Condition" :value="implode(', ', $conditionItems)" />
                             @endif
 
+                            {{-- Bedrooms and Bathrooms both resolve an "Other" answer to its custom
+                                 value. The two-branch @if that did it inline becomes one ternary per
+                                 row: same two outcomes, and the property-type guards around them are
+                                 untouched — Bedrooms is Residential only, Bathrooms adds Commercial
+                                 and Business. --}}
                             @if (in_array($propType, ['Residential']))
                             @if (@$auction->get->bedrooms != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Bedrooms:
-                                    <span class="removeBold">
-                                        @if (@$auction->get->bedrooms != 'Other')
-                                            {{ $auction->get->bedrooms }}
-                                        @elseif(@$auction->get->bedrooms == 'Other')
-                                            {{ @$auction->get->other_bedrooms }}
-                                        @endif
-                                    </span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Bedrooms"
+                                    :value="@$auction->get->bedrooms != 'Other' ? @$auction->get->bedrooms : @$auction->get->other_bedrooms" />
                             @endif
                             @endif
 
                             @if (in_array($propType, ['Residential', 'Commercial', 'Business']))
                             @if (@$auction->get->bathrooms != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Bathrooms:
-                                    <span class="removeBold">
-                                        @if (@$auction->get->bathrooms != 'Other')
-                                            {{ $auction->get->bathrooms }}
-                                        @elseif(@$auction->get->bathrooms == 'Other')
-                                            {{ @$auction->get->other_bathrooms }}
-                                        @endif
-                                    </span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Bathrooms"
+                                    :value="@$auction->get->bathrooms != 'Other' ? @$auction->get->bathrooms : @$auction->get->other_bathrooms" />
                             @endif
                             @endif
 
+                            @php
+                                /*
+                                 | S2 — the square-footage formatter, written once.
+                                 |
+                                 | The three property-type branches below each repeated this
+                                 | expression twice: strip thousands separators, and either
+                                 | re-format the number or hand back the original string when it is
+                                 | not numeric. Six copies became one closure; the RULE is unchanged
+                                 | and each call still receives exactly the value its branch passed.
+                                 |
+                                 | DEFINED OUT HERE, not inside the first branch that uses it — the
+                                 | three trios are separate @if blocks, so a closure declared inside
+                                 | the Residential one would be undefined for a Commercial or Income
+                                 | listing, which is every listing the first branch does not match.
+                                 */
+                                $hsaSqft = function ($v) {
+                                    $clean = str_replace(',', '', (string) $v);
+                                    return is_numeric($clean) ? number_format((float) $clean, 0) : $v;
+                                };
+                            @endphp
                             @if ($propType === 'Residential')
+                                {{-- ── THE THREE SQFT TRIOS ARE NOT DUPLICATES. DO NOT MERGE THEM.
+                                     Residential, Commercial|Business and Income each render the same
+                                     three meta keys, and the branches are mutually exclusive, so
+                                     they look like copy-paste. Their LABELS DIFFER, and the
+                                     differences are load-bearing because flag-off text is asserted:
+                                     Residential says "Sqft Heated Source" where the other two say
+                                     "SqFt Heated Source", and Income says "Heated SqFt" where the
+                                     other two say "Heated Sqft". Collapsing them into one block
+                                     would silently re-caption whichever branches lost. ── --}}
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Heated Sqft:
-                                        <span class="removeBold">
-                                            @php
-                                                $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
-                                                echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Heated Sqft" :value="$hsaSqft(@$auction->get->minimum_heated_square)" />
                                 @endif
                                 @php $totalSqFt = @$auction->get->total_square_feet; @endphp
                                 @if (!empty($totalSqFt) && $totalSqFt != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Sqft:
-                                        <span class="removeBold">
-                                            @php
-                                                $totalSqFtClean = str_replace(',', '', $totalSqFt);
-                                                echo is_numeric($totalSqFtClean) ? number_format((float)$totalSqFtClean, 0) : $totalSqFt;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Sqft" :value="$hsaSqft($totalSqFt)" />
                                 @endif
                                 @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Sqft Heated Source:
-                                        <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Sqft Heated Source" :value="@$auction->get->sqft_heated_source" />
                                 @endif
                             @endif
 
                             @if (in_array($propType, ['Commercial', 'Business']))
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Heated Sqft:
-                                        <span class="removeBold">
-                                            @php
-                                                $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
-                                                echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Heated Sqft" :value="$hsaSqft(@$auction->get->minimum_heated_square)" />
                                 @endif
                                 @php $totalSqFtCom = @$auction->get->total_square_feet; @endphp
                                 @if (!empty($totalSqFtCom) && $totalSqFtCom != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Sqft:
-                                        <span class="removeBold">
-                                            @php
-                                                $totalSqFtComClean = str_replace(',', '', $totalSqFtCom);
-                                                echo is_numeric($totalSqFtComClean) ? number_format((float)$totalSqFtComClean, 0) : $totalSqFtCom;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Sqft" :value="$hsaSqft($totalSqFtCom)" />
                                 @endif
                                 @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        SqFt Heated Source:
-                                        <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
-                                    </div>
+                                    {{-- "SqFt", not "Sqft" — see the note above. --}}
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="SqFt Heated Source" :value="@$auction->get->sqft_heated_source" />
                                 @endif
                             @endif
 
@@ -828,10 +806,13 @@
                                             $carportDisplay = $carportVal;
                                         }
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Carport:
-                                        <span class="removeBold">{{ $carportDisplay }}</span>
-                                    </div>
+                                    {{-- The FIRST of two Carport rows on this page, and the two are
+                                         not duplicates: this one reads `carportOptions` /
+                                         `custom_carport`, the one further down reads
+                                         `carport_needed` / `other_carport_needed` through
+                                         formatYesCount(). Both are Residential-gated and both can
+                                         render on the same listing. Same for Garage. --}}
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Carport" :value="$carportDisplay" />
                                 @endif
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garageOptions))
                                     @php
@@ -843,50 +824,27 @@
                                             $garageDisplay = $garageVal;
                                         }
                                     @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Garage:
-                                        <span class="removeBold">{{ $garageDisplay }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Garage" :value="$garageDisplay" />
                                 @endif
                             @endif
 
                             @if ($propType === 'Income')
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Heated SqFt:
-                                        <span class="removeBold">
-                                            @php
-                                                $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
-                                                echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    {{-- "Heated SqFt", not "Heated Sqft" — the Income branch
+                                         capitalises this one differently from the two above it. --}}
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Heated SqFt" :value="$hsaSqft(@$auction->get->minimum_heated_square)" />
                                 @endif
                                 @php $totalSqFtInc = @$auction->get->total_square_feet; @endphp
                                 @if (!empty($totalSqFtInc) && $totalSqFtInc != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Sqft:
-                                        <span class="removeBold">
-                                            @php
-                                                $totalSqFtIncClean = str_replace(',', '', $totalSqFtInc);
-                                                echo is_numeric($totalSqFtIncClean) ? number_format((float)$totalSqFtIncClean, 0) : $totalSqFtInc;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Sqft" :value="$hsaSqft($totalSqFtInc)" />
                                 @endif
                                 @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        SqFt Heated Source:
-                                        <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="SqFt Heated Source" :value="@$auction->get->sqft_heated_source" />
                                 @endif
                             @endif
 
                             @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != '' && @$auction->get->total_acreage != 'null')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Total Acreage:
-                                    <span class="removeBold">{{ @$auction->get->total_acreage }}</span>
-                                </div>
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Acreage" :value="@$auction->get->total_acreage" />
                             @endif
 
                             @php
@@ -915,8 +873,14 @@
                                 }
                             @endphp
                             @if (!empty($applianceItems) && in_array($propType, ['Residential', 'Income', 'Commercial', 'Business']))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Appliances Included:
+                                {{-- PILLS IN LEGACY, ", "-JOINED TEXT IN THE REDESIGN — buyer's rule
+                                     that a pill means STATE and plain text means DATA, and an
+                                     appliance list is data. The caller passes BOTH: the slot, which
+                                     only the legacy branch reads and which keeps its
+                                     one-item-plain / many-items-pills shape verbatim, and
+                                     $applianceItems as listValue, which only the redesign branch
+                                     reads. Neither branch has to know what the other does. --}}
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Appliances Included" :bare-slot="true" :list-value="$applianceItems">
                                     @if (count($applianceItems) === 1)
                                         <span class="removeBold">{{ $applianceItems[0] }}</span>
                                     @else
@@ -924,24 +888,16 @@
                                             <span class="removeBold badge bg-secondary">{{ $appItem }}</span>
                                         @endforeach
                                     @endif
-                                </div>
+                                </x-hire-agent.field>
                             @endif
 
                             @if ($propType === 'Income' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
-                                @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
+                                @include('hire_seller_agent.partials.pool-display', ['auction' => $auction, 'redesign' => $hsaDetailRedesign])
                             @endif
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
                                 @if (@$auction->get->minimum_net_leasable_square != null && @$auction->get->minimum_net_leasable_square != 'null' && @$auction->get->minimum_net_leasable_square != '')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Net Leasable Square Footage:
-                                        <span class="removeBold">
-                                            @php
-                                                $netSqftVal = str_replace(',', '', @$auction->get->minimum_net_leasable_square);
-                                                echo is_numeric($netSqftVal) ? number_format((float)$netSqftVal, 0) : @$auction->get->minimum_net_leasable_square;
-                                            @endphp
-                                        </span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Net Leasable Square Footage" :value="$hsaSqft(@$auction->get->minimum_net_leasable_square)" />
                                 @endif
                             @endif
 
@@ -950,53 +906,44 @@
                                     $parkingItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper);
                                 @endphp
                                 @if (!empty($parkingItems))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Garage/Parking Features:
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Garage/Parking Features" :bare-slot="true" :list-value="$parkingItems">
                                         @foreach ($parkingItems as $feature)
                                             <span class="removeBold badge bg-secondary">{{ $feature }}</span>
                                         @endforeach
-                                    </div>
+                                    </x-hire-agent.field>
                                 @endif
                             @endif
 
                             @if (in_array($propType, ['Residential']))
+                                {{-- The SECOND Carport/Garage pair. Different meta keys from the one
+                                     above and formatted by formatYesCount() rather than inline; both
+                                     pairs are Residential-gated and both can render together. --}}
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Carport:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Carport" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces')" />
                                 @endif
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Garage:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Garage" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces')" />
                                 @endif
                             @endif
 
                             @if ($propType === 'Residential' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
-                                @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
+                                @include('hire_seller_agent.partials.pool-display', ['auction' => $auction, 'redesign' => $hsaDetailRedesign])
                             @endif
 
                             @php
                                 $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
                             @endphp
                             @if (!empty($viewPrefItems))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    View:
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="View" :bare-slot="true" :list-value="$viewPrefItems">
                                     @foreach ($viewPrefItems as $item)
                                         <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                     @endforeach
-                                </div>
+                                </x-hire-agent.field>
                             @endif
 
                             @if (in_array($propType, ['Residential']))
                                 @if (@$auction->get->leasing_55_plus != null && @$auction->get->leasing_55_plus != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Age-Restricted Community:
-                                    <span class="removeBold">
-                                        {{ @$auction->get->leasing_55_plus }}</span>
-                                </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Age-Restricted Community" :value="@$auction->get->leasing_55_plus" />
                                 @endif
                             @endif
 
@@ -1005,46 +952,36 @@
                                     $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
                                 @endphp
                                 @if (!empty($amenityItems))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Amenities and Property Features:
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Amenities and Property Features" :bare-slot="true" :list-value="$amenityItems">
                                         @foreach ($amenityItems as $item)
                                             <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                         @endforeach
-                                    </div>
+                                    </x-hire-agent.field>
                                 @endif
                             @endif
 
                             @if (in_array($propType, ['Residential', 'Income']))
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pets))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Pets Allowed:
-                                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
-                                </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Pets Allowed" :value="\App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets)" />
                                 @endif
 
+                                {{-- isParentYes(), not hasValue() — the three rows below describe
+                                     WHICH pets are allowed and must stay behind a "Pets Allowed =
+                                     Yes" answer rather than merely a present one. --}}
                                 @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Acceptable Pet Types:
-                                        <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
-                                    </div>
+                                        <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Acceptable Pet Types" :value="@$auction->get->type_of_pets" />
                                     @endif
 
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maximum Weight Per Pet (lbs):
-                                        <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
-                                    </div>
+                                        <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Maximum Weight Per Pet (lbs)" :value="@$auction->get->weight_of_pets . ' lbs'" />
                                     @endif
 
                                     @php
                                         $petRestrictVal = @$auction->get->breed_of_pets ?: @$auction->get->breed_restrictions ?: @$auction->get->has_breed_restrictions;
                                     @endphp
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue($petRestrictVal))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Restrictions:
-                                        <span class="removeBold">{{ $petRestrictVal }}</span>
-                                    </div>
+                                        <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Pet Restrictions" :value="$petRestrictVal" />
                                     @endif
                                 @endif
                             @endif
@@ -1087,12 +1024,11 @@
                                 <x-viho.section-header title="Business/Property Assets" tag="h4" />
                                 <div class="row" style="flex-wrap: wrap;">
                                 @endif
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Included Property or Business Assets:
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Included Property or Business Assets" :bare-slot="true" :list-value="$assetItems">
                                         @foreach ($assetItems as $asset)
                                             <span class="removeBold badge bg-secondary">{{ $asset }}</span>
                                         @endforeach
-                                    </div>
+                                    </x-hire-agent.field>
                                 @endif
                             @endif
                             @if ($propType === 'Business')
@@ -1100,10 +1036,9 @@
                                     $realEstatePurchase = @$auction->get->real_estate_purchase;
                                 @endphp
                                 @if (!empty($realEstatePurchase) && $realEstatePurchase != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Business & Real Estate Purchase Requirements:
-                                        <span class="removeBold">{{ $realEstatePurchase }}</span>
-                                    </div>
+                                    {{-- Literal & in the label: Blade escapes it back to &amp; on
+                                         output, so the rendered text is unchanged. --}}
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Business & Real Estate Purchase Requirements" :value="$realEstatePurchase" />
                                 @endif
                             @endif
 
@@ -1124,17 +1059,11 @@
                                 <div class="row" style="flex-wrap: wrap;">
                                 @endif
                                     @if ($hasNOI)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Annual Net Income:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->minimum_annual_net_income) }}</span>
-                                    </div>
+                                        <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Annual Net Income" :value="\App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->minimum_annual_net_income)" />
                                     @endif
 
                                     @if ($hasCapRate)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Cap Rate:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtPercent(@$auction->get->minimum_cap_rate) }}</span>
-                                    </div>
+                                        <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Cap Rate" :value="\App\Helpers\ListingDisplayHelper::fmtPercent(@$auction->get->minimum_cap_rate)" />
                                     @endif
                                 @endif
                             @endif
@@ -1144,20 +1073,14 @@
                                     $unitNumber = @$auction->get->unit_number;
                                 @endphp
                                 @if (!empty($unitNumber) && $unitNumber != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Number of Units:
-                                        <span class="removeBold">{{ $unitNumber }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Number of Units" :value="$unitNumber" />
                                 @endif
 
                                 @php
                                     $unitBuildings = @$auction->get->unit_buildings;
                                 @endphp
                                 @if (!empty($unitBuildings) && $unitBuildings != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Number of Buildings:
-                                        <span class="removeBold">{{ $unitBuildings }}</span>
-                                    </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Number of Buildings" :value="$unitBuildings" />
                                 @endif
 
                                 @php
@@ -1249,7 +1172,7 @@
                             }
                         @endphp
                         @if (!empty($saleProvisionItems))
-                            <div class="col-md-12 col-12 pt-2 fw-bold">Special Sale Provision:
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Special Sale Provision" :bare-slot="true" :list-value="$saleProvisionItems">
                                 @if (count($saleProvisionItems) === 1)
                                     <span class="removeBold">{{ $saleProvisionItems[0] }}</span>
                                 @else
@@ -1257,67 +1180,68 @@
                                         <span class="removeBold badge bg-secondary">{{ $spItem }}</span>
                                     @endforeach
                                 @endif
-                            </div>
+                            </x-hire-agent.field>
                         @endif
 
+                        {{-- ── THE INVERTED ROWS ──────────────────────────────────────────────
+                             Seven of Seller's eight `legacyInverted` rows are in this section; the
+                             eighth is "Seller's Current Status" in Seller Info. They are written
+                             with the row div carrying `removeBold` and the LABEL in a `fw-bold`
+                             span, which is the opposite of every other row on the page and which
+                             the shared component could not emit until S2 added the branch. Flag-off
+                             markup is reproduced exactly; with the redesign on they converge with
+                             every other row, because both shapes reach the same kv cell. --}}
                         @if (@$auction->get->sale_provision_assignment != null && @$auction->get->sale_provision_assignment != '')
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Assignment Contract:</span>
-                                {{ @$auction->get->sale_provision_assignment }}
-                            </div>
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" label="Assignment Contract" :value="@$auction->get->sale_provision_assignment" />
                             @if (strtolower(@$auction->get->sale_provision_assignment) === 'yes')
                                 @if (@$auction->get->buyer_sell_contract != null && @$auction->get->buyer_sell_contract != '')
-                                <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Seller Under Contract for Assignment:</span>
-                                    {{ @$auction->get->buyer_sell_contract }}
-                                </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" span="full" label="Seller Under Contract for Assignment" :value="@$auction->get->buyer_sell_contract" />
                                 @endif
                                 @if (@$auction->get->assignment_fee_amount != null && @$auction->get->assignment_fee_amount != '')
-                                <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Assignment Contract Fee to Broker:</span>
                                     @php
                                         $assignFeeType = @$auction->get->assignment_fee_type ?? '$';
                                         $assignFeeAmt = @$auction->get->assignment_fee_amount;
+                                        /*
+                                         | The %-vs-$ choice, unchanged. `assignment_fee_type` holds
+                                         | either a literal '%' or the word 'percent'; anything else
+                                         | (including the '$' default) formats as money.
+                                         */
+                                        $assignFeeDisplay = ($assignFeeType === '%' || $assignFeeType === 'percent')
+                                            ? $assignFeeAmt . '%'
+                                            : $fmtMoney($assignFeeAmt);
                                     @endphp
-                                    @if ($assignFeeType === '%' || $assignFeeType === 'percent')
-                                        {{ $assignFeeAmt }}%
-                                    @else
-                                        {{ $fmtMoney($assignFeeAmt) }}
-                                    @endif
-                                </div>
+                                    <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" span="full" label="Assignment Contract Fee to Broker" :value="$assignFeeDisplay" />
                                 @endif
                             @endif
                         @endif
 
                         @if (@$auction->get->target_closing_date != null)
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Target Closing Date:</span>
-                                {{ @$auction->get->target_closing_date }}
-                            </div>
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" label="Target Closing Date" :value="@$auction->get->target_closing_date" />
                         @endif
                         @if (@$auction->get->occupant_status != null)
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Occupant Type:</span>
-                                {{ @$auction->get->occupant_status }}
-                            </div>
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" label="Occupant Type" :value="@$auction->get->occupant_status" />
                         @endif
                         @if (@$auction->get->occupant_tenant != '' && @$auction->get->occupant_tenant != 'null')
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Occupied Until:</span>
-                                @php
-                                    $occupiedDate = \Carbon\Carbon::parse($auction->get->occupant_tenant);
-                                    echo $occupiedDate->format('F j, Y');
-                                @endphp
-                            </div>
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" label="Occupied Until" :value="\Carbon\Carbon::parse($auction->get->occupant_tenant)->format('F j, Y')" />
                         @endif
                         @if (@$auction->get->maximum_budget != null)
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Desired Sale Price:</span>
-                                @php
-                                    $salePriceRaw = str_replace(',', '', @$auction->get->maximum_budget);
-                                    echo is_numeric($salePriceRaw) ? '$' . number_format((float)$salePriceRaw, 0) : '$' . @$auction->get->maximum_budget;
-                                @endphp
-                            </div>
+                            @php
+                                /*
+                                 | S2 — the sale price, formatted exactly as before: strip thousands
+                                 | separators, then either re-format as currency or prefix the raw
+                                 | answer with a dollar sign when it is not numeric. The fallback
+                                 | branch keeps its '$' prefix, which is what the page has always
+                                 | shown for a non-numeric price.
+                                 |
+                                 | $fmtMoney is NOT used here — it returns null for a non-numeric
+                                 | value, which would hide the row instead of showing the answer.
+                                 */
+                                $salePriceRaw = str_replace(',', '', @$auction->get->maximum_budget);
+                                $salePriceDisplay = is_numeric($salePriceRaw)
+                                    ? '$' . number_format((float) $salePriceRaw, 0)
+                                    : '$' . @$auction->get->maximum_budget;
+                            @endphp
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" label="Desired Sale Price" :value="$salePriceDisplay" />
                         @endif
 
                         @php
@@ -1357,8 +1281,7 @@
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-financing" title="Financing Details" icon="fa-solid fa-money-check-dollar">
                             <div class="row">
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Offered Financing/Currency:
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Offered Financing/Currency" :bare-slot="true" :list-value="$financingPills">
                                 @if (count($financingPills) === 1)
                                     <span class="removeBold">{{ $financingPills[0] }}</span>
                                 @else
@@ -1366,7 +1289,7 @@
                                         <span class="removeBold badge bg-secondary">{{ $fp }}</span>
                                     @endforeach
                                 @endif
-                            </div>
+                            </x-hire-agent.field>
 
                             @php
                                 $financingConfig = config('seller-financing-config.sections');
@@ -1423,8 +1346,31 @@
                                                 }
                                             @endphp
                                             @if ($showField)
-                                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                                    {{ $field['label'] }}:
+                                                {{-- S2 — THE CONFIG-DRIVEN FINANCING ROW, CONVERTED
+                                                     ONCE RATHER THAN TEN TIMES.
+
+                                                     This one call site renders every field in
+                                                     config/seller-financing-config.php, and the
+                                                     @switch below turns its `format` key into
+                                                     markup — ten formats, several of which emit
+                                                     more than one element (a badge plus a
+                                                     parenthetical, a pill run) or choose between
+                                                     money and percent from a second meta key.
+
+                                                     It uses bareSlot for exactly that reason: the
+                                                     slot is emitted unwrapped, so the switch keeps
+                                                     producing the elements it always has and the
+                                                     legacy row is reproduced verbatim. Passing
+                                                     :value instead would mean re-deriving all ten
+                                                     formats as plain strings — a second
+                                                     implementation of a rule that already has one,
+                                                     and the config would then be read twice.
+
+                                                     The label comes from the config and carries no
+                                                     colon there, which is what this component
+                                                     wants; the legacy branch adds it exactly where
+                                                     the hand-written row had it. --}}
+                                                <x-hire-agent.field :redesign="$hsaDetailRedesign" :label="$field['label']" :bare-slot="true">
                                                     @switch($field['format'])
                                                         @case('text')
                                                             <span class="removeBold">{{ str_replace('"', '', $fieldVal) }}</span>
@@ -1566,7 +1512,7 @@
                                                         @default
                                                             <span class="removeBold">{{ str_replace('"', '', $fieldVal) }}</span>
                                                     @endswitch
-                                                </div>
+                                                </x-hire-agent.field>
                                             @endif
                                         @endforeach
                                     @endif
@@ -1584,10 +1530,10 @@
             @if ($hsaDetailRedesign ? $hsaShows('additional-details') : \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-additional-details" title="Additional Details:" icon="fa-solid fa-circle-info">
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Details: <span
-                                    class="removeBold">{{ $auction->get->additional_details }}</span>
-                            </div>
+                            {{-- The label repeats the section heading, and both are kept: with the
+                                 flag off the heading and the row have always both read "Additional
+                                 Details:", and flag-off text is asserted. --}}
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" label="Additional Details" :value="$auction->get->additional_details" />
             </x-hire-agent.detail-section>
             @endif
 
@@ -1615,11 +1561,11 @@
             @if ($hsaDetailRedesign ? $hsaShows('representation') : !empty($repRows))
             @if (! $hsaDetailRedesign)<hr />@endif
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
+                        {{-- One call site for up to twenty-one rows. The labels and the "Other"
+                             resolution live in $repAdd in the prologue and are unchanged; this loop
+                             only renders what that builder produced. --}}
                         @foreach ($repRows as $repRow)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            {{ $repRow['label'] }}:
-                            <span class="removeBold">{{ $repRow['value'] }}</span>
-                        </div>
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" :label="$repRow['label']" :value="$repRow['value']" />
                         @endforeach
             </x-hire-agent.detail-section>
             @endif
@@ -1637,10 +1583,7 @@
             @if ($hsaDetailRedesign ? $hsaShows('referral') : $referralPctDisplay !== '')
             @if (! $hsaDetailRedesign)<hr />@endif
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-referral" title="Referral & Cooperation Terms" icon="fa-solid fa-share-nodes">
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Referral Fee:
-                            <span class="removeBold">{{ $referralPctDisplay }}</span>
-                        </div>
+                        <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Referral Fee" :value="$referralPctDisplay" />
             </x-hire-agent.detail-section>
             @endif
 
@@ -1659,21 +1602,32 @@
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" :title="$_ownerInfoHeading" id="hla-section-role-info" icon="fa-solid fa-id-card">
 
                         @if (!empty($auction->get->first_name))
-                            <div class="col-md-12 col-12 pt-2 fw-bold">First
-                                Name:
-                                <span class="removeBold">
-                                    {{ $auction->get->first_name }}
-                                </span>
-                            </div>
+                            {{-- The label was split across two source lines as "First\nName:", which
+                                 normalises to "First Name:" — that is the text this row has always
+                                 rendered and the label the component is given. --}}
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" label="First Name" :value="$auction->get->first_name" />
                         @endif
 
+                        {{-- The eighth and last inverted row; the other seven are in Sale Terms. --}}
                         @if (@$auction->get->current_status != null && @$auction->get->current_status != '' && @$auction->get->current_status != 'null')
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Seller's Current Status:</span>
-                                {{ @$auction->get->current_status }}
-                            </div>
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :legacy-inverted="true" span="full" label="Seller's Current Status" :value="@$auction->get->current_status" />
                         @endif
 
+                        {{-- ── THE MEDIA BLOCK IS DELIBERATELY NOT CONVERTED ──────────────────
+                             Video, Photo and Personal Video keep their hand-written rows, matching
+                             buyer, landlord and tenant — none of the three converted these, and
+                             this is the one place where following them means leaving markup alone
+                             rather than replacing it.
+
+                             Two reasons, both structural rather than stylistic. They carry
+                             `col-md-6 col-6 pt-2 fw-bold`, a half-width class list no other row on
+                             the page uses, so each would have to pass `width` verbatim to preserve
+                             it. And their "value" is an embedded <video>, <img> or <iframe> sized
+                             at 29vh — putting one inside a 5/7 label/value split gives it 58% of a
+                             half-width cell, which is smaller than the media needs and is not what
+                             the reference page does with media either.
+
+                             They stay inside their own div.row, which is also unconverted. --}}
                         <div class="row">
                             {{-- @if (isset($auction->get->video))
                                 <div class="col-md-6 col-6 pt-2 fw-bold">Video:
