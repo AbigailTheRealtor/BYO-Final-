@@ -4,6 +4,7 @@ namespace App\Http\Livewire\OfferListing\Seller;
 
 use Livewire\Component;
 use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
+use App\Http\Livewire\OfferListing\Concerns\RecordsSelectedPropertyAddress;
 use Livewire\WithFileUploads;
 use App\Models\OfferAuction;
 use App\Models\SellerAgentAuction as SellerAgentAuctionModel;
@@ -26,6 +27,7 @@ use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
 class SellerOfferListing extends Component
 {
     use ResolvesPropertyCoordinates;
+    use RecordsSelectedPropertyAddress; // the address pick is not a coordinate
 
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
@@ -2497,6 +2499,26 @@ class SellerOfferListing extends Component
                 $auction->save();
                 $this->listingId = $auction->id;
                 $this->saveAllMetadata($auction);
+
+                if ($this->address) {
+                    try {
+                        // The draft's address is saved; resolve the coordinate the
+                        // ladder derives from it. No dispatch here — an unpublished
+                        // draft has no Location DNA consumer, and drafts are saved
+                        // repeatedly. This is the boundary the removed raw write used
+                        // to cover, including for an MLS import that arrived with the
+                        // feed's own coordinate: the Bridge rung re-derives that from
+                        // the stored ListingKey, with provenance the copy never had.
+                        $this->resolvePropertyCoordinates($auction, 'seller_agent');
+                    } catch (\Throwable $coordEx) {
+                        \Log::warning('[SELLER DRAFT] Coordinate resolution failed', [
+                            'listing_id' => $this->listingId,
+                            'reason'     => $coordEx->getMessage(),
+                            'exception'  => get_class($coordEx),
+                        ]);
+                    }
+                }
+
                 app(WizardEventService::class)->record(
                     (string) $this->user_type,
                     $this->listingId ? (int) $this->listingId : null,
@@ -2542,6 +2564,25 @@ class SellerOfferListing extends Component
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            if ($this->address) {
+                try {
+                    // The draft's address is saved; resolve the coordinate the
+                    // ladder derives from it. No dispatch here — an unpublished
+                    // draft has no Location DNA consumer, and drafts are saved
+                    // repeatedly. This is the boundary the removed raw write used
+                    // to cover, including for an MLS import that arrived with the
+                    // feed's own coordinate: the Bridge rung re-derives that from
+                    // the stored ListingKey, with provenance the copy never had.
+                    $this->resolvePropertyCoordinates($auction, 'seller_agent');
+                } catch (\Throwable $coordEx) {
+                    \Log::warning('[SELLER DRAFT] Coordinate resolution failed', [
+                        'listing_id' => $this->listingId,
+                        'reason'     => $coordEx->getMessage(),
+                        'exception'  => get_class($coordEx),
+                    ]);
+                }
+            }
 
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
@@ -3585,9 +3626,10 @@ class SellerOfferListing extends Component
         // Meeting details yes
         $auction->saveMeta('address', $this->address);
         $auction->saveMeta('unit_address', $this->unit_address);
-        $auction->saveMeta('property_lat', $this->property_lat);
-        $auction->saveMeta('property_lng', $this->property_lng);
-        $auction->saveMeta('google_place_id', $this->google_place_id);
+        // The address pick's own lat/lng is deliberately NOT written here.
+        // property_lat/property_lng are written only by the coordinate ladder,
+        // at the resolution boundary later in this same save.
+        $this->saveSelectedPropertyAddressMeta($auction);
         $auction->saveMeta('meeting_details_meeting_time', $this->meeting_details_meeting_time);
         $auction->saveMeta('meeting_details_meeting_date', $this->meeting_details_meeting_date);
         $auction->saveMeta('meeting_details_time_zone', $this->meeting_details_time_zone);

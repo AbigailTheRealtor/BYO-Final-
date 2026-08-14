@@ -3,6 +3,7 @@
 namespace App\Services\Location;
 
 use App\Services\Location\Coordinates\Adapters\StandardCoordinateLadder;
+use App\Services\Location\Coordinates\CoordinateProvenanceStatus;
 use App\Services\Location\Coordinates\PropertyAddress;
 use App\Services\Location\Coordinates\PropertyCoordinateMeta;
 use App\Services\Location\Coordinates\PropertyCoordinateResolverInterface;
@@ -78,6 +79,13 @@ use Throwable;
  * its migrations — none of them may interrupt a listing save, and none of them
  * may destroy a coordinate that is already there. An existing value is only
  * ever replaced by a successful resolution, never cleared by a failed one.
+ *
+ * The one deletion this class performs is not a failure path and is not decided
+ * by the resolver: a coordinate whose own recorded normalized address says it
+ * belongs to somewhere else is discarded before resolution is attempted. See
+ * {@see self::discardCoordinateRecordedForAnotherAddress()} for why leaving it
+ * would get it relabelled as the new address's coordinate rather than merely
+ * left behind.
  */
 class PropertyCoordinatePersistenceService
 {
@@ -155,6 +163,12 @@ class PropertyCoordinatePersistenceService
             return $this->outcome(self::OUTCOME_UNCHANGED, null);
         }
 
+        // Reaching here means the listing holds no coordinate this class can show
+        // belongs to THIS address. Where it holds one that provably belongs to a
+        // different one, that must not survive the attempt to replace it — see
+        // the method for what "provably" is allowed to mean.
+        $this->discardCoordinateRecordedForAnotherAddress($listing, $address);
+
         $result = $this->resolver->resolve($address);
 
         if (! $result->isResolved()) {
@@ -219,6 +233,93 @@ class PropertyCoordinatePersistenceService
         $recorded = trim($this->meta($listing, PropertyCoordinateMeta::NORMALIZED_ADDRESS));
 
         return $recorded !== '' && $recorded === $address->coordinateLookupLine();
+    }
+
+    /**
+     * Drop a stored coordinate that provably describes a different address.
+     *
+     * WHY THIS IS NOT THE SAME AS "CLEARING ON FAILURE"
+     * -------------------------------------------------
+     * {@see self::attempt()} deliberately leaves an existing coordinate alone
+     * when resolution comes back empty, and that stays true: a provider outage
+     * is not evidence that a coordinate we already hold is wrong. This is the
+     * case where we DO have that evidence, and it does not come from the
+     * resolver at all — the coordinate's own recorded normalized address says it
+     * was produced for somewhere else.
+     *
+     * WHY LEAVING IT WOULD RELABEL IT
+     * -------------------------------
+     * `property_lat`/`property_lng` are not inert until someone reads them
+     * carefully. {@see \App\Services\LocationDna\LocationDnaPipelineRunner}
+     * forwards them as `pre_lat`/`pre_lng` on the dispatch that follows this
+     * very save, and the pre-coordinate branch of
+     * {@see \App\Services\LocationDna\LocationDnaGeocodeService} writes them into
+     * `property_location_dna` stamped with the address it was handed — the NEW
+     * one — without comparing the two. A held-over point would therefore be
+     * recorded as this address's coordinate, and
+     * {@see \App\Services\Location\Coordinates\Adapters\ExistingCoordinatesAdapter}
+     * would read it back as rung 1 next time, its address check satisfied by the
+     * relabelling. Discarding here is what keeps the old address's answer from
+     * being laundered into the new address's.
+     *
+     * WHAT COUNTS AS THE COORDINATE SAYING SO
+     * ---------------------------------------
+     * A complete, readable provenance record — {@see PropertyCoordinateMeta::readProvenance()}
+     * — that classifies as {@see CoordinateProvenanceStatus::Automatic} and names
+     * a different normalized address. Nothing weaker, and each exclusion is the
+     * same rule pointed in a different direction: only a machine-made claim that
+     * provably describes somewhere else is deleted by a machine.
+     *
+     *   No provenance, or partial          A legacy value's origin is unprovable
+     *                                      in BOTH directions — it cannot be shown
+     *                                      to belong to this address, and it cannot
+     *                                      be shown not to. Half a provenance is
+     *                                      not a weaker claim about a point, it is
+     *                                      an unverifiable one, and this class does
+     *                                      not get to read staleness out of a
+     *                                      fragment it would refuse to read
+     *                                      anything else out of. It keeps its
+     *                                      legacy handling.
+     *
+     *   A manual override                  Somebody is accountable for it and
+     *                                      stated a reason. A person's deliberate
+     *                                      correction is not something an
+     *                                      address edit may silently delete;
+     *                                      surfacing the mismatch to them is a
+     *                                      later, separately-reviewed decision.
+     *
+     * Provenance goes with the coordinate when it does go. Half a provenance left
+     * behind would be a statement attached to a point that no longer exists.
+     */
+    private function discardCoordinateRecordedForAnotherAddress(
+        object $listing,
+        PropertyAddress $address
+    ): void {
+        $hasCoordinate = trim($this->meta($listing, PropertyCoordinateMeta::LAT)) !== ''
+            || trim($this->meta($listing, PropertyCoordinateMeta::LNG)) !== '';
+
+        if (! $hasCoordinate) {
+            return;
+        }
+
+        $reader = fn (string $key) => $this->meta($listing, $key);
+
+        if (PropertyCoordinateMeta::classify($reader) !== CoordinateProvenanceStatus::Automatic) {
+            return;
+        }
+
+        $recorded = trim((string) (PropertyCoordinateMeta::readProvenance($reader)['normalized_address'] ?? ''));
+
+        if ($recorded === '' || $recorded === $address->coordinateLookupLine()) {
+            return;
+        }
+
+        $listing->saveMeta(PropertyCoordinateMeta::LAT, '');
+        $listing->saveMeta(PropertyCoordinateMeta::LNG, '');
+
+        foreach (PropertyCoordinateMeta::provenanceKeys() as $key) {
+            $listing->saveMeta($key, '');
+        }
     }
 
     private function persist(

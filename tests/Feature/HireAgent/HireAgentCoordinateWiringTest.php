@@ -51,7 +51,28 @@ class HireAgentCoordinateWiringTest extends TestCase
     /** Methods that publish. Everything else that saves is a draft. */
     private const PUBLISH_METHODS = ['store', 'update'];
 
-    private const APP_WIDE_DISPATCH_BASELINE = 21;
+    /**
+     * Every `ComputeLocationDna::dispatch` in the application: 17 before G6, 21
+     * after it added the four Hire Agent publish boundaries, 22 today.
+     *
+     * THE 22nd SITE
+     * -------------
+     * {@see \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::enrichLocation()},
+     * added by the MLS quick-import flow. A listing that publishes through quick
+     * import needs Location DNA exactly as one published through a wizard does,
+     * so the baseline moves rather than the invariant.
+     *
+     * The Hire Agent four and the Create Offer nine are pinned separately below,
+     * so this number's job is unchanged: catch a dispatch appearing anywhere
+     * else. It is still a hard number — a 23rd must fail this test and be
+     * explained here before it is admitted.
+     *
+     * Kept in step with the identical constant in
+     * {@see \Tests\Feature\Location\CreateOfferCoordinateWiringTest}. Two tests
+     * counting the same thing is deliberate — they pin it from opposite ends —
+     * and they have to move together.
+     */
+    private const APP_WIDE_DISPATCH_BASELINE = 22;
     private const HIRE_AGENT_DISPATCH_BASELINE = 4;
     private const CREATE_OFFER_DISPATCH_BASELINE = 9;
 
@@ -243,7 +264,8 @@ class HireAgentCoordinateWiringTest extends TestCase
         $this->assertSame(
             self::APP_WIDE_DISPATCH_BASELINE,
             $total,
-            'G6 adds exactly four dispatch sites — the Hire Agent publish boundaries — and none anywhere else'
+            'G6 adds exactly four dispatch sites — the Hire Agent publish boundaries — and the only '
+            . 'other one added since is MLS quick import, which the baseline accounts for'
         );
     }
 
