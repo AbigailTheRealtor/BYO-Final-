@@ -22,19 +22,52 @@ use Illuminate\Support\Facades\Auth;
 
 class TenantCounteredTermsController extends Controller
 {
+    /**
+     * Resolve the bid, then the auction it belongs to, and admit only a party to
+     * that negotiation: the listing owner, or the agent who placed the bid.
+     *
+     * The auction is re-resolved from the database by id rather than read through
+     * `$pab->auction`, because that relation is declared `->withDefault()` — it
+     * hands back an empty model instead of null when the auction is missing, so a
+     * `!$auction` check there can never fire and an absent auction would silently
+     * read as "owned by nobody" rather than as a 404.
+     *
+     * Without this, any authenticated user could pass a foreign bid id in the URL
+     * and reach the live counter-terms screen for someone else's negotiation.
+     */
+    private function bidForParty($id): TenantAgentAuctionBid
+    {
+        $pab = TenantAgentAuctionBid::find($id);
+        if (!$pab) {
+            abort(404);
+        }
+
+        $auction = TenantAgentAuction::find($pab->tenant_agent_auction_id);
+        if (!$auction) {
+            abort(404);
+        }
+
+        $isTenant = (int) $auction->user_id === (int) Auth::id();
+        $isAgent  = (int) $pab->user_id === (int) Auth::id();
+
+        abort_unless(Auth::check() && ($isTenant || $isAgent), 403, 'You are not authorized to view counter terms for this bid.');
+
+        return $pab;
+    }
+
     public function add(Request $request, $id)
     {
-        $pab = TenantAgentAuctionBid::whereId($id)->first();
+        $pab = $this->bidForParty($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
 
         return view('tenant_counter_terms.add', compact('bid_id', 'pab', 'parent_counter_id'));
     }
 
-    
+
   public function edit(Request $request, $id)
     {
-        $pab = TenantAgentAuctionBid::findOrFail($id);
+        $pab = $this->bidForParty($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ?: null;
 
