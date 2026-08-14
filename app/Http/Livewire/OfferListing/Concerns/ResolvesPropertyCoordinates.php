@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\OfferListing\Concerns;
 
 use App\Services\Location\PropertyCoordinatePersistenceService;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * The Seller/Landlord hook into the coordinate ladder — Create Offer and Hire
@@ -96,7 +97,49 @@ trait ResolvesPropertyCoordinates
      */
     protected function resolvePropertyCoordinates(object $auction, string $listingType): array
     {
+        $this->forgetLoadedMeta($auction);
+
         return app(PropertyCoordinatePersistenceService::class)
             ->resolveAndPersist($auction, $listingType);
+    }
+
+    /**
+     * Drop the model's cached `meta` relation so the service reads what was just
+     * saved.
+     *
+     * WHY THIS IS NECESSARY AND NOT DEFENSIVE
+     * ---------------------------------------
+     * The four role models expose meta through two mechanisms that do not talk
+     * to each other. `saveMeta()` writes with `$this->meta()->updateOrCreate()` —
+     * the relation QUERY, straight to the database — while `info()` reads
+     * `$this->meta`, the loaded relation COLLECTION. Eloquent caches that
+     * collection on first access and never invalidates it on a query-builder
+     * write.
+     *
+     * So on a save boundary the sequence is: the component saves a new listing
+     * row, `saveAllMetadata()` writes every field through `saveMeta()`, and
+     * anything that reads `info()` afterwards on the same instance sees the
+     * relation as it stood before all of it — empty, for a listing created in
+     * this same request. The service would then find no address, decline with
+     * `insufficient_address`, and return without a single provider call. Silently:
+     * an insufficient address is an ordinary answer, not an error, so nothing
+     * logs and nothing fails.
+     *
+     * That was survivable only while the components also copied the autocomplete
+     * widget's coordinate straight into `property_lat` themselves — the listing
+     * ended up with a coordinate either way, just not one the ladder had produced
+     * or could vouch for. With that copy removed, the ladder is the only source
+     * of a coordinate, and it has to be able to read the address it is being
+     * asked about.
+     *
+     * Unsetting is preferred to `load('meta')`: the service reads several keys
+     * and then writes its own, so a fresh lazy load at the first read is both
+     * correct and one query rather than two.
+     */
+    private function forgetLoadedMeta(object $auction): void
+    {
+        if ($auction instanceof Model && $auction->relationLoaded('meta')) {
+            $auction->unsetRelation('meta');
+        }
     }
 }

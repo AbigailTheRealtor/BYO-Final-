@@ -38,14 +38,60 @@ class CreateOfferCoordinateWiringTest extends TestCase
     ];
 
     /**
-     * 17 before G6, 21 after. G6 added four — the Hire Agent publish boundaries,
-     * which had no Location DNA dispatch at all. The Create Offer nine above are
-     * unchanged, which is what {@see self::DISPATCH_SITES} pins independently;
-     * this number exists to catch a dispatch appearing anywhere else.
+     * 17 before G6, 21 after, 22 today. G6 added four — the Hire Agent publish
+     * boundaries, which had no Location DNA dispatch at all. The Create Offer
+     * nine above are unchanged, which is what {@see self::DISPATCH_SITES} pins
+     * independently; this number exists to catch a dispatch appearing anywhere
+     * else.
+     *
+     * THE 22nd SITE
+     * -------------
+     * {@see \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::enrichLocation()},
+     * added by the MLS quick-import flow. A legitimate dispatch — a listing that
+     * publishes through quick import needs Location DNA exactly as one published
+     * through the wizard does — so the baseline moves rather than the invariant.
+     *
+     * It is accounted for here and NOT exempted anywhere else. Quick import
+     * dispatches without first resolving a coordinate through the ladder, so it
+     * has the gap the four Create Offer components no longer have: it persists an
+     * `mls_listing_key`, which is precisely what the Bridge rung needs, and then
+     * never asks. Closing that is a separate change with its own review; this
+     * constant only records that the dispatch exists and is expected.
+     *
+     * Deliberately still a hard number. A 23rd dispatch appearing anywhere must
+     * fail this test and be explained here before it is admitted.
      *
      * @see \Tests\Feature\HireAgent\HireAgentCoordinateWiringTest
      */
-    private const APP_WIDE_DISPATCH_BASELINE = 21;
+    private const APP_WIDE_DISPATCH_BASELINE = 22;
+
+    /**
+     * Where each component resolves a coordinate. Never fewer than its dispatch
+     * sites, and now more in one of them.
+     *
+     * G5 put one resolution in front of each existing dispatch, which made the
+     * two counts equal and made equality look like the invariant. It never was:
+     * the invariant is that nothing dispatches Location DNA without resolving
+     * first, and resolving without dispatching has always been legitimate — the
+     * Hire Agent draft boundaries have done exactly that since G6.
+     *
+     * `SellerOfferListing::saveDraft()` gained the two the reroute needed. It was
+     * the only save boundary in the four components that wrote address meta and
+     * never resolved, which did not show while the components copied the widget's
+     * coordinate into `property_lat` themselves. With that copy gone, a Seller
+     * draft — including an MLS import carrying the feed's own coordinate — would
+     * have been saved with no coordinate at all until publish. Neither boundary
+     * dispatches: an unpublished draft has no Location DNA consumer, and drafts
+     * are saved repeatedly.
+     *
+     * All four components now resolve at every boundary that saves address meta.
+     */
+    private const RESOLVE_SITES = [
+        'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php'         => 3,
+        'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php'     => 3,
+        'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php'     => 2,
+        'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php' => 3,
+    ];
 
     private function source(string $path): string
     {
@@ -122,25 +168,58 @@ class CreateOfferCoordinateWiringTest extends TestCase
 
     public function test_every_dispatch_site_resolves_coordinates_immediately_before_it(): void
     {
-        foreach (self::DISPATCH_SITES as $path => $expected) {
+        foreach (self::DISPATCH_SITES as $path => $dispatchCount) {
             $source = $this->source($path);
 
             $resolves   = $this->lines($source, 'resolvePropertyCoordinates(');
             $dispatches = $this->lines($source, 'ComputeLocationDna::dispatch');
 
             $this->assertCount(
-                $expected,
+                self::RESOLVE_SITES[$path],
                 $resolves,
-                basename($path) . ' must resolve coordinates once per dispatch site'
+                basename($path) . ' must resolve coordinates at every boundary that saves address meta'
+            );
+            $this->assertGreaterThanOrEqual(
+                $dispatchCount,
+                count($resolves),
+                basename($path) . ' must never dispatch more often than it resolves'
             );
 
-            foreach ($dispatches as $i => $dispatchLine) {
-                $this->assertLessThan(
-                    $dispatchLine,
-                    $resolves[$i],
-                    basename($path) . ": resolution must precede the dispatch at line {$dispatchLine}"
+            foreach ($dispatches as $dispatchLine) {
+                // The nearest resolution above this dispatch, whichever boundary
+                // it belongs to. Pairing by index would misalign as soon as a
+                // component resolves somewhere it does not dispatch.
+                $preceding = array_filter($resolves, static fn (int $line) => $line < $dispatchLine);
+
+                $this->assertNotEmpty(
+                    $preceding,
+                    basename($path) . ": nothing resolves before the dispatch at line {$dispatchLine}"
+                );
+
+                $this->assertLessThanOrEqual(
+                    5,
+                    $dispatchLine - max($preceding),
+                    basename($path) . ": resolution must sit immediately before the dispatch at line {$dispatchLine}"
                 );
             }
+        }
+    }
+
+    public function test_a_resolution_without_a_dispatch_is_a_draft_boundary(): void
+    {
+        // The only legitimate reason to resolve without dispatching: a draft has
+        // no Location DNA consumer yet. Anything else that acquired a lone
+        // resolution would be resolving somewhere it should not.
+        $source = $this->source('app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php');
+
+        foreach ($this->lines($source, 'resolvePropertyCoordinates(') as $line) {
+            $enclosing = $this->enclosingFunction($source, $line);
+
+            $this->assertContains(
+                $enclosing,
+                ['saveDraft', 'store'],
+                "SellerOfferListing resolves inside {$enclosing}(), which is not a save boundary"
+            );
         }
     }
 
