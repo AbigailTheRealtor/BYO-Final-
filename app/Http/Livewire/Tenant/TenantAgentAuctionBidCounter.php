@@ -584,9 +584,14 @@ class TenantAgentAuctionBidCounter extends Component
         $this->isOfferListing = $pab->info('workflow_type') === 'offer_listing';
         
         // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms for THIS bid thread
-        // TenantCounterTerm stores bid ID in tenant_agent_auction_id field
-        // First try to load the Tenant's latest counter terms for this specific bid
-        $tenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', $bidId)
+        //
+        // tenant_agent_auction_bid_id is the bid reference. tenant_agent_auction_id
+        // is — and always was — the AUCTION reference, FK'd to tenant_agent_auctions.
+        // The comment that previously stood here claimed the opposite, and the query
+        // below was written to match it: it passed a bid id into the auction-id
+        // column, so it prefilled this form from an unrelated listing's counter terms
+        // whenever that listing's auction id equalled this bid id.
+        $tenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_bid_id', $bidId)
             ->orderBy('created_at', 'desc')
             ->first();
         
