@@ -240,6 +240,60 @@
             </div>
         </div>
 
+        {{--
+            Supplementary questions: real fields whose canonical home is a
+            DIFFERENT tab, kept because this flow has always asked them and
+            dropping them would lose answers. Rendered in their own card, plainly
+            separated from the canonical surface above, so nobody mistakes them
+            for part of it. Empty for a role that has none.
+        --}}
+        @if(!empty($schema))
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="fw-semibold mb-1">Other details</h5>
+                    <p class="text-muted small">
+                        A few extra questions that live on other parts of a full listing.
+                    </p>
+
+                    @foreach($schema as $field => $spec)
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="qs-{{ $field }}">
+                                {{ $spec['label'] }}
+                                @if(!empty($spec['required']))<span class="text-danger">*</span>@endif
+                            </label>
+
+                            @if($spec['type'] === 'multiselect')
+                                @foreach($spec['options'] as $option)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="qs-{{ $field }}-{{ $loop->index }}"
+                                               value="{{ $option }}"
+                                               wire:model="multiTerms.{{ $field }}">
+                                        <label class="form-check-label" for="qs-{{ $field }}-{{ $loop->index }}">{{ $option }}</label>
+                                    </div>
+                                @endforeach
+                            @elseif($spec['type'] === 'select')
+                                <select id="qs-{{ $field }}" class="form-select" wire:model="terms.{{ $field }}">
+                                    <option value="">Select</option>
+                                    @foreach($spec['options'] as $option)
+                                        <option value="{{ $option }}">{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="{{ $spec['type'] === 'number' ? 'number' : 'text' }}"
+                                       id="qs-{{ $field }}" class="form-control"
+                                       wire:model.defer="terms.{{ $field }}">
+                            @endif
+
+                            @if(!empty($spec['help']))
+                                <div class="form-text">{{ $spec['help'] }}</div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="d-flex gap-2 mt-3 mb-5">
             <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
             <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
@@ -453,6 +507,19 @@
                                 defaults shown on the terms step.
                             </dt>
                         @endforelse
+
+                        {{-- Supplementary answers, same list, same omit-if-empty rule. --}}
+                        @foreach($schema as $field => $spec)
+                            @php
+                                $value = $spec['type'] === 'multiselect'
+                                    ? implode(', ', (array) ($multiTerms[$field] ?? []))
+                                    : trim((string) ($terms[$field] ?? ''));
+                            @endphp
+                            @if($value !== '')
+                                <dt class="col-sm-4 fw-normal text-muted">{{ $spec['label'] }}</dt>
+                                <dd class="col-sm-8">{{ $value }}</dd>
+                            @endif
+                        @endforeach
                     @else
                         @foreach($schema as $field => $spec)
                             @php

@@ -688,10 +688,13 @@ abstract class MlsQuickImportComponent extends Component
         // A canonical role stores through the SAME routine the manual flow uses,
         // so a quick-imported listing and a manually created one are written by
         // one piece of code rather than two that must be kept in step.
+        //
+        // It does NOT return here. A canonical role may still declare a small
+        // schema for questions whose canonical home is a DIFFERENT tab — those
+        // are stored by the loop below exactly as they always were. For a role
+        // with no such questions the schema is empty and the loop is a no-op.
         if ($this->usesCanonicalTerms()) {
             $this->persistCanonicalTerms($auction);
-
-            return;
         }
 
         foreach ($this->questionSchema() as $field => $spec) {
@@ -728,11 +731,9 @@ abstract class MlsQuickImportComponent extends Component
      */
     protected function missingRequiredTerms(): array
     {
-        if ($this->usesCanonicalTerms()) {
-            return $this->missingCanonicalTerms();
-        }
-
-        $missing = [];
+        // Canonical requirements first, then any supplementary question that
+        // declares itself required — both lists matter for a canonical role.
+        $missing = $this->usesCanonicalTerms() ? $this->missingCanonicalTerms() : [];
 
         foreach ($this->questionSchema() as $field => $spec) {
             if (empty($spec['required'])) {

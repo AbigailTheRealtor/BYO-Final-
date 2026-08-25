@@ -1153,12 +1153,25 @@ class MlsQuickImportFlowTest extends TestCase
      */
     public function the_landlord_flow_never_asks_the_seller_financing_questions(): void
     {
-        $schema = (new LandlordMlsQuickImport())->questionSchema();
+        $component = new LandlordMlsQuickImport();
+        $schema     = $component->questionSchema();
+        $canonical  = $component::landlordLeasingTermsFields();
 
+        // Not in the supplementary schema…
         $this->assertArrayNotHasKey('offered_financing', $schema);
         $this->assertArrayNotHasKey('other_financing', $schema);
+
+        // …and not in the canonical Leasing Terms either, which is the stronger
+        // statement now that the terms step renders that whole tab: financing is
+        // a sale concept and it is absent from the landlord surface entirely.
+        $this->assertNotContains('offered_financing', $canonical);
+        $this->assertNotContains('other_financing', $canonical);
+
+        // The lease questions are still asked — security deposit from the
+        // canonical tab, lease length from the supplementary set (its canonical
+        // home is a different screen).
+        $this->assertContains('security_deposit_amount', $canonical);
         $this->assertArrayHasKey('desired_lease_length', $schema);
-        $this->assertArrayHasKey('security_deposit_amount', $schema);
     }
 
     /** @test */
@@ -1175,7 +1188,10 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('continueToTerms')
             // desired_rental_amount, not maximum_budget: the landlord rent key is the
             // one the published page reads. See LandlordMlsQuickImport::priceField().
-            ->set('terms', ['desired_rental_amount' => '2400'])
+            // It is a CANONICAL Leasing Terms property now, so it is set directly;
+            // desired_lease_length stays in the supplementary bag because its
+            // canonical home is another screen.
+            ->set('desired_rental_amount', '2400')
             ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
             ->call('continueToReview')
             ->assertSet('step', 'review');
@@ -1187,6 +1203,103 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertFalse((bool) $listing->is_draft);
         $this->assertSame('Traditional', $listing->info('auction_type'));
         $this->assertEqualsCanonicalizing(['1 Year'], (array) $listing->get->desired_lease_length);
+    }
+
+    /**
+     * @test
+     *
+     * Canonical Leasing Terms the old thirteen-field schema never asked about
+     * reach the listing through Quick Import, under the canonical keys and with
+     * the canonical transforms.
+     *
+     * The behavioural half of LandlordLeasingTermsParityTest's structural checks:
+     * those prove the fields exist on this path, this proves an answer survives.
+     */
+    public function canonical_leasing_terms_persist_through_landlord_quick_import(): void
+    {
+        $this->seedBridgeProperty(1, [], 'PHPUNIT-QI-LL3-KEY', 'PHPUNIT-QI-LL3-MLS');
+
+        $component = Livewire::actingAs($this->landlord)
+            ->test(LandlordMlsQuickImport::class)
+            ->set('mlsNumber', 'PHPUNIT-QI-LL3-MLS')
+            ->call('findListing')
+            ->call('acceptProperty')
+            ->call('chooseMethod', 'Traditional')
+            ->call('continueToTerms')
+            ->set('desired_rental_amount', '2,400')
+            // None of these existed on the old quick-import schema.
+            ->set('smoking_policy', 'No Smoking')
+            ->set('subletting_policy', 'Not Permitted')
+            ->set('occupant_status', 'Vacant')
+            ->set('maintenance_by', 'Landlord')
+            ->set('maintenance_response_time', '48 hours')
+            ->set('renewal_option_details', 'One 12-month renewal at CPI')
+            ->set('rent_escalation_terms', '3% annually')
+            ->set('commercial_lease_type', 'NNN')
+            ->set('access_24_7', 'Yes')
+            ->set('additional_landlord_lease_terms', 'Landlord prefers a January start')
+            ->set('terms_of_lease', ['1 Year'])
+            ->set('owner_pays', ['Taxes', 'Insurance'])
+            ->call('continueToReview')
+            ->assertSet('step', 'review');
+
+        $meta = LandlordAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('No Smoking', $meta->smoking_policy);
+        $this->assertSame('Not Permitted', $meta->subletting_policy);
+        $this->assertSame('Vacant', $meta->occupant_status);
+        $this->assertSame('Landlord', $meta->maintenance_by);
+        $this->assertSame('48 hours', $meta->maintenance_response_time);
+        $this->assertSame('One 12-month renewal at CPI', $meta->renewal_option_details);
+        $this->assertSame('3% annually', $meta->rent_escalation_terms);
+        $this->assertSame('NNN', $meta->commercial_lease_type);
+        $this->assertSame('Yes', $meta->access_24_7);
+        $this->assertSame('Landlord prefers a January start', $meta->additional_landlord_lease_terms);
+
+        // The rent is comma-stripped, as on the manual flows.
+        $this->assertSame('2400', $meta->desired_rental_amount);
+
+        // Multi-selects keep their JSON shape.
+        foreach (['terms_of_lease' => ['1 Year'], 'owner_pays' => ['Taxes', 'Insurance']] as $field => $expected) {
+            $stored = $meta->{$field};
+            $stored = is_string($stored) ? json_decode($stored, true) : $stored;
+            $this->assertSame($expected, array_values((array) $stored), $field);
+        }
+    }
+
+    /**
+     * @test
+     *
+     * Bidding-period rent pricing reaches the listing from Landlord quick import.
+     * The old schema had none of these, so a bidding-period rental created this
+     * way could not carry a reserve at all.
+     */
+    public function landlord_bidding_period_rent_pricing_persists(): void
+    {
+        $this->seedBridgeProperty(1, [], 'PHPUNIT-QI-LL4-KEY', 'PHPUNIT-QI-LL4-MLS');
+
+        $component = Livewire::actingAs($this->landlord)
+            ->test(LandlordMlsQuickImport::class)
+            ->set('mlsNumber', 'PHPUNIT-QI-LL4-MLS')
+            ->call('findListing')
+            ->call('acceptProperty')
+            ->call('chooseMethod', 'Bidding Period')
+            ->set('auction_time', '7 Days')
+            ->call('continueToTerms')
+            ->set('desired_rental_amount', '2400')
+            ->set('starting_rent', '2,200')
+            ->set('reserve_rent', '2,300')
+            ->set('lease_now_price', '2,900')
+            ->call('continueToReview')
+            ->assertSet('step', 'review');
+
+        $meta = LandlordAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('Bidding Period', $meta->auction_type);
+        $this->assertSame('7 Days', $meta->auction_time);
+        $this->assertSame('2200', $meta->starting_rent);
+        $this->assertSame('2300', $meta->reserve_rent);
+        $this->assertSame('2900', $meta->lease_now_price);
     }
 
     // ─── Regression: the manual path is untouched ────────────────────────────
