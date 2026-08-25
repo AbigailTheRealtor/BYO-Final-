@@ -79,3 +79,219 @@ jobs:
         env:
           MIGRATION_FRESH_TEST: true
         run: php vendor/bin/phpunit --filter MigrationFreshTest --testdox
+
+  migrate-fresh-pgsql:
+    name: Run the full migration chain on PostgreSQL 16 (no schema dump)
+    runs-on: ubuntu-latest
+
+    # WHY THIS JOB EXISTS, ALONGSIDE THE SQLITE ONE ABOVE.
+    #
+    # Between them, the two existing gates left a real hole:
+    #
+    #   * the SQLite job runs every migration, but on an engine this project
+    #     does not deploy;
+    #   * incremental-migration-tests.yml runs PostgreSQL, but it restores
+    #     database/schema/pgsql-schema.dump first, so only the migrations added
+    #     since that dump was taken actually execute. The rest arrive as a
+    #     binary restore and their up() methods never run on any PostgreSQL.
+    #
+    # So no gate executed the older migrations against the deployed engine.
+    # This job does. Verified in a disposable PG 16 cluster before it landed:
+    # all migration files executed cleanly from an empty database, and the
+    # resulting schema was proven structurally identical to the dump+tail route
+    # (the only differences were semantically-equivalent CHECK-constraint
+    # formatting and pg_dump's random session tokens).
+    #
+    # This does NOT replace the dump+tail path -- incremental-migration-tests.yml
+    # still covers that, and is deliberately left alone.
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_USER: postgres
+          POSTGRES_DB: byo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      # Load-bearing, not decorative: config/database.php resolves the default
+      # connection to pgsql whenever DATABASE_URL is non-empty and would then
+      # read that URL instead of the DB_* values below.
+      DATABASE_URL: ""
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: byo_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+      # For psql in the guard and smoke steps. Deliberately only the password:
+      # PGHOST/PGPORT/PGDATABASE/PGUSER stay unset so nothing can redirect psql,
+      # and the guard asserts exactly that.
+      PGPASSWORD: secret
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      TELESCOPE_ENABLED: false
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo, pdo_pgsql, mbstring, xml, ctype, fileinfo, json, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare environment file
+        run: cp .env.example .env && php artisan key:generate --force
+
+      - name: Prove the target database is disposable
+        # FAIL CLOSED. The next step drops every table in the target, and
+        # `--force` bypasses Laravel's confirmation prompt, so nothing
+        # downstream would stop it if DB_* were ever wrong. Unlike the PHPUnit
+        # suite, artisan does NOT load tests/bootstrap.php, so none of the
+        # SQLite pinning applies here -- these checks are the entire safety net.
+        #
+        # Every failure exits non-zero. Nothing here skips: a skipped safety
+        # check is indistinguishable from a passing one in CI output.
+        run: |
+          set -euo pipefail
+          fail() { echo "GUARD ABORT: $1" >&2; exit 1; }
+          ok()   { echo "  [PASS] $1"; }
+
+          [ "${GITHUB_ACTIONS:-}" = "true" ] || fail "not running in GitHub Actions"
+          ok "GITHUB_ACTIONS=true"
+
+          [ -z "${DATABASE_URL:-}" ] || fail "DATABASE_URL is non-empty; it would override every DB_* value"
+          ok "DATABASE_URL is empty"
+
+          [ "${DB_CONNECTION:-}" = "pgsql" ]  || fail "DB_CONNECTION='${DB_CONNECTION:-}', expected pgsql"
+          [ "${DB_HOST:-}" = "127.0.0.1" ]    || fail "DB_HOST='${DB_HOST:-}', expected 127.0.0.1"
+          [ "${DB_PORT:-}" = "5432" ]         || fail "DB_PORT='${DB_PORT:-}', expected 5432"
+          [ "${DB_DATABASE:-}" = "byo_test" ] || fail "DB_DATABASE='${DB_DATABASE:-}', expected byo_test"
+          ok "connection targets pgsql byo_test @ 127.0.0.1:5432"
+
+          for v in "${DB_DATABASE:-}" "${DB_HOST:-}" "${DB_USERNAME:-}" "${DATABASE_URL:-}"; do
+            case "$(printf '%s' "$v" | tr 'A-Z' 'a-z')" in
+              *heliumdb*|*helium*|*prod*|*production*|*forge*|*bidoffer*)
+                fail "denylisted token in connection value '$v'" ;;
+            esac
+          done
+          ok "no heliumdb/helium/prod/production/forge/bidoffer token in any connection value"
+
+          for v in PGHOST PGPORT PGDATABASE PGUSER PGSERVICE PGHOSTADDR; do
+            [ -z "${!v:-}" ] || fail "$v is set ('${!v}') and could redirect psql away from the service container"
+          done
+          ok "no inherited PG* client variable can redirect psql"
+
+          # Configuration can lie. Ask the server what it actually is.
+          ACTUAL_DB="$(psql -h 127.0.0.1 -p 5432 -U postgres -d byo_test -tAc 'select current_database()')"
+          [ "$ACTUAL_DB" = "byo_test" ] || fail "current_database()='$ACTUAL_DB', expected byo_test"
+          ok "server reports current_database()=$ACTUAL_DB"
+
+          ACTUAL_PORT="$(psql -h 127.0.0.1 -p 5432 -U postgres -d byo_test -tAc 'select inet_server_port()')"
+          [ "$ACTUAL_PORT" = "5432" ] || fail "server reports port '$ACTUAL_PORT', expected 5432"
+          ok "server reports port=$ACTUAL_PORT"
+
+          # The strongest check, and the reason it is mandatory: it inspects
+          # reality rather than configuration. A disposable CI database is
+          # empty. A real one never is.
+          TABLES="$(psql -h 127.0.0.1 -p 5432 -U postgres -d byo_test -tAc \
+            "select count(*) from pg_tables where schemaname not in ('pg_catalog','information_schema')")"
+          [ "$TABLES" = "0" ] || fail "target holds $TABLES user tables; a disposable CI database is empty. Refusing to wipe."
+          ok "target holds 0 user tables"
+
+          echo "guard passed: the target is disposable"
+
+      - name: Run the FULL migration chain (bypassing pgsql-schema.dump)
+        # The nonexistent --schema-path is intentional and load-bearing.
+        # FreshCommand forwards the option to `migrate`;
+        # MigrateCommand::schemaPath() returns it in preference to the default
+        # database/schema/{connection}-schema.dump; and loadSchemaState() bails
+        # out when is_file() fails. The net effect is that Laravel skips the
+        # stored dump and executes every migration file instead.
+        #
+        # Without this flag ~194 migrations would be restored as a binary dump
+        # and their up() methods would never run on PostgreSQL -- which is the
+        # exact gap this job exists to close. So a run that silently loads the
+        # dump is a failure, not a pass, and is checked for below.
+        run: |
+          set -euo pipefail
+          php artisan migrate:fresh --force --no-interaction \
+            --schema-path=database/schema/__intentionally_missing__.sql \
+            2>&1 | tee migrate-fresh-pgsql.log
+
+          if grep -q "Loading stored database schema" migrate-fresh-pgsql.log; then
+            echo "FAIL: the stored schema dump was loaded. This job must execute every" >&2
+            echo "      migration file; the --schema-path bypass has stopped working." >&2
+            exit 1
+          fi
+          echo "confirmed: pgsql-schema.dump was NOT loaded"
+
+      - name: Smoke-test the resulting schema
+        # psql directly, so PHPUnit and its SQLite-only bootstrap are entirely
+        # uninvolved. A missing table fails the job.
+        run: |
+          set -euo pipefail
+          PSQL="psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 5432 -U postgres -d byo_test -tAc"
+
+          # Compared against the file count rather than a hardcoded number, so
+          # adding a migration does not require editing this workflow.
+          EXPECTED="$(ls database/migrations/*_*.php | wc -l | tr -d ' ')"
+          RECORDED="$($PSQL 'select count(*) from migrations' | tr -d ' ')"
+          echo "migration files discovered: ${EXPECTED}"
+          echo "migrations recorded as run: ${RECORDED}"
+          [ "$EXPECTED" = "$RECORDED" ] || {
+            echo "FAIL: ${EXPECTED} migration files exist but ${RECORDED} ran." >&2
+            exit 1
+          }
+
+          # NOTE: this list duplicates the one in tests/Feature/MigrationFreshTest.php.
+          # The duplication is accepted deliberately for now; extracting a shared
+          # list would mean editing that test, which is out of scope here. Tracked
+          # as a maintainability follow-up.
+          MISSING="$($PSQL "select coalesce(string_agg(name, ', '), '') from (values
+              ('users'),('auctions'),
+              ('seller_agent_auctions'),('seller_agent_auction_bids'),
+              ('buyer_agent_auctions'),('buyer_agent_auction_bids'),
+              ('landlord_agent_auctions'),('landlord_agent_auction_bids'),
+              ('tenant_agent_auctions'),('tenant_agent_auction_bids'),
+              ('offer_auctions'),('accepted_bid_summaries'),
+              ('agent_referral_links'),('referral_visits'),
+              ('user_agents'),('settings'),('personal_access_tokens')
+            ) t(name) where to_regclass('public.' || name) is null")"
+
+          if [ -n "$MISSING" ]; then
+            echo "FAIL: expected tables missing after migrate:fresh: ${MISSING}" >&2
+            exit 1
+          fi
+          echo "all 17 key tables present"
+
+          FINAL_DB="$($PSQL 'select current_database()')"
+          [ "$FINAL_DB" = "byo_test" ] || {
+            echo "FAIL: ended up on database '${FINAL_DB}'." >&2
+            exit 1
+          }
+          echo "still on the disposable database: ${FINAL_DB}"
