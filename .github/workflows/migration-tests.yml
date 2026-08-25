@@ -11,29 +11,23 @@ jobs:
     name: Run migrate:fresh and smoke-test key tables
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: secret
-          MYSQL_DATABASE: byo_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+    # NO DATABASE SERVICE, DELIBERATELY.
+    #
+    # This job used to start a mysql:8.0 container and set DB_CONNECTION=mysql plus
+    # five DB_* variables. Not one of them was ever reachable: tests/bootstrap.php
+    # pins DATABASE_URL/DB_CONNECTION/DB_DATABASE to SQLite :memory: before the
+    # autoloader runs, so the test resolved to SQLite and the container sat idle.
+    # Verified before removal by running this test with those exact MySQL variables
+    # set and no MySQL server running anywhere -- it passed.
+    #
+    # The service was worse than useless: it implied a MySQL guarantee this project
+    # has never had (the deployed application is PostgreSQL). Removing it makes the
+    # job honestly self-describing. PostgreSQL fresh-install coverage is a separate
+    # concern and is deliberately not bolted onto this job.
 
     env:
       APP_ENV: testing
       APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-      DB_CONNECTION: mysql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_DATABASE: byo_test
-      DB_USERNAME: root
-      DB_PASSWORD: secret
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
@@ -48,7 +42,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: pdo, pdo_mysql, mbstring, xml, ctype, fileinfo, json, bcmath
+          extensions: pdo, mbstring, xml, ctype, fileinfo, json, bcmath
           coverage: none
 
       - name: Cache Composer packages
@@ -70,12 +64,18 @@ jobs:
         # "Tests: 2, Assertions: 0, Skipped: 2" — green, having asserted nothing.
         # Scoped to this step rather than the job so it cannot reach any other step.
         #
-        # NOTE: the test executes against SQLite :memory:, not the MySQL service
-        # above. tests/bootstrap.php pins DB_CONNECTION/DB_DATABASE before Laravel
-        # boots, and tests/Feature/Safeguards/TestDatabaseIdentityTest.php asserts
-        # the resolved connection is neither PostgreSQL nor MySQL. Pointing this
-        # test at MySQL is therefore a deliberate architectural change, not a
-        # config tweak — do not "fix" it by overriding the bootstrap pin.
+        # NOTE: the test executes against SQLite :memory:, and this job runs no
+        # database service at all. tests/bootstrap.php pins DB_CONNECTION/DB_DATABASE
+        # before Laravel boots, and tests/Feature/Safeguards/TestDatabaseIdentityTest.php
+        # asserts the resolved connection is neither PostgreSQL nor MySQL. Pointing
+        # this test at a networked engine is therefore a deliberate architectural
+        # change, not a config tweak — do not "fix" it by overriding the bootstrap
+        # pin or by re-adding a service container here.
+        #
+        # What this job is for: SQLite has no schema dump, so migrate:fresh executes
+        # every migration's up() end to end — the only coverage of the complete
+        # migration chain. The PostgreSQL path restores database/schema/pgsql-schema.dump
+        # and therefore runs only the tail migrations; the two are complementary.
         env:
           MIGRATION_FRESH_TEST: true
         run: php vendor/bin/phpunit --filter MigrationFreshTest --testdox
