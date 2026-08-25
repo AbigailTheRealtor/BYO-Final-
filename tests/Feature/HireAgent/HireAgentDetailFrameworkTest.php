@@ -1208,6 +1208,288 @@ class HireAgentDetailFrameworkTest extends TestCase
         $this->assertStringNotContainsString('data-viho-hero', $body, 'The redesigned hero must not render.');
     }
 
+    // ── T4 — the seller shell: quick actions, section nav, sidebar card ──────
+    //
+    // Everything below reads the DETAIL flag, not the hero flag. The two are independent by
+    // design and T4 is entirely detail-flag work, so these tests must not be able to pass or fail
+    // because of the hero's state.
+    //
+    // MARKERS ARE CHOSEN TO EXCLUDE THE STYLESHEET. The framework CSS is inlined into the page, so
+    // a bare class name occurs in the page whether or not any element carries it — a lesson from
+    // T3, where an assertion counted 2 and was measuring the stylesheet. Every count below matches
+    // either a `data-` attribute (which appears only on elements) or a `class="` prefix.
+
+    /** Turn the DETAIL redesign on for seller only, exactly as production would. */
+    private function enableSellerDetailRedesign(): void
+    {
+        config([
+            'hire_agent_detail.redesign_enabled' => true,
+            'hire_agent_detail.redesign_roles'   => ['seller'],
+        ]);
+    }
+
+    /** The rendered page for a seller listing, as the given viewer. */
+    private function sellerBody(Model $listing, ?User $viewer = null): string
+    {
+        $request = $viewer ? $this->actingAs($viewer) : $this;
+
+        return (string) $request->get($this->urlFor('seller', $listing->id))->assertOk()->getContent();
+    }
+
+    public function test_seller_quick_actions_band_renders_with_the_three_approved_tiles(): void
+    {
+        $this->enableSellerDetailRedesign();
+
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+        $body    = $this->sellerBody($listing, $owner);
+
+        $this->assertSame(1, substr_count($body, 'data-viho-quick-actions'), 'Exactly one Quick Actions band.');
+
+        // The three tiles, by their actual targets rather than by their labels — a label can be
+        // present in prose, a route cannot.
+        $this->assertStringContainsString(
+            route('auction-chat', ['seller-agent', $listing->id]),
+            $body,
+            'Send Message must point at the seller chat channel this page already uses.'
+        );
+        $this->assertSame(
+            1,
+            substr_count($body, 'data-hla-copy-link="'),
+            'Exactly one wired copy control. Matched with `="` so the handler\'s own selector and '
+            . 'getAttribute call, which are not copy controls, are not counted.'
+        );
+        $this->assertStringContainsString('hla-quick-share', $body, 'The share tile must render its targets.');
+    }
+
+    public function test_seller_section_nav_renders_once_and_every_anchor_resolves_to_a_real_section(): void
+    {
+        $this->enableSellerDetailRedesign();
+
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+        $body    = $this->sellerBody($listing, $owner);
+
+        $this->assertSame(
+            1,
+            substr_count($body, 'class="viho-section-nav-list"'),
+            'Exactly one section navigation must render.'
+        );
+
+        // THE ASSERTION THAT MATTERS: every anchor the bar offers must resolve to an element that
+        // actually rendered. This is what would have caught the agent-credentials gap — the
+        // registry carried the section, the card did not exist, and the bar would have linked to
+        // nothing.
+        preg_match_all('/data-viho-section-nav-link[^>]*href="#([^"]+)"|href="#([^"]+)"[^>]*data-viho-section-nav-link/', $body, $m);
+        $anchors = array_values(array_filter(array_merge($m[1], $m[2])));
+
+        $this->assertNotEmpty($anchors, 'Control: the bar must offer at least one section.');
+
+        foreach ($anchors as $anchor) {
+            $this->assertStringContainsString(
+                'id="' . $anchor . '"',
+                $body,
+                "The section bar links to #{$anchor}, which no element on the page declares."
+            );
+        }
+    }
+
+    /**
+     * The agent-credentials section, which is why T4 had to add a card as well as a bar.
+     *
+     * An agent viewing an agent-owned listing is the only combination that resolves this section.
+     * The registry has carried it since T1 with no card behind it; adding the bar without the card
+     * would have made it the one dead link on the page.
+     */
+    public function test_seller_agent_credentials_section_renders_for_an_agent_viewing_an_agent_owned_listing(): void
+    {
+        $this->enableSellerDetailRedesign();
+
+        // `brokerage` and `license_no` are NOT columns on users — User::getBrokerageAttribute()
+        // resolves them from EAV meta. Seeding them as factory attributes throws. Same approach
+        // HireAgentBuyerSectionNavTest uses for the identical section.
+        $agentOwner = User::factory()->create(['user_type' => 'seller_agent']);
+        $agentOwner->saveMeta('brokerage', 'Probe Brokerage');
+        $agentOwner->saveMeta('license_no', 'LIC-4242');
+
+        $listing = $this->makeSellerPilotListing($agentOwner->id);
+
+        // The agent tier requires a submitted proposal, not merely an agent user_type.
+        $agentViewer = User::factory()->create(['user_type' => 'agent']);
+        $this->makeBid('seller', $listing->id, $agentViewer->id);
+
+        $body = $this->sellerBody($listing, $agentViewer);
+
+        $this->assertStringContainsString('id="hla-section-agent-credentials"', $body, 'The card must render.');
+        $this->assertStringContainsString('Probe Brokerage', $body);
+        $this->assertStringContainsString('LIC-4242', $body);
+
+        // And a consumer viewer must not receive it — the resolver withholds it below the agent
+        // tier, and the bar must not name a section the viewer cannot read.
+        $consumerBody = $this->sellerBody($listing, User::factory()->create(['user_type' => 'seller']));
+        $this->assertStringNotContainsString('id="hla-section-agent-credentials"', $consumerBody);
+        $this->assertStringNotContainsString('Probe Brokerage', $consumerBody);
+    }
+
+    public function test_seller_sidebar_surface_card_renders_once_and_is_sticky_and_replaces_the_rule(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+
+        // Measured on the SAME listing in both flag states, and legacy FIRST. Two listings would
+        // collide on the pilot listing_id's unique index, and enabling the flag before the legacy
+        // render would make both bodies redesigned — which would compare a page to itself.
+        $legacyBody = $this->sellerBody($listing, $owner);
+
+        $this->enableSellerDetailRedesign();
+        $body = $this->sellerBody($listing, $owner);
+
+        $this->assertSame(
+            0,
+            substr_count($legacyBody, 'data-hire-agent-sidebar-card'),
+            'Control: the legacy sidebar has no surface card.'
+        );
+        $this->assertSame(
+            1,
+            substr_count($body, 'data-hire-agent-sidebar-card'),
+            'Exactly one sidebar surface card.'
+        );
+        $this->assertMatchesRegularExpression(
+            '/class="[^"]*\bhla-sidebar-sticky\b[^"]*"[^>]*data-hire-agent-sidebar-card/',
+            $body,
+            'The sticky class must be on the card element itself, not merely present in the stylesheet.'
+        );
+
+        // The rule the card replaces, counted in the SIDEBAR REGION rather than page-wide.
+        //
+        // A page-wide count is not a proxy for this: the detail flag changes which section cards
+        // render in the main column, and those legacy branches carry rules of their own — the
+        // first version of this assertion compared 1 against 3 and was measuring the main column.
+        // The region between the shell's sidebar marker and the proposal console is exactly the
+        // stretch this rule lives in, and both delimiters are unique strings.
+        $this->assertSame(
+            1,
+            substr_count($this->sellerSidebarRegion($legacyBody), '<hr>'),
+            'Control: the legacy sidebar carries the identity rule.'
+        );
+        $this->assertSame(
+            0,
+            substr_count($this->sellerSidebarRegion($body), '<hr>'),
+            'The card supplies the separation, so the rule must be suppressed.'
+        );
+    }
+
+    /**
+     * The sidebar column, from the shell's own marker to the proposal console that ends it.
+     *
+     * Both delimiters are unique on the page: `data-hire-agent-sidebar` is emitted once by
+     * x-hire-agent.detail-shell, and `id="bids-section"` once by the console. Returns '' rather
+     * than the whole body if either is missing, so a broken assumption fails the assertion instead
+     * of silently widening it to the entire page.
+     */
+    private function sellerSidebarRegion(string $html): string
+    {
+        $start = strpos($html, 'data-hire-agent-sidebar');
+        $end   = strpos($html, 'id="bids-section"');
+
+        if ($start === false || $end === false || $end <= $start) {
+            return '';
+        }
+
+        return substr($html, $start, $end - $start);
+    }
+
+    public function test_seller_behaviour_partials_are_included_exactly_once_each(): void
+    {
+        $this->enableSellerDetailRedesign();
+
+        $owner = User::factory()->create(['user_type' => 'seller']);
+        $body  = $this->sellerBody($this->makeSellerPilotListing($owner->id), $owner);
+
+        $this->assertSame(
+            1,
+            substr_count($body, "querySelector('[data-viho-section-nav]')"),
+            'The section-nav behaviour partial must be included exactly once.'
+        );
+        $this->assertSame(
+            1,
+            substr_count($body, "querySelectorAll('[data-hla-copy-link]')"),
+            'The quick-actions behaviour partial must be included exactly once.'
+        );
+    }
+
+    /**
+     * THE FLAGS-OFF CONTRACT. Nothing T4 adds may reach the page with the detail flag off.
+     *
+     * Includes the empty-wrapper cases specifically, because that is the failure mode T3 found:
+     * a named slot emitted unconditionally is `isset()` in the shell even when it renders nothing,
+     * so the shell emits its slot position on a page the flag should not touch.
+     */
+    public function test_seller_t4_markup_is_entirely_absent_with_the_detail_flag_off(): void
+    {
+        $this->assertFalse(
+            \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('seller'),
+            'Precondition: seller is not on the detail allowlist by default.'
+        );
+
+        $owner = User::factory()->create(['user_type' => 'seller']);
+        $body  = $this->sellerBody($this->makeSellerPilotListing($owner->id), $owner);
+
+        // EVERY NEEDLE BELOW MATCHES MARKUP ONLY. The viho and framework stylesheets are inlined
+        // into the page, and they declare `.viho-quick-actions-grid`, `.viho-section-nav-list` and
+        // `.hla-sidebar-sticky` as rules — so a bare class name is present with the flag off no
+        // matter what rendered. Verified by grep over resources/views/viho/styles.blade.php and
+        // hire_agent/framework/styles.blade.php: the `data-` attributes appear in neither, and the
+        // class names are matched with a `class="` prefix that a CSS selector cannot produce.
+        // The first draft of this test asserted on the bare names and failed against the
+        // stylesheet, which is the same trap T3 hit.
+        foreach ([
+            'data-viho-quick-actions'            => 'Quick Actions band',
+            'class="viho-quick-actions-grid"'    => 'empty Quick Actions container',
+            'data-hla-copy-link'                 => 'wired copy control',
+            'data-viho-section-nav'              => 'section navigation',
+            'class="viho-section-nav-list"'      => 'empty navigation container',
+            'data-hire-agent-sidebar-card'       => 'sidebar surface card',
+            'id="hla-section-agent-credentials"' => 'agent credentials section',
+            "querySelector('[data-viho-section-nav]')"  => 'section-nav behaviour script',
+            "querySelectorAll('[data-hla-copy-link]')"  => 'quick-actions behaviour script',
+        ] as $needle => $what) {
+            $this->assertStringNotContainsString($needle, $body, "Flags off must not gain the {$what}.");
+        }
+
+        // And the legacy structures it replaces are still there.
+        $this->assertStringContainsString('<hr>', $body, 'The legacy sidebar rule must remain.');
+        $this->assertStringContainsString('js-copy-link', $body, 'The legacy share card must remain.');
+        $this->assertStringContainsString('Status: ', $body, 'The legacy identity block must remain.');
+    }
+
+    /** T4 must not disturb anything T3 established. */
+    public function test_seller_t4_leaves_the_t3_hero_contract_intact(): void
+    {
+        $this->enableSellerDetailRedesign();
+        $this->enableSellerPilot();
+
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+
+        $ownerBody = $this->sellerBody($listing, $owner);
+        $this->assertSame(1, substr_count($ownerBody, 'data-viho-hero'), 'Still exactly one hero.');
+        $this->assertSame(1, substr_count($ownerBody, '<h1'), 'Still exactly one h1.');
+        $this->assertSame(
+            1,
+            substr_count($ownerBody, $this->sellerEditHref($listing->id)),
+            'The owner still gets exactly one edit control.'
+        );
+        $this->assertStringContainsString('$987,654', $ownerBody, 'The figure still comes from `maximum_budget`.');
+        $this->assertStringNotContainsString('654,321', $ownerBody, 'And never from `budget`.');
+
+        $this->assertSame(
+            0,
+            substr_count($this->sellerBody($listing, User::factory()->create()), $this->sellerEditHref($listing->id)),
+            'A non-owner still gets no edit control.'
+        );
+    }
+
     /** With the flag off, every role renders exactly what it rendered before M4. */
     public function test_the_flag_defaults_off_and_leaves_all_four_roles_untouched(): void
     {

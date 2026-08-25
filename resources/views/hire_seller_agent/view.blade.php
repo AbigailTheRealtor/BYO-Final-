@@ -491,10 +491,121 @@
             return isset($hsaSections[\App\Support\HireAgent\HireAgentDetailSections::ID_PREFIX . $key]);
         };
     @endphp
+    @php
+        // T4 — seller counterpart of $byaListingUrl / $hlaListingUrl / $tnaListingUrl. Resolved
+        // once here because the Quick Actions band below uses it five times (four share targets
+        // and the copy control), and a route() call repeated per tile is five chances for them to
+        // drift apart.
+        //
+        // `seller.agent.auction.detail` is the URL this page's own legacy copy control already
+        // hands out further down, so the new Copy Link control and the old one agree about what
+        // "this listing" means. Same reasoning tenant recorded for its own URL choice.
+        $hsaListingUrl = route('seller.agent.auction.detail', $auction->id);
+    @endphp
+
     {{-- Milestone 5A.3: flash, hero, the listing container, the grid row and both column
          wrappers now come from the shared shell. Only role-specific content lives here. --}}
     <x-hire-agent.detail-shell role="seller" :auction="$auction">
+        @if ($hsaDetailRedesign)
+        {{-- T4 — chrome parity with the buyer, landlord and tenant pages. Full-width, above the
+             grid: these are page-level actions, not main-column content, which is what the shell's
+             beforeGrid slot exists for.
+
+             THE SLOT ITSELF IS INSIDE THE FLAG, not just its contents — the T3 lesson about
+             heroActions applies verbatim. An always-emitted slot is `isset()` in the shell even
+             when it renders nothing, and the shell would then emit its beforeGrid position on a
+             page the flag is supposed to leave untouched.
+
+             The tiles are the set all three completed roles carry, in the same order, with seller
+             routes and seller wording. No tile is added and none is dropped: Send Message uses the
+             `seller-agent` chat channel this page already links to twice, and Share/Copy Link
+             point at $hsaListingUrl. No new business action is introduced here — every target
+             already existed on this page. --}}
+        <x-slot name="beforeGrid">
+            <x-viho.quick-actions label="Quick Actions" icon="fa-solid fa-bolt" ariaLabel="Quick actions">
+
+                {{-- 1. Send Message — authenticated user action; the route enforces it, exactly as
+                     it does for the two existing seller links to the same conversation. --}}
+                <x-viho.action-tile
+                    :href="route('auction-chat', ['seller-agent', $auction->id])"
+                    icon="fa-solid fa-paper-plane"
+                    label="Send Message"
+                    description="Message the listing contact about this listing." />
+
+                {{-- 2. Share Listing — public action. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-share-nodes"
+                    label="Share Listing"
+                    description="Share this listing with agents or your network.">
+                    <x-slot name="action">
+                        <ul class="hla-quick-share">
+                            <li>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($hsaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Facebook">
+                                    <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/intent/tweet?url={{ urlencode($hsaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on X">
+                                    <i class="fa-brands fa-twitter" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://pinterest.com/pin/create/button/?url={{ urlencode($hsaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on Pinterest">
+                                    <i class="fa-brands fa-pinterest" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode($hsaListingUrl) }}"
+                                   target="_blank" rel="noopener" aria-label="Share this listing on LinkedIn">
+                                    <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </x-slot>
+                </x-viho.action-tile>
+
+                {{-- 3. Copy Link — public action.
+                     The legacy share card further down carries a `js-copy-link` button that NOTHING
+                     in the repository binds a handler to — dead here as it is in the other three
+                     views. This one is wired by the quick-actions behaviour partial.
+
+                     THE LEGACY CARD IS KEPT, AND THE COMPLETED ROLES DISAGREE ABOUT THIS. Landlord
+                     suppresses its share/QR card under the detail flag (M5.3, with a note that the
+                     QR's re-siting was deferred); buyer leaves its copy in afterGrid ungated, and
+                     tenant leaves its copy in the sidebar ungated. Two of three keep it, including
+                     tenant, the role migrated immediately before this one — so seller keeps it too.
+                     Removing a working control is not something to infer from a one-role
+                     precedent, and the flags-off page is identical either way. If the product wants
+                     the landlord treatment everywhere, that is one deliberate change across three
+                     views, not a decision to make quietly here. --}}
+                <x-viho.action-tile
+                    icon="fa-solid fa-link"
+                    label="Copy Link"
+                    description="Copy a direct link to this listing.">
+                    <x-slot name="action">
+                        <x-viho.button
+                            variant="outline"
+                            icon="fa-solid fa-link"
+                            data-hla-copy-link="{{ $hsaListingUrl }}">Copy Link</x-viho.button>
+                        <span class="hla-quick-copy-status" data-hla-copy-status role="status" aria-live="polite"></span>
+                    </x-slot>
+                </x-viho.action-tile>
+
+            </x-viho.quick-actions>
+        </x-slot>
+        @endif
+
         <x-slot name="main">
+            {{-- T4. Outside the card wrapper and above it, so the bar spans the column and sticks
+                 to the top of the reading area rather than to the inside of a card. $hsaSections is
+                 the same registry the section cards consult, so a card and its nav entry cannot
+                 disagree about which sections exist. --}}
+            @if ($hsaDetailRedesign)
+                <x-viho.section-nav :items="array_values($hsaSections)" ariaLabel="Listing sections" />
+            @endif
             {{--
                 M3. Was `div.card.description` wrapping `card-header.section-header` + an
                 `h4.section-title` + `card-body`. The heading level stays h4: typography is
@@ -1725,6 +1836,54 @@
                         </div>
             </x-hire-agent.detail-section>
             @endif
+
+            {{-- T4 — Agent Credentials & Contact Info.
+
+                 THE SECTION THE T1 SCAFFOLD PROMISED. $hsaHasAgentCredentials has been computed
+                 and handed to the section registry since T1, with a note saying "T4 adds the
+                 card". Until now nothing consumed the resolved set except the cards themselves, so
+                 the missing card was inert. The section bar added above IS such a consumer: with
+                 the guard true and no card, the bar would offer an anchor that resolves to
+                 nothing. That is why this lands in the same change as the nav rather than after
+                 it.
+
+                 No Hire Agent detail view renders anything like this with the flag off, so there
+                 is no legacy branch to preserve: the whole block sits inside the redesign guard
+                 and emits nothing when it is off. That is why it carries none of the
+                 `@if (! $hsaDetailRedesign)` fallbacks every section above it has, and why
+                 :redesign="true" below is a statement of fact rather than a flag read — the
+                 section is already gated `$hsaDetailRedesign &&`.
+
+                 THE LISTING OWNER'S credentials, and only when that owner is an agent — never the
+                 viewer's own and never the hired agent's. It is the counterpart to Referral &
+                 Cooperation above: the terms of a referral, and who the agent on the other side of
+                 it is. $hsaHasAgentCredentials carries both halves (the owner is an agent, and has
+                 at least one field to show), and the resolver additionally withholds the section
+                 from anyone below the agent tier.
+
+                 Nothing here is new data: these are the same values author.blade.php already
+                 publishes on the public profile page. Buyer's and landlord's identical sections are
+                 the reference — same four fields, same order, each row guarding itself so a partly
+                 filled profile shows what it has. --}}
+            @if ($hsaDetailRedesign && $hsaShows('agent-credentials'))
+            <x-hire-agent.detail-section :redesign="true" :legacy-header="false" id="hla-section-agent-credentials" title="Agent Credentials & Contact Info" icon="fa-solid fa-address-card">
+                        @if (@$auction->user->brokerage != null)
+                            <x-hire-agent.field :redesign="true" label="Brokerage" :value="$auction->user->brokerage" />
+                        @endif
+
+                        @if (@$auction->user->license_no != null)
+                            <x-hire-agent.field :redesign="true" label="License No." :value="$auction->user->license_no" />
+                        @endif
+
+                        @if (@$auction->user->phone != null)
+                            <x-hire-agent.field :redesign="true" label="Phone" :value="$auction->user->phone" />
+                        @endif
+
+                        @if (@$auction->user->email != null)
+                            <x-hire-agent.field :redesign="true" label="Email" :value="$auction->user->email" />
+                        @endif
+            </x-hire-agent.detail-section>
+            @endif
             {{-- M3: the former card-body close is gone with its opening tag; the card closes here.
                  S1: "here" is now the detail-body, which emits that same card with the flag off. --}}
             </x-hire-agent.detail-body>
@@ -1793,6 +1952,32 @@
         // out. The directive emits no output, so hoisting it cannot alter the legacy rendering.
         $auth_id = auth()->id();
     @endphp
+
+    {{--
+        T4 — THE SIDEBAR SURFACE, chrome parity with buyer, landlord and tenant.
+
+        Everything from here to the proposal console is one card. Before this the seller sidebar
+        was a bare stack — heading, badges, rules and buttons sitting directly on the page
+        background beside a main column made entirely of cards.
+
+        WHERE IT CLOSES. Above the proposal console, which stays a SIBLING rather than a child. The
+        console brings its own `.card` chrome, so nesting it would render border inside border and
+        shadow inside shadow; and its contents are gated by HireAgentProposalAccess, so keeping it
+        outside this wrapper means no geometry rule added here has a selector that can reach a
+        proposal card. That fence is deliberate and is not crossed by this change.
+
+        AND IT IS WHAT MAKES THE STICKY WORK. A sidebar column carrying a populated console is as
+        tall as the main column, and an element that is never shorter than its container never
+        sticks. This card is short by construction, because the thing that made the column tall is
+        left outside it.
+
+        Redesign-only, so with the detail flag off the sidebar emits exactly the bytes it did
+        before. Gated on the DETAIL flag, not the hero flag: this is page chrome, and the identity
+        block below it is gated on the hero flag for its own separate reason.
+    --}}
+    @if ($hsaDetailRedesign)
+    <div class="hla-surface-card hla-sidebar-card hla-sidebar-sticky" data-hire-agent-sidebar-card>
+    @endif
 
     {{--
         T3 — the sidebar identity block.
@@ -1879,12 +2064,22 @@
                 </div>
                 @endif
     @endunless
-                {{-- T4, NOT T3. Buyer and landlord suppress this rule under the DETAIL flag, because
-                     there the sidebar is a card whose own edge and padding are the separation the
-                     rule stood in for. Seller has no sidebar surface card yet, so there is nothing
-                     for the rule to be redundant with and it is left exactly as it was. It moves
-                     with the card, in T4, not before it. --}}
+                {{-- T4 — and this is the change T3 deferred to here. This rule only ever separated
+                     the identity block from what follows. Under the redesign the sidebar is a card,
+                     and the card's own edge and padding are the separation the rule stood in for —
+                     so it is suppressed there and left exactly as-is for the legacy branch. Gated
+                     on the DETAIL flag, matching buyer and landlord, because it is the CARD that
+                     makes it redundant, not the hero.
+
+                     WORTH RECORDING, because it is a live flag combination rather than a
+                     hypothetical: with the hero flag on and the detail flag off, the identity block
+                     above does not render but this rule still does, separating nothing. Landlord
+                     carries the same artifact and documented the same answer — the fix is turning
+                     the detail flag on after visual verification, not suppressing the rule a second
+                     time in the legacy branch. --}}
+    @unless ($hsaDetailRedesign)
                 <hr>
+    @endunless
 
                  @inject('carbon', 'Carbon\Carbon')
 
@@ -2029,6 +2224,15 @@
             $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
             $isAgentViewer  = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
         @endphp
+
+    {{-- T4 — the sidebar card closes HERE, above the proposal console. The console is its sibling,
+         not its child: it brings its own card chrome, and its contents are gated by
+         HireAgentProposalAccess. Nesting it would double the border and shadow, and would put a
+         geometry rule from this change in reach of a proposal card. See the block that opens the
+         wrapper for the full reasoning. Buyer closes at the identical point. --}}
+    @if ($hsaDetailRedesign)
+    </div>
+    @endif
 
         {{--
             Milestone 2 — competing-agent proposal privacy. Removed from this position:
@@ -3694,4 +3898,22 @@ document.querySelectorAll('.hla-bid-accordion-header').forEach(function(header) 
     });
 });
 </script>
+
+{{-- T4 — active section highlighting. Flag-gated: with the redesign off this page pushes no
+     additional script, so there is no new behaviour to regress.
+
+     THE ROLE-AWARE READER, NOT THE MASTER SWITCH. This script drives the bar emitted under the
+     same gate; reading a different flag than the markup it operates on is how a page ends up
+     binding behaviour to elements that were never rendered. See the $hsaDetailRedesign note.
+
+     Both partials are shared with the three completed roles rather than copied, and neither
+     carries a gate of its own on purpose, so the decision stays here with the markup. --}}
+@if (\App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('seller'))
+@include('hire_agent.framework.section-nav-behaviour')
+
+{{-- Binds the Quick Actions Copy Link control emitted in the beforeGrid slot. Gated by the same
+     role-aware reader as the markup it operates on: binding behaviour to elements that were never
+     rendered is the failure this pairing avoids. --}}
+@include('hire_agent.framework.quick-actions-behaviour')
+@endif
 @endpush
