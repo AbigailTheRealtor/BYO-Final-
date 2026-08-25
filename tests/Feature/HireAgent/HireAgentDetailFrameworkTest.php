@@ -64,11 +64,16 @@ class HireAgentDetailFrameworkTest extends TestCase
     /**
      * A live listing with the role's hero inputs planted.
      *
-     * `budget` is the single stored key all four roles use for their headline figure — its
-     * MEANING differs (sale price / monthly rent / purchase budget / rental budget) but the key
-     * does not, which is exactly why the presenter decides the label. Cities are planted for all
-     * roles so the Buyer/Tenant "Preferred Area" assertions have a real value to find and the
-     * Seller/Landlord assertions prove the presenter does NOT show an area for them.
+     * EVERY headline-figure key is planted for EVERY role, at the same value where the roles are
+     * comparable. `budget` (buyer, tenant), `desired_rental_amount` + `lease_amount_frequency`
+     * (landlord, M5.0a) and `maximum_budget` (seller, T3) are all seeded regardless of which role
+     * is being built, because a role only reads its own and a fixture that quietly differed by
+     * role is precisely what hid the landlord and seller defects: seller's assertion passed for
+     * years against a `budget` key the seller form has never written.
+     *
+     * Cities are planted for all roles so the Buyer/Tenant "Preferred Area" assertions have a
+     * real value to find and the Seller/Landlord assertions prove the presenter does NOT show an
+     * area for them.
      */
     private function makeListing(string $role, int $ownerId, array $overrides = []): Model
     {
@@ -94,6 +99,13 @@ class HireAgentDetailFrameworkTest extends TestCase
         $meta = array_merge([
             'listing_title'        => ucfirst($role) . ' listing title',
             'budget'               => '654321',
+            // T3 — seller's sale price lives here, not in `budget`. Seeded for every role for the
+            // same reason as the landlord keys below: only seller reads it and the others ignore
+            // it. The value is DELIBERATELY DIFFERENT from `budget` above: if both carried 654321
+            // the seller assertion would pass whichever key the presenter read, which is exactly
+            // how the original defect survived. 987,654 vs 654,321 makes the positive test itself
+            // discriminate between the two keys, with no negative test required to do that work.
+            'maximum_budget'       => '987654',
             // M5.0a — landlord rent lives here, not in `budget`, and carries its own frequency.
             // Seeded for every role because only landlord reads it; the others ignore it, and a
             // shared fixture that quietly differed by role would hide exactly this kind of defect.
@@ -263,17 +275,64 @@ class HireAgentDetailFrameworkTest extends TestCase
      * Agent listings must not publicly display agent compensation, so the assertion is inverted
      * rather than deleted: the old expectation is now the thing we forbid. See
      * HireAgentHeroData::facts() for why the removal lives in the presenter.
+     *
+     * AMENDED AGAIN IN T3 — the figure now comes from `maximum_budget`, and the fixture plants a
+     * different value there (987654) than in `budget` (654321), so this assertion distinguishes
+     * the two keys on its own. Before T3 both the presenter and this test named `budget`, and the
+     * test passed against a key the seller form has never written.
      */
     public function test_seller_hero_shows_listing_price_and_no_compensation(): void
     {
         $hero = HireAgentHeroData::for('seller', $this->makeListing('seller', User::factory()->create()->id));
 
         $this->assertSame('Listing Price', $hero['figure']['label']);
-        $this->assertStringContainsString('654,321', $hero['figure']['value']);
+        $this->assertStringContainsString('987,654', $hero['figure']['value']);
+        $this->assertStringNotContainsString(
+            '654,321',
+            $hero['figure']['value'],
+            'The seller figure must come from `maximum_budget`, never from the unwritten `budget` key.'
+        );
 
         $labels = array_column($hero['facts'], 'label');
         $this->assertNotContains('Broker Compensation', $labels);
         $this->assertSame(['Property Type'], $labels, 'Nothing was substituted for the removed row.');
+    }
+
+    /**
+     * T3 REGRESSION — `budget` alone must not populate the seller figure.
+     *
+     * The complement of the test above, and the one that pins the no-fallback rule. A seller
+     * listing carrying only `budget` is what every real seller listing looked like before T3: the
+     * key is written by nothing in the seller flow, so the figure must be absent rather than
+     * quietly sourced from it. A fallback chain would make this pass while restoring the defect.
+     *
+     * Buyer and tenant are asserted alongside as the positive control, so a future change that
+     * removed `budget` from the presenter entirely could not make this file green by accident.
+     */
+    public function test_seller_figure_is_absent_when_only_the_unwritten_budget_key_is_present(): void
+    {
+        $seller = $this->makeListing('seller', User::factory()->create()->id, [
+            'maximum_budget' => null,
+            'budget'         => '654321',
+        ]);
+
+        $this->assertNull(
+            HireAgentHeroData::for('seller', $seller)['figure'],
+            'Seller must not fall back to `budget`; with `maximum_budget` absent the slot is omitted.'
+        );
+
+        foreach (['buyer', 'tenant'] as $role) {
+            $listing = $this->makeListing($role, User::factory()->create()->id, [
+                'maximum_budget' => null,
+                'budget'         => '654321',
+            ]);
+
+            $this->assertStringContainsString(
+                '654,321',
+                HireAgentHeroData::for($role, $listing)['figure']['value'],
+                "Control: {$role} still reads `budget` and is unaffected by the seller fix."
+            );
+        }
     }
 
     /**
@@ -429,15 +488,23 @@ class HireAgentDetailFrameworkTest extends TestCase
         }
     }
 
-    /** A missing value omits its slot rather than rendering a placeholder or a zero. */
+    /**
+     * A missing value omits its slot rather than rendering a placeholder or a zero.
+     *
+     * T3 — the blanked key is now `maximum_budget`, which is where seller's price actually lives.
+     * The assertion is unchanged; only the key it has to blank to mean "no price" moved. `budget`
+     * is blanked alongside it so this still proves the seller figure is absent even when NEITHER
+     * key carries a value — a version that blanked only the new key could pass while a fallback
+     * to the old one existed.
+     */
     public function test_absent_values_are_omitted_not_placeheld(): void
     {
         $owner   = User::factory()->create();
-        $listing = $this->makeListing('seller', $owner->id, ['budget' => '', 'commission_structure' => '', 'purchase_fee_type' => '', 'lease_fee_type' => '', 'brokerage_relationship' => '']);
+        $listing = $this->makeListing('seller', $owner->id, ['maximum_budget' => '', 'budget' => '', 'commission_structure' => '', 'purchase_fee_type' => '', 'lease_fee_type' => '', 'brokerage_relationship' => '']);
 
         $hero = HireAgentHeroData::for('seller', $listing);
 
-        $this->assertNull($hero['figure'], 'No budget must mean no figure — not $0.');
+        $this->assertNull($hero['figure'], 'No price must mean no figure — not $0.');
         $this->assertNotContains('Broker Compensation', array_column($hero['facts'], 'label'));
     }
 
@@ -942,6 +1009,203 @@ class HireAgentDetailFrameworkTest extends TestCase
 
         $this->assertSame(2, $legacy, 'Control: the legacy page carried two h1 elements.');
         $this->assertSame(1, $redesigned, 'The redesigned page must carry exactly one h1.');
+    }
+
+    // ── T3 — the seller hero, given the same treatment landlord got ──────────
+    //
+    // Seller is the last role to adopt the hero guard and the heroActions slot, so it gets its own
+    // copy of the matrix above rather than being folded into it: the landlord matrix hardcodes the
+    // landlord edit route and the landlord pilot listing, and generalising it would have meant
+    // touching a passing landlord test to add a seller one.
+    //
+    // The same evidence limitation applies here as there. This asserts CONTENT, IDENTITY and
+    // AUTHORIZATION. There is no browser in this environment, so layout, spacing, wrapping and
+    // breakpoint behaviour are NOT covered and rest on manual review before the flag is enabled
+    // anywhere shared.
+
+    private const SELLER_PILOT_LISTING_ID = 'SAA-TEST5678';
+
+    /** Turn the pilot on for seller only, exactly as production would. */
+    private function enableSellerPilot(): void
+    {
+        config([
+            'hire_agent_hero.redesign_enabled' => true,
+            'hire_agent_hero.redesign_roles'   => ['seller'],
+        ]);
+    }
+
+    private function makeSellerPilotListing(int $ownerId, bool $expired = false): Model
+    {
+        $listing = $this->makeListing('seller', $ownerId, [
+            'expiration_date' => $expired
+                ? now()->subDays(5)->toDateTimeString()
+                : now()->addDays(30)->toDateTimeString(),
+        ]);
+
+        $listing->listing_id = self::SELLER_PILOT_LISTING_ID;
+        $listing->save();
+
+        return $listing->fresh();
+    }
+
+    private function sellerEditHref(int $listingId): string
+    {
+        return route('hire.agent.auction.edit', ['auctionId' => $listingId, 'user_type' => 'seller']);
+    }
+
+    public static function sellerHeroMatrix(): array
+    {
+        $out = [];
+        foreach (['owner', 'non-owner', 'guest'] as $viewer) {
+            foreach ([false, true] as $expired) {
+                $out[$viewer . ' / ' . ($expired ? 'Expired' : 'Active')] = [$viewer, $expired];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @dataProvider sellerHeroMatrix
+     */
+    public function test_the_seller_hero_renders_correctly_for_each_viewer_and_status(string $viewer, bool $expired): void
+    {
+        $this->enableSellerPilot();
+
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id, $expired);
+
+        $request = match ($viewer) {
+            'owner'     => $this->actingAs($owner),
+            'non-owner' => $this->actingAs(User::factory()->create()),
+            'guest'     => $this,
+        };
+
+        $response = $request->get($this->urlFor('seller', $listing->id));
+        $body     = (string) $response->getContent();
+
+        // EVERY viewer asserts on a real page, INCLUDING THE GUEST. The landlord matrix above
+        // tolerates a redirect and returns early, because a guest there may legitimately be sent
+        // away. The seller detail route carries no `auth` middleware (routes/web.php — it is one
+        // of the few in that block without one), so a guest gets a 200 and the full assertion set
+        // below runs against real markup. Keeping landlord's early return here would have left the
+        // guest case silently asserting nothing, and would go on passing if the page ever started
+        // redirecting — which is the regression this row exists to catch.
+        $response->assertOk();
+
+        // ── Exactly one heading ─────────────────────────────────────────────
+        $this->assertSame(
+            1,
+            substr_count($body, '<h1'),
+            'With the seller hero on, the sidebar identity block is suppressed and exactly one h1 remains.'
+        );
+
+        // ── Exactly one status representation ───────────────────────────────
+        $expectedStatus = $expired ? 'Expired' : 'Active';
+        $this->assertSame(
+            $expectedStatus,
+            $listing->status,
+            'Control: the model accessor itself must derive the status under test.'
+        );
+        $this->assertStringContainsString(
+            $expectedStatus,
+            $body,
+            "The hero must show the accessor's own label, {$expectedStatus}."
+        );
+        // `Status: ` is emitted by the sidebar identity pill and by nothing else on this page —
+        // the bid CTA below reuses the .status-pill CLASS for its own controls, so counting the
+        // class would count those too and assert something this test does not mean.
+        $this->assertSame(
+            0,
+            substr_count($body, 'Status: '),
+            'The legacy sidebar status pill must not render alongside the hero status.'
+        );
+        // The redesigned hero renders its status as a pill badge, and viho-badge is emitted by the
+        // viho hero and by no other component this page renders.
+        //
+        // MATCHED AS `class="viho-badge`, NOT AS `viho-badge-pill`. The framework stylesheet is
+        // inlined into the page, so a bare class name occurs in the CSS as well as in the markup —
+        // the first version of this assertion counted 2 and was measuring the stylesheet. The
+        // `class="` prefix appears only where an element actually carries the class.
+        $this->assertSame(
+            1,
+            substr_count($body, 'class="viho-badge'),
+            'Exactly one hero status badge must render.'
+        );
+
+        // ── Identity ────────────────────────────────────────────────────────
+        //
+        // COUNTED ON `data-viho-hero`, NOT `data-hla-hero`, and the landlord matrix above does the
+        // same for the same reason: the role view passes `data-hla-hero` as a VALUELESS attribute,
+        // and Laravel's attribute bag renders those as `data-hla-hero="data-hla-hero"` — two
+        // occurrences of the substring for one element. `data-viho-hero` is emitted by the
+        // primitive itself with no value to double.
+        $this->assertSame(1, substr_count($body, 'data-viho-hero'), 'Exactly one hero must render.');
+        $this->assertSame(
+            1,
+            substr_count($body, 'Listing ID: ' . self::SELLER_PILOT_LISTING_ID),
+            'The full alphanumeric listing id must appear exactly once.'
+        );
+
+        // ── Authorization: exactly one edit control, and only for the owner ──
+        $this->assertSame(
+            $viewer === 'owner' ? 1 : 0,
+            substr_count($body, $this->sellerEditHref($listing->id)),
+            'The seller edit control must appear ' . ($viewer === 'owner' ? 'exactly once' : 'not at all')
+            . " for a {$viewer}."
+        );
+
+        // ── Retired vocabulary stays retired ────────────────────────────────
+        foreach (['data-hla-countdown', 'Bidding Period', 'Remaining'] as $banned) {
+            $this->assertStringNotContainsString($banned, $body, "The seller hero must not reintroduce {$banned}.");
+        }
+    }
+
+    /**
+     * The seller headline figure, asserted on the RENDERED PAGE rather than on the presenter.
+     *
+     * The presenter-level assertions live in the figure tests above. This one exists because the
+     * defect T3 fixed was only ever visible as a rendered page: the figure resolved to null, the
+     * slot emitted nothing, and no presenter test was failing to say so.
+     */
+    public function test_the_seller_hero_figure_renders_from_maximum_budget_and_never_from_budget(): void
+    {
+        $this->enableSellerPilot();
+
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+        $body    = (string) $this->actingAs($owner)->get($this->urlFor('seller', $listing->id))->getContent();
+
+        $this->assertStringContainsString('Listing Price', $body, 'The seller hero must label its figure.');
+        $this->assertStringContainsString('$987,654', $body, 'The figure must come from `maximum_budget`.');
+        $this->assertStringNotContainsString(
+            '654,321',
+            $body,
+            'The unwritten `budget` key must not reach the page — no fallback, on any surface.'
+        );
+    }
+
+    /** With the seller hero off, the seller page keeps every byte of its legacy identity block. */
+    public function test_the_seller_hero_flag_off_leaves_the_legacy_identity_block_intact(): void
+    {
+        $this->assertFalse(
+            HireAgentHeroData::redesignEnabledFor('seller'),
+            'Seller must not be on the pilot allowlist by default.'
+        );
+
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+        $body    = (string) $this->actingAs($owner)->get($this->urlFor('seller', $listing->id))->getContent();
+
+        $this->assertSame(2, substr_count($body, '<h1'), 'Control: the legacy seller page carries two h1 elements.');
+        $this->assertSame(1, substr_count($body, 'Status: '), 'The legacy sidebar status pill must render, exactly once.');
+        $this->assertSame(
+            1,
+            substr_count($body, $this->sellerEditHref($listing->id)),
+            'The owner still gets exactly one edit control, from the sidebar.'
+        );
+        $this->assertStringContainsString('hla-hero', $body, 'The legacy hero must still render.');
+        $this->assertStringNotContainsString('data-viho-hero', $body, 'The redesigned hero must not render.');
     }
 
     /** With the flag off, every role renders exactly what it rendered before M4. */

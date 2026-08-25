@@ -1782,6 +1782,39 @@
         {{-- Sidebar body untouched by 5A.3; the shell supplies only the column wrapper.
              Extracting it is Milestone 5B. --}}
         <x-slot name="sidebar">
+    @php
+        // T3 — hoisted out of the identity block below so this assignment happens in BOTH
+        // treatments. Later sidebar code reads $auth_id, and leaving it inside a block that the
+        // redesigned hero suppresses would silently change those reads the moment the hero is
+        // enabled for seller. Mirrors the buyer and landlord views. The prologue at the top of
+        // this section already assigns $auth_id unconditionally, so this is belt-and-braces
+        // rather than a behaviour change — but the other three roles state it here, and a reader
+        // checking why the guarded block is safe should not have to scroll 1,600 lines to find
+        // out. The directive emits no output, so hoisting it cannot alter the legacy rendering.
+        $auth_id = auth()->id();
+    @endphp
+
+    {{--
+        T3 — the sidebar identity block.
+
+        Title, listing id, status and Edit Listing move INTO the hero when the hero redesign is on
+        for seller, so this block renders only when it is off. What is avoided is duplication:
+        without this guard the page would carry two <h1> elements, two status pills and two Edit
+        controls, which is worse than either treatment alone.
+
+        Gated on the HERO flag, not the detail flag — the two roll out independently by design, and
+        this block's counterpart lives in the hero. Reading the detail flag here would suppress the
+        identity block for a role whose hero is still off, leaving the page with no title at all.
+
+        THE EXPIRY OVERRIDE BELOW IS NOT MOVED, AND DOES NOT NEED TO BE. It re-derives a result
+        SellerAgentAuction::getStatusAttribute() has already produced — the accessor returns
+        'Hired Agent' from is_sold or listing_status, 'Pending' from listing_status, and 'Expired'
+        from expiration_date, which is the same input in the same precedence — so the hero reading
+        $auction->status directly yields the identical label for every state. Nothing about expiry
+        is reimplemented in the presenter; there is nothing left to reimplement. Same conclusion
+        landlord reached.
+    --}}
+    @unless (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('seller'))
                 <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
                 @if(@$auction->listing_id)
                 <div class="mb-2">
@@ -1836,9 +1869,6 @@
                 </div>
                 @endif
 
-                @php
-                    $auth_id = auth()->id();
-                @endphp
                 @if($auth_id && $auth_id == @$auction->user_id)
                 <div class="mb-2">
                     <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'seller']) }}" 
@@ -1848,6 +1878,12 @@
                     {{-- PDF download button hidden from UI (backend route preserved) --}}
                 </div>
                 @endif
+    @endunless
+                {{-- T4, NOT T3. Buyer and landlord suppress this rule under the DETAIL flag, because
+                     there the sidebar is a card whose own edge and padding are the separation the
+                     rule stood in for. Seller has no sidebar surface card yet, so there is nothing
+                     for the rule to be redundant with and it is left exactly as it was. It moves
+                     with the card, in T4, not before it. --}}
                 <hr>
 
                  @inject('carbon', 'Carbon\Carbon')
@@ -3599,6 +3635,38 @@
                 </div>
             </div>
         </x-slot>
+
+        {{--
+            T3 — the hero's Edit Listing control, the seller counterpart of the buyer, landlord and
+            tenant slots.
+
+            THE SLOT ITSELF IS CONDITIONAL, not just its contents. An always-emitted slot would be
+            `isset()` even when empty, and the legacy hero would then render an empty actions
+            wrapper — a DOM change on a page the flag is supposed to leave untouched.
+
+            THE AUTHORIZATION TEST IS SELLER'S OWN, UNCHANGED. Owner-only, by user id — the same
+            test the sidebar control has always carried, and buyer's and landlord's shape rather
+            than tenant's, because tenant's extra two conditions (tenant-type listing, no accepted
+            bid) come from tenant's sidebar control and seller's has never had them. Adding them
+            here would hide the control from a seller the sidebar has always shown it to.
+
+            `auth()->id()` is read directly rather than through $auth_id so this does not depend on
+            the sidebar slot having been captured first — slot capture order is not something this
+            control should have an opinion about.
+
+            Route, params, label, icon and classes are identical to the sidebar control it replaces,
+            and the sidebar copy is suppressed under the same hero flag — so exactly one Edit
+            Listing renders in either flag state, never two and never none.
+        --}}
+        @if (\App\Support\HireAgent\HireAgentHeroData::redesignEnabledFor('seller')
+            && auth()->id() && auth()->id() == @$auction->user_id)
+        <x-slot name="heroActions">
+            <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'seller']) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
+            </a>
+        </x-slot>
+        @endif
     </x-hire-agent.detail-shell>
 @endsection
 @push('scripts')
