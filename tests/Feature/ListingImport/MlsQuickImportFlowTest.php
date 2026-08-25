@@ -885,6 +885,59 @@ class MlsQuickImportFlowTest extends TestCase
     /**
      * @test
      *
+     * The fifteen fields manual Create used to silently discard reach the
+     * listing through Quick Import too, with the same transforms.
+     *
+     * Quick Import inherited Create's gap by design — it writes through the same
+     * routine — so repairing Create repaired this path in the same edit. This
+     * asserts that rather than assuming it.
+     */
+    public function the_repaired_sale_terms_persist_through_quick_import(): void
+    {
+        $this->seedBridgeProperty(1);
+
+        $component = $this->flowToReview($this->seller, [
+            'occupant_tenant'                    => 'Lease expires March 2027',
+            'balloon_payment'                    => 'Yes',
+            'outstanding_balance'                => '245000',
+            'lease_option_fee_credit'            => 'Yes',
+            'lease_option_fee_credit_percentage' => '50',
+            'lease_option_maintenance'           => 'Buyer',
+            'lease_option_extension_terms'       => 'One 6-month extension',
+            'lease_purchase_rent_credit'         => 'Yes',
+            'lease_purchase_rent_credit_amount'  => '1,000',
+            'lease_purchase_deposit'             => '15,000',
+            'lease_purchase_maintenance'         => 'Seller',
+            'lease_purchase_extension_terms'     => 'Month to month thereafter',
+            'nft_gas_fees'                       => 'Buyer',
+            'nft_transfer_method'                => 'Direct wallet transfer',
+            'nft_valuation_method'               => 'Third-party appraisal',
+        ]);
+
+        $meta = SellerAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('Lease expires March 2027', $meta->occupant_tenant);
+        $this->assertSame('Yes', $meta->balloon_payment);
+        $this->assertSame('245000', $meta->outstanding_balance);
+        $this->assertSame('Yes', $meta->lease_option_fee_credit);
+        $this->assertSame('50', $meta->lease_option_fee_credit_percentage);
+        $this->assertSame('Buyer', $meta->lease_option_maintenance);
+        $this->assertSame('One 6-month extension', $meta->lease_option_extension_terms);
+        $this->assertSame('Yes', $meta->lease_purchase_rent_credit);
+        $this->assertSame('Seller', $meta->lease_purchase_maintenance);
+        $this->assertSame('Month to month thereafter', $meta->lease_purchase_extension_terms);
+        $this->assertSame('Buyer', $meta->nft_gas_fees);
+        $this->assertSame('Direct wallet transfer', $meta->nft_transfer_method);
+        $this->assertSame('Third-party appraisal', $meta->nft_valuation_method);
+
+        // The two money fields among them are comma-stripped.
+        $this->assertSame('1000', $meta->lease_purchase_rent_credit_amount);
+        $this->assertSame('15000', $meta->lease_purchase_deposit);
+    }
+
+    /**
+     * @test
+     *
      * Bidding-period pricing — starting, reserve and buy-now — reaches the
      * listing from quick import. The old reduced schema had none of these, so a
      * bidding-period listing created this way could not carry a reserve at all.

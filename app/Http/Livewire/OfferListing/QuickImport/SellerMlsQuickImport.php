@@ -133,20 +133,40 @@ class SellerMlsQuickImport extends MlsQuickImportComponent
     /**
      * Required before review.
      *
-     * Deliberately only the asking price. The manual flow's publish rules
-     * (SellerPublishValidation) impose no required rule on ANY sale-terms field
-     * — the sole terms-adjacent requirement is auction_time for a Bidding Period
-     * listing, which continueToTerms() already enforces on this path too.
+     * NOT A SALE TERMS RULE, and deliberately kept apart from one.
      *
-     * The price guard is kept because this path seeds it from the MLS record and
-     * publishing a listing with no asking price is not a state the flow should
-     * be able to reach. The previous additional requirement on "Financing You
-     * Will Accept" is dropped: the manual flow does not demand it, and demanding
-     * it here made quick import stricter than the screen it is meant to mirror.
+     * The canonical Sale Terms tab has no required fields: SellerPublishValidation
+     * imposes no rule on any of them, and the only terms-adjacent requirement in
+     * the manual flow is auction_time for a Bidding Period listing, which
+     * continueToTerms() already enforces on this path too. Nothing below may grow
+     * into a second, quick-import-only validation surface for sale terms — if a
+     * term should be mandatory it becomes mandatory in SellerPublishValidation,
+     * where both entry paths read it.
+     *
+     * What this is instead: a LISTING-DATA guard specific to this entry path.
+     * The asking price is core listing data, quick import seeds it from the MLS
+     * record, and a listing that reaches publish with no price at all is not a
+     * state this flow should be able to produce. It is enforced here rather than
+     * as a sale term because that is what it is.
+     *
+     * A previous additional requirement on "Offered Financing/Currency" is gone:
+     * the manual flow does not demand it, so demanding it here made quick import
+     * stricter than the screen it mirrors.
      *
      * @return list<string>
      */
     protected function missingCanonicalTerms(): array
+    {
+        return $this->missingRequiredListingData();
+    }
+
+    /**
+     * Listing-data requirements for this entry path. See the note above for why
+     * these are not sale-terms rules.
+     *
+     * @return list<string>
+     */
+    private function missingRequiredListingData(): array
     {
         return trim((string) $this->maximum_budget) === ''
             ? ['Desired Sale Price']

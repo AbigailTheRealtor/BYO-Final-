@@ -210,30 +210,23 @@ trait SellerSaleTerms
     }
 
     /**
-     * Fields the canonical tab renders that manual Create does not persist.
+     * Canonical fields that are deliberately NOT stored.
      *
-     * @see the PERSISTENCE DIVERGENCE note above. Not a design choice.
+     * UI state only — something the tab needs in order to draw itself, which is
+     * not an answer the seller gave. This is not, and must not become, a place
+     * to park a field that is genuinely supported but inconvenient to persist:
+     * a field the seller can type into belongs in sellerSaleTermsMetaMap().
+     *
+     * It previously held fifteen real fields, under the name
+     * sellerSaleTermsUnpersistedOnCreate(), recording a Create-only data-loss
+     * bug. Those are repaired and gone from here.
      *
      * @return list<string>
      */
-    public static function sellerSaleTermsUnpersistedOnCreate(): array
+    public static function sellerSaleTermsNotPersisted(): array
     {
         return [
-            'occupant_tenant',
-            'balloon_payment',
-            'outstanding_balance',
-            'lease_option_fee_credit',
-            'lease_option_fee_credit_percentage',
-            'lease_option_maintenance',
-            'lease_option_extension_terms',
-            'lease_purchase_rent_credit',
-            'lease_purchase_rent_credit_amount',
-            'lease_purchase_deposit',
-            'lease_purchase_maintenance',
-            'lease_purchase_extension_terms',
-            'nft_gas_fees',
-            'nft_transfer_method',
-            'nft_valuation_method',
+            // The Estimated Payment Assumptions expander. Open or closed, not an answer.
             'showPaymentAssumptions',
         ];
     }
@@ -361,6 +354,27 @@ trait SellerSaleTerms
             'home_warranty_amount_details' => 'raw',
             'hoa_condo_association_terms' => 'raw',
             'additional_seller_sale_terms' => 'raw',
+            // ── Repaired: rendered by the canonical tab on Create as well as
+            //    Edit, but Create had no saveMeta line for any of them, so a
+            //    value typed while CREATING a listing was silently discarded and
+            //    the same value typed while EDITING saved normally. Transforms
+            //    are Edit's, which were already correct and already round-trip.
+            'occupant_tenant' => 'raw',
+            'balloon_payment' => 'raw',
+            'outstanding_balance' => 'raw',
+            'lease_option_fee_credit' => 'raw',
+            'lease_option_fee_credit_percentage' => 'raw',
+            'lease_option_maintenance' => 'raw',
+            'lease_option_extension_terms' => 'raw',
+            'lease_purchase_rent_credit' => 'raw',
+            'lease_purchase_rent_credit_amount' => 'money',
+            'lease_purchase_deposit' => 'money',
+            'lease_purchase_maintenance' => 'raw',
+            'lease_purchase_extension_terms' => 'raw',
+            'nft_gas_fees' => 'raw',
+            'nft_transfer_method' => 'raw',
+            'nft_valuation_method' => 'raw',
+
             'payment_down_payment_pct' => 'money',
             'payment_interest_rate' => 'money',
             'payment_loan_term' => 'money',
@@ -421,6 +435,61 @@ trait SellerSaleTerms
 
                 default:
                     $auction->saveMeta($field, $value);
+            }
+        }
+    }
+
+    /**
+     * Read every canonical Sale Terms answer back off the listing's meta.
+     *
+     * The other half of persistence, and the half Create was also missing.
+     * Create wrote a value and then, on resuming the draft, never read it back —
+     * so 27 of these fields came up blank on the form and the next save wrote
+     * that blank over the stored answer. Saving without loading is data loss on
+     * a delay.
+     *
+     * ADDITIVE BY DESIGN. Callers invoke this BEFORE their own hand-written
+     * hydration lines, so any field a class already loads is simply re-assigned
+     * to the same value a moment later and that class's existing behaviour wins
+     * untouched. What changes is only the fields nobody was loading at all.
+     *
+     * The three array fields and the one boolean are normalised exactly as the
+     * hand-written lines normalise them: values come back from EAV meta as JSON
+     * strings, and casting a JSON string with (array) yields a one-element array
+     * holding the raw JSON rather than the list that was stored.
+     */
+    protected function loadSellerSaleTermsMeta(object $auction): void
+    {
+        $meta = $auction->get;
+
+        foreach (static::sellerSaleTermsMetaMap() as $field => $kind) {
+            $raw = $meta->{$field} ?? null;
+
+            switch ($kind) {
+                case 'json':
+                case 'exchange_item':
+                    if (is_string($raw)) {
+                        $decoded = json_decode($raw, true);
+                        $this->{$field} = is_array($decoded)
+                            ? $decoded
+                            : ($raw !== '' ? [$raw] : []);
+                    } else {
+                        $this->{$field} = (array) ($raw ?? []);
+                    }
+                    break;
+
+                case 'bool01':
+                    // Absent means "never answered", which for this flag is true
+                    // — the buydown options are shown by default.
+                    $this->{$field} = ($raw === null)
+                        ? true
+                        : ($raw !== '0' && $raw !== 'false');
+                    break;
+
+                default:
+                    if ($raw !== null) {
+                        $this->{$field} = $raw;
+                    }
             }
         }
     }

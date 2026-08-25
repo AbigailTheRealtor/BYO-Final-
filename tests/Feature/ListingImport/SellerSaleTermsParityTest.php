@@ -229,36 +229,158 @@ class SellerSaleTermsParityTest extends TestCase
     /**
      * @test
      *
-     * Documents a PRE-EXISTING defect this refactor deliberately did not change:
-     * manual Create renders these fields but has never persisted them, while
-     * manual Edit does. Quick Import is a creation path and matches Create.
+     * NO ACTIVE CANONICAL FIELD IS SILENTLY UNPERSISTED.
      *
-     * This test exists so the gap is visible and counted rather than forgotten.
-     * When Create is repaired the list empties and this assertion is what tells
-     * you to delete the constant it guards.
+     * The defect this replaces: manual Create rendered fifteen canonical Sale
+     * Terms fields it had no saveMeta line for, so a value typed while CREATING
+     * a listing was silently discarded while the same value typed while EDITING
+     * saved normally. They are repaired; this asserts the class of bug is gone
+     * rather than that those particular fifteen are fixed.
+     *
+     * Every canonical field must be either persisted or on the deliberate
+     * not-persisted list, and that list may only contain UI state.
      */
-    public function the_known_create_persistence_gap_is_recorded(): void
+    public function no_active_canonical_field_is_silently_unpersisted(): void
     {
-        $unpersisted = SellerOfferListing::sellerSaleTermsUnpersistedOnCreate();
-        $map         = SellerOfferListing::sellerSaleTermsMetaMap();
+        $fields       = SellerOfferListing::sellerSaleTermsFields();
+        $map          = SellerOfferListing::sellerSaleTermsMetaMap();
+        $notPersisted = SellerOfferListing::sellerSaleTermsNotPersisted();
 
-        foreach ($unpersisted as $field) {
-            $this->assertArrayNotHasKey(
-                $field,
-                $map,
-                "{$field} is now persisted on Create — remove it from "
-                . 'sellerSaleTermsUnpersistedOnCreate().'
-            );
-        }
-
-        // Every canonical field is either persisted or explicitly listed as a
-        // known gap. Nothing may fall between the two silently.
-        $accounted = array_merge(array_keys($map), $unpersisted);
+        $unaccounted = array_values(array_diff($fields, array_keys($map), $notPersisted));
 
         $this->assertSame(
             [],
-            array_values(array_diff(SellerOfferListing::sellerSaleTermsFields(), $accounted)),
-            'A canonical Sale Terms field is neither persisted nor recorded as a known gap.'
+            $unaccounted,
+            'Canonical Sale Terms fields are neither persisted nor declared as UI state: '
+            . implode(', ', $unaccounted)
         );
+
+        // The escape hatch stays shut. Anything a seller can type into belongs in
+        // the map; only view state may sit here.
+        $this->assertSame(
+            ['showPaymentAssumptions'],
+            $notPersisted,
+            'A field was added to the not-persisted list. If a seller can enter a '
+            . 'value into it, it must be persisted instead.'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * The fifteen repaired fields are persisted, with the transforms Edit
+     * already used. Named explicitly because each was a live data-loss path.
+     */
+    public function the_repaired_create_gap_fields_are_persisted(): void
+    {
+        $map = SellerOfferListing::sellerSaleTermsMetaMap();
+
+        $expected = [
+            'occupant_tenant'                    => 'raw',
+            'balloon_payment'                    => 'raw',
+            'outstanding_balance'                => 'raw',
+            'lease_option_fee_credit'            => 'raw',
+            'lease_option_fee_credit_percentage' => 'raw',
+            'lease_option_maintenance'           => 'raw',
+            'lease_option_extension_terms'       => 'raw',
+            'lease_purchase_rent_credit'         => 'raw',
+            'lease_purchase_rent_credit_amount'  => 'money',
+            'lease_purchase_deposit'             => 'money',
+            'lease_purchase_maintenance'         => 'raw',
+            'lease_purchase_extension_terms'     => 'raw',
+            'nft_gas_fees'                       => 'raw',
+            'nft_transfer_method'                => 'raw',
+            'nft_valuation_method'               => 'raw',
+        ];
+
+        foreach ($expected as $field => $kind) {
+            $this->assertArrayHasKey($field, $map, "{$field} is unpersisted again.");
+            $this->assertSame($kind, $map[$field], "{$field} changed storage transform.");
+        }
+    }
+
+    /**
+     * @test
+     *
+     * All three flows write through the one routine. Create and Edit are checked
+     * at the source, because a hand-written saveMeta run reappearing beside the
+     * shared call is how the drift started.
+     */
+    public function create_edit_and_quick_import_all_persist_through_the_shared_routine(): void
+    {
+        foreach ([
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
+            'app/Http/Livewire/OfferListing/QuickImport/SellerMlsQuickImport.php',
+        ] as $file) {
+            $this->assertStringContainsString(
+                'saveSellerSaleTermsMeta($auction)',
+                file_get_contents(base_path($file)),
+                $file . ' no longer persists Sale Terms through the shared routine.'
+            );
+        }
+
+        // And none of them keeps a private saveMeta line for a canonical field.
+        $map = array_keys(SellerOfferListing::sellerSaleTermsMetaMap());
+
+        foreach ([
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php',
+            'app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php',
+        ] as $file) {
+            $source = file_get_contents(base_path($file));
+
+            foreach ($map as $field) {
+                $this->assertStringNotContainsString(
+                    "saveMeta('{$field}'",
+                    $source,
+                    "{$file} has a private saveMeta line for the canonical field {$field}."
+                );
+            }
+        }
+    }
+
+    /**
+     * @test
+     *
+     * Persistence is save AND load. Create used to write twelve fields it never
+     * read back, so resuming a draft showed them blank and the next save wrote
+     * that blank over the stored answer — data loss on a delay.
+     */
+    public function create_rehydrates_canonical_sale_terms(): void
+    {
+        $this->assertStringContainsString(
+            'loadSellerSaleTermsMeta($auction)',
+            file_get_contents(base_path(
+                'app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php'
+            )),
+            'Create no longer rehydrates canonical Sale Terms when resuming a draft.'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Quick Import's asking-price rule is listing-data validation, not a sale
+     * term. Pinned so it is not later mistaken for one and copied into the
+     * canonical rules.
+     */
+    public function the_quick_import_price_rule_is_not_a_sale_terms_rule(): void
+    {
+        // Read through reflection rather than adding a test-only accessor to a
+        // production component.
+        $component = new SellerOfferListing();
+        $method    = new \ReflectionMethod($component, 'getConditionalRules');
+        $method->setAccessible(true);
+
+        /** @var array<string, mixed> $rules */
+        $rules = $method->invoke($component);
+
+        foreach (SellerOfferListing::sellerSaleTermsFields() as $field) {
+            $this->assertArrayNotHasKey(
+                $field,
+                $rules,
+                "Canonical publish validation has grown a rule for the sale term {$field}."
+            );
+        }
     }
 }

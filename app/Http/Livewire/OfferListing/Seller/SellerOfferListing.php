@@ -2460,6 +2460,15 @@ class SellerOfferListing extends Component
 
         if ($auction) {
 
+            // Canonical Sale Terms first, so the hand-written lines further down
+            // still win for every field they already covered and nothing about
+            // them changes. What this adds is the 27 canonical terms fields this
+            // method never read back at all — including twelve it had been
+            // writing, which meant resuming a draft showed them blank and the
+            // next save wrote that blank over the stored answer.
+            // @see \App\Http\Livewire\OfferListing\Concerns\SellerSaleTerms
+            $this->loadSellerSaleTermsMeta($auction);
+
             // Load all metadata fields
             $this->listing_title = $auction->title;
             $this->user_type = $auction->get->user_type;
