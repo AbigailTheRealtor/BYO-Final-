@@ -81,6 +81,17 @@ abstract class MlsQuickImportComponent extends Component
     // ── BidYourOffer answers ────────────────────────────────────────────────
 
     /** 'Traditional' | 'Bidding Period' — the platform's canonical terminology. */
+    /**
+     * The MLS record's property type, carried for the terms step.
+     *
+     * NOT a seller-entered term and never rendered as an editable input here —
+     * it is an imported MLS fact. It is held because the canonical Sale Terms
+     * tab branches on it (Vacant Land, for one, has no Occupant Type question),
+     * and a terms screen that cannot see the property type would show the wrong
+     * questions for the property it was imported from.
+     */
+    public string $property_type = '';
+
     public string $auction_type = '';
 
     /** Bidding Period duration; read only when auction_type is a bidding format. */
@@ -116,6 +127,77 @@ abstract class MlsQuickImportComponent extends Component
      * @return array<string, array{label: string, type: string, options?: list<string>, help?: string, section: string, when?: string}>
      */
     abstract public function questionSchema(): array;
+
+    /**
+     * The canonical terms partial this role renders, or null to fall back to
+     * questionSchema().
+     *
+     * A role that returns a partial name is saying "my terms step IS the manual
+     * flow's terms tab" — the same blade, the same fields, the same labels and
+     * conditionals — and its questionSchema() is then unused for rendering.
+     *
+     * This exists because a quick-import-only field list is the thing that goes
+     * wrong. Seller once had one: nineteen hand-copied fields, its own option
+     * vocabularies, and no conditional sections at all, so a seller who came in
+     * through quick import could not state seller financing, a lease option, a
+     * crypto split, a bidding-period reserve, or a payment assumption. Pointing
+     * at the canonical partial is what makes that impossible to reintroduce
+     * quietly: there is no second list to forget to update.
+     */
+    public function canonicalTermsPartial(): ?string
+    {
+        return null;
+    }
+
+    public function usesCanonicalTerms(): bool
+    {
+        return $this->canonicalTermsPartial() !== null;
+    }
+
+    /**
+     * Put the MLS-derived asking price where this role's terms step reads it.
+     *
+     * Schema-driven roles keep it in $terms; a canonical role holds the real
+     * Livewire property the manual tab binds, so it must be written there
+     * instead or the seeded figure would be invisible on the form.
+     */
+    protected function applySeededPrice(string $seed): void
+    {
+        if (! isset($this->terms[$this->priceField()]) || $this->terms[$this->priceField()] === '') {
+            $this->terms[$this->priceField()] = $seed;
+        }
+    }
+
+    /**
+     * Write the canonical terms for a role that renders the canonical partial.
+     *
+     * Overridden by such roles to delegate to the shared save routine the manual
+     * flow uses. Never reached by a schema-driven role.
+     */
+    protected function persistCanonicalTerms(object $auction): void
+    {
+        // no-op — a canonical role overrides this.
+    }
+
+    /**
+     * Canonical-mode required-field check.
+     *
+     * @return list<string>
+     */
+    protected function missingCanonicalTerms(): array
+    {
+        return [];
+    }
+
+    /**
+     * Canonical-mode review rows: [label => display value].
+     *
+     * @return array<string, string>
+     */
+    public function canonicalTermsReview(): array
+    {
+        return [];
+    }
 
     /** Price meta key for this role: what the user is asking for. */
     abstract public function priceField(): string;
@@ -223,9 +305,10 @@ abstract class MlsQuickImportComponent extends Component
             return;
         }
 
-        $this->listingId  = $auction->id;
-        $this->headline   = $result->headline;
-        $this->photoCount = $result->photoCount();
+        $this->listingId     = $auction->id;
+        $this->headline      = $result->headline;
+        $this->photoCount    = $result->photoCount();
+        $this->property_type = (string) ($result->facts['property_type'] ?? '');
 
         // Seed the price the user is asking, as a starting point they can change.
         // What may legitimately be seeded is role-specific — see seededPrice() —
@@ -233,9 +316,8 @@ abstract class MlsQuickImportComponent extends Component
         // a lease record, and guessing wrong publishes a wrong number.
         $seed = $this->seededPrice($result);
 
-        if ($seed !== null
-            && (! isset($this->terms[$this->priceField()]) || $this->terms[$this->priceField()] === '')) {
-            $this->terms[$this->priceField()] = $seed;
+        if ($seed !== null) {
+            $this->applySeededPrice($seed);
         }
 
         $this->step = self::STEP_METHOD;
@@ -547,6 +629,8 @@ abstract class MlsQuickImportComponent extends Component
             'role'        => $this->role(),
             'gallery'     => $gallery,
             'schema'      => $this->questionSchema(),
+            'termsPartial' => $this->canonicalTermsPartial(),
+            'termsReview'  => $this->usesCanonicalTerms() ? $this->canonicalTermsReview() : [],
             'methods'     => $this->availableMethods(),
             'mlsDetails'  => $this->mlsDetailsFor($auction),
             'priceField'  => $this->priceField(),
@@ -601,6 +685,15 @@ abstract class MlsQuickImportComponent extends Component
             $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
         );
 
+        // A canonical role stores through the SAME routine the manual flow uses,
+        // so a quick-imported listing and a manually created one are written by
+        // one piece of code rather than two that must be kept in step.
+        if ($this->usesCanonicalTerms()) {
+            $this->persistCanonicalTerms($auction);
+
+            return;
+        }
+
         foreach ($this->questionSchema() as $field => $spec) {
             if (($spec['type'] ?? 'text') === 'multiselect') {
                 $selected = $this->multiTerms[$field] ?? [];
@@ -635,6 +728,10 @@ abstract class MlsQuickImportComponent extends Component
      */
     protected function missingRequiredTerms(): array
     {
+        if ($this->usesCanonicalTerms()) {
+            return $this->missingCanonicalTerms();
+        }
+
         $missing = [];
 
         foreach ($this->questionSchema() as $field => $spec) {

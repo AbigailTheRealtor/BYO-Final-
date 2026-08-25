@@ -213,6 +213,38 @@
 
     {{-- ── Step 4: transaction terms ────────────────────────────────────── --}}
     @if($step === 'terms')
+
+    {{--
+        A role with a canonical terms partial renders THAT partial — the very
+        blade the manual Create and Edit screens include. Not a copy of it: the
+        same file, so its fields, labels, option vocabularies, help text and
+        conditional sections cannot drift from the manual flow's, because there
+        is only one of each.
+
+        The schema-driven branch below is for roles that still declare a
+        questionSchema(). Do not add fields to a schema for a role that has a
+        canonical partial; add them to the partial, where both entry paths see
+        them.
+    --}}
+    @if($termsPartial)
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="fw-semibold mb-1">Your {{ $role === 'seller' ? 'sale' : 'lease' }} terms</h4>
+                <p class="text-muted">
+                    These are the questions the MLS doesn't answer — how you want BidYourOffer to handle
+                    the transaction. They are the same terms you would be asked when creating a listing
+                    manually.
+                </p>
+
+                @include($termsPartial)
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3 mb-5">
+            <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
+            <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
+        </div>
+    @else
         @php
             $sections = [];
             foreach ($schema as $field => $spec) {
@@ -301,6 +333,7 @@
                 <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
             </div>
         </div>
+    @endif{{-- /canonical vs schema-driven terms --}}
     @endif
 
     {{-- ── Step 5: review before publish ────────────────────────────────── --}}
@@ -408,23 +441,37 @@
                         {{ $auction_type }}@if($auction_type === 'Bidding Period' && $auction_time) — {{ $auction_time }}@endif
                     </dd>
 
-                    @foreach($schema as $field => $spec)
-                        @php
-                            $value = $spec['type'] === 'multiselect'
-                                ? implode(', ', (array) ($multiTerms[$field] ?? []))
-                                : trim((string) ($terms[$field] ?? ''));
-                        @endphp
-                        @if($value !== '')
-                            <dt class="col-sm-4 fw-normal text-muted">{{ $spec['label'] }}</dt>
-                            <dd class="col-sm-8">
-                                @if(in_array($spec['type'], ['money'], true))
-                                    ${{ number_format((float) str_replace([',', '$'], '', $value)) }}
-                                @else
-                                    {{ $value }}
-                                @endif
-                            </dd>
-                        @endif
-                    @endforeach
+                    {{-- Canonical roles summarise from the canonical field set, so a
+                         term added to the tab shows up here without a second edit. --}}
+                    @if($termsPartial)
+                        @forelse($termsReview as $label => $value)
+                            <dt class="col-sm-4 fw-normal text-muted">{{ $label }}</dt>
+                            <dd class="col-sm-8">{{ $value }}</dd>
+                        @empty
+                            <dt class="col-sm-12 fw-normal text-muted">
+                                No additional terms entered — the listing will publish with the
+                                defaults shown on the terms step.
+                            </dt>
+                        @endforelse
+                    @else
+                        @foreach($schema as $field => $spec)
+                            @php
+                                $value = $spec['type'] === 'multiselect'
+                                    ? implode(', ', (array) ($multiTerms[$field] ?? []))
+                                    : trim((string) ($terms[$field] ?? ''));
+                            @endphp
+                            @if($value !== '')
+                                <dt class="col-sm-4 fw-normal text-muted">{{ $spec['label'] }}</dt>
+                                <dd class="col-sm-8">
+                                    @if(in_array($spec['type'], ['money'], true))
+                                        ${{ number_format((float) str_replace([',', '$'], '', $value)) }}
+                                    @else
+                                        {{ $value }}
+                                    @endif
+                                </dd>
+                            @endif
+                        @endforeach
+                    @endif
                 </dl>
             </div>
         </div>

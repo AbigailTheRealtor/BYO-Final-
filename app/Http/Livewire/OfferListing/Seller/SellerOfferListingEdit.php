@@ -23,6 +23,7 @@ use App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
+use App\Http\Livewire\OfferListing\Concerns\SellerSaleTerms;
 
 class SellerOfferListingEdit extends Component
 {
@@ -34,6 +35,7 @@ class SellerOfferListingEdit extends Component
     use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use SellerSaleTerms;  // canonical Sale Terms field set (create + edit + quick import)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use GuidesPublishValidation; // publish gate + guided correction (parity with create)
     use ValidatesPropertyAddress; // Phase 0: ZIP autofill + ZIP-in-street recovery
@@ -85,76 +87,23 @@ class SellerOfferListingEdit extends Component
     public $other_carport_needed = '';
 
     // Properties
-    public $sale_provision = [];
-    public $sale_provision_other = '';
-    public $sale_provision_assignment = '';
     public $assignment_fee_type = '$';
-    public $assignment_fee_amount = '';
-    public $buyer_sell_contract = '';
 
     // Properties
-    public $maximum_budget = '';
-    public $starting_price = '';
-    public $reserve_price = '';
-    public $buy_now_price = '';
-    public $offered_financing = [];
-    public $other_financing = '';
-    public $cash_budget = '';
-    public $pre_approved = '';
-    public $pre_approval_amount = '';
-    public $purchase_price = '';
-    public $down_payment_type = '%';
-    public $down_payment_amount = '';
-    public $seller_financing_type = '$';
     public $seller_financing_amount = '';
-    public $interest_rate = '';
-    public $loan_duration = '';
-    public $prepayment_penalty = '';
-    public $prepayment_penalty_amount = '';
-    public $balloon_payment_amount = '';
-    public $balloon_payment_date = '';
-    public $assumable_terms = '';
-    public $max_assumable_rate = '';
-    public $max_monthly_payment = '';
-    public $gap_payment_type = '$';
-    public $gap_payment_amount = '';
 
     // Exchange/Trade Properties
-    public $exchange_item = [];
-    public $other_exchange_item = '';
-    public $exchange_item_value = '';
-    public $exchange_item_condition = '';
-    public $additional_cash = '';
-    public $value_determination = '';
 
     // Lease Option Properties
-    public $lease_option_price = '';
-    public $lease_option_terms = '';
-    public $lease_option_duration = '';
-    public $lease_option_payment = '';
-    public $lease_option_conditions = '';
-    public $has_option_fee = '';
-    public $option_fee_amount = '';
 
     // Lease Purchase Properties
-    public $lease_purchase_price = '';
-    public $lease_purchase_terms = '';
-    public $lease_purchase_duration = '';
-    public $lease_purchase_payment = '';
-    public $lease_purchase_conditions = '';
 
     public $lease_purchase_option_fee = '';
     public $lease_purchase_option_fee_amount = '';
 
     // Cryptocurrency Properties
-    public $cryptocurrency_type = '';
-    public $crypto_percentage = '';
-    public $cash_percentage_crypto = '';
 
     // NFT Properties
-    public $nft_description = '';
-    public $nft_percentage = '';
-    public $cash_percentage_nft = '';
 
     public $garage_needed = '';
     public $other_garage_needed = '';
@@ -314,44 +263,9 @@ class SellerOfferListingEdit extends Component
     public $virtual_showings_count = '';
 
     // Sale Terms Questions
-    public $initial_deposit_type = '$';
-    public $initial_deposit_requested = '';
-    public $initial_deposit_timeframe = '';
-    public $additional_deposit_type = '$';
-    public $additional_deposit_requested = '';
-    public $additional_deposit_timeframe = '';
-    public $escrow_agent_preference = '';
-    public $preferred_inspection_period = '';
     // Phase 5/6 QA Follow-up (Seller Contingency UX): see SellerOfferListing for rationale.
-    public $inspection_contingency_preference = '';
-    public $appraisal_contingency_preference = '';
-    public $appraisal_contingency_period = '';
-    public $financing_contingency_preference = '';
-    public $financing_contingency_period = '';
-    public $sale_of_buyer_property_contingency = '';
-    public $sale_of_buyer_property_period = '';
-    public $seller_contribution_credit_offered = '';
-    public $seller_contribution_amount_details = '';
-    public $possession_preference = '';
-    public $possession_details = '';
-    public $included_personal_property = '';
-    public $excluded_items = '';
-    public $home_warranty_offered = '';
-    public $home_warranty_amount_details = '';
-    public $hoa_condo_association_terms = '';
-    public $additional_seller_sale_terms = '';
 
     // Estimated Payment Assumptions (agent-editable calculator defaults)
-    public $showPaymentAssumptions = false;
-    public $payment_down_payment_pct = '';
-    public $payment_interest_rate = '';
-    public $payment_loan_term = '';
-    public $payment_annual_property_taxes = '';
-    public $payment_monthly_insurance = '';
-    public $payment_hoa_fee_amount = '';
-    public $payment_hoa_fee_frequency = '';
-    public $payment_pmi_rate = '';
-    public $payment_show_buydown_options = true;
 
     // Property Showings
     public $schedule_showings = false;
@@ -546,62 +460,20 @@ class SellerOfferListingEdit extends Component
 
 
     // ── Properties ported from SellerOfferListing (needed by shared blade tabs) ──
-    public $occupant_status = '';
-    public $occupant_tenant = '';
     public $business_type = '';
     public $other_business_type = '';
-    public $target_closing_date = '';
-    public $seller_down_payment_amount = '';
-    public $seller_late_fee_amount = '';
-    public $balloon_payment = '';
-    public $assumable_loan_type = '';
-    public $outstanding_balance = '';
     public $lender_approval_required = '';
-    public $assumable_monthly_escrow = '';
-    public $assumable_loan_term_remaining = '';
-    public $assumable_loan_origination_date = '';
-    public $assumable_loan_servicer = '';
-    public $assumable_fee_type = '$';
-    public $assumable_fee_amount = '';
-    public $assumption_fee_responsibility = ''; // A6.31-A6.34: who pays the assumption fee (Buyer/Seller/Split)
-    public $assumable_occupancy_requirement = '';
-    public $assumable_occupancy_other = '';
-    public $exchange_transfer_method = '';
     public $exchange_liens = '';
-    public $exchange_liens_disclosure = '';
-    public $exchange_liens_details = '';
-    public $exchange_inspection_rights = '';
-    public $lease_option_fee_credit = '';
-    public $lease_option_fee_credit_percentage = '';
-    public $lease_option_maintenance = '';
-    public $lease_option_extension_terms = '';
     public $seller_lease_option_fee_credit = '';
     public $seller_lease_option_fee_credit_percent = '';
     public $seller_lease_option_maintenance = '';
     public $seller_lease_option_extension_terms = '';
-    public $lease_purchase_rent_credit = '';
-    public $lease_purchase_rent_credit_amount = '';
-    public $lease_purchase_deposit = '';
-    public $lease_purchase_maintenance = '';
-    public $lease_purchase_extension_terms = '';
     public $seller_lease_purchase_rent_credit = '';
     public $seller_lease_purchase_rent_credit_type = '$';
     public $seller_lease_purchase_rent_credit_amount = '';
     public $seller_lease_purchase_deposit = '';
     public $seller_lease_purchase_maintenance = '';
     public $seller_lease_purchase_extension_terms = '';
-    public $seller_amortization_type = '';
-    public $seller_amortization_other = '';
-    public $seller_payment_frequency = '';
-    public $seller_payment_frequency_other = '';
-    public $crypto_transfer_timing = '';
-    public $crypto_transfer_timing_other = '';
-    public $crypto_exchange_method = '';
-    public $crypto_custodian_wallet = '';
-    public $crypto_transaction_fees = '';
-    public $nft_gas_fees = '';
-    public $nft_transfer_method = '';
-    public $nft_valuation_method = '';
     public $appliances = [];
     public $other_appliances = '';
     public $showOtherAppliances = false;
@@ -793,8 +665,6 @@ class SellerOfferListingEdit extends Component
     public $property_county = '';
     public $propertyCitySuggestions = [];
     public $highlightedPropertyCityIndex = -1;
-    public $initial_deposit_timeframe_other = '';
-    public $additional_deposit_timeframe_other = '';
     public $parcel_id = '';
     public $tax_year = '';
     public $annual_property_taxes = '';
@@ -877,24 +747,6 @@ class SellerOfferListingEdit extends Component
     }
 
     // Methods
-    public function setDownPaymentType($type)
-    {
-        $this->down_payment_type = $type;
-        $this->down_payment_amount = '';
-    }
-
-    public function setSellerFinancingType($type)
-    {
-        $this->seller_financing_type = $type;
-        $this->seller_financing_amount = '';
-    }
-
-    public function setGapPaymentType($type)
-    {
-        $this->gap_payment_type = $type;
-        $this->gap_payment_amount = '';
-    }
-
     public function updatedAppliances()
     {
         $this->showOtherAppliances = in_array('Other', $this->appliances ?? []);
@@ -1026,12 +878,6 @@ class SellerOfferListingEdit extends Component
         }
     }
     // Methods/ Methods
-    public function setAssignmentFeeType($type)
-    {
-        $this->assignment_fee_type = $type;
-        $this->assignment_fee_amount = ''; // Clear amount when changing type
-    }
-
     public function updatedSaleProvision()
     {
         if ($this->isLoadingData) return;

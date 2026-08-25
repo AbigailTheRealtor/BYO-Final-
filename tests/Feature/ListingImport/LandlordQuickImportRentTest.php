@@ -226,12 +226,17 @@ class LandlordQuickImportRentTest extends TestCase
 
         // Seller still stores to maximum_budget, and the list price still seeds it —
         // for a sale record that IS the asking price.
+        //
+        // The seeded figure now lands on the canonical $maximum_budget property
+        // rather than in the $terms bag, because Seller's terms step renders the
+        // canonical Sale Terms tab and that tab binds the property directly. The
+        // quantity, the source and the storage key are unchanged.
         $this->assertSame('maximum_budget', $c->instance()->priceField());
-        $this->assertSame('100000', (string) ($c->get('terms')['maximum_budget'] ?? ''));
+        $this->assertSame('100000', (string) $c->get('maximum_budget'));
 
         $c->call('chooseMethod', 'Traditional')->call('continueToTerms')
-          ->set('terms', ['maximum_budget' => '777777'])
-          ->set('multiTerms', ['offered_financing' => ['Cash']])
+          ->set('maximum_budget', '777777')
+          ->set('offered_financing', ['Cash'])
           ->call('continueToReview')
           ->assertSet('step', 'review');
 

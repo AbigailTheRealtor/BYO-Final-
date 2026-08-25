@@ -129,19 +129,34 @@ class MlsQuickImportFlowTest extends TestCase
         ], $overrides));
     }
 
-    /** Drive the flow to the review step and return the live component. */
+    /**
+     * Drive the flow to the review step and return the live component.
+     *
+     * Seller's terms step renders the CANONICAL Sale Terms tab, so answers are
+     * set on the real Livewire properties that tab binds — the same properties
+     * the manual Create screen sets. There is no quick-import-only $terms bag
+     * for this role any more, and a test that reintroduced one would be testing
+     * a field list the product no longer has.
+     *
+     * @param  array<string, mixed>  $terms  canonical property => value
+     */
     private function flowToReview(User $user, array $terms = [], array $multi = []): \Livewire\Testing\TestableLivewire
     {
-        return Livewire::actingAs($user)
+        $component = Livewire::actingAs($user)
             ->test(SellerMlsQuickImport::class)
             ->set('mlsNumber', self::MLS)
             ->call('findListing')
             ->call('acceptProperty')
             ->call('chooseMethod', 'Traditional')
             ->call('continueToTerms')
-            ->set('terms', array_merge(['maximum_budget' => '525000'], $terms))
-            ->set('multiTerms', array_merge(['offered_financing' => ['Cash', 'Conventional']], $multi))
-            ->call('continueToReview');
+            ->set('maximum_budget', '525000')
+            ->set('offered_financing', ['Cash', 'Conventional']);
+
+        foreach (array_merge($terms, $multi) as $field => $value) {
+            $component->set($field, $value);
+        }
+
+        return $component->call('continueToReview');
     }
 
     // ─── Ingestion ───────────────────────────────────────────────────────────
@@ -636,7 +651,11 @@ class MlsQuickImportFlowTest extends TestCase
         // The terms step asks transaction questions and nothing else. If a
         // property input ever appears here, the feature has become the thing it
         // exists to replace.
-        $component->assertSee('Financing You Will Accept')
+        //
+        // The labels asserted are the CANONICAL tab's, because that is what this
+        // step renders now. "Financing You Will Accept" was the quick-import-only
+        // schema's wording for the same question and no longer exists anywhere.
+        $component->assertSee('Offered Financing/Currency')
             ->assertDontSee('Total Acreage')
             ->assertDontSee('Roof Type')
             ->assertDontSee('Exterior Construction');
@@ -792,6 +811,112 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertSame('Dining room chandelier', $meta->excluded_items);
     }
 
+    /**
+     * @test
+     *
+     * The conditional Sale Terms sections quick import could not express at all
+     * before this existed: seller financing, a balloon schedule, a crypto split,
+     * an exchange, and the Estimated Payment Assumptions. Each is set through the
+     * canonical property the manual tab binds and read back from the SAME meta
+     * key the manual flow writes.
+     *
+     * This is the behavioural half of SellerSaleTermsParityTest's structural
+     * checks: those prove the fields EXIST on this path, this proves an answer
+     * given on this path actually survives to the listing.
+     */
+    public function canonical_conditional_sale_terms_persist_through_quick_import(): void
+    {
+        $this->seedBridgeProperty(1);
+
+        $component = $this->flowToReview($this->seller, [
+            // Seller financing + amortisation
+            'seller_financing_type'      => '%',
+            'seller_down_payment_amount' => '50,000',
+            'interest_rate'              => '6.5',
+            'loan_duration'              => '30',
+            'seller_amortization_type'   => 'Fully Amortized',
+            'seller_payment_frequency'   => 'Monthly',
+
+            // Balloon
+            'balloon_payment_amount' => '120,000',
+            'balloon_payment_date'   => '2030-01-01',
+
+            // Cryptocurrency
+            'cryptocurrency_type'    => 'Bitcoin',
+            'crypto_percentage'      => '25',
+            'cash_percentage_crypto' => '75',
+
+            // Exchange / Trade
+            'other_exchange_item' => 'Vintage tractor',
+            'exchange_item_value' => '18,500',
+
+            // Estimated Payment Assumptions
+            'payment_interest_rate'         => '6.75',
+            'payment_loan_term'             => '30',
+            'payment_annual_property_taxes' => '7,200',
+            'payment_monthly_insurance'     => '150',
+        ]);
+
+        $meta = SellerAgentAuction::find($component->get('listingId'))->get;
+
+        // Stored under the canonical keys…
+        $this->assertSame('%', $meta->seller_financing_type);
+        $this->assertSame('Fully Amortized', $meta->seller_amortization_type);
+        $this->assertSame('Monthly', $meta->seller_payment_frequency);
+        $this->assertSame('6.5', $meta->interest_rate);
+        $this->assertSame('30', $meta->loan_duration);
+        $this->assertSame('2030-01-01', $meta->balloon_payment_date);
+        $this->assertSame('Bitcoin', $meta->cryptocurrency_type);
+        $this->assertSame('Vintage tractor', $meta->other_exchange_item);
+        $this->assertSame('6.75', $meta->payment_interest_rate);
+        $this->assertSame('30', $meta->payment_loan_term);
+
+        // …and money fields are comma-stripped exactly as the manual flow strips
+        // them, so "50,000" is stored as a number and not as text.
+        $this->assertSame('50000', $meta->seller_down_payment_amount);
+        $this->assertSame('120000', $meta->balloon_payment_amount);
+        $this->assertSame('18500', $meta->exchange_item_value);
+        $this->assertSame('7200', $meta->payment_annual_property_taxes);
+        $this->assertSame('150', $meta->payment_monthly_insurance);
+        $this->assertSame('25', $meta->crypto_percentage);
+        $this->assertSame('75', $meta->cash_percentage_crypto);
+    }
+
+    /**
+     * @test
+     *
+     * Bidding-period pricing — starting, reserve and buy-now — reaches the
+     * listing from quick import. The old reduced schema had none of these, so a
+     * bidding-period listing created this way could not carry a reserve at all.
+     */
+    public function bidding_period_pricing_persists_through_quick_import(): void
+    {
+        $this->seedBridgeProperty(1);
+
+        $component = Livewire::actingAs($this->seller)
+            ->test(SellerMlsQuickImport::class)
+            ->set('mlsNumber', self::MLS)
+            ->call('findListing')
+            ->call('acceptProperty')
+            ->call('chooseMethod', 'Bidding Period')
+            ->set('auction_time', '7 Days')
+            ->call('continueToTerms')
+            ->set('maximum_budget', '525000')
+            ->set('starting_price', '499,000')
+            ->set('reserve_price', '515,000')
+            ->set('buy_now_price', '599,000')
+            ->call('continueToReview')
+            ->assertSet('step', 'review');
+
+        $meta = SellerAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('Bidding Period', $meta->auction_type);
+        $this->assertSame('7 Days', $meta->auction_time);
+        $this->assertSame('499000', $meta->starting_price);
+        $this->assertSame('515000', $meta->reserve_price);
+        $this->assertSame('599000', $meta->buy_now_price);
+    }
+
     /** @test */
     public function a_missing_required_term_blocks_review(): void
     {
@@ -804,8 +929,12 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('acceptProperty')
             ->call('chooseMethod', 'Traditional')
             ->call('continueToTerms')
-            ->set('terms', ['maximum_budget' => ''])
-            ->set('multiTerms', ['offered_financing' => []])
+            // The asking price is the one term this path requires. The manual
+            // flow's publish rules require no sale-terms field at all, so the
+            // former additional requirement on financing was quick import being
+            // stricter than the screen it mirrors, and is gone.
+            ->set('maximum_budget', '')
+            ->set('offered_financing', [])
             ->call('continueToReview')
             ->assertSet('step', 'terms')
             ->assertSee('Please complete');
