@@ -136,6 +136,13 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
             'geocoded_lat'   => 27.9506,
             'geocoded_lng'   => -82.4572,
             'geocode_source' => 'saved_meta',
+            // "Trusted" is now a property of the recorded ladder provenance, not
+            // of the `geocode_source` name. A row without these is declined by
+            // ExistingCoordinatesAdapter, so a fixture lacking them would be
+            // testing the reuse path on a coordinate that no longer qualifies
+            // for reuse.
+            'geocode_provider'  => 'address_point',
+            'geocode_precision' => 'rooftop',
             'geocode_status' => 'geocoded',
             'geocoded_at'    => now(),
         ]);
@@ -166,11 +173,11 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
         $outcome = $this->service()->resolveAndPersist($listing, $listingType);
 
         $this->assertSame(PropertyCoordinatePersistenceService::OUTCOME_RESOLVED, $outcome['outcome']);
-        // The Existing rung records the provider that ORIGINALLY produced the
-        // point, not itself — "where did this coordinate come from" has one true
-        // answer, and reusing it does not change it. The rung identifies itself
-        // through the source instead.
-        $this->assertSame('saved_meta', $outcome['provider']);
+        // The Existing rung records the rung that ORIGINALLY produced the point,
+        // not itself — "where did this coordinate come from" has one true answer,
+        // and reusing it does not change it. The rung identifies itself through
+        // the source instead.
+        $this->assertSame('address_point', $outcome['provider']);
         $this->assertSame('existing', $listing->info(PropertyCoordinateMeta::SOURCE));
         $this->assertSame('27.9506', $listing->info(PropertyCoordinateMeta::LAT));
 
@@ -525,18 +532,25 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
         $this->assertSame('us_census', $row->geocode_provider);
         $this->assertSame('315 e madison st tampa fl 33602', $row->normalized_address);
 
-        // geocode_source stays 'saved_meta' for ExistingCoordinatesAdapter's
-        // allow-list; the honest detail lives in the columns above.
+        // geocode_source stays 'saved_meta' — a caller did supply this
+        // coordinate. It is no longer what grades the point: reuse and precision
+        // are both decided by the provenance columns above.
         $this->assertSame('saved_meta', $row->geocode_source);
     }
 
     /** @dataProvider roles */
-    public function test_a_census_coordinate_is_not_read_back_inflated_to_parcel(
+    public function test_a_persisted_census_coordinate_is_not_reused_by_the_existing_rung(
         string $listingType,
         int $listingId
     ): void {
-        // 'saved_meta' infers Parcel. An Interpolated point stored under it must
-        // not be laundered into something flood-zone work treats as the property.
+        // A Census result is a house number interpolated along a street segment.
+        // The Existing rung must not hand it back and thereby stop the ladder,
+        // because that is what would keep an authoritative address-point match
+        // from ever being consulted once a corpus exists.
+        //
+        // This supersedes the older "not inflated to Parcel" guarantee: the row
+        // is not read back at all now, which is strictly stronger. The precision
+        // assertion below keeps the anti-inflation claim covered regardless.
         config()->set('census_geocoder.enabled', true);
         Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
 
@@ -556,6 +570,14 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
             ),
         ]);
 
+        // The stored row really does carry honest Census provenance — otherwise
+        // this test would pass for the wrong reason.
+        $stored = PropertyLocationDna::query()
+            ->where('listing_type', $listingType)
+            ->where('listing_id', $listingId)
+            ->firstOrFail();
+        $this->assertSame('us_census', $stored->geocode_provider);
+
         // Now read it back through the Existing rung on a fresh listing.
         $reader = $this->listing($listingId, $this->addressMeta());
         Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
@@ -563,14 +585,14 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
         $outcome = $this->service()->resolveAndPersist($reader, $listingType);
 
         $this->assertSame(
-            'existing',
+            'geocoder',
             $reader->info(PropertyCoordinateMeta::SOURCE),
-            'The Existing rung must answer, not Census'
+            'The Existing rung must decline a Census-derived point so later rungs stay reachable'
         );
         $this->assertSame(
             'interpolated',
             $outcome['precision'],
-            'The stored precision must win over the saved_meta inference'
+            'And it is still never inflated on the way back out'
         );
     }
 

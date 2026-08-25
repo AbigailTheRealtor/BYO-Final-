@@ -67,6 +67,12 @@ class LocalCoordinateLadderTest extends TestCase
             'geocoded_lat'   => self::EXISTING_LAT,
             'geocoded_lng'   => self::EXISTING_LNG,
             'geocode_source' => 'saved_meta',
+            // Ladder provenance is what makes a stored coordinate reusable at all.
+            // Without it the Existing rung declines and the claim under test —
+            // that a coordinate we already vouched for outranks the feed's second
+            // opinion — would be tested on a coordinate nobody ever vouched for.
+            'geocode_provider'  => 'bridge_mls',
+            'geocode_precision' => 'parcel',
             'geocode_status' => 'geocoded',
             'geocoded_at'    => now(),
         ]);
