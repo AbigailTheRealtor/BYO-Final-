@@ -66,38 +66,141 @@ trait HasMlsImport
      */
     public string $mlsImportSnapshotJson = '';
 
+    /**
+     * Which import mechanism the user picked in the modal.
+     *
+     *   ''      — the chooser is on screen; no mechanism picked yet.
+     *   'link'  — the Listing Link / raw-text importer's inputs are on screen.
+     *
+     * There is deliberately no 'stellar' value. Picking Stellar MLS navigates
+     * away to the quick-import page, so there is no state to remember for it —
+     * a stored 'stellar' would only ever describe a component the user has
+     * already left.
+     *
+     * The empty default is what keeps the Buyer and Tenant forms working
+     * untouched: they open the modal with $set('showImportModal', true) and
+     * never call startMlsImport(), so they arrive here with '' and no chooser
+     * available, which the blade renders as the inputs — exactly as before.
+     */
+    public string $importMethod = '';
+
     // ─── Entry point ─────────────────────────────────────────────────────────
 
     /**
      * What the "Import from MLS Listing" button on this form does when clicked.
      *
-     * ONE BUTTON, TWO DESTINATIONS, DECIDED SERVER-SIDE.
-     * --------------------------------------------------
-     * With quick import live, the shortened path is simply what "import from
-     * MLS" means for Seller and Landlord, so the existing button leads there
-     * rather than to a second button beside it. The legacy modal is not removed
-     * and not weakened — it is what the same button still opens everywhere the
-     * quick import flow is not available (every role but Seller/Landlord, and
-     * Seller/Landlord with the flag off).
+     * ONE BUTTON, THEN THE USER CHOOSES.
+     * ----------------------------------
+     * Opening the modal is all this does. Which importer runs is the user's
+     * decision, taken in the chooser the modal renders — not a decision taken
+     * for them here from a flag.
      *
-     * The decision is taken here rather than only in the blade for the same
-     * reason mlsNumberImportAvailable() is re-asked inside
-     * importListingByMlsNumber(): a rendered page outlives a config change, and
-     * the answer that matters is the one that holds at click time.
+     * That is a correction. This method used to redirect straight to the
+     * quick-import page whenever that flow was available, which made the
+     * Listing Link importer unreachable on Seller and Landlord: the only button
+     * that had ever opened it now went somewhere else. Stellar MLS is an
+     * ADDITIONAL door, not a replacement one. Anyone without Stellar
+     * credentials still needs the link importer, and it is not gated on Bridge
+     * for exactly that reason.
      *
-     * Deliberately not a redirect for the URL/text importer. That mechanism is
-     * ungated by design and has no quick-import equivalent, so with quick import
-     * off this method's whole job is to open the modal exactly as before.
+     * With no chooser to show — Buyer, Tenant, or Seller/Landlord with the
+     * quick-import flow off — the modal opens directly on the link importer's
+     * inputs, which is byte-for-byte what this button did before quick import
+     * existed.
      */
     public function startMlsImport()
     {
-        if ($this->mlsQuickImportAvailable()) {
-            return redirect()->route($this->mlsQuickImportRouteName());
-        }
+        $this->importError = '';
+
+        // No chooser worth showing when there is only one thing behind it.
+        $this->importMethod = $this->importMethodChoiceAvailable() ? '' : 'link';
 
         $this->showImportModal = true;
 
         return null;
+    }
+
+    // ─── Choosing an import method ───────────────────────────────────────────
+
+    /**
+     * Does this component have more than one import mechanism to offer?
+     *
+     * Only the quick-import roles do. Everywhere else there is exactly one
+     * importer, and a "choose a method" screen listing a single method is a
+     * click that teaches the user nothing.
+     */
+    public function importMethodChoiceAvailable(): bool
+    {
+        return $this->mlsQuickImportAvailable();
+    }
+
+    /**
+     * The user picked Stellar MLS — hand them to the quick-import flow.
+     *
+     * Availability is re-asked here rather than trusted from the render that
+     * drew the card. A rendered modal outlives a config change, and the answer
+     * that matters is the one that holds at click time. If the flow went away
+     * in between, the user lands on the link importer with an explanation
+     * rather than on a 404.
+     */
+    public function chooseStellarMlsImport()
+    {
+        if (! $this->mlsQuickImportAvailable()) {
+            $this->importMethod = 'link';
+            $this->importError  = 'Stellar MLS import is not available right now. '
+                                . 'You can still import from a public listing link below.';
+
+            return null;
+        }
+
+        return redirect()->route($this->mlsQuickImportRouteName());
+    }
+
+    /**
+     * The user picked Listing Link — show the URL / raw-text inputs.
+     *
+     * Never gated. This importer reads a public web page; it holds no Bridge
+     * credentials and needs none, which is the whole point of offering it
+     * beside the Stellar path.
+     */
+    public function chooseListingLinkImport(): void
+    {
+        $this->importMethod = 'link';
+        $this->importError  = '';
+    }
+
+    /**
+     * The user picked Create Manually — close the modal and leave them on the
+     * form, which is already the manual path and needs nothing set up.
+     */
+    public function chooseManualListing(): void
+    {
+        $this->closeImportModal();
+    }
+
+    /**
+     * Back to the chooser from a picked method.
+     *
+     * Clears whatever the abandoned method had typed or fetched so returning to
+     * it later starts clean; a stale preview from the link importer must not be
+     * sitting there if the user comes back and picks Stellar.
+     *
+     * A no-op where no chooser exists, so the back link cannot strand a Buyer or
+     * Tenant on a screen their component never renders.
+     */
+    public function backToImportMethodChoice(): void
+    {
+        if (! $this->importMethodChoiceAvailable()) {
+            return;
+        }
+
+        $this->importMethod      = '';
+        $this->importPreviewData = [];
+        $this->importError       = '';
+        $this->importUrlInput    = '';
+        $this->importRawText     = '';
+        $this->importMlsNumber   = '';
+        $this->mlsParsedDataJson = '';
     }
 
     /**
@@ -140,6 +243,7 @@ trait HasMlsImport
     public function closeImportModal(): void
     {
         $this->showImportModal   = false;
+        $this->importMethod      = '';
         $this->importPreviewData = [];
         $this->importError       = '';
         $this->importUrlInput    = '';

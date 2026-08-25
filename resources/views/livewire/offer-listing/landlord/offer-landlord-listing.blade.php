@@ -1033,14 +1033,20 @@
 
                 {{-- MLS Import Entry Point --}}
                 {{--
-                    ONE button, two destinations. startMlsImport() decides at click
-                    time: with the quick-import flow available it redirects to
-                    offer.listing.landlord.quick-import (MLS # → confirm property →
-                    BidYourOffer questions → review → publish); otherwise it opens
-                    the legacy prefill modal exactly as before. The wording follows
-                    the destination — "pre-fill this form" is only true of the modal.
-                    The manual form below is untouched either way and remains the
-                    path for anyone without an MLS number.
+                    ONE button, then the user chooses. startMlsImport() opens the
+                    shared modal; the modal asks which import method when there is
+                    more than one — Stellar MLS # (→ offer.listing.landlord.quick-import:
+                    MLS # → confirm property → BidYourOffer questions → review →
+                    publish), Listing Link / URL, or Create Manually.
+
+                    The button used to redirect straight into quick import, which
+                    left the Listing Link importer with no entry point at all on
+                    this form. Stellar is an additional door, not a replacement, so
+                    the choice belongs to the user.
+
+                    With no choice to offer (quick import off) the modal opens
+                    directly on the link importer, exactly as it always did. The
+                    manual form below is untouched either way.
                 --}}
                 <div class="container pt-3 pb-0">
                     <div class="d-flex align-items-center justify-content-end">
@@ -1049,11 +1055,11 @@
                                 wire:click="startMlsImport"
                                 wire:loading.attr="disabled"
                                 wire:target="startMlsImport">
-                            <i class="fas fa-file-import me-1"></i>Have an MLS listing?
-                            @if($this->mlsQuickImportAvailable())
-                                Import from MLS Listing &rarr;
+                            <i class="fas fa-file-import me-1"></i>
+                            @if($this->importMethodChoiceAvailable())
+                                Import Listing — Stellar MLS # or listing link &rarr;
                             @else
-                                Import it to pre-fill this form &rarr;
+                                Have an MLS listing? Import it to pre-fill this form &rarr;
                             @endif
                         </button>
                     </div>
