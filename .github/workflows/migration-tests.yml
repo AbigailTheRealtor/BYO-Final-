@@ -65,4 +65,17 @@ jobs:
         run: cp .env.example .env && php artisan key:generate --force
 
       - name: Run migration PHPUnit tests
+        # MIGRATION_FRESH_TEST is load-bearing: MigrationFreshTest::setUp() calls
+        # markTestSkipped() unless it is set, so without it this job reported
+        # "Tests: 2, Assertions: 0, Skipped: 2" — green, having asserted nothing.
+        # Scoped to this step rather than the job so it cannot reach any other step.
+        #
+        # NOTE: the test executes against SQLite :memory:, not the MySQL service
+        # above. tests/bootstrap.php pins DB_CONNECTION/DB_DATABASE before Laravel
+        # boots, and tests/Feature/Safeguards/TestDatabaseIdentityTest.php asserts
+        # the resolved connection is neither PostgreSQL nor MySQL. Pointing this
+        # test at MySQL is therefore a deliberate architectural change, not a
+        # config tweak — do not "fix" it by overriding the bootstrap pin.
+        env:
+          MIGRATION_FRESH_TEST: true
         run: php vendor/bin/phpunit --filter MigrationFreshTest --testdox
