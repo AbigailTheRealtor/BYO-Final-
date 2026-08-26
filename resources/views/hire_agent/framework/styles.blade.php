@@ -829,5 +829,72 @@
         gap: var(--viho-space-2xs);
         align-items: center;
     }
+
+    /* ── SECTION NAV DENSITY ──────────────────────────────────────────────────────────────────
+       The bar is one nowrap flex row inside an `overflow-x: auto` list whose scrollbar is
+       hidden on purpose (viho/styles.blade.php). That combination has no failure state that
+       is visible: once the labels are wider than the main column the tail of the row is
+       simply not on screen, with no scrollbar, no fade and nothing to suggest it exists.
+
+       The last entry is always the owner-info one — "Agent's Info" when the owner is an
+       agent — so the invisible end of the row is always the same entry. Landlord carries six
+       entries and fits; seller, tenant and buyer carry seven, because they also have
+       Financing (seller, buyer) or Pre-Screening (tenant). Measured against the ~966px main
+       column at the xxl container: landlord ~937px, seller ~1070px, tenant ~1106px, buyer
+       ~1150px. So the entry was partly cut on seller and tenant and entirely past the edge
+       on buyer, whose labels are the longest — which is why buyer read as MISSING the
+       section rather than as clipping it. The markup was correct on all four the whole time:
+       the anchor, the section and their agreement are what HireAgentSectionNavTest already
+       asserts, and it asserts them on landlord, the one role that fits.
+
+       Two rules, and the second is the one that makes the first safe:
+
+       1. DENSITY. Link padding drops to --viho-space-md and the label to --viho-font-xs —
+          both existing tokens, so the bar stays on the type and spacing scale rather than
+          acquiring magic numbers. Measured that way the four roles come to ~773px
+          (landlord), ~882px (seller), ~914px (tenant) and ~955px (buyer) against the ~966px
+          column, so all four fit on one row with buyer, the widest, clearing by ~11px.
+
+          THE SIZE MOVED AND THE PADDING DID NOT, and that is the deliberate half. Taking the
+          label one further step down the type scale buys more than the equivalent step on
+          the padding — seven labels are ~820px of text against ~168px of padding — so
+          spending it on the font keeps the gap between adjacent tabs at a readable 24px
+          rather than crushing the row to buy the same pixels.
+
+       2. A CEILING THAT CANNOT CLIP. Fitting by ~11px is fitting, but it is not a margin to
+          rely on: one longer label in a future section, or a container narrower than the
+          xxl one, puts the row back over with the same silent failure. From `lg` up the row
+          may WRAP, so overflow becomes a second line that can be read rather than a first
+          line that cannot be seen. At the xl container (1140px, a ~831px column) the three
+          seven-entry roles do legitimately exceed one row — 831px cannot hold seven of these
+          labels at any sane density — and there the ceiling is what renders them instead of
+          hiding them.
+
+       BELOW `lg` NOTHING CHANGES. Horizontal scrolling is the intended small-screen
+       behaviour and keeps it; the media query starts at 992px, which is where the sidebar
+       column appears and where the reported clipping lives. Left alignment is preserved in
+       both modes — centring a row that fits would be a visible change to every role for the
+       sake of the rare row that does not. */
+    .hla-detail-page .viho-section-nav-link {
+        padding-left: var(--viho-space-md);
+        padding-right: var(--viho-space-md);
+        font-size: var(--viho-font-xs);
+    }
+
+    /* While the row still scrolls (below `lg`), the final link ends flush against the
+       container edge, which reads as a cut-off word rather than as "there is more this way".
+       A tail of end padding on the scroller gives it somewhere to stop. Removed once the row
+       wraps, where there is no scroll and the padding would only skew the last line. */
+    .hla-detail-page .viho-section-nav-list {
+        padding-right: var(--viho-space-md);
+    }
+
+    @media (min-width: 992px) {
+        .hla-detail-page .viho-section-nav-list {
+            flex-wrap: wrap;
+            overflow-x: visible;
+            padding-right: 0;
+        }
+    }
 @endif
 </style>
