@@ -26,9 +26,12 @@ use App\Helpers\ListingDisplayHelper;
  * meaningful value for a slot, the slot is omitted rather than filled with a placeholder or a
  * derived stand-in.
  *
- * The four roles share one money key, `budget`, whose MEANING differs by role — sale price,
- * monthly rent, purchase budget, rental budget. That is why the label is role-specific while the
- * source key is not; the label is the only thing being decided here.
+ * The roles were once assumed to share one money key, `budget`, whose MEANING differed by role —
+ * sale price, monthly rent, purchase budget, rental budget — which is why the label is decided
+ * here. They do not share it. Buyer and tenant read `budget`; landlord reads
+ * `desired_rental_amount` (M5.0a); seller reads `maximum_budget` (T3). Each correction was the
+ * same discovery: the key the presenter asked for was not the key the role's form writes, so the
+ * figure silently resolved to null on every real listing. See figure() for both.
  *
  * FORBIDDEN BY THE GOVERNING RULES, and absent by construction: no countdown, no remaining time,
  * no auction duration, no "bidding ends", no competing-proposal count, rank, highest proposal or
@@ -187,11 +190,37 @@ final class HireAgentHeroData
      * the slot silently never rendered. That was a wiring defect, not missing data: the rent was
      * there the whole time, under a name this presenter did not ask for.
      *
-     * Only landlord is re-pointed. `budget` is confirmed correct for tenant, and buyer stores its
-     * own budget keys; seller's figure has the same class of defect (its price lives in the native
-     * `min_price` column) but the fix is a different key on a different storage model, and seller
-     * is outside this milestone's landlord-first scope. It is recorded here so the next role
-     * migration does not rediscover it: SELLER'S HEADLINE FIGURE IS STILL DEAD.
+     * Only landlord was re-pointed then. `budget` is confirmed correct for tenant, and buyer
+     * stores its own budget keys; seller had the same class of defect and was left recorded as
+     * "SELLER'S HEADLINE FIGURE IS STILL DEAD" for whoever migrated seller next.
+     *
+     * ── T3: SELLER READS `maximum_budget`, AND THE OLD NOTE NAMED THE WRONG KEY ──────────────
+     *
+     * That note said seller's price "lives in the native `min_price` column". It does not. The
+     * column exists on `seller_agent_auctions` and is written by NOTHING in the Hire Agent seller
+     * flow and read by NOTHING in the seller detail views — verified by grep over
+     * app/Http/Livewire/HireSellerAgent and resources/views/hire_seller_agent before this change.
+     * Acting on that note would have swapped one dead key for another.
+     *
+     * The seller sale price is `maximum_budget`. It is written by SellerAgentAuction::save() and
+     * SellerAgentAuctionEdit::save(), and it is the value the detail body already renders as
+     * "Desired Sale Price". `budget` meanwhile has no `wire:model` binding anywhere in the seller
+     * tabs — its saveMeta() call sits in a lease-oriented block (unit_buildings, lease_for,
+     * lease_by) that is residue from the landlord flow — so it is never populated on a seller
+     * listing and the figure resolved to null on every real one.
+     *
+     * SELLER DOES NOT FALL BACK TO `budget`. A fallback would re-introduce the dead key as a
+     * silent second source and make it impossible to tell, from a rendered page, which one
+     * answered. If `maximum_budget` is absent the slot is omitted, which is what every other role
+     * does with a missing figure.
+     *
+     * THIS IS VISIBLE WITH BOTH FLAGS OFF, deliberately. The presenter feeds the legacy hero as
+     * well as the redesigned one, so seller listings gain a Listing Price line they should always
+     * have had. That is the defect being fixed, not a side effect to be gated — flag-gating a
+     * correction would leave the wrong behaviour as the default.
+     *
+     * The label stays the short-form "Listing Price". The detail body's own "Desired Sale Price"
+     * row is a different surface with a different width budget and is not renamed here.
      */
     private static function figure(string $role, $meta): ?array
     {
@@ -199,7 +228,9 @@ final class HireAgentHeroData
             return self::landlordRentFigure($meta);
         }
 
-        $raw = $meta->budget ?? null;
+        $raw = $role === 'seller'
+            ? ($meta->maximum_budget ?? null)
+            : ($meta->budget ?? null);
 
         if (! ListingDisplayHelper::hasValue($raw)) {
             return null;
