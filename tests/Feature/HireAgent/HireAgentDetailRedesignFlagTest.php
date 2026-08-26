@@ -193,6 +193,15 @@ class HireAgentDetailRedesignFlagTest extends TestCase
                 'resources/views/components/hire-agent/detail-shell.blade.php',
                 'resources/views/hire_buyer_agent/view.blade.php',
                 'resources/views/hire_landlord_agent/view.blade.php',
+                // S1. Seller reads the flag but the allowlist does not grant it, so the view is
+                // capable of the redesign and does not have it — the same state tenant entered
+                // at T1. With seller in, every role view plus the shared shell gates on the
+                // role-aware reader, which is the end state this list was tracking toward.
+                'resources/views/hire_seller_agent/view.blade.php',
+                // T1. Tenant reads the flag but the allowlist does not grant it, so the view is
+                // capable of the redesign and does not have it. Declared here because that is
+                // the decision this list records — which files gate — not which roles are live.
+                'resources/views/hire_tenant_agent/view.blade.php',
             ],
             $consumers,
             'The set of views gating on the detail redesign must stay known. ALL read it through '
@@ -227,6 +236,8 @@ class HireAgentDetailRedesignFlagTest extends TestCase
             'resources/views/components/hire-agent/detail-shell.blade.php',
             'resources/views/hire_buyer_agent/view.blade.php',
             'resources/views/hire_landlord_agent/view.blade.php',
+            'resources/views/hire_seller_agent/view.blade.php',
+            'resources/views/hire_tenant_agent/view.blade.php',
         ] as $path) {
             $this->assertStringNotContainsString(
                 'HireAgentDetailRedesign::enabled()',
