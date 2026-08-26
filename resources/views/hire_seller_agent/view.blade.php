@@ -3801,9 +3801,34 @@
             </div>
         </div>
 
+                {{-- T5: a full-width button carrying a single user icon — no label, no handler, no
+                     destination, and no accessible name. It predates the redesign and renders for
+                     every viewer. It is suppressed only behind the redesign flag: it is visible
+                     today, so deleting it outright would change the legacy page for everyone, and
+                     "it looks like a mistake" is not the same standard as "it can never render".
+                     It goes with the share card below rather than after it — suppressing the card
+                     alone would leave this button standing on its own, which is exactly the
+                     conspicuousness landlord recorded when M5.3 did the same thing there. --}}
+                @unless ($hsaDetailRedesign)
                 <button class="btn w-100 mt-0">
                     <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
                 </button>
+                @endunless
+                {{-- T5: the sidebar share card is suppressed when the Seller detail redesign is on —
+                     Share Listing and Copy Link both live in the Quick Actions band above the grid,
+                     and the copy control there is wired where this card's `js-copy-link` button is
+                     bound by nothing in the repository. Confirmed on a rendered page: the two sets
+                     of controls appeared together, and the duplicate was the reason for this change.
+
+                     The QR code goes with it. It has no Quick Actions tile because a QR image is
+                     listing INFORMATION rather than an action; re-siting it is a sidebar question,
+                     not this one.
+
+                     SELLER ONLY. Buyer and tenant still render their copies ungated, so this closes
+                     the gap between seller and landlord and leaves the buyer/tenant divergence
+                     exactly where it was — normalising all four is a cross-role task with its own
+                     scope, and the wider `.js-copy-link` audit is deliberately not started here. --}}
+                @unless ($hsaDetailRedesign)
                 <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
                     <div class="qr-code" style="width: 100%; height:200px;">
@@ -3837,6 +3862,7 @@
                         </div>
                     </div>
                 </div>
+                @endunless
             </div>
         </x-slot>
 

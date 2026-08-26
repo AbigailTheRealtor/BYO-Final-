@@ -1419,6 +1419,55 @@ class HireAgentDetailFrameworkTest extends TestCase
     }
 
     /**
+     * T5 — the legacy share/QR card gives way to Quick Actions, matching landlord.
+     *
+     * Both halves are asserted together because the point is the SWAP, not either side of it: the
+     * old card must go AND the controls that replace it must be present. Asserting only the
+     * removal would pass on a page that lost both.
+     *
+     * The orphan user-icon button above the card is suppressed with it. Landlord recorded why when
+     * it did the same: suppressing the card alone leaves a full-width button with no label, no
+     * handler and no destination standing on its own, which is more conspicuous than it was when
+     * the card sat beneath it.
+     */
+    public function test_seller_legacy_share_card_is_replaced_by_quick_actions_when_the_redesign_is_on(): void
+    {
+        $this->enableSellerDetailRedesign();
+
+        $owner = User::factory()->create(['user_type' => 'seller']);
+        $body  = $this->sellerBody($this->makeSellerPilotListing($owner->id), $owner);
+
+        // Gone: the legacy card, its QR, its unwired copy button, and the orphan button above it.
+        $this->assertStringNotContainsString('Share this link via', $body, 'The legacy share card must be suppressed.');
+        $this->assertStringNotContainsString('js-copy-link', $body, 'The unwired legacy copy button must be suppressed.');
+        $this->assertStringNotContainsString('id="copylink"', $body, 'The legacy copy input must be suppressed.');
+        $this->assertStringNotContainsString('fa-solid fa-user"></i> </span>', $body, 'The orphan user-icon button must go with it.');
+
+        // Still present: the controls that replace them.
+        $this->assertSame(1, substr_count($body, 'data-viho-quick-actions'), 'The Quick Actions band must remain.');
+        $this->assertSame(1, substr_count($body, 'data-hla-copy-link="'), 'Exactly one — and now the ONLY — copy control.');
+        $this->assertStringContainsString('hla-quick-share', $body, 'The Quick Actions share targets must remain.');
+    }
+
+    /** With the detail flag off, the legacy share card is byte-for-byte still there. */
+    public function test_seller_legacy_share_card_survives_with_the_detail_flag_off(): void
+    {
+        $this->assertFalse(
+            \App\Support\HireAgent\HireAgentDetailRedesign::enabledFor('seller'),
+            'Precondition: seller is not on the detail allowlist by default.'
+        );
+
+        $owner = User::factory()->create(['user_type' => 'seller']);
+        $body  = $this->sellerBody($this->makeSellerPilotListing($owner->id), $owner);
+
+        $this->assertStringContainsString('Share this link via', $body, 'The legacy share card must remain.');
+        $this->assertStringContainsString('js-copy-link', $body, 'The legacy copy button must remain — unwired, but unchanged.');
+        $this->assertStringContainsString('id="copylink"', $body, 'The legacy copy input must remain.');
+        $this->assertStringContainsString('fa-solid fa-user"></i> </span>', $body, 'The orphan button must remain.');
+        $this->assertStringNotContainsString('data-viho-quick-actions', $body, 'And no Quick Actions band appears.');
+    }
+
+    /**
      * THE FLAGS-OFF CONTRACT. Nothing T4 adds may reach the page with the detail flag off.
      *
      * Includes the empty-wrapper cases specifically, because that is the failure mode T3 found:
