@@ -9,6 +9,7 @@ use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\TenantAgentAuction;
 use App\Models\User;
+use App\Support\Listing\ListingWorkflow;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Livewire;
@@ -62,11 +63,26 @@ class OfferListingAuthorizationTest extends TestCase
     private function makeAuction(string $modelClass): object
     {
         // forceCreate bypasses per-model $fillable/$guarded differences.
-        return $modelClass::forceCreate([
+        $auction = $modelClass::forceCreate([
             'user_id'  => $this->owner->id,
             'title'    => 'Owner listing',
             'is_draft' => true,
         ]);
+
+        // The four `*_agent_auctions` tables are shared with Hire an Agent, so a row
+        // carrying no `workflow_type` is one whose product cannot be proven — and is
+        // therefore refused by BOTH products' edit surfaces. Every row this file makes
+        // is an OFFER LISTING row (that is the whole subject of the file), so it must
+        // say so to be a realistic fixture: no Offer Listing edit route would ever have
+        // served an unstamped row.
+        //
+        // This is a fixture correction, not an accommodation. Stamping is invisible to
+        // the ownership rule these tests exist to prove — `userCanManageAuction()` keys
+        // on `user_id` alone — so every IDOR assertion here is unchanged by it. The
+        // cross-product boundary is asserted separately in tests/Feature/Listing.
+        ListingWorkflow::stamp($auction, ListingWorkflow::OFFER_LISTING);
+
+        return $auction;
     }
 
     public function modelProvider(): array

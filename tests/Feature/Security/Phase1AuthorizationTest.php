@@ -447,6 +447,15 @@ class Phase1AuthorizationTest extends TestCase
         $owner    = User::factory()->create();
         $attacker = User::factory()->create();
         $draft = SellerAgentAuction::forceCreate(['user_id' => $owner->id, 'is_draft' => true, 'title' => 'Owner draft']);
+
+        // `seller_agent_auctions` is shared by Hire Agent and Create Offer Listing, and an
+        // unstamped draft is refused by BOTH products' delete paths. The component under
+        // test here is the HIRE SELLER wizard, so the draft it operates on is a Hire Agent
+        // draft and must say so — an unstamped row would make the second half of this test
+        // ("the owner CAN delete their own draft") assert the fail-closed rule instead of
+        // the ownership rule it was written for.
+        \App\Support\Listing\ListingWorkflow::stamp($draft, \App\Support\Listing\ListingWorkflow::HIRE_AGENT);
+
         \Illuminate\Support\Facades\DB::table('seller_agent_auction_metas')->insert([
             'seller_agent_auction_id' => $draft->id,
             'meta_key'   => 'wf3_probe',

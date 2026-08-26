@@ -2,6 +2,10 @@
 
 namespace App\Http\Livewire\OfferListing\Tenant;
 
+use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+
+use App\Support\Listing\ListingWorkflow;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\TenantAgentAuction as HireTenantAgentAuction;
@@ -30,6 +34,20 @@ use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class TenantOfferListing extends Component
 {
+    use BelongsToListingWorkflow;
+
+    /** Create Offer Listing — the shared multi-role tenant/criteria wizard. */
+    protected const LISTING_WORKFLOW = ListingWorkflow::OFFER_LISTING;
+
+    /** Where a completed delete-all returns the user. */
+    private const DRAFT_INDEX_ROUTE = 'offer.listing.tenant';
+    /**
+     * Role is NOT a constant here: this component serves all four roles, taking the
+     * role from the route. BelongsToListingWorkflow reads $this->user_type and
+     * validates it, with no fallback — an unrecognised role resolves to no model and
+     * every helper refuses. See the trait.
+     */
+
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
@@ -1690,26 +1708,19 @@ class TenantOfferListing extends Component
         $this->initializeFeeStructure();
         $this->addService();
 
-        // Check for existing drafts based on user_type
-        $draftModelClass = match ($this->user_type) {
-            'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
-            'buyer'    => HireBuyerAgentAuction::class,
-            'seller'   => HireSellerAgentAuction::class,
-            default    => HireTenantAgentAuction::class,
-        };
-        $this->hasDrafts = $draftModelClass::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->exists();
+        // Owner + product scoped. The per-role `match` that used to select the model
+        // here is gone: its `default` arm answered "tenant" for an unrecognised
+        // user_type, so a bad role silently queried the wrong table.
+        $this->hasDrafts = $this->workflowHasDrafts();
 
         if ($listingId) {
-            $draftRecord = $draftModelClass::where('id', $listingId)
-                ->where('user_id', Auth::id())
-                ->first();
+            // WORKFLOW BOUNDARY — owner + role + product + draft-state, before hydration.
+            // The route's role is passed explicitly and is authoritative.
+            $draftRecord = $this->resumableListing($listingId, true, $this->user_type);
 
-            if (!$draftRecord) {
+            if (! $draftRecord) {
                 session()->flash('error', 'Draft not found. It may have been deleted or belongs to another account.');
-                return redirect()->route('offer.listing.tenant', ['user_type' => $this->user_type]);
+                return redirect()->route(self::DRAFT_INDEX_ROUTE, ['user_type' => $this->user_type]);
             }
 
             $this->loadDraft($listingId);
@@ -1743,20 +1754,18 @@ class TenantOfferListing extends Component
         $this->listingId = null;
         $this->isDraft = false;
     }
+    /**
+     * The saved drafts offered by this screen's "Load Saved Draft" picker.
+     *
+     * Scoped to owner AND product. Both products share this role's table, so the old
+     * owner-plus-is_draft pair listed the other product's drafts too — which is how an
+     * Offer Listing draft came to be offered by, and opened in, a Hire Agent wizard.
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDrafts()
+     */
     public function getDrafts()
     {
-        // Return drafts from the correct model based on user_type
-        $draftModelClass = match ($this->user_type) {
-            'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
-            'buyer'    => HireBuyerAgentAuction::class,
-            'seller'   => HireSellerAgentAuction::class,
-            default    => HireTenantAgentAuction::class,
-        };
-        return $draftModelClass::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->latest()
-            ->get();
+        return $this->workflowDrafts();
     }
     public function updatedFees()
     {
@@ -3278,52 +3287,35 @@ class TenantOfferListing extends Component
         $this->isLoadingData = true;
 
         try {
-        // All model classes to search
-        $modelClasses = [
-            'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
-            'buyer'    => HireBuyerAgentAuction::class,
-            'seller'   => HireSellerAgentAuction::class,
-        ];
-
-        $auction = null;
-        $foundUserType = null;
-
-        // If user_type is set, try that model first
-        if ($this->user_type && isset($modelClasses[$this->user_type])) {
-            $modelClass = $modelClasses[$this->user_type];
-            $auction = $modelClass::where('id', $listingId)
-                ->where('user_id', Auth::id())
-                ->first();
-            if ($auction) {
-                $foundUserType = $this->user_type;
-            }
-        }
-
-        // If not found, try all other models (fallback for drafts saved before fix)
-        if (!$auction) {
-            foreach ($modelClasses as $userType => $modelClass) {
-                if ($userType === $this->user_type) continue; // Already tried
-                $auction = $modelClass::where('id', $listingId)
-                    ->where('user_id', Auth::id())
-                    ->first();
-                if ($auction) {
-                    $foundUserType = $userType;
-                    break;
-                }
-            }
-        }
+        // THE ROLE IN THE ROUTE IS AUTHORITATIVE. A MISS IS A MISS.
+        //
+        // This used to search this role's table first and then, on a miss, walk the other
+        // three — adopting whichever table happened to contain the id, and rewriting
+        // $this->user_type to match. That is how /hire/agent/auction/tenant/{sellerDraftId}
+        // located the Seller row, relabelled the component as Seller, and hydrated Seller
+        // data into a screen the URL said was Tenant. It was introduced as a "fallback for
+        // drafts saved before fix"; the cost of that convenience was that no role boundary
+        // existed anywhere on the resume path.
+        //
+        // The row is now resolved through the same guard the mount used — owner, role,
+        // product and draft-state — and nothing else is consulted. It is deliberately NOT
+        // replaced with a different heuristic search: a legacy row that cannot be found in
+        // its own role's table fails closed and is reported by
+        // `php artisan listings:workflow-inventory`.
+        $auction = $this->resumableListing($listingId, true, $this->user_type);
 
         if ($auction) {
-            // Update user_type if found in a different table
-            if ($foundUserType && $foundUserType !== $this->user_type) {
-                $this->user_type = $foundUserType;
-            }
-
             // Load all metadata fields
             $this->listing_title = $auction->title;
             $this->workflow_type = $auction->get->workflow_type ?? 'hire_agent';
-            $this->user_type = $auction->get->user_type;
+            // WF: the role in the route is authoritative. This used to assign the EAV
+            // user_type unconditionally — including a null or a foreign role — which could
+            // relabel the component after the guard had established which table the row is
+            // in. Accepted only when it agrees.
+            $eavUserType = $auction->get->user_type;
+            if ($eavUserType === $this->user_type) {
+                $this->user_type = $eavUserType;
+            }
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
             $this->referral_percentage = $auction->get->referral_percentage ?? '';
@@ -4395,7 +4387,7 @@ class TenantOfferListing extends Component
                 : [];
         }
 
-        $auction->saveMeta('workflow_type', 'offer_listing');
+        ListingWorkflow::stamp($auction, ListingWorkflow::OFFER_LISTING);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
@@ -5222,96 +5214,53 @@ class TenantOfferListing extends Component
     }
 
 
+    /**
+     * Delete every draft this screen owns — FOR THIS PRODUCT ONLY.
+     *
+     * The ids are selected through the workflow-scoped helper BEFORE any DELETE is
+     * issued. See the note on BelongsToListingWorkflow::workflowDeletableDraftIds():
+     * the meta rows go via a raw query, so scoping the SELECT is the only available
+     * boundary. The per-role model/meta-table/foreign-key `match` blocks this method
+     * used to carry are gone — each defaulted to the tenant tables for an unrecognised
+     * user_type, which is a deletion aimed at the wrong table.
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDeleteAllDrafts()
+     */
     public function deleteAllDrafts()
     {
         try {
-            $modelClass = match ($this->user_type) {
-                'tenant'   => HireTenantAgentAuction::class,
-                'landlord' => HireLandLordAgentAuction::class,
-                'buyer'    => HireBuyerAgentAuction::class,
-                'seller'   => HireSellerAgentAuction::class,
-                default    => HireTenantAgentAuction::class,
-            };
-            $metaTable = match ($this->user_type) {
-                'tenant'   => 'tenant_agent_auction_metas',
-                'landlord' => 'landlord_agent_auction_metas',
-                'buyer'    => 'buyer_agent_auction_metas',
-                'seller'   => 'seller_agent_auction_metas',
-                default    => 'tenant_agent_auction_metas',
-            };
-            $metaFk = match ($this->user_type) {
-                'tenant'   => 'tenant_agent_auction_id',
-                'landlord' => 'landlord_agent_auction_id',
-                'buyer'    => 'buyer_agent_auction_id',
-                'seller'   => 'seller_agent_auction_id',
-                default    => 'tenant_agent_auction_id',
-            };
+            $this->workflowDeleteAllDrafts();
 
-            $draftIds = $modelClass::where('user_id', Auth::id())
-                ->where('is_draft', true)
-                ->pluck('id');
-
-            if ($draftIds->isNotEmpty()) {
-                DB::table($metaTable)
-                    ->whereIn($metaFk, $draftIds)
-                    ->delete();
-            }
-
-            $modelClass::where('user_id', Auth::id())
-                ->where('is_draft', true)
-                ->delete();
+            $this->hasDrafts = $this->workflowHasDrafts();
 
             session()->flash('success', 'All drafts and their associated data have been deleted successfully.');
-            return redirect()->route('offer.listing.tenant', ['user_type' => $this->user_type]);
+
+            return redirect()->route(self::DRAFT_INDEX_ROUTE, ['user_type' => $this->user_type]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting drafts: ' . $e->getMessage());
         }
     }
+    /**
+     * Delete one draft.
+     *
+     * Owner, role, product and draft-state are all checked before anything is removed.
+     * The previous owner-only check let a Hire screen delete an Offer Listing draft
+     * (and a published listing, since draft state was never asserted).
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDeleteDraft()
+     */
     public function deleteDraft($draftId)
     {
         try {
-            $modelClass = match ($this->user_type) {
-                'tenant'   => HireTenantAgentAuction::class,
-                'landlord' => HireLandLordAgentAuction::class,
-                'buyer'    => HireBuyerAgentAuction::class,
-                'seller'   => HireSellerAgentAuction::class,
-                default    => HireTenantAgentAuction::class,
-            };
-            $metaTable = match ($this->user_type) {
-                'tenant'   => 'tenant_agent_auction_metas',
-                'landlord' => 'landlord_agent_auction_metas',
-                'buyer'    => 'buyer_agent_auction_metas',
-                'seller'   => 'seller_agent_auction_metas',
-                default    => 'tenant_agent_auction_metas',
-            };
-            $metaFk = match ($this->user_type) {
-                'tenant'   => 'tenant_agent_auction_id',
-                'landlord' => 'landlord_agent_auction_id',
-                'buyer'    => 'buyer_agent_auction_id',
-                'seller'   => 'seller_agent_auction_id',
-                default    => 'tenant_agent_auction_id',
-            };
-
-            // WF-3: only the draft's owner may delete it (and its meta).
-            if (! $modelClass::where('id', $draftId)->where('user_id', Auth::id())->exists()) {
+            if (! $this->workflowDeleteDraft($draftId)) {
                 session()->flash('error', 'You are not authorized to delete this draft.');
+
                 return;
             }
 
-            DB::table($metaTable)
-                ->where($metaFk, $draftId)
-                ->delete();
-
-            $modelClass::where('id', $draftId)
-                ->where('user_id', Auth::id())
-                ->delete();
-
-            $this->hasDrafts = $modelClass::where('user_id', Auth::id())
-                ->where('is_draft', true)
-                ->exists();
+            $this->hasDrafts = $this->workflowHasDrafts();
 
             session()->flash('success', 'Draft deleted successfully.');
-            return redirect()->route('offer.listing.tenant', ['user_type' => $this->user_type]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
         }

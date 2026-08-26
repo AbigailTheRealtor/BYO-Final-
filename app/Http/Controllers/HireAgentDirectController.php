@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingWorkflow;
+
 use App\Models\AgentDefaultProfile;
 use App\Models\User;
 use App\Services\AgentBidMapperService;
@@ -974,7 +976,7 @@ class HireAgentDirectController extends Controller
             $listing->save();
 
             // ── 2. Save listing meta ─────────────────────────────────────
-            $listing->saveMeta('workflow_type',    'hire_agent');
+            ListingWorkflow::stamp($listing, ListingWorkflow::HIRE_AGENT);
             $listing->saveMeta('listing_status',   'Active');
             $listing->saveMeta('service_type',     'full_service');
             $listing->saveMeta('auction_type',     'Traditional');

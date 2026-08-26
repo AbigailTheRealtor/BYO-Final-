@@ -1651,7 +1651,18 @@ $lease_types = [
                         @endif
                         @endforeach
                     </ul>
-                    @else
+                    {{-- Limited Service — named explicitly.
+
+                         This arm used to be a bare `@else`, i.e. "anything that is not
+                         full_service", which put NULL and every unrecognised value into the
+                         limited-service tab bar. An Offer Listing row has no service_type at
+                         all, so that is exactly the branch a cross-product draft landed in:
+                         five limited-service-shaped tabs, with the panes below rendering
+                         nothing because they are gated on `=== 'limited_service'`.
+
+                         The Limited Service flow itself is unchanged — same tabs, same panes,
+                         same labels. Only the condition that reaches it is narrowed. --}}
+                    @elseif ($service_type === \App\Support\Listing\ServiceTypeMode::LIMITED)
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
                         <li class="nav-item" role="presentation">
@@ -1689,6 +1700,21 @@ $lease_types = [
                         </li>
                     </ul>
 
+                    {{-- FAIL CLOSED — service_type is absent or unrecognised.
+
+                         Reached only when the value is neither full_service nor
+                         limited_service. There is no wizard for that state, so none is
+                         guessed at: the tab bar is replaced by a notice rather than
+                         borrowing whichever layout is adjacent in the template. --}}
+                    @else
+                    <div class="alert alert-warning" role="alert" data-service-type-unrecognised="1">
+                        <strong>This listing can’t be opened here.</strong>
+                        <div class="mt-1">
+                            Its service type is missing or not recognised, so we can’t tell which
+                            version of this form belongs to it. Please go back to your listings and
+                            open it from there, or start a new listing.
+                        </div>
+                    </div>
                     @endif
 
                     <!-- Tab Content -->
