@@ -1706,9 +1706,29 @@
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
                         {{-- One call site for up to twenty-one rows. The labels and the "Other"
                              resolution live in $repAdd in the prologue and are unchanged; this loop
-                             only renders what that builder produced. --}}
+                             only renders what that builder produced.
+
+                             NO span="full" HERE, AND THAT IS THE PARITY FIX. This loop used to pass
+                             it, and it was the only representation loop of the four that did —
+                             buyer, landlord and tenant all let the component take its `half`
+                             default. `full` resolves to `col-12`, so twenty-one short label/value
+                             pairs stacked into one very long single column while the equivalent
+                             tenant card flowed them two-up; visual QA caught seller as the odd one
+                             out. Dropping the attribute puts these rows on `col-lg-6 col-12` — the
+                             established two-up-at-lg, one-up-below behaviour every other role's
+                             representation card already has.
+
+                             span="full" IS STILL CORRECT ELSEWHERE IN THIS FILE and none of those
+                             call sites are touched: Appliances, Amenities, Additional Details and
+                             the rest are list-valued or sentence-length, and all three other roles
+                             pass `full` for their equivalents too. The attribute was never wrong in
+                             general — it was wrong for THESE rows.
+
+                             LEGACY IS UNREACHABLE FROM HERE. `span` is read only when building
+                             $hlaFieldRedesignWidth, inside the redesign branch; the flag-off element
+                             tree does not consult it, so this line cannot move flag-off output. --}}
                         @foreach ($repRows as $repRow)
-                            <x-hire-agent.field :redesign="$hsaDetailRedesign" span="full" :label="$repRow['label']" :value="$repRow['value']" />
+                            <x-hire-agent.field :redesign="$hsaDetailRedesign" :label="$repRow['label']" :value="$repRow['value']" />
                         @endforeach
             </x-hire-agent.detail-section>
             @endif
