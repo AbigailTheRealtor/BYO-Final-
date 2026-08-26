@@ -235,6 +235,38 @@
         $hsaFinancingPills = \App\Helpers\ListingDisplayHelper::normalizeList($hsaFinancingArray, $hsaOtherFinancing);
 
         /*
+         | T6 — THE SELLER PRICE ON THE THREE SIDEBAR CTA BADGES.
+         |
+         | The badges beside "Bid Already Placed", "Bid Now" and "Login to Bid" read
+         | `$auction->get->budget` and hardcoded a `$` in front of it. That key is never written by
+         | the seller flow — it is the same dead key T3 removed from the hero — so all three
+         | rendered a bare dollar sign with no number. Visible on a rendered page, which is how it
+         | was found.
+         |
+         | Re-pointed at `maximum_budget`, the same source of truth T3 gave the hero, resolved ONCE
+         | here rather than three times inline so the three badges cannot drift apart.
+         |
+         | fmtMoneyWhole() supplies the `$`, which is why the literal one is removed from all three
+         | call sites. It is the helper the hero already uses on this exact field: it strips
+         | thousands separators, formats a numeric value as currency, and returns a non-numeric
+         | value unchanged — so a stored "Negotiable" reads as "Negotiable" rather than
+         | "$Negotiable". That last behaviour differs from the detail body's "Desired Sale Price"
+         | row, which prefixes `$` unconditionally; the hero's treatment is the right one for a
+         | badge, and this deliberately follows the hero.
+         |
+         | NULL WHEN ABSENT, and each badge is wrapped in a truth test rather than rendering an
+         | empty span — replacing a bare `$` with an empty box would not be a fix. hasValue() is
+         | the same absence rule the rest of this page uses, so 'null', '' and the placeholder
+         | strings all count as missing.
+         |
+         | NOTHING ELSE ABOUT THE CTAs CHANGES: not the authorization above them, not the wording,
+         | not the routes, not the visibility conditions, not the bid logic.
+         */
+        $hsaCtaPrice = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->maximum_budget)
+            ? \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->maximum_budget)
+            : null;
+
+        /*
          | Owner info heading. Resolved in PHP rather than inline because a bound attribute
          | containing `&&` is not parseable by Blade's attribute compiler. Same expression and same
          | two outcomes as the copy it replaces further down.
@@ -2155,7 +2187,7 @@
         </div>
         <div class="status-pill status-disabled w-100 d-flex justify-content-between">
             <span>Bid Already Placed</span>
-            <span style="font-weight:normal;font-size:.85em;">${{ @$auction->get->budget }}</span>
+            @if ($hsaCtaPrice)<span style="font-weight:normal;font-size:.85em;">{{ $hsaCtaPrice }}</span>@endif
         </div>
 
         @else
@@ -2163,7 +2195,7 @@
         <button class="btn w-100 bid-btn"
             onclick="window.location='{{ route('add_seller_agent_bid', @$auction->id) }}';">
             <span class="bid">Bid Now</span>
-            <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
+            @if ($hsaCtaPrice)<span class="badge bg-light float-end text-dark">{{ $hsaCtaPrice }}</span>@endif
         </button>
         @endif
 
@@ -2198,7 +2230,7 @@
         <a href="{{ route('login') }}">
             <button class="btn w-100">
                 <span class="bid m-0">Login to Bid</span>
-                <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
+                @if ($hsaCtaPrice)<span class="badge bg-light float-end text-dark">{{ $hsaCtaPrice }}</span>@endif
             </button>
         </a>
         @else

@@ -1228,12 +1228,24 @@ class HireAgentDetailFrameworkTest extends TestCase
         ]);
     }
 
-    /** The rendered page for a seller listing, as the given viewer. */
+    /**
+     * The rendered page for a seller listing, as the given viewer.
+     *
+     * A null viewer means GUEST, and is made guest EXPLICITLY. actingAs() authenticates the test
+     * case itself, not the single request that follows, so a later `$this->get()` in the same test
+     * method is still signed in as whoever was last passed here. Without the logout below, a
+     * "guest" assertion placed after an authenticated one silently tests the authenticated view —
+     * which is exactly what happened when this helper first grew a multi-viewer caller.
+     */
     private function sellerBody(Model $listing, ?User $viewer = null): string
     {
-        $request = $viewer ? $this->actingAs($viewer) : $this;
+        if ($viewer) {
+            $this->actingAs($viewer);
+        } else {
+            auth()->logout();
+        }
 
-        return (string) $request->get($this->urlFor('seller', $listing->id))->assertOk()->getContent();
+        return (string) $this->get($this->urlFor('seller', $listing->id))->assertOk()->getContent();
     }
 
     public function test_seller_quick_actions_band_renders_with_the_three_approved_tiles(): void
@@ -1465,6 +1477,125 @@ class HireAgentDetailFrameworkTest extends TestCase
         $this->assertStringContainsString('id="copylink"', $body, 'The legacy copy input must remain.');
         $this->assertStringContainsString('fa-solid fa-user"></i> </span>', $body, 'The orphan button must remain.');
         $this->assertStringNotContainsString('data-viho-quick-actions', $body, 'And no Quick Actions band appears.');
+    }
+
+    // ── T6 — the three sidebar CTA price badges ──────────────────────────────
+    //
+    // They read the dead `budget` key with a hardcoded `$`, so all three rendered a bare dollar
+    // sign. Re-pointed at `maximum_budget`. These tests are FLAG-INDEPENDENT on purpose: the CTAs
+    // live outside both redesign guards, so the fix must hold in either state and each test below
+    // asserts that explicitly rather than picking one.
+
+    /** The region holding the sidebar CTA stack — between the sidebar marker and the console. */
+    private function sellerCtaRegion(string $html): string
+    {
+        $start = strpos($html, 'data-hire-agent-sidebar');
+        $end   = strpos($html, 'id="bids-section"');
+
+        if ($start === false || $end === false || $end <= $start) {
+            return '';
+        }
+
+        return substr($html, $start, $end - $start);
+    }
+
+    /**
+     * The badge shows the seller price, formatted, from `maximum_budget` — in BOTH flag states.
+     *
+     * An agent viewer is used because "Bid Now" is the CTA an agent gets; owner and guest reach
+     * different branches of the same stack, covered by the authorization test below.
+     */
+    public function test_seller_cta_badge_shows_the_price_from_maximum_budget(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+        $agent   = User::factory()->create(['user_type' => 'agent']);
+
+        foreach ([false, true] as $redesignOn) {
+            if ($redesignOn) {
+                $this->enableSellerDetailRedesign();
+            }
+
+            $cta = $this->sellerCtaRegion($this->sellerBody($listing, $agent));
+            $state = $redesignOn ? 'flag on' : 'flag off';
+
+            // The fixture plants maximum_budget = 987654 and budget = 654321.
+            $this->assertStringContainsString('$987,654', $cta, "The CTA badge must show the formatted seller price ({$state}).");
+            $this->assertStringNotContainsString('654,321', $cta, "The CTA badge must not read the stale `budget` key ({$state}).");
+            $this->assertStringNotContainsString('>$<', $cta, "No bare dollar sign may render ({$state}).");
+        }
+    }
+
+    /**
+     * The QA fixture's own value, asserted literally.
+     *
+     * The listing behind the browser QA carries maximum_budget = 100000, and the defect was found
+     * by looking at that page. This pins the exact string a human read off the screen.
+     */
+    public function test_seller_cta_badge_formats_the_qa_value_as_a_currency_string(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id, false);
+        $listing->saveMeta('maximum_budget', '100000');
+
+        $agent = User::factory()->create(['user_type' => 'agent']);
+        $cta   = $this->sellerCtaRegion($this->sellerBody($listing->fresh(), $agent));
+
+        $this->assertStringContainsString('$100,000', $cta, 'maximum_budget = 100000 must render as $100,000.');
+    }
+
+    /**
+     * Absent price → no badge at all, rather than an empty box.
+     *
+     * Replacing a bare `$` with an empty span would not have been a fix, so the whole element is
+     * conditional. `budget` is left planted to prove the badge does not fall back to it.
+     */
+    public function test_seller_cta_badge_renders_nothing_when_the_price_is_absent(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id, false);
+        $listing->saveMeta('maximum_budget', '');
+
+        $agent = User::factory()->create(['user_type' => 'agent']);
+        $cta   = $this->sellerCtaRegion($this->sellerBody($listing->fresh(), $agent));
+
+        $this->assertStringNotContainsString('>$<', $cta, 'A bare dollar sign must not render.');
+        $this->assertStringNotContainsString('654,321', $cta, 'And it must not fall back to the stale `budget` key.');
+        $this->assertStringNotContainsString(
+            'class="badge bg-light float-end text-dark"></span>',
+            $cta,
+            'Nor may it render an empty badge element.'
+        );
+
+        // Control: the CTA itself is unaffected — only its price badge is conditional.
+        $this->assertStringContainsString('Bid Now', $cta, 'The CTA must still render without a price.');
+    }
+
+    /** T6 changes no authorization: each viewer still reaches the CTA branch they always did. */
+    public function test_seller_cta_authorization_and_wording_are_unchanged_by_the_price_fix(): void
+    {
+        $owner   = User::factory()->create(['user_type' => 'seller']);
+        $listing = $this->makeSellerPilotListing($owner->id);
+
+        // Agent with no bid yet → "Bid Now", pointing at the unchanged route.
+        $agent = User::factory()->create(['user_type' => 'agent']);
+        $cta   = $this->sellerCtaRegion($this->sellerBody($listing, $agent));
+        $this->assertStringContainsString('Bid Now', $cta);
+        $this->assertStringContainsString(route('add_seller_agent_bid', $listing->id), $cta, 'The bid route is unchanged.');
+
+        // Same agent after bidding → "Bid Already Placed", not a second Bid Now.
+        $this->makeBid('seller', $listing->id, $agent->id);
+        $cta = $this->sellerCtaRegion($this->sellerBody($listing->fresh(), $agent));
+        $this->assertStringContainsString('Bid Already Placed', $cta);
+
+        // Guest → "Login to Bid", and no bid route offered.
+        $cta = $this->sellerCtaRegion($this->sellerBody($listing, null));
+        $this->assertStringContainsString('Login to Bid', $cta);
+        $this->assertStringNotContainsString(route('add_seller_agent_bid', $listing->id), $cta, 'A guest is not offered the bid route.');
+
+        // Owner (a consumer, not an agent) → offered no bid CTA at all.
+        $cta = $this->sellerCtaRegion($this->sellerBody($listing, $owner));
+        $this->assertStringNotContainsString('Bid Now', $cta, 'The owner is not offered the agent CTA.');
     }
 
     /**
