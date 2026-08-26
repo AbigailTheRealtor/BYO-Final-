@@ -120,6 +120,14 @@ trait LandlordLeasingTerms
             'storage_space_com_entire',
             'shared_amenities',
             'building_hours',
+            // Added after the property-type fix: the canonical partial binds
+            // these through $wire.entangle() and renders desired_lease_length as
+            // a lease-term select. The original audit scanned wire:model and
+            // JS-bridged ids only, so all three were missed — they were invisible
+            // because the conditional sections holding them never opened.
+            'rent_includes',
+            'tenant_pays',
+            'desired_lease_length',
             'access_24_7',
             'zoning_allows',
             'space_features',
@@ -216,6 +224,9 @@ trait LandlordLeasingTerms
             'storage_space_com_entire' => 'raw',
             'shared_amenities' => 'raw',
             'building_hours' => 'raw',
+            'rent_includes' => 'json_array',
+            'tenant_pays' => 'json_array',
+            'desired_lease_length' => 'json_array',
             'access_24_7' => 'raw',
             'zoning_allows' => 'raw',
             'space_features' => 'raw',
@@ -365,6 +376,9 @@ trait LandlordLeasingTerms
     public $storage_space_com_entire = '';
     public $shared_amenities = '';
     public $building_hours = '';
+    public $rent_includes = [];          // Residential only
+    public $tenant_pays = [];            // Commercial only
+    public $desired_lease_length = [];
     public $access_24_7 = '';
     public $zoning_allows = '';
     public $space_features = '';

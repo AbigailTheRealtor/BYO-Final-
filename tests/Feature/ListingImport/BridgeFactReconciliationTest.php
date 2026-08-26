@@ -614,6 +614,50 @@ class BridgeFactReconciliationTest extends TestCase
     /**
      * @test
      *
+     * The live feed spells it "Partially"; this vocabulary spells it "partial".
+     * Both must produce the SAME stored feature, so a listing cannot end up with
+     * two near-identical furnishing entries depending on the feed's wording.
+     *
+     * Asserted on the shared rule, which is what both import paths call — there
+     * is deliberately no path-specific furnished logic to test separately.
+     */
+    public function the_feeds_partially_spelling_is_aliased_to_partial(): void
+    {
+        $this->assertSame('Partial', MlsFactVocabulary::furnishedFeatureLabel('Partially'));
+        $this->assertSame('Partial', MlsFactVocabulary::furnishedFeatureLabel('partially'));
+        $this->assertSame('Partial', MlsFactVocabulary::furnishedFeatureLabel('Partial'));
+
+        // Established behaviour is untouched.
+        $this->assertSame('Furnished', MlsFactVocabulary::furnishedFeatureLabel('Furnished'));
+        $this->assertSame('Turnkey', MlsFactVocabulary::furnishedFeatureLabel('Turnkey'));
+        $this->assertSame('Negotiable', MlsFactVocabulary::furnishedFeatureLabel('Negotiable'));
+        $this->assertNull(MlsFactVocabulary::furnishedFeatureLabel('Unfurnished'));
+        $this->assertNull(MlsFactVocabulary::furnishedFeatureLabel('Something Else'));
+
+        // …and it merges once, not twice, whichever spelling arrives.
+        $this->assertSame(['Elevator', 'Partial'], MlsFactVocabulary::mergeFurnishedFeature(['Elevator'], 'Partially'));
+        $this->assertSame(['Partial'], MlsFactVocabulary::mergeFurnishedFeature(['Partial'], 'Partially'));
+    }
+
+    /**
+     * @test
+     *
+     * End to end: a record the feed marks "Partially" reaches the seller listing
+     * as a single Partial building feature.
+     */
+    public function a_partially_furnished_record_merges_through_quick_import(): void
+    {
+        $this->seedRecord(['Furnished' => 'Partially']);
+
+        $r    = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $meta = SellerAgentAuction::find($r->listingId)->get;
+
+        $this->assertSame(['Partial'], $this->asList($meta->building_features));
+    }
+
+    /**
+     * @test
+     *
      * FURNISHED IS NOT ROUTED ON LANDLORD. Its landlord-side lookalike
      * (`tenant_require`) is deliberately absent from the landlord map.
      */

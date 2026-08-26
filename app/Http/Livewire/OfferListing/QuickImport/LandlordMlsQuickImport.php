@@ -121,11 +121,16 @@ class LandlordMlsQuickImport extends MlsQuickImportComponent
      *
      * Each of these is a real Landlord field with a real meta key, but its
      * canonical home is a different tab: pet_policy and
-     * number_of_occupants_allowed belong to Applicant Requirements,
-     * parking_terms to Property Preferences, and desired_lease_length to the
-     * Hire Landlord Agent flow. Quick Import has always asked them and dropping
-     * them would lose answers landlords currently give, so they are kept — but
-     * kept visibly apart from the canonical surface.
+     * number_of_occupants_allowed belong to Applicant Requirements, and
+     * parking_terms to Property Preferences. Quick Import has always asked them
+     * and dropping them would lose answers landlords currently give, so they are
+     * kept — but kept visibly apart from the canonical surface.
+     *
+     * desired_lease_length USED to be listed here on the belief that its home
+     * was the Hire Landlord Agent flow. It is not: the canonical Leasing Terms
+     * partial renders it as a lease-term select. It moved into the canonical set
+     * when the property-type fix opened the conditional sections that had been
+     * hiding it.
      *
      * This is not a Leasing Terms schema and must never become one. A parity
      * test asserts that nothing in here is a canonical Leasing Terms field; if a
@@ -134,20 +139,6 @@ class LandlordMlsQuickImport extends MlsQuickImportComponent
     public function questionSchema(): array
     {
         return [
-            'desired_lease_length' => [
-                'label'   => 'Lease Lengths You Will Accept',
-                'type'    => 'multiselect',
-                'section' => 'Other Details',
-                'options' => [
-                    'Month to Month',
-                    '6 Months',
-                    '1 Year',
-                    '2 Years',
-                    '3 Years',
-                    'Other',
-                ],
-                'help'    => 'Asked here because the Leasing Terms tab does not carry this field.',
-            ],
             'pet_policy' => [
                 'label'   => 'Pet Policy',
                 'type'    => 'select',

@@ -11,6 +11,7 @@ use App\Services\ListingImport\QuickImport\MlsQuickImportResult;
 use App\Services\ListingImport\QuickImport\MlsQuickImportService;
 use App\Support\Listing\ListingGalleryView;
 use App\Support\Listing\ListingPhotoEntry;
+use App\Support\Listing\PropertyTypeVocabulary;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -308,7 +309,18 @@ abstract class MlsQuickImportComponent extends Component
         $this->listingId     = $auction->id;
         $this->headline      = $result->headline;
         $this->photoCount    = $result->photoCount();
-        $this->property_type = (string) ($result->facts['property_type'] ?? '');
+        // NORMALISED, not copied. The canonical terms partials gate their
+        // conditional sections on an EXACT match against BYO vocabulary
+        // ("Residential Property" / "Commercial Property" for landlord), and a
+        // feed says "Residential Lease". Carrying the feed's word through meant
+        // fourteen landlord sections silently never rendered.
+        //
+        // The feed's own value is not lost: it stays in the cached Bridge record
+        // and is written to meta as mls_source_property_type by the draft writer.
+        $this->property_type = PropertyTypeVocabulary::forRole(
+            (string) ($result->facts['property_type'] ?? ''),
+            $this->role(),
+        );
 
         // Seed the price the user is asking, as a starting point they can change.
         // What may legitimately be seeded is role-specific — see seededPrice() —

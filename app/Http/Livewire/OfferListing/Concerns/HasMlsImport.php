@@ -1031,47 +1031,19 @@ trait HasMlsImport
      * Seller / buyer / tenant options: 'Residential', 'Commercial', 'Business',
      *                                   'Income', 'Vacant Land'
      */
+    /**
+     * Translate a source property type into this role's BYO vocabulary.
+     *
+     * Delegates to {@see \App\Support\Listing\PropertyTypeVocabulary}, which
+     * MLS Quick Import also uses. The rules are unchanged — they were moved
+     * there so both import paths translate identically, after quick import was
+     * found carrying raw RESO values ("Residential Lease") into Blade conditions
+     * that compare against BYO words ("Residential Property") and silently
+     * hiding whole conditional sections as a result.
+     */
     private static function normalizePropertyTypeForRole(string $value, string $role): string
     {
-        $v     = trim($value);
-        $lower = strtolower($v);
-
-        if ($role === 'landlord') {
-            // Landlord blade uses "Residential Property" / "Commercial Property".
-            // MLS output already matches, but handle short-form edge cases too.
-            if (str_contains($lower, 'commercial'))  return 'Commercial Property';
-            if (str_contains($lower, 'residential')) return 'Residential Property';
-            return $v;
-        }
-
-        // Seller, buyer, tenant: use short-form values (no " Property" suffix).
-        if (str_contains($lower, 'residential')   || str_contains($lower, 'single family')
-            || str_contains($lower, 'condominium') || str_contains($lower, 'condo')
-            || str_contains($lower, 'townhome')    || str_contains($lower, 'townhouse')
-            || str_contains($lower, 'mobile home')) {
-            return 'Residential';
-        }
-
-        // "Business Opportunity" → 'Business' (must come before 'commercial' check
-        // because some MLS exports say "Business, Commercial").
-        if (str_contains($lower, 'business')) {
-            return 'Business';
-        }
-
-        if (str_contains($lower, 'commercial')) {
-            return 'Commercial';
-        }
-
-        if (str_contains($lower, 'income') || str_contains($lower, 'multifamily')
-            || str_contains($lower, 'multi-family') || str_contains($lower, 'multi family')) {
-            return 'Income';
-        }
-
-        if (str_contains($lower, 'vacant') || str_contains($lower, 'land')) {
-            return 'Vacant Land';
-        }
-
-        return $v; // already-normalized or unrecognised — pass through
+        return \App\Support\Listing\PropertyTypeVocabulary::forRole($value, $role);
     }
 
     private function resolveImportRole(): string

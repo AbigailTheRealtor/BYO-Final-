@@ -1167,11 +1167,15 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertNotContains('offered_financing', $canonical);
         $this->assertNotContains('other_financing', $canonical);
 
-        // The lease questions are still asked — security deposit from the
-        // canonical tab, lease length from the supplementary set (its canonical
-        // home is a different screen).
+        // The lease questions are still asked, both now from the canonical tab.
+        // desired_lease_length used to sit in the supplementary set on the
+        // belief that its home was the Hire Landlord Agent flow; the canonical
+        // Leasing Terms partial renders it as a lease-term select, and it moved
+        // into the canonical set once the property-type fix opened the sections
+        // that had been hiding it.
         $this->assertContains('security_deposit_amount', $canonical);
-        $this->assertArrayHasKey('desired_lease_length', $schema);
+        $this->assertContains('desired_lease_length', $canonical);
+        $this->assertArrayNotHasKey('desired_lease_length', $schema);
     }
 
     /** @test */
@@ -1192,7 +1196,8 @@ class MlsQuickImportFlowTest extends TestCase
             // desired_lease_length stays in the supplementary bag because its
             // canonical home is another screen.
             ->set('desired_rental_amount', '2400')
-            ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
+            // Canonical property now, not a supplementary $multiTerms entry.
+            ->set('desired_lease_length', ['1 Year'])
             ->call('continueToReview')
             ->assertSet('step', 'review');
 

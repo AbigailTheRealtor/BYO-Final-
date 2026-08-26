@@ -100,6 +100,14 @@ final class MlsFactVocabulary
     {
         $value = mb_strtolower(trim((string) $raw));
 
+        // The live feed says "Partially" where this vocabulary says "partial".
+        // Aliased rather than added as a fifth label so both spellings produce
+        // the SAME stored feature — "Partial" — and no listing ends up with two
+        // near-identical furnishing entries depending on which word the feed used.
+        if ($value === 'partially') {
+            $value = 'partial';
+        }
+
         return in_array($value, ['furnished', 'turnkey', 'partial', 'negotiable'], true)
             ? ucfirst($value)
             : null;

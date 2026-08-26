@@ -8,6 +8,7 @@ use App\Services\ListingImport\Media\MlsListingGallerySync;
 use App\Services\ListingImport\MlsFieldMap;
 use App\Support\Listing\ListingPhotoEntry;
 use App\Support\Listing\MlsFactVocabulary;
+use App\Support\Listing\PropertyTypeVocabulary;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -51,6 +52,7 @@ class MlsQuickImportDraftWriter
     public const META_SOURCE_STATUS = 'mls_source_status';
     public const META_ORDER_CUSTOM  = 'property_photos_order_customized';
     public const META_QUICK_IMPORT  = 'mls_quick_import';
+    public const META_SOURCE_PTYPE  = 'mls_source_property_type';
 
     public function __construct(
         private readonly MlsListingGallerySync $gallerySync,
@@ -213,6 +215,14 @@ class MlsQuickImportDraftWriter
                 ? array_values(array_filter(array_map('trim', explode(',', (string) $value))))
                 : $value;
 
+            // Stored in BYO vocabulary, exactly as the manual flow stores it, so
+            // a quick-imported listing drives the same conditionals everywhere
+            // downstream — the terms step, the Edit tabs and the published page.
+            // The feed's own wording is preserved separately as provenance.
+            if ($canonicalKey === 'property_type') {
+                $stored = PropertyTypeVocabulary::forRole((string) $stored, $role);
+            }
+
             // Flooring lands in a fixed 26-option multi-select. A feed value
             // outside that list would store fine and then never render as
             // chosen, so it is dropped rather than written.
@@ -331,6 +341,18 @@ class MlsQuickImportDraftWriter
 
         if ($result->mlsStatus !== null) {
             $auction->saveMeta(self::META_SOURCE_STATUS, $result->mlsStatus);
+        }
+
+        // The feed's own property-type wording, kept because the editable field
+        // now holds the BYO translation of it. Normalising the form value must
+        // not cost us the ability to say what the MLS actually called this
+        // property — "Residential Lease" and "Residential Income" both become
+        // "Residential Property" on a landlord listing, and that distinction is
+        // worth keeping somewhere.
+        $sourceType = (string) ($result->facts['property_type'] ?? '');
+
+        if ($sourceType !== '') {
+            $auction->saveMeta(self::META_SOURCE_PTYPE, $sourceType);
         }
 
         $now = now()->toIso8601String();

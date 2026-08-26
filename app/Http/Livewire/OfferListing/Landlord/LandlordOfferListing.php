@@ -92,9 +92,6 @@ class LandlordOfferListing extends Component
 
 
     public $desired_rental_amount_tenant = '';
-    public $desired_lease_length = [];
-    public $rent_includes = []; // Residential only
-    public $tenant_pays = []; // Commercial only
 
 
     // Properties
@@ -3183,10 +3180,7 @@ class LandlordOfferListing extends Component
         // cannot store the same answer under different keys or transforms.
         // @see \App\Http\Livewire\OfferListing\Concerns\LandlordLeasingTerms
         $this->saveLandlordLeasingTermsMeta($auction);
-        $auction->saveMeta('desired_lease_length', json_encode($this->ensureArray($this->desired_lease_length)));
         $auction->saveMeta('desired_rental_amount_tenant', $this->desired_rental_amount_tenant);
-        $auction->saveMeta('rent_includes', json_encode($this->ensureArray($this->rent_includes)));
-        $auction->saveMeta('tenant_pays', json_encode($this->ensureArray($this->tenant_pays)));
         $auction->saveMeta('tenant_pays_other', $this->tenant_pays_other);
         $auction->saveMeta('owner_pays_other', $this->owner_pays_other);
 
