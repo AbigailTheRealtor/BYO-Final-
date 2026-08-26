@@ -10,6 +10,7 @@ use App\Models\SellerAgentAuction;
 use App\Models\User;
 use App\Services\ListingImport\MlsFieldMap;
 use App\Services\ListingImport\MlsListingPrefillService;
+use App\Support\Listing\MlsFactVocabulary;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Bus;
 use Livewire\Livewire;
@@ -439,6 +440,243 @@ class BridgeFactReconciliationTest extends TestCase
             . 'documented carry-only list, so the fact is fetched and silently dropped: '
             . implode(', ', $orphans)
         );
+    }
+
+    // ─── Commit F: the four remaining candidate facts ────────────────────────
+
+    /**
+     * @test
+     *
+     * FLOORING IS LANDLORD-ONLY. The landlord Property Preferences tab has a
+     * "Floor Covering" multi-select; the Seller form has no flooring field of
+     * any kind, so there is no seller destination to map to.
+     */
+    public function flooring_maps_on_landlord_and_is_absent_on_seller(): void
+    {
+        $this->assertArrayHasKey('flooring', MlsFieldMap::forRole('landlord'));
+        $this->assertArrayNotHasKey('flooring', MlsFieldMap::forRole('seller'));
+
+        $this->seedRecord(['Flooring' => ['Laminate', 'Ceramic Tile']], propertyType: 'Residential Lease');
+
+        $r    = $this->importAs($this->landlord, LandlordMlsQuickImport::class);
+        $meta = LandlordAgentAuction::find($r->listingId)->get;
+
+        $this->assertSame(['Laminate', 'Ceramic Tile'], $this->asList($meta->floor_covering));
+    }
+
+    /** @test */
+    public function flooring_is_not_written_to_a_seller_listing(): void
+    {
+        $this->seedRecord(['Flooring' => ['Laminate']]);
+
+        $r       = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $listing = SellerAgentAuction::find($r->listingId);
+
+        $this->assertNull($listing->get->floor_covering ?? null);
+    }
+
+    /**
+     * @test
+     *
+     * FAIL CLOSED ON THE ENUM. The select offers a fixed 26-value list. A
+     * covering outside it would store fine and then never render as chosen, so
+     * it is dropped rather than written.
+     */
+    public function an_unsupported_floor_covering_is_dropped_not_stored(): void
+    {
+        $this->seedRecord(
+            ['Flooring' => ['Laminate', 'Unobtainium Composite', 'Tile']],
+            propertyType: 'Residential Lease',
+        );
+
+        $r    = $this->importAs($this->landlord, LandlordMlsQuickImport::class);
+        $meta = LandlordAgentAuction::find($r->listingId)->get;
+
+        $this->assertSame(['Laminate', 'Tile'], $this->asList($meta->floor_covering));
+    }
+
+    /** @test */
+    public function a_record_whose_flooring_is_entirely_unsupported_writes_nothing(): void
+    {
+        $this->seedRecord(['Flooring' => ['Unobtainium Composite']], propertyType: 'Residential Lease');
+
+        $r       = $this->importAs($this->landlord, LandlordMlsQuickImport::class);
+        $listing = LandlordAgentAuction::find($r->listingId);
+
+        $this->assertEmpty($listing->get->floor_covering ?? '');
+    }
+
+    /** @test */
+    public function floor_covering_matching_is_case_insensitive_and_deduplicated(): void
+    {
+        $this->assertSame(
+            ['Tile', 'Carpet'],
+            MlsFactVocabulary::filterFloorCoverings(['tile', 'CARPET', 'Tile', '  ', 'nonsense']),
+        );
+    }
+
+    /**
+     * @test
+     *
+     * FURNISHED IS SELLER-ONLY, AND IT MERGES. It does not land in a "furnished"
+     * field — it contributes at most one label to building_features, a list the
+     * user also edits.
+     */
+    public function furnished_merges_into_seller_building_features(): void
+    {
+        $this->seedRecord(['Furnished' => 'Turnkey']);
+
+        $r    = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $meta = SellerAgentAuction::find($r->listingId)->get;
+
+        $this->assertSame(['Turnkey'], $this->asList($meta->building_features));
+    }
+
+    /**
+     * @test
+     *
+     * THE MERGE PRESERVES USER VALUES. This is the requirement that made a plain
+     * copy unacceptable: building_features is a list the user curates.
+     */
+    public function the_furnished_merge_preserves_existing_user_selections(): void
+    {
+        $this->seedRecord(['Furnished' => 'Furnished']);
+
+        $first   = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $listing = SellerAgentAuction::find($first->listingId);
+
+        // The user curates the list themselves.
+        $listing->saveMeta('building_features', ['Elevator', 'Reception']);
+
+        // Re-importing the same record adds the label without disturbing them.
+        $second = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $meta   = SellerAgentAuction::find($second->listingId)->fresh()->get;
+
+        $this->assertSame(['Elevator', 'Reception', 'Furnished'], $this->asList($meta->building_features));
+    }
+
+    /**
+     * @test
+     *
+     * IDEMPOTENT. A third import must not add "Furnished" again.
+     */
+    public function repeated_import_does_not_duplicate_the_furnished_label(): void
+    {
+        $this->seedRecord(['Furnished' => 'Furnished']);
+
+        $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $r = $this->importAs($this->seller, SellerMlsQuickImport::class);
+
+        $meta = SellerAgentAuction::find($r->listingId)->fresh()->get;
+
+        $this->assertSame(['Furnished'], $this->asList($meta->building_features));
+    }
+
+    /**
+     * @test
+     *
+     * "Unfurnished" contributes nothing: absence of a furnishing label already
+     * means unfurnished, and listing it among FEATURES would read as the
+     * opposite of what it says.
+     */
+    public function unfurnished_adds_no_building_feature(): void
+    {
+        $this->seedRecord(['Furnished' => 'Unfurnished']);
+
+        $r       = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $listing = SellerAgentAuction::find($r->listingId);
+
+        $this->assertEmpty($listing->get->building_features ?? '');
+    }
+
+    /**
+     * @test
+     *
+     * The merge touches building_features and nothing else.
+     */
+    public function the_furnished_merge_changes_no_other_array_field(): void
+    {
+        $this->seedRecord(['Furnished' => 'Furnished', 'Appliances' => ['Range']]);
+
+        $r       = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $listing = SellerAgentAuction::find($r->listingId);
+
+        $listing->saveMeta('interior_features', ['Open Floorplan']);
+
+        $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $meta = SellerAgentAuction::find($r->listingId)->fresh()->get;
+
+        $this->assertSame(['Open Floorplan'], $this->asList($meta->interior_features));
+        $this->assertSame(['Range'], $this->asList($meta->appliances));
+    }
+
+    /**
+     * @test
+     *
+     * FURNISHED IS NOT ROUTED ON LANDLORD. Its landlord-side lookalike
+     * (`tenant_require`) is deliberately absent from the landlord map.
+     */
+    public function furnished_is_not_written_to_a_landlord_listing(): void
+    {
+        // The landlord map DOES carry a `furnished` entry, pointing at
+        // `tenant_require` — the URL/text importer has always used it and that is
+        // left untouched. What is asserted here is that the QUICK IMPORT write
+        // path declines to act on it: tenant_require is a single-select
+        // "Furnishings" control, not a feature list, so there is nothing to merge
+        // a label into.
+        $this->assertSame('building_features', MlsFieldMap::forRole('seller')['furnished']);
+        $this->assertSame('tenant_require', MlsFieldMap::forRole('landlord')['furnished']);
+
+        $this->seedRecord(['Furnished' => 'Furnished'], propertyType: 'Residential Lease');
+
+        $r       = $this->importAs($this->landlord, LandlordMlsQuickImport::class);
+        $listing = LandlordAgentAuction::find($r->listingId);
+
+        $this->assertEmpty($listing->get->tenant_require ?? '');
+    }
+
+    /**
+     * @test
+     *
+     * SubdivisionName and BuildingFeatures stay excluded, and the reasons stay
+     * written down. Pinned so a later reader does not "complete the set".
+     */
+    public function subdivision_and_building_features_remain_excluded(): void
+    {
+        $allowed = MlsListingPrefillService::ALLOWED_FIELDS;
+
+        $this->assertArrayNotHasKey('subdivisionName', $allowed);
+        $this->assertArrayNotHasKey('buildingFeatures', $allowed);
+
+        // Subdivision has no canonical route on either role at all.
+        foreach (['seller', 'landlord'] as $role) {
+            $this->assertArrayNotHasKey('subdivision', MlsFieldMap::forRole($role));
+        }
+
+        // building_features_list DOES have a seller route — it is the URL/text
+        // parser's, and it is untouched. What is excluded is the BRIDGE source:
+        // no candidate property carries RESO BuildingFeatures, so the quick
+        // import can never emit that canonical key.
+        $this->assertArrayHasKey('building_features_list', MlsFieldMap::forRole('seller'));
+        $this->assertNotContains('building_features_list', MlsListingPrefillService::ALLOWED_FIELDS);
+    }
+
+    /**
+     * @test
+     *
+     * The Commit F additions do not reach any Terms surface either.
+     */
+    public function the_role_asymmetric_facts_do_not_touch_terms(): void
+    {
+        $this->seedRecord(['Furnished' => 'Furnished', 'Flooring' => ['Tile']]);
+
+        $r    = $this->importAs($this->seller, SellerMlsQuickImport::class);
+        $meta = SellerAgentAuction::find($r->listingId)->get;
+
+        foreach (['occupant_status', 'included_personal_property', 'offered_financing'] as $term) {
+            $this->assertEmpty($meta->{$term} ?? '', "MLS import wrote the sale term {$term}.");
+        }
     }
 
     /** @return list<string> */

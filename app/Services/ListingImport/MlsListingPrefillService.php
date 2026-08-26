@@ -154,6 +154,26 @@ class MlsListingPrefillService
         // ── Hazard ──────────────────────────────────────────────────────────
         'floodZoneCode'         => 'flood_zone_code',
 
+        // ── Role-asymmetric facts (Commit F) ────────────────────────────────
+        //
+        // Both of these resolve to a destination on ONE role only, and the
+        // MlsFieldMap decides which — a canonical key with no entry for a role is
+        // skipped by the writer, so the asymmetry is enforced in one place rather
+        // than restated here.
+        //
+        // `flooring` → Landlord `*floor_covering`. Seller has no flooring field
+        // of any kind. The landlord select offers a fixed 26-value list, so feed
+        // values are filtered against it before storage; an unrecognised covering
+        // is dropped rather than stored as an option that would never render as
+        // chosen.
+        //
+        // `furnished` → Seller `building_features`, MERGED not copied, with
+        // "Unfurnished" contributing nothing. Landlord's furnishing target
+        // (`tenant_require`) is deliberately absent from its map — see the note
+        // in the deliberate-exclusions test.
+        'flooring'              => 'flooring',
+        'furnished'             => 'furnished',
+
         // DELIBERATELY ABSENT — `OccupantType`.
         // It is an objective MLS fact, and a matching canonical field
         // (`occupant_status`) exists — but that field lives on the Sale Terms /
@@ -164,20 +184,24 @@ class MlsListingPrefillService
         // closing. It also has no MlsFieldMap target on either role, so importing
         // it would mean inventing one. Left for an explicit product decision.
         //
-        // DELIBERATELY ABSENT — `Flooring` and `SubdivisionName`.
-        // Both are permitted facts with real form fields, but neither has an
-        // MlsFieldMap entry for either role. Adding the mapping is a separate,
-        // reviewable change; silently minting new canonical routes inside a
-        // licensing allow-list is not.
+        // DELIBERATELY ABSENT — `SubdivisionName`.
+        // There is no canonical destination on either role. The word appears in
+        // a legal-description TOOLTIP and, on the Seller form, as a vacant-land
+        // CURRENT-USE category ("this parcel is used as a subdivision") — a
+        // different claim entirely from the name of the development a home sits
+        // in. The only `neighborhood_*` properties are broker marketing-fee
+        // fields. Mapping it would mean inventing a field, and it is already
+        // shown to the user on the review screen through the presenter's
+        // Community section, so nothing is lost by not importing it.
         //
-        // DELIBERATELY ABSENT — `Furnished` and `BuildingFeatures`.
-        // Their targets diverge by role (`building_features` on Seller,
-        // `tenant_require` on Landlord) and the Seller side MERGES rather than
-        // replaces, with an explicit exclusion for "Unfurnished" — see the
-        // furnished branch in HasMlsImport::applyImportedFields(). The quick
-        // import draft writer has no equivalent merge step, so routing these
-        // through it would replace a user's building_features array instead of
-        // adding to it. Needs the merge to exist on the write path first.
+        // DELIBERATELY ABSENT — `BuildingFeatures`.
+        // `building_features` looks like a match by name but its vocabulary is a
+        // COMMERCIAL fit-out list — Loading Dock, Truck Well, Freight Elevator,
+        // Clear Span, High Bays, Medical Disposal. RESO BuildingFeatures carries
+        // nothing shaped like that, so a mapping would be filtered to nothing on
+        // a good day and would write commercial fit-out claims onto a house on a
+        // bad one. `furnished` reaches this same field on purpose, because
+        // "Furnished" IS one of its options.
 
         // DELIBERATELY ABSENT — `petsAllowed`.
         // The candidate carries it and BridgePropertyNormalizer now preserves

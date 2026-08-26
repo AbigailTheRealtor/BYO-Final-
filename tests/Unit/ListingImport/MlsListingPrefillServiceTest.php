@@ -298,6 +298,12 @@ class MlsListingPrefillServiceTest extends TestCase
             'taxYear'               => 'tax_year',
             'buildingAreaTotal'     => 'building_size_sqft',
             'floodZoneCode'         => 'flood_zone_code',
+
+            // Role-asymmetric: flooring reaches Landlord only, furnished reaches
+            // Seller only. MlsFieldMap enforces which, so the allow-list simply
+            // permits the fact and does not restate the split.
+            'flooring'              => 'flooring',
+            'furnished'             => 'furnished',
         ], MlsListingPrefillService::ALLOWED_FIELDS);
     }
 
@@ -328,24 +334,25 @@ class MlsListingPrefillServiceTest extends TestCase
                 . 'occupies the property today is not that claim, and there is no MlsFieldMap '
                 . 'target for it on either role.',
             ],
-            'flooring: no MlsFieldMap target on either role' => [
-                'flooring',
-                'A permitted fact with a real form field but no canonical route. Minting one '
-                . 'inside a licensing allow-list is a separate, reviewable change.',
-            ],
-            'subdivision: no MlsFieldMap target on either role' => [
+            'subdivision: no canonical destination on either role' => [
                 'subdivisionName',
-                'Same as flooring — permitted, but there is no canonical route to add it to.',
+                'The word appears in a legal-description tooltip and, on Seller, as a '
+                . 'vacant-land CURRENT-USE category — a different claim from the name of a '
+                . 'development. The only neighborhood_* properties are broker fee fields. '
+                . 'Already shown to the user via the presenter Community section.',
             ],
-            'furnished: role-divergent target with merge semantics the write path lacks' => [
-                'furnished',
-                'Seller merges Furnished into building_features and excludes "Unfurnished"; '
-                . 'Landlord routes it to tenant_require. MlsQuickImportDraftWriter has no '
-                . 'merge step, so importing it would replace a user array instead of adding.',
+            'building features: commercial fit-out vocabulary, not a RESO match' => [
+                'buildingFeatures',
+                'building_features offers Loading Dock, Truck Well, Freight Elevator, Clear '
+                . 'Span, High Bays. RESO BuildingFeatures carries nothing shaped like that, '
+                . 'so a mapping would write commercial fit-out claims onto a house.',
             ],
             'pets: no wire:model binding for pet_policy on any Create Offer tab' => [
                 'petsAllowed',
-                'pet_policy has no blade binding — importing it writes state the user cannot see or correct',
+                'pet_policy is an INACTIVE product field: it has no wire:model binding on any '
+                . 'Create Offer tab, so there is no active canonical destination. This is a '
+                . 'dormant field, not a failed import — importing would write state the user '
+                . 'can neither see nor correct, and the fix is to wire the field, not the map.',
             ],
             'standardStatus: no form target on either role' => [
                 'standardStatus',

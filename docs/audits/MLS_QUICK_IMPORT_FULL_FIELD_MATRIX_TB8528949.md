@@ -1,7 +1,50 @@
 # MLS Quick Import — complete Bridge field matrix (TB8528949)
 
-> Status: **audit only — no behaviour changed by this document.** Generated against the
-> LIVE Bridge/Stellar record for `TB8528949`, 2142 Bradford Street Unit 308, Clearwater FL 33760.
+> Status: **audit only — no behaviour changed by this document.** Originally generated against
+> the LIVE Bridge/Stellar record for `TB8528949`, 2142 Bradford Street Unit 308, Clearwater FL 33760.
+>
+> ## ⚠️ SUPERSEDED IN PART — updated 2026-08-26
+>
+> The `CANONICAL BYO (TARGET EXISTS, NOT FED)` section below described the state **before**
+> the Bridge field reconciliation. **18 of its 20 rows are now fed.** The per-row listings
+> in that section are retained as the historical record of what the reconciliation found;
+> read the "Current reconciliation state" block immediately below for what is true today.
+>
+> **Source of the update:** the current code, not a fresh feed call — `ALLOWED_FIELDS`,
+> `MlsFieldMap::forRole()` and the passing tests in `BridgeFactReconciliationTest`. No new
+> Bridge lookup was made: the existing audit procedure needs live credentials and a live
+> request, and re-running it is a state-changing operation that was out of scope for this
+> change. The field-by-field values below therefore remain those of the original
+> 2026-08-14 capture.
+>
+> ### Current reconciliation state (verified 2026-08-26)
+>
+> | | Then | Now |
+> |---|---|---|
+> | Allow-listed source fields | 25 | **43** |
+> | …reaching an editable form field | 21 | **36** |
+> | …carried as meta / display only | 4 | **7** |
+> | `TARGET EXISTS, NOT FED` | 20 | **2** |
+>
+> The two remaining rows are `SubdivisionName` and `OccupantType`, both now reclassified as
+> deliberate exclusions rather than gaps — see "Final dispositions" below. Every exclusion
+> is pinned by `MlsListingPrefillServiceTest::test_deliberately_excluded_candidate_properties_are_not_allow_listed`.
+>
+> ### Final dispositions for the four candidates resolved 2026-08-26
+>
+> | Fact | Disposition | Reason |
+> |---|---|---|
+> | `Flooring` | **MAPPED — Landlord only** | → `*floor_covering`. Seller has no flooring field of any kind. Feed values are filtered against the select's 26-value option list; unrecognised coverings are dropped rather than stored as options that would never render as chosen. |
+> | `Furnished` | **MAPPED — Seller only, merged** | → `building_features`, adding at most one label and preserving existing user selections. "Unfurnished" contributes nothing — absence of a furnishing label already means unfurnished. The Landlord lookalike (`tenant_require`) is a single-select "Furnishings" control, not a feature list, so the quick-import write path declines to act on it. |
+> | `SubdivisionName` | **EXCLUDED — no canonical destination** | The word appears in a legal-description tooltip and, on Seller, as a vacant-land *current-use category* — a different claim from the name of a development. The only `neighborhood_*` properties are broker marketing-fee fields. Already shown to the user via the presenter's Community section, so nothing is lost. |
+> | `BuildingFeatures` | **EXCLUDED — vocabulary mismatch** | `building_features` offers a commercial fit-out list (Loading Dock, Truck Well, Freight Elevator, Clear Span, High Bays). RESO `BuildingFeatures` carries nothing shaped like that; a mapping would filter to nothing at best and write commercial fit-out claims onto a house at worst. `Furnished` reaches this same field deliberately, because "Furnished" *is* one of its options. |
+> | `PetsAllowed` | **EXCLUDED — inactive product field** | `pet_policy` has no `wire:model` binding on any Create Offer tab. This is a dormant field, not a failed import; the fix is to wire the field, not the map. |
+> | `OccupantType` | **EXCLUDED — terms boundary** | `occupant_status` lives on the Sale Terms / Leasing Terms tab, which is the user's statement of how they intend to transact. The feed's view of who occupies the property *today* is a different claim, and there is no `MlsFieldMap` target on either role. |
+>
+> Unchanged by this work: media (reference-only, gated, idempotent), coordinate precedence
+> (`Existing → Bridge MLS → AddressPoint → Census`, listing-key match only), and the
+> remarks / agent / office / compensation exclusions, which still await a separately
+> confirmed licensing decision. Photographs remain the only superseded permission area.
 
 Every **populated** field on the record is assigned exactly one disposition, and the
 dispositions reconcile back to the populated count — no field disappears unexplained.
@@ -75,7 +118,12 @@ DISPOSITION COUNTS
   WaterfrontYN                           1                                -> waterfront
   YearBuilt                              1986                             -> year_built
 
-### CANONICAL BYO (TARGET EXISTS, NOT FED)
+### CANONICAL BYO (TARGET EXISTS, NOT FED) — HISTORICAL, 18 of 20 NOW FED
+
+> Retained as the record of what the reconciliation found on 2026-08-14. Of these twenty,
+> eighteen are now imported; `OccupantType` and `SubdivisionName` are deliberate exclusions.
+> The "(blocked by ALLOWED_FIELDS)" annotations describe the state at capture time and are
+> no longer true for the eighteen.
   Appliances                             ["Dryer","Microwave","Range","Refrigerator","Washer"] -> appliances (blocked by ALLOWED_FIELDS)
   BuildingAreaTotal                      480                              -> total_square_feet (blocked by ALLOWED_FIELDS)
   ConstructionMaterials                  ["Block","Stucco"]               -> exterior_construction (blocked by ALLOWED_FIELDS)

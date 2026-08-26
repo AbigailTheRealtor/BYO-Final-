@@ -126,6 +126,15 @@ class PropertyCandidate
 
         // ── Hazard ──────────────────────────────────────────────────────────
         public readonly ?string $floodZoneCode = null,
+
+        // ── Role-asymmetric facts ───────────────────────────────────────────
+        // `flooring` reaches a Landlord field only; `furnished` reaches a Seller
+        // field only. Both are carried unconditionally — the DTO describes the
+        // property, and which role can use a fact is MlsFieldMap's decision, not
+        // this class's.
+        /** @var list<string>|null */
+        public readonly ?array $flooring = null,
+        public readonly ?string $furnished = null,
     ) {}
 
     /**

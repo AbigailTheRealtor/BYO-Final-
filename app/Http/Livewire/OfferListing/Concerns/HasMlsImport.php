@@ -594,14 +594,16 @@ trait HasMlsImport
             // want to merge, never to replace or skip. 'Unfurnished' is intentionally
             // excluded because absence of the value implies unfurnished.
             if ($canonicalKey === 'furnished' && $propName === 'building_features') {
-                $furnishedVal = strtolower(trim($rawValue));
-                if (in_array($furnishedVal, ['furnished', 'turnkey', 'partial', 'negotiable'], true)) {
-                    $label    = ucfirst($furnishedVal);
-                    $existing = is_array($this->building_features) ? $this->building_features : [];
-                    if (!in_array($label, $existing, true)) {
-                        $this->building_features = array_merge($existing, [$label]);
-                    }
-                }
+                // The rule itself lives in MlsFactVocabulary because the
+                // quick-import writer needs the identical behaviour. Two
+                // lookalike copies of "which furnishing values earn a feature
+                // label, and does Unfurnished count" is exactly the drift this
+                // branch would otherwise start.
+                $this->building_features = \App\Support\Listing\MlsFactVocabulary::mergeFurnishedFeature(
+                    $this->building_features,
+                    $rawValue,
+                );
+
                 continue;
             }
 

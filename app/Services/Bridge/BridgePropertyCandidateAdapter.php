@@ -108,6 +108,10 @@ class BridgePropertyCandidateAdapter
             // Stellar prefixes its local extensions; this is the flood zone the
             // Tax/Legal tab already has a field for.
             floodZoneCode:         $this->toText($raw, 'STELLAR_FloodZoneCode'),
+
+            flooring:              $this->toList($raw, 'Flooring'),
+            furnished:             $this->toText($raw, 'Furnished')
+                                       ?? $this->toText($raw, 'FurnishedYN'),
         );
     }
 
