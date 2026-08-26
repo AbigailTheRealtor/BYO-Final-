@@ -272,6 +272,32 @@ class MlsListingPrefillServiceTest extends TestCase
             'waterfront'      => 'waterfront',
             'pool'            => 'pool',
             'garage'          => 'garage',
+
+            // ── Bridge reconciliation ───────────────────────────────────────
+            // Construction, systems, land, tax/legal and hazard facts. Each has
+            // a canonical BidYourOffer field AND an MlsFieldMap target for both
+            // Seller and Landlord, each target was confirmed rendered on the
+            // live form with no property-type restriction, and each was being
+            // fetched from the feed and discarded before this.
+            //
+            // Objective property characteristics only — nothing authored, no
+            // imagery, no contact data, no transaction terms.
+            'appliances'            => 'appliances',
+            'constructionMaterials' => 'exterior_construction',
+            'cooling'               => 'air_conditioning',
+            'heating'               => 'heating_fuel',
+            'foundationDetails'     => 'foundation',
+            'interiorFeatures'      => 'interior_features',
+            'roof'                  => 'roof_type',
+            'sewer'                 => 'sewer',
+            'utilities'             => 'utilities',
+            'waterSource'           => 'water',
+            'waterfrontFeatures'    => 'water_access',
+            'parcelNumber'          => 'tax_id',
+            'taxLegalDescription'   => 'legal_description',
+            'taxYear'               => 'tax_year',
+            'buildingAreaTotal'     => 'building_size_sqft',
+            'floodZoneCode'         => 'flood_zone_code',
         ], MlsListingPrefillService::ALLOWED_FIELDS);
     }
 
@@ -295,6 +321,28 @@ class MlsListingPrefillServiceTest extends TestCase
     public static function deliberatelyExcludedCandidateProperties(): array
     {
         return [
+            'occupancy: OccupantType belongs to a user-controlled terms surface' => [
+                'occupantType',
+                'occupant_status lives on the Sale Terms / Leasing Terms tab, which is the '
+                . "user's statement of how they intend to transact. The feed's view of who "
+                . 'occupies the property today is not that claim, and there is no MlsFieldMap '
+                . 'target for it on either role.',
+            ],
+            'flooring: no MlsFieldMap target on either role' => [
+                'flooring',
+                'A permitted fact with a real form field but no canonical route. Minting one '
+                . 'inside a licensing allow-list is a separate, reviewable change.',
+            ],
+            'subdivision: no MlsFieldMap target on either role' => [
+                'subdivisionName',
+                'Same as flooring — permitted, but there is no canonical route to add it to.',
+            ],
+            'furnished: role-divergent target with merge semantics the write path lacks' => [
+                'furnished',
+                'Seller merges Furnished into building_features and excludes "Unfurnished"; '
+                . 'Landlord routes it to tenant_require. MlsQuickImportDraftWriter has no '
+                . 'merge step, so importing it would replace a user array instead of adding.',
+            ],
             'pets: no wire:model binding for pet_policy on any Create Offer tab' => [
                 'petsAllowed',
                 'pet_policy has no blade binding — importing it writes state the user cannot see or correct',

@@ -112,6 +112,73 @@ class MlsListingPrefillService
         'pool'            => 'pool',
         'garage'          => 'garage',
 
+        // ── Construction, systems, land (Bridge reconciliation) ─────────────
+        // Objective, publicly-advertised characteristics of the building. Every
+        // one of these already had a canonical BidYourOffer field AND an
+        // MlsFieldMap target for BOTH Seller and Landlord before this entry was
+        // added, and every target was confirmed rendered on the live form with
+        // no property-type restriction. The fact was being fetched from the feed
+        // and then thrown away for want of a line here.
+        //
+        // The list-valued ones flatten to a comma-joined string in stringify(),
+        // which is the shape the preview table and MlsQuickImportDraftWriter
+        // already split back into an array for a `*` multi-select target. That
+        // is the URL parser's long-standing contract, matched deliberately
+        // rather than invented.
+        'appliances'            => 'appliances',
+        'constructionMaterials' => 'exterior_construction',
+        'cooling'               => 'air_conditioning',
+        'heating'               => 'heating_fuel',
+        'foundationDetails'     => 'foundation',
+        'interiorFeatures'      => 'interior_features',
+        'roof'                  => 'roof_type',
+        'sewer'                 => 'sewer',
+        'utilities'             => 'utilities',
+        'waterSource'           => 'water',
+        'waterfrontFeatures'    => 'water_access',
+
+        // ── Tax / legal / parcel ────────────────────────────────────────────
+        // Public record data. The Tax, Legal & HOA tab has a field for each and
+        // renders no property-type conditional, so all seven types are covered.
+        'parcelNumber'          => 'tax_id',
+        'taxLegalDescription'   => 'legal_description',
+        'taxYear'               => 'tax_year',
+
+        // ── Size ────────────────────────────────────────────────────────────
+        // Seller-only in practice: `building_size_sqft` has a Seller
+        // MlsFieldMap target and no Landlord one, and the draft writer skips a
+        // canonical key its role's map does not contain. The role split is
+        // therefore enforced by the map, not duplicated here.
+        'buildingAreaTotal'     => 'building_size_sqft',
+
+        // ── Hazard ──────────────────────────────────────────────────────────
+        'floodZoneCode'         => 'flood_zone_code',
+
+        // DELIBERATELY ABSENT — `OccupantType`.
+        // It is an objective MLS fact, and a matching canonical field
+        // (`occupant_status`) exists — but that field lives on the Sale Terms /
+        // Leasing Terms tab, which is the user's statement of how they intend to
+        // transact. Those surfaces were just made canonical and are deliberately
+        // user-controlled; the feed's view of who is in the property today is
+        // not the same claim as the seller's declaration of occupancy at
+        // closing. It also has no MlsFieldMap target on either role, so importing
+        // it would mean inventing one. Left for an explicit product decision.
+        //
+        // DELIBERATELY ABSENT — `Flooring` and `SubdivisionName`.
+        // Both are permitted facts with real form fields, but neither has an
+        // MlsFieldMap entry for either role. Adding the mapping is a separate,
+        // reviewable change; silently minting new canonical routes inside a
+        // licensing allow-list is not.
+        //
+        // DELIBERATELY ABSENT — `Furnished` and `BuildingFeatures`.
+        // Their targets diverge by role (`building_features` on Seller,
+        // `tenant_require` on Landlord) and the Seller side MERGES rather than
+        // replaces, with an explicit exclusion for "Unfurnished" — see the
+        // furnished branch in HasMlsImport::applyImportedFields(). The quick
+        // import draft writer has no equivalent merge step, so routing these
+        // through it would replace a user's building_features array instead of
+        // adding to it. Needs the merge to exist on the write path first.
+
         // DELIBERATELY ABSENT — `petsAllowed`.
         // The candidate carries it and BridgePropertyNormalizer now preserves
         // the complete policy, but the Landlord target it maps to (`pet_policy`)
@@ -216,6 +283,25 @@ class MlsListingPrefillService
 
         if (is_bool($value)) {
             return $value ? 'Yes' : 'No';
+        }
+
+        // RESO list fields arrive as arrays and travel onward as the
+        // comma-joined string every consumer of this pipeline already expects:
+        // the preview table renders it, and both apply paths split it back into
+        // an array for a `*` multi-select target.
+        //
+        // Empty members are dropped so a feed that sends ["Slab", ""] does not
+        // produce a trailing empty option. A member containing a comma would
+        // split into two on the way back — no RESO enumeration in this
+        // allow-list contains one, and this is the same contract the URL parser
+        // has always used.
+        if (is_array($value)) {
+            $items = array_values(array_filter(
+                array_map(static fn ($v) => is_scalar($v) ? trim((string) $v) : '', $value),
+                static fn (string $v) => $v !== '',
+            ));
+
+            return $items === [] ? null : implode(', ', $items);
         }
 
         if (is_float($value) || is_int($value)) {

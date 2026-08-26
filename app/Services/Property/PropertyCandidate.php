@@ -76,6 +76,56 @@ class PropertyCandidate
         // ── Freshness + full source record ──────────────────────────────────
         public readonly ?string $modificationTimestamp = null,
         public readonly array $raw = [],
+
+        // ── Objective construction / systems / land facts ───────────────────
+        //
+        // Publicly-advertised characteristics of the building itself. Each one
+        // already had a canonical BidYourOffer form field AND an MlsFieldMap
+        // target for both Seller and Landlord before it was carried here; what
+        // was missing was a typed property to carry it, so the fact was fetched
+        // from the feed and then discarded.
+        //
+        // The list ones arrive from RESO as JSON arrays (["Block","Stucco"]) and
+        // are kept as arrays here. Flattening to the comma-joined string the
+        // preview pipeline expects happens once, in
+        // MlsListingPrefillService::stringify(), so this DTO stays the shape the
+        // source actually has.
+        //
+        // Nothing here is prose, imagery, contact data or a transaction term —
+        // the facts-only boundary is unchanged, only better fed.
+        /** @var list<string>|null */
+        public readonly ?array $appliances = null,
+        /** @var list<string>|null */
+        public readonly ?array $constructionMaterials = null,
+        /** @var list<string>|null */
+        public readonly ?array $cooling = null,
+        /** @var list<string>|null */
+        public readonly ?array $heating = null,
+        /** @var list<string>|null */
+        public readonly ?array $foundationDetails = null,
+        /** @var list<string>|null */
+        public readonly ?array $interiorFeatures = null,
+        /** @var list<string>|null */
+        public readonly ?array $roof = null,
+        /** @var list<string>|null */
+        public readonly ?array $sewer = null,
+        /** @var list<string>|null */
+        public readonly ?array $utilities = null,
+        /** @var list<string>|null */
+        public readonly ?array $waterSource = null,
+        /** @var list<string>|null */
+        public readonly ?array $waterfrontFeatures = null,
+
+        // ── Tax / legal / parcel ────────────────────────────────────────────
+        public readonly ?string $parcelNumber = null,
+        public readonly ?string $taxLegalDescription = null,
+        public readonly ?string $taxYear = null,
+
+        // ── Size ────────────────────────────────────────────────────────────
+        public readonly ?int $buildingAreaTotal = null,
+
+        // ── Hazard ──────────────────────────────────────────────────────────
+        public readonly ?string $floodZoneCode = null,
     ) {}
 
     /**
