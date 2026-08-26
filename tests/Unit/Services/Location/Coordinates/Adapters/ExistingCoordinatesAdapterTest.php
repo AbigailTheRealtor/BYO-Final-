@@ -41,22 +41,34 @@ class ExistingCoordinatesAdapterTest extends TestCase
 
     // ── fixtures ────────────────────────────────────────────────────────────
 
-    /** @param array<string, mixed> $overrides */
+    /**
+     * A row this rung is willing to reuse.
+     *
+     * The defaults carry full ladder provenance — an originating rung in
+     * {@see ExistingCoordinatesAdapter::REUSABLE_PROVIDERS} and a recorded
+     * precision — because that is now the only shape that resolves. Tests about
+     * correspondence and normalization override the address, not the provenance,
+     * so they keep exercising the thing they are named for.
+     *
+     * @param array<string, mixed> $overrides
+     */
     private function storedRow(array $overrides = []): PropertyLocationDna
     {
         return PropertyLocationDna::create(array_merge([
-            'listing_type'   => self::LISTING_TYPE,
-            'listing_id'     => self::LISTING_ID,
-            'source_address' => '123 Main St',
-            'source_city'    => 'Tampa',
-            'source_county'  => 'Hillsborough',
-            'source_state'   => 'FL',
-            'source_zip'     => '33602',
-            'geocoded_lat'   => self::LAT,
-            'geocoded_lng'   => self::LNG,
-            'geocode_source' => 'saved_meta',
-            'geocode_status' => 'geocoded',
-            'geocoded_at'    => now(),
+            'listing_type'      => self::LISTING_TYPE,
+            'listing_id'        => self::LISTING_ID,
+            'source_address'    => '123 Main St',
+            'source_city'       => 'Tampa',
+            'source_county'     => 'Hillsborough',
+            'source_state'      => 'FL',
+            'source_zip'        => '33602',
+            'geocoded_lat'      => self::LAT,
+            'geocoded_lng'      => self::LNG,
+            'geocode_source'    => 'saved_meta',
+            'geocode_provider'  => 'bridge_mls',
+            'geocode_precision' => 'parcel',
+            'geocode_status'    => 'geocoded',
+            'geocoded_at'       => now(),
         ], $overrides));
     }
 
@@ -109,15 +121,37 @@ class ExistingCoordinatesAdapterTest extends TestCase
 
     public function test_the_originating_provider_is_preserved_not_overwritten(): void
     {
-        $this->storedRow(['geocode_source' => 'google']);
+        $this->storedRow(['geocode_provider' => 'address_point']);
 
         $result = $this->adapter->resolve($this->currentAddress());
 
         $this->assertSame(
-            'google',
+            'address_point',
             $result->provider,
-            'Reusing a coordinate does not change where it came from'
+            'Reusing a coordinate does not change which rung produced it'
         );
+    }
+
+    public function test_the_reported_provider_survives_a_persistence_round_trip(): void
+    {
+        // Regression guard for the reuse loop. The persistence service stores
+        // `provider` back as `geocode_provider`, so a rung that reported anything
+        // other than the originating rung here would rewrite the trust marker on
+        // every save and the coordinate would fail its own reuse check next time.
+        $this->storedRow(['geocode_provider' => 'address_point', 'geocode_source' => 'saved_meta']);
+
+        $first = $this->adapter->resolve($this->currentAddress());
+        $this->assertTrue($first->isResolved());
+
+        // Simulate the round trip: what this rung reported becomes the stored
+        // provenance for the next resolution.
+        PropertyLocationDna::query()->delete();
+        $this->storedRow(['geocode_provider' => $first->provider]);
+
+        $second = $this->adapter->resolve($this->currentAddress());
+
+        $this->assertTrue($second->isResolved(), 'Reuse must remain stable across saves');
+        $this->assertSame('address_point', $second->provider);
     }
 
     public function test_the_original_resolution_time_is_preserved(): void
@@ -131,39 +165,56 @@ class ExistingCoordinatesAdapterTest extends TestCase
 
     // ── precision is never inflated ─────────────────────────────────────────
 
-    public function test_a_reused_coordinate_is_never_promoted_to_rooftop(): void
+    public function test_the_precision_reported_is_the_one_recorded(): void
     {
-        foreach (['saved_meta', 'google'] as $geocodeSource) {
+        // No inference: whatever the column says is what comes back, and nothing
+        // is promoted on the way out.
+        foreach (['rooftop' => CoordinatePrecision::Rooftop, 'parcel' => CoordinatePrecision::Parcel] as $stored => $expected) {
             PropertyLocationDna::query()->delete();
-            $this->storedRow(['geocode_source' => $geocodeSource]);
+            $this->storedRow(['geocode_precision' => $stored]);
 
             $result = $this->adapter->resolve($this->currentAddress());
 
-            $this->assertSame(
-                CoordinatePrecision::Parcel,
-                $result->precision,
-                "{$geocodeSource} proves a building, never a roof"
-            );
+            $this->assertSame($expected, $result->precision, $stored);
         }
     }
 
-    public function test_an_unrecognised_geocode_source_is_refused_rather_than_graded(): void
+    public function test_a_precision_is_never_inferred_from_the_geocode_source_name(): void
     {
-        $this->storedRow(['geocode_source' => 'some_future_provider']);
+        // The defect this replaces: 'saved_meta' and 'google' were graded Parcel
+        // by name alone, so a browser-supplied number became authoritative.
+        foreach (['saved_meta', 'google'] as $geocodeSource) {
+            PropertyLocationDna::query()->delete();
+            $this->storedRow([
+                'geocode_source'    => $geocodeSource,
+                'geocode_provider'  => 'bridge_mls',
+                'geocode_precision' => null,
+            ]);
+
+            $result = $this->adapter->resolve($this->currentAddress());
+
+            $this->assertFalse($result->isResolved(), $geocodeSource);
+            $this->assertSame('existing_precision_unprovable', $result->reason, $geocodeSource);
+        }
+    }
+
+    public function test_an_unrecognised_ladder_provider_is_refused_rather_than_graded(): void
+    {
+        $this->storedRow(['geocode_provider' => 'some_future_provider']);
 
         $result = $this->adapter->resolve($this->currentAddress());
 
         $this->assertFalse($result->isResolved());
-        $this->assertSame('existing_precision_unprovable', $result->reason);
+        $this->assertSame('existing_provider_superseded', $result->reason);
     }
 
-    public function test_a_coarse_stored_source_is_never_promoted_into_an_exact_coordinate(): void
+    public function test_a_coarse_stored_precision_is_never_promoted_into_an_exact_coordinate(): void
     {
         // The failure this guards against: a centroid sitting in the table
         // being handed back as if it identified the property.
         foreach (['zip_centroid', 'city_centroid', 'street'] as $coarse) {
             PropertyLocationDna::query()->delete();
-            $this->storedRow(['geocode_source' => $coarse]);
+            $this->storedRow(['geocode_precision' => $coarse]);
 
             $result = $this->adapter->resolve($this->currentAddress());
 
@@ -172,14 +223,17 @@ class ExistingCoordinatesAdapterTest extends TestCase
         }
     }
 
-    public function test_a_missing_geocode_source_is_not_guessed_at(): void
+    public function test_a_missing_ladder_provenance_is_not_guessed_at(): void
     {
-        $this->storedRow(['geocode_source' => null]);
+        foreach ([null, ''] as $absent) {
+            PropertyLocationDna::query()->delete();
+            $this->storedRow(['geocode_provider' => $absent]);
 
-        $result = $this->adapter->resolve($this->currentAddress());
+            $result = $this->adapter->resolve($this->currentAddress());
 
-        $this->assertFalse($result->isResolved());
-        $this->assertSame('existing_precision_unprovable', $result->reason);
+            $this->assertFalse($result->isResolved());
+            $this->assertSame('existing_provenance_absent', $result->reason);
+        }
     }
 
     // ── address-change invalidation ─────────────────────────────────────────

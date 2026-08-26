@@ -249,13 +249,27 @@ class CreateOfferCoordinateRerouteTest extends TestCase
         ]);
     }
 
-    /** A trusted existing coordinate, stored the way the pipeline stores one. */
+    /**
+     * An existing coordinate, stored the way the pipeline stores one.
+     *
+     * The default row is the legacy shape: `geocode_source = 'saved_meta'` and
+     * nothing else. That is what the pipeline wrote for years, and — as this
+     * file's own header describes — it is exactly what a laundered browser pick
+     * looks like two saves later. It carries no `geocode_provider`, so it cannot
+     * say which rung produced it, and no `geocode_precision`, so it cannot say
+     * how good it is.
+     *
+     * Pass `$provenance` to store the other kind: a row the ladder wrote, which
+     * records both. See {@see CoordinateSourcePrecedenceTest} for the full
+     * matrix of what each provenance shape is and is not allowed to do.
+     */
     private function storeExistingCoordinate(
         string $listingType,
         int $listingId,
-        string $sourceAddress = '315 E Madison St'
+        string $sourceAddress = '315 E Madison St',
+        array $provenance = []
     ): void {
-        PropertyLocationDna::create([
+        PropertyLocationDna::create(array_merge([
             'listing_type'   => $listingType,
             'listing_id'     => $listingId,
             'source_address' => $sourceAddress,
@@ -268,7 +282,7 @@ class CreateOfferCoordinateRerouteTest extends TestCase
             'geocode_source' => 'saved_meta',
             'geocode_status' => 'geocoded',
             'geocoded_at'    => now(),
-        ]);
+        ], $provenance));
     }
 
     private function assertNotTheBrowserCoordinate(object $listing): void
@@ -409,26 +423,64 @@ class CreateOfferCoordinateRerouteTest extends TestCase
         Http::assertNothingSent();
     }
 
-    // ── CASE E: an existing trusted coordinate ──────────────────────────────
+    // ── CASE E: an existing coordinate, trusted and not ─────────────────────
 
     /** @dataProvider roles */
-    public function test_case_e_an_existing_trusted_coordinate_is_reused_per_current_main_semantics(
+    public function test_case_e_an_existing_coordinate_with_no_provenance_does_not_outrank_the_ladder(
+        string $listingType,
+        int $listingId
+    ): void {
+        config()->set('census_geocoder.enabled', true); // now genuinely reached
+        Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
+
+        // The legacy row: 'saved_meta' and nothing else. Under the semantics this
+        // file's header describes as the defect, that name alone was graded
+        // Parcel and ended the ladder at rung 1.
+        $this->storeExistingCoordinate($listingType, $listingId);
+        $listing = $this->listing($listingId, $this->addressMeta());
+
+        $outcome = $this->save($listing, $listingType);
+
+        // It no longer does. A source name is not provenance: the row cannot say
+        // which rung produced it, so rung 1 declines and a rung that can vouch
+        // for its answer resolves instead.
+        $this->assertSame(PropertyCoordinatePersistenceService::OUTCOME_RESOLVED, $outcome['outcome']);
+        $this->assertSame('us_census', $outcome['provider']);
+        $this->assertSame('27.948434712759', $listing->info(PropertyCoordinateMeta::LAT));
+        $this->assertNotSame(
+            '27.9506',
+            $listing->info(PropertyCoordinateMeta::LAT),
+            'an unprovenanced stored coordinate must not win merely by being stored'
+        );
+
+        // The reroute's own claim, which this case exists to make: whoever wins,
+        // it is still never the browser.
+        $this->assertNotTheBrowserCoordinate($listing);
+    }
+
+    /** @dataProvider roles */
+    public function test_case_e_an_existing_trusted_coordinate_is_reused_without_spending_a_request(
         string $listingType,
         int $listingId
     ): void {
         config()->set('census_geocoder.enabled', true); // must not be reached
         Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
 
-        $this->storeExistingCoordinate($listingType, $listingId);
+        // The same point, this time stored by the ladder: it records the rung
+        // that produced it and how precise that rung was. Reuse is earned by
+        // provenance, not assumed from a source name.
+        $this->storeExistingCoordinate($listingType, $listingId, '315 E Madison St', [
+            'geocode_provider'  => 'address_point',
+            'geocode_precision' => CoordinatePrecision::Rooftop->value,
+        ]);
         $listing = $this->listing($listingId, $this->addressMeta());
 
         $outcome = $this->save($listing, $listingType);
 
-        // Unchanged from main: rung 1 answers, the provider recorded is the one
-        // that originally produced the point. Fix B's precedence change is NOT
-        // part of this phase and is not asserted here.
+        // Rung 1 answers, and the provider recorded is the rung that originally
+        // produced the point — not this adapter, and not the legacy source name.
         $this->assertSame(PropertyCoordinatePersistenceService::OUTCOME_RESOLVED, $outcome['outcome']);
-        $this->assertSame('saved_meta', $outcome['provider']);
+        $this->assertSame('address_point', $outcome['provider']);
         $this->assertSame('existing', $listing->info(PropertyCoordinateMeta::SOURCE));
         $this->assertSame('27.9506', $listing->info(PropertyCoordinateMeta::LAT));
         $this->assertNotTheBrowserCoordinate($listing);

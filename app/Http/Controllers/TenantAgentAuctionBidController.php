@@ -489,6 +489,20 @@ class TenantAgentAuctionBidController extends Controller
             abort(404, 'Bid not found');
         }
         
+        // Defence in depth at the HTTP boundary: the auction and the bid arrive as
+        // two INDEPENDENT route parameters, and the party check below authorizes
+        // against either one. Without this assertion an agent who owns any bid
+        // could pair it with any listing's auction id, satisfy the "is bid owner"
+        // half, and open a negotiation they are not party to — with the
+        // counterparty's terms prefilled. The pair must be coherent before it is
+        // meaningful to ask who the parties are.
+        //
+        // The Livewire component re-derives and re-authorizes this independently;
+        // neither layer is permitted to be the only guard.
+        if ((int) $bid->tenant_agent_auction_id !== (int) $auction->id) {
+            abort(403, 'This bid does not belong to that auction.');
+        }
+
         $userId = Auth::id();
         $isListingOwner = ($auction->user_id === $userId);
         $isBidOwner = ($bid->user_id === $userId);
@@ -502,7 +516,13 @@ class TenantAgentAuctionBidController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
         
-        $latestTenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', $bid_id)
+        // Bid-scoped. This previously read
+        //   where('tenant_agent_auction_id', $bid_id)
+        // which compared a BID id against an AUCTION-id column. Those are two
+        // independent autoincrement sequences, so it matched a counter term
+        // belonging to an unrelated listing whenever the numbers happened to
+        // coincide — and the result was then used to seed parent_counter_id below.
+        $latestTenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_bid_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
@@ -557,9 +577,15 @@ class TenantAgentAuctionBidController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
         
-        // Get tenant's counter to agent (TenantCounterTerm)
+        // Get tenant's counter to agent (TenantCounterTerm), scoped to THIS BID.
+        //
+        // This previously filtered on the auction alone, with no bid filter. Every
+        // agent bidding on the listing therefore read the same row: a second agent
+        // opening their own counter screen — a legitimate request that the party
+        // check correctly admits — was served the terms the owner had written
+        // privately for a rival bidder.
         $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $bid->tenant_agent_auction_id)
+            ->where('tenant_agent_auction_bid_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
