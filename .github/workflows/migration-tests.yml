@@ -80,6 +80,29 @@ jobs:
           MIGRATION_FRESH_TEST: true
         run: php vendor/bin/phpunit --filter MigrationFreshTest --testdox
 
+      - name: Assert the migrated schema matches what the application expects
+        # migrate:fresh above proves every migration RAN. It cannot prove any of
+        # them did anything: Laravel records success on the absence of an
+        # exception, so a gutted up() is indistinguishable from a legitimate
+        # driver guard ("skip unless pgsql"), of which this repo has ten valid
+        # examples. Five migrations were stranded that way and three application
+        # tables did not exist -- in fresh installs and in production -- while
+        # this workflow reported 257 of 257 migrations executed.
+        #
+        # ModelTableExistenceTest closes that by asserting the OUTCOME, deriving
+        # its expectation from the models rather than from the migrations, so it
+        # needs no hand-maintained roster and catches the next gutted migration
+        # without anyone remembering to update a list.
+        #
+        # Invoked once per file on purpose: PHPUnit takes a single test target
+        # from the command line and SILENTLY IGNORES additional paths, so
+        # `phpunit a.php b.php` runs only a.php and still exits 0. That is the
+        # same shape of false-green this step exists to prevent.
+        run: |
+          set -euo pipefail
+          php vendor/bin/phpunit --testdox tests/Feature/ModelTableExistenceTest.php
+          php vendor/bin/phpunit --testdox tests/Feature/MissingCounterTablesSchemaTest.php
+
   migrate-fresh-pgsql:
     name: Run the full migration chain on PostgreSQL 16 (no schema dump)
     runs-on: ubuntu-latest
@@ -288,6 +311,23 @@ jobs:
             exit 1
           fi
           echo "all 17 key tables present"
+
+          # Regression-specific, NOT a general roster. The general check is
+          # ModelTableExistenceTest in the SQLite job, which derives its
+          # expectations from the models. These three are named here so the fix
+          # is also proven on the engine actually deployed: each was absent from
+          # fresh installs and from production because its migration ran without
+          # creating anything.
+          REPAIRED="$($PSQL "select coalesce(string_agg(name, ', '), '') from (values
+              ('landlord_counter_bidding'),('landlord_counter_bidding_meta'),
+              ('tenant_counter_bidding_meta')
+            ) t(name) where to_regclass('public.' || name) is null")"
+
+          if [ -n "$REPAIRED" ]; then
+            echo "FAIL: repaired counter tables still missing: ${REPAIRED}" >&2
+            exit 1
+          fi
+          echo "repaired counter tables present"
 
           FINAL_DB="$($PSQL 'select current_database()')"
           [ "$FINAL_DB" = "byo_test" ] || {
