@@ -419,7 +419,14 @@ class HireAgentBuyerSectionNavTest extends TestCase
 
         $this->assertContains('hla-section-referral', $anchors, 'A qualifying agent must reach referral.');
         $this->assertContains('hla-section-referral', $this->navTargets($html), '…and be offered it.');
-        $this->assertStringContainsString('Referral Fee:', $html);
+        // No trailing colon. This test runs with the redesign ON, and the redesign renders a field
+        // label as a column header in a 5/7 grid rather than as a sentence fragment — the colon is
+        // the legacy branch's, appended by x-hire-agent.field only when the flag is off. The
+        // assertion carried one because the referral row was still legacy markup when it was
+        // written, so it was pinning un-migrated output inside a redesign-enabled test. Dropping the
+        // colon keeps what the assertion is actually for — proving the section rendered CONTENT and
+        // not just an anchor — and makes it true in both branches.
+        $this->assertStringContainsString('Referral Fee', $html);
 
         // The agent is the WIDEST tier, so if either negotiation term survived anywhere on the
         // listing view it would surface here.
@@ -589,8 +596,12 @@ class HireAgentBuyerSectionNavTest extends TestCase
      */
     public function test_every_listing_details_key_renders_a_non_empty_section(): void
     {
+        // `listing_title` is deliberately absent. The row that read it is gone — the questionnaire
+        // stores the title in the auction's `title` COLUMN, so the meta key this enumeration used
+        // to set is written by nothing and the row was dead against real data. It is dropped from
+        // the guard for the same reason, and this list must track the guard exactly: a key here
+        // that the rows no longer read would assert that an empty card is acceptable.
         $this->assertKeysRenderSection('hla-section-listing-details', [
-            'listing_title'           => 'A title',
             'working_with_agent'      => 'Not represented',
             'desired_agent_hire_date' => '2026-09-01',
             'listing_date'            => '2026-09-02',

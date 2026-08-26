@@ -1066,7 +1066,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $tenantRequireVal = is_string($tenantRequireRaw) ? trim(trim($tenantRequireRaw, '"')) : '';
             @endphp
             @if (!empty($tenantRequireVal) && $tenantRequireVal !== 'null')
-            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Furnishings">
+            {{-- `listValue` carries a SCALAR here, and that is the whole fix. The value is one
+                 option ("Furnished"), but it was reaching the page wearing pill markup in the
+                 slot, and with nothing else to render the redesign branch passed the chip
+                 straight through to `.viho-kv-value`. It was the only pill left on either
+                 redesigned page — Carport and Garage immediately below pass `:value` and read as
+                 text, and this row simply never got converted with them.
+
+                 THE SLOT STAYS, UNCHANGED. Flag-off output is asserted verbatim and flag-off
+                 renders the pill, so the span below cannot be deleted and this cannot become
+                 `:value`. The legacy branch reads only the slot; the redesign branch reads only
+                 `listValue`. No `bareSlot` either — adding it would strip the legacy
+                 `.removeBold` wrapper, which is part of the element tree flag-off reproduces.
+
+                 A scalar needs no array wrapper: the component's join helper returns a
+                 non-array unchanged. --}}
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Furnishings" :list-value="$tenantRequireVal">
                     <span class="removeBold badge bg-secondary">{{ $tenantRequireVal }}</span>
                 </x-hire-agent.field>
             @endif
