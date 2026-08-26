@@ -247,15 +247,58 @@ public bool $isOfferListing = false;
         }));
     }
 
+    /**
+     * Re-resolve the bid and its auction from the database and admit only a party
+     * to that negotiation — the listing owner (the buyer) or the bidding agent.
+     *
+     * Those two parties are not invented here: BuyerAgentAuctionBidController
+     * ::view_counter_terms() — the page that links to this screen — already admits
+     * exactly `isAgent || isBuyer` and 403s everyone else.
+     *
+     * Always re-queries rather than reading `$pab->auction`: that relation is declared
+     * `->withDefault()`, so a missing auction yields an empty model whose `user_id` is
+     * null instead of null itself, which would read as "owned by nobody" rather than
+     * failing closed.
+     *
+     * Authentication alone is deliberately not sufficient: the buyer route prefix
+     * carries only `auth` + `verified`, so before this guard every verified user of
+     * any role could reach this component for any bid id.
+     *
+     * @return array{0: BuyerAgentAuctionBid, 1: BuyerAgentAuction}
+     */
+    private function authorizeParty($bidId): array
+    {
+        $bid     = BuyerAgentAuctionBid::find($bidId);
+        $auction = $bid ? BuyerAgentAuction::find($bid->buyer_agent_auction_id) : null;
+
+        $isBuyer = $auction && (int) $auction->user_id === (int) Auth::id();
+        $isAgent = $bid && (int) $bid->user_id === (int) Auth::id();
+
+        abort_unless(Auth::check() && $bid && $auction && ($isBuyer || $isAgent), 403, 'You are not authorized to submit counter terms for this bid.');
+
+        return [$bid, $auction];
+    }
+
     public function mount($pab, $bidId)
     {
+        // Guard independently of the controller: a Livewire component can be mounted
+        // from anywhere, so it cannot assume its caller checked. It especially cannot
+        // assume it here — the controller's only guards sit on store()/update(), and
+        // neither of those is routed.
+        [$bid, $auction] = $this->authorizeParty($bidId);
+
         // $pab is a BuyerAgentAuctionBid (the specific agent bid being countered).
-        // We load the parent auction to get listing-level data like property_type.
+        // It is supplied separately from $bidId, so each can be individually valid
+        // while naming different negotiations — admit the pair only if coherent.
+        if (is_object($pab) && isset($pab->id)) {
+            abort_unless((int) $pab->id === (int) $bid->id, 403, 'You are not authorized to submit counter terms for this bid.');
+        }
+
         $this->pab   = $pab;
         $this->bidId = $bidId;
 
-        $auction = BuyerAgentAuction::find($pab->buyer_agent_auction_id);
-        $this->auctionId = $pab->buyer_agent_auction_id;
+        // Auction taken from the authorized bid, never from $pab.
+        $this->auctionId = $auction->id;
         $this->property_type = $auction ? ($auction->get->property_type ?? '') : '';
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
         $this->isOfferListing = $auction ? ($auction->info('workflow_type') === 'offer_listing') : false;
@@ -460,6 +503,49 @@ public bool $isOfferListing = false;
     }
     public function submit()
     {
+        // REAUTHORIZE. mount()'s guard ran on an earlier request; every public property
+        // below arrived from the client on THIS one. Livewire v2 has no locked
+        // properties and its payload checksum does not cover client-initiated property
+        // updates, so $bidId, $auctionId, $pab and $counterTermId are all
+        // attacker-controlled here regardless of what mount() saw.
+        [$bid, $auction] = $this->authorizeParty($this->bidId);
+
+        // $bidId and $auctionId are SEPARATE public properties, and the create below
+        // reads both. Left unchecked, a caller party to one negotiation could forge a
+        // row whose auction and bid belong to different negotiations. Require both to
+        // agree with the authorized pair.
+        abort_unless((int) $this->bidId === (int) $bid->id, 403, 'You are not authorized to submit counter terms for this bid.');
+        abort_unless((int) $this->auctionId === (int) $auction->id, 403, 'You are not authorized to submit counter terms for this listing.');
+
+        // $counterTermId is a plain public property, so the client can set it to any
+        // value it likes. Updating whatever row it names would let an authenticated
+        // party rewrite another user's counter terms — and because the update leaves
+        // user_id alone, the rewrite would still be attributed to the victim.
+        //
+        // Buyer scoping differs from Landlord. `buyer_counter_terms.buyer_agent_auction_id`
+        // is a genuine AUCTION id (its FK references buyer_agent_auctions.id), and the
+        // bid is carried in `parent_counter_id` — despite that column's "counter-back
+        // chain" name, both write paths here store $this->bidId in it, and mount()'s
+        // edit lookup keys off it. So the negotiation is pinned by BOTH columns, which
+        // together also exclude a sibling bid's row on the same listing.
+        //
+        // A legacy row (parent_counter_id NULL) fails this comparison and is refused,
+        // which is deliberate: the retired controller store() wrote rows with no bid at
+        // all, and an unscoped historical row must never be adopted as the editable
+        // counter for a specific bid.
+        if ($this->counterTermId) {
+            $existing = BuyerCounterTerm::find($this->counterTermId);
+            abort_unless(
+                $existing
+                    && (int) $existing->user_id === (int) Auth::id()
+                    && (int) $existing->buyer_agent_auction_id === (int) $auction->id
+                    && $existing->parent_counter_id !== null
+                    && (int) $existing->parent_counter_id === (int) $bid->id,
+                403,
+                'You are not authorized to modify these counter terms.'
+            );
+        }
+
         $this->validate();
 
         try {
@@ -468,21 +554,22 @@ public bool $isOfferListing = false;
 
 
             if ($this->counterTermId) {
-                // UPDATE same record
-                $counterTerm = BuyerCounterTerm::findOrFail($this->counterTermId);
-                // ensure base columns still correct
+                // UPDATE the row already authorized above, rather than a second lookup
+                // from client state, so nothing can change between check and write.
+                $counterTerm = $existing;
                 $counterTerm->update([
                     'property_type' => $this->property_type,
-                    'parent_counter_id' => $this->bidId,
+                    'parent_counter_id' => $bid->id,
                     'status' => 1,
                 ]);
             } else {
-                // CREATE new record
+                // CREATE new record. Both FK values come from the authorized,
+                // database-re-read models — not from the mutable Livewire ids.
                 $counterTerm = BuyerCounterTerm::create([
                     'user_id' => Auth::id(),
-                    'buyer_agent_auction_id' => $this->auctionId,
+                    'buyer_agent_auction_id' => $auction->id,
                     'property_type' => $this->property_type,
-                    'parent_counter_id' => $this->bidId,
+                    'parent_counter_id' => $bid->id,
                     'status' => 1,
                 ]);
                 $this->counterTermId = $counterTerm->id; // track after create
@@ -495,21 +582,21 @@ public bool $isOfferListing = false;
 
             // Notify the agent (bid owner) that the buyer submitted counter terms
             try {
-                $originalBid = BuyerAgentAuctionBid::find($this->bidId);
-                // $this->pab is the bid; load the parent auction for the notification
-                $notifyAuction = BuyerAgentAuction::find($this->auctionId);
-                if ($originalBid && $notifyAuction) {
-                    $agent = User::find($originalBid->user_id);
-                    $sender = Auth::user();
-                    if ($agent && $sender) {
-                        $agent->notify(new CounterBidSubmittedNotification(
-                            $originalBid,
-                            $notifyAuction,
-                            $sender,
-                            $agent->id,
-                            'buyer_agent'
-                        ));
-                    }
+                // Recipient derived from the authorized $bid and $auction, not from
+                // $this->bidId / $this->auctionId. Those are client-supplied, and a
+                // tampered bid id would address the notification to an agent outside
+                // this negotiation. The rule itself is unchanged: the bid's agent is
+                // the recipient.
+                $agent  = User::find($bid->user_id);
+                $sender = Auth::user();
+                if ($agent && $sender) {
+                    $agent->notify(new CounterBidSubmittedNotification(
+                        $bid,
+                        $auction,
+                        $sender,
+                        $agent->id,
+                        'buyer_agent'
+                    ));
                 }
             } catch (\Exception $e) {
                 Log::error('Failed to send counter terms notification for buyer agent listing', [
