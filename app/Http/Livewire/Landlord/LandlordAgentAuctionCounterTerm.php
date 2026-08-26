@@ -467,8 +467,75 @@ class LandlordAgentAuctionCounterTerm extends Component
     {
         $this->activeTab = $index;
     }
+    /**
+     * Re-resolve the bid and its auction from the database and admit only a party
+     * to that negotiation — the listing owner or the bidding agent.
+     *
+     * Always re-queries rather than reading `$pab->auction`: that relation is
+     * declared `->withDefault()`, so a missing auction yields an empty model whose
+     * `user_id` is null instead of null itself, which would read as "owned by
+     * nobody" rather than failing closed.
+     *
+     * Authentication alone is deliberately not sufficient here. The landlord route
+     * prefix carries only `auth` + `verified` (its `landlordAuth` middleware is
+     * commented out), so before this guard every verified user of any role could
+     * reach this component for any bid id.
+     *
+     * @return array{0: \App\Models\LandlordAgentAuctionBid, 1: LandlordAgentAuction}
+     */
+    private function authorizeParty($bidId): array
+    {
+        $bid     = \App\Models\LandlordAgentAuctionBid::find($bidId);
+        $auction = $bid ? LandlordAgentAuction::find($bid->landlord_agent_auction_id) : null;
+
+        $isLandlord = $auction && (int) $auction->user_id === (int) Auth::id();
+        $isAgent    = $bid && (int) $bid->user_id === (int) Auth::id();
+
+        abort_unless(Auth::check() && $bid && $auction && ($isLandlord || $isAgent), 403, 'You are not authorized to submit counter terms for this bid.');
+
+        return [$bid, $auction];
+    }
+
+    /**
+     * Reject an incoherent ($pab, $bidId) tuple.
+     *
+     * Both are supplied by the caller and each can be individually valid while
+     * describing different negotiations. `authorizeParty()` proves the caller is a
+     * party to $bidId; this proves $pab names that same negotiation, so a foreign
+     * $pab cannot steer the auction-derived reads (property_type, offer-listing
+     * flags) or the notification recipient.
+     *
+     * A non-object $pab is left alone: nothing is then derived from it.
+     */
+    private function assertPabMatchesAuthorized($pab, $bid, $auction): void
+    {
+        if ($pab instanceof LandlordAgentAuction) {
+            abort_unless((int) $pab->id === (int) $auction->id, 403, 'You are not authorized to submit counter terms for this bid.');
+            return;
+        }
+
+        if ($pab instanceof \App\Models\LandlordAgentAuctionBid) {
+            abort_unless((int) $pab->id === (int) $bid->id, 403, 'You are not authorized to submit counter terms for this bid.');
+        }
+    }
+
     public function mount($pab, $bidId, $parent_counter_id = null)
     {
+        // Guard independently of the controller: a Livewire component can be
+        // mounted from anywhere, so it cannot assume its caller checked.
+        //
+        // Anchored on $bidId, never on $pab->id. Unlike the Tenant component, this
+        // one is mounted with EITHER a LandlordAgentAuctionBid (from
+        // LandlordCounteredTermsController) or a LandlordAgentAuction (from the
+        // counter-bid controller) — so $pab->id is not reliably a bid id, and
+        // authorizing on it would authorize the wrong record entirely.
+        [$bid, $auction] = $this->authorizeParty($bidId);
+
+        // $pab and $bidId arrive as two independently supplied ids. Each may be
+        // individually valid while naming different negotiations; admit the pair
+        // only if it is coherent with the bid just authorized.
+        $this->assertPabMatchesAuthorized($pab, $bid, $auction);
+
         $this->pab              = $pab;
         $this->bidId            = $bidId;
         $this->parent_counter_id = $parent_counter_id ?: null;
@@ -791,15 +858,53 @@ class LandlordAgentAuctionCounterTerm extends Component
 
     public function submit()
     {
+        // REAUTHORIZE. mount()'s guard ran on an earlier request; every public
+        // property below arrived from the client on THIS one. Livewire v2 has no
+        // locked properties and its payload checksum does not cover
+        // client-initiated property updates, so $bidId, $pab and $counterTermId are
+        // all attacker-controlled here regardless of what mount() saw.
+        //
+        // Anchored on the bid re-read from the database — not on $this->auctionId
+        // or any other hydrated scalar.
+        [$bid, $auction] = $this->authorizeParty($this->bidId);
+
+        // A tampered $pab must not be able to steer the notification recipient or
+        // the auction-derived reads at a negotiation the caller is not party to.
+        $this->assertPabMatchesAuthorized($this->pab, $bid, $auction);
+
+        // $counterTermId is a plain public property, so the client can set it to any
+        // value it likes. Updating whatever row it names would let an authenticated
+        // party rewrite another user's counter terms — and because the update leaves
+        // user_id alone, the rewrite would still be attributed to the victim.
+        // Verify ownership AND that the row belongs to this negotiation before any
+        // mutation.
+        //
+        // landlord_counter_terms.landlord_agent_auction_id stores a BID id (its FK
+        // references landlord_agent_auction_bids.id; the name is historical and is
+        // deliberately NOT being renamed here). Comparing it to $bid->id therefore
+        // pins the row to this exact bid, which also excludes a sibling bid's row on
+        // the same listing.
+        if ($this->counterTermId) {
+            $existing = LandlordCounterTerm::find($this->counterTermId);
+            abort_unless(
+                $existing
+                    && (int) $existing->user_id === (int) Auth::id()
+                    && (int) $existing->landlord_agent_auction_id === (int) $bid->id,
+                403,
+                'You are not authorized to modify these counter terms.'
+            );
+        }
+
         $this->validate();
 
         try {
             DB::beginTransaction();
 
             if ($this->counterTermId) {
-                // UPDATE same record
-                $counterTerm = LandlordCounterTerm::findOrFail($this->counterTermId);
-                // ensure base columns still correct if you want
+                // UPDATE same record. Uses the row already authorized above rather
+                // than a second lookup from client state, so nothing can change
+                // between the check and the write.
+                $counterTerm = $existing;
                 $counterTerm->update([
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id ?: null,
@@ -807,9 +912,12 @@ class LandlordAgentAuctionCounterTerm extends Component
                 ]);
             } else {
                 // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
+                // Taken from the authorized, database-re-read $bid rather than from
+                // $this->bidId, so the row can only ever be attached to the bid this
+                // caller was actually admitted to.
                 $counterTerm = LandlordCounterTerm::create([
                     'user_id' => Auth::id(),
-                    'landlord_agent_auction_id' => $this->bidId,
+                    'landlord_agent_auction_id' => $bid->id,
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id ?: null,
                     'status' => 1,
@@ -827,28 +935,23 @@ class LandlordAgentAuctionCounterTerm extends Component
             // Notify the other party that a counter bid was submitted.
             // $pab may be either a LandlordAgentAuction or a LandlordAgentAuctionBid.
             try {
-                $bid = \App\Models\LandlordAgentAuctionBid::with('user')->find($this->bidId);
-                if ($bid) {
-                    $auctionId = $this->pab instanceof LandlordAgentAuction
-                        ? $this->pab->id
-                        : $this->pab->landlord_agent_auction_id;
-                    $auction = LandlordAgentAuction::find($auctionId);
-                    if ($auction) {
-                        $senderId = Auth::id();
-                        $recipientId = ($senderId === $auction->user_id)
-                            ? $bid->user_id
-                            : $auction->user_id;
-                        $recipient = User::find($recipientId);
-                        if ($recipient) {
-                            $recipient->notify(new CounterBidSubmittedNotification(
-                                $bid,
-                                $auction,
-                                Auth::user(),
-                                $recipientId,
-                                'landlord_agent'
-                            ));
-                        }
-                    }
+                // Recipient is derived from the authorized $bid and $auction, not
+                // from $this->pab / $this->bidId. Those are client-supplied, and
+                // resolving the auction from a tampered $pab would address the
+                // notification to a party outside this negotiation.
+                $senderId = (int) Auth::id();
+                $recipientId = ($senderId === (int) $auction->user_id)
+                    ? $bid->user_id
+                    : $auction->user_id;
+                $recipient = User::find($recipientId);
+                if ($recipient) {
+                    $recipient->notify(new CounterBidSubmittedNotification(
+                        $bid,
+                        $auction,
+                        Auth::user(),
+                        $recipientId,
+                        'landlord_agent'
+                    ));
                 }
             } catch (\Exception $e) {
                 Log::error('Failed to send landlord counter terms notification', [

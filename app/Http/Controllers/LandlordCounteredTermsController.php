@@ -22,9 +22,48 @@ use Illuminate\Support\Facades\Auth;
 
 class LandlordCounteredTermsController extends Controller
 {
+    /**
+     * Re-resolve the bid and its auction from the database and admit only a party
+     * to that negotiation — the listing owner or the bidding agent.
+     *
+     * Always re-queries rather than reading `$pab->auction`, because that relation
+     * is declared `->withDefault()` — it hands back an empty model instead of null
+     * when the auction is missing, so a `!$auction` check there can never fire and
+     * an absent auction would silently read as "owned by nobody" rather than as a 404.
+     *
+     * Without this, any authenticated user could pass a foreign bid id in the URL
+     * and reach the live counter-terms screen for someone else's negotiation. The
+     * route group carries only `auth` + `verified` — the `landlordAuth` middleware
+     * on this prefix is commented out — so authentication was the ONLY barrier.
+     *
+     * This is defence in depth, not the authorization boundary:
+     * App\Http\Livewire\Landlord\LandlordAgentAuctionCounterTerm re-authorizes
+     * independently, because a Livewire component can be mounted from anywhere and
+     * its actions arrive on later requests that never pass through this controller.
+     */
+    private function bidForParty($id): LandlordAgentAuctionBid
+    {
+        $pab = LandlordAgentAuctionBid::find($id);
+        if (!$pab) {
+            abort(404);
+        }
+
+        $auction = LandlordAgentAuction::find($pab->landlord_agent_auction_id);
+        if (!$auction) {
+            abort(404);
+        }
+
+        $isLandlord = (int) $auction->user_id === (int) Auth::id();
+        $isAgent    = (int) $pab->user_id === (int) Auth::id();
+
+        abort_unless(Auth::check() && ($isLandlord || $isAgent), 403, 'You are not authorized to view counter terms for this bid.');
+
+        return $pab;
+    }
+
     public function add(Request $request, $id)
     {
-        $pab = LandlordAgentAuctionBid::whereId($id)->first();
+        $pab = $this->bidForParty($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
 
@@ -32,7 +71,7 @@ class LandlordCounteredTermsController extends Controller
     }
     public function edit(Request $request, $id)
     {
-        $pab = LandlordAgentAuctionBid::findOrFail($id);
+        $pab = $this->bidForParty($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ?: null;
 

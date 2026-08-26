@@ -1,4 +1,4 @@
-@if($defaultProfileLoaded)
+@if($defaultProfileLoaded ?? false)
 <div class="alert alert-success d-flex align-items-start gap-2 mb-3" role="alert">
     <i class="fa-solid fa-wand-magic-sparkles mt-1 flex-shrink-0"></i>
     <div>

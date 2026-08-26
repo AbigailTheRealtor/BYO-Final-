@@ -115,11 +115,54 @@
     forty-item comma list is genuinely worse to scan than forty chips. They keep `badges` and pass
     no `listValue`, so they keep rendering exactly as they do today.
 
+    ── S2 — legacyInverted, AND THE ONE ROW SHAPE THIS COMPONENT COULD NOT EMIT ─────────────────
+
+    SELLER WRITES EIGHT ROWS INSIDE OUT. Every shape above puts the bold on the row div and the
+    unbolded value in a span; these eight do the opposite — the row div carries `removeBold` and the
+    LABEL is wrapped in a `fw-bold` span, with the value left bare beside it:
+
+        <div class="col-md-12 col-12 pt-2 removeBold">
+            <span class="fw-bold">Assignment Contract:</span>
+            {{ value }}
+        </div>
+
+    Buyer, landlord and tenant have ZERO rows of this shape; it is Seller's alone, and it is spread
+    across Sale Terms (seven rows, including Desired Sale Price) and Seller Info (one).
+
+    IT RENDERS IDENTICALLY TO THE SHAPE ABOVE IT — bold label, unbolded value, same text, same
+    order. The two are the same row written two ways, which is exactly why this is a legacy-branch
+    concern and nothing more: with the redesign ON both shapes reach the same x-viho.kv call and
+    become the same cell, so there is nothing to preserve on that side and nothing to choose. The
+    convergence is asserted rather than assumed — see the inverted-row test.
+
+    SO WHY NOT NORMALISE THE EIGHT TO THE ORDINARY SHAPE AND SKIP THIS FLAG? Because flag-off is
+    asserted against the pre-change render, and swapping which element carries which class is a
+    changed attribute on two elements per row even though nothing moves and nothing looks different.
+    The rule this component has followed since M7.4 is that the legacy branch reproduces what was
+    there, verbatim, and the redesign branch is where the page improves. Normalising these rows is a
+    defensible change to make; it is not a change to make silently inside a conversion commit.
+
+    THE COLON IS THE CALLER'S TO OMIT, as everywhere else. It sits inside the label span in the
+    original markup, so a caller migrating one of these rows must pass "Assignment Contract" and let
+    this branch add the colon — passing it with one would render "Assignment Contract::" in legacy
+    and put a stray colon in the redesign's `viho-kv-label`, which
+    test_a_grid_label_carries_no_trailing_colon exists to catch.
+
+    IT CARRIES ITS OWN DEFAULT WIDTH, and that is the same reasoning `badges` uses for implying a
+    full span: all eight rows write `col-md-12 col-12 pt-2 removeBold`, so asking each call site to
+    repeat the string is eight chances to typo a class list that flag-off is required not to change.
+    An explicit `width` still overrides it, so the escape hatch the other shapes rely on is intact.
+
+    NEW BEHAVIOUR ONLY WHEN EXPLICITLY ASKED FOR. The prop defaults false and no other role passes
+    it, so buyer, landlord and tenant reach byte-identical output by construction — asserted at
+    source, because "no call site passes this" is a claim about the views rather than about a render.
+
     @param string $label          WITHOUT a trailing colon; the legacy branch adds one
     @param mixed  $value          omitted entirely when the display helper counts it as absent
     @param mixed  $listValue      REDESIGN ONLY — array/string rendered as ", "-joined text,
                                   overriding the slot so legacy can keep its pill run untouched
-    @param string $width          COMPLETE legacy class list for the row div, order included
+    @param string $width          COMPLETE legacy class list for the row div, order included. Null
+                                  takes the default for the shape — see $hlaFieldWidth below.
     @param bool   $redesign       resolved flag state, passed by the caller — never read from config
     @param string $span           redesign cell width: 'half' (default, two per line at lg and
                                   above; full width below it) | 'full'
@@ -127,23 +170,44 @@
     @param bool   $badges         redesign stacks label over a full-width pill run; implies full span
     @param bool   $legacyRow      legacy branch wraps the row in its own div.row
     @param string $legacyRowStyle inline style for that wrapper, verbatim
+    @param bool   $legacyInverted LEGACY ONLY — bold label in a span, bare value; implies the
+                                  inverted row class list. Seller's eight rows; see above.
 --}}
 @props([
     'label',
     'value'          => null,
     'listValue'      => null,
-    'width'          => 'col-md-12 col-12 pt-2 fw-bold',
+    'width'          => null,
     'redesign'       => false,
     'span'           => 'half',
     'bareSlot'       => false,
     'badges'         => false,
     'legacyRow'      => false,
     'legacyRowStyle' => 'flex-wrap: wrap;',
+    'legacyInverted' => false,
 ])
 
 @php
     $hlaFieldSlot = trim($slot ?? '');
     $hlaFieldHasSlot = $hlaFieldSlot !== '';
+
+    /*
+     | S2. The legacy row class list, resolved once.
+     |
+     | `width` used to default to the ordinary spelling directly in the props list. It defaults to
+     | null now so that the DEFAULT can depend on the shape — an inverted row's div carries
+     | `removeBold` where an ordinary one carries `fw-bold`, and every one of the eight inverted
+     | rows writes the same string. Deriving it is the same trade `badges` makes when it implies a
+     | full span: one flag at the call site instead of two values that can be set inconsistently.
+     |
+     | NOTHING CHANGES FOR AN EXISTING CALLER. A call site that passes a width still gets exactly
+     | that string, and one that passes none still gets exactly the string that was the prop default
+     | before — no caller passes `width=""` or a bound null (verified across the three migrated
+     | views), so there is no third case for `??` to resolve differently than the prop default did.
+     */
+    $hlaFieldWidth = $width ?? ($legacyInverted
+        ? 'col-md-12 col-12 pt-2 removeBold'
+        : 'col-md-12 col-12 pt-2 fw-bold');
 
     /*
      | An array reaching a row is not an error — several questionnaire answers are multi-select —
@@ -217,18 +281,28 @@
         <div class="{{ $hlaFieldRedesignWidth }} hla-field">
             <x-viho.kv :label="$label" layout="split">{{ $hlaFieldHasListValue ? $hlaFieldListValue : ($hlaFieldHasSlot ? $slot : $hlaFieldValue) }}</x-viho.kv>
         </div>
+    @elseif ($legacyInverted)
+    {{-- S2. First in the chain because it is mutually exclusive with the three below rather than
+         composable with them: an inverted row is a whole shape, not a modifier. The value is
+         emitted bare — no wrapper span — because the row div already carries `removeBold` and
+         nesting one inside the other would be a different element tree than the one flag-off
+         reproduces. --}}
+    <div class="{{ $hlaFieldWidth }}">
+        <span class="fw-bold">{{ $label }}:</span>
+        {{ $hlaFieldHasSlot ? $slot : $hlaFieldValue }}
+    </div>
     @elseif ($bareSlot)
-    <div class="{{ $width }}">{{ $label }}:
+    <div class="{{ $hlaFieldWidth }}">{{ $label }}:
         {{ $slot }}
     </div>
     @elseif ($legacyRow)
     <div class="row" style="{{ $legacyRowStyle }}">
-        <div class="{{ $width }}">{{ $label }}:
+        <div class="{{ $hlaFieldWidth }}">{{ $label }}:
             <span class="removeBold">{{ $hlaFieldHasSlot ? $slot : $hlaFieldValue }}</span>
         </div>
     </div>
     @else
-    <div class="{{ $width }}">{{ $label }}:
+    <div class="{{ $hlaFieldWidth }}">{{ $label }}:
         <span class="removeBold">{{ $hlaFieldHasSlot ? $slot : $hlaFieldValue }}</span>
     </div>
     @endif
