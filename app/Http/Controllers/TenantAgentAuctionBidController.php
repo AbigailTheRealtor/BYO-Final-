@@ -489,6 +489,20 @@ class TenantAgentAuctionBidController extends Controller
             abort(404, 'Bid not found');
         }
         
+        // Defence in depth at the HTTP boundary: the auction and the bid arrive as
+        // two INDEPENDENT route parameters, and the party check below authorizes
+        // against either one. Without this assertion an agent who owns any bid
+        // could pair it with any listing's auction id, satisfy the "is bid owner"
+        // half, and open a negotiation they are not party to — with the
+        // counterparty's terms prefilled. The pair must be coherent before it is
+        // meaningful to ask who the parties are.
+        //
+        // The Livewire component re-derives and re-authorizes this independently;
+        // neither layer is permitted to be the only guard.
+        if ((int) $bid->tenant_agent_auction_id !== (int) $auction->id) {
+            abort(403, 'This bid does not belong to that auction.');
+        }
+
         $userId = Auth::id();
         $isListingOwner = ($auction->user_id === $userId);
         $isBidOwner = ($bid->user_id === $userId);

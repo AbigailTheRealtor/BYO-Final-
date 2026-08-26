@@ -562,8 +562,119 @@ class TenantAgentAuctionBidCounter extends Component
     {
         $this->activeTab = $index;
     }
+    /**
+     * Re-resolve the bid and its auction from the database and admit only a party
+     * to that negotiation — the listing owner or the bidding agent.
+     *
+     * WHY THE AUCTION IS DERIVED, NEVER ACCEPTED
+     * ------------------------------------------
+     * This component used to receive the auction and the bid as two independent
+     * route parameters and authorize against them separately: the controller
+     * admitted anyone who owned EITHER the auction OR the bid, and nothing ever
+     * asserted the bid belonged to that auction. An agent who owned any bid
+     * anywhere could therefore pair it with any listing's auction id, satisfy the
+     * "is bid owner" half, and reach a negotiation they were not party to — with
+     * the counterparty's terms prefilled into the form, and a write at the end.
+     *
+     * The auction is now derived from `$bid->tenant_agent_auction_id`, so the two
+     * ids cannot disagree. A caller-supplied `$pab` is not trusted; it is only
+     * checked for agreement with the derived auction and otherwise unused.
+     *
+     * Always re-queries rather than reading `$bid->auction`: that relation is
+     * declared `->withDefault()`, so a missing auction yields an empty model whose
+     * `user_id` is null instead of null itself, which would read as "owned by
+     * nobody" rather than failing closed.
+     *
+     * @return array{0: \App\Models\TenantAgentAuctionBid, 1: \App\Models\TenantAgentAuction}
+     */
+    private function authorizeParty($bidId, $pab = null): array
+    {
+        $bid     = TenantAgentAuctionBidModel::find($bidId);
+        $auction = $bid ? \App\Models\TenantAgentAuction::find($bid->tenant_agent_auction_id) : null;
+
+        $isTenant = $auction && (int) $auction->user_id === (int) Auth::id();
+        $isAgent  = $bid && (int) $bid->user_id === (int) Auth::id();
+
+        abort_unless(
+            Auth::check() && $bid && $auction && ($isTenant || $isAgent),
+            403,
+            'You are not authorized to counter this bid.'
+        );
+
+        // The mismatched-tuple defence. Anything that is not the auction owning
+        // this bid is refused, including a non-auction object smuggled in as $pab.
+        if ($pab !== null) {
+            $suppliedAuctionId = $pab instanceof \App\Models\TenantAgentAuction
+                ? $pab->id
+                : (is_object($pab) ? null : $pab);
+
+            abort_unless(
+                $suppliedAuctionId !== null && (int) $suppliedAuctionId === (int) $auction->id,
+                403,
+                'This bid does not belong to that auction.'
+            );
+        }
+
+        return [$bid, $auction];
+    }
+
+    /**
+     * A supplied parent_counter_id must name a row in THIS bid's negotiation.
+     *
+     * The value is a public Livewire property written straight into
+     * `tenant_counter_bidding.parent_counter_id`, so without this an authenticated
+     * party could chain their counter onto any negotiation's row by id.
+     *
+     * The id may reference either side of the conversation — the controller seeds
+     * it from a TenantCounterTerm (owner side) or a TenantCounterBidding (agent
+     * side) — so both tables are checked and the row must be bid-scoped to this
+     * bid in whichever one it lives.
+     *
+     * A legacy row whose bid id is NULL predates bid scoping and cannot be proven
+     * to belong to this negotiation, so it is never adopted. That is deliberate:
+     * silently adopting it is exactly how an unrelated thread would be joined.
+     *
+     * (Typing and schema-level validation of this column remain open work; this
+     * method closes only the ownership hole that the write path depends on.)
+     */
+    private function authorizeParentCounter($parentCounterId, $bid): void
+    {
+        if ($parentCounterId === null || $parentCounterId === '') {
+            return;
+        }
+
+        $belongsToThisBid = function ($row) use ($bid): bool {
+            return $row !== null
+                && $row->tenant_agent_auction_bid_id !== null
+                && (int) $row->tenant_agent_auction_bid_id === (int) $bid->id;
+        };
+
+        $asAgentCounter = TenantCounterBidding::find($parentCounterId);
+        $asOwnerCounter = \App\Models\TenantCounterTerm::find($parentCounterId);
+
+        abort_unless(
+            $belongsToThisBid($asAgentCounter) || $belongsToThisBid($asOwnerCounter),
+            403,
+            'That counter does not belong to this negotiation.'
+        );
+    }
+
     public function mount($pab, $bidId, $parent_counter_id = null)
     {
+        // Authorization first, before any listing or bid data is read into the
+        // component: a refused caller must not receive prefilled counterparty
+        // terms in the rendered form.
+        //
+        // The resolved models are intentionally NOT used to replace the prefill
+        // variables below. `$auction` on the next lines has always resolved to
+        // null (a TenantAgentAuction has no `auction` relation and no
+        // `tenant_agent_auction_id`), so the prefill has always taken the else
+        // branch. Repointing it here would silently change which terms populate
+        // the form, which is a product decision and not part of this security
+        // fix. The authorization boundary is kept in its own variables.
+        [$authorizedBid] = $this->authorizeParty($bidId, $pab);
+        $this->authorizeParentCounter($parent_counter_id, $authorizedBid);
+
         $this->pab   = $pab;
         $this->bidId = $bidId;
         $this->parent_counter_id = $parent_counter_id;
@@ -779,27 +890,38 @@ class TenantAgentAuctionBidCounter extends Component
 
     public function submit()
     {
+        // Re-authorize from scratch. Passing mount() is not a credential: Livewire
+        // v2 lets a client update any public property that is not declared on the
+        // base class (see HandlesActions::syncInput), so $bidId and
+        // $parent_counter_id can both be rewritten between a legitimate mount and
+        // this call. Everything below is therefore derived from the freshly
+        // resolved models, never from the public properties.
+        [$authorizedBid, $authorizedAuction] = $this->authorizeParty($this->bidId, $this->pab);
+        $this->authorizeParentCounter($this->parent_counter_id, $authorizedBid);
+
         $this->validate();
 
         try {
-            $endDate = strtotime($this->pab->end_date . ' ' . ($this->pab->end_time ?? '23:59:59'));
+            $endDate = strtotime($authorizedAuction->end_date . ' ' . ($authorizedAuction->end_time ?? '23:59:59'));
             if (time() > $endDate) {
                 session()->flash('error', 'This auction has ended. Counter bids are no longer available.');
-                return redirect()->route('tenant.agent.auction.view', $this->pab->id);
+                return redirect()->route('tenant.agent.auction.view', $authorizedAuction->id);
             }
             
-            if ($this->pab->is_sold) {
+            if ($authorizedAuction->is_sold) {
                 session()->flash('error', 'This listing has been sold. Counter bids are no longer available.');
-                return redirect()->route('tenant.agent.auction.view', $this->pab->id);
+                return redirect()->route('tenant.agent.auction.view', $authorizedAuction->id);
             }
             
             DB::beginTransaction();
 
             // 1. Create main counter bidding record
+            //    The two foreign keys come from the authorized relationship, so a
+            //    tampered $bidId cannot steer the row onto another negotiation.
             $counterBid = TenantCounterBidding::create([
                 'user_id' => Auth::id(),
-                'tenant_agent_auction_id' => $this->pab->id,
-                'tenant_agent_auction_bid_id' => $this->bidId,
+                'tenant_agent_auction_id' => $authorizedAuction->id,
+                'tenant_agent_auction_bid_id' => $authorizedBid->id,
                 'property_type' => $this->property_type,
                 'parent_counter_id' => $this->parent_counter_id,
             ]);
@@ -811,17 +933,14 @@ class TenantAgentAuctionBidCounter extends Component
             
             // Send notification to the listing owner (Tenant)
             try {
-                $originalBid = TenantAgentAuctionBidModel::find($this->bidId);
-                if ($originalBid) {
-                    $listingOwner = User::find($this->pab->user_id);
-                    if ($listingOwner) {
-                        $listingOwner->notify(new CounterBidSubmittedNotification(
-                            $originalBid,
-                            $this->pab,
-                            Auth::user(),
-                            $this->pab->user_id
-                        ));
-                    }
+                $listingOwner = User::find($authorizedAuction->user_id);
+                if ($listingOwner) {
+                    $listingOwner->notify(new CounterBidSubmittedNotification(
+                        $authorizedBid,
+                        $authorizedAuction,
+                        Auth::user(),
+                        $authorizedAuction->user_id
+                    ));
                 }
             } catch (\Exception $e) {
                 Log::error('Failed to send counter bid notification', [
@@ -832,7 +951,7 @@ class TenantAgentAuctionBidCounter extends Component
             
             session()->flash('success', 'Counter bid has been submitted successfully!');
 
-            return redirect()->route('tenant.hire.agent.auction.bid.view-counter', $this->bidId);
+            return redirect()->route('tenant.hire.agent.auction.bid.view-counter', $authorizedBid->id);
             // Optional: reset form or redirect
             // $this->resetForm();
 
