@@ -22,6 +22,7 @@ use App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\LandlordPublishValidation;
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
+use App\Http\Livewire\OfferListing\Concerns\LandlordLeasingTerms;
 
 class LandlordOfferListing extends Component
 {
@@ -37,6 +38,7 @@ class LandlordOfferListing extends Component
     use ValidatesPropertyAddress;   // Phase 0: ZIP autofill + ZIP-in-street recovery
     use HandlesResolvedPropertyAddress; // Phase 1: the one fillFromResolvedAddress()
     use HasCanonicalPetFee;         // #2 Part B: canonical pet fee (create + edit)
+    use LandlordLeasingTerms;      // canonical Leasing Terms field set (create + edit + quick import)
 
     // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
@@ -89,17 +91,7 @@ class LandlordOfferListing extends Component
 
 
 
-    public $lease_amount_frequency = '';
-    public $desired_rental_amount = '';
-    public $starting_rent = '';
-    public $reserve_rent = '';
-    public $lease_now_price = '';
     public $desired_rental_amount_tenant = '';
-    public $desired_lease_length = [];
-    public $rent_includes = []; // Residential only
-    public $terms_of_lease = []; // Commercial only
-    public $tenant_pays = []; // Commercial only
-    public $owner_pays = []; // Commercial only
 
 
     // Properties
@@ -340,13 +332,9 @@ class LandlordOfferListing extends Component
     public $virtual_showings_count = '';
 
     // Landlord Lease Terms Questions
-    public $lease_available_date = '';
-    public $last_month_rent_required = '';
-    public $total_move_in_funds_required = '';
     public $pet_policy = '';
     public $pet_deposit_fee_rent = '';
     // Phase B Landlord Tier 1 EAV keys
-    public $available_date = '';
     public $pet_max_weight_lbs = '';
     public $pet_species_allowed = [];
     // #2 Part B — the five RETIRED legacy pet-fee fields. They are kept as properties so
@@ -358,31 +346,11 @@ class LandlordOfferListing extends Component
     public $pet_fee = '';
     // #2 Part B — canonical pet fee. Replaces the four legacy amount inputs above and the
     // obsolete combined pet_deposit_fee_rent representation in the UI and write path.
-    public $pet_fee_type = '';
-    public $pet_fee_amount = '';
-    public $pet_fee_other = '';
     public $number_of_occupants_allowed = '';
     public $parking_terms = '';
-    public $ll_maintenance_responsibility = '';
-    public $renewal_option_offered = '';
-    public $renewal_option_details = '';
     public $landlord_approval_conditions = '';
-    public $additional_landlord_lease_terms = '';
-    public $commercial_lease_type = '';
-    public $commercial_lease_type_other = '';
-    public $cam_nnn_additional_rent_charges = '';
-    public $rent_escalation_terms = '';
-    public $tenant_improvement_buildout_terms = '';
-    public $permitted_use_restrictions = '';
-    public $signage_rights = '';
-    public $commercial_parking_terms = '';
-    public $personal_guarantee_requirement = '';
-    public $commercial_approval_conditions = '';
     // Phase D Landlord Tier 2 & Tier 3 EAV keys
-    public $smoking_policy = '';
-    public $security_deposit_amount = '';
     public $min_income_requirement = '';
-    public $subletting_policy = '';
 
     // Applicant Requirements tab EAV keys
     public $min_credit_score = '';
@@ -553,42 +521,11 @@ class LandlordOfferListing extends Component
     public $expansion_custom_commission = null;
 
     // Lease Terms - Leasing Space Sub-Fields
-    public $occupant_status = '';
-    public $occupant_tenant = '';
-    public $leasing_spaces = '';
-    public $restrictions = '';
-    public $maintenance_by = '';
-    public $maintenance_response_time = '';
-    public $included_storage_space_res_both = '';
-    public $storage_space_res_both = '';
-    public $guests_allowed = '';
-    public $common_areas_access = '';
-    public $utilities = '';
-    public $common_areas_cleaning = '';
-    public $included_storage_space_res_single = '';
-    public $storage_space_res_single = '';
-    public $bathroom_facilities = '';
-    public $room_size = '';
-    public $included_storage_space_com_entire = '';
-    public $storage_space_com_entire = '';
-    public $shared_amenities = '';
-    public $building_hours = '';
-    public $access_24_7 = '';
-    public $zoning_allows = '';
-    public $space_features = '';
-    public $neighboring_tenants = '';
-    public $included_storage_space_com_single = '';
-    public $storage_space_com_single = '';
     public $maintenance_handler = '';
     public $included_storage_space = '';
     public $storage_space = '';
 
     // "Other" text fields for multi-select dropdowns
-    public $other_tenant_pays = '';
-    public $other_owner_pays = '';
-    public $custom_lease_term = '';
-    public $other_lease_term = '';
-    public $other_rent_include = '';
     public $other_appliances = '';
     public $tenant_pays_other = '';
     public $owner_pays_other = '';
@@ -3238,24 +3175,14 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('occupant_types', $this->occupant_types);
         $auction->saveMeta('occupant_types_tenant', $this->occupant_types_tenant);
         $auction->saveMeta('leasing_space_property', $this->leasing_space_property);
-        $auction->saveMeta('lease_amount_frequency', $this->lease_amount_frequency);
-        $auction->saveMeta('desired_lease_length', json_encode($this->ensureArray($this->desired_lease_length)));
-        $auction->saveMeta('desired_rental_amount', $this->stripCommas($this->desired_rental_amount));
-        $auction->saveMeta('starting_rent', $this->stripCommas($this->starting_rent));
-        $auction->saveMeta('reserve_rent', $this->stripCommas($this->reserve_rent));
-        $auction->saveMeta('lease_now_price', $this->stripCommas($this->lease_now_price));
+        // Canonical Landlord Leasing Terms — the SAME routine manual Create,
+        // manual Edit and MLS Quick Import all write through, so the three
+        // cannot store the same answer under different keys or transforms.
+        // @see \App\Http\Livewire\OfferListing\Concerns\LandlordLeasingTerms
+        $this->saveLandlordLeasingTermsMeta($auction);
         $auction->saveMeta('desired_rental_amount_tenant', $this->desired_rental_amount_tenant);
-        $auction->saveMeta('rent_includes', json_encode($this->ensureArray($this->rent_includes)));
-        $auction->saveMeta('terms_of_lease', json_encode($this->ensureArray($this->terms_of_lease)));
-        $auction->saveMeta('tenant_pays', json_encode($this->ensureArray($this->tenant_pays)));
-        $auction->saveMeta('owner_pays', json_encode($this->ensureArray($this->owner_pays)));
-        $auction->saveMeta('other_tenant_pays', $this->other_tenant_pays);
-        $auction->saveMeta('other_owner_pays', $this->other_owner_pays);
         $auction->saveMeta('tenant_pays_other', $this->tenant_pays_other);
         $auction->saveMeta('owner_pays_other', $this->owner_pays_other);
-        $auction->saveMeta('custom_lease_term', $this->custom_lease_term);
-        $auction->saveMeta('other_lease_term', $this->other_lease_term);
-        $auction->saveMeta('other_rent_include', $this->other_rent_include);
 
 
 
@@ -3273,32 +3200,6 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);
         $auction->saveMeta('minimum_annual_net_income', $this->minimum_annual_net_income);
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
-        $auction->saveMeta('occupant_status', $this->occupant_status);
-        $auction->saveMeta('occupant_tenant', $this->occupant_tenant);
-        $auction->saveMeta('leasing_spaces', $this->leasing_spaces);
-        $auction->saveMeta('restrictions', $this->restrictions);
-        $auction->saveMeta('maintenance_by', $this->maintenance_by);
-        $auction->saveMeta('maintenance_response_time', $this->maintenance_response_time);
-        $auction->saveMeta('included_storage_space_res_both', $this->included_storage_space_res_both);
-        $auction->saveMeta('storage_space_res_both', $this->storage_space_res_both);
-        $auction->saveMeta('guests_allowed', $this->guests_allowed);
-        $auction->saveMeta('common_areas_access', $this->common_areas_access);
-        $auction->saveMeta('utilities', $this->utilities);
-        $auction->saveMeta('common_areas_cleaning', $this->common_areas_cleaning);
-        $auction->saveMeta('included_storage_space_res_single', $this->included_storage_space_res_single);
-        $auction->saveMeta('storage_space_res_single', $this->storage_space_res_single);
-        $auction->saveMeta('bathroom_facilities', $this->bathroom_facilities);
-        $auction->saveMeta('room_size', $this->room_size);
-        $auction->saveMeta('included_storage_space_com_entire', $this->included_storage_space_com_entire);
-        $auction->saveMeta('storage_space_com_entire', $this->storage_space_com_entire);
-        $auction->saveMeta('shared_amenities', $this->shared_amenities);
-        $auction->saveMeta('building_hours', $this->building_hours);
-        $auction->saveMeta('access_24_7', $this->access_24_7);
-        $auction->saveMeta('zoning_allows', $this->zoning_allows);
-        $auction->saveMeta('space_features', $this->space_features);
-        $auction->saveMeta('neighboring_tenants', $this->neighboring_tenants);
-        $auction->saveMeta('included_storage_space_com_single', $this->included_storage_space_com_single);
-        $auction->saveMeta('storage_space_com_single', $this->storage_space_com_single);
         $auction->saveMeta('maintenance_handler', $this->maintenance_handler);
         $auction->saveMeta('included_storage_space', $this->included_storage_space);
         $auction->saveMeta('storage_space', $this->storage_space);
@@ -3603,12 +3504,8 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('virtual_showings_count', $this->virtual_showings_count);
 
         // Landlord Lease Terms Questions
-        $auction->saveMeta('lease_available_date', $this->lease_available_date);
-        $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
-        $auction->saveMeta('total_move_in_funds_required', $this->stripCommas($this->total_move_in_funds_required));
         $auction->saveMeta('pet_policy', $this->pet_policy);
         // Phase B Landlord Tier 1 EAV keys
-        $auction->saveMeta('available_date', $this->available_date);
         $auction->saveMeta('pet_max_weight_lbs', $this->pet_max_weight_lbs);
         $auction->saveMeta('pet_species_allowed', json_encode($this->ensureArray($this->pet_species_allowed)));
         // #2 Part B — canonical pet fee is the ONLY pet-fee write from this component.
@@ -3617,31 +3514,11 @@ class LandlordOfferListing extends Component
         // value intact instead of blanking it. Readers resolve legacy records through
         // PetFeeNormalizer's precedence rather than a dual write.
         [$petFeeAmount, $petFeeOther] = $this->canonicalPetFeeValues();
-        $auction->saveMeta('pet_fee_type', $this->pet_fee_type);
-        $auction->saveMeta('pet_fee_amount', $petFeeAmount);
-        $auction->saveMeta('pet_fee_other', $petFeeOther);
         $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
         $auction->saveMeta('parking_terms', $this->parking_terms);
-        $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);
-        $auction->saveMeta('renewal_option_offered', $this->renewal_option_offered);
-        $auction->saveMeta('renewal_option_details', $this->renewal_option_details);
         $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
-        $auction->saveMeta('additional_landlord_lease_terms', $this->additional_landlord_lease_terms);
-        $auction->saveMeta('commercial_lease_type', $this->commercial_lease_type);
-        $auction->saveMeta('commercial_lease_type_other', $this->commercial_lease_type_other);
-        $auction->saveMeta('cam_nnn_additional_rent_charges', $this->cam_nnn_additional_rent_charges);
-        $auction->saveMeta('rent_escalation_terms', $this->rent_escalation_terms);
-        $auction->saveMeta('tenant_improvement_buildout_terms', $this->tenant_improvement_buildout_terms);
-        $auction->saveMeta('permitted_use_restrictions', $this->permitted_use_restrictions);
-        $auction->saveMeta('signage_rights', $this->signage_rights);
-        $auction->saveMeta('commercial_parking_terms', $this->commercial_parking_terms);
-        $auction->saveMeta('personal_guarantee_requirement', $this->personal_guarantee_requirement);
-        $auction->saveMeta('commercial_approval_conditions', $this->commercial_approval_conditions);
         // Phase D Landlord Tier 2 & Tier 3 EAV keys
-        $auction->saveMeta('smoking_policy', $this->smoking_policy);
-        $auction->saveMeta('security_deposit_amount', $this->security_deposit_amount);
         $auction->saveMeta('min_income_requirement', $this->min_income_requirement);
-        $auction->saveMeta('subletting_policy', $this->subletting_policy);
 
         // Applicant Requirements tab EAV keys
         $auction->saveMeta('min_credit_score', $this->min_credit_score);

@@ -1,19 +1,39 @@
 {{-- MLS Import Modal — shared across all four Create Offer Listing forms --}}
 {{--
-    TWO INDEPENDENT IMPORT MECHANISMS live in this modal. They are presented as
-    separate, clearly-titled sections because they are genuinely different
+    INDEPENDENT IMPORT MECHANISMS live in this modal. They are presented as
+    separate, clearly-titled things because they are genuinely different
     things, not two spellings of the same one:
 
-      1. "Import by MLS #"  — Bridge/Stellar OData lookup. Needs ONLY the MLS
-                              number: no URL, no pasted text, no MLS or Matrix
-                              login. Seller/Landlord only, behind the
-                              mls_direct_import.prefill_enabled flag.
-      2. "Import from a listing link" — the original scraper. Fetches a public
+      1. "Import from Stellar MLS" — Bridge/Stellar OData lookup. Needs ONLY the
+                              MLS number: no URL, no pasted text, no MLS or
+                              Matrix login. Seller/Landlord only, behind the
+                              mls_direct_import flags. Where the quick-import
+                              flow is available this is a CARD that navigates to
+                              it; where it is not, it is the inline "Import by
+                              MLS #" field below.
+      2. "Import from Listing Link" — the original scraper. Fetches a public
                               listing URL, or parses text the user pastes.
                               All four roles, never feature-gated, unchanged.
+                              This is the path for anyone WITHOUT Stellar MLS
+                              access and it holds no Bridge credentials.
+      3. "Create Manually"  — dismisses the modal. The form behind it is already
+                              the manual path, so there is nothing to set up.
 
-    Both converge on the SAME preview table and the same Apply Selected step, so
-    the review-before-write behaviour is identical whichever one was used.
+    WHY THERE IS A CHOOSER
+    ----------------------
+    Both importers were once reachable from this one modal. When the quick
+    import flow arrived, the button started redirecting straight into it, and
+    the Listing Link importer lost its only entry point on Seller and Landlord.
+    Stellar is an additional door, not a replacement one — so the modal now asks
+    which door, rather than picking for the user.
+
+    The chooser only appears where there is genuinely more than one mechanism
+    ($this->importMethodChoiceAvailable()). Buyer and Tenant, and Seller/Landlord
+    with quick import off, open straight onto the link importer's inputs exactly
+    as they always have.
+
+    Both importers converge on the SAME preview table and the same Apply Selected
+    step, so the review-before-write behaviour is identical whichever was used.
 
     Do not relabel the URL field as an MLS # field — the two are not
     interchangeable, and a user who pastes a URL into the MLS # box (or types a
@@ -21,6 +41,7 @@
 
     Required Livewire public properties on the host component:
       $showImportModal   (bool)
+      $importMethod      (string: '' = chooser, 'link' = link importer)
       $importUrlInput    (string)
       $importRawText     (string)
       $importMlsNumber   (string)
@@ -32,6 +53,11 @@
       importListingFromUrl()
       importListingByMlsNumber()
       mlsNumberImportAvailable()
+      importMethodChoiceAvailable()
+      chooseStellarMlsImport()
+      chooseListingLinkImport()
+      chooseManualListing()
+      backToImportMethodChoice()
       applyImportedFields(array $selected, array $overrideKeys)
       closeImportModal()
 --}}
@@ -55,8 +81,115 @@
                 {{-- ── Step 1: input ── --}}
                 @if(empty($importPreviewData))
 
-                {{-- ── Option 1: Bridge lookup by MLS # (Seller/Landlord, flagged) ── --}}
-                @if($this->mlsNumberImportAvailable())
+                {{-- ── Step 0: which import method? ──────────────────────────
+                     Only where there is more than one. See the header note. --}}
+                @if($importMethod === '' && $this->importMethodChoiceAvailable())
+
+                <p class="text-muted mb-3">
+                    Choose how you would like to start this listing.
+                </p>
+
+                <div class="row g-3">
+
+                    {{-- Stellar MLS — for members, via our MLS data connection --}}
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title fw-bold mb-1">
+                                    <i class="fas fa-database me-2 text-primary"></i>Import from Stellar MLS
+                                </h6>
+                                <p class="card-text text-muted small flex-grow-1 mb-3">
+                                    For Stellar MLS members. Enter the MLS number and we will pull the
+                                    listing straight from our MLS data connection — no listing URL and
+                                    no MLS login required.
+                                </p>
+                                <button type="button" class="btn btn-primary w-100"
+                                        style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;"
+                                        wire:click="chooseStellarMlsImport"
+                                        wire:loading.attr="disabled"
+                                        wire:target="chooseStellarMlsImport">
+                                    <span wire:loading.remove wire:target="chooseStellarMlsImport">
+                                        <i class="fas fa-search me-1"></i>Use Stellar MLS #
+                                    </span>
+                                    <span wire:loading wire:target="chooseStellarMlsImport">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>Opening…
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Listing Link — for everyone else. Never gated on Bridge. --}}
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title fw-bold mb-1">
+                                    <i class="fas fa-link me-2 text-primary"></i>Import from Listing Link
+                                </h6>
+                                <p class="card-text text-muted small flex-grow-1 mb-3">
+                                    Not a Stellar MLS member? Paste the property's public listing URL
+                                    and we will fill in what we can read from it. You can also paste the
+                                    listing text instead.
+                                </p>
+                                <button type="button" class="btn btn-outline-primary w-100"
+                                        style="color:#0d6efd;"
+                                        wire:click="chooseListingLinkImport">
+                                    <i class="fas fa-link me-1"></i>Use a Listing Link
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Manual — the form already behind this modal --}}
+                <div class="d-flex align-items-center my-4">
+                    <hr class="flex-grow-1 my-0">
+                    <span class="px-3 text-muted small text-uppercase fw-semibold">Or</span>
+                    <hr class="flex-grow-1 my-0">
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div>
+                        <div class="fw-semibold">Create Manually</div>
+                        <div class="text-muted small">
+                            No MLS number and no listing link — fill in the listing yourself.
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary text-nowrap"
+                            style="color:#6c757d;"
+                            wire:click="chooseManualListing">
+                        <i class="fas fa-pen me-1"></i>Create Manually
+                    </button>
+                </div>
+
+                @if($importError)
+                    <div class="alert alert-danger py-2 mt-3">
+                        <i class="fas fa-exclamation-circle me-1"></i>{{ $importError }}
+                    </div>
+                @endif
+
+                {{-- ── A method is picked (or there was only ever one) ── --}}
+                @else
+
+                {{-- Back to the chooser. Rendered only where a chooser exists,
+                     so it cannot strand Buyer/Tenant on a screen they never
+                     render. --}}
+                @if($this->importMethodChoiceAvailable())
+                <div class="mb-3">
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                            wire:click="backToImportMethodChoice">
+                        <i class="fas fa-arrow-left me-1"></i>Choose a different import method
+                    </button>
+                    <h6 class="fw-bold text-uppercase text-secondary small mt-2 mb-0">Import from Listing Link</h6>
+                </div>
+                @endif
+
+                {{-- ── Option 1: Bridge lookup by MLS # (Seller/Landlord, flagged) ──
+                     Inline ONLY where no chooser is in play. With the chooser up,
+                     the Stellar card is this mechanism's entry point and a second
+                     MLS # box on the link screen would just be a duplicate the
+                     user already declined. --}}
+                @if($this->mlsNumberImportAvailable() && ! $this->importMethodChoiceAvailable())
                 <div class="mb-4">
                     <h6 class="fw-bold text-uppercase text-secondary small mb-2">Import by MLS #</h6>
 
@@ -134,6 +267,8 @@
                     </button>
                     <button type="button" class="btn btn-outline-secondary" style="color:#6c757d;" wire:click="closeImportModal">Cancel</button>
                 </div>
+
+                @endif{{-- /chooser vs picked-method --}}
 
                 {{-- ── Step 2: Preview Table ── --}}
                 @else

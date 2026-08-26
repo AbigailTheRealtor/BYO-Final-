@@ -248,6 +248,13 @@ class MlsFieldMap
             //       targets the multi-select array property, hence the '*' prefix.
             'utilities'           => '*property_utilities',
             'sqft_heated_source'  => 'sqft_heated_source',
+            // LANDLORD ONLY. The landlord Property Preferences tab has a "Floor
+            // Covering" multi-select bound to $floor_covering; the Seller form has
+            // no flooring field of any kind, so there is deliberately no seller
+            // entry for this key. Values are filtered against the select's own
+            // option list before storage — see
+            // \App\Support\Listing\MlsFactVocabulary::filterFloorCoverings().
+            'flooring'            => '*floor_covering',
             // NOTE: 'lot_size_sqft' intentionally omitted -- LandlordOfferListing uses
             //       total_acreage (acres) for lot size via the lot_size_acres canonical key.
             //       No Livewire property exists to accept lot size expressed in square feet.

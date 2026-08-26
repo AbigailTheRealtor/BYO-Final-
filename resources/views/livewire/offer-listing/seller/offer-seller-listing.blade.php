@@ -740,12 +740,35 @@
                 @endif
 
                 {{-- MLS Import Entry Point --}}
+                {{--
+                    ONE button, then the user chooses. startMlsImport() opens the
+                    shared modal; the modal asks which import method when there is
+                    more than one — Stellar MLS # (→ offer.listing.seller.quick-import:
+                    MLS # → confirm property → BidYourOffer questions → review →
+                    publish), Listing Link / URL, or Create Manually.
+
+                    The button used to redirect straight into quick import, which
+                    left the Listing Link importer with no entry point at all on
+                    this form. Stellar is an additional door, not a replacement, so
+                    the choice belongs to the user.
+
+                    With no choice to offer (quick import off) the modal opens
+                    directly on the link importer, exactly as it always did. The
+                    manual form below is untouched either way.
+                --}}
                 <div class="container pt-3 pb-0">
                     <div class="d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-primary btn-sm"
                                 style="color:#0d6efd;"
-                                wire:click="$set('showImportModal', true)">
-                            <i class="fas fa-file-import me-1"></i>Have an MLS listing? Import it to pre-fill this form &rarr;
+                                wire:click="startMlsImport"
+                                wire:loading.attr="disabled"
+                                wire:target="startMlsImport">
+                            <i class="fas fa-file-import me-1"></i>
+                            @if($this->importMethodChoiceAvailable())
+                                Import Listing — Stellar MLS # or listing link &rarr;
+                            @else
+                                Have an MLS listing? Import it to pre-fill this form &rarr;
+                            @endif
                         </button>
                     </div>
                 </div>

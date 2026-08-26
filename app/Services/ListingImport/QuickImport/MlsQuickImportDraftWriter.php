@@ -7,6 +7,8 @@ use App\Models\SellerAgentAuction;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
 use App\Services\ListingImport\MlsFieldMap;
 use App\Support\Listing\ListingPhotoEntry;
+use App\Support\Listing\MlsFactVocabulary;
+use App\Support\Listing\PropertyTypeVocabulary;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -50,6 +52,7 @@ class MlsQuickImportDraftWriter
     public const META_SOURCE_STATUS = 'mls_source_status';
     public const META_ORDER_CUSTOM  = 'property_photos_order_customized';
     public const META_QUICK_IMPORT  = 'mls_quick_import';
+    public const META_SOURCE_PTYPE  = 'mls_source_property_type';
 
     public function __construct(
         private readonly MlsListingGallerySync $gallerySync,
@@ -177,6 +180,20 @@ class MlsQuickImportDraftWriter
         $existing = $auction->get;
 
         foreach ($result->facts as $canonicalKey => $value) {
+            // ── Furnished is a MERGE, not a copy, and only on Seller ─────────
+            //
+            // It does not land in a "furnished" field: it contributes at most one
+            // label to building_features, a list the user also edits. So it is
+            // handled before the overwrite guard below, because the guard would
+            // skip an already-populated array and merging into one is the whole
+            // point. Landlord has no entry for this key in its map, so a landlord
+            // import never reaches here.
+            if ($canonicalKey === 'furnished') {
+                $this->mergeFurnished($auction, $map, $existing, (string) $value);
+
+                continue;
+            }
+
             $target = $map[$canonicalKey] ?? null;
 
             if ($target === null) {
@@ -194,10 +211,30 @@ class MlsQuickImportDraftWriter
                 continue;
             }
 
-            $auction->saveMeta(
-                $metaKey,
-                $isArray ? array_values(array_filter(array_map('trim', explode(',', (string) $value)))) : $value,
-            );
+            $stored = $isArray
+                ? array_values(array_filter(array_map('trim', explode(',', (string) $value))))
+                : $value;
+
+            // Stored in BYO vocabulary, exactly as the manual flow stores it, so
+            // a quick-imported listing drives the same conditionals everywhere
+            // downstream — the terms step, the Edit tabs and the published page.
+            // The feed's own wording is preserved separately as provenance.
+            if ($canonicalKey === 'property_type') {
+                $stored = PropertyTypeVocabulary::forRole((string) $stored, $role);
+            }
+
+            // Flooring lands in a fixed 26-option multi-select. A feed value
+            // outside that list would store fine and then never render as
+            // chosen, so it is dropped rather than written.
+            if ($canonicalKey === 'flooring') {
+                $stored = MlsFactVocabulary::filterFloorCoverings((array) $stored);
+
+                if ($stored === []) {
+                    continue;
+                }
+            }
+
+            $auction->saveMeta($metaKey, $stored);
         }
 
         // Carried as meta rather than as a form field: there is no input for
@@ -209,6 +246,48 @@ class MlsQuickImportDraftWriter
         if ($result->mlsNumber !== null) {
             $auction->saveMeta(self::META_MLS_NUMBER, $result->mlsNumber);
         }
+    }
+
+    /**
+     * Add the furnishing label to building_features without disturbing the rest.
+     *
+     * The one import on this path that merges rather than replaces. Existing
+     * selections are preserved, at most one entry is added, nothing is removed,
+     * and a second import of the same record changes nothing — the rule lives in
+     * {@see MlsFactVocabulary} so this writer and the URL/text importer apply the
+     * identical behaviour instead of two lookalike copies.
+     *
+     * "Unfurnished" contributes nothing: absence of a furnishing label already
+     * means unfurnished, and listing it as a building FEATURE would read as the
+     * opposite of what it says.
+     *
+     * @param  array<string,string>  $map
+     */
+    private function mergeFurnished(object $auction, array $map, object $existing, string $value): void
+    {
+        $metaKey = ltrim((string) ($map['furnished'] ?? ''), '*');
+
+        // ONLY building_features, which is Seller's target.
+        //
+        // The landlord map also carries a `furnished` entry, pointing at
+        // `tenant_require` — a SINGLE-SELECT "Furnishings" control, not a feature
+        // list. Merging a label into it is meaningless, and its blade currently
+        // binds the same variable it iterates for its options, so a written value
+        // would not render as chosen anyway. The landlord map entry is left alone
+        // because the URL/text importer has always used it; this WRITE path
+        // simply declines to act on it.
+        if ($metaKey !== 'building_features') {
+            return;
+        }
+        $merged  = MlsFactVocabulary::mergeFurnishedFeature($existing->{$metaKey} ?? null, $value);
+
+        // Nothing to add and nothing already there — leave the key unwritten
+        // rather than storing an empty array over an absent one.
+        if ($merged === []) {
+            return;
+        }
+
+        $auction->saveMeta($metaKey, $merged);
     }
 
     /**
@@ -262,6 +341,18 @@ class MlsQuickImportDraftWriter
 
         if ($result->mlsStatus !== null) {
             $auction->saveMeta(self::META_SOURCE_STATUS, $result->mlsStatus);
+        }
+
+        // The feed's own property-type wording, kept because the editable field
+        // now holds the BYO translation of it. Normalising the form value must
+        // not cost us the ability to say what the MLS actually called this
+        // property — "Residential Lease" and "Residential Income" both become
+        // "Residential Property" on a landlord listing, and that distinction is
+        // worth keeping somewhere.
+        $sourceType = (string) ($result->facts['property_type'] ?? '');
+
+        if ($sourceType !== '') {
+            $auction->saveMeta(self::META_SOURCE_PTYPE, $sourceType);
         }
 
         $now = now()->toIso8601String();

@@ -12,6 +12,33 @@
     again on the review screen — as read-only summaries, never as a hundred
     editable inputs to click through. The only things this page asks for are the
     transaction questions MLS does not answer.
+
+    WHY THE FILLED BUTTONS CARRY INLINE COLOURS
+    -------------------------------------------
+    Not a style preference, and not something to "clean up" into a class.
+    public/css/app.css is the Mix build of Breeze's Tailwind and it ships
+    Preflight, which contains:
+
+        button, [type='button'], [type='reset'], [type='submit'] {
+            background-color: transparent; background-image: none;
+        }
+
+    layouts.main loads that file AFTER bootstrap.min.css, and `[type='button']`
+    has exactly the same specificity as `.btn` (0,1,0). The tie therefore breaks
+    on load order and every `<button type="button" class="btn btn-primary">` in
+    the application renders with no background — while `.btn-primary:hover`
+    (0,2,0) still wins, which is why such a button is invisible until the
+    pointer touches it.
+
+    An inline declaration outranks both, so it is the fix that does not require
+    editing global CSS. This is the convention the rest of the app already uses
+    for the same reason — see the filled buttons in
+    livewire/offer-listing/shared/mls-import-modal.blade.php, and the
+    !important rules for .wizard-step-next / #save-button in
+    public/assets/css/global.css.
+
+    Outline buttons are deliberately left alone: their background is meant to be
+    transparent, so Preflight changes nothing about how they look.
 --}}
 <div class="container py-4" style="max-width: 960px;">
 
@@ -61,6 +88,7 @@
                 </div>
 
                 <button type="button" class="btn btn-primary btn-lg"
+                        style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;"
                         wire:click="findListing" wire:loading.attr="disabled" wire:target="findListing">
                     <span wire:loading.remove wire:target="findListing"><i class="fas fa-search me-1"></i>Find My Listing</span>
                     <span wire:loading wire:target="findListing"><span class="spinner-border spinner-border-sm me-1"></span>Searching…</span>
@@ -126,7 +154,7 @@
                 </div>
             </div>
             <div class="card-footer bg-white d-flex gap-2">
-                <button type="button" class="btn btn-primary" wire:click="acceptProperty"
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="acceptProperty"
                         wire:loading.attr="disabled" wire:target="acceptProperty">
                     <span wire:loading.remove wire:target="acceptProperty">Yes, this is my property</span>
                     <span wire:loading wire:target="acceptProperty"><span class="spinner-border spinner-border-sm me-1"></span>Importing…</span>
@@ -150,6 +178,7 @@
                         <div class="col-md-6">
                             <button type="button"
                                     class="btn w-100 text-start p-3 h-100 {{ $auction_type === $method ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    @if($auction_type === $method) style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" @endif
                                     wire:click="chooseMethod('{{ $method }}')">
                                 <span class="fw-semibold d-block">{{ $method }}</span>
                                 <span class="small d-block mt-1 {{ $auction_type === $method ? 'text-white-50' : 'text-muted' }}">
@@ -177,13 +206,99 @@
                 @endif
             </div>
             <div class="card-footer bg-white d-flex gap-2">
-                <button type="button" class="btn btn-primary" wire:click="continueToTerms">Continue</button>
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToTerms">Continue</button>
             </div>
         </div>
     @endif
 
     {{-- ── Step 4: transaction terms ────────────────────────────────────── --}}
     @if($step === 'terms')
+
+    {{--
+        A role with a canonical terms partial renders THAT partial — the very
+        blade the manual Create and Edit screens include. Not a copy of it: the
+        same file, so its fields, labels, option vocabularies, help text and
+        conditional sections cannot drift from the manual flow's, because there
+        is only one of each.
+
+        The schema-driven branch below is for roles that still declare a
+        questionSchema(). Do not add fields to a schema for a role that has a
+        canonical partial; add them to the partial, where both entry paths see
+        them.
+    --}}
+    @if($termsPartial)
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="fw-semibold mb-1">Your {{ $role === 'seller' ? 'sale' : 'lease' }} terms</h4>
+                <p class="text-muted">
+                    These are the questions the MLS doesn't answer — how you want BidYourOffer to handle
+                    the transaction. They are the same terms you would be asked when creating a listing
+                    manually.
+                </p>
+
+                @include($termsPartial)
+            </div>
+        </div>
+
+        {{--
+            Supplementary questions: real fields whose canonical home is a
+            DIFFERENT tab, kept because this flow has always asked them and
+            dropping them would lose answers. Rendered in their own card, plainly
+            separated from the canonical surface above, so nobody mistakes them
+            for part of it. Empty for a role that has none.
+        --}}
+        @if(!empty($schema))
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="fw-semibold mb-1">Other details</h5>
+                    <p class="text-muted small">
+                        A few extra questions that live on other parts of a full listing.
+                    </p>
+
+                    @foreach($schema as $field => $spec)
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="qs-{{ $field }}">
+                                {{ $spec['label'] }}
+                                @if(!empty($spec['required']))<span class="text-danger">*</span>@endif
+                            </label>
+
+                            @if($spec['type'] === 'multiselect')
+                                @foreach($spec['options'] as $option)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="qs-{{ $field }}-{{ $loop->index }}"
+                                               value="{{ $option }}"
+                                               wire:model="multiTerms.{{ $field }}">
+                                        <label class="form-check-label" for="qs-{{ $field }}-{{ $loop->index }}">{{ $option }}</label>
+                                    </div>
+                                @endforeach
+                            @elseif($spec['type'] === 'select')
+                                <select id="qs-{{ $field }}" class="form-select" wire:model="terms.{{ $field }}">
+                                    <option value="">Select</option>
+                                    @foreach($spec['options'] as $option)
+                                        <option value="{{ $option }}">{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="{{ $spec['type'] === 'number' ? 'number' : 'text' }}"
+                                       id="qs-{{ $field }}" class="form-control"
+                                       wire:model.defer="terms.{{ $field }}">
+                            @endif
+
+                            @if(!empty($spec['help']))
+                                <div class="form-text">{{ $spec['help'] }}</div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <div class="d-flex gap-2 mt-3 mb-5">
+            <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
+            <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
+        </div>
+    @else
         @php
             $sections = [];
             foreach ($schema as $field => $spec) {
@@ -269,9 +384,10 @@
             </div>
             <div class="card-footer bg-white d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
-                <button type="button" class="btn btn-primary" wire:click="continueToReview">Review My Listing</button>
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
             </div>
         </div>
+    @endif{{-- /canonical vs schema-driven terms --}}
     @endif
 
     {{-- ── Step 5: review before publish ────────────────────────────────── --}}
@@ -301,6 +417,7 @@
                                     @else
                                         <button type="button"
                                                 class="btn btn-sm btn-light position-absolute bottom-0 start-0 m-1"
+                                                style="background-color:#f8f9fa; border-color:#f8f9fa; color:#212529;"
                                                 wire:click="setCoverPhoto(@js($photo->key))">
                                             Make cover
                                         </button>
@@ -378,30 +495,57 @@
                         {{ $auction_type }}@if($auction_type === 'Bidding Period' && $auction_time) — {{ $auction_time }}@endif
                     </dd>
 
-                    @foreach($schema as $field => $spec)
-                        @php
-                            $value = $spec['type'] === 'multiselect'
-                                ? implode(', ', (array) ($multiTerms[$field] ?? []))
-                                : trim((string) ($terms[$field] ?? ''));
-                        @endphp
-                        @if($value !== '')
-                            <dt class="col-sm-4 fw-normal text-muted">{{ $spec['label'] }}</dt>
-                            <dd class="col-sm-8">
-                                @if(in_array($spec['type'], ['money'], true))
-                                    ${{ number_format((float) str_replace([',', '$'], '', $value)) }}
-                                @else
-                                    {{ $value }}
-                                @endif
-                            </dd>
-                        @endif
-                    @endforeach
+                    {{-- Canonical roles summarise from the canonical field set, so a
+                         term added to the tab shows up here without a second edit. --}}
+                    @if($termsPartial)
+                        @forelse($termsReview as $label => $value)
+                            <dt class="col-sm-4 fw-normal text-muted">{{ $label }}</dt>
+                            <dd class="col-sm-8">{{ $value }}</dd>
+                        @empty
+                            <dt class="col-sm-12 fw-normal text-muted">
+                                No additional terms entered — the listing will publish with the
+                                defaults shown on the terms step.
+                            </dt>
+                        @endforelse
+
+                        {{-- Supplementary answers, same list, same omit-if-empty rule. --}}
+                        @foreach($schema as $field => $spec)
+                            @php
+                                $value = $spec['type'] === 'multiselect'
+                                    ? implode(', ', (array) ($multiTerms[$field] ?? []))
+                                    : trim((string) ($terms[$field] ?? ''));
+                            @endphp
+                            @if($value !== '')
+                                <dt class="col-sm-4 fw-normal text-muted">{{ $spec['label'] }}</dt>
+                                <dd class="col-sm-8">{{ $value }}</dd>
+                            @endif
+                        @endforeach
+                    @else
+                        @foreach($schema as $field => $spec)
+                            @php
+                                $value = $spec['type'] === 'multiselect'
+                                    ? implode(', ', (array) ($multiTerms[$field] ?? []))
+                                    : trim((string) ($terms[$field] ?? ''));
+                            @endphp
+                            @if($value !== '')
+                                <dt class="col-sm-4 fw-normal text-muted">{{ $spec['label'] }}</dt>
+                                <dd class="col-sm-8">
+                                    @if(in_array($spec['type'], ['money'], true))
+                                        ${{ number_format((float) str_replace([',', '$'], '', $value)) }}
+                                    @else
+                                        {{ $value }}
+                                    @endif
+                                </dd>
+                            @endif
+                        @endforeach
+                    @endif
                 </dl>
             </div>
         </div>
 
         <div class="d-flex gap-2 mb-5">
             <button type="button" class="btn btn-outline-secondary" wire:click="backToTerms">Back to terms</button>
-            <button type="button" class="btn btn-success btn-lg" wire:click="publish"
+            <button type="button" class="btn btn-success btn-lg" style="background-color:#198754; border-color:#198754; color:#fff;" wire:click="publish"
                     wire:loading.attr="disabled" wire:target="publish">
                 <span wire:loading.remove wire:target="publish">Publish Listing</span>
                 <span wire:loading wire:target="publish"><span class="spinner-border spinner-border-sm me-1"></span>Publishing…</span>

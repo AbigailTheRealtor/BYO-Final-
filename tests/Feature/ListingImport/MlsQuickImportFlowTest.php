@@ -129,19 +129,34 @@ class MlsQuickImportFlowTest extends TestCase
         ], $overrides));
     }
 
-    /** Drive the flow to the review step and return the live component. */
+    /**
+     * Drive the flow to the review step and return the live component.
+     *
+     * Seller's terms step renders the CANONICAL Sale Terms tab, so answers are
+     * set on the real Livewire properties that tab binds — the same properties
+     * the manual Create screen sets. There is no quick-import-only $terms bag
+     * for this role any more, and a test that reintroduced one would be testing
+     * a field list the product no longer has.
+     *
+     * @param  array<string, mixed>  $terms  canonical property => value
+     */
     private function flowToReview(User $user, array $terms = [], array $multi = []): \Livewire\Testing\TestableLivewire
     {
-        return Livewire::actingAs($user)
+        $component = Livewire::actingAs($user)
             ->test(SellerMlsQuickImport::class)
             ->set('mlsNumber', self::MLS)
             ->call('findListing')
             ->call('acceptProperty')
             ->call('chooseMethod', 'Traditional')
             ->call('continueToTerms')
-            ->set('terms', array_merge(['maximum_budget' => '525000'], $terms))
-            ->set('multiTerms', array_merge(['offered_financing' => ['Cash', 'Conventional']], $multi))
-            ->call('continueToReview');
+            ->set('maximum_budget', '525000')
+            ->set('offered_financing', ['Cash', 'Conventional']);
+
+        foreach (array_merge($terms, $multi) as $field => $value) {
+            $component->set($field, $value);
+        }
+
+        return $component->call('continueToReview');
     }
 
     // ─── Ingestion ───────────────────────────────────────────────────────────
@@ -636,7 +651,11 @@ class MlsQuickImportFlowTest extends TestCase
         // The terms step asks transaction questions and nothing else. If a
         // property input ever appears here, the feature has become the thing it
         // exists to replace.
-        $component->assertSee('Financing You Will Accept')
+        //
+        // The labels asserted are the CANONICAL tab's, because that is what this
+        // step renders now. "Financing You Will Accept" was the quick-import-only
+        // schema's wording for the same question and no longer exists anywhere.
+        $component->assertSee('Offered Financing/Currency')
             ->assertDontSee('Total Acreage')
             ->assertDontSee('Roof Type')
             ->assertDontSee('Exterior Construction');
@@ -685,8 +704,26 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertSame('7 Days', $listing->info('auction_time'));
     }
 
-    /** @test */
-    public function bidding_period_cannot_be_chosen_when_the_flag_hides_it(): void
+    /**
+     * @test
+     *
+     * REPLACES `bidding_period_cannot_be_chosen_when_the_flag_hides_it`, which
+     * asserted the opposite and was wrong about the product.
+     *
+     * That test encoded the belief that quick import should gate Bidding Period
+     * on bya_beta.bidding_period_enabled "exactly as the wizard gates it". The
+     * wizard does not gate it: the canonical Seller and Landlord Create Listing
+     * partials render the Listing Type select with both options and no
+     * condition around either — the gate was deliberately lifted for these two
+     * roles and survives only as a mount() default for a blank auction_type.
+     * Quick import reading the flag therefore offered a SMALLER set of listing
+     * methods than the manual flow for the same role, so a listing created
+     * through the shortened path could never be a Bidding Period listing.
+     *
+     * The flag is forced OFF here because that is the configuration under which
+     * the option used to disappear.
+     */
+    public function bidding_period_is_offered_regardless_of_the_beta_flag(): void
     {
         config(['bya_beta.bidding_period_enabled' => false]);
         $this->seedBridgeProperty(1);
@@ -697,8 +734,8 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('findListing')
             ->call('acceptProperty')
             ->call('chooseMethod', 'Bidding Period')
-            ->assertSet('auction_type', '')
-            ->assertSee('Please choose how you would like to sell');
+            ->assertSet('auction_type', 'Bidding Period')
+            ->assertSet('errorMessage', '');
     }
 
     /** @test */
@@ -774,6 +811,165 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertSame('Dining room chandelier', $meta->excluded_items);
     }
 
+    /**
+     * @test
+     *
+     * The conditional Sale Terms sections quick import could not express at all
+     * before this existed: seller financing, a balloon schedule, a crypto split,
+     * an exchange, and the Estimated Payment Assumptions. Each is set through the
+     * canonical property the manual tab binds and read back from the SAME meta
+     * key the manual flow writes.
+     *
+     * This is the behavioural half of SellerSaleTermsParityTest's structural
+     * checks: those prove the fields EXIST on this path, this proves an answer
+     * given on this path actually survives to the listing.
+     */
+    public function canonical_conditional_sale_terms_persist_through_quick_import(): void
+    {
+        $this->seedBridgeProperty(1);
+
+        $component = $this->flowToReview($this->seller, [
+            // Seller financing + amortisation
+            'seller_financing_type'      => '%',
+            'seller_down_payment_amount' => '50,000',
+            'interest_rate'              => '6.5',
+            'loan_duration'              => '30',
+            'seller_amortization_type'   => 'Fully Amortized',
+            'seller_payment_frequency'   => 'Monthly',
+
+            // Balloon
+            'balloon_payment_amount' => '120,000',
+            'balloon_payment_date'   => '2030-01-01',
+
+            // Cryptocurrency
+            'cryptocurrency_type'    => 'Bitcoin',
+            'crypto_percentage'      => '25',
+            'cash_percentage_crypto' => '75',
+
+            // Exchange / Trade
+            'other_exchange_item' => 'Vintage tractor',
+            'exchange_item_value' => '18,500',
+
+            // Estimated Payment Assumptions
+            'payment_interest_rate'         => '6.75',
+            'payment_loan_term'             => '30',
+            'payment_annual_property_taxes' => '7,200',
+            'payment_monthly_insurance'     => '150',
+        ]);
+
+        $meta = SellerAgentAuction::find($component->get('listingId'))->get;
+
+        // Stored under the canonical keys…
+        $this->assertSame('%', $meta->seller_financing_type);
+        $this->assertSame('Fully Amortized', $meta->seller_amortization_type);
+        $this->assertSame('Monthly', $meta->seller_payment_frequency);
+        $this->assertSame('6.5', $meta->interest_rate);
+        $this->assertSame('30', $meta->loan_duration);
+        $this->assertSame('2030-01-01', $meta->balloon_payment_date);
+        $this->assertSame('Bitcoin', $meta->cryptocurrency_type);
+        $this->assertSame('Vintage tractor', $meta->other_exchange_item);
+        $this->assertSame('6.75', $meta->payment_interest_rate);
+        $this->assertSame('30', $meta->payment_loan_term);
+
+        // …and money fields are comma-stripped exactly as the manual flow strips
+        // them, so "50,000" is stored as a number and not as text.
+        $this->assertSame('50000', $meta->seller_down_payment_amount);
+        $this->assertSame('120000', $meta->balloon_payment_amount);
+        $this->assertSame('18500', $meta->exchange_item_value);
+        $this->assertSame('7200', $meta->payment_annual_property_taxes);
+        $this->assertSame('150', $meta->payment_monthly_insurance);
+        $this->assertSame('25', $meta->crypto_percentage);
+        $this->assertSame('75', $meta->cash_percentage_crypto);
+    }
+
+    /**
+     * @test
+     *
+     * The fifteen fields manual Create used to silently discard reach the
+     * listing through Quick Import too, with the same transforms.
+     *
+     * Quick Import inherited Create's gap by design — it writes through the same
+     * routine — so repairing Create repaired this path in the same edit. This
+     * asserts that rather than assuming it.
+     */
+    public function the_repaired_sale_terms_persist_through_quick_import(): void
+    {
+        $this->seedBridgeProperty(1);
+
+        $component = $this->flowToReview($this->seller, [
+            'occupant_tenant'                    => 'Lease expires March 2027',
+            'balloon_payment'                    => 'Yes',
+            'outstanding_balance'                => '245000',
+            'lease_option_fee_credit'            => 'Yes',
+            'lease_option_fee_credit_percentage' => '50',
+            'lease_option_maintenance'           => 'Buyer',
+            'lease_option_extension_terms'       => 'One 6-month extension',
+            'lease_purchase_rent_credit'         => 'Yes',
+            'lease_purchase_rent_credit_amount'  => '1,000',
+            'lease_purchase_deposit'             => '15,000',
+            'lease_purchase_maintenance'         => 'Seller',
+            'lease_purchase_extension_terms'     => 'Month to month thereafter',
+            'nft_gas_fees'                       => 'Buyer',
+            'nft_transfer_method'                => 'Direct wallet transfer',
+            'nft_valuation_method'               => 'Third-party appraisal',
+        ]);
+
+        $meta = SellerAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('Lease expires March 2027', $meta->occupant_tenant);
+        $this->assertSame('Yes', $meta->balloon_payment);
+        $this->assertSame('245000', $meta->outstanding_balance);
+        $this->assertSame('Yes', $meta->lease_option_fee_credit);
+        $this->assertSame('50', $meta->lease_option_fee_credit_percentage);
+        $this->assertSame('Buyer', $meta->lease_option_maintenance);
+        $this->assertSame('One 6-month extension', $meta->lease_option_extension_terms);
+        $this->assertSame('Yes', $meta->lease_purchase_rent_credit);
+        $this->assertSame('Seller', $meta->lease_purchase_maintenance);
+        $this->assertSame('Month to month thereafter', $meta->lease_purchase_extension_terms);
+        $this->assertSame('Buyer', $meta->nft_gas_fees);
+        $this->assertSame('Direct wallet transfer', $meta->nft_transfer_method);
+        $this->assertSame('Third-party appraisal', $meta->nft_valuation_method);
+
+        // The two money fields among them are comma-stripped.
+        $this->assertSame('1000', $meta->lease_purchase_rent_credit_amount);
+        $this->assertSame('15000', $meta->lease_purchase_deposit);
+    }
+
+    /**
+     * @test
+     *
+     * Bidding-period pricing — starting, reserve and buy-now — reaches the
+     * listing from quick import. The old reduced schema had none of these, so a
+     * bidding-period listing created this way could not carry a reserve at all.
+     */
+    public function bidding_period_pricing_persists_through_quick_import(): void
+    {
+        $this->seedBridgeProperty(1);
+
+        $component = Livewire::actingAs($this->seller)
+            ->test(SellerMlsQuickImport::class)
+            ->set('mlsNumber', self::MLS)
+            ->call('findListing')
+            ->call('acceptProperty')
+            ->call('chooseMethod', 'Bidding Period')
+            ->set('auction_time', '7 Days')
+            ->call('continueToTerms')
+            ->set('maximum_budget', '525000')
+            ->set('starting_price', '499,000')
+            ->set('reserve_price', '515,000')
+            ->set('buy_now_price', '599,000')
+            ->call('continueToReview')
+            ->assertSet('step', 'review');
+
+        $meta = SellerAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('Bidding Period', $meta->auction_type);
+        $this->assertSame('7 Days', $meta->auction_time);
+        $this->assertSame('499000', $meta->starting_price);
+        $this->assertSame('515000', $meta->reserve_price);
+        $this->assertSame('599000', $meta->buy_now_price);
+    }
+
     /** @test */
     public function a_missing_required_term_blocks_review(): void
     {
@@ -786,8 +982,12 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('acceptProperty')
             ->call('chooseMethod', 'Traditional')
             ->call('continueToTerms')
-            ->set('terms', ['maximum_budget' => ''])
-            ->set('multiTerms', ['offered_financing' => []])
+            // The asking price is the one term this path requires. The manual
+            // flow's publish rules require no sale-terms field at all, so the
+            // former additional requirement on financing was quick import being
+            // stricter than the screen it mirrors, and is gone.
+            ->set('maximum_budget', '')
+            ->set('offered_financing', [])
             ->call('continueToReview')
             ->assertSet('step', 'terms')
             ->assertSee('Please complete');
@@ -953,12 +1153,29 @@ class MlsQuickImportFlowTest extends TestCase
      */
     public function the_landlord_flow_never_asks_the_seller_financing_questions(): void
     {
-        $schema = (new LandlordMlsQuickImport())->questionSchema();
+        $component = new LandlordMlsQuickImport();
+        $schema     = $component->questionSchema();
+        $canonical  = $component::landlordLeasingTermsFields();
 
+        // Not in the supplementary schema…
         $this->assertArrayNotHasKey('offered_financing', $schema);
         $this->assertArrayNotHasKey('other_financing', $schema);
-        $this->assertArrayHasKey('desired_lease_length', $schema);
-        $this->assertArrayHasKey('security_deposit_amount', $schema);
+
+        // …and not in the canonical Leasing Terms either, which is the stronger
+        // statement now that the terms step renders that whole tab: financing is
+        // a sale concept and it is absent from the landlord surface entirely.
+        $this->assertNotContains('offered_financing', $canonical);
+        $this->assertNotContains('other_financing', $canonical);
+
+        // The lease questions are still asked, both now from the canonical tab.
+        // desired_lease_length used to sit in the supplementary set on the
+        // belief that its home was the Hire Landlord Agent flow; the canonical
+        // Leasing Terms partial renders it as a lease-term select, and it moved
+        // into the canonical set once the property-type fix opened the sections
+        // that had been hiding it.
+        $this->assertContains('security_deposit_amount', $canonical);
+        $this->assertContains('desired_lease_length', $canonical);
+        $this->assertArrayNotHasKey('desired_lease_length', $schema);
     }
 
     /** @test */
@@ -975,8 +1192,12 @@ class MlsQuickImportFlowTest extends TestCase
             ->call('continueToTerms')
             // desired_rental_amount, not maximum_budget: the landlord rent key is the
             // one the published page reads. See LandlordMlsQuickImport::priceField().
-            ->set('terms', ['desired_rental_amount' => '2400'])
-            ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
+            // It is a CANONICAL Leasing Terms property now, so it is set directly;
+            // desired_lease_length stays in the supplementary bag because its
+            // canonical home is another screen.
+            ->set('desired_rental_amount', '2400')
+            // Canonical property now, not a supplementary $multiTerms entry.
+            ->set('desired_lease_length', ['1 Year'])
             ->call('continueToReview')
             ->assertSet('step', 'review');
 
@@ -987,6 +1208,103 @@ class MlsQuickImportFlowTest extends TestCase
         $this->assertFalse((bool) $listing->is_draft);
         $this->assertSame('Traditional', $listing->info('auction_type'));
         $this->assertEqualsCanonicalizing(['1 Year'], (array) $listing->get->desired_lease_length);
+    }
+
+    /**
+     * @test
+     *
+     * Canonical Leasing Terms the old thirteen-field schema never asked about
+     * reach the listing through Quick Import, under the canonical keys and with
+     * the canonical transforms.
+     *
+     * The behavioural half of LandlordLeasingTermsParityTest's structural checks:
+     * those prove the fields exist on this path, this proves an answer survives.
+     */
+    public function canonical_leasing_terms_persist_through_landlord_quick_import(): void
+    {
+        $this->seedBridgeProperty(1, [], 'PHPUNIT-QI-LL3-KEY', 'PHPUNIT-QI-LL3-MLS');
+
+        $component = Livewire::actingAs($this->landlord)
+            ->test(LandlordMlsQuickImport::class)
+            ->set('mlsNumber', 'PHPUNIT-QI-LL3-MLS')
+            ->call('findListing')
+            ->call('acceptProperty')
+            ->call('chooseMethod', 'Traditional')
+            ->call('continueToTerms')
+            ->set('desired_rental_amount', '2,400')
+            // None of these existed on the old quick-import schema.
+            ->set('smoking_policy', 'No Smoking')
+            ->set('subletting_policy', 'Not Permitted')
+            ->set('occupant_status', 'Vacant')
+            ->set('maintenance_by', 'Landlord')
+            ->set('maintenance_response_time', '48 hours')
+            ->set('renewal_option_details', 'One 12-month renewal at CPI')
+            ->set('rent_escalation_terms', '3% annually')
+            ->set('commercial_lease_type', 'NNN')
+            ->set('access_24_7', 'Yes')
+            ->set('additional_landlord_lease_terms', 'Landlord prefers a January start')
+            ->set('terms_of_lease', ['1 Year'])
+            ->set('owner_pays', ['Taxes', 'Insurance'])
+            ->call('continueToReview')
+            ->assertSet('step', 'review');
+
+        $meta = LandlordAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('No Smoking', $meta->smoking_policy);
+        $this->assertSame('Not Permitted', $meta->subletting_policy);
+        $this->assertSame('Vacant', $meta->occupant_status);
+        $this->assertSame('Landlord', $meta->maintenance_by);
+        $this->assertSame('48 hours', $meta->maintenance_response_time);
+        $this->assertSame('One 12-month renewal at CPI', $meta->renewal_option_details);
+        $this->assertSame('3% annually', $meta->rent_escalation_terms);
+        $this->assertSame('NNN', $meta->commercial_lease_type);
+        $this->assertSame('Yes', $meta->access_24_7);
+        $this->assertSame('Landlord prefers a January start', $meta->additional_landlord_lease_terms);
+
+        // The rent is comma-stripped, as on the manual flows.
+        $this->assertSame('2400', $meta->desired_rental_amount);
+
+        // Multi-selects keep their JSON shape.
+        foreach (['terms_of_lease' => ['1 Year'], 'owner_pays' => ['Taxes', 'Insurance']] as $field => $expected) {
+            $stored = $meta->{$field};
+            $stored = is_string($stored) ? json_decode($stored, true) : $stored;
+            $this->assertSame($expected, array_values((array) $stored), $field);
+        }
+    }
+
+    /**
+     * @test
+     *
+     * Bidding-period rent pricing reaches the listing from Landlord quick import.
+     * The old schema had none of these, so a bidding-period rental created this
+     * way could not carry a reserve at all.
+     */
+    public function landlord_bidding_period_rent_pricing_persists(): void
+    {
+        $this->seedBridgeProperty(1, [], 'PHPUNIT-QI-LL4-KEY', 'PHPUNIT-QI-LL4-MLS');
+
+        $component = Livewire::actingAs($this->landlord)
+            ->test(LandlordMlsQuickImport::class)
+            ->set('mlsNumber', 'PHPUNIT-QI-LL4-MLS')
+            ->call('findListing')
+            ->call('acceptProperty')
+            ->call('chooseMethod', 'Bidding Period')
+            ->set('auction_time', '7 Days')
+            ->call('continueToTerms')
+            ->set('desired_rental_amount', '2400')
+            ->set('starting_rent', '2,200')
+            ->set('reserve_rent', '2,300')
+            ->set('lease_now_price', '2,900')
+            ->call('continueToReview')
+            ->assertSet('step', 'review');
+
+        $meta = LandlordAgentAuction::find($component->get('listingId'))->get;
+
+        $this->assertSame('Bidding Period', $meta->auction_type);
+        $this->assertSame('7 Days', $meta->auction_time);
+        $this->assertSame('2200', $meta->starting_rent);
+        $this->assertSame('2300', $meta->reserve_rent);
+        $this->assertSame('2900', $meta->lease_now_price);
     }
 
     // ─── Regression: the manual path is untouched ────────────────────────────

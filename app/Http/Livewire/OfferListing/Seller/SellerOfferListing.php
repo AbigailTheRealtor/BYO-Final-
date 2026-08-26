@@ -23,6 +23,7 @@ use App\Http\Livewire\Concerns\ValidatesMediaUploads;
 use App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress;
 use App\Http\Livewire\Concerns\ValidatesPropertyAddress;
 use App\Http\Livewire\OfferListing\Concerns\SellerPublishValidation;
+use App\Http\Livewire\OfferListing\Concerns\SellerSaleTerms;
 
 class SellerOfferListing extends Component
 {
@@ -34,6 +35,7 @@ class SellerOfferListing extends Component
     use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use ValidatesMediaUploads; // HI-04 (M1): content+size validation for $photo/$video
     use SellerPublishValidation; // BYO-H1: shared publish rules (create + edit)
+    use SellerSaleTerms;  // canonical Sale Terms field set (create + edit + quick import)
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use \App\Http\Livewire\OfferListing\Concerns\GuidesPublishValidation; // publish gate required-field contract (parity with edit)
     use ValidatesPropertyAddress; // Phase 0: ZIP autofill + ZIP-in-street recovery
@@ -87,103 +89,26 @@ class SellerOfferListing extends Component
     public $other_carport_needed = '';
 
     // Properties
-    public $sale_provision = [];
-    public $sale_provision_other = '';
-    public $sale_provision_assignment = '';
     public $assignment_fee_type = '';
-    public $assignment_fee_amount = '';
-    public $buyer_sell_contract = '';
 
     // Occupant / business type
-    public $occupant_status = '';
-    public $occupant_tenant = '';
     public $business_type = '';
     public $other_business_type = '';
-    public $target_closing_date = '';
 
     // Properties
-    public $maximum_budget = '';
-    public $starting_price = '';
-    public $reserve_price = '';
-    public $buy_now_price = '';
-    public $offered_financing = [];
-    public $other_financing = '';
-    public $cash_budget = '';
-    public $pre_approved = '';
-    public $pre_approval_amount = '';
-    public $purchase_price = '';
-    public $down_payment_type = '%';
-    public $down_payment_amount = '';
-    public $seller_financing_type = '$';
     public $seller_financing_amount = '';
-    public $seller_down_payment_amount = '';
-    public $seller_late_fee_amount = '';
-    public $interest_rate = '';
-    public $loan_duration = '';
-    public $prepayment_penalty = '';
-    public $prepayment_penalty_amount = '';
-    public $balloon_payment = '';
-    public $balloon_payment_amount = '';
-    public $balloon_payment_date = '';
-    public $assumable_terms = '';
-    public $assumable_loan_type = '';
-    public $outstanding_balance = '';
     public $lender_approval_required = '';
-    public $max_assumable_rate = '';
-    public $assumable_monthly_escrow = '';
-    public $assumable_loan_term_remaining = '';
-    public $assumable_loan_origination_date = '';
-    public $assumable_loan_servicer = '';
-    public $assumable_fee_type = '$';
-    public $assumable_fee_amount = '';
-    public $assumption_fee_responsibility = ''; // A6.31-A6.34: who pays the assumption fee (Buyer/Seller/Split)
-    public $assumable_occupancy_requirement = '';
-    public $assumable_occupancy_other = '';
-    public $max_monthly_payment = '';
-    public $gap_payment_type = '$';
-    public $gap_payment_amount = '';
 
     // Exchange/Trade Properties
-    public $exchange_item = [];
-    public $other_exchange_item = '';
-    public $exchange_item_value = '';
-    public $exchange_item_condition = '';
-    public $additional_cash = '';
-    public $value_determination = '';
-    public $exchange_transfer_method = '';
     public $exchange_liens = '';
-    public $exchange_liens_disclosure = '';
-    public $exchange_liens_details = '';
-    public $exchange_inspection_rights = '';
 
     // Lease Option Properties
-    public $lease_option_price = '';
-    public $lease_option_terms = '';
-    public $lease_option_duration = '';
-    public $lease_option_payment = '';
-    public $lease_option_conditions = '';
-    public $has_option_fee = '';
-    public $option_fee_amount = '';
-    public $lease_option_fee_credit = '';
-    public $lease_option_fee_credit_percentage = '';
-    public $lease_option_maintenance = '';
-    public $lease_option_extension_terms = '';
     public $seller_lease_option_fee_credit = '';
     public $seller_lease_option_fee_credit_percent = '';
     public $seller_lease_option_maintenance = '';
     public $seller_lease_option_extension_terms = '';
 
     // Lease Purchase Properties
-    public $lease_purchase_price = '';
-    public $lease_purchase_terms = '';
-    public $lease_purchase_duration = '';
-    public $lease_purchase_payment = '';
-    public $lease_purchase_conditions = '';
-    public $lease_purchase_rent_credit = '';
-    public $lease_purchase_rent_credit_amount = '';
-    public $lease_purchase_deposit = '';
-    public $lease_purchase_maintenance = '';
-    public $lease_purchase_extension_terms = '';
     public $seller_lease_purchase_rent_credit = '';
     public $seller_lease_purchase_rent_credit_type = '$';
     public $seller_lease_purchase_rent_credit_amount = '';
@@ -195,28 +120,10 @@ class SellerOfferListing extends Component
     public $lease_purchase_option_fee_amount = '';
 
     // Seller financing amortization / payment
-    public $seller_amortization_type = '';
-    public $seller_amortization_other = '';
-    public $seller_payment_frequency = '';
-    public $seller_payment_frequency_other = '';
 
     // Cryptocurrency Properties
-    public $crypto_transfer_timing = '';
-    public $crypto_transfer_timing_other = '';
-    public $crypto_exchange_method = '';
-    public $crypto_custodian_wallet = '';
-    public $crypto_transaction_fees = '';
-    public $cryptocurrency_type = '';
-    public $crypto_percentage = '';
-    public $cash_percentage_crypto = '';
 
     // NFT Properties
-    public $nft_description = '';
-    public $nft_percentage = '';
-    public $cash_percentage_nft = '';
-    public $nft_gas_fees = '';
-    public $nft_transfer_method = '';
-    public $nft_valuation_method = '';
 
     public $garage_needed = '';
     public $other_garage_needed = '';
@@ -231,7 +138,6 @@ class SellerOfferListing extends Component
     public $other_appliances = '';
     public $showOtherAppliances = false;
     public $showEnhancements = false;
-    public $showPaymentAssumptions = false;
     public $showCustomEnhancement = false;
     public $showOpenHouseInput = false;
     public $is_other_visible = false;
@@ -588,47 +494,11 @@ class SellerOfferListing extends Component
     public $virtual_showings_count = '';
 
     // Sale Terms Questions
-    public $initial_deposit_type = '$';
-    public $initial_deposit_requested = '';
-    public $initial_deposit_timeframe = '';
-    public $initial_deposit_timeframe_other = '';
-    public $additional_deposit_type = '$';
-    public $additional_deposit_requested = '';
-    public $additional_deposit_timeframe = '';
-    public $additional_deposit_timeframe_other = '';
-    public $escrow_agent_preference = '';
-    public $preferred_inspection_period = '';
     // Phase 5/6 QA Follow-up (Seller Contingency UX): per-contingency preference select +
     // conditional "Preferred … Period (Days)" companions. Inspection now has an explicit
     // preference select; appraisal/financing/sale-of-buyer each gain a period field.
-    public $inspection_contingency_preference = '';
-    public $appraisal_contingency_preference = '';
-    public $appraisal_contingency_period = '';
-    public $financing_contingency_preference = '';
-    public $financing_contingency_period = '';
-    public $sale_of_buyer_property_contingency = '';
-    public $sale_of_buyer_property_period = '';
-    public $seller_contribution_credit_offered = '';
-    public $seller_contribution_amount_details = '';
-    public $possession_preference = '';
-    public $possession_details = '';
-    public $included_personal_property = '';
-    public $excluded_items = '';
-    public $home_warranty_offered = '';
-    public $home_warranty_amount_details = '';
-    public $hoa_condo_association_terms = '';
-    public $additional_seller_sale_terms = '';
 
     // Estimated Payment Assumptions (agent-editable calculator defaults)
-    public $payment_down_payment_pct = '';
-    public $payment_interest_rate = '';
-    public $payment_loan_term = '';
-    public $payment_annual_property_taxes = '';
-    public $payment_monthly_insurance = '';
-    public $payment_hoa_fee_amount = '';
-    public $payment_hoa_fee_frequency = '';
-    public $payment_pmi_rate = '';
-    public $payment_show_buydown_options = true;
 
     // Tax, Legal, HOA & Disclosures tab fields
     // Group 1 — Tax / Legal / Parcel
@@ -919,24 +789,6 @@ class SellerOfferListing extends Component
     }
 
     // Methods
-    public function setDownPaymentType($type)
-    {
-        $this->down_payment_type = $type;
-        $this->down_payment_amount = '';
-    }
-
-    public function setSellerFinancingType($type)
-    {
-        $this->seller_financing_type = $type;
-        $this->seller_financing_amount = '';
-    }
-
-    public function setGapPaymentType($type)
-    {
-        $this->gap_payment_type = $type;
-        $this->gap_payment_amount = '';
-    }
-
     public function setType($which, $type)
     {
         if ($which === 'lease') {
@@ -1073,12 +925,6 @@ class SellerOfferListing extends Component
         }
     }
     // Methods/ Methods
-    public function setAssignmentFeeType($type)
-    {
-        $this->assignment_fee_type = $type;
-        $this->assignment_fee_amount = ''; // Clear amount when changing type
-    }
-
     public function updatedSaleProvision()
     {
         $provision = $this->sale_provision ?? [];
@@ -2614,6 +2460,15 @@ class SellerOfferListing extends Component
 
         if ($auction) {
 
+            // Canonical Sale Terms first, so the hand-written lines further down
+            // still win for every field they already covered and nothing about
+            // them changes. What this adds is the 27 canonical terms fields this
+            // method never read back at all — including twelve it had been
+            // writing, which meant resuming a draft showed them blank and the
+            // next save wrote that blank over the stored answer.
+            // @see \App\Http\Livewire\OfferListing\Concerns\SellerSaleTerms
+            $this->loadSellerSaleTermsMeta($auction);
+
             // Load all metadata fields
             $this->listing_title = $auction->title;
             $this->user_type = $auction->get->user_type;
@@ -3396,92 +3251,21 @@ class SellerOfferListing extends Component
         $auction->saveMeta('telecom_available_other', $this->telecom_available_other);
 
         // Sale Provisions
-        $auction->saveMeta('sale_provision', $this->sale_provision);
-        $auction->saveMeta('sale_provision_other', $this->sale_provision_other);
-        $auction->saveMeta('sale_provision_assignment', $this->sale_provision_assignment);
-        $auction->saveMeta('assignment_fee_type', $this->assignment_fee_type);
-        $auction->saveMeta('assignment_fee_amount', $this->stripCommas($this->assignment_fee_amount));
-        $auction->saveMeta('buyer_sell_contract', $this->buyer_sell_contract);
+        // Canonical Seller Sale Terms — one definition, shared with
+        // SellerOfferListingEdit and SellerMlsQuickImport.
+        // @see \App\Http\Livewire\OfferListing\Concerns\SellerSaleTerms
+        $this->saveSellerSaleTermsMeta($auction);
 
         // Budget & Financing
-        $auction->saveMeta('maximum_budget', $this->stripCommas($this->maximum_budget));
-        $auction->saveMeta('starting_price', $this->stripCommas($this->starting_price));
-        $auction->saveMeta('reserve_price', $this->stripCommas($this->reserve_price));
-        $auction->saveMeta('buy_now_price', $this->stripCommas($this->buy_now_price));
-        $auction->saveMeta('offered_financing', json_encode($this->offered_financing));
-        $auction->saveMeta('other_financing', $this->other_financing);
-        $auction->saveMeta('cash_budget', $this->cash_budget);
-        $auction->saveMeta('pre_approved', $this->pre_approved);
-        $auction->saveMeta('pre_approval_amount', $this->pre_approval_amount);
-        $auction->saveMeta('purchase_price', $this->stripCommas($this->purchase_price));
-        $auction->saveMeta('down_payment_type', $this->down_payment_type);
-        $auction->saveMeta('down_payment_amount', $this->stripCommas($this->down_payment_amount));
-        $auction->saveMeta('seller_financing_type', $this->seller_financing_type);
         $auction->saveMeta('seller_financing_amount', $this->stripCommas($this->seller_financing_amount));
-        $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
-        $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
-        $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
-        $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
-        $auction->saveMeta('seller_down_payment_amount', $this->stripCommas($this->seller_down_payment_amount));
-        $auction->saveMeta('seller_late_fee_amount', $this->stripCommas($this->seller_late_fee_amount));
-        $auction->saveMeta('interest_rate', $this->interest_rate);
-        $auction->saveMeta('loan_duration', $this->loan_duration);
-        $auction->saveMeta('prepayment_penalty', $this->prepayment_penalty);
-        $auction->saveMeta('prepayment_penalty_amount', $this->stripCommas($this->prepayment_penalty_amount));
-        $auction->saveMeta('balloon_payment_amount', $this->stripCommas($this->balloon_payment_amount));
-        $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
-        $auction->saveMeta('assumable_terms', $this->assumable_terms);
-        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
-        $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
-        $auction->saveMeta('assumable_monthly_escrow', $this->stripCommas($this->assumable_monthly_escrow));
-        $auction->saveMeta('assumable_loan_term_remaining', $this->assumable_loan_term_remaining);
-        $auction->saveMeta('assumable_loan_origination_date', $this->assumable_loan_origination_date);
-        $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
-        $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
-        $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
-        $auction->saveMeta('assumption_fee_responsibility', $this->assumption_fee_responsibility);
-        $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
-        $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
-        $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
-        $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
-        $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
-        $auction->saveMeta('target_closing_date', $this->target_closing_date);
-        $auction->saveMeta('occupant_status', $this->occupant_status);
-
-        // Exchange / Trade
-        $exchangeItemVal = $this->exchange_item;
-        if (is_null($exchangeItemVal)) $exchangeItemVal = [];
-        if (is_string($exchangeItemVal)) $exchangeItemVal = json_decode($exchangeItemVal, true) ?? [];
-        $auction->saveMeta('exchange_item', json_encode(array_values(array_filter((array) $exchangeItemVal))));
-        $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
-        $auction->saveMeta('exchange_item_value', $this->stripCommas($this->exchange_item_value));
-        $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);
-        $auction->saveMeta('additional_cash', $this->stripCommas($this->additional_cash));
-        $auction->saveMeta('value_determination', $this->value_determination);
-        $auction->saveMeta('exchange_transfer_method', $this->exchange_transfer_method);
-        $auction->saveMeta('exchange_liens_disclosure', $this->exchange_liens_disclosure);
-        $auction->saveMeta('exchange_liens_details', $this->exchange_liens_details);
-        $auction->saveMeta('exchange_inspection_rights', $this->exchange_inspection_rights);
 
         // Lease Option
-        $auction->saveMeta('lease_option_price', $this->stripCommas($this->lease_option_price));
-        $auction->saveMeta('lease_option_terms', $this->lease_option_terms);
-        $auction->saveMeta('lease_option_duration', $this->lease_option_duration);
-        $auction->saveMeta('lease_option_payment', $this->stripCommas($this->lease_option_payment));
-        $auction->saveMeta('lease_option_conditions', $this->lease_option_conditions);
-        $auction->saveMeta('has_option_fee', $this->has_option_fee);
-        $auction->saveMeta('option_fee_amount', $this->stripCommas($this->option_fee_amount));
         $auction->saveMeta('seller_lease_option_fee_credit', $this->seller_lease_option_fee_credit);
         $auction->saveMeta('seller_lease_option_fee_credit_percent', $this->seller_lease_option_fee_credit_percent);
         $auction->saveMeta('seller_lease_option_maintenance', $this->seller_lease_option_maintenance);
         $auction->saveMeta('seller_lease_option_extension_terms', $this->seller_lease_option_extension_terms);
 
         // Lease Purchase
-        $auction->saveMeta('lease_purchase_price', $this->stripCommas($this->lease_purchase_price));
-        $auction->saveMeta('lease_purchase_terms', $this->lease_purchase_terms);
-        $auction->saveMeta('lease_purchase_duration', $this->lease_purchase_duration);
-        $auction->saveMeta('lease_purchase_payment', $this->stripCommas($this->lease_purchase_payment));
-        $auction->saveMeta('lease_purchase_conditions', $this->lease_purchase_conditions);
         $auction->saveMeta('seller_lease_purchase_rent_credit', $this->seller_lease_purchase_rent_credit);
         $auction->saveMeta('seller_lease_purchase_rent_credit_type', $this->seller_lease_purchase_rent_credit_type);
         $auction->saveMeta('seller_lease_purchase_rent_credit_amount', $this->stripCommas($this->seller_lease_purchase_rent_credit_amount));
@@ -3492,19 +3276,8 @@ class SellerOfferListing extends Component
         $auction->saveMeta('lease_purchase_option_fee_amount', $this->stripCommas($this->lease_purchase_option_fee_amount));
 
         // Cryptocurrency
-        $auction->saveMeta('cryptocurrency_type', $this->cryptocurrency_type);
-        $auction->saveMeta('crypto_percentage', $this->stripCommas($this->crypto_percentage));
-        $auction->saveMeta('cash_percentage_crypto', $this->stripCommas($this->cash_percentage_crypto));
-        $auction->saveMeta('crypto_transfer_timing', $this->crypto_transfer_timing);
-        $auction->saveMeta('crypto_transfer_timing_other', $this->crypto_transfer_timing_other);
-        $auction->saveMeta('crypto_exchange_method', $this->crypto_exchange_method);
-        $auction->saveMeta('crypto_custodian_wallet', $this->crypto_custodian_wallet);
-        $auction->saveMeta('crypto_transaction_fees', $this->crypto_transaction_fees);
 
         // NFT
-        $auction->saveMeta('nft_description', $this->nft_description);
-        $auction->saveMeta('nft_percentage', $this->nft_percentage);
-        $auction->saveMeta('cash_percentage_nft', $this->cash_percentage_nft);
 
         // Amenities and Features
         $auction->saveMeta('tenant_require', json_encode($this->tenant_require));
@@ -3722,44 +3495,8 @@ class SellerOfferListing extends Component
         $auction->saveMeta('virtual_showings_count', $this->virtual_showings_count);
 
         // Sale Terms Questions
-        $auction->saveMeta('initial_deposit_type', $this->initial_deposit_type);
-        $auction->saveMeta('initial_deposit_requested', $this->initial_deposit_requested);
-        $auction->saveMeta('initial_deposit_timeframe', $this->initial_deposit_timeframe);
-        $auction->saveMeta('initial_deposit_timeframe_other', $this->initial_deposit_timeframe_other);
-        $auction->saveMeta('additional_deposit_type', $this->additional_deposit_type);
-        $auction->saveMeta('additional_deposit_requested', $this->additional_deposit_requested);
-        $auction->saveMeta('additional_deposit_timeframe', $this->additional_deposit_timeframe);
-        $auction->saveMeta('additional_deposit_timeframe_other', $this->additional_deposit_timeframe_other);
-        $auction->saveMeta('escrow_agent_preference', $this->escrow_agent_preference);
-        $auction->saveMeta('preferred_inspection_period', $this->preferred_inspection_period);
-        $auction->saveMeta('inspection_contingency_preference', $this->inspection_contingency_preference);
-        $auction->saveMeta('appraisal_contingency_preference', $this->appraisal_contingency_preference);
-        $auction->saveMeta('appraisal_contingency_period', $this->appraisal_contingency_period);
-        $auction->saveMeta('financing_contingency_preference', $this->financing_contingency_preference);
-        $auction->saveMeta('financing_contingency_period', $this->financing_contingency_period);
-        $auction->saveMeta('sale_of_buyer_property_contingency', $this->sale_of_buyer_property_contingency);
-        $auction->saveMeta('sale_of_buyer_property_period', $this->sale_of_buyer_property_period);
-        $auction->saveMeta('seller_contribution_credit_offered', $this->seller_contribution_credit_offered);
-        $auction->saveMeta('seller_contribution_amount_details', $this->seller_contribution_amount_details);
-        $auction->saveMeta('possession_preference', $this->possession_preference);
-        $auction->saveMeta('possession_details', $this->possession_details);
-        $auction->saveMeta('included_personal_property', $this->included_personal_property);
-        $auction->saveMeta('excluded_items', $this->excluded_items);
-        $auction->saveMeta('home_warranty_offered', $this->home_warranty_offered);
-        $auction->saveMeta('home_warranty_amount_details', $this->home_warranty_amount_details);
-        $auction->saveMeta('hoa_condo_association_terms', $this->hoa_condo_association_terms);
-        $auction->saveMeta('additional_seller_sale_terms', $this->additional_seller_sale_terms);
 
         // Estimated Payment Assumptions
-        $auction->saveMeta('payment_down_payment_pct',      $this->stripCommas($this->payment_down_payment_pct));
-        $auction->saveMeta('payment_interest_rate',         $this->stripCommas($this->payment_interest_rate));
-        $auction->saveMeta('payment_loan_term',             $this->stripCommas($this->payment_loan_term));
-        $auction->saveMeta('payment_annual_property_taxes', $this->stripCommas($this->payment_annual_property_taxes));
-        $auction->saveMeta('payment_monthly_insurance',     $this->stripCommas($this->payment_monthly_insurance));
-        $auction->saveMeta('payment_hoa_fee_amount',        $this->stripCommas($this->payment_hoa_fee_amount));
-        $auction->saveMeta('payment_hoa_fee_frequency',     $this->payment_hoa_fee_frequency);
-        $auction->saveMeta('payment_pmi_rate',              $this->stripCommas($this->payment_pmi_rate));
-        $auction->saveMeta('payment_show_buydown_options',  $this->payment_show_buydown_options ? '1' : '0');
 
         // Tax, Legal, HOA & Disclosures tab
         $auction->saveMeta('parcel_id', $this->parcel_id);

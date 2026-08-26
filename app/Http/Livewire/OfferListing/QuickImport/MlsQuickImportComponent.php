@@ -11,6 +11,7 @@ use App\Services\ListingImport\QuickImport\MlsQuickImportResult;
 use App\Services\ListingImport\QuickImport\MlsQuickImportService;
 use App\Support\Listing\ListingGalleryView;
 use App\Support\Listing\ListingPhotoEntry;
+use App\Support\Listing\PropertyTypeVocabulary;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -81,6 +82,17 @@ abstract class MlsQuickImportComponent extends Component
     // ── BidYourOffer answers ────────────────────────────────────────────────
 
     /** 'Traditional' | 'Bidding Period' — the platform's canonical terminology. */
+    /**
+     * The MLS record's property type, carried for the terms step.
+     *
+     * NOT a seller-entered term and never rendered as an editable input here —
+     * it is an imported MLS fact. It is held because the canonical Sale Terms
+     * tab branches on it (Vacant Land, for one, has no Occupant Type question),
+     * and a terms screen that cannot see the property type would show the wrong
+     * questions for the property it was imported from.
+     */
+    public string $property_type = '';
+
     public string $auction_type = '';
 
     /** Bidding Period duration; read only when auction_type is a bidding format. */
@@ -116,6 +128,77 @@ abstract class MlsQuickImportComponent extends Component
      * @return array<string, array{label: string, type: string, options?: list<string>, help?: string, section: string, when?: string}>
      */
     abstract public function questionSchema(): array;
+
+    /**
+     * The canonical terms partial this role renders, or null to fall back to
+     * questionSchema().
+     *
+     * A role that returns a partial name is saying "my terms step IS the manual
+     * flow's terms tab" — the same blade, the same fields, the same labels and
+     * conditionals — and its questionSchema() is then unused for rendering.
+     *
+     * This exists because a quick-import-only field list is the thing that goes
+     * wrong. Seller once had one: nineteen hand-copied fields, its own option
+     * vocabularies, and no conditional sections at all, so a seller who came in
+     * through quick import could not state seller financing, a lease option, a
+     * crypto split, a bidding-period reserve, or a payment assumption. Pointing
+     * at the canonical partial is what makes that impossible to reintroduce
+     * quietly: there is no second list to forget to update.
+     */
+    public function canonicalTermsPartial(): ?string
+    {
+        return null;
+    }
+
+    public function usesCanonicalTerms(): bool
+    {
+        return $this->canonicalTermsPartial() !== null;
+    }
+
+    /**
+     * Put the MLS-derived asking price where this role's terms step reads it.
+     *
+     * Schema-driven roles keep it in $terms; a canonical role holds the real
+     * Livewire property the manual tab binds, so it must be written there
+     * instead or the seeded figure would be invisible on the form.
+     */
+    protected function applySeededPrice(string $seed): void
+    {
+        if (! isset($this->terms[$this->priceField()]) || $this->terms[$this->priceField()] === '') {
+            $this->terms[$this->priceField()] = $seed;
+        }
+    }
+
+    /**
+     * Write the canonical terms for a role that renders the canonical partial.
+     *
+     * Overridden by such roles to delegate to the shared save routine the manual
+     * flow uses. Never reached by a schema-driven role.
+     */
+    protected function persistCanonicalTerms(object $auction): void
+    {
+        // no-op — a canonical role overrides this.
+    }
+
+    /**
+     * Canonical-mode required-field check.
+     *
+     * @return list<string>
+     */
+    protected function missingCanonicalTerms(): array
+    {
+        return [];
+    }
+
+    /**
+     * Canonical-mode review rows: [label => display value].
+     *
+     * @return array<string, string>
+     */
+    public function canonicalTermsReview(): array
+    {
+        return [];
+    }
 
     /** Price meta key for this role: what the user is asking for. */
     abstract public function priceField(): string;
@@ -223,9 +306,21 @@ abstract class MlsQuickImportComponent extends Component
             return;
         }
 
-        $this->listingId  = $auction->id;
-        $this->headline   = $result->headline;
-        $this->photoCount = $result->photoCount();
+        $this->listingId     = $auction->id;
+        $this->headline      = $result->headline;
+        $this->photoCount    = $result->photoCount();
+        // NORMALISED, not copied. The canonical terms partials gate their
+        // conditional sections on an EXACT match against BYO vocabulary
+        // ("Residential Property" / "Commercial Property" for landlord), and a
+        // feed says "Residential Lease". Carrying the feed's word through meant
+        // fourteen landlord sections silently never rendered.
+        //
+        // The feed's own value is not lost: it stays in the cached Bridge record
+        // and is written to meta as mls_source_property_type by the draft writer.
+        $this->property_type = PropertyTypeVocabulary::forRole(
+            (string) ($result->facts['property_type'] ?? ''),
+            $this->role(),
+        );
 
         // Seed the price the user is asking, as a starting point they can change.
         // What may legitimately be seeded is role-specific — see seededPrice() —
@@ -233,9 +328,8 @@ abstract class MlsQuickImportComponent extends Component
         // a lease record, and guessing wrong publishes a wrong number.
         $seed = $this->seededPrice($result);
 
-        if ($seed !== null
-            && (! isset($this->terms[$this->priceField()]) || $this->terms[$this->priceField()] === '')) {
-            $this->terms[$this->priceField()] = $seed;
+        if ($seed !== null) {
+            $this->applySeededPrice($seed);
         }
 
         $this->step = self::STEP_METHOD;
@@ -294,21 +388,28 @@ abstract class MlsQuickImportComponent extends Component
     }
 
     /**
-     * The listing methods this environment actually offers.
+     * The listing methods this role may choose from.
      *
-     * Bidding Period is gated by config/bya_beta.php exactly as the wizard gates
-     * it. Reading the same flag here is what stops this flow becoming a way in
-     * to a format the rest of the product is not showing yet.
+     * Both, unconditionally, because that is what the canonical Create Listing
+     * flow offers. `offer-seller-tabs/commission-based/listing-details.blade.php`
+     * and its landlord counterpart render the Listing Type select with
+     * "Bidding Period" and "Traditional" and NO flag around either — the
+     * bya_beta.bidding_period_enabled gate was deliberately lifted for Seller
+     * and Landlord (see the "restored for Seller/Landlord (Create Offer)" note
+     * on both partials) and now survives only as a mount() default for a blank
+     * auction_type. Buyer and Tenant remain Traditional-only via the gate in
+     * their own partials, and nothing here touches them.
+     *
+     * This used to consult that flag, which meant quick import silently offered
+     * a smaller set of listing methods than the manual wizard for the same role
+     * — a listing created through the shortened path could not be a Bidding
+     * Period listing at all. The requirements that come WITH the choice are
+     * unchanged: chooseMethod()/continueToTerms() still demand auction_time for
+     * a bidding format, exactly as the wizard does.
      */
     public function availableMethods(): array
     {
-        $methods = ['Traditional'];
-
-        if (config('bya_beta.bidding_period_enabled')) {
-            $methods[] = 'Bidding Period';
-        }
-
-        return $methods;
+        return ['Traditional', 'Bidding Period'];
     }
 
     public function backToMethod(): void
@@ -519,14 +620,33 @@ abstract class MlsQuickImportComponent extends Component
             $this->photoCount = count($gallery);
         }
 
+        // `layouts.main` is the application shell every other full-page Livewire
+        // component in this codebase extends, and the only layout that carries
+        // @livewireStyles / @livewireScripts and the Bootstrap stylesheet this
+        // template's markup is written against.
+        //
+        // This used to say ->layout('layouts.app'), which is the untouched
+        // Laravel Breeze starter layout: Tailwind, no Bootstrap, and — the part
+        // that mattered — no Livewire assets. The page still rendered and still
+        // returned 200, so nothing looked wrong server-side, but the browser
+        // received a Livewire component with no Livewire runtime: wire:click
+        // never fired, so "Find My Listing" issued no request at all, and with
+        // @livewireStyles absent the [wire:loading] rule that hides the
+        // "Searching…" span was missing too, leaving it visible from page load.
+        // The result read as a hung lookup and was neither.
+        //
+        // ->extends()->section() rather than ->layout(): layouts.main is a
+        // @yield('content') layout, not a {{ $slot }} component layout.
         return view('livewire.offer-listing.quick-import.mls-quick-import', [
             'role'        => $this->role(),
             'gallery'     => $gallery,
             'schema'      => $this->questionSchema(),
+            'termsPartial' => $this->canonicalTermsPartial(),
+            'termsReview'  => $this->usesCanonicalTerms() ? $this->canonicalTermsReview() : [],
             'methods'     => $this->availableMethods(),
             'mlsDetails'  => $this->mlsDetailsFor($auction),
             'priceField'  => $this->priceField(),
-        ])->layout('layouts.app');
+        ])->extends('layouts.main')->section('content');
     }
 
     // ─── Internals ───────────────────────────────────────────────────────────
@@ -577,6 +697,18 @@ abstract class MlsQuickImportComponent extends Component
             $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
         );
 
+        // A canonical role stores through the SAME routine the manual flow uses,
+        // so a quick-imported listing and a manually created one are written by
+        // one piece of code rather than two that must be kept in step.
+        //
+        // It does NOT return here. A canonical role may still declare a small
+        // schema for questions whose canonical home is a DIFFERENT tab — those
+        // are stored by the loop below exactly as they always were. For a role
+        // with no such questions the schema is empty and the loop is a no-op.
+        if ($this->usesCanonicalTerms()) {
+            $this->persistCanonicalTerms($auction);
+        }
+
         foreach ($this->questionSchema() as $field => $spec) {
             if (($spec['type'] ?? 'text') === 'multiselect') {
                 $selected = $this->multiTerms[$field] ?? [];
@@ -611,7 +743,9 @@ abstract class MlsQuickImportComponent extends Component
      */
     protected function missingRequiredTerms(): array
     {
-        $missing = [];
+        // Canonical requirements first, then any supplementary question that
+        // declares itself required — both lists matter for a canonical role.
+        $missing = $this->usesCanonicalTerms() ? $this->missingCanonicalTerms() : [];
 
         foreach ($this->questionSchema() as $field => $spec) {
             if (empty($spec['required'])) {

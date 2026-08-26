@@ -70,6 +70,43 @@ class MlsMultiSelectCompatibilityTest extends TestCase
         'Canal/Lake For Irrigation', 'Private', 'Public', 'Well', 'Well Required', 'None', 'Other',
     ];
 
+    /**
+     * The Landlord "Floor Covering" option list, from
+     * offer-landlord-tabs/commission-based/property-preferences.blade.php.
+     * Mirrors MlsFactVocabulary::floorCoverings().
+     */
+    /**
+     * Array-prop canonical keys that reach the form from BRIDGE ONLY, never from
+     * the URL/text parser.
+     *
+     * The providers below drive raw MLS TEXT through
+     * MlsListingImportService::parseFields(), so a key the parser does not emit
+     * cannot be audited there — asserting it would only prove the parser has no
+     * label for it. These keys are audited instead by
+     * {@see \Tests\Feature\ListingImport\BridgeFactReconciliationTest}, which
+     * drives the real Bridge record through the real import and checks the stored
+     * option tokens, plus the vocabulary filter's own unit coverage.
+     *
+     * This is an exemption from WHERE a key is audited, not from WHETHER it is.
+     * A new array field that appears in neither place still fails the inventory
+     * tests below.
+     *
+     * @var list<string>
+     */
+    private const BRIDGE_ONLY_ARRAY_KEYS = [
+        // Landlord Floor Covering. RESO `Flooring` → `*floor_covering`; the
+        // parser has no "Flooring:" label for the landlord form.
+        'flooring',
+    ];
+
+    private const FLOOR_COVERING_OPTIONS = [
+        'Bamboo', 'Brick/Stone', 'Carpet', 'Ceramic Tile', 'Concrete', 'Cork',
+        'Engineered Hardwood', 'Epoxy', 'Forestry Stewardship Certified', 'Granite',
+        'Laminate', 'Linoleum', 'Luxury Vinyl', 'Marble', 'Parquet', 'Porcelain Tile',
+        'Quarry Tile', 'Reclaimed Wood', 'Recycled/Composite Flooring', 'Slate',
+        'Terrazzo', 'Tile', 'Travertine', 'Vinyl', 'Wood', 'Other',
+    ];
+
     private const ROOF_TYPE_OPTIONS = [
         'Built-Up', 'Cement', 'Concrete', 'Membrane', 'Metal', 'Roof Over',
         'Shake', 'Shingle', 'Slate', 'Tile', 'Other',
@@ -525,6 +562,32 @@ class MlsMultiSelectCompatibilityTest extends TestCase
         );
     }
 
+    /**
+     * The Bridge-only exemption may not be used to hide a key the parser DOES
+     * emit. If the parser learns a label for one of these, it belongs in the
+     * strict provider like everything else.
+     */
+    public function test_bridge_only_array_keys_are_genuinely_not_parser_emitted(): void
+    {
+        /** @var MlsListingImportService $service */
+        $service = app(MlsListingImportService::class);
+
+        // Raw text that names every exempt field explicitly. If the parser had a
+        // label for one, this is the text that would make it emit.
+        $result = $service->import('', 'Monthly Rent: $2,000 | Flooring: Laminate, Ceramic Tile');
+
+        $this->assertTrue($result['success']);
+
+        foreach (self::BRIDGE_ONLY_ARRAY_KEYS as $key) {
+            $this->assertArrayNotHasKey(
+                $key,
+                $result['data'],
+                "The parser now emits '{$key}' — move it out of BRIDGE_ONLY_ARRAY_KEYS "
+                . 'and into the strict provider, where its option tokens get audited.'
+            );
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Inventory: every * field in MlsFieldMap is covered by a strict test
     // ═══════════════════════════════════════════════════════════════════════
@@ -545,11 +608,18 @@ class MlsMultiSelectCompatibilityTest extends TestCase
             if (!str_starts_with($propNameRaw, '*')) {
                 continue;
             }
+            if (in_array($canonicalKey, self::BRIDGE_ONLY_ARRAY_KEYS, true)) {
+                // Audited in BridgeFactReconciliationTest instead — see the note
+                // on BRIDGE_ONLY_ARRAY_KEYS.
+                continue;
+            }
+
             $this->assertContains(
                 $canonicalKey,
                 $strictKeys,
                 "Seller array-prop field '$canonicalKey' (→ $propNameRaw) is NOT covered " .
-                "by this compatibility audit — add it to sellerStrictCompatibilityProvider."
+                "by this compatibility audit — add it to sellerStrictCompatibilityProvider, " .
+                "or to BRIDGE_ONLY_ARRAY_KEYS if the parser cannot emit it."
             );
         }
     }
@@ -569,11 +639,18 @@ class MlsMultiSelectCompatibilityTest extends TestCase
             if (!str_starts_with($propNameRaw, '*')) {
                 continue;
             }
+            if (in_array($canonicalKey, self::BRIDGE_ONLY_ARRAY_KEYS, true)) {
+                // Audited in BridgeFactReconciliationTest instead — see the note
+                // on BRIDGE_ONLY_ARRAY_KEYS.
+                continue;
+            }
+
             $this->assertContains(
                 $canonicalKey,
                 $strictKeys,
                 "Landlord array-prop field '$canonicalKey' (→ $propNameRaw) is NOT covered " .
-                "by this compatibility audit — add it to landlordStrictCompatibilityProvider."
+                "by this compatibility audit — add it to landlordStrictCompatibilityProvider, " .
+                "or to BRIDGE_ONLY_ARRAY_KEYS if the parser cannot emit it."
             );
         }
     }

@@ -272,6 +272,38 @@ class MlsListingPrefillServiceTest extends TestCase
             'waterfront'      => 'waterfront',
             'pool'            => 'pool',
             'garage'          => 'garage',
+
+            // ── Bridge reconciliation ───────────────────────────────────────
+            // Construction, systems, land, tax/legal and hazard facts. Each has
+            // a canonical BidYourOffer field AND an MlsFieldMap target for both
+            // Seller and Landlord, each target was confirmed rendered on the
+            // live form with no property-type restriction, and each was being
+            // fetched from the feed and discarded before this.
+            //
+            // Objective property characteristics only — nothing authored, no
+            // imagery, no contact data, no transaction terms.
+            'appliances'            => 'appliances',
+            'constructionMaterials' => 'exterior_construction',
+            'cooling'               => 'air_conditioning',
+            'heating'               => 'heating_fuel',
+            'foundationDetails'     => 'foundation',
+            'interiorFeatures'      => 'interior_features',
+            'roof'                  => 'roof_type',
+            'sewer'                 => 'sewer',
+            'utilities'             => 'utilities',
+            'waterSource'           => 'water',
+            'waterfrontFeatures'    => 'water_access',
+            'parcelNumber'          => 'tax_id',
+            'taxLegalDescription'   => 'legal_description',
+            'taxYear'               => 'tax_year',
+            'buildingAreaTotal'     => 'building_size_sqft',
+            'floodZoneCode'         => 'flood_zone_code',
+
+            // Role-asymmetric: flooring reaches Landlord only, furnished reaches
+            // Seller only. MlsFieldMap enforces which, so the allow-list simply
+            // permits the fact and does not restate the split.
+            'flooring'              => 'flooring',
+            'furnished'             => 'furnished',
         ], MlsListingPrefillService::ALLOWED_FIELDS);
     }
 
@@ -295,9 +327,32 @@ class MlsListingPrefillServiceTest extends TestCase
     public static function deliberatelyExcludedCandidateProperties(): array
     {
         return [
+            'occupancy: OccupantType belongs to a user-controlled terms surface' => [
+                'occupantType',
+                'occupant_status lives on the Sale Terms / Leasing Terms tab, which is the '
+                . "user's statement of how they intend to transact. The feed's view of who "
+                . 'occupies the property today is not that claim, and there is no MlsFieldMap '
+                . 'target for it on either role.',
+            ],
+            'subdivision: no canonical destination on either role' => [
+                'subdivisionName',
+                'The word appears in a legal-description tooltip and, on Seller, as a '
+                . 'vacant-land CURRENT-USE category — a different claim from the name of a '
+                . 'development. The only neighborhood_* properties are broker fee fields. '
+                . 'Already shown to the user via the presenter Community section.',
+            ],
+            'building features: commercial fit-out vocabulary, not a RESO match' => [
+                'buildingFeatures',
+                'building_features offers Loading Dock, Truck Well, Freight Elevator, Clear '
+                . 'Span, High Bays. RESO BuildingFeatures carries nothing shaped like that, '
+                . 'so a mapping would write commercial fit-out claims onto a house.',
+            ],
             'pets: no wire:model binding for pet_policy on any Create Offer tab' => [
                 'petsAllowed',
-                'pet_policy has no blade binding — importing it writes state the user cannot see or correct',
+                'pet_policy is an INACTIVE product field: it has no wire:model binding on any '
+                . 'Create Offer tab, so there is no active canonical destination. This is a '
+                . 'dormant field, not a failed import — importing would write state the user '
+                . 'can neither see nor correct, and the fix is to wire the field, not the map.',
             ],
             'standardStatus: no form target on either role' => [
                 'standardStatus',

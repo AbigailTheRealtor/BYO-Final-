@@ -29,6 +29,15 @@
     $is_rent_include_visible = is_array($this->rent_includes ?? null) && in_array('Other', $this->rent_includes ?? []);
     $is_update_lease_term_option_visible = is_array($desired_lease_length ?? null) && in_array('Other', $desired_lease_length ?? []);
 
+    // The three option lists this partial renders. They used to be inherited
+    // from whichever page included it — only the manual Create page defined
+    // them — so the partial fataled the moment MLS Quick Import opened these
+    // sections. Defined here now, from one shared source, so the partial is
+    // self-contained regardless of its host.
+    $ownerPays     = \App\Support\Listing\LandlordLeaseTermsOptions::ownerPays();
+    $rent_includes = \App\Support\Listing\LandlordLeaseTermsOptions::rentIncludes();
+    $tenantPays    = \App\Support\Listing\LandlordLeaseTermsOptions::tenantPays();
+
     $tenantPaysIconMap = [
         'Association Fees'        => 'fa-solid fa-building-columns',
         'Capital Expenses'        => 'fa-solid fa-money-bill-trend-up',

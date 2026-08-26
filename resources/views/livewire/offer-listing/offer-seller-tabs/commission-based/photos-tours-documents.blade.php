@@ -96,7 +96,35 @@
     @if (!empty($propertyPhotos))
         <div id="photo-gallery-sortable-seller" class="d-flex flex-wrap gap-3 mt-1">
             @foreach ($propertyPhotos as $index => $photo)
-                <div data-filename="{{ $photo }}"
+                {{--
+                    TWO STORED SHAPES, ONE GALLERY.
+                    A user upload is stored as a bare filename string; an MLS
+                    photograph is stored as a ListingPhotoEntry array carrying an
+                    absolute provider URL. Echoing $photo directly assumed the
+                    first shape and raised
+                    "htmlspecialchars(): Argument #1 must be of type string,
+                    array given" the moment a quick-imported listing was edited.
+
+                    ListingPhotoEntry is the single definition of that shape, so
+                    it decides here too — never a json_encode() or a cast to
+                    quieten Blade, which would put a serialised array in a src
+                    attribute and a provider photo in a local path.
+
+                    Resolved per item rather than through ListingGalleryView
+                    because this list must stay INDEX-ALIGNED with
+                    $propertyPhotos: movePhotoUp/movePhotoDown/deletePropertyPhoto
+                    are given $index and act on that array. A filtered gallery
+                    would renumber the grid and point those actions at the wrong
+                    photograph.
+                --}}
+                @php
+                    $entry = \App\Support\Listing\ListingPhotoEntry::fromStored($photo);
+                    $photoKey = $entry?->key() ?? (is_string($photo) ? $photo : '');
+                    $photoSrc = $entry !== null && $entry->isMls()
+                        ? $entry->url
+                        : \App\Support\Storage\ListingMediaUrl::get('auction/images/' . ($entry->filename ?? (is_string($photo) ? $photo : '')));
+                @endphp
+                <div data-filename="{{ $photoKey }}"
                     style="position:relative;width:185px;border:2px solid {{ $index === 0 ? '#049399' : '#ddd' }};border-radius:8px;overflow:hidden;padding:8px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08);cursor:grab;">
                     @if ($index === 0)
                         <div class="text-center mb-1"
@@ -106,7 +134,7 @@
                     @else
                         <div style="height:22px;"></div>
                     @endif
-                    <img src="{{ \App\Support\Storage\ListingMediaUrl::get('auction/images/' . $photo) }}"
+                    <img src="{{ $photoSrc }}"
                         style="width:100%;height:120px;object-fit:cover;border-radius:4px;" />
                     <div class="d-flex gap-1 mt-2">
                         <button type="button"

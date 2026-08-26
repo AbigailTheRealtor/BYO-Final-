@@ -112,7 +112,11 @@ class LandlordQuickImportRentTest extends TestCase
         $this->seedSaleRecord();
 
         $c = $this->landlordThroughToTerms()
-            ->set('terms', ['desired_rental_amount' => '4321'])
+            // The rent is a CANONICAL Leasing Terms property now — the terms step
+            // renders the manual tab, which binds it directly — so it is set on
+            // the property rather than in the schema-driven $terms bag. Same key,
+            // same figure, same storage.
+            ->set('desired_rental_amount', '4321')
             ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
             ->call('continueToReview')
             ->assertSet('step', 'review');
@@ -147,7 +151,11 @@ class LandlordQuickImportRentTest extends TestCase
         $this->seedSaleRecord();
 
         $c = $this->landlordThroughToTerms()
-            ->set('terms', ['desired_rental_amount' => '4321'])
+            // The rent is a CANONICAL Leasing Terms property now — the terms step
+            // renders the manual tab, which binds it directly — so it is set on
+            // the property rather than in the schema-driven $terms bag. Same key,
+            // same figure, same storage.
+            ->set('desired_rental_amount', '4321')
             ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
             ->call('continueToReview');
         $c->call('publish');
@@ -175,10 +183,10 @@ class LandlordQuickImportRentTest extends TestCase
             ->call('findListing')
             ->call('acceptProperty');
 
-        $terms = $c->get('terms');
+        $rent = $c->get('desired_rental_amount');
 
         $this->assertTrue(
-            ! isset($terms['desired_rental_amount']) || $terms['desired_rental_amount'] === '',
+            $rent === '' || $rent === null,
             'a sale price must not be offered to the landlord as a monthly rent',
         );
     }
@@ -193,7 +201,7 @@ class LandlordQuickImportRentTest extends TestCase
             ->call('findListing')
             ->call('acceptProperty');
 
-        $this->assertSame('100000', (string) ($c->get('terms')['desired_rental_amount'] ?? ''));
+        $this->assertSame('100000', (string) $c->get('desired_rental_amount'));
     }
 
     public function test_publish_is_unreachable_until_the_landlord_states_a_rent(): void
@@ -226,12 +234,17 @@ class LandlordQuickImportRentTest extends TestCase
 
         // Seller still stores to maximum_budget, and the list price still seeds it —
         // for a sale record that IS the asking price.
+        //
+        // The seeded figure now lands on the canonical $maximum_budget property
+        // rather than in the $terms bag, because Seller's terms step renders the
+        // canonical Sale Terms tab and that tab binds the property directly. The
+        // quantity, the source and the storage key are unchanged.
         $this->assertSame('maximum_budget', $c->instance()->priceField());
-        $this->assertSame('100000', (string) ($c->get('terms')['maximum_budget'] ?? ''));
+        $this->assertSame('100000', (string) $c->get('maximum_budget'));
 
         $c->call('chooseMethod', 'Traditional')->call('continueToTerms')
-          ->set('terms', ['maximum_budget' => '777777'])
-          ->set('multiTerms', ['offered_financing' => ['Cash']])
+          ->set('maximum_budget', '777777')
+          ->set('offered_financing', ['Cash'])
           ->call('continueToReview')
           ->assertSet('step', 'review');
 
@@ -263,6 +276,14 @@ class LandlordQuickImportRentTest extends TestCase
             $view,
             "the landlord view must read the key the quick import writes ({$key})",
         );
-        $this->assertArrayHasKey($key, $c->instance()->questionSchema());
+        // The key now comes from the CANONICAL Leasing Terms field set rather
+        // than a quick-import schema — that is the whole point of this change —
+        // so that is where it must appear.
+        $this->assertContains($key, $c->instance()::landlordLeasingTermsFields());
+        $this->assertArrayNotHasKey(
+            $key,
+            $c->instance()->questionSchema(),
+            'The rent must not be duplicated into the supplementary schema.'
+        );
     }
 }
