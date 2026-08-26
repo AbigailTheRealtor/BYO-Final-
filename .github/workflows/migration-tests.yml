@@ -93,10 +93,15 @@ jobs:
         # its expectation from the models rather than from the migrations, so it
         # needs no hand-maintained roster and catches the next gutted migration
         # without anyone remembering to update a list.
+        #
+        # Invoked once per file on purpose: PHPUnit takes a single test target
+        # from the command line and SILENTLY IGNORES additional paths, so
+        # `phpunit a.php b.php` runs only a.php and still exits 0. That is the
+        # same shape of false-green this step exists to prevent.
         run: |
-          php vendor/bin/phpunit --testdox \
-            tests/Feature/ModelTableExistenceTest.php \
-            tests/Feature/MissingCounterTablesSchemaTest.php
+          set -euo pipefail
+          php vendor/bin/phpunit --testdox tests/Feature/ModelTableExistenceTest.php
+          php vendor/bin/phpunit --testdox tests/Feature/MissingCounterTablesSchemaTest.php
 
   migrate-fresh-pgsql:
     name: Run the full migration chain on PostgreSQL 16 (no schema dump)
