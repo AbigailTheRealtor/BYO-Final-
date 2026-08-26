@@ -471,11 +471,45 @@ class SellerAgentAuctionCounterTerm extends Component
     {
         $this->validate();
 
-        $auction = $this->pab->auction ?? SellerAgentAuction::find($this->pab->seller_agent_auction_id ?? null);
-        $isSeller = $auction && ($auction->user_id === Auth::id());
-        $isAgent  = ($this->pab->user_id === Auth::id());
-        if (!$isSeller && !$isAgent) {
+        // Re-resolved by query rather than through `$this->pab->auction`: that relation
+        // is declared `->withDefault()`, so a missing auction yields an empty model
+        // instead of null and the `$auction &&` test below could never fail closed.
+        $auction  = SellerAgentAuction::find($this->pab->seller_agent_auction_id ?? null);
+        $isSeller = $auction && ((int) $auction->user_id === (int) Auth::id());
+        $isAgent  = ((int) $this->pab->user_id === (int) Auth::id());
+        if (!Auth::check() || !$auction || (!$isSeller && !$isAgent)) {
             abort(403, 'You are not authorized to submit counter terms for this bid.');
+        }
+
+        // $auctionId is a public property and the create below reads it, so an
+        // untouched-bid / foreign-auction pair could otherwise be written.
+        if ((int) $this->auctionId !== (int) $auction->id) {
+            abort(403, 'You are not authorized to submit counter terms for this listing.');
+        }
+
+        // The guard above proves the caller is a party to THIS bid. It says nothing
+        // about $counterTermId, which is a plain public property the client can set to
+        // any value on this request. Left unchecked, a legitimate party to one
+        // negotiation could name a counter row from another and have it rewritten —
+        // and because the update never touches user_id, the attacker's terms would
+        // stay attributed to the victim.
+        //
+        // seller_counter_terms carries BOTH seller_agent_auction_bid_id and
+        // seller_agent_auction_id (both NOT NULL), so the row can be pinned to this
+        // exact negotiation on both axes. The user_id clause additionally enforces the
+        // rule mount() already applies when it selects the editable row: a counter is
+        // edited by the party who created it, not merely by any party to the bid.
+        $existing = null;
+        if ($this->counterTermId) {
+            $existing = SellerCounterTerm::find($this->counterTermId);
+            if (
+                !$existing
+                || (int) $existing->user_id !== (int) Auth::id()
+                || (int) $existing->seller_agent_auction_bid_id !== (int) $this->pab->id
+                || (int) $existing->seller_agent_auction_id !== (int) $auction->id
+            ) {
+                abort(403, 'You are not authorized to modify these counter terms.');
+            }
         }
 
         try {
@@ -484,7 +518,8 @@ class SellerAgentAuctionCounterTerm extends Component
             $isEditing = (bool) $this->counterTermId;
 
             if ($this->counterTermId) {
-                $counterTerm = SellerCounterTerm::findOrFail($this->counterTermId);
+                // The instance authorized above, not a second lookup from client state.
+                $counterTerm = $existing;
                 $counterTerm->update([
                     'property_type'     => $this->property_type,
                     'parent_counter_id' => $isAgent ? $this->parentCounterId : null,
@@ -492,10 +527,12 @@ class SellerAgentAuctionCounterTerm extends Component
                     'updated_at'        => now(),
                 ]);
             } else {
+                // FK values taken from the authorized models rather than the mutable
+                // Livewire ids.
                 $counterTerm = SellerCounterTerm::create([
                     'user_id'                     => Auth::id(),
                     'seller_agent_auction_bid_id' => $this->pab->id,
-                    'seller_agent_auction_id'     => $this->auctionId,
+                    'seller_agent_auction_id'     => $auction->id,
                     'property_type'               => $this->property_type,
                     'parent_counter_id'           => $isAgent ? $this->parentCounterId : null,
                     'status'                      => 1,
