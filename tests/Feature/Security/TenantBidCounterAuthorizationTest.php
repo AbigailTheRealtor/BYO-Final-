@@ -45,20 +45,20 @@ use Tests\TestCase;
  * pair it with any listing's auction id, satisfy the "is bid owner" half, read the
  * counterparty's prefilled terms, and write a counter row into that negotiation.
  *
- * ── WHY THE POSITIVE CONTROLS ASSERT THE ATTEMPTED WRITE ────────────────────
+ * ── WHAT THE POSITIVE CONTROLS ASSERT ───────────────────────────────────────
  *
- * They capture the INSERT into `tenant_counter_bidding` and assert its bindings,
- * rather than asserting the row afterwards with assertDatabaseHas.
+ * That a legitimate counter bid PERSISTS — the row survives the transaction and
+ * its meta is written — not merely that an INSERT was attempted.
  *
- * That is not a workaround for a weakness in the fix — it is stronger for this
- * purpose, because it pins the exact foreign keys the component chose, which is
- * precisely the security property. It is also necessary: `saveAllMetaData()`
- * immediately afterwards throws on a freshly-migrated database, because
- * database/migrations/2025_09_29_152714_create_tenant_counter_bidding_meta_table.php
- * has a gutted `up()` (its real body sits unreferenced in `up_original()`), so
- * `tenant_counter_bidding_meta` is never created and the surrounding transaction
- * rolls the row back. That is a pre-existing schema defect entirely independent of
- * authorization, it is reported separately, and it is deliberately NOT fixed here.
+ * They could not do that when this file was written: `saveAllMetaData()` threw on
+ * every freshly-migrated database because `tenant_counter_bidding_meta` was never
+ * created by any migration, and the surrounding catch rolled the row back. That
+ * schema defect is now repaired by
+ * 2026_08_26_000001_create_missing_counter_tables_fix, so these assertions
+ * became possible and were tightened accordingly.
+ *
+ * The negative cases still assert that NO insert was attempted, which is the
+ * sharper statement for them.
  *
  * ── DISCIPLINE ──────────────────────────────────────────────────────────────
  *
@@ -168,21 +168,28 @@ class TenantBidCounterAuthorizationTest extends TestCase
     {
         $w = $this->world();
 
-        $bindings = $this->captureCounterInsert(function () use ($w) {
-            Livewire::actingAs($w['agentA'])
-                ->test(TenantAgentAuctionBidCounter::class, [
-                    'pab'   => $w['auctionA'],
-                    'bidId' => $w['bidA']->id,
-                ])
-                ->set('additional_details', 'AGENT-A-LEGITIMATE-COUNTER')
-                ->call('submit')
-                ->assertStatus(200);
-        });
+        Livewire::actingAs($w['agentA'])
+            ->test(TenantAgentAuctionBidCounter::class, [
+                'pab'   => $w['auctionA'],
+                'bidId' => $w['bidA']->id,
+            ])
+            ->set('additional_details', 'AGENT-A-LEGITIMATE-COUNTER')
+            ->call('submit')
+            ->assertStatus(200);
 
-        $this->assertNotNull($bindings, 'The legitimate counter bid was never written.');
-        $this->assertSame((int) $w['agentA']->id, (int) $bindings[0]);
-        $this->assertSame((int) $w['auctionA']->id, (int) $bindings[1]);
-        $this->assertSame((int) $w['bidA']->id, (int) $bindings[2]);
+        // The row must SURVIVE the transaction, not merely have been attempted.
+        $this->assertDatabaseHas('tenant_counter_bidding', [
+            'user_id'                     => $w['agentA']->id,
+            'tenant_agent_auction_id'     => $w['auctionA']->id,
+            'tenant_agent_auction_bid_id' => $w['bidA']->id,
+        ]);
+
+        $row = TenantCounterBidding::where('user_id', $w['agentA']->id)->latest('id')->first();
+        $this->assertSame(
+            'AGENT-A-LEGITIMATE-COUNTER',
+            $row->getMeta('additional_details'),
+            'The counter bid persisted but its meta did not.'
+        );
     }
 
     /** @test */
@@ -190,20 +197,20 @@ class TenantBidCounterAuthorizationTest extends TestCase
     {
         $w = $this->world();
 
-        $bindings = $this->captureCounterInsert(function () use ($w) {
-            Livewire::actingAs($w['ownerA'])
-                ->test(TenantAgentAuctionBidCounter::class, [
-                    'pab'   => $w['auctionA'],
-                    'bidId' => $w['bidA']->id,
-                ])
-                ->set('additional_details', 'OWNER-LEGITIMATE-COUNTER')
-                ->call('submit')
-                ->assertStatus(200);
-        });
+        Livewire::actingAs($w['ownerA'])
+            ->test(TenantAgentAuctionBidCounter::class, [
+                'pab'   => $w['auctionA'],
+                'bidId' => $w['bidA']->id,
+            ])
+            ->set('additional_details', 'OWNER-LEGITIMATE-COUNTER')
+            ->call('submit')
+            ->assertStatus(200);
 
-        $this->assertNotNull($bindings, 'The listing owner was refused their own negotiation.');
-        $this->assertSame((int) $w['ownerA']->id, (int) $bindings[0]);
-        $this->assertSame((int) $w['bidA']->id, (int) $bindings[2]);
+        $this->assertDatabaseHas('tenant_counter_bidding', [
+            'user_id'                     => $w['ownerA']->id,
+            'tenant_agent_auction_id'     => $w['auctionA']->id,
+            'tenant_agent_auction_bid_id' => $w['bidA']->id,
+        ]);
     }
 
     /** @test */
@@ -213,22 +220,22 @@ class TenantBidCounterAuthorizationTest extends TestCase
 
         // The two foreign keys must come from the re-resolved bid/auction, not
         // from client-modifiable public state, so the pair is always coherent.
-        $bindings = $this->captureCounterInsert(function () use ($w) {
-            Livewire::actingAs($w['agentA'])
-                ->test(TenantAgentAuctionBidCounter::class, [
-                    'pab'   => $w['auctionA'],
-                    'bidId' => $w['bidA']->id,
-                ])
-                ->call('submit');
-        });
+        Livewire::actingAs($w['agentA'])
+            ->test(TenantAgentAuctionBidCounter::class, [
+                'pab'   => $w['auctionA'],
+                'bidId' => $w['bidA']->id,
+            ])
+            ->call('submit');
 
-        $this->assertNotNull($bindings);
+        $row = TenantCounterBidding::where('user_id', $w['agentA']->id)->latest('id')->first();
+
+        $this->assertNotNull($row, 'The legitimate counter bid did not persist.');
         $this->assertSame(
             (int) $w['bidA']->tenant_agent_auction_id,
-            (int) $bindings[1],
+            (int) $row->tenant_agent_auction_id,
             'The stored auction id is not the auction that actually owns the bid.'
         );
-        $this->assertSame((int) $w['bidA']->id, (int) $bindings[2]);
+        $this->assertSame((int) $w['bidA']->id, (int) $row->tenant_agent_auction_bid_id);
     }
 
     // =====================================================================
@@ -503,20 +510,20 @@ class TenantBidCounterAuthorizationTest extends TestCase
             'status'                      => 1,
         ]);
 
-        $bindings = $this->captureCounterInsert(function () use ($w, $ownParent) {
-            Livewire::actingAs($w['agentA'])
-                ->test(TenantAgentAuctionBidCounter::class, [
-                    'pab'               => $w['auctionA'],
-                    'bidId'             => $w['bidA']->id,
-                    'parent_counter_id' => $ownParent->id,
-                ])
-                ->set('additional_details', 'CHAINED-COUNTER')
-                ->call('submit')
-                ->assertStatus(200);
-        });
+        Livewire::actingAs($w['agentA'])
+            ->test(TenantAgentAuctionBidCounter::class, [
+                'pab'               => $w['auctionA'],
+                'bidId'             => $w['bidA']->id,
+                'parent_counter_id' => $ownParent->id,
+            ])
+            ->set('additional_details', 'CHAINED-COUNTER')
+            ->call('submit')
+            ->assertStatus(200);
 
-        $this->assertNotNull($bindings, 'A legitimate counter chain was refused.');
-        $this->assertSame((int) $ownParent->id, (int) $bindings[4]);
+        $this->assertDatabaseHas('tenant_counter_bidding', [
+            'tenant_agent_auction_bid_id' => $w['bidA']->id,
+            'parent_counter_id'           => $ownParent->id,
+        ]);
     }
 
     // =====================================================================
