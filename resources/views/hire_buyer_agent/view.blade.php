@@ -333,22 +333,6 @@
             !empty(@$auction->get->video_link);
 
         /*
-         | Guest CTA amount, formatted once, for x-hire-agent.login-cta.
-         |
-         | SAME FIELD AS BEFORE. The legacy button read `$auction->get->budget` inline and this reads
-         | the same column — no substitution of a nearby budget-ish field, which is the mistake
-         | seller's maximum_budget fix already had to correct once.
-         |
-         | WHAT CHANGES IS THE ABSENT CASE. Inline, the markup was `${{ …->budget }}` with no guard,
-         | so a listing that carries no budget rendered a bare "$" beside "Login to Bid" — the
-         | dangling dollar sign visual QA caught on buyer. hasValue() treats null, '', '0' and
-         | whitespace as missing, so those resolve to null here and the badge is not emitted at all.
-         */
-        $byaCtaPrice = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->budget)
-            ? \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->budget)
-            : null;
-
-        /*
          | THE BUILDERS BELOW ARE HOISTED, NOT COPIED. Each block moved here verbatim from beside
          | the section that used it, under the SAME variable names, and the block it came from is
          | gone — so the deep conditions that read these names now read the one definition rather
@@ -2675,7 +2659,7 @@
              flag-off answer. The BRANCH is unchanged — same `! $auth_id` condition, same login
              route — only how the action is drawn. --}}
         @if ($byaDetailRedesign)
-        <x-hire-agent.login-cta :amount="$byaCtaPrice" />
+        <x-hire-agent.login-cta />
         @else
         <a href="{{ route('login') }}">
             <button class="btn w-100">

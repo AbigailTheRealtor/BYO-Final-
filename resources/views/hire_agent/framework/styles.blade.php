@@ -896,18 +896,5 @@
             padding-right: 0;
         }
     }
-
-    /* ── GUEST CTA AMOUNT ─────────────────────────────────────────────────────────────────────
-       The companion figure under x-hire-agent.login-cta. It reads as part of the button rather
-       than as a paragraph that happens to follow one, so it takes the button's own width and
-       sits tight beneath it. Tokens only — the whole point of the shared component is that no
-       role hand-writes this treatment. */
-    .hla-detail-page .hla-cta-amount {
-        margin-top: var(--viho-space-2xs);
-        text-align: center;
-        font-size: var(--viho-font-sm);
-        font-weight: var(--viho-weight-semibold);
-        color: var(--viho-label);
-    }
 @endif
 </style>

@@ -2263,7 +2263,7 @@
              flag-off answer. The BRANCH is unchanged — same `! $auth_id` condition, same login
              route — only how the action is drawn. --}}
         @if ($hsaDetailRedesign)
-        <x-hire-agent.login-cta :amount="$hsaCtaPrice" />
+        <x-hire-agent.login-cta />
         @else
         <a href="{{ route('login') }}">
             <button class="btn w-100">

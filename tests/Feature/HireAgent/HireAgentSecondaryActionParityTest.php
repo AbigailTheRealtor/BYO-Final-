@@ -39,7 +39,7 @@ use Tests\TestCase;
  * rather than normalised away, because "make the screenshots match" is precisely how an
  * authorization branch gets deleted for a visual reason.
  *
- * Assertions are on semantic hooks — the component's own `viho-btn` classes, `.hla-cta-amount`,
+ * Assertions are on semantic hooks — the component's own `viho-btn` classes,
  * `.hla-quick-share`, `.js-copy-link` — rather than on copy, so rewording a label does not fail
  * a test about where an action lives.
  */
@@ -165,6 +165,26 @@ class HireAgentSecondaryActionParityTest extends TestCase
     private function occurrences(string $html, string $needle): int
     {
         return substr_count($this->markup($html), $needle);
+    }
+
+    /**
+     * The redesigned sidebar card's inner markup.
+     *
+     * Scoped deliberately: several assertions here are of the form "X does not appear", and run
+     * against the whole document they would be answered by unrelated parts of the page — a price
+     * in a listing row, a button in a bid card. The card is the surface under review.
+     */
+    private function guestSidebarCard(string $html, string $role): string
+    {
+        $this->assertMatchesRegularExpression(
+            '/data-hire-agent-sidebar-card/',
+            $html,
+            "[$role] the redesigned sidebar card must render."
+        );
+
+        preg_match('/data-hire-agent-sidebar-card[^>]*>(.*?)<\/div>\s*<\/div>/s', $html, $m);
+
+        return $m[1] ?? '';
     }
 
     // ── 1-4: the legacy QR / share card ──────────────────────────────────────
@@ -315,9 +335,9 @@ class HireAgentSecondaryActionParityTest extends TestCase
             "[$role] flag off must keep the legacy CTA markup exactly."
         );
         $this->assertStringNotContainsString(
-            'hla-cta-amount',
+            'viho-btn-block',
             $html,
-            "[$role] the redesign's amount companion must not leak into the legacy CTA."
+            "[$role] the redesigned button must not leak into the legacy CTA."
         );
     }
 
@@ -338,11 +358,6 @@ class HireAgentSecondaryActionParityTest extends TestCase
 
         $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role, null)));
 
-        $this->assertStringNotContainsString(
-            'hla-cta-amount',
-            $html,
-            "[$role] no amount is known, so the companion must not be emitted at all."
-        );
         $this->assertDoesNotMatchRegularExpression(
             '/>\s*\$\s*</',
             $html,
@@ -350,35 +365,71 @@ class HireAgentSecondaryActionParityTest extends TestCase
         );
     }
 
-    /** Seller's approved maximum_budget CTA value still reaches the page, formatted. */
-    public function test_seller_keeps_its_maximum_budget_cta_amount(): void
+    /**
+     * NO REDESIGNED GUEST CTA RENDERS MONEY — on any role.
+     *
+     * Landlord's plain button is the reviewed standard, so the card holds the control and nothing
+     * else. Asserted as "no currency figure anywhere in the sidebar card" rather than as "not
+     * $550,000", because the failure being guarded against is a figure reappearing on ONE role,
+     * and that role's number is not knowable from here.
+     *
+     * @dataProvider roleProvider
+     */
+    public function test_no_redesigned_guest_cta_renders_a_monetary_amount(string $role): void
     {
         $this->enableRedesign();
+
+        $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role, '550000')));
+
+        $card = $this->guestSidebarCard($html, $role);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/\$\s*[\d,]/',
+            $card,
+            "[$role] the redesigned guest CTA must carry no monetary figure."
+        );
+        $this->assertStringNotContainsString(
+            'hla-cta-amount',
+            $card,
+            "[$role] the amount companion was removed and must not return."
+        );
+        $this->assertStringContainsString('Log in to bid', $card, "[$role] the CTA itself must remain.");
+    }
+
+    /**
+     * The DATA is untouched — only the redesigned CTA stopped showing it.
+     *
+     * Seller's $hsaCtaPrice survives because three other CTA branches legitimately display it,
+     * including the flag-off guest button. This asserts the value still resolves from
+     * maximum_budget and still reaches one of those branches, so "removed from the CTA card" can
+     * never quietly become "the figure was deleted".
+     */
+    public function test_seller_still_presents_its_maximum_budget_figure_where_it_legitimately_belongs(): void
+    {
+        $this->disableRedesign();
 
         $listing = $this->makeListing('seller', '550000');
         $html    = $this->markup($this->renderAsGuest('seller', $listing));
 
-        $this->assertMatchesRegularExpression(
-            '/class="hla-cta-amount"[^>]*>\s*\$550,000\s*</',
+        $this->assertStringContainsString(
+            '$550,000',
             $html,
-            'Seller must still present its maximum_budget-derived CTA amount.'
+            'The legacy seller CTA must still present the maximum_budget figure.'
         );
     }
 
-    /** Buyer and tenant read their OWN budget column — no substitution, no invention. */
-    public function test_buyer_and_tenant_present_their_own_budget_when_present(): void
+    /** Tenant's own listing data is likewise intact — the flag-off CTA still shows it. */
+    public function test_tenant_listing_amount_data_remains_intact(): void
     {
-        $this->enableRedesign();
+        $this->disableRedesign();
 
-        foreach (['buyer', 'tenant'] as $role) {
-            $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role, '2000')));
+        $html = $this->markup($this->renderAsGuest('tenant', $this->makeListing('tenant', '2000')));
 
-            $this->assertMatchesRegularExpression(
-                '/class="hla-cta-amount"[^>]*>\s*\$2,000\s*</',
-                $html,
-                "[$role] must present its own budget value in the CTA companion."
-            );
-        }
+        $this->assertStringContainsString(
+            '2,000',
+            $html,
+            'Tenant listing amount data must be unchanged; only the redesigned CTA stopped showing it.'
+        );
     }
 
     // ── 9, 12: role-specific authorization is a DIFFERENCE, not drift ────────
@@ -491,11 +542,7 @@ class HireAgentSecondaryActionParityTest extends TestCase
 
         $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role)));
 
-        $card = null;
-        if (preg_match('/data-hire-agent-sidebar-card[^>]*>(.*?)<\/div>\s*<\/div>/s', $html, $m)) {
-            $card = $m[1];
-        }
-        $this->assertNotNull($card, "[$role] the sidebar card must render.");
+        $card = $this->guestSidebarCard($html, $role);
 
         $this->assertSame(
             1,
