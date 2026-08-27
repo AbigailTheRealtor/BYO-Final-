@@ -2177,10 +2177,21 @@
         @endphp
 
 
-        {{-- 📩 Message Button --}}
+        {{-- 📩 Message Button.
+             SUPPRESSED UNDER THE REDESIGN, matching the `@unless` landlord already carries. The
+             Quick Actions band above the grid renders this same route as a tile, so leaving this
+             button in place put the identical action on the page twice — the duplication visual
+             QA reported. Suppressed rather than deleted: with the flag off this is the only
+             Send Message on the page.
+
+             WHO MAY SEE IT IS UNCHANGED. The control stays unconditional in both flag states and
+             the route keeps enforcing its own middleware; this decides WHERE the action lives,
+             never WHO may take it. --}}
+        @unless ($hsaDetailRedesign)
         <a href="{{ route('auction-chat', ['seller-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
+        @endunless
 
 
         {{--
@@ -2247,12 +2258,20 @@
         <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
         @endif
         @elseif(!$auth_id)
+        {{-- Guest CTA. Under the redesign this routes through x-hire-agent.login-cta so all four
+             roles emit one button structure; the legacy markup below is untouched and still the
+             flag-off answer. The BRANCH is unchanged — same `! $auth_id` condition, same login
+             route — only how the action is drawn. --}}
+        @if ($hsaDetailRedesign)
+        <x-hire-agent.login-cta :amount="$hsaCtaPrice" />
+        @else
         <a href="{{ route('login') }}">
             <button class="btn w-100">
                 <span class="bid m-0">Login to Bid</span>
                 @if ($hsaCtaPrice)<span class="badge bg-light float-end text-dark">{{ $hsaCtaPrice }}</span>@endif
             </button>
         </a>
+        @endif
         @else
         <div class="alert alert-secondary text-center">
             Only agents can place bids

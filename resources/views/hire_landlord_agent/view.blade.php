@@ -2081,11 +2081,10 @@ if ($auser && $hlaOwnerName === '') {
                     Only agents can place bids
                 </div>
             @else
-                <x-viho.button
-                    :href="route('login')"
-                    variant="primary"
-                    :block="true"
-                    icon="fa-solid fa-right-to-bracket">Log in to bid</x-viho.button>
+                {{-- Same control as before, now via the shared component the other three roles
+                     also route through. Landlord passes no amount: its guest CTA never carried
+                     one, and the component omits the badge rather than inventing a figure. --}}
+                <x-hire-agent.login-cta />
             @endif
         @else
             {{-- 🔹 Bid Button --}}

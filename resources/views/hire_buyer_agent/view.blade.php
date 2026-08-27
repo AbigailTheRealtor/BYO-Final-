@@ -333,6 +333,22 @@
             !empty(@$auction->get->video_link);
 
         /*
+         | Guest CTA amount, formatted once, for x-hire-agent.login-cta.
+         |
+         | SAME FIELD AS BEFORE. The legacy button read `$auction->get->budget` inline and this reads
+         | the same column — no substitution of a nearby budget-ish field, which is the mistake
+         | seller's maximum_budget fix already had to correct once.
+         |
+         | WHAT CHANGES IS THE ABSENT CASE. Inline, the markup was `${{ …->budget }}` with no guard,
+         | so a listing that carries no budget rendered a bare "$" beside "Login to Bid" — the
+         | dangling dollar sign visual QA caught on buyer. hasValue() treats null, '', '0' and
+         | whitespace as missing, so those resolve to null here and the badge is not emitted at all.
+         */
+        $byaCtaPrice = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->budget)
+            ? \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->budget)
+            : null;
+
+        /*
          | THE BUILDERS BELOW ARE HOISTED, NOT COPIED. Each block moved here verbatim from beside
          | the section that used it, under the SAME variable names, and the block it came from is
          | gone — so the deep conditions that read these names now read the one definition rather
@@ -2566,10 +2582,21 @@
         @endphp
 
 
-        {{-- 📩 Message Button --}}
+        {{-- 📩 Message Button.
+             SUPPRESSED UNDER THE REDESIGN, matching the `@unless` landlord already carries. The
+             Quick Actions band above the grid renders this same route as a tile, so leaving this
+             button in place put the identical action on the page twice — the duplication visual
+             QA reported. Suppressed rather than deleted: with the flag off this is the only
+             Send Message on the page.
+
+             WHO MAY SEE IT IS UNCHANGED. The control stays unconditional in both flag states and
+             the route keeps enforcing its own middleware; this decides WHERE the action lives,
+             never WHO may take it. --}}
+        @unless ($byaDetailRedesign)
         <a href="{{ route('auction-chat', ['buyer-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
+        @endunless
 
 
         {{--
@@ -2643,12 +2670,20 @@
         <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
         @endif
         @elseif(!$auth_id)
+        {{-- Guest CTA. Under the redesign this routes through x-hire-agent.login-cta so all four
+             roles emit one button structure; the legacy markup below is untouched and still the
+             flag-off answer. The BRANCH is unchanged — same `! $auth_id` condition, same login
+             route — only how the action is drawn. --}}
+        @if ($byaDetailRedesign)
+        <x-hire-agent.login-cta :amount="$byaCtaPrice" />
+        @else
         <a href="{{ route('login') }}">
             <button class="btn w-100">
                 <span class="bid m-0">Login to Bid</span>
                 <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
             </button>
         </a>
+        @endif
         @else
         <div class="alert alert-secondary text-center">
             Only agents can place bids
@@ -4280,6 +4315,17 @@
         <button class="btn w-100 mt-0">
             <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
+        {{-- Legacy QR / share card. GUARDED AS OF THE SHARE-PARITY PASS, matching the
+             `@unless` seller and landlord already carry. Under the redesign the share
+             targets and the copy control live in the Quick Actions band, so an unguarded
+             card rendered a SECOND "Share this link via" panel — its own QR, its own
+             social row and a second `.js-copy-link` — below the detail content. Buyer and
+             tenant were the two roles that never received the guard.
+        
+             WITH THE FLAG OFF NOTHING CHANGES: the card is the only sharing surface on a
+             legacy page, so the condition is `@unless` on the redesign rather than a
+             removal. --}}
+        @unless ($byaDetailRedesign)
         <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
                     <div class="qr-code" style="width: 100%; height:200px;">
@@ -4313,6 +4359,7 @@
                         </div>
                     </div>
                 </div>
+        @endunless
     </div>
     <hr>
     <div class="container buyerOfferContentDetails">
