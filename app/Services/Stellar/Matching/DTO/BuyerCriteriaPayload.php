@@ -2,6 +2,8 @@
 
 namespace App\Services\Stellar\Matching\DTO;
 
+use App\Support\Location\UsStateCode;
+
 class BuyerCriteriaPayload
 {
     public readonly array $preferredCities;
@@ -11,6 +13,22 @@ class BuyerCriteriaPayload
     public readonly array $polygons;
     public readonly array $preferredSubdivisions;
     public readonly array $preferredMlsAreas;
+
+    /**
+     * The single Preferred State, as a two-letter code, or null when none was
+     * given or the stored value could not be recognised.
+     *
+     * A SCALAR, unlike every other geography field here, because the Search
+     * Areas widget offers one Preferred State and not a list. Normalised on the
+     * way in by {@see \App\Support\Location\UsStateCode} so that consumers
+     * compare against `bridge_properties.state_or_province` — which is the RESO
+     * two-letter code — rather than against whatever a user typed.
+     *
+     * Null is the "no state criterion" signal and covers an unrecognised value
+     * as well as an absent one; see the normalizer for why an unknown state
+     * widens rather than empties a search.
+     */
+    public readonly ?string $preferredState;
 
     public readonly ?int $maxPrice;
     public readonly ?int $idealPrice;
@@ -93,6 +111,15 @@ class BuyerCriteriaPayload
         $this->polygons              = $data['polygons']                ?? [];
         $this->preferredSubdivisions = $data['preferred_subdivisions']  ?? [];
         $this->preferredMlsAreas     = $data['preferred_mls_areas']     ?? [];
+
+        // Normalised HERE rather than in each loader so that every producer of
+        // this payload — four Stellar loaders, Match Check, and any test that
+        // builds one by hand — gets the same answer for the same stored string.
+        $this->preferredState = UsStateCode::normalize(
+            isset($data['preferred_state']) && is_string($data['preferred_state'])
+                ? $data['preferred_state']
+                : null
+        );
 
         $this->maxPrice   = $maxPrice !== null ? (int) $maxPrice : null;
         $this->idealPrice = $idealPrice !== null ? (int) $idealPrice : null;

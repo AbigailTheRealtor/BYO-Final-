@@ -92,14 +92,22 @@ class BuyerMatchQueryBuilder
         $hasZip     = !empty($criteria->preferredZipCodes);
         $hasCounty  = !empty($criteria->preferredCounties);
 
-        if (!$hasRadius && !$hasPolygon && !$hasCity && !$hasZip && !$hasCounty) {
+        // A Preferred State counts as declared geography. Leaving it out of this
+        // guard was the defect: a searcher whose ONLY geographic criterion was a
+        // state fell straight through to the early return, no clause was added,
+        // and the search ran nationwide — silently, because an absent filter is
+        // not an error.
+        $state    = $criteria->preferredState;
+        $hasState = $state !== null && $state !== '';
+
+        if (!$hasRadius && !$hasPolygon && !$hasCity && !$hasZip && !$hasCounty && !$hasState) {
             return;
         }
 
         if ($hasRadius || $hasPolygon) {
             // Apply bounding box for each radius search and/or polygon (OR across all).
             // These are coarse pre-filters; exact Haversine / PIP checks happen in the scorer.
-            $query->where(function (Builder $outer) use ($criteria, $hasRadius, $hasPolygon, $hasCity, $hasZip, $hasCounty) {
+            $query->where(function (Builder $outer) use ($criteria, $hasRadius, $hasPolygon, $hasCity, $hasZip, $hasCounty, $hasState, $state) {
                 if ($hasRadius) {
                     foreach ($criteria->radiusSearches as $radiusSearch) {
                         // Support flat {lat, lng} (canonical) and legacy {center: {lat, lng}}
@@ -148,10 +156,17 @@ class BuyerMatchQueryBuilder
                 if ($hasCounty) {
                     $outer->orWhereIn('county_or_parish', $criteria->preferredCounties);
                 }
+
+                // ORed like every other tier. A state is the BROADEST criterion
+                // the product offers, so ANDing it here would quietly shrink
+                // every combined search instead of widening it.
+                if ($hasState) {
+                    $outer->orWhere('state_or_province', $state);
+                }
             });
         } else {
             // No geometry — city/ZIP/county only filter
-            $query->where(function (Builder $q) use ($criteria, $hasCity, $hasZip, $hasCounty) {
+            $query->where(function (Builder $q) use ($criteria, $hasCity, $hasZip, $hasCounty, $hasState, $state) {
                 if ($hasCity) {
                     $q->whereIn('city', $criteria->preferredCities);
                 }
@@ -160,6 +175,9 @@ class BuyerMatchQueryBuilder
                 }
                 if ($hasCounty) {
                     $q->orWhereIn('county_or_parish', $criteria->preferredCounties);
+                }
+                if ($hasState) {
+                    $q->orWhere('state_or_province', $state);
                 }
             });
         }
