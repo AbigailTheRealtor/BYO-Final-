@@ -99,8 +99,24 @@ class DeployPreflight extends Command
                 return 'unknown (migrations table absent — first deploy?)';
             }
 
-            $ran   = $migrator->getRepository()->getRan();
-            $files = $migrator->getMigrationFiles($migrator->paths() ?: [database_path('migrations')]);
+            $ran = $migrator->getRepository()->getRan();
+
+            // Mirror Laravel's own BaseCommand::getMigrationPaths(): the application's
+            // migration directory is MERGED with the paths packages registered, never
+            // treated as a fallback for them.
+            //
+            // `Migrator::paths()` returns only the extras registered through
+            // loadMigrationsFrom(), and Sanctum registers one — so `?:` never fell back
+            // and database_path('migrations') was excluded from the scan entirely. This
+            // reported "0 pending" while application migrations were genuinely pending.
+            //
+            // Order matters and matches the framework: registered paths first, the
+            // application path last. getMigrationFiles() keys by migration name, so for a
+            // migration both ship (personal_access_tokens) the later entry wins — which
+            // must be the application's copy.
+            $files = $migrator->getMigrationFiles(
+                array_merge($migrator->paths(), [database_path('migrations')])
+            );
 
             return (string) count(array_diff(array_keys($files), $ran));
         } catch (Throwable $e) {
