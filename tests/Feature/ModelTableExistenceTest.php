@@ -46,13 +46,10 @@ class ModelTableExistenceTest extends TestCase
      * are deliberately NOT listed: this test is part of the proof that they exist.
      */
     private const ALLOWED_MISSING = [
-        // Model: App\Models\AgentCounterTerm. Used by AgentCounteredTermsController
-        // and by tests/Feature/Security/AgentCounteredTermsAuthorizationTest, which
-        // documents the path as inert and skips one assertion with the reason
-        // "`agent_counter_terms` has no migration (inert path)". That skip is the
-        // single pre-existing skip in the security gate. Retained until the offer
-        // counter-terms path is either finished or retired.
-        'agent_counter_terms',
+        // `agent_counter_terms` was here. It is deliberately NOT listed any more:
+        // 2026_08_27_000001_create_agent_counter_terms_table creates it, so this
+        // test is now part of the proof that it exists — and the security gate's
+        // single pre-existing skip, which cited its absence, is gone with it.
 
         // Models: App\Models\CounterBid, App\Models\CounterBidMeta. Used by
         // CounterBidController, which is still routed (routes/web.php,
