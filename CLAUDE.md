@@ -105,6 +105,50 @@ Service order, compensation fields, and UI display decisions are driven by confi
 
 `config/bya_compatibility.php` has a **kill switch** (`BYA_COMPATIBILITY_KILL_SWITCH`, defaults `true` = all consumer-facing compatibility blocked) and a GA flag (`BYA_COMPATIBILITY_GA_ENABLED`, defaults `false`). Do not enable GA without coordinating with the owner.
 
+### Hire Agent compatibility preferences — the allowlist boundary
+
+`compatibility_preferences` is one EAV meta blob per listing, keyed `{role}_specific`. **Every write
+goes through `CompatibilityPreferencePolicy::project()`** (`app/Support/HireAgent/`), which rebuilds
+the sub-array from the allowlist in `config/hire_agent_compatibility_keys.php` — that config has one
+reader and a test asserts it.
+
+**Validation cannot do this job, and assuming it could is what made the policy necessary.**
+`$compatibility_preferences` is a public Livewire property, so a client can set any nested path;
+`validate()` checks the keys named in `rules()` and leaves the rest on the property; the persist then
+wrote the sub-array verbatim. A `prohibited` rule narrows only the paths that reach full validation,
+and a draft save does not. So the gate is at the write, it is an **intersection** (a key survives by
+being named, never by escaping a deny-list), and it covers Create, Save Draft, Save Edit and the
+three still-routed legacy per-role create components.
+
+**Landlord keys are scoped by property type.** `preferred_business_use` /
+`preferred_business_use_other` are commercial-only. Anything that is not exactly
+`Commercial Property` — null, `''`, a legacy spelling — is treated as residential, because
+`property_type` is EAV and can be absent on an older row. **On Edit the STORED property type governs**
+(`propertyTypeForProjection()`): one request can otherwise flip the listing commercial and supply the
+commercial-only key in the same message.
+
+**Retired for Fair Housing reasons, and not to be reintroduced:**
+`tenant_type_preference` / `tenant_type_preference_other` (mixed occupant categories — Individual /
+Family, Young Professionals, Students — with business ones, rendered on residential and commercial
+listings alike, and published on a route with no auth middleware). Residential has **no** replacement
+occupant question. Commercial answers **Preferred Business Use** instead; its options live in
+`config/landlord_business_use_options.php`. Landlord `risk_tolerance` became
+`applicant_screening_approach` (method, not tolerance) and is `informational_context` only — never a
+trait slot, because a slot is what a future scorer reads. Buyer `risk_tolerance` is unrelated and
+stays. `HireAgentFairHousingWordingTest` guards the wording and the keys at source.
+
+`php artisan hireagent:retire-tenant-type` remediates stored values. **Dry-run by default**; `--write`
+backs every original blob up first and `--restore=FILE` is the only rollback, since deleting JSON keys
+has no `down()`. It is a command rather than a migration because nothing schema-shaped changes and
+`deploy/start-production.sh` is the single migration owner. **Not yet run against any database.**
+
+**Detail-page visibility.** Representation rows are built in two buckets: `$repAdd()` is public,
+`$repAddOwn()` is owner-only (free text, screening posture, and the seller's own motivation and price
+firmness). The gate is `$hlaViewerIsOwner`, resolved in the four controllers from
+`HireAgentProposalAccess::isListingOwner()` — **the ownership relationship, not the audience tier**,
+because `audienceFor()` resolves widest-match-first and would otherwise hide an owner's own answers
+from them whenever that owner also holds an agent account.
+
 ### Deployment & migrations
 
 **`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.

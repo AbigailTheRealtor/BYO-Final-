@@ -519,6 +519,27 @@ class SellerAgentAuctionController extends Controller
         // the specific thing this replaces. Nothing consumes it yet.
         $page_data["hlaAudience"] = app(HireAgentDetailAudience::class)->audienceFor(auth()->user(), $auction);
 
+        /*
+         | WHO MAY READ THE PRIVATE REPRESENTATION ROWS.
+         |
+         | Decided here, beside the audience above, and handed to the view — same contract, and
+         | for the same reason: a user_type test in Blade is exactly what HireAgentDetailAudience
+         | exists to replace.
+         |
+         | THE OWNER RELATIONSHIP, NOT THE AUDIENCE TIER, AND THE DIFFERENCE IS LOAD-BEARING.
+         | audienceFor() resolves widest-match-first, so a listing owner who is also an agent
+         | resolves to AUDIENCE_AGENT rather than AUDIENCE_OWNER. Gating private rows on the tier
+         | would therefore withhold a client's own answers from them whenever that client happens
+         | to hold an agent account. isListingOwner() asks the question actually being asked.
+         |
+         | OWNER-ONLY, NOT OWNER-AND-AGENTS, IN THIS BATCH. AUDIENCE_AGENT admits any account whose
+         | user_type is agent/buyer_agent/seller_agent — it does not test whether they bid on this
+         | listing, and there is no hired-agent tier. Until one exists, "every agent on the
+         | platform" is not a safe audience for a tenant's disclosure about their own situation.
+         | Widening this later is a deliberate authorization change, not a display tweak.
+         */
+        $page_data["hlaViewerIsOwner"] = $proposalAccess->isListingOwner(auth()->id(), $auction);
+
         $page_data['title']    = $auction->address ?? 'Listing Details';
         $page_data['counties'] = County::all();
         $page_data['id']       = $id;

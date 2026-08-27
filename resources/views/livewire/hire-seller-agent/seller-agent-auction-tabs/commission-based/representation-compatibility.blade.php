@@ -403,9 +403,9 @@
 {{-- Additional Decision Makers --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Decision Makers Involved:
+        Who else must approve the final decision?:
         <span data-bs-toggle="tooltip" data-bs-html="true"
-            title="List anyone else involved in the final selling decision (e.g., co-owner, spouse, financial advisor)."
+            title="The roles that must sign off before you can accept an offer. Describe roles rather than naming individuals."
             class="ms-2 cursor-pointer">
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
@@ -414,7 +414,7 @@
         <input type="text"
             wire:model="compatibility_preferences.seller_specific.additional_decision_makers"
             class="form-control has-icon" data-icon="fa-solid fa-users"
-            placeholder="Enter decision makers involved (e.g., Spouse, Co-owner, Financial advisor)">
+            placeholder="Enter approval roles (e.g., Co-owner, Trustee, Attorney, Financial advisor)">
     </div>
 </div>
 
@@ -507,6 +507,6 @@
             class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
             maxlength="2000"
-            placeholder="Enter additional compatibility notes (e.g., Prefer a bilingual agent, Need flexible scheduling)">
+            placeholder="Enter additional compatibility notes (e.g., Need flexible scheduling, Prefer detailed written updates)">
     </div>
 </div>

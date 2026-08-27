@@ -3,6 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+use App\Support\HireAgent\CompatibilityPreferencePolicy;
 
 use App\Support\Listing\ListingWorkflow;
 
@@ -385,13 +386,16 @@ class TenantAgentAuctionEdit extends Component
             'negotiation_style'                   => '',
             'representation_priorities'           => [],
             'primary_leasing_goal_other'          => '',
-            'tenant_type_preference'              => '',
-            'tenant_type_preference_other'        => '',
+            // Commercial-only. Declared for every landlord listing so the array shape is stable
+            // for hydration; kept off a residential listing by CompatibilityPreferencePolicy at
+            // the write. See the note in TenantAgentAuction.
+            'preferred_business_use'              => [],
+            'preferred_business_use_other'        => '',
             'lease_duration_preference'           => '',
             'property_management_involvement'     => '',
             'preferred_contact_method'            => '',
             'response_time_expectation'           => '',
-            'risk_tolerance'                      => '',
+            'applicant_screening_approach'        => '',
             'concessions_willingness'             => '',
             'lease_terms_flexibility'             => '',
             'additional_representation_notes'     => '',
@@ -3502,6 +3506,20 @@ class TenantAgentAuctionEdit extends Component
                 ? $auctionClass::where('user_id', Auth::id())->findOrFail($this->auctionId)
                 : new $auctionClass();
 
+            // CAPTURED HERE, BEFORE ANY WRITE, AND THAT POSITION IS THE WHOLE POINT.
+            //
+            // The compatibility projection further down scopes landlord's commercial-only keys by
+            // property type, and it must not let a request authorise itself: `$this->property_type`
+            // is a public Livewire property, so one message can both flip the listing to commercial
+            // AND supply the commercial-only key. Reading the stored value at the persist site would
+            // not help either — saveMeta('property_type') runs ~400 lines above it, so by then the
+            // "stored" value is the submitted one.
+            //
+            // So it is read here, from the row as it exists before this save touches anything. A
+            // landlord genuinely converting a listing to commercial saves once to change the type
+            // and answers Preferred Business Use on the next save. That is the correct price.
+            $storedPropertyType = $this->auctionId ? $auction->info('property_type') : null;
+            $storedPropertyType = is_string($storedPropertyType) ? $storedPropertyType : null;
 
             // Update the auction properties
             $auction->title = $this->listing_title;
@@ -3958,9 +3976,37 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('services_snapshot', json_encode($servicesSnapshot));
             $auction->saveMeta('additional_details', $this->additional_details);
 
-            // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
-            if ($this->user_type === 'tenant') {
-                $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+            // Representation Preferences & Compatibility — ALL full_service roles.
+            //
+            // THIS USED TO BE `if ($this->user_type === 'tenant')`, AND THAT WAS A DATA-LOSS BUG.
+            // The class declares and hydrates all four role namespaces — the comment at the top of
+            // $compatibility_preferences records that parity fix — but the write was never widened
+            // to match. So a landlord, seller or buyer could edit their representation answers, see
+            // them in the form, press Save Edit, and have every change silently discarded. Only the
+            // form round-trip was fixed; the persist was not.
+            //
+            // Fixing it is a real behaviour change for three roles, not just plumbing for the new
+            // commercial field: fields that used to discard edits now keep them.
+            //
+            // Role-keyed merge rather than writing the whole property, because the property carries
+            // all four namespaces and the stored blob is the shared record. Writing the property
+            // wholesale would stamp this component's defaults over any other role's stored answers.
+            if ($this->service_type === 'full_service') {
+                $storedCompat = json_decode((string) $auction->info('compatibility_preferences'), true);
+                $storedCompat = is_array($storedCompat) ? $storedCompat : [];
+
+                $roleKey = $this->user_type . '_specific';
+
+                $storedCompat[$roleKey] = CompatibilityPreferencePolicy::project(
+                    $this->compatibility_preferences[$roleKey] ?? [],
+                    $this->user_type,
+                    CompatibilityPreferencePolicy::propertyTypeForProjection(
+                        $storedPropertyType,
+                        $this->property_type
+                    )
+                );
+
+                $auction->saveMeta('compatibility_preferences', json_encode($storedCompat));
             }
 
             $auction->saveMeta('desired_lease_length', json_encode($this->desired_lease_length));

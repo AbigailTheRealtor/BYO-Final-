@@ -4022,6 +4022,37 @@
                 $landlordRp.off('change.landlordCompatRpEditSync').on('change.landlordCompatRpEditSync', function() {
                     safeLivewireSet('compatibility_preferences.landlord_specific.representation_priorities', $(this).val() || []);
                 });
+
+                // Preferred Business Use (commercial landlord only). Same lifecycle as the
+                // Representation Priorities field above; absent on residential listings, where
+                // every guard below is a .length check so nothing runs and nothing throws.
+                var $landlordBu = $('#compat_preferred_business_use_landlord');
+                if ($landlordBu.length) {
+                    var _buOpen = false;
+                    try { _buOpen = !!($landlordBu.data('select2') && $landlordBu.data('select2').isOpen()); } catch(e) {}
+                    if (!_buOpen) {
+                        if ($landlordBu.hasClass('select2-hidden-accessible')) { $landlordBu.select2('destroy'); }
+                        $landlordBu.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                        var lwLandlordBu = [];
+                        try {
+                            lwLandlordBu = $wire.get('compatibility_preferences.landlord_specific.preferred_business_use') || [];
+                            if (typeof lwLandlordBu === 'string') { lwLandlordBu = JSON.parse(lwLandlordBu) || []; }
+                        } catch(e) {}
+                        if (lwLandlordBu.length) { $landlordBu.val(lwLandlordBu).trigger('change.select2'); }
+                        // x-data only evaluates once, so a rehydrated "Other" needs telling.
+                        window.dispatchEvent(new CustomEvent('update-business-use-other', {
+                            detail: { hasOther: (lwLandlordBu || []).indexOf('Other') !== -1 }
+                        }));
+                    }
+                    $landlordBu.off('change.landlordCompatBuEditSync').on('change.landlordCompatBuEditSync', function() {
+                        var vals = $(this).val() || [];
+                        safeLivewireSet('compatibility_preferences.landlord_specific.preferred_business_use', vals);
+                        window.dispatchEvent(new CustomEvent('update-business-use-other', {
+                            detail: { hasOther: vals.indexOf('Other') !== -1 }
+                        }));
+                    });
+                }
+
                 addIconsToInputs();
             }
 

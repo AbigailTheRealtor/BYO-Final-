@@ -4026,6 +4026,40 @@ $lease_types = [
             $landlordRp.off('change.landlordCompatRpSync').on('change.landlordCompatRpSync', function() {
                 safeLivewireSet('compatibility_preferences.landlord_specific.representation_priorities', $(this).val() || []);
             });
+
+            // Preferred Business Use (commercial landlord only). Mirrors the Representation
+            // Priorities field above rather than inventing a second pattern: same wire:ignore +
+            // select2 + @this.set() lifecycle, same re-init on message.processed. The element is
+            // absent on residential listings because Blade did not render it, and every guard
+            // here is a .length check, so nothing runs and nothing throws.
+            var $landlordBu = $('#compat_preferred_business_use_landlord');
+            if ($landlordBu.length) {
+                var _buOpen = false;
+                try { _buOpen = !!($landlordBu.data('select2') && $landlordBu.data('select2').isOpen()); } catch(e) {}
+                if (!_buOpen) {
+                    if ($landlordBu.hasClass('select2-hidden-accessible')) { $landlordBu.select2('destroy'); }
+                    $landlordBu.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                    var lwLandlordBu = [];
+                    try {
+                        lwLandlordBu = $wire.get('compatibility_preferences.landlord_specific.preferred_business_use') || [];
+                        if (typeof lwLandlordBu === 'string') { lwLandlordBu = JSON.parse(lwLandlordBu) || []; }
+                    } catch(e) {}
+                    if (lwLandlordBu.length) { $landlordBu.val(lwLandlordBu).trigger('change.select2'); }
+                    // Tell Alpine whether the companion input should be open on first paint too —
+                    // x-data only runs once, so a rehydrated "Other" would otherwise stay hidden.
+                    window.dispatchEvent(new CustomEvent('update-business-use-other', {
+                        detail: { hasOther: (lwLandlordBu || []).indexOf('Other') !== -1 }
+                    }));
+                }
+                $landlordBu.off('change.landlordCompatBuSync').on('change.landlordCompatBuSync', function() {
+                    var vals = $(this).val() || [];
+                    safeLivewireSet('compatibility_preferences.landlord_specific.preferred_business_use', vals);
+                    window.dispatchEvent(new CustomEvent('update-business-use-other', {
+                        detail: { hasOther: vals.indexOf('Other') !== -1 }
+                    }));
+                });
+            }
+
             addIconsToInputs();
         }
 

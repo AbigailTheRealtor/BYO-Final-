@@ -965,33 +965,31 @@
                     <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
                         data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No Pit Bulls)">
                 </div>
+                <small class="text-muted d-block mt-1">
+                    Applies to pets only. Assistance animals — service animals and emotional support
+                    animals — are a disability accommodation rather than pets, and breed, weight and
+                    pet-fee restrictions do not apply to them.
+                </small>
                 <span class="error mt-2" id="breed_restrictions_error"></span>
             </div>
-            <!-- Service Animal -->
-            {{-- <div class="form-group">
-            <label class="fw-bold">Service Animal:</label>
-            <div class="input-cover">
-                <select wire:model="service_animal" class="form-control has-icon" data-icon="fa-solid fa-dog">
-                    <option value="">Select</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="service_animal_error"></span>
-        </div>
+            {{--
+                DELETED, NOT RE-COMMENTED: a landlord-facing "Service Animal: Yes/No" and
+                "Emotional Support Animal: Yes/No" pair.
 
-        <!-- Emotional Support Animal -->
-        <div class="form-group">
-            <label class="fw-bold">Emotional Support Animal:</label>
-            <div class="input-cover">
-                <select wire:model="support_animal" class="form-control has-icon" data-icon="fa-solid fa-heart">
-                    <option value="">Select</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="support_animal_error"></span>
-        </div> --}}
+                An assistance animal is not a pet, and whether to allow one is not a landlord
+                preference to express. It is a reasonable accommodation for a disability, which a
+                housing provider must consider on request regardless of any pet policy — so a
+                stored "No" is a recorded intention to refuse an accommodation, and the control
+                invites it. Commenting it out left it one uncomment away from returning; that is
+                why it is gone rather than hidden.
+
+                NOTHING LEGITIMATE WAS REMOVED WITH IT. The tenant- and buyer-side fields of the
+                same name are a CONSUMER declaring that they have an assistance animal, which is
+                the disclosure the accommodation process runs on. Those stay exactly as they are.
+
+                Ordinary pet policy — Pets Allowed, pet deposit, breed restrictions — is a
+                different subject and is directly above.
+            --}}
         </div>
     @endif
 @endif

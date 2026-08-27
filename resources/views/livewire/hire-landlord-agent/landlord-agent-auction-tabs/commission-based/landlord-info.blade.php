@@ -67,7 +67,9 @@
         $compatLS = $compatibility_preferences['landlord_specific'] ?? [];
         $compatLabels = [
             'primary_leasing_goal'            => 'Primary Leasing Goal',
-            'tenant_type_preference'          => 'Preferred Tenant Type',
+            // 'tenant_type_preference' retired (Fair Housing). No residential replacement;
+            // commercial listings answer 'preferred_business_use' below instead.
+            'preferred_business_use'          => 'Preferred Business Use',
             'lease_duration_preference'       => 'Preferred Lease Duration',
             'property_management_involvement' => 'Level of Management Involvement',
             'communication_style'             => 'Preferred Communication Style',
@@ -76,7 +78,7 @@
             'preferred_agent_working_style'   => 'Preferred Agent Working Style',
             'negotiation_style'               => 'Negotiation Style',
             'representation_priorities'       => 'Representation Priorities',
-            'risk_tolerance'                  => 'Risk Tolerance',
+            'applicant_screening_approach'    => 'Applicant Screening Approach',
             'concessions_willingness'         => 'Willingness to Offer Concessions',
             'lease_terms_flexibility'         => 'Flexibility on Lease Terms',
             'additional_representation_notes' => 'Additional Representation Notes',
@@ -96,7 +98,7 @@
                 <div class="form-group row mb-2">
                     <label class="col-sm-4 fw-bold">{{ $label }}:</label>
                     <div class="col-sm-8">
-                        @if ($key === 'representation_priorities' && is_array($val))
+                        @if (in_array($key, ['representation_priorities', 'preferred_business_use'], true) && is_array($val))
                             <ul class="mb-0 ps-3">
                                 @foreach ($val as $priority)
                                     <li>{{ $priority }}</li>
@@ -104,9 +106,6 @@
                             </ul>
                         @elseif ($key === 'primary_leasing_goal' && $val === 'Other')
                             @php $otherText = $compatLS['primary_leasing_goal_other'] ?? null; @endphp
-                            <span>{{ !empty($otherText) ? $otherText : 'Other' }}</span>
-                        @elseif ($key === 'tenant_type_preference' && $val === 'Other')
-                            @php $otherText = $compatLS['tenant_type_preference_other'] ?? null; @endphp
                             <span>{{ !empty($otherText) ? $otherText : 'Other' }}</span>
                         @else
                             <span>{{ is_array($val) ? implode(', ', $val) : $val }}</span>

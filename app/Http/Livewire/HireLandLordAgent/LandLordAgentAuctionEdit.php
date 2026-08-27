@@ -579,8 +579,18 @@ class LandLordAgentAuctionEdit extends Component
     // Pet/animal fields
     public $has_breed_restrictions = '';
     public $breed_restrictions = '';
-    public $service_animal = '';
-    public $support_animal = '';
+    /*
+     | `service_animal` / `support_animal` REMOVED (Fair Housing).
+     |
+     | These were a landlord-side stance on whether assistance animals would be accepted. Their
+     | control has been deleted from property-preferences.blade.php — an assistance animal is a
+     | disability accommodation, not a pet, so it is not a preference a housing provider states.
+     | The state, hydration and persist go with it; a write path with no reader is exactly the
+     | surface that gets a control reattached to it later.
+     |
+     | The tenant- and buyer-side fields of the same name are a consumer declaring that they HAVE
+     | an assistance animal. Those are legitimate and untouched.
+     */
 
     // Enable/disable checkboxes
     public $enable = [
@@ -1955,8 +1965,6 @@ class LandLordAgentAuctionEdit extends Component
             $this->custom_enhancement = $auction->get->custom_enhancement ?? null;
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? null;
             $this->breed_restrictions = $auction->get->breed_restrictions ?? null;
-            $this->service_animal = $auction->get->service_animal ?? null;
-            $this->support_animal = $auction->get->support_animal ?? null;
 
             // Lease-Option Agreement Compensation
             $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? null;
@@ -2371,8 +2379,6 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
         $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
-        $auction->saveMeta('service_animal', $this->service_animal);
-        $auction->saveMeta('support_animal', $this->support_animal);
         $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
         $auction->saveMeta('lease_type', $this->lease_type);
         $auction->saveMeta('purchase_type', $this->purchase_type);

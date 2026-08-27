@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\HireSellerAgent;
 
+use App\Support\HireAgent\CompatibilityPreferencePolicy;
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
 
 use App\Support\Listing\ListingWorkflow;
@@ -2911,7 +2912,12 @@ class SellerAgentAuction extends Component
 
         // Representation Preferences & Compatibility (seller full service only)
         if ($this->service_type === 'full_service' && $this->user_type === 'seller') {
-            $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+            // Projected through the shared allowlist before it is written. These legacy
+            // per-role create components are still routed, so a key retired from the live
+            // component would otherwise survive here. See CompatibilityPreferencePolicy.
+            $auction->saveMeta('compatibility_preferences', json_encode(
+                CompatibilityPreferencePolicy::projectAll($this->compatibility_preferences, null)
+            ));
         }
 
         // Save video - only process if it's a new upload (UploadedFile), not an existing string path
