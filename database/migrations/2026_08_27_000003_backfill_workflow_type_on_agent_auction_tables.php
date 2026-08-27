@@ -81,7 +81,7 @@ return new class extends Migration
     // Literals, not imported constants. An imported constant is a value someone can
     // change; these cannot be changed from outside this file. Part of the snapshot.
 
-    /** The discriminator column, as added by 2026_08_27_000001. */
+    /** The discriminator column, as added by 2026_08_27_000002. */
     private const COLUMN = 'workflow_type';
 
     /** The two products. */
@@ -159,9 +159,9 @@ return new class extends Migration
      *
      * So the ownership boundary is explicit:
      *
-     *     000001 owns the SCHEMA  — its down() drops the index and the column, taking
+     *     000002 owns the SCHEMA  — its down() drops the index and the column, taking
      *                               every value with it, which IS the meaningful undo.
-     *     000002 owns the DATA    — and cannot safely un-populate, so it does nothing.
+     *     000003 owns the DATA    — and cannot safely un-populate, so it does nothing.
      *
      * Rolling back this migration alone is therefore safe and lossless, and leaves the
      * database in a state a re-run of up() treats correctly: already-populated rows are
@@ -173,7 +173,7 @@ return new class extends Migration
     {
         Log::info('[workflow_backfill] rollback is a no-op by design — this migration '
             . 'populated data it cannot distinguish from later runtime writes. Roll back '
-            . '2026_08_27_000001 to remove the workflow_type column and its values.');
+            . '2026_08_27_000002 to remove the workflow_type column and its values.');
     }
 
     // ─── FROZEN CLASSIFICATION ────────────────────────────────────────────────

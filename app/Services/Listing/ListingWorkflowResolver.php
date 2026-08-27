@@ -52,7 +52,7 @@ class ListingWorkflowResolver
      *
      * DESCRIPTIVE ONLY — NOTHING DEPENDS ON IT FOR CORRECTNESS.
      * -------------------------------------------------------
-     * This constant used to be load-bearing: the 2026_08_27_000002 backfill migration
+     * This constant used to be load-bearing: the 2026_08_27_000003 backfill migration
      * called this resolver and pinned this value, declining to run if the two disagreed.
      * That made a historical migration's meaning depend on a developer remembering to
      * bump a constant — detection by convention, which is not determinism.

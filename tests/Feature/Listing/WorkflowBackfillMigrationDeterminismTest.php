@@ -16,7 +16,7 @@ use Tests\TestCase;
  *
  * THE PROBLEM, AND WHY THE FIRST FIX WAS NOT ENOUGH
  * -------------------------------------------------
- * `2026_08_27_000002` originally called {@see ListingWorkflowResolver}, so that a row's
+ * `2026_08_27_000003` originally called {@see ListingWorkflowResolver}, so that a row's
  * product meant the same thing to the backfill and to the runtime guard. The price was a
  * historical migration whose behaviour was defined by mutable application code: change a
  * rule in six months and `migrate:fresh` from an empty database would classify rows by the
@@ -44,8 +44,8 @@ class WorkflowBackfillMigrationDeterminismTest extends TestCase
     use DatabaseTransactions;
     use MakesWorkflowListings;
 
-    private const SCHEMA_MIGRATION   = '2026_08_27_000001_add_workflow_type_to_agent_auction_tables.php';
-    private const BACKFILL_MIGRATION = '2026_08_27_000002_backfill_workflow_type_on_agent_auction_tables.php';
+    private const SCHEMA_MIGRATION   = '2026_08_27_000002_add_workflow_type_to_agent_auction_tables.php';
+    private const BACKFILL_MIGRATION = '2026_08_27_000003_backfill_workflow_type_on_agent_auction_tables.php';
 
     protected function setUp(): void
     {
@@ -432,7 +432,7 @@ class WorkflowBackfillMigrationDeterminismTest extends TestCase
         $this->assertTrue(
             Schema::hasColumn('seller_agent_auctions', ListingWorkflow::COLUMN),
             'the data migration does not own the column and must not remove it — '
-            . '2026_08_27_000001 does'
+            . '2026_08_27_000002 does'
         );
     }
 
