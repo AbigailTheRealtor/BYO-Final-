@@ -140,28 +140,25 @@ class LocationDnaEnrichmentRunner
      * Derive a PoiDistanceLookupService-compatible geometry array from the
      * available boundary data and preferences.
      *
-     * Priority:
-     *   1. First valid radius_search entry from preferences
-     *   2. First drawn polygon (≥3 points) from preferences
+     * Priority (canonical Location DNA precedence: Polygon > Radius > boundaries):
+     *   1. First drawn polygon (≥3 points) from preferences
+     *   2. First valid radius_search entry from preferences
      *   3. First exterior ring (≥3 coords) from geojson_polygons in boundaryData
+     *
+     * A drawn polygon is a deliberately hand-drawn shape and is more specific than a
+     * radius, so it outranks one. This used to return on the first valid radius before
+     * ever looking at polygons, so a user who drew a search area AND kept a radius had
+     * POI distances measured from the radius and the polygon discarded silently.
+     *
+     * Each source skips entries it cannot use before moving on, so an unusable polygon
+     * (fewer than three points) does not block a usable radius — presence alone does not
+     * win precedence, usability does.
      *
      * Returns null when no usable geometry can be derived.
      */
     private function derivePoiGeometry(array $boundaryData, array $preferences): ?array
     {
-        // 1. Radius searches from preferences
-        foreach ($preferences['radius_searches'] ?? [] as $r) {
-            if (isset($r['center']['lat'], $r['center']['lng']) && ((float) ($r['radius_miles'] ?? 0)) > 0) {
-                return [
-                    'type'         => 'radius',
-                    'lat'          => (float) $r['center']['lat'],
-                    'lng'          => (float) $r['center']['lng'],
-                    'radius_miles' => (int) $r['radius_miles'],
-                ];
-            }
-        }
-
-        // 2. Drawn polygons from preferences
+        // 1. Drawn polygons from preferences
         foreach ($preferences['polygons'] ?? [] as $poly) {
             $path = $poly['path'] ?? [];
             if (!is_array($path) || count($path) < 3) {
@@ -173,6 +170,18 @@ class LocationDnaEnrichmentRunner
             );
             if (count($coordinates) >= 3) {
                 return ['type' => 'polygon', 'coordinates' => array_values($coordinates)];
+            }
+        }
+
+        // 2. Radius searches from preferences
+        foreach ($preferences['radius_searches'] ?? [] as $r) {
+            if (isset($r['center']['lat'], $r['center']['lng']) && ((float) ($r['radius_miles'] ?? 0)) > 0) {
+                return [
+                    'type'         => 'radius',
+                    'lat'          => (float) $r['center']['lat'],
+                    'lng'          => (float) $r['center']['lng'],
+                    'radius_miles' => (int) $r['radius_miles'],
+                ];
             }
         }
 
