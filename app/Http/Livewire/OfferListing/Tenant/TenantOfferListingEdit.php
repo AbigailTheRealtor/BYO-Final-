@@ -2,6 +2,10 @@
 
 namespace App\Http\Livewire\OfferListing\Tenant;
 
+use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+
+use App\Support\Listing\ListingWorkflow;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\TenantAgentAuction as HireTenantAgentAuction;
@@ -25,6 +29,17 @@ use App\Http\Livewire\Concerns\HasSearchAreas;
 
 class TenantOfferListingEdit extends Component
 {
+    use BelongsToListingWorkflow;
+
+    /** Create Offer Listing — the shared multi-role tenant/criteria edit wizard. */
+    protected const LISTING_WORKFLOW = ListingWorkflow::OFFER_LISTING;
+    /**
+     * Role is NOT a constant here: this component serves all four roles, taking the
+     * role from the route. BelongsToListingWorkflow reads $this->user_type and
+     * validates it, with no fallback — an unrecognised role resolves to no model and
+     * every helper refuses. See the trait.
+     */
+
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads;
     use ResolvesOwnedAuction;
@@ -2446,6 +2461,13 @@ class TenantOfferListingEdit extends Component
             $this->bootGeographySearch();
 
             $this->assertCanManageAuction($this->tenantAuctionClass(), $auctionId, null);
+
+            // WORKFLOW BOUNDARY — owner + role + product, layered on top of the existing
+            // 403 ownership check above, which is unchanged. `mustBeDraft: false`: this is
+            // the EDIT route and a published listing is a legitimate target here.
+            if ($this->resumableListing($auctionId, false, $user_type) === null) {
+                abort(404);
+            }
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             $this->isListingDraft = (bool) $this->isDraft;
             
@@ -3285,7 +3307,7 @@ class TenantOfferListingEdit extends Component
             $this->isDraft        = (bool) $this->_isDraftSave;
             $this->isListingDraft = (bool) $this->_isDraftSave;
             $auction->save();
-            $auction->saveMeta('workflow_type', 'offer_listing');
+            ListingWorkflow::stamp($auction, ListingWorkflow::OFFER_LISTING);
             $auction->saveMeta('user_type', $this->user_type);
             $auction->saveMeta('listing_status', $this->listing_status);
             if (auth()->user() && auth()->user()->user_type === 'agent') {
@@ -4103,6 +4125,22 @@ class TenantOfferListingEdit extends Component
             $newDraft->is_paid = $source->is_paid;
         }
 
+        // Product identity travels in the INSERT.
+        //
+        // This versioning path is the one new-row path in the wizards that does NOT run
+        // saveAllMetadata() — it clones the source's meta instead (Step 4), which is why
+        // the stamp cannot be left to that method as it is everywhere else. Without this
+        // the row was born with no identity at all and acquired only the EAV half a few
+        // statements later, when the clone loop happened to copy the source's
+        // `workflow_type` meta row across. That is a half-stamp of exactly the kind
+        // ListingWorkflow::stamp() exists to prevent: the native SSOT column stayed NULL
+        // while the legacy key said offer_listing, and if the clone loop ever threw
+        // between the two the row would be permanently unclassified — and, under the
+        // strict policy, thereafter unreachable and undeletable by its own owner.
+        if (ListingWorkflow::columnAvailable($auctionClass)) {
+            $newDraft->setAttribute(ListingWorkflow::COLUMN, ListingWorkflow::OFFER_LISTING);
+        }
+
         $newDraft->save();
 
         // Step 4 — clone all meta rows from source; then stamp the versioning keys.
@@ -4110,6 +4148,13 @@ class TenantOfferListingEdit extends Component
         foreach ($source->meta()->get() as $meta) {
             $newDraft->saveMeta($meta->meta_key, $meta->meta_value);
         }
+
+        // Re-asserted after the clone rather than trusted to it. The loop copies whatever
+        // identity the SOURCE carried, so a source that was itself half-stamped would
+        // propagate that state to every future version. Stamping explicitly writes both
+        // halves together and makes this path's output independent of the source's
+        // condition. Idempotent when the clone already brought the right value across.
+        ListingWorkflow::stamp($newDraft, ListingWorkflow::OFFER_LISTING);
 
         $newDraft->saveMeta('draft_version',   $previousVersion + 1);
         $newDraft->saveMeta('parent_draft_id', $source->id);

@@ -9,6 +9,7 @@ use App\Http\Livewire\OfferListing\Seller\SellerOfferListingEdit;
 use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\User;
+use App\Support\Listing\ListingWorkflow;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -94,6 +95,19 @@ class OfferListingPhotoOrderOwnershipTest extends TestCase
     // Fixtures
     // =====================================================================
 
+    /**
+     * WHY THESE ROWS ARE STAMPED
+     * --------------------------
+     * `seller_agent_auctions` and `landlord_agent_auctions` are shared by Hire Agent and
+     * Create Offer Listing, and a row carrying no `workflow_type` is refused by both
+     * products' edit surfaces. These fixtures back OFFER LISTING components, so a row with
+     * no stamp is not a realistic fixture — it is a row no Offer Listing edit route would
+     * ever have served, and mounting one models nothing that can happen in production.
+     *
+     * Stamping is therefore a fixture correction, not an accommodation: it makes these rows
+     * what the components under test actually operate on. The cross-product boundary itself
+     * is asserted in tests/Feature/Listing, not weakened here.
+     */
     private function sellerListing(User $owner, array $photos): SellerAgentAuction
     {
         $l = SellerAgentAuction::forceCreate([
@@ -101,6 +115,7 @@ class OfferListingPhotoOrderOwnershipTest extends TestCase
             'is_draft' => false, 'is_approved' => true, 'is_sold' => false,
         ]);
         $l->saveMeta('property_photos', $photos);
+        ListingWorkflow::stamp($l, ListingWorkflow::OFFER_LISTING);
 
         return $l->fresh();
     }
@@ -111,6 +126,7 @@ class OfferListingPhotoOrderOwnershipTest extends TestCase
             'user_id' => $owner->id, 'title' => 'L', 'is_draft' => false,
         ]);
         $l->saveMeta('property_photos', $photos);
+        ListingWorkflow::stamp($l, ListingWorkflow::OFFER_LISTING);
 
         return $l->fresh();
     }

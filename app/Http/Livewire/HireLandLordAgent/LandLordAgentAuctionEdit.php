@@ -2,6 +2,10 @@
 
 namespace App\Http\Livewire\HireLandLordAgent;
 
+use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+
+use App\Support\Listing\ListingWorkflow;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
@@ -15,6 +19,18 @@ use Illuminate\Support\Facades\Storage;
 
 class LandLordAgentAuctionEdit extends Component
 {
+    use BelongsToListingWorkflow;
+
+    /** Hire an Agent — Landlord (edit). */
+    protected const LISTING_WORKFLOW = ListingWorkflow::HIRE_AGENT;
+
+    /**
+     * Read from a constant, never from $this->user_type: that property is public on a
+     * Livewire component and therefore client input. This screen edits exactly one
+     * role's table.
+     */
+    protected const LISTING_ROLE = 'landlord';
+
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
@@ -864,12 +880,18 @@ class LandLordAgentAuctionEdit extends Component
         $this->listingId = null;
         $this->isDraft = false;
     }
+    /**
+     * The saved drafts offered by this screen's "Load Saved Draft" picker.
+     *
+     * Scoped to owner AND product. Both products share this role's table, so the old
+     * owner-plus-is_draft pair listed the other product's drafts too — which is how an
+     * Offer Listing draft came to be offered by, and opened in, a Hire Agent wizard.
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDrafts()
+     */
     public function getDrafts()
     {
-        return HirelandLordAgentAuction::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->latest()
-            ->get();
+        return $this->workflowDrafts();
     }
     public function updatedFees()
     {
@@ -1383,6 +1405,15 @@ class LandLordAgentAuctionEdit extends Component
     {
 
         if ($auctionId) {
+            // WORKFLOW BOUNDARY — owner + role + product, before any hydration.
+            //
+            // `mustBeDraft: false` on purpose: this is the EDIT route, and editing a
+            // published listing is legitimate here. Draft state is the one of the four
+            // checks that does not apply; the other three do.
+            if ($this->resumableListing($auctionId, false) === null) {
+                abort(404);
+            }
+
             $this->auctionId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
         }
@@ -2009,6 +2040,12 @@ class LandLordAgentAuctionEdit extends Component
 
     protected function saveAllMetadata($auction)
     {
+        // This edit surface writes rows — including brand-new draft versions — and
+        // never recorded which product they belong to. An unstamped row is one the
+        // resolver can only classify from provenance, and one a NOT NULL enforcement
+        // step would later have to chase down by hand.
+        ListingWorkflow::stamp($auction, ListingWorkflow::HIRE_AGENT);
+
 
 
 

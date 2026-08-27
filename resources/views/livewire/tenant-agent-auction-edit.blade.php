@@ -1607,7 +1607,11 @@
                                     @endif
                                 @endforeach
                             </ul>
-                        @else
+                        {{-- Limited Service — named explicitly. Same narrowing as the create
+                             wizard: this arm was a bare `@else`, so NULL and every
+                             unrecognised service_type rendered the limited-service tab bar.
+                             The Limited Service flow itself is unchanged. --}}
+                        @elseif ($service_type === \App\Support\Listing\ServiceTypeMode::LIMITED)
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
@@ -1645,6 +1649,17 @@
                                 </li>
                             </ul>
 
+                        {{-- FAIL CLOSED — service_type absent or unrecognised. No wizard
+                             exists for that state, so none is guessed at. --}}
+                        @else
+                            <div class="alert alert-warning" role="alert" data-service-type-unrecognised="1">
+                                <strong>This listing can’t be opened here.</strong>
+                                <div class="mt-1">
+                                    Its service type is missing or not recognised, so we can’t tell
+                                    which version of this form belongs to it. Please go back to your
+                                    listings and open it from there.
+                                </div>
+                            </div>
                         @endif
 
                         <!-- Tab Content -->

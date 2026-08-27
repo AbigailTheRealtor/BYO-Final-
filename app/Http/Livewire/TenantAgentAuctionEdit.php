@@ -2,6 +2,10 @@
 
 namespace App\Http\Livewire;
 
+use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+
+use App\Support\Listing\ListingWorkflow;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Http\Livewire\Concerns\ValidatesMediaUploads;
@@ -23,6 +27,17 @@ use App\Support\TenantServicesCatalog;
 
 class TenantAgentAuctionEdit extends Component
 {
+    use BelongsToListingWorkflow;
+
+    /** Hire an Agent — the shared four-role edit wizard. */
+    protected const LISTING_WORKFLOW = ListingWorkflow::HIRE_AGENT;
+    /**
+     * Role is NOT a constant here: this component serves all four roles, taking the
+     * role from the route. BelongsToListingWorkflow reads $this->user_type and
+     * validates it, with no fallback — an unrecognised role resolves to no model and
+     * every helper refuses. See the trait.
+     */
+
     use WithFileUploads;
     use ValidatesMediaUploads;
     use \App\Http\Livewire\Concerns\HandlesResolvedPropertyAddress; // A3.20-A3.25: shared resolved-address handler
@@ -2585,6 +2600,29 @@ class TenantAgentAuctionEdit extends Component
             $this->auctionId = $auctionId;
             $this->user_type = $user_type;
 
+            // OWNERSHIP FIRST, THEN THE WORKFLOW BOUNDARY.
+            //
+            // The owner-scoped findOrFail inside loadAuctionData() is the pre-existing
+            // Phase-1 authorization check, and a non-owner has always been refused by it
+            // with a ModelNotFoundException. Running it here — before the workflow guard —
+            // keeps that failure mode exactly as it was rather than replacing it with this
+            // guard's 404. The workflow guard is an ADDITIONAL boundary, so it must not
+            // change how the existing one reports.
+            $ownershipClass = ListingWorkflow::modelClassForRole($user_type);
+
+            if ($ownershipClass !== null) {
+                $ownershipClass::where('user_id', \Illuminate\Support\Facades\Auth::id())
+                    ->findOrFail($auctionId);
+            }
+
+            // WORKFLOW BOUNDARY — role + product, before any hydration.
+            // The route's role is passed explicitly and is authoritative.
+            // `mustBeDraft: false`: this is the EDIT surface and a published listing is
+            // a legitimate target here.
+            if ($this->resumableListing($auctionId, false, $user_type) === null) {
+                abort(404);
+            }
+
             // Phase 1c — decide whether the cascade runs, AFTER user_type is assigned (the
             // workflow map reads it) and BEFORE loadAuctionData() hydrates from the document.
             $this->bootGeographyCascade($this->geographyCascadeWorkflow());
@@ -3469,7 +3507,11 @@ class TenantAgentAuctionEdit extends Component
             $auction->title = $this->listing_title;
             $auction->save();
 
-            $auction->saveMeta('workflow_type', $this->workflow_type ?: 'hire_agent');
+            // Stamped from the component's own identity, not from the public (i.e.
+            // client-writable) `$this->workflow_type`. See the matching note in
+            // TenantAgentAuction::saveAllMetadata().
+            ListingWorkflow::stamp($auction, self::LISTING_WORKFLOW);
+            $this->workflow_type = self::LISTING_WORKFLOW;
             $auction->saveMeta('service_type', $this->service_type);
             $auction->saveMeta('user_type', $this->user_type);
             $auction->saveMeta('listing_status', $this->listing_status);
