@@ -1487,16 +1487,37 @@ class HireAgentDetailFrameworkTest extends TestCase
     // asserts that explicitly rather than picking one.
 
     /** The region holding the sidebar CTA stack — between the sidebar marker and the console. */
+    /**
+     * The sidebar, from its marker to whatever ends it.
+     *
+     * THE END MARKER IS A LIST, NOT ONE STRING, and that is the whole change here. The region used
+     * to end at `id="bids-section"`, which assumed the proposal console always follows the CTA. It
+     * no longer does: the console is now drawn only for a viewer who has a proposal to see, so for
+     * this test's agent — who has not bid — there is no `bids-section` at all and the old lookup
+     * returned an empty region, failing on absence rather than on content. The footer is the
+     * fallback bound; the assertions on the returned region are unchanged.
+     */
     private function sellerCtaRegion(string $html): string
     {
         $start = strpos($html, 'data-hire-agent-sidebar');
-        $end   = strpos($html, 'id="bids-section"');
 
-        if ($start === false || $end === false || $end <= $start) {
+        if ($start === false) {
             return '';
         }
 
-        return substr($html, $start, $end - $start);
+        $ends = [];
+        foreach (['id="bids-section"', '<!-- Footer', '<footer'] as $marker) {
+            $at = strpos($html, $marker, $start);
+            if ($at !== false) {
+                $ends[] = $at;
+            }
+        }
+
+        if ($ends === []) {
+            return '';
+        }
+
+        return substr($html, $start, min($ends) - $start);
     }
 
     /**

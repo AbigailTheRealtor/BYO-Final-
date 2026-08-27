@@ -2566,10 +2566,21 @@
         @endphp
 
 
-        {{-- 📩 Message Button --}}
+        {{-- 📩 Message Button.
+             SUPPRESSED UNDER THE REDESIGN, matching the `@unless` landlord already carries. The
+             Quick Actions band above the grid renders this same route as a tile, so leaving this
+             button in place put the identical action on the page twice — the duplication visual
+             QA reported. Suppressed rather than deleted: with the flag off this is the only
+             Send Message on the page.
+
+             WHO MAY SEE IT IS UNCHANGED. The control stays unconditional in both flag states and
+             the route keeps enforcing its own middleware; this decides WHERE the action lives,
+             never WHO may take it. --}}
+        @unless ($byaDetailRedesign)
         <a href="{{ route('auction-chat', ['buyer-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
+        @endunless
 
 
         {{--
@@ -2643,12 +2654,20 @@
         <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
         @endif
         @elseif(!$auth_id)
+        {{-- Guest CTA. Under the redesign this routes through x-hire-agent.login-cta so all four
+             roles emit one button structure; the legacy markup below is untouched and still the
+             flag-off answer. The BRANCH is unchanged — same `! $auth_id` condition, same login
+             route — only how the action is drawn. --}}
+        @if ($byaDetailRedesign)
+        <x-hire-agent.login-cta />
+        @else
         <a href="{{ route('login') }}">
             <button class="btn w-100">
                 <span class="bid m-0">Login to Bid</span>
                 <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
             </button>
         </a>
+        @endif
         @else
         <div class="alert alert-secondary text-center">
             Only agents can place bids
@@ -2690,6 +2709,25 @@
         @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
             <p class="mb-3">No agents have submitted a bid yet.</p>
         @endif
+
+        {{-- THE PROPOSAL CONSOLE EXISTS ONLY FOR VIEWERS WHO HAVE A PROPOSAL TO SEE.
+        
+             `<div class="card higestBider">` rendered unconditionally. For every viewer the access
+             layer hands zero proposals — a guest, a competing agent, an agent who has not bid, an
+             unrelated authenticated user — it drew an empty bordered card. The redesign made that
+             conspicuous by clearing what used to sit around it: on a guest page the sidebar became
+             the CTA and this empty bar. That is the leftover control visual QA reported.
+        
+             THE CONDITION IS LANDLORD'S, VERBATIM — see the long note at its own console. Two allow
+             branches matching HireAgentProposalAccess: the owner, who must still get the console and
+             its empty state before anyone bids; and a non-empty `$auction->bids`, which the
+             controller ALREADY narrowed, so "non-empty" here means "this viewer is authorized to see
+             at least one proposal" and cannot mean anything else.
+        
+             THIS IS NOT THE PRIVACY MECHANISM. Withholding happens server-side before the view runs
+             and the per-card gates are untouched; this only stops an empty container being drawn.
+             Flag-gated, so the legacy page keeps the empty card it has today. --}}
+        @if (! $byaDetailRedesign || ($canReviewAllProposals ?? false) || $auction->bids->isNotEmpty())
 
         <div class="card higestBider" id="bids-section">
             <div class="card-body card-body-padding">
@@ -4272,14 +4310,38 @@
                         </div>
                     </div>
                 </div>
+        @endif
         </x-slot>
 
         {{-- Buyer alone renders content inside the container but after the grid: the share
              block 749ace982 established below the two columns. It stays exactly there. --}}
         <x-slot name="afterGrid">
+        {{-- A full-width button carrying a single user icon — no label, no handler, no
+             destination and no accessible name. It predates the redesign and rendered for every
+             viewer. Suppressed only behind the flag, matching the identical guards seller and
+             landlord already carry: it is visible on the legacy page today, and "it looks like a
+             mistake" is not the same standard as "it can never render".
+        
+             IT GOES WITH THE SHARE CARD, NOT AFTER IT. Seller's note records the reason and this
+             pass proved it: guarding the card alone left this button standing by itself under the
+             CTA, which is the orphan control visual QA reported on exactly the two roles whose
+             card had just been guarded. --}}
+        @unless ($byaDetailRedesign)
         <button class="btn w-100 mt-0">
             <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
+        @endunless
+        {{-- Legacy QR / share card. GUARDED AS OF THE SHARE-PARITY PASS, matching the
+             `@unless` seller and landlord already carry. Under the redesign the share
+             targets and the copy control live in the Quick Actions band, so an unguarded
+             card rendered a SECOND "Share this link via" panel — its own QR, its own
+             social row and a second `.js-copy-link` — below the detail content. Buyer and
+             tenant were the two roles that never received the guard.
+        
+             WITH THE FLAG OFF NOTHING CHANGES: the card is the only sharing surface on a
+             legacy page, so the condition is `@unless` on the redesign rather than a
+             removal. --}}
+        @unless ($byaDetailRedesign)
         <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
                     <div class="qr-code" style="width: 100%; height:200px;">
@@ -4313,6 +4375,42 @@
                         </div>
                     </div>
                 </div>
+        @endunless
+        {{-- Legacy "Recommended For You" strip. SUPPRESSED UNDER THE REDESIGN, matching the
+             `@unless` the icon button and the share card above it already carry — and for a
+             stronger reason than either, because none of this is listing data.
+
+             IT IS HARDCODED MOCKUP MARKUP, not a recommendation feature. Both cards name the
+             same fixed address, quote the same "#12345" MLS id, the same beds/baths/sqft, the
+             same "$1,000" and the same frozen "28d 03:15:29" countdown, and pull their photo
+             from an absolute bidyouroffer.com URL. No query, no controller variable and no
+             component feeds it: the only Blade in the whole block is three `asset()` calls for
+             icon SVGs. So it cannot be "the buyer recommendations", and suppressing it removes
+             no recommendation the product actually computes.
+
+             NOTHING ELSE IN THE BUYER PRODUCT SHARES THIS CODE. The block is inline here; the
+             other views that show a "Recommended For You" heading each carry their own separate
+             copy. What IS shared is the CSS — `buyerOfferContentDetails` and `cardsDetails` are
+             used by the real buyer search and author surfaces — which is exactly why this is a
+             Blade guard and not a stylesheet rule. Hiding the class would have blanked live
+             result grids elsewhere in the buyer product.
+
+             THE RANGE STARTS AT THE `</div>` ABOVE THE `<hr>`, WHICH IS NOT A TYPO. That close
+             tag is an orphan: nothing in this slot opens it. It has always been balanced by the
+             `<div class="container buyerOfferContentDetails">` below, which is never closed —
+             the two malformed halves cancel, which is why the slot nets out today. Guarding only
+             the visible section from the `<hr>` down would have left the orphan close behind, and
+             it would then have closed the shell's own container early and pulled the footer up
+             into the detail card. They are one unit and are guarded as one.
+
+             The `<hr>` goes with them. Landlord's note records that buyer's trailing rule is
+             deliberate because it divides the listing from this section — true, and still true
+             with the flag off. With the section gone there is nothing to divide, so keeping it
+             would leave precisely the accidental trailing rule landlord removed in 5A.
+
+             WITH THE FLAG OFF NOTHING CHANGES: every line below renders exactly as it does on
+             the live legacy page today. --}}
+        @unless ($byaDetailRedesign)
     </div>
     <hr>
     <div class="container buyerOfferContentDetails">
@@ -4444,6 +4542,7 @@
                 </div>
             </div>
         </div>
+        @endunless
         </x-slot>
 
         {{--

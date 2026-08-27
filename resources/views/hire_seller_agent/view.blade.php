@@ -2177,10 +2177,21 @@
         @endphp
 
 
-        {{-- 📩 Message Button --}}
+        {{-- 📩 Message Button.
+             SUPPRESSED UNDER THE REDESIGN, matching the `@unless` landlord already carries. The
+             Quick Actions band above the grid renders this same route as a tile, so leaving this
+             button in place put the identical action on the page twice — the duplication visual
+             QA reported. Suppressed rather than deleted: with the flag off this is the only
+             Send Message on the page.
+
+             WHO MAY SEE IT IS UNCHANGED. The control stays unconditional in both flag states and
+             the route keeps enforcing its own middleware; this decides WHERE the action lives,
+             never WHO may take it. --}}
+        @unless ($hsaDetailRedesign)
         <a href="{{ route('auction-chat', ['seller-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
+        @endunless
 
 
         {{--
@@ -2247,12 +2258,20 @@
         <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
         @endif
         @elseif(!$auth_id)
+        {{-- Guest CTA. Under the redesign this routes through x-hire-agent.login-cta so all four
+             roles emit one button structure; the legacy markup below is untouched and still the
+             flag-off answer. The BRANCH is unchanged — same `! $auth_id` condition, same login
+             route — only how the action is drawn. --}}
+        @if ($hsaDetailRedesign)
+        <x-hire-agent.login-cta />
+        @else
         <a href="{{ route('login') }}">
             <button class="btn w-100">
                 <span class="bid m-0">Login to Bid</span>
                 @if ($hsaCtaPrice)<span class="badge bg-light float-end text-dark">{{ $hsaCtaPrice }}</span>@endif
             </button>
         </a>
+        @endif
         @else
         <div class="alert alert-secondary text-center">
             Only agents can place bids
@@ -2309,6 +2328,25 @@
         @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
             <p class="mb-3">No agents have submitted a bid yet.</p>
         @endif
+
+        {{-- THE PROPOSAL CONSOLE EXISTS ONLY FOR VIEWERS WHO HAVE A PROPOSAL TO SEE.
+        
+             `<div class="card higestBider">` rendered unconditionally. For every viewer the access
+             layer hands zero proposals — a guest, a competing agent, an agent who has not bid, an
+             unrelated authenticated user — it drew an empty bordered card. The redesign made that
+             conspicuous by clearing what used to sit around it: on a guest page the sidebar became
+             the CTA and this empty bar. That is the leftover control visual QA reported.
+        
+             THE CONDITION IS LANDLORD'S, VERBATIM — see the long note at its own console. Two allow
+             branches matching HireAgentProposalAccess: the owner, who must still get the console and
+             its empty state before anyone bids; and a non-empty `$auction->bids`, which the
+             controller ALREADY narrowed, so "non-empty" here means "this viewer is authorized to see
+             at least one proposal" and cannot mean anything else.
+        
+             THIS IS NOT THE PRIVACY MECHANISM. Withholding happens server-side before the view runs
+             and the per-card gates are untouched; this only stops an empty container being drawn.
+             Flag-gated, so the legacy page keeps the empty card it has today. --}}
+        @if (! $hsaDetailRedesign || ($canReviewAllProposals ?? false) || $auction->bids->isNotEmpty())
 
         <div class="card higestBider" id="bids-section">
             <div class="card-body card-body-padding">
@@ -3852,6 +3890,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
                 {{-- T5: a full-width button carrying a single user icon — no label, no handler, no
                      destination, and no accessible name. It predates the redesign and renders for
