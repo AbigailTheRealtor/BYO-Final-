@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopesListingWorkflow;
 use App\Traits\HasListingId;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,11 @@ use Illuminate\Database\Eloquent\Model;
 class BuyerAgentAuction extends Model
 {
     use HasFactory, HasListingId;
+
+    // Product-scoped query narrowing for the Hire Agent / Offer Listing split that
+    // shares this table. See ScopesListingWorkflow — it is a PRE-filter, not the
+    // whole rule; ListingWorkflowResolver decides.
+    use ScopesListingWorkflow;
     protected $guarded = [];
     protected $appends = ["get", "status"];
     protected $with = ['meta'];

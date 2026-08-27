@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingWorkflow;
+
 use App\Models\County;
 use App\Models\Financing;
 use App\Models\TenantAgentAuction;
@@ -44,6 +46,12 @@ class TenantAgentAuctionController extends Controller
             $auction->user_id = Auth::user()->id;
             // title is stored in meta as 'listing_title' — tenant_agent_auctions has no title column
             $auction->save();
+
+            // Every new row leaves its creation path with a product identity. This
+            // legacy store path never had one, so the rows it created were
+            // invisible to both hubs' filters and adoptable by either product's
+            // draft picker. Native column + legacy EAV key, written together.
+            ListingWorkflow::stamp($auction, ListingWorkflow::HIRE_AGENT);
             $auction->saveMeta('working_with_agent', $request->working_with_agent);
             $auction->saveMeta('cities', json_encode($request->cities));
             $auction->saveMeta('counties', json_encode($request->counties));

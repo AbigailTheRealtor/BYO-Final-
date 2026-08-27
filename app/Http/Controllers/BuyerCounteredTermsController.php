@@ -20,9 +20,51 @@ use Illuminate\Support\Facades\Auth;
 
 class BuyerCounteredTermsController extends Controller
 {
+    /**
+     * Re-resolve the bid and its auction from the database and admit only a party
+     * to that negotiation — the listing owner (the buyer) or the bidding agent.
+     *
+     * These are the same two parties BuyerAgentAuctionBidController::view_counter_terms()
+     * already admits, and that page is what links here; before this guard, the screen
+     * it links TO was the only one of the pair that let anybody in.
+     *
+     * Always re-queries rather than reading `$pab->auction`, because that relation is
+     * declared `->withDefault()` — it hands back an empty model instead of null when
+     * the auction is missing, so a `!$auction` check there can never fire and an
+     * absent auction would read as "owned by nobody" rather than as a 404.
+     *
+     * NOTE: store() and update() below carry their own guards, but neither is routed
+     * (only add and edit are). The guards therefore protected dead code while the two
+     * live entry points had none.
+     *
+     * This is defence in depth, not the authorization boundary:
+     * App\Http\Livewire\Buyer\BuyerAgentAuctionCounterTerm re-authorizes independently,
+     * because a Livewire component can be mounted from anywhere and its actions arrive
+     * on later requests that never pass through this controller.
+     */
+    private function bidForParty($id): BuyerAgentAuctionBid
+    {
+        $pab = BuyerAgentAuctionBid::find($id);
+        if (!$pab) {
+            abort(404);
+        }
+
+        $auction = BuyerAgentAuction::find($pab->buyer_agent_auction_id);
+        if (!$auction) {
+            abort(404);
+        }
+
+        $isBuyer = (int) $auction->user_id === (int) Auth::id();
+        $isAgent = (int) $pab->user_id === (int) Auth::id();
+
+        abort_unless(Auth::check() && ($isBuyer || $isAgent), 403, 'You are not authorized to view counter terms for this bid.');
+
+        return $pab;
+    }
+
     public function add(Request $request, $id)
     {
-        $pab = BuyerAgentAuctionBid::whereId($id)->first();
+        $pab = $this->bidForParty($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
 
@@ -32,7 +74,7 @@ class BuyerCounteredTermsController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $pab = BuyerAgentAuctionBid::findOrFail($id);
+        $pab = $this->bidForParty($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ?: null;
 

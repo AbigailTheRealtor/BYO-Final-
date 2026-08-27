@@ -2,6 +2,10 @@
 
 namespace App\Http\Livewire\OfferListing\Buyer;
 
+use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+
+use App\Support\Listing\ListingWorkflow;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
@@ -21,6 +25,18 @@ use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 
 class BuyerOfferListing extends Component
 {
+    use BelongsToListingWorkflow;
+
+    /** Create Offer Listing — Buyer. */
+    protected const LISTING_WORKFLOW = ListingWorkflow::OFFER_LISTING;
+
+    /**
+     * Read from a constant, never from $this->user_type: that property is public on a
+     * Livewire component and therefore client input. This screen edits exactly one
+     * role's table.
+     */
+    protected const LISTING_ROLE = 'buyer';
+
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads, HasMlsImport;
     use ResolvesOwnedAuction;
@@ -863,11 +879,18 @@ class BuyerOfferListing extends Component
         $this->listing_date = now()->format('Y-m-d');
 
         // Check for existing drafts
-        $this->hasDrafts = HireBuyerAgentAuction::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->exists();
+        $this->hasDrafts = $this->workflowHasDrafts(); // owner + product scoped; see BelongsToListingWorkflow
 
         if ($listingId) {
+            // WORKFLOW BOUNDARY — owner + role + product + draft-state, and it runs
+            // BEFORE loadDraft() so nothing from a foreign row is ever hydrated onto
+            // this component. Owning a row was previously the only requirement, which
+            // let an Offer Listing draft, a published listing, and another role's draft
+            // all resume into this wizard.
+            if ($this->resumableListing($listingId) === null) {
+                abort(404);
+            }
+
             $this->loadDraft($listingId);
         }
 
@@ -908,12 +931,18 @@ class BuyerOfferListing extends Component
         $this->listingId = null;
         $this->isDraft = false;
     }
+    /**
+     * The saved drafts offered by this screen's "Load Saved Draft" picker.
+     *
+     * Scoped to owner AND product. Both products share this role's table, so the old
+     * owner-plus-is_draft pair listed the other product's drafts too — which is how an
+     * Offer Listing draft came to be offered by, and opened in, a Hire Agent wizard.
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDrafts()
+     */
     public function getDrafts()
     {
-        return HireBuyerAgentAuction::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->latest()
-            ->get();
+        return $this->workflowDrafts();
     }
     public function updatedFees()
     {
@@ -2503,7 +2532,7 @@ class BuyerOfferListing extends Component
         // to $location_dna_preferences_json before that payload is persisted.
         $this->applyGeographyCascadeToPayload();
 
-        $auction->saveMeta('workflow_type', 'offer_listing');
+        ListingWorkflow::stamp($auction, ListingWorkflow::OFFER_LISTING);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
@@ -3097,55 +3126,50 @@ class BuyerOfferListing extends Component
         }
     }
 
+    /**
+     * Delete every draft this screen owns — FOR THIS PRODUCT ONLY.
+     *
+     * The ids are selected through the workflow-scoped helper BEFORE any DELETE is
+     * issued, which is the only place the boundary can be enforced here: the meta rows
+     * are removed with a raw query, so no Eloquent event exists to intercept a delete
+     * that has already chosen the wrong rows. Previously the ids came from
+     * `user_id` + `is_draft` alone, and because both products share this table a Hire
+     * "Delete All Drafts" destroyed the user's Offer Listing drafts and their meta
+     * (and vice versa).
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDeleteAllDrafts()
+     */
     public function deleteAllDrafts()
     {
         try {
-            // Get all draft IDs first
-            $draftIds = HireBuyerAgentAuction::where('user_id', Auth::id())
-                ->where('is_draft', true)
-                ->pluck('id');
+            $this->workflowDeleteAllDrafts();
 
-            // Delete all metadata associated with these drafts
-            if ($draftIds->isNotEmpty()) {
-                DB::table('buyer_agent_auction_metas')
-                    ->whereIn('buyer_agent_auction_id', $draftIds)
-                    ->delete();
-            }
-
-            // Now delete the drafts themselves
-            $deleted = HireBuyerAgentAuction::where('user_id', Auth::id())
-                ->where('is_draft', true)
-                ->delete();
-
-            // Reset component state and switch to write mode
+            $this->hasDrafts = $this->workflowHasDrafts();
 
             session()->flash('success', 'All drafts and their associated data have been deleted successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting drafts: ' . $e->getMessage());
         }
     }
+    /**
+     * Delete one draft.
+     *
+     * Owner, role, product and draft-state are all checked before anything is removed.
+     * The previous owner-only check let a Hire screen delete an Offer Listing draft
+     * (and a published listing, since draft state was never asserted).
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDeleteDraft()
+     */
     public function deleteDraft($draftId)
     {
         try {
-            // WF-3: only the draft's owner may delete it (and its meta).
-            if (! HireBuyerAgentAuction::where('id', $draftId)->where('user_id', Auth::id())->exists()) {
+            if (! $this->workflowDeleteDraft($draftId)) {
                 session()->flash('error', 'You are not authorized to delete this draft.');
+
                 return;
             }
-            // Delete metadata first
-            DB::table('buyer_agent_auction_metas')
-                ->where('buyer_agent_auction_id', $draftId)
-                ->delete();
 
-            // Delete the draft
-            HireBuyerAgentAuction::where('id', $draftId)
-                ->where('user_id', Auth::id())
-                ->delete();
-
-            // Check if there are any drafts left
-            $this->hasDrafts = HireBuyerAgentAuction::where('user_id', Auth::id())
-                ->where('is_draft', true)
-                ->exists();
+            $this->hasDrafts = $this->workflowHasDrafts();
 
             session()->flash('success', 'Draft deleted successfully.');
         } catch (\Exception $e) {

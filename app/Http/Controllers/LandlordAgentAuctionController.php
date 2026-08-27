@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingWorkflow;
+
 use Carbon\Carbon;
 use App\Models\County;
 use App\Models\Financing;
@@ -46,6 +48,12 @@ class LandlordAgentAuctionController extends Controller
             $auction->is_approved = true;
             $auction->is_draft = false;
             $auction->save();
+
+            // Every new row leaves its creation path with a product identity. This
+            // legacy store path never had one, so the rows it created were
+            // invisible to both hubs' filters and adoptable by either product's
+            // draft picker. Native column + legacy EAV key, written together.
+            ListingWorkflow::stamp($auction, ListingWorkflow::HIRE_AGENT);
             $auction->saveMeta("working_with_agent", $request->working_with_agent);
             $auction->saveMeta("address", $request->address);
             $auction->saveMeta("unit_num", $request->unit_num);

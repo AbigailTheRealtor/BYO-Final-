@@ -6,7 +6,9 @@ use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
 use App\Services\ListingImport\MlsFieldMap;
+use App\Services\Listing\ListingWorkflowResolver;
 use App\Support\Listing\ListingPhotoEntry;
+use App\Support\Listing\ListingWorkflow;
 use App\Support\Listing\MlsFactVocabulary;
 use App\Support\Listing\PropertyTypeVocabulary;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +42,21 @@ use Illuminate\Support\Facades\Log;
  * The writer performs the ownership scoping itself rather than trusting a
  * caller-supplied model, because the caller is a Livewire component whose
  * public properties are client input.
+ *
+ * EVERY DRAFT LEAVES HERE STAMPED AS AN OFFER LISTING.
+ * ---------------------------------------------------
+ * This class is reachable only from Create Offer Listing, so every row it creates is
+ * an Offer Listing — but it used to say so nowhere. It set `user_id`, `is_draft`,
+ * `title` and (on seller) `address`, and no product identity at all, because the only
+ * thing writing `workflow_type` was the wizards' `saveAllMetadata()`, which a quick
+ * import never runs. The four `*_agent_auctions` tables hold BOTH products, so a draft
+ * with no identity was a draft that belonged to whichever screen asked for it first —
+ * which is how an imported Offer Listing draft came to be listed, opened and rendered
+ * by the Hire Seller's Agent wizard.
+ *
+ * The stamp is written through {@see ListingWorkflow::stamp()} so the native column and
+ * the legacy EAV key are always set together. Writing one without the other would
+ * manufacture exactly the native/EAV disagreement the resolver must fail closed on.
  */
 class MlsQuickImportDraftWriter
 {
@@ -79,9 +96,16 @@ class MlsQuickImportDraftWriter
     /**
      * The user's own draft for this MLS listing, or null when they have none.
      *
-     * Owner-scoped first, MLS-key second. Drafts only: a published listing is
-     * never returned, so no caller can accidentally be handed one to overwrite.
-     * The newest is preferred when a user somehow accumulated several.
+     * Owner-scoped first, product second, MLS-key third. Drafts only: a published
+     * listing is never returned, so no caller can accidentally be handed one to
+     * overwrite. The newest is preferred when a user somehow accumulated several.
+     *
+     * The product filter matters even though only this class writes the MLS key: a
+     * draft that was created here and then resumed and re-saved by a Hire wizard comes
+     * back carrying both products' fingerprints, and the resolver reports that as
+     * conflicting. Such a row must not be silently re-adopted and written to as though
+     * it were a clean Offer Listing draft — a fresh draft is created instead, and the
+     * damaged row is left intact for the inventory to surface.
      */
     public function findOwnedDraft(string $role, int $userId, string $listingKey): ?object
     {
@@ -91,16 +115,25 @@ class MlsQuickImportDraftWriter
             return null;
         }
 
+        $resolver = app(ListingWorkflowResolver::class);
+
         $candidates = $modelClass::query()
             ->where('user_id', $userId)
             ->where('is_draft', true)
+            ->forWorkflow(ListingWorkflow::OFFER_LISTING)
             ->latest('id')
             ->get();
 
         foreach ($candidates as $candidate) {
-            if ((string) $candidate->info(self::META_LISTING_KEY) === $listingKey) {
-                return $candidate;
+            if ((string) $candidate->info(self::META_LISTING_KEY) !== $listingKey) {
+                continue;
             }
+
+            if (! $resolver->matches($candidate, ListingWorkflow::OFFER_LISTING)) {
+                continue;
+            }
+
+            return $candidate;
         }
 
         return null;
@@ -152,8 +185,21 @@ class MlsQuickImportDraftWriter
                 $auction->address = $this->draftTitle($result);
             }
 
+            // Product identity travels in the INSERT, not in a follow-up UPDATE. A row
+            // that exists for even one statement without it is a row another screen's
+            // picker could enumerate, and "briefly unidentified" is the state this whole
+            // change exists to abolish.
+            if ($this->tableHasColumn($auction, ListingWorkflow::COLUMN)) {
+                $auction->setAttribute(ListingWorkflow::COLUMN, ListingWorkflow::OFFER_LISTING);
+            }
+
             $auction->save();
         }
+
+        // Idempotent, and applied on resume as well as creation: a draft imported before
+        // this fix shipped carries no stamp, and re-importing it is the natural moment to
+        // give it one. Writes the native column and the legacy EAV key together.
+        ListingWorkflow::stamp($auction, ListingWorkflow::OFFER_LISTING);
 
         $this->writeFacts($auction, $role, $result);
         $this->writeGallery($auction, $result);

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingWorkflow;
+
 use Carbon\Carbon;
 use App\Models\City;
 use App\Models\User;
@@ -67,6 +69,12 @@ class SellerAgentAuctionController extends Controller
             $auction->auction_type = $request->auction_type;
             $auction->auction_length = $auction_lenth_days;
             $auction->save(); //$request->auction_length;
+
+            // Every new row leaves its creation path with a product identity. This
+            // legacy store path never had one, so the rows it created were
+            // invisible to both hubs' filters and adoptable by either product's
+            // draft picker. Native column + legacy EAV key, written together.
+            ListingWorkflow::stamp($auction, ListingWorkflow::HIRE_AGENT);
 
             $listing_date = Carbon::parse($request->listing_date);
             $expiration_date = Carbon::parse($request->expiration_date);

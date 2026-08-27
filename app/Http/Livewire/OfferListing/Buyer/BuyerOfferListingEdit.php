@@ -2,6 +2,10 @@
 
 namespace App\Http\Livewire\OfferListing\Buyer;
 
+use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+
+use App\Support\Listing\ListingWorkflow;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
@@ -17,6 +21,18 @@ use App\Http\Livewire\Concerns\HasSearchAreas;
 
 class BuyerOfferListingEdit extends Component
 {
+    use BelongsToListingWorkflow;
+
+    /** Create Offer Listing — Buyer (edit). */
+    protected const LISTING_WORKFLOW = ListingWorkflow::OFFER_LISTING;
+
+    /**
+     * Read from a constant, never from $this->user_type: that property is public on a
+     * Livewire component and therefore client input. This screen edits exactly one
+     * role's table.
+     */
+    protected const LISTING_ROLE = 'buyer';
+
     use \App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation; // stamps canonical bidding_starts_at + bidding_ends_at
     use WithFileUploads;
     use ResolvesOwnedAuction;
@@ -816,12 +832,18 @@ class BuyerOfferListingEdit extends Component
         $this->listingId = null;
         $this->isDraft = false;
     }
+    /**
+     * The saved drafts offered by this screen's "Load Saved Draft" picker.
+     *
+     * Scoped to owner AND product. Both products share this role's table, so the old
+     * owner-plus-is_draft pair listed the other product's drafts too — which is how an
+     * Offer Listing draft came to be offered by, and opened in, a Hire Agent wizard.
+     *
+     * @see \App\Http\Livewire\Concerns\BelongsToListingWorkflow::workflowDrafts()
+     */
     public function getDrafts()
     {
-        return HireBuyerAgentAuction::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->latest()
-            ->get();
+        return $this->workflowDrafts();
     }
     public function updatedFees()
     {
@@ -1377,6 +1399,13 @@ class BuyerOfferListingEdit extends Component
             $this->auctionId = $auctionId;
             $this->listingId = $auctionId;
             $this->assertCanManageAuction(HireBuyerAgentAuction::class, $auctionId, null);
+
+            // WORKFLOW BOUNDARY — owner + role + product, layered on top of the existing
+            // 403 ownership check above, which is unchanged. `mustBeDraft: false`: this is
+            // the EDIT route and a published listing is a legitimate target here.
+            if ($this->resumableListing($auctionId, false) === null) {
+                abort(404);
+            }
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
             $this->isListingDraft = (bool) $this->isDraft;
         }
@@ -2443,7 +2472,7 @@ class BuyerOfferListingEdit extends Component
         // class is the load site.
         $this->applyGeographyCascadeToPayload();
 
-        $auction->saveMeta('workflow_type', 'offer_listing');
+        ListingWorkflow::stamp($auction, ListingWorkflow::OFFER_LISTING);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);

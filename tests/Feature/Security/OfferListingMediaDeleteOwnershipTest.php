@@ -12,6 +12,7 @@ use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\TenantAgentAuction;
 use App\Models\User;
+use App\Support\Listing\ListingWorkflow;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -97,6 +98,19 @@ class OfferListingMediaDeleteOwnershipTest extends TestCase
     // Fixtures
     // =====================================================================
 
+    /**
+     * WHY THESE ROWS ARE STAMPED
+     * --------------------------
+     * The four `*_agent_auctions` tables are shared by Hire Agent and Create Offer Listing,
+     * and a row carrying no `workflow_type` is refused by both products' edit surfaces.
+     * These fixtures back OFFER LISTING components, so an unstamped row is not a realistic
+     * fixture — no Offer Listing edit route would ever have served one, and mounting it
+     * models nothing that can happen in production.
+     *
+     * Stamping is a fixture correction, not an accommodation. What this file guards —
+     * ownership of the row and authority over the filename — is untouched by it, and the
+     * cross-product boundary is asserted separately in tests/Feature/Listing.
+     */
     private function sellerListing(User $owner): SellerAgentAuction
     {
         $l = SellerAgentAuction::forceCreate([
@@ -104,6 +118,7 @@ class OfferListingMediaDeleteOwnershipTest extends TestCase
             'is_draft' => false, 'is_approved' => true, 'is_sold' => false,
         ]);
         $this->seedMedia($l);
+        ListingWorkflow::stamp($l, ListingWorkflow::OFFER_LISTING);
 
         return $l->fresh();
     }
@@ -114,6 +129,7 @@ class OfferListingMediaDeleteOwnershipTest extends TestCase
             'user_id' => $owner->id, 'title' => 'L', 'is_draft' => false,
         ]);
         $this->seedMedia($l);
+        ListingWorkflow::stamp($l, ListingWorkflow::OFFER_LISTING);
 
         return $l->fresh();
     }
@@ -125,6 +141,7 @@ class OfferListingMediaDeleteOwnershipTest extends TestCase
         ]);
         $this->seedMedia($l);
         $l->saveMeta('user_type', 'tenant');
+        ListingWorkflow::stamp($l, ListingWorkflow::OFFER_LISTING);
 
         return $l->fresh();
     }
