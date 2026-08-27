@@ -51,12 +51,14 @@ class CreateOfferCoordinateWiringTest extends TestCase
      * publishes through quick import needs Location DNA exactly as one published
      * through the wizard does — so the baseline moves rather than the invariant.
      *
-     * It is accounted for here and NOT exempted anywhere else. Quick import
-     * dispatches without first resolving a coordinate through the ladder, so it
-     * has the gap the four Create Offer components no longer have: it persists an
-     * `mls_listing_key`, which is precisely what the Bridge rung needs, and then
-     * never asks. Closing that is a separate change with its own review; this
-     * constant only records that the dispatch exists and is expected.
+     * It is accounted for here and NOT exempted anywhere else. Quick import used
+     * to dispatch without first resolving a coordinate through the ladder — it
+     * persisted an `mls_listing_key`, which is precisely what the Bridge rung
+     * needs, and then never asked. That gap is now closed: the component uses the
+     * same shared concern the eight below do and resolves immediately before this
+     * dispatch. The number is unchanged by that change, which is the point — the
+     * fix added a resolution, not a dispatch. Its behaviour is pinned in
+     * {@see \Tests\Feature\ListingImport\MlsQuickImportCoordinateResolutionTest}.
      *
      * Deliberately still a hard number. A 23rd dispatch appearing anywhere must
      * fail this test and be explained here before it is admitted.
@@ -236,12 +238,20 @@ class CreateOfferCoordinateWiringTest extends TestCase
     }
 
     /**
-     * Four Create Offer components (G5) plus four Hire Agent components (G6).
+     * Four Create Offer components (G5), four Hire Agent components (G6), and the
+     * shared MLS quick-import base.
      *
      * The point of the assertion is unchanged and is not about the number: the
      * trait resolves ONE property's coordinate, so it may only ever reach flows
      * that have one property. Buyer and Tenant carry multi-area search criteria
      * and no property_lat at all, and must never appear in this list.
+     *
+     * Quick import qualifies on exactly that test. It is one abstract component
+     * with two concrete subclasses — Seller and Landlord — each producing a single
+     * property listing, so it is listed once rather than twice; the subclasses
+     * carry the role, not the resolution. `mls_direct_import.prefill_roles` is
+     * seller/landlord for the same reason the trait's list is, and widening either
+     * to Buyer or Tenant would be the same mistake in two places.
      */
     public function test_the_trait_is_used_by_exactly_the_seller_landlord_property_components(): void
     {
@@ -267,6 +277,7 @@ class CreateOfferCoordinateWiringTest extends TestCase
             'app/Http/Livewire/HireSellerAgent/SellerAgentAuctionEdit.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php',
             'app/Http/Livewire/HireLandLordAgent/LandLordAgentAuctionEdit.php',
+            'app/Http/Livewire/OfferListing/QuickImport/MlsQuickImportComponent.php',
         ]);
         sort($expected);
 
