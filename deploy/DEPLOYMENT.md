@@ -61,14 +61,84 @@ and asserts positively that `deploy/start-production.sh` still owns the job.
 
 ### Current state vs planned hardening
 
-**Current, after this change:** exactly one migration owner —
-`deploy/start-production.sh`. Concurrency safety rests on that single ownership
-and on nothing else.
+**CURRENT — implemented and asserted by tests:**
 
-**Planned, not yet implemented:** an explicit deploy lock (e.g. `flock`), a
-recorded deploy SHA, and a post-boot smoke check. None of those exist today.
-Single ownership is currently the only protection, so treat "only one thing
-migrates" as load-bearing rather than as a tidy convention.
+| Control | Where | Notes |
+|---|---|---|
+| Single migration owner | `deploy/start-production.sh` | `[postMerge]` no longer migrates |
+| Exclusive deploy lock | `flock` on `.ops-backups/deploy.lock` | bounded wait, fails closed |
+| Recorded deploy SHA | `.ops-backups/current-deploy-sha` | written after migrations succeed |
+| Persistent backups | `.ops-backups/` | never `/tmp` |
+| Startup ordering | preflight → migrate → record → serve | a failed migration never reaches `serve` |
+| Code rollback | re-pin previous SHA, restart | schema rollback is separate and manual |
+
+Single ownership stops a *second script* migrating. It never stopped *this
+script* running twice — a redeploy overlapping a restart, or two deploys
+triggered close together. The lock is the mechanism Laravel 8 does not provide.
+
+**PLANNED — not yet live. Do not read these as done:**
+
+- **Automated post-start smoke check.** See "What verifies a start" below — not
+  implemented, deliberately.
+- **Canonical `production-serve` worktree** (PR #110). The committed `.replit`
+  change is open but unmerged, the worktree does not exist, and production still
+  serves from `.worktrees/postmerge-validate-current-main`.
+- **`APP_DEBUG=false` in production.** Still an open question — see "Environment
+  mode" below.
+
+### What verifies a start, and what does not
+
+The start script guarantees **ordering**: preflight runs, migrations apply, the
+SHA is recorded, and only then is the port bound. `set -euo pipefail` means a
+failed migration exits non-zero without ever reaching `serve`, so a broken
+release fails to start rather than serving new code against an old schema.
+
+The platform verifies **that the port binds and the process stays up**. There is
+no `healthCheckPath` configured under `[deployment]`, and `waitForPort = 5000`
+belongs to the workspace workflow, not the deployment.
+
+Nothing verifies that the application *answers correctly* after boot. That gap is
+known and deliberately left open: the script ends with
+
+```
+exec php artisan serve …
+```
+
+and `exec` replaces the shell, so no command can run after it. Adding a smoke
+check would mean backgrounding the server, polling it, and hand-forwarding
+SIGTERM/SIGINT — changing the process-supervision model so the supervisor no
+longer talks to the server directly. Getting that subtly wrong orphans the
+production process or double-binds the port. A missing smoke check is a smaller
+problem than a mis-supervised production server, so it stays a follow-up rather
+than a rushed addition.
+
+### The deploy lock
+
+```
+flock -w ${DEPLOY_LOCK_TIMEOUT:-30}  →  .ops-backups/deploy.lock
+```
+
+Held on file descriptor 9 for the critical section — preflight, migration, SHA
+recording — and **released before `exec`**. Holding it across `exec` would leave
+the serving process owning the lock for its whole life, so no later deploy could
+ever acquire it.
+
+Bounded on purpose: a deploy queued forever behind a stuck one is an outage with
+extra steps. After the timeout it refuses and exits non-zero.
+
+`DEPLOY_STATE_DIR` relocates the lock and SHA record; it exists so tests can use
+a temporary directory. Production leaves it unset.
+
+### The recorded deploy SHA
+
+`.ops-backups/current-deploy-sha` holds the commit this release is serving,
+`0600`, written atomically (temp file + rename) so a reader can never see a
+half-written value.
+
+It is written **after** migrations succeed, never before. Recording earlier would
+name a SHA that never reached a healthy schema — a rollback target that was never
+good. If the SHA cannot be determined the deploy refuses to start: `DEPLOY_SHA`
+overrides the lookup for environments shipped without a `.git` directory.
 
 ### Why migrations run at start and not at build
 
