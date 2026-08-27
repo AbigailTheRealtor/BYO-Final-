@@ -87,6 +87,7 @@ class OnPlatformCandidateAttributeResolver implements CandidateAttributeResolver
                     city: $gp !== null ? $this->stringOrNull($gp->source_city) : null,
                     zip: $gp !== null ? $this->stringOrNull($gp->source_zip) : null,
                     county: $gp !== null ? $this->stringOrNull($gp->source_county) : null,
+                    state: $gp !== null ? $this->stringOrNull($gp->source_state) : null,
                 );
             }
         }
@@ -140,7 +141,7 @@ class OnPlatformCandidateAttributeResolver implements CandidateAttributeResolver
         $rows = DB::table('property_location_dna')
             ->where('listing_type', $listingType)
             ->whereIn('listing_id', $ids)
-            ->get(['listing_id', 'geocoded_lat', 'geocoded_lng', 'source_city', 'source_zip', 'source_county']);
+            ->get(['listing_id', 'geocoded_lat', 'geocoded_lng', 'source_city', 'source_zip', 'source_county', 'source_state']);
 
         $out = [];
         foreach ($rows as $row) {

@@ -124,6 +124,17 @@ class TenantCriteriaLoader
             ? $ldnaDecoded['polygons']
             : [];
 
+        // Preferred State — a single value the Search Areas widget writes into the
+        // blob and {@see \App\Http\Livewire\Concerns\HasSearchAreas::saveSearchAreas()}
+        // mirrors to a discrete `state` meta. Read blob-first for the same reason
+        // cities are: the map is the editing surface, so a value there is the
+        // user's current intent and the discrete key only answers for records
+        // predating it. Passed through raw — {@see \App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload}
+        // owns the name/abbreviation normalization so every loader agrees.
+        $preferredState = array_key_exists('state', $ldnaDecoded)
+            ? $ldnaDecoded['state']
+            : $infoGet('state');
+
         // -----------------------------------------------------------------------
         // Price — tenant criteria carry a monthly rental budget, not a sale price.
         // bridge_properties.list_price stores sale prices ($200k+), so applying
@@ -166,6 +177,7 @@ class TenantCriteriaLoader
             'preferred_cities'            => $preferredCities,
             'preferred_zip_codes'         => [],
             'preferred_counties'          => $preferredCounties,
+            'preferred_state'             => $preferredState,
             'radius_searches'             => $radiusSearches,
             'polygons'                    => $polygons,
             'preferred_subdivisions'      => [],

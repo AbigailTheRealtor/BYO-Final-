@@ -45,6 +45,19 @@ final class CandidateAttributeProfile
         public readonly ?string $city,
         public readonly ?string $zip,
         public readonly ?string $county,
+        /**
+         * The candidate's state, as stored — `property_location_dna.source_state`.
+         * NOT normalized here: this is a raw attribute record, and the comparison
+         * rule belongs to whoever compares. {@see \App\Services\Dna\Relevance\Narrowers\GeoEnvelopeNarrower}
+         * normalizes both sides through {@see \App\Support\Location\UsStateCode}.
+         *
+         * Deliberately absent from {@see self::hasNoGeoSignal()}: a candidate whose
+         * only signal is a state still fails open and is KEPT, exactly as it was
+         * before this field existed. Counting it there would start dropping
+         * candidates that a narrower previously could not evaluate, which is a
+         * behaviour change this eligibility fix has no reason to make.
+         */
+        public readonly ?string $state = null,
     ) {
     }
 

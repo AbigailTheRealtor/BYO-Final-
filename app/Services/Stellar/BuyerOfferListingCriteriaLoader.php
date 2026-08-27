@@ -160,6 +160,14 @@ class BuyerOfferListingCriteriaLoader
             [$this, 'normalizeCountyName'],
             $this->decodeJsonMeta($get('counties'))
         )));
+
+        // Preferred State — see the note in BuyerCriteriaLoader. Blob first, the
+        // discrete `state` meta second, raw value passed through for the payload
+        // to normalize.
+        $preferredState = ($ldnaBlobPresent && array_key_exists('state', $ldna))
+            ? $ldna['state']
+            : $get('state');
+
         $preferredSubdivisions = $this->decodeJsonMeta($get('preferred_subdivisions'));
         $preferredMlsAreas     = $this->decodeJsonMeta($get('preferred_mls_areas'));
 
@@ -240,6 +248,7 @@ class BuyerOfferListingCriteriaLoader
             'preferred_cities'            => $preferredCities,
             'preferred_zip_codes'         => $preferredZipCodes,
             'preferred_counties'          => $preferredCounties,
+            'preferred_state'             => $preferredState,
             'radius_searches'             => $radiusSearches,
             'polygons'                    => $polygons,
             'preferred_subdivisions'      => $preferredSubdivisions,
