@@ -209,6 +209,13 @@ class TenantOfferListingCriteriaLoader
 
         $preferredCounties = $this->decodeJsonMeta($get('counties'));
 
+        // Preferred State — see the note in BuyerCriteriaLoader. Blob first, the
+        // discrete `state` meta second, raw value passed through for the payload
+        // to normalize.
+        $preferredState = ($ldnaBlobPresent && array_key_exists('state', $ldna))
+            ? $ldna['state']
+            : $get('state');
+
         // -----------------------------------------------------------------------
         // Price — tenant criteria use a monthly rental budget. BYO-H4: both target
         // PropertyTypes ('Residential Lease' and 'Commercial Lease') store the monthly
@@ -280,6 +287,7 @@ class TenantOfferListingCriteriaLoader
             'preferred_cities'            => $preferredCities,
             'preferred_zip_codes'         => $preferredZipCodes,
             'preferred_counties'          => $preferredCounties,
+            'preferred_state'             => $preferredState,
             'radius_searches'             => $radiusSearches,
             'polygons'                    => $polygons,
             'preferred_subdivisions'      => [],

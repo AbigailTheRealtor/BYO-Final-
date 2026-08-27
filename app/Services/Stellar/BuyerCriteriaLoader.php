@@ -144,6 +144,18 @@ class BuyerCriteriaLoader
             [$this, 'normalizeCountyName'],
             $this->decodeJsonMeta($infoGet('preferred_counties'))
         )));
+
+        // Preferred State — a single value the Search Areas widget writes into the
+        // blob and {@see \App\Http\Livewire\Concerns\HasSearchAreas::saveSearchAreas()}
+        // mirrors to a discrete `state` meta. Read blob-first for the same reason
+        // cities are: the map is the editing surface, so a value there is the
+        // user's current intent and the discrete key only answers for records
+        // predating it. Passed through raw — {@see \App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload}
+        // owns the name/abbreviation normalization so every loader agrees.
+        $preferredState = ($ldnaBlobPresent && array_key_exists('state', $ldna))
+            ? $ldna['state']
+            : $infoGet('state');
+
         $preferredSubdivisions = $this->decodeJsonMeta($infoGet('preferred_subdivisions'));
         $preferredMlsAreas     = $this->decodeJsonMeta($infoGet('preferred_mls_areas'));
 
@@ -207,6 +219,7 @@ class BuyerCriteriaLoader
             'preferred_cities'            => $preferredCities,
             'preferred_zip_codes'         => $preferredZipCodes,
             'preferred_counties'          => $preferredCounties,
+            'preferred_state'             => $preferredState,
             'radius_searches'             => $radiusSearches,
             'polygons'                    => $polygons,
             'preferred_subdivisions'      => $preferredSubdivisions,

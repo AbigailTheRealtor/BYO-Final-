@@ -2,6 +2,7 @@
 
 namespace App\Services\Dna\Relevance\Narrowers;
 
+use App\Support\Location\UsStateCode;
 use App\Services\Dna\Relevance\CandidateNarrower;
 use App\Services\Dna\Relevance\MatchDirection;
 use App\Services\Dna\Relevance\NarrowingContext;
@@ -47,8 +48,9 @@ class GeoEnvelopeNarrower implements CandidateNarrower
         $cities   = $this->lowerSet($criteria->preferredCities);
         $zips      = $this->stringSet($criteria->preferredZipCodes);
         $counties = $this->lowerSet($criteria->preferredCounties);
+        $state    = $criteria->preferredState;
 
-        return array_values(array_filter($tuples, function (array $tuple) use ($context, $criteria, $cities, $zips, $counties) {
+        return array_values(array_filter($tuples, function (array $tuple) use ($context, $criteria, $cities, $zips, $counties, $state) {
             $profile = $context->profileFor($tuple);
             if ($profile === null || $profile->hasNoGeoSignal()) {
                 return true; // fail-open: cannot evaluate geography
@@ -70,6 +72,12 @@ class GeoEnvelopeNarrower implements CandidateNarrower
             if ($profile->county !== null && isset($counties[strtolower($profile->county)])) {
                 return true;
             }
+            // Last because it is the broadest, not because it is weakest — this
+            // is an OR, so position affects only how early the loop can stop.
+            if ($state !== null && $profile->state !== null
+                && UsStateCode::normalize($profile->state) === $state) {
+                return true;
+            }
 
             return false;
         }));
@@ -81,7 +89,11 @@ class GeoEnvelopeNarrower implements CandidateNarrower
             || ! empty($c->polygons)
             || ! empty($c->preferredCities)
             || ! empty($c->preferredZipCodes)
-            || ! empty($c->preferredCounties);
+            || ! empty($c->preferredCounties)
+            // A Preferred State is a declared envelope. Omitting it here made a
+            // state-only searcher look like one who had declared no geography at
+            // all, so this narrower returned every tuple untouched.
+            || ($c->preferredState !== null && $c->preferredState !== '');
     }
 
     private function matchesGeometry(BuyerCriteriaPayload $criteria, float $lat, float $lng): bool
