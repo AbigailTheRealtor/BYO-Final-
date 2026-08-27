@@ -13,6 +13,64 @@ and neither restarts the other.
 | Web | `.replit` → `[deployment] run` | `bash deploy/start-production.sh` |
 | Scheduler | manual Replit setup (see `SCHEDULER.md`) | `bash deploy/scheduler.sh` |
 
+## The canonical serving worktree
+
+The port-5000 workflow serves from exactly one path:
+
+```
+/home/runner/workspace/.worktrees/production-serve
+```
+
+**CURRENT — what the committed configuration targets.** This path is pinned in
+`.replit`, so it is reviewable in git rather than living only on a disk somewhere.
+`CanonicalServingWorktreeTest` asserts it, and asserts that the workflow never
+again points at a transient tree.
+
+### Why a dedicated worktree at all
+
+The workflow used to serve from `$PWD` — whatever directory the supervisor
+started in, which is the repository root, a development workspace that routinely
+sits on a feature branch. It had also been hand-edited on disk to serve from
+`.worktrees/postmerge-validate-current-main`, a tree whose name declares it a
+disposable post-merge validation checkout. That edit was in no commit, so nothing
+reviewed it and nothing would restore it.
+
+Neither is a production target. One follows whoever last checked out a branch at
+the root; the other is a scratch tree sitting among dozens of siblings, and a
+single cleanup pass over stale validation worktrees would have deleted it.
+
+### How the canonical worktree behaves
+
+| Property | Rule |
+|---|---|
+| HEAD | **detached**, pinned to an explicit approved deploy SHA |
+| Branch | none — never on a branch, never follows `main` |
+| `git pull` | never |
+| Lock | `git worktree lock` while it is serving |
+| Purpose | production serving only |
+| Feature work | never |
+| Tests | never run inside it |
+| Composer | never experimented with inside it |
+| Promotion | explicit `git checkout --detach <approved-sha>` |
+| Code rollback | re-pin the previous known-good SHA, then restart the supervisor workflow |
+| Schema rollback | **not automatic** — restore from a dump under `.ops-backups/`, as a deliberate incident procedure |
+| After a supervisor restart | must come back to this same canonical path |
+
+Detached rather than a branch on purpose: production identity is *which commit is
+live*, not which branch. A branch invites accidental commits and a stray `pull`;
+a detached SHA makes "what is running" unambiguous and makes promotion an
+explicit, reviewable act. The lock is the concrete defence against a worktree
+cleanup removing production.
+
+Backups stay under `/home/runner/workspace/.ops-backups/` — never `/tmp`, which
+does not survive a container restart.
+
+### Not yet done
+
+Committing this path does **not** switch production to it. Creating the
+`production-serve` worktree and repointing the live supervisor is a separate,
+controlled deployment event.
+
 ## Migrations: the web start script owns them
 
 `deploy/start-production.sh` is the **only** thing that migrates:
@@ -61,9 +119,10 @@ and asserts positively that `deploy/start-production.sh` still owns the job.
 
 ### Current state vs planned hardening
 
-**Current, after this change:** exactly one migration owner —
-`deploy/start-production.sh`. Concurrency safety rests on that single ownership
-and on nothing else.
+**Current, on `main` today:** exactly one migration owner —
+`deploy/start-production.sh`. The `[postMerge]` hook's `migrate` call has been
+removed, so the platform's merge action no longer touches the schema.
+Concurrency safety rests on that single ownership and on nothing else.
 
 **Planned, not yet implemented:** an explicit deploy lock (e.g. `flock`), a
 recorded deploy SHA, and a post-boot smoke check. None of those exist today.
