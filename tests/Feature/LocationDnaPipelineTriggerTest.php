@@ -64,6 +64,20 @@ class LocationDnaPipelineTriggerTest extends TestCase
         // tests/Feature/Security/GooglePlacesKillSwitchTest.
         config(['google_places.enabled' => true]);
 
+        // The POI step guards on services.google.places_key and fails closed with
+        // 'missing_google_api_key' when it is blank — a guard that is generic over
+        // listing_type, not specific to any one source. phpunit.xml deliberately blanks
+        // GOOGLE_PLACES_API_KEY, so every case in this file needs the fake key to reach
+        // the POI/summary/lifestyle steps at all.
+        //
+        // This used to be set inside makeSellerListing() as a side effect, which made it
+        // an accidental prerequisite of the seller fixture rather than of the pipeline.
+        // makeBridgeListing() did not repeat it, so the bridge case failed at the POI key
+        // guard and the pipeline correctly reported 'partial' — a fixture asymmetry, not a
+        // defect in the bridge branch. Setting it here makes the prerequisite shared and
+        // explicit. It grants no network access: both Guzzle clients are mocked below.
+        config(['services.google.places_key' => 'fake-test-key']);
+
         $this->bindMockedServices();
     }
 
@@ -398,8 +412,6 @@ class LocationDnaPipelineTriggerTest extends TestCase
      */
     private function makeSellerListing(): PropertyAuction
     {
-        config(['services.google.places_key' => 'fake-test-key']);
-
         $stateId  = $this->ensureState('FL', 'Florida');
         $cityId   = $this->ensureCity('Tampa', $stateId);
 
