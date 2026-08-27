@@ -26,7 +26,22 @@ serve
 ```
 
 **Nothing else may run migrations.** Not the scheduler, not the build phase, not
-a second web process.
+a second web process, and **not the Replit `[postMerge]` hook**.
+
+### The `[postMerge]` hook does not migrate
+
+`scripts/post-merge.sh` — the script Replit's `[postMerge]` hook runs — used to
+call `php artisan migrate --force --no-interaction`. It no longer does, and must
+not again.
+
+That hook fires on a **platform merge in the workspace**, from whatever branch
+happens to be checked out there, with no backup, no preflight and no lock. It is
+not the deployment path. A migration applied that way changes the production
+schema at a moment nobody chose, from a tree nobody reviewed.
+
+It still refreshes dependencies, assets and caches. It simply may not alter the
+schema. Migrations happen during an **explicit deployment**, never as a side
+effect of a merge.
 
 ### Why single ownership matters more here than usual
 
@@ -35,8 +50,25 @@ the built-in migration lock arrived in Laravel 9. There is no mutex, so two
 processes migrating concurrently is a real race with no framework protection.
 Safety comes entirely from exactly one process owning the job.
 
-`DeploymentMigrationReadinessTest` asserts this: the scheduler contains no
-`artisan migrate`, no other `deploy/*.sh` does, and the build phase does not.
+That is the whole reason the `[postMerge]` migration had to go: it was a second
+owner, and there is no lock underneath it to make a second owner survivable.
+
+`DeploymentMigrationReadinessTest` asserts the scheduler contains no
+`artisan migrate`, that no other `deploy/*.sh` does, and that the build phase
+does not. `PostMergeMigrationOwnershipTest` covers the hook: it resolves the
+script path out of `.replit` rather than assuming one, ignores commented lines,
+and asserts positively that `deploy/start-production.sh` still owns the job.
+
+### Current state vs planned hardening
+
+**Current, after this change:** exactly one migration owner —
+`deploy/start-production.sh`. Concurrency safety rests on that single ownership
+and on nothing else.
+
+**Planned, not yet implemented:** an explicit deploy lock (e.g. `flock`), a
+recorded deploy SHA, and a post-boot smoke check. None of those exist today.
+Single ownership is currently the only protection, so treat "only one thing
+migrates" as load-bearing rather than as a tidy convention.
 
 ### Why migrations run at start and not at build
 
@@ -67,9 +99,11 @@ data. A test asserts none of them appear in the start script.
 
 ## How this was missed before
 
-A migration hook did exist — `scripts/post-merge.sh` runs `migrate --force`. But
-it is wired to Replit's `[postMerge]` hook, so it fires when a merge happens **in
-the workspace**, not on deploy and not when a pull request is merged on GitHub.
+A migration hook did exist — `scripts/post-merge.sh` **used to** run
+`migrate --force`. But it is wired to Replit's `[postMerge]` hook, so it fired
+when a merge happened **in the workspace**, not on deploy and not when a pull
+request was merged on GitHub. (That call has since been removed; see "The
+`[postMerge]` hook does not migrate" above.)
 
 The one mechanism that migrated was the one that does not run on the path we
 actually ship through. G4's provenance migration reached `main`, was released,
