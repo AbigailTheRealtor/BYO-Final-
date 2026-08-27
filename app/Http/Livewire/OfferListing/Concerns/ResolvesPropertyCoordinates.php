@@ -12,15 +12,19 @@ use Illuminate\Database\Eloquent\Model;
  * Deliberately one method with one line of behaviour. All of the thinking —
  * precedence, change detection, provenance, failure posture — lives in
  * {@see PropertyCoordinatePersistenceService}, which knows nothing about roles
- * or Livewire. This exists so that eight components share one insertion point
- * rather than eight copies of a call, and so that "resolve before dispatch" is
+ * or Livewire. This exists so that nine components share one insertion point
+ * rather than nine copies of a call, and so that "resolve before dispatch" is
  * stated once, here, instead of being an ordering somebody has to notice at
- * thirteen call sites.
+ * fourteen dispatch sites.
  *
- * Eight users, all of them Seller or Landlord property listings: four Create
- * Offer components (G5) and four Hire Agent components (G6). Both groups write
- * the same two models under the same `property_location_dna` listing types —
- * 'seller_agent' and 'landlord_agent' — which is why one trait serves both.
+ * Nine users, all of them Seller or Landlord property listings: four Create
+ * Offer components (G5), four Hire Agent components (G6), and the shared MLS
+ * quick-import base. All three groups write the same two models under the same
+ * `property_location_dna` listing types — 'seller_agent' and 'landlord_agent' —
+ * which is why one trait serves them all.
+ *
+ * Quick import is one abstract component with a Seller and a Landlord subclass,
+ * so it appears here once: the subclasses carry the role, not the resolution.
  *
  * Buyer and Tenant are not on this list and must not join it. Their geography
  * is multi-area search criteria (`HasSearchAreas`), not one property's point;
@@ -58,11 +62,16 @@ use Illuminate\Database\Eloquent\Model;
  *                 dispatch at all before G6. Their `saveDraft()` boundaries
  *                 resolve but do NOT dispatch: an unpublished draft has no
  *                 consumer for Location DNA, and drafts are saved repeatedly.
+ *   Quick import  one dispatch site, which already existed and was the last one
+ *                 in the application still dispatching without resolving first.
+ *                 Wiring it added a resolution and no dispatch, so the app-wide
+ *                 baseline below is unchanged by it.
  *
- * That makes the app-wide Location DNA dispatch-site baseline 21 after G6, from
- * 17 before it. (Written without the literal call expression on purpose — the
- * tests below count raw occurrences of it across `app/`, so naming it here
- * would make this comment count itself.) The number is pinned by test in both
+ * That makes the app-wide Location DNA dispatch-site baseline 22: 17 before G6,
+ * 21 after it, and the quick-import site above is the 22nd — it predates this
+ * wiring and was not added by it. (Written without the literal call expression
+ * on purpose — the tests below count raw occurrences of it across `app/`, so
+ * naming it here would make this comment count itself.) The number is pinned in
  * {@see \Tests\Feature\Location\CreateOfferCoordinateWiringTest} and
  * {@see \Tests\Feature\HireAgent\HireAgentCoordinateWiringTest}, so it fails
  * loudly rather than drifting.
@@ -75,6 +84,7 @@ use Illuminate\Database\Eloquent\Model;
  * @see \App\Http\Livewire\HireSellerAgent\SellerAgentAuctionEdit
  * @see \App\Http\Livewire\HireLandLordAgent\LandLordAgentAuction
  * @see \App\Http\Livewire\HireLandLordAgent\LandLordAgentAuctionEdit
+ * @see \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent
  */
 trait ResolvesPropertyCoordinates
 {

@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\OfferListing\QuickImport;
 
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
+use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
 use App\Services\ListingImport\MlsPropertyDetailsPresenter;
@@ -62,6 +63,7 @@ use Livewire\Component;
 abstract class MlsQuickImportComponent extends Component
 {
     use ResolvesOwnedAuction;
+    use ResolvesPropertyCoordinates;
     use StampsBiddingActivation;
 
     public const STEP_LOOKUP  = 'lookup';
@@ -798,20 +800,56 @@ abstract class MlsQuickImportComponent extends Component
     }
 
     /**
-     * Prime Location DNA for the published listing.
+     * Resolve the property's coordinate, then prime Location DNA for it.
      *
-     * Best-effort and never allowed to fail a publish: a listing that is live
-     * with enrichment still queued is a far better outcome than one that refused
-     * to publish because a background pipeline was unavailable. Mirrors the
-     * wizard's own try/catch around the same dispatch.
+     * WHY THE COORDINATE IS RESOLVED HERE, AND FIRST
+     * ----------------------------------------------
+     * This flow persists an `mls_listing_key` — which is precisely the handle
+     * {@see \App\Services\Location\Coordinates\Adapters\BridgeMlsCoordinatesAdapter}
+     * matches on — and for a while it never asked. Two things followed:
+     *
+     *   The feed's own point, when it had one, arrived through
+     *   {@see \App\Services\ListingImport\MlsFieldMap} as a plain field copy into
+     *   `property_lat`/`property_lng` with no provenance whatsoever. Right
+     *   number, unprovable origin: no provider, no precision, no source ref, no
+     *   normalized address. Everything downstream that reasons about a
+     *   coordinate — the pipeline's provenance branch, the Existing rung on the
+     *   next save — has to treat that as a legacy value it cannot vouch for.
+     *
+     *   And when the feed carried no point at all, which is the common case, the
+     *   listing got nothing and no other rung was ever offered the address.
+     *
+     * Routing through the shared concern fixes both with one call, and adds no
+     * ladder of its own: {@see \App\Services\Location\PropertyCoordinatePersistenceService}
+     * reads `mls_listing_key` off the listing itself, so the Bridge rung is
+     * selected here for exactly the same reason it is anywhere else.
+     *
+     * Ordering is the correctness argument, not a preference.
+     * {@see \App\Services\LocationDna\LocationDnaPipelineRunner} forwards
+     * `property_lat`/`property_lng` as `pre_lat`/`pre_lng` and prefers them over
+     * geocoding, so writing the coordinate BEFORE the dispatch is what lets the
+     * queued job carry it — and its provenance — into `property_location_dna`.
+     * Resolving afterwards would win that race only by luck.
+     *
+     * Deliberately outside the try/catch below. The resolution never throws —
+     * {@see \App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates}
+     * swallows its own failures precisely so a coordinate cannot fail a save —
+     * and putting it inside would mean a hypothetical escape skipped the
+     * dispatch too, which is strictly worse than dispatching without a point.
+     *
+     * The dispatch itself keeps its posture: best-effort, never allowed to fail
+     * a publish. A listing that is live with enrichment still queued is a far
+     * better outcome than one that refused to publish because a background
+     * pipeline was unavailable. Mirrors the wizard's own try/catch.
      */
     protected function enrichLocation(object $auction): void
     {
+        $listingType = $this->role() === 'seller' ? 'seller_agent' : 'landlord_agent';
+
+        $this->resolvePropertyCoordinates($auction, $listingType);
+
         try {
-            \App\Jobs\ComputeLocationDna::dispatch(
-                $this->role() === 'seller' ? 'seller_agent' : 'landlord_agent',
-                $auction->id,
-            );
+            \App\Jobs\ComputeLocationDna::dispatch($listingType, $auction->id);
         } catch (\Throwable $e) {
             Log::warning('[MLS QUICK IMPORT] Location DNA dispatch failed', [
                 'listing_id' => $auction->id,

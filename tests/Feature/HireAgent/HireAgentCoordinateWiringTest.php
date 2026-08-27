@@ -62,6 +62,12 @@ class HireAgentCoordinateWiringTest extends TestCase
      * import needs Location DNA exactly as one published through a wizard does,
      * so the baseline moves rather than the invariant.
      *
+     * That site now resolves a coordinate through the shared concern immediately
+     * before it dispatches, as every other site here does. The number is unchanged
+     * by that — a resolution was added, not a dispatch — which is exactly what
+     * this constant is for. See
+     * {@see \Tests\Feature\ListingImport\MlsQuickImportCoordinateResolutionTest}.
+     *
      * The Hire Agent four and the Create Offer nine are pinned separately below,
      * so this number's job is unchanged: catch a dispatch appearing anywhere
      * else. It is still a hard number — a 23rd must fail this test and be
