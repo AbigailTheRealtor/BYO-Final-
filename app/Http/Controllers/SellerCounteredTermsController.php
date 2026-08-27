@@ -55,7 +55,28 @@ class SellerCounteredTermsController extends Controller
     }
     public function edit(Request $request, $id)
     {
+        // Parity with add(). Without this the edit screen admitted anyone and relied
+        // entirely on the Livewire component's own mount() guard to 403 — which it
+        // does, so this closes an inconsistency rather than a reachable hole, and
+        // keeps the two entry points from drifting apart again.
+        //
+        // Deliberately NOT repeating add()'s counter-back precondition: that check
+        // gates *creating* a counter-back before the seller has countered, and edit()
+        // reaches an existing row. The component still applies it on mount.
         $pab = SellerAgentAuctionBid::findOrFail($id);
+
+        $auction = \App\Models\SellerAgentAuction::find($pab->seller_agent_auction_id);
+        if (!$auction) {
+            abort(404, 'Auction not found.');
+        }
+
+        $isSeller = ((int) $auction->user_id === (int) Auth::id());
+        $isAgent  = ((int) $pab->user_id === (int) Auth::id());
+
+        if (!Auth::check() || (!$isSeller && !$isAgent)) {
+            abort(403, 'You are not authorized to submit counter terms for this bid.');
+        }
+
         $bid_id = $id;
 
         return view('seller_counter_terms.add', compact('pab', 'bid_id'));
