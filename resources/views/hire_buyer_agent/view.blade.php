@@ -4376,6 +4376,41 @@
                     </div>
                 </div>
         @endunless
+        {{-- Legacy "Recommended For You" strip. SUPPRESSED UNDER THE REDESIGN, matching the
+             `@unless` the icon button and the share card above it already carry — and for a
+             stronger reason than either, because none of this is listing data.
+
+             IT IS HARDCODED MOCKUP MARKUP, not a recommendation feature. Both cards name the
+             same fixed address, quote the same "#12345" MLS id, the same beds/baths/sqft, the
+             same "$1,000" and the same frozen "28d 03:15:29" countdown, and pull their photo
+             from an absolute bidyouroffer.com URL. No query, no controller variable and no
+             component feeds it: the only Blade in the whole block is three `asset()` calls for
+             icon SVGs. So it cannot be "the buyer recommendations", and suppressing it removes
+             no recommendation the product actually computes.
+
+             NOTHING ELSE IN THE BUYER PRODUCT SHARES THIS CODE. The block is inline here; the
+             other views that show a "Recommended For You" heading each carry their own separate
+             copy. What IS shared is the CSS — `buyerOfferContentDetails` and `cardsDetails` are
+             used by the real buyer search and author surfaces — which is exactly why this is a
+             Blade guard and not a stylesheet rule. Hiding the class would have blanked live
+             result grids elsewhere in the buyer product.
+
+             THE RANGE STARTS AT THE `</div>` ABOVE THE `<hr>`, WHICH IS NOT A TYPO. That close
+             tag is an orphan: nothing in this slot opens it. It has always been balanced by the
+             `<div class="container buyerOfferContentDetails">` below, which is never closed —
+             the two malformed halves cancel, which is why the slot nets out today. Guarding only
+             the visible section from the `<hr>` down would have left the orphan close behind, and
+             it would then have closed the shell's own container early and pulled the footer up
+             into the detail card. They are one unit and are guarded as one.
+
+             The `<hr>` goes with them. Landlord's note records that buyer's trailing rule is
+             deliberate because it divides the listing from this section — true, and still true
+             with the flag off. With the section gone there is nothing to divide, so keeping it
+             would leave precisely the accidental trailing rule landlord removed in 5A.
+
+             WITH THE FLAG OFF NOTHING CHANGES: every line below renders exactly as it does on
+             the live legacy page today. --}}
+        @unless ($byaDetailRedesign)
     </div>
     <hr>
     <div class="container buyerOfferContentDetails">
@@ -4507,6 +4542,7 @@
                 </div>
             </div>
         </div>
+        @endunless
         </x-slot>
 
         {{--
