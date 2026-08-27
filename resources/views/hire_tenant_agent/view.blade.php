@@ -1319,7 +1319,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     </div>
     @endif
     @endunless
+    {{-- A bare rule separating the owner-actions block from the bid CTA below. NO OTHER ROLE
+         HAS ONE: seller, buyer and landlord all emit zero bare `<hr>` in this stretch of the
+         sidebar. Under the redesign the sidebar card supplies its own chrome, so the rule draws
+         a line across the top of that card and makes tenant's CTA sit lower than the other
+         three — the same class of leftover as the empty console and the icon-only button, found
+         while removing them. Suppressed behind the flag, so the legacy sidebar keeps it. --}}
+    @unless ($tnaDetailRedesign)
     <hr>
+    @endunless
 
     @inject('carbon', 'Carbon\Carbon')
 
@@ -1513,6 +1521,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (($canReviewAllProposals ?? false) && $auction->bids->isEmpty())
             <p class="mb-3">No agents have submitted a bid yet.</p>
         @endif
+
+        {{-- THE PROPOSAL CONSOLE EXISTS ONLY FOR VIEWERS WHO HAVE A PROPOSAL TO SEE.
+        
+             `<div class="card higestBider">` rendered unconditionally. For every viewer the access
+             layer hands zero proposals — a guest, a competing agent, an agent who has not bid, an
+             unrelated authenticated user — it drew an empty bordered card. The redesign made that
+             conspicuous by clearing what used to sit around it: on a guest page the sidebar became
+             the CTA and this empty bar. That is the leftover control visual QA reported.
+        
+             THE CONDITION IS LANDLORD'S, VERBATIM — see the long note at its own console. Two allow
+             branches matching HireAgentProposalAccess: the owner, who must still get the console and
+             its empty state before anyone bids; and a non-empty `$auction->bids`, which the
+             controller ALREADY narrowed, so "non-empty" here means "this viewer is authorized to see
+             at least one proposal" and cannot mean anything else.
+        
+             THIS IS NOT THE PRIVACY MECHANISM. Withholding happens server-side before the view runs
+             and the per-card gates are untouched; this only stops an empty container being drawn.
+             Flag-gated, so the legacy page keeps the empty card it has today. --}}
+        @if (! $tnaDetailRedesign || ($canReviewAllProposals ?? false) || $auction->bids->isNotEmpty())
 
         <div class="card higestBider" id="bids-section">
             <div class="card-body card-body-padding">
@@ -4485,6 +4512,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
             </div>
         </div>
+        @endif
 {{-- Milestone 5A.2-T (2 of 2): a </div> here closed .rightCol before the share block. With
      .leftCol now closed at its proper place (see 1 of 2), that closer became excess and pushed
      the "Share this link via" card and its button out to become direct children of the .row.
@@ -4492,9 +4520,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
      of the section ends .rightCol instead of .leftCol. Net effect across both edits: one closer
      added, one removed — the sidebar and its share controls sit together inside the grid column,
      exactly as they do on Seller. --}}
+{{-- A full-width button carrying a single user icon — no label, no handler, no
+     destination and no accessible name. It predates the redesign and rendered for every
+     viewer. Suppressed only behind the flag, matching the identical guards seller and
+     landlord already carry: it is visible on the legacy page today, and "it looks like a
+     mistake" is not the same standard as "it can never render".
+
+     IT GOES WITH THE SHARE CARD, NOT AFTER IT. Seller's note records the reason and this
+     pass proved it: guarding the card alone left this button standing by itself under the
+     CTA, which is the orphan control visual QA reported on exactly the two roles whose
+     card had just been guarded. --}}
+@unless ($tnaDetailRedesign)
 <button class="btn w-100 mt-0">
     <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>
+@endunless
 {{-- Legacy QR / share card. GUARDED AS OF THE SHARE-PARITY PASS, matching the
      `@unless` seller and landlord already carry. Under the redesign the share
      targets and the copy control live in the Quick Actions band, so an unguarded

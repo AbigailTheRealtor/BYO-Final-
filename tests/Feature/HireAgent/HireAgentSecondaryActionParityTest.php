@@ -430,6 +430,129 @@ class HireAgentSecondaryActionParityTest extends TestCase
         );
     }
 
+    // ── The sidebar leftovers ────────────────────────────────────────────────
+
+    /**
+     * An empty proposal console is not drawn.
+     *
+     * `<div class="card higestBider">` rendered unconditionally on seller, buyer and tenant, so
+     * every viewer the access layer hands zero proposals — a guest here — got an empty bordered
+     * bar under the CTA. Landlord already guarded it; the other three now use landlord's own
+     * condition. A guest is the strongest case to assert: they can never be authorized to see a
+     * proposal, so the console can never be legitimate for them.
+     *
+     * @dataProvider roleProvider
+     */
+    public function test_a_guest_is_not_shown_an_empty_proposal_console(string $role): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->renderAsGuest($role, $this->makeListing($role));
+
+        $this->assertSame(0, $this->occurrences($html, 'higestBider'), "[$role] no empty console for a guest.");
+        $this->assertSame(0, $this->occurrences($html, 'id="bids-section"'), "[$role] and no empty console container.");
+    }
+
+    /**
+     * The icon-only orphan button is not drawn.
+     *
+     * A full-width button carrying one user icon — no label, no handler, no destination. Seller
+     * and landlord already suppressed it, and seller's note warns it must go WITH the share card
+     * because guarding the card alone leaves the button standing on its own. That is exactly what
+     * happened on buyer and tenant when their card was guarded, which is how visual QA saw it.
+     *
+     * @dataProvider roleProvider
+     */
+    public function test_no_icon_only_orphan_button_is_drawn(string $role): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role)));
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<button class="btn w-100 mt-0">\s*<span class="bid m-0"><i class="fa-solid fa-user"><\/i>\s*<\/span>\s*<\/button>/s',
+            $html,
+            "[$role] the icon-only button must not render under the redesign."
+        );
+    }
+
+    /**
+     * The guest sidebar card holds the CTA, its optional amount, and nothing else.
+     *
+     * The strongest statement of the whole pass, and the one that would catch a leftover nobody
+     * has thought of yet: whatever else changes, a guest's redesigned sidebar card contains no
+     * further control at all.
+     *
+     * @dataProvider roleProvider
+     */
+    public function test_the_guest_sidebar_card_carries_only_the_cta_and_its_amount(string $role): void
+    {
+        $this->enableRedesign();
+
+        $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role)));
+
+        $card = null;
+        if (preg_match('/data-hire-agent-sidebar-card[^>]*>(.*?)<\/div>\s*<\/div>/s', $html, $m)) {
+            $card = $m[1];
+        }
+        $this->assertNotNull($card, "[$role] the sidebar card must render.");
+
+        $this->assertSame(
+            1,
+            preg_match_all('/<(?:a|button)\b/', $card),
+            "[$role] exactly one control belongs in a guest's sidebar card — the CTA."
+        );
+        $this->assertStringNotContainsString('<hr', $card, "[$role] no bare rule inside the card.");
+        $this->assertStringNotContainsString('higestBider', $card, "[$role] no console inside the card.");
+    }
+
+    /**
+     * Flag off, all three leftovers are still exactly where they were.
+     *
+     * Each is suppressed rather than deleted precisely because it is on the live legacy page
+     * today, and nothing here is allowed to change that page.
+     *
+     * @dataProvider roleProvider
+     */
+    public function test_redesign_off_preserves_the_legacy_sidebar_markup(string $role): void
+    {
+        $this->disableRedesign();
+
+        $html = $this->markup($this->renderAsGuest($role, $this->makeListing($role)));
+
+        $this->assertStringContainsString('higestBider', $html, "[$role] flag off keeps the console container.");
+        $this->assertMatchesRegularExpression(
+            '/<button class="btn w-100 mt-0">\s*<span class="bid m-0"><i class="fa-solid fa-user"><\/i>\s*<\/span>\s*<\/button>/s',
+            $html,
+            "[$role] flag off keeps the icon-only button exactly as it renders today."
+        );
+    }
+
+    /**
+     * The console guard is a DISPLAY decision and must not withhold a real proposal.
+     *
+     * The listing owner may review the whole set, so the console — and its empty state — must
+     * still reach them even before anyone has bid. This is the assertion that stops the guard
+     * being tightened into something that hides proposals.
+     *
+     * @dataProvider roleProvider
+     */
+    public function test_the_listing_owner_still_receives_the_proposal_console(string $role): void
+    {
+        $this->enableRedesign();
+
+        $listing = $this->makeListing($role);
+        $owner   = User::find($listing->user_id);
+
+        $html = $this->markup($this->renderAs($role, $listing, $owner));
+
+        $this->assertStringContainsString(
+            'higestBider',
+            $html,
+            "[$role] the owner must still get the console, empty state and all."
+        );
+    }
+
     public function roleProvider(): array
     {
         return array_combine(
