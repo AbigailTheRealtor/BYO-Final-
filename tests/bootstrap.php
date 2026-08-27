@@ -65,6 +65,58 @@ $byoBlankedCredentials = [
     'DATABASE_URL'  => '',
     'DB_CONNECTION' => 'sqlite',
     'DB_DATABASE'   => ':memory:',
+
+    // ── SPATIAL CLUSTER IDENTITY ─────────────────────────────────────────────
+    //
+    // `pgsql_spatial` (config/database.php) is a SEPARATE PostGIS connection that
+    // reads only its own SPATIAL_* variables. The block above therefore does not
+    // touch it, and until now nothing did: an ambient `SPATIAL_DATABASE_URL` was
+    // inherited straight into the test process.
+    //
+    // That is not theoretical. `SpatialFirstSliceCategorySeeder::run()` fails
+    // closed only while the connection is inert — its guard throws when both `url`
+    // and `host` are empty. With a live DSN inherited, the guard passes, and
+    // `SpatialFirstSliceSeederIsolationTest` stops testing isolation and instead
+    // upserts `place_categories` into whatever that DSN points at. The suite has no
+    // business reaching any real database.
+    //
+    // Blanked to '' rather than unset, for the same reason as `DATABASE_URL`: an
+    // unset variable is simply repopulated from `.env`. Empty is falsy to `env()`,
+    // so every SPATIAL_* key resolves null/empty and the connection is inert.
+    'SPATIAL_DATABASE_URL' => '',
+    'SPATIAL_PGHOST'       => '',
+    'SPATIAL_PGPORT'       => '',
+    'SPATIAL_PGDATABASE'   => '',
+    'SPATIAL_PGUSER'       => '',
+    'SPATIAL_PGPASSWORD'   => '',
+    'SPATIAL_PGSSLMODE'    => '',
+
+    // ── libpq CLIENT FALLBACK ────────────────────────────────────────────────
+    //
+    // Blanking SPATIAL_* alone would not be enough, and would arguably be worse.
+    // Laravel's PostgresConnector builds its DSN as
+    //
+    //     $host = isset($host) ? "host={$host};" : '';
+    //     $dsn  = "pgsql:{$host}dbname='{$database}'";
+    //
+    // so a null/blank host is OMITTED from the DSN rather than forced empty. libpq
+    // then supplies its own defaults from the environment — PGHOST, PGDATABASE,
+    // PGUSER. This host injects PGHOST=helium and PGDATABASE=heliumdb, so a
+    // spatial connection attempt with no explicit host would land on the shared
+    // APPLICATION database: the exact outcome the SQLite pinning above exists to
+    // prevent, reached through a different door.
+    //
+    // These are blanked for the same reason `migration-tests.yml` asserts that no
+    // inherited PG* variable can redirect `psql`. Nothing in the suite talks to
+    // PostgreSQL — it runs on SQLite :memory: — so removing libpq's ambient
+    // defaults costs the tests nothing and closes the fallback.
+    'PGHOST'     => '',
+    'PGHOSTADDR' => '',
+    'PGPORT'     => '',
+    'PGDATABASE' => '',
+    'PGUSER'     => '',
+    'PGPASSWORD' => '',
+    'PGSERVICE'  => '',
 ];
 
 foreach ($byoBlankedCredentials as $name => $value) {
