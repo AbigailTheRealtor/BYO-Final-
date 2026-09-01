@@ -421,7 +421,32 @@ class LocationDnaRoundTripTest extends TestCase
         $data = $this->makeLoader()->load($userId);
 
         $this->assertNotNull($data);
-        $this->assertContains('St. Petersburg', $data['preferred_cities']);
+
+        // The stored value is `St. Petersburg`; the loader returns `Saint Petersburg`.
+        //
+        // That is BuyerCriteriaLoader::normalizeCityName() doing its job, not a defect.
+        // It strips a trailing state suffix and expands `St.` / `Ft.` / `Mt.` so a city
+        // tag matches how the Bridge API stores it — `bridge_properties.city` holds
+        // "Saint Petersburg", so a criteria value left as "St. Petersburg" matches
+        // nothing. See the docblock on that method and 64e55c835 ("normalize buyer
+        // county/city matching"), which landed ~1h40m AFTER this test file was last
+        // touched (d8b17e2a2) and left the expectation below asserting the pre-
+        // normalization spelling.
+        //
+        // Asserting BOTH directions on purpose: the positive assertion alone would
+        // still pass if normalization were widened to emit both spellings, which
+        // would silently double every city tag sent to Bridge.
+        $this->assertContains(
+            'Saint Petersburg',
+            $data['preferred_cities'],
+            'The loader must expand `St.` to `Saint` so the tag matches Bridge storage.'
+        );
+        $this->assertNotContains(
+            'St. Petersburg',
+            $data['preferred_cities'],
+            'The un-normalized spelling must NOT survive — Bridge stores "Saint Petersburg".'
+        );
+
         $this->assertContains('33701',           $data['preferred_zip_codes']);
         $this->assertCount(1, $data['radius_searches']);
         $this->assertEqualsWithDelta(27.7676, (float) $data['radius_searches'][0]['lat'], 0.0001);

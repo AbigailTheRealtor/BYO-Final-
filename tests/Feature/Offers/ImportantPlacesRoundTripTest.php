@@ -17,6 +17,18 @@ use Tests\TestCase;
  * commute fields are neither read nor written here.
  *
  * BuyerOfferListingEdit / BuyerOfferListing are exercised as the representative role/flow.
+ *
+ * SQLITE NOTE
+ * -----------
+ * The discrete `state` is seeded with `->call('selectStateSuggestion', ...)`, not
+ * `->set('state', ...)`. `->set()` fires Livewire's `updatedState()` hook, which runs a
+ * `UsState::where('name', 'ILIKE', ...)` typeahead lookup — PostgreSQL syntax that
+ * production speaks and SQLite rejects outright, which is what errored all four submit
+ * tests here. `selectStateSuggestion()` is the component method the real UI calls when a
+ * user picks a state from the dropdown and assigns `$this->state` to exactly the value
+ * passed, so the required-field precondition is met by the more production-faithful of
+ * the two routes and no assertion below is weakened. Same treatment, same reason, as
+ * tests/Feature/Offers/SearchAreasStateCountyRoundTripTest.php.
  */
 class ImportantPlacesRoundTripTest extends TestCase
 {
@@ -61,12 +73,17 @@ class ImportantPlacesRoundTripTest extends TestCase
         ], $overrides);
     }
 
-    /** A blob/discrete pair that satisfies the required counties/state validation on submit. */
+    /**
+     * A blob/discrete pair that satisfies the required counties/state validation on submit.
+     *
+     * `state` goes in through `selectStateSuggestion()` rather than `->set('state', ...)` —
+     * see the SQLITE NOTE on the class docblock.
+     */
     private function editComponent(User $owner, BuyerAgentAuction $auction)
     {
         return Livewire::actingAs($owner)
             ->test(BuyerOfferListingEdit::class, ['auctionId' => $auction->id])
-            ->set('state', 'Florida')
+            ->call('selectStateSuggestion', 'Florida')
             ->set('counties', ['Pinellas County, FL']);
     }
 
