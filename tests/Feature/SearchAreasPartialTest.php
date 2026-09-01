@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 /**
@@ -12,17 +13,36 @@ use Tests\TestCase;
  *
  * The partial is self-contained (plain HTML + vanilla JS + Blade vars that self-default
  * from $existingLocationDna), so it can be rendered directly without a Livewire context.
+ *
+ * `$errors` IS PART OF THAT CONTEXT
+ * ---------------------------------
+ * One exception to "self-contained": the Important Places block reads `$errors` to render
+ * its submit-guard messages. In production that variable is never absent — Laravel's
+ * `ShareErrorsFromSession` middleware, in the `web` group every host of this partial goes
+ * through, shares a `ViewErrorBag` into every view whether or not validation has failed.
+ * A bare `view()->render()` has no request and therefore no middleware, so the two
+ * `enableImportantPlaces` tests below died on `Undefined variable $errors` before
+ * asserting anything.
+ *
+ * Supplying an EMPTY bag is what makes this faithful rather than a workaround: it is
+ * exactly the state production is in on a first render, and it leaves the `@if
+ * ($errors->has('important_places_json'))` branch evaluating for real — false, so the
+ * assertions below still describe a page with no error alert on it. Defaulted in the
+ * render helpers rather than per-test so a future test cannot reintroduce the omission.
  */
 class SearchAreasPartialTest extends TestCase
 {
     private function render(): string
     {
-        return view('partials.location-dna.map-input', ['existingLocationDna' => []])->render();
+        return $this->renderWith([]);
     }
 
     private function renderWith(array $data): string
     {
-        return view('partials.location-dna.map-input', array_merge(['existingLocationDna' => []], $data))->render();
+        return view('partials.location-dna.map-input', array_merge([
+            'existingLocationDna' => [],
+            'errors'              => new ViewErrorBag(),
+        ], $data))->render();
     }
 
     public function test_partial_uses_search_areas_heading(): void

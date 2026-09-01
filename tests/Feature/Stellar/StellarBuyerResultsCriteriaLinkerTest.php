@@ -234,8 +234,26 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     // TC-CL04: Agent with multiple criteria (mixed) → select_criteria state
     // =========================================================================
 
-    /** @test */
-    public function agent_with_multiple_criteria_sees_select_criteria_state(): void
+    /**
+     * An agent holding more than one criteria profile gets the SWITCHER STRIP, with one
+     * profile already auto-selected — not a blocking "pick one first" screen.
+     *
+     * This assertion used to require `Choose a Criteria Profile`, the `select_criteria`
+     * empty state. That state was removed on purpose by 7d0750205 (Task #3164), which
+     * replaced "make the user choose before showing anything" with `findPreferredCriteria()`
+     * auto-selecting a profile and leaving the switcher visible — its own comment reads
+     * "The criteria switcher strip remains visible for all records regardless." No code
+     * path has emitted `select_criteria` since; the `@elseif($emptyState ===
+     * 'select_criteria')` arm still sitting in stellar/buyer/results.blade.php is
+     * unreachable leftover, and this test was asserting that dead arm's markup.
+     *
+     * So the assertions below pin the behaviour that actually shipped, and the negative
+     * one pins the removal itself — a reinstated blocking chooser would be a UX
+     * regression, and without it this test would pass again if that arm came back.
+     *
+     * @test
+     */
+    public function agent_with_multiple_criteria_sees_the_criteria_switcher(): void
     {
         $this->skipIfTablesMissing();
 
@@ -253,10 +271,20 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
         $response = $this->get(route('stellar.buyer.results'));
 
         $response->assertStatus(200);
-        $response->assertSee('Choose a Criteria Profile', false);
-        // Both profiles should appear in the list
+
+        // The switcher strip renders (it is gated on count($criteriaList) > 1) …
+        $response->assertSee('id="criteria-switcher"', false);
+        $response->assertSee('Switch profile:', false);
+
+        // … one profile is already auto-selected rather than the user being blocked …
+        $response->assertSee('Matching against:', false);
+
+        // … and both profiles are offered in it.
         $response->assertSee('Buyer Criteria', false);
         $response->assertSee('Tenant Criteria', false);
+
+        // The removed blocking chooser must not come back.
+        $response->assertDontSee('Choose a Criteria Profile', false);
     }
 
     // =========================================================================

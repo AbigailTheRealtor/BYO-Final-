@@ -27,6 +27,26 @@ use Tests\TestCase;
  * only_by_blob` proves that.
  *
  * BuyerOfferListingEdit is exercised as the representative role/flow.
+ *
+ * SQLITE NOTE
+ * -----------
+ * The discrete `state` is seeded with `->call('selectStateSuggestion', ...)`, not
+ * `->set('state', ...)`. `->set()` fires Livewire's `updatedState()` hook, which runs
+ * `getPlaceSuggestions()` — a `UsState::where('name', 'ILIKE', ...)` typeahead lookup.
+ * `ILIKE` is PostgreSQL syntax that production speaks and SQLite rejects outright
+ * ("General error: 1 near \"ILIKE\": syntax error"), so the suite's `:memory:` harness
+ * cannot execute it. That is a property of the harness, not of the flow under test, and
+ * the same avoidance is already used by
+ * tests/Feature/HireAgent/SellerLandlordHireAgentCreatePublishCharacterizationTest.php
+ * and tests/Feature/Offers/TenantOfferListingEditImportantPlacesGuardTest.php.
+ *
+ * Nothing is skipped or weakened by the swap. `selectStateSuggestion()` is the component
+ * method the real UI calls when a user picks a state from the dropdown, and it assigns
+ * `$this->state` to exactly the value passed — so the component reaches the state this
+ * test needs (a discrete value that disagrees with the blob) by the MORE production-
+ * faithful of the two routes. `->set()` simulated the keystroke that *precedes* the pick;
+ * the typeahead query it triggers is not this test's subject and is covered where it
+ * belongs. Every assertion below still runs against the real `update()` write-back path.
  */
 class SearchAreasStateCountyRoundTripTest extends TestCase
 {
@@ -71,9 +91,13 @@ class SearchAreasStateCountyRoundTripTest extends TestCase
 
         // Discrete fields hold *different* values (as the still-present duplicate UI
         // supplies them and validation requires them pre-save); the blob must win.
+        //
+        // `state` is seeded through the component's own `selectStateSuggestion()` — the
+        // real autocomplete-selection path — rather than `->set('state', ...)`. See the
+        // SQLITE NOTE on the class docblock for why.
         Livewire::actingAs($owner)
             ->test(BuyerOfferListingEdit::class, ['auctionId' => $auction->id])
-            ->set('state', 'Texas')
+            ->call('selectStateSuggestion', 'Texas')
             ->set('counties', ['Travis County, TX'])
             ->set('location_dna_preferences_json', $blob)
             ->call('update');
