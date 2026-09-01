@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\Migrations\MigrationPaths;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -209,7 +210,23 @@ class IncrementalMigrationFixture extends Command
             }
 
             $ran   = $migrator->getRepository()->getRan();
-            $files = $migrator->getMigrationFiles($migrator->paths() ?: [database_path('migrations')]);
+
+            // MERGED, never a fallback. This line used to read:
+            //
+            //     $migrator->getMigrationFiles($migrator->paths() ?: [database_path('migrations')])
+            //
+            // `Migrator::paths()` holds only the directories packages registered
+            // through loadMigrationsFrom(); it never contains database/migrations.
+            // Sanctum registers one, so `paths()` was never empty, the `?:` fallback
+            // never fired, and the scan covered a single vendor migration. That
+            // migration is applied by the previous-release schema step, so this check
+            // printed "zero pending migrations" unconditionally — the CI gate's own
+            // success condition was vacuous, and would have stayed green through a
+            // release that shipped an unapplied schema. Which is the exact failure
+            // this gate exists to catch.
+            //
+            // See App\Support\Migrations\MigrationPaths for the rule and the order.
+            $files = $migrator->getMigrationFiles(MigrationPaths::forScanning($migrator));
 
             return array_values(array_diff(array_keys($files), $ran));
         } catch (Throwable) {
