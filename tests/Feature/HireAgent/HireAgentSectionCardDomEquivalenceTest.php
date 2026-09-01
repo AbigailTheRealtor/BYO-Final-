@@ -172,8 +172,12 @@ class HireAgentSectionCardDomEquivalenceTest extends TestCase
 
             'compatibility_preferences' => json_encode([
                 'landlord_specific' => [
-                    'primary_leasing_goal'   => 'Maximize rent',
-                    'tenant_type_preference' => 'Long-term professional',
+                    // 'tenant_type_preference' was here. It is retired (Fair Housing), and this
+                    // fixture is a Residential Property listing — the exact combination the
+                    // retirement exists to make impossible. Replaced with a current public row so
+                    // the section still has content to compare DOM for.
+                    'primary_leasing_goal'      => 'Maximize rent',
+                    'lease_duration_preference' => '1 Year',
                 ],
             ]),
 

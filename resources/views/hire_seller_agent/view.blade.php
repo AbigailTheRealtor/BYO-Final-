@@ -318,6 +318,18 @@
             $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
             if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
         };
+        /*
+         | Owner-only rows. This route carries no auth middleware, so everything $repAdd() emits
+         | is published to anonymous visitors; free text written about a transaction, about third
+         | parties, or about the client's own negotiating position does not belong there.
+         | Owner-only rather than owner-and-agents in this batch — see the controller note.
+         */
+        $repPrivateRows = [];
+        $repAddOwn = function(string $label, $raw, string $otherVal = '') use (&$repPrivateRows, $repResolve, $repResolveArr) {
+            if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+            $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+            if (!empty($display)) { $repPrivateRows[] = ['label' => $label, 'value' => $display]; }
+        };
 
         // Phase 5/6 QA Follow-up (Seller Rep & Compatibility): full listing-display parity — every
         // field captured by the Seller representation form is rendered here when populated.
@@ -325,7 +337,9 @@
         $repAdd('Primary Transaction Goal', $ssView['primary_transaction_goal'] ?? '', $ssView['primary_transaction_goal_other'] ?? '');
         $repAdd('Target Sale Timeline', $ssView['target_sale_timeline'] ?? '', '');
         $repAdd('Timeline Flexibility', $ssView['flexibility_on_timeline'] ?? '', '');
-        $repAdd('Post-Sale Plans', $ssView['post_sale_plan'] ?? '', '');
+        // Not a Fair Housing question. Withheld because publishing a seller's motivation and
+        // price firmness to any visitor works against the client this listing represents.
+        $repAddOwn('Post-Sale Plans', $ssView['post_sale_plan'] ?? '', '');
         $repAdd('Representation Priorities', $ssView['representation_priorities'] ?? [], '');
         $repAdd('Agent Qualities Most Important to You', $ssView['qualities_most_important'] ?? [], '');
         $repAdd('Preferred Communication Style', $ssView['communication_style'] ?? '', '');
@@ -333,16 +347,22 @@
         $repAdd('Expected Agent Response Time', $ssView['response_time_expectation'] ?? '', '');
         $repAdd('Negotiation Style', $ssView['negotiation_style'] ?? '', '');
         $repAdd('Areas Willing to Negotiate On', $ssView['willing_to_negotiate_on'] ?? [], '');
-        $repAdd('Firm on Asking Price', $ssView['firm_on_price'] ?? '', '');
+        $repAddOwn('Firm on Asking Price', $ssView['firm_on_price'] ?? '', '');
         $repAdd('Preferred Agent Working Style', $ssView['preferred_agent_working_style'] ?? '', '');
         $repAdd('Decision-Making Style', $ssView['decision_making_style'] ?? '', '');
         $repAdd('Involvement Level', $ssView['involvement_level'] ?? '', '');
-        $repAdd('Decision Makers Involved', $ssView['additional_decision_makers'] ?? '', '');
+        // Names third parties who did not consent to publication.
+        $repAddOwn('Decision Makers Involved', $ssView['additional_decision_makers'] ?? '', '');
         $repAdd('Past Experience Working with a Real Estate Agent', $ssView['past_agent_experience'] ?? '', '');
-        $repAdd('What Did Not Work Well with Past Agents', $ssView['what_did_not_work_before'] ?? '', '');
+        // Free-text narrative about identifiable third parties.
+        $repAddOwn('What Did Not Work Well with Past Agents', $ssView['what_did_not_work_before'] ?? '', '');
         $repAdd('Showing Availability', $ssView['showing_availability'] ?? [], '');
         $repAdd('Open House Preference', $ssView['open_house_preference'] ?? '', '');
-        $repAdd('Additional Compatibility Notes', $ssView['additional_compatibility_notes'] ?? '', '');
+        // Seller catch-all. A seller is a housing provider under the same rules a landlord is,
+        // so this box carries the same occupant-preference risk as the landlord's.
+        $repAddOwn('Additional Compatibility Notes', $ssView['additional_compatibility_notes'] ?? '', '');
+
+        $repVisibleRows = array_merge($repRows, ($hlaViewerIsOwner ?? false) ? $repPrivateRows : []);
 
         $hsaSections = [];
 
@@ -504,7 +524,7 @@
                     'terms'              => $hsaHasTerms,
                     'financing'          => $hsaHasFinancing,
                     'additional-details' => $hsaHasAdditionalDetails,
-                    'representation'     => ! empty($repRows),
+                    'representation'     => ! empty($repVisibleRows),
                     'referral'           => $referralPctDisplay !== '',
                     'role-info'          => $hsaHasOwnerInfo,
                     'agent-credentials'  => $hsaHasAgentCredentials,
@@ -1701,7 +1721,7 @@
 
             {{-- Literal & in the title: Blade escapes it back to &amp; on output, so the rendered
                  text is unchanged. Passing &amp; here would double-escape it. --}}
-            @if ($hsaDetailRedesign ? $hsaShows('representation') : !empty($repRows))
+            @if ($hsaDetailRedesign ? $hsaShows('representation') : !empty($repVisibleRows))
             @if (! $hsaDetailRedesign)<hr />@endif
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
                         {{-- One call site for up to twenty-one rows. The labels and the "Other"
@@ -1727,7 +1747,7 @@
                              LEGACY IS UNREACHABLE FROM HERE. `span` is read only when building
                              $hlaFieldRedesignWidth, inside the redesign branch; the flag-off element
                              tree does not consult it, so this line cannot move flag-off output. --}}
-                        @foreach ($repRows as $repRow)
+                        @foreach ($repVisibleRows as $repRow)
                             <x-hire-agent.field :redesign="$hsaDetailRedesign" :label="$repRow['label']" :value="$repRow['value']" />
                         @endforeach
             </x-hire-agent.detail-section>

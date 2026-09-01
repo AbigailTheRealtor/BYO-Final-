@@ -78,21 +78,36 @@ class HireAgentSellerRepresentationLayoutTest extends TestCase
     /** The label/value pairs the fixture above must produce, as the kv helper spells them. */
     private function expectedPairs(): array
     {
+        /*
+         | ORDER IS NOW PUBLIC ROWS THEN OWNER-ONLY ROWS, and this test renders as the owner
+         | (see render(): actingAs($listing->user)), so it sees both groups.
+         |
+         | The Fair Housing batch split the builder in two: $repAdd() emits rows every visitor
+         | may read, $repAddOwn() emits rows only the listing owner may. The view concatenates
+         | the public group and then the private one, so four rows moved to the end — three
+         | free-text boxes, plus Post-Sale Plans and Firm on Asking Price, which publish the
+         | client's own motivation and negotiating position to anyone who opens the page.
+         |
+         | The rows themselves are unchanged: same labels, same values, same "Other" resolution.
+         | Only the grouping moved, and the grouping is the point.
+         */
         return [
+            // ── public ────────────────────────────────────────────────────────────────
             // "Other" resolves to the custom value — $repResolve, unchanged by this fix.
             'Primary Transaction Goal'         => 'Downsize before retirement',
             'Target Sale Timeline'             => '30-60 days',
             'Timeline Flexibility'             => 'Somewhat flexible',
-            'Post-Sale Plans'                  => 'Buying locally',
             // Arrays join with ", " in the builder, before the component ever sees them.
             'Representation Priorities'        => 'Net proceeds, Speed of sale',
             'Preferred Communication Style'    => 'Direct and concise',
             'Preferred Contact Method'         => 'Text, Email',
             'Expected Agent Response Time'     => 'Same day',
             'Negotiation Style'                => 'Collaborative',
-            'Firm on Asking Price'             => 'No',
             'Involvement Level'                => 'Weekly updates',
             'Open House Preference'            => 'Weekends only',
+            // ── owner only ────────────────────────────────────────────────────────────
+            'Post-Sale Plans'                  => 'Buying locally',
+            'Firm on Asking Price'             => 'No',
             'Additional Compatibility Notes'   => 'Prefers an agent who has sold in this subdivision before.',
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\HireLandLordAgent;
 
+use App\Support\HireAgent\CompatibilityPreferencePolicy;
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
 
 use App\Support\Listing\ListingWorkflow;
@@ -468,8 +469,10 @@ class LandLordAgentAuction extends Component
         'landlord_specific' => [
             'primary_leasing_goal'             => '',
             'primary_leasing_goal_other'       => '',
-            'tenant_type_preference'           => '',
-            'tenant_type_preference_other'     => '',
+            // Commercial-only; kept off residential listings by
+            // CompatibilityPreferencePolicy at the write, not by this declaration.
+            'preferred_business_use'           => [],
+            'preferred_business_use_other'     => '',
             'lease_duration_preference'        => '',
             'property_management_involvement'  => '',
             'communication_style'              => '',
@@ -478,7 +481,7 @@ class LandLordAgentAuction extends Component
             'preferred_agent_working_style'    => '',
             'negotiation_style'                => '',
             'representation_priorities'        => [],
-            'risk_tolerance'                   => '',
+            'applicant_screening_approach'     => '',
             'concessions_willingness'          => '',
             'lease_terms_flexibility'          => '',
             'additional_representation_notes'  => '',
@@ -608,8 +611,18 @@ class LandLordAgentAuction extends Component
     // Pet/animal fields
     public $has_breed_restrictions = '';
     public $breed_restrictions = '';
-    public $service_animal = '';
-    public $support_animal = '';
+    /*
+     | `service_animal` / `support_animal` REMOVED (Fair Housing).
+     |
+     | These were a landlord-side stance on whether assistance animals would be accepted. Their
+     | control has been deleted from property-preferences.blade.php — an assistance animal is a
+     | disability accommodation, not a pet, so it is not a preference a housing provider states.
+     | The state, hydration and persist go with it; a write path with no reader is exactly the
+     | surface that gets a control reattached to it later.
+     |
+     | The tenant- and buyer-side fields of the same name are a consumer declaring that they HAVE
+     | an assistance animal. Those are legitimate and untouched.
+     */
 
     // MLS Property Detail Fields — Residential + Commercial shared
     public $year_built = '';
@@ -2129,8 +2142,6 @@ class LandLordAgentAuction extends Component
             $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? null;
             $this->breed_restrictions = $auction->get->breed_restrictions ?? null;
-            $this->service_animal = $auction->get->service_animal ?? null;
-            $this->support_animal = $auction->get->support_animal ?? null;
 
             // MLS Property Detail Fields
             $this->year_built = $auction->get->year_built ?? '';
@@ -2223,8 +2234,10 @@ class LandLordAgentAuction extends Component
                 'landlord_specific' => [
                     'primary_leasing_goal'             => '',
                     'primary_leasing_goal_other'       => '',
-                    'tenant_type_preference'           => '',
-                    'tenant_type_preference_other'     => '',
+                    // Commercial-only; kept off residential listings by
+                    // CompatibilityPreferencePolicy at the write, not by this declaration.
+                    'preferred_business_use'           => [],
+                    'preferred_business_use_other'     => '',
                     'lease_duration_preference'        => '',
                     'property_management_involvement'  => '',
                     'communication_style'              => '',
@@ -2233,7 +2246,7 @@ class LandLordAgentAuction extends Component
                     'preferred_agent_working_style'    => '',
                     'negotiation_style'                => '',
                     'representation_priorities'        => [],
-                    'risk_tolerance'                   => '',
+                    'applicant_screening_approach'     => '',
                     'concessions_willingness'          => '',
                     'lease_terms_flexibility'          => '',
                     'additional_representation_notes'  => '',
@@ -2628,8 +2641,6 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
         $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
-        $auction->saveMeta('service_animal', $this->service_animal);
-        $auction->saveMeta('support_animal', $this->support_animal);
 
         // MLS Property Detail Fields
         $auction->saveMeta('year_built', $this->year_built);
@@ -2795,7 +2806,12 @@ class LandLordAgentAuction extends Component
 
         // Representation Preferences & Compatibility — Full Service only
         if ($this->service_type === 'full_service') {
-            $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+            // Projected through the shared allowlist before it is written. These legacy
+            // per-role create components are still routed, so a key retired from the live
+            // component would otherwise survive here. See CompatibilityPreferencePolicy.
+            $auction->saveMeta('compatibility_preferences', json_encode(
+                CompatibilityPreferencePolicy::projectAll($this->compatibility_preferences, $this->property_type ?? null)
+            ));
         }
 
         $auction->saveMeta('custom_services', json_encode($this->ensureArray($this->custom_services)));

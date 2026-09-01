@@ -264,15 +264,44 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
                 }, $vals)));
             };
+            /*
+             | TWO BUCKETS, NOT ONE.
+             |
+             | This page is reachable with no auth middleware at all, so everything $repAdd()
+             | emitted was published to anonymous visitors. That is fine for how a landlord wants
+             | to be communicated with — an agent deciding whether to bid needs it — and it was
+             | not fine for free-text notes or for a screening posture.
+             |
+             | $repAdd     → public. Objective service, communication and negotiation preferences.
+             | $repAddOwn  → owner only. Free text, and anything that reads as a stance on who
+             |               may rent. Withheld from anonymous visitors AND from agents: see the
+             |               note in LandlordAgentAuctionController for why "every agent account"
+             |               is not a safe audience while no participant tier exists.
+             |
+             | RETIRED, AND ABSENT FROM BOTH: 'Preferred Tenant Type'. Removing the form control
+             | did not stop this row rendering, because the row reads the stored blob — which is
+             | also why hireagent:retire-tenant-type exists. Commercial listings answer
+             | 'Preferred Business Use' instead; residential answers nothing in its place.
+             */
             $repRows = [];
+            $repPrivateRows = [];
             $repAdd = function(string $label, $raw, string $otherVal = '') use (&$repRows, $repResolve, $repResolveArr) {
                 if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
                 $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
                 if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
             };
+            $repAddOwn = function(string $label, $raw, string $otherVal = '') use (&$repPrivateRows, $repResolve, $repResolveArr) {
+                if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+                if (!empty($display)) { $repPrivateRows[] = ['label' => $label, 'value' => $display]; }
+            };
 
             $repAdd('Primary Leasing Goal', $llView['primary_leasing_goal'] ?? '', $llView['primary_leasing_goal_other'] ?? '');
-            $repAdd('Preferred Tenant Type', $llView['tenant_type_preference'] ?? '', $llView['tenant_type_preference_other'] ?? '');
+            // Commercial-only field, and gated on the STORED property type so a residential
+            // listing that still holds the key from before the allowlist cannot render it.
+            if ((($auction->info('property_type') ?: '')) === 'Commercial Property') {
+                $repAdd('Preferred Business Use', $llView['preferred_business_use'] ?? [], $llView['preferred_business_use_other'] ?? '');
+            }
             $repAdd('Preferred Lease Duration', $llView['lease_duration_preference'] ?? '', '');
             $repAdd('Level of Involvement in Day-to-Day Management', $llView['property_management_involvement'] ?? '', '');
             $repAdd('Preferred Communication Style', $llView['communication_style'] ?? '', '');
@@ -281,10 +310,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $repAdd('Preferred Agent Working Style', $llView['preferred_agent_working_style'] ?? '', '');
             $repAdd('Negotiation Style', $llView['negotiation_style'] ?? '', '');
             $repAdd('Representation Priorities', $llView['representation_priorities'] ?? [], '');
-            $repAdd('Risk Tolerance', $llView['risk_tolerance'] ?? '', '');
             $repAdd('Willingness to Offer Concessions', $llView['concessions_willingness'] ?? '', '');
             $repAdd('Flexibility on Lease Terms', $llView['lease_terms_flexibility'] ?? '', '');
-            $repAdd('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
+
+            // Screening posture: a published strictness level is a disparate-impact surface, and
+            // the retired 'risk_tolerance' key is deliberately not read here at all.
+            $repAddOwn('Applicant Screening Approach', $llView['applicant_screening_approach'] ?? '', '');
+            $repAddOwn('Additional Notes on Representation Preferences', $llView['additional_representation_notes'] ?? '', '');
+
+            $repVisibleRows = array_merge($repRows, ($hlaViewerIsOwner ?? false) ? $repPrivateRows : []);
         @endphp
 
 {{-- Referral & Cooperation — moved verbatim from above its section. Note it issues a query;
@@ -579,7 +613,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 'property'           => $hlaHasPropertyDetails,
                 'terms'              => $hlaHasLeasingTerms,
                 'additional-details' => !empty($additionalDetailsStr) && $additionalDetailsStr !== 'null',
-                'representation'     => !empty($repRows),
+                'representation'     => !empty($repVisibleRows),
                 'referral'           => $referralPctDisplay !== '',
                 'role-info'          => $hlaHasOwnerInfo,
                 'agent-credentials'  => $hlaHasAgentCredentials,
@@ -1505,7 +1539,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         {{-- C9: Representation Preferences & Compatibility display (public; parity with tenant hire view). --}}
 
-        @if ($hlaDetailRedesign ? $hlaShows('representation') : (!empty($repRows)))
+        @if ($hlaDetailRedesign ? $hlaShows('representation') : (!empty($repVisibleRows)))
         @if (! $hlaDetailRedesign)<hr />@endif
         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the rendered
              text is unchanged. Passing &amp; here would double-escape it. --}}
@@ -1515,7 +1549,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
              guard for the section and why the nav can share it. The rows still route through the
              adapter rather than emitting their own markup, so a pair that ever did arrive empty
              disappears here instead of printing a bare label. --}}
-        @foreach ($repRows as $repRow)
+        @foreach ($repVisibleRows as $repRow)
         <x-hire-agent.field :redesign="$hlaDetailRedesign" :label="$repRow['label']" :value="$repRow['value']" />
         @endforeach
         </x-hire-agent.detail-section>@endif

@@ -25,11 +25,16 @@
         <select wire:model="compatibility_preferences.landlord_specific.primary_leasing_goal"
                 class="form-control has-icon" data-icon="fa-solid fa-bullseye" required
                 x-on:change="showOtherPrimaryGoal = $event.target.value === 'Other'">
+            {{-- Every option names an OUTCOME the landlord wants from the lease. None grades a
+                 person. "High-Quality Tenant Profile" was removed for that reason (it has no
+                 objective referent and reads as a euphemism), and "Long-Term Stable Tenant"
+                 became "Long-Term Tenancy" so the goal describes the lease rather than the
+                 occupant. Both retired values are remapped by hireagent:retire-tenant-type. --}}
             <option value="">Select</option>
             <option value="Maximize Monthly Rent">Maximize Monthly Rent</option>
-            <option value="Long-Term Stable Tenant">Long-Term Stable Tenant</option>
+            <option value="Long-Term Tenancy">Long-Term Tenancy</option>
             <option value="Minimize Vacancy Time">Minimize Vacancy Time</option>
-            <option value="High-Quality Tenant Profile">High-Quality Tenant Profile</option>
+            <option value="Reliable Rent Collection">Reliable Rent Collection</option>
             <option value="Build Portfolio Cash Flow">Build Portfolio Cash Flow</option>
             <option value="Property Appreciation & Upkeep">Property Appreciation &amp; Upkeep</option>
             <option value="Other">Other</option>
@@ -48,43 +53,73 @@
     @enderror
 </div>
 
-@php
-    $tenantTypePref = $compatibility_preferences['landlord_specific']['tenant_type_preference'] ?? '';
-@endphp
-<div class="form-group"
-     x-data="{ showOtherTenantType: {{ $tenantTypePref === 'Other' ? 'true' : 'false' }} }">
-    <label class="fw-bold">
-        Preferred Tenant Type:
-        <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-            title="What type of tenant best suits your property?">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <select wire:model="compatibility_preferences.landlord_specific.tenant_type_preference"
-                class="form-control has-icon" data-icon="fa-solid fa-users"
-                x-on:change="showOtherTenantType = $event.target.value === 'Other'">
-            <option value="">Select</option>
-            <option value="Individual / Family">Individual / Family</option>
-            <option value="Young Professionals">Young Professionals</option>
-            <option value="Students">Students</option>
-            <option value="Corporate / Relocation">Corporate / Relocation</option>
-            <option value="Small Business">Small Business</option>
-            <option value="Retail Business">Retail Business</option>
-            <option value="Office Tenant">Office Tenant</option>
-            <option value="No Preference">No Preference</option>
-            <option value="Other">Other</option>
-        </select>
-    </div>
-    <div x-show="showOtherTenantType" class="mt-2" wire:key="tenant-type-other-wrapper">
-        <div class="input-cover">
-            <input type="text"
-                   wire:model="compatibility_preferences.landlord_specific.tenant_type_preference_other"
-                   class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter preferred tenant type (e.g., Long-term professional tenant)">
+{{--
+    PREFERRED BUSINESS USE — COMMERCIAL LISTINGS ONLY.
+
+    This replaces "Preferred Tenant Type", which was retired for Fair Housing reasons. That
+    field offered occupant categories (Individual / Family, Young Professionals, Students) and
+    business categories (Office Tenant, Retail Business) in ONE control, rendered on residential
+    and commercial listings alike, and published the answer on a route with no auth middleware —
+    a housing provider's stated preference about who may live somewhere, on the open web.
+
+    Residential gets NO replacement. There is deliberately no question anywhere in this partial
+    asking a landlord what kind of person, household, age group, family structure or profession
+    they would prefer as an occupant.
+
+    THIS @if IS CONVENIENCE, NOT SECURITY. Blade cannot stop a crafted Livewire request from
+    setting a public array property, so what actually keeps these keys off a residential listing
+    is CompatibilityPreferencePolicy at the persist. See config/hire_agent_compatibility_keys.php.
+
+    NOT THE SAME AS "Zoning Allows" IN LEASING TERMS, and the two must stay separate: zoning is
+    an objective legal constraint on the premises, this is the landlord's marketing preference,
+    and a landlord may legitimately prefer a narrower use than zoning permits.
+--}}
+@if (($property_type ?? '') === 'Commercial Property')
+    @php
+        $businessUseOptions  = config('landlord_business_use_options.options', []);
+        $businessUseOther    = config('landlord_business_use_options.other_sentinel', 'Other');
+        $businessUseSelected = $compatibility_preferences['landlord_specific']['preferred_business_use'] ?? [];
+        $businessUseSelected = is_array($businessUseSelected) ? $businessUseSelected : [];
+    @endphp
+    <div class="form-group" wire:key="preferred-business-use-group"
+         x-data="{ showOtherBusinessUse: {{ in_array($businessUseOther, $businessUseSelected, true) ? 'true' : 'false' }} }"
+         @update-business-use-other.window="showOtherBusinessUse = $event.detail.hasOther">
+        <label class="fw-bold">
+            Preferred Business Use:
+            <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                title="What business uses would you prefer your agent to target for this commercial property, subject to zoning, property restrictions, and applicable law?">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-pbu-landlord-s2">
+            <select id="compat_preferred_business_use_landlord"
+                    name="compat_preferred_business_use_landlord" multiple
+                    class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase"
+                    data-placeholder="Select">
+                @foreach ($businessUseOptions as $businessUseOpt)
+                    <option value="{{ $businessUseOpt }}"
+                        {{ in_array($businessUseOpt, $businessUseSelected, true) ? 'selected' : '' }}>
+                        {{ $businessUseOpt }}
+                    </option>
+                @endforeach
+            </select>
         </div>
+        <div x-show="showOtherBusinessUse" class="mt-2" x-cloak wire:key="business-use-other-wrapper">
+            <div class="input-cover">
+                <input type="text"
+                       wire:model="compatibility_preferences.landlord_specific.preferred_business_use_other"
+                       class="form-control has-icon" data-icon="fa-solid fa-pen"
+                       placeholder="Enter business use (e.g., Veterinary clinic, Self-storage)">
+            </div>
+        </div>
+        @error('compatibility_preferences.landlord_specific.preferred_business_use')
+            <span class="text-danger">{{ $message }}</span>
+        @enderror
+        @error('compatibility_preferences.landlord_specific.preferred_business_use.*')
+            <span class="text-danger">{{ $message }}</span>
+        @enderror
     </div>
-</div>
+@endif
 
 <div class="form-group">
     <label class="fw-bold">
@@ -290,22 +325,41 @@
     @enderror
 </div>
 
+{{--
+    APPLICANT SCREENING APPROACH — was "Risk Tolerance".
+
+    The old question asked how much leasing RISK a landlord would tolerate, illustrated with
+    "accepting tenants with less-than-perfect credit", and offered "Flexible – Case-by-Case" and
+    "High – Willing to Work With Most Tenants". Two problems. Credit and rental-history leniency
+    correlate with race, disability and source of income, so a published tolerance level is a
+    disparate-impact surface. And discretion is the wrong thing to advertise: a defensible
+    screening policy is one applied uniformly, so "case-by-case" describes the posture that gets
+    a landlord into trouble rather than out of it.
+
+    The question is now about METHOD. It asks how criteria are applied, not how much risk is
+    acceptable, and every option is a process a landlord can point to afterwards.
+
+    NEW KEY, not new options on the old one: the stored values do not map onto these choices, and
+    a shared key would render "High – Willing to Work With Most Tenants" straight back to the
+    owner. `risk_tolerance` is off the landlord allowlist, so stored values stop being written on
+    the next save and are rendered nowhere. (Buyer keeps its own `risk_tolerance` — that one is
+    about offer strategy and is unrelated.)
+--}}
 <div class="form-group">
     <label class="fw-bold">
-        Risk Tolerance:
+        Applicant Screening Approach:
         <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-            title="How comfortable are you with leasing risk, such as accepting tenants with less-than-perfect credit?">
+            title="How would you like applicant screening to be handled? Screening criteria must be applied consistently to every applicant.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover">
-        <select wire:model="compatibility_preferences.landlord_specific.risk_tolerance"
-                class="form-control has-icon" data-icon="fa-solid fa-shield-halved">
+        <select wire:model="compatibility_preferences.landlord_specific.applicant_screening_approach"
+                class="form-control has-icon" data-icon="fa-solid fa-clipboard-check">
             <option value="">Select</option>
-            <option value="Low – Strict Screening Only">Low – Strict Screening Only</option>
-            <option value="Moderate – Standard Criteria">Moderate – Standard Criteria</option>
-            <option value="Flexible – Case-by-Case">Flexible – Case-by-Case</option>
-            <option value="High – Willing to Work With Most Tenants">High – Willing to Work With Most Tenants</option>
+            <option value="Written criteria, applied uniformly">Written criteria, applied uniformly</option>
+            <option value="Written criteria, with a documented exception process">Written criteria, with a documented exception process</option>
+            <option value="I want my agent to recommend screening criteria">I want my agent to recommend screening criteria</option>
         </select>
     </div>
 </div>

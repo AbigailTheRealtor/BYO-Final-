@@ -199,7 +199,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     };
 
                     // Build resolved display rows. Only include rows with a non-empty value.
+                    /*
+                     | TWO BUCKETS. This route carries no auth middleware, so $addRow() published
+                     | to anonymous visitors — including a tenant's free-text account of their own
+                     | situation, which is the single most sensitive answer in the section and the
+                     | one most useful to a housing provider inclined to discriminate.
+                     |
+                     | $addRow    → public. Objective preferences an agent needs to decide whether
+                     |              to bid. Includes 'Accessibility features' inside Representation
+                     |              Priorities: a stated accessibility need is a legitimate consumer
+                     |              requirement and is deliberately NOT treated as sensitive here.
+                     | $addOwnRow → owner only. Free text. See the note in TenantAgentAuctionController
+                     |              for why owner-only rather than owner-and-agents in this batch.
+                     */
                     $compatRows = [];
+                    $compatPrivateRows = [];
                     $addRow = function(string $label, $raw, string $otherVal = '') use (&$compatRows, $resolveOther, $resolveOtherArray) {
                         if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
                         if (is_array($raw)) {
@@ -209,6 +223,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         }
                         if (!empty($display)) {
                             $compatRows[] = ['label' => $label, 'value' => $display];
+                        }
+                    };
+                    $addOwnRow = function(string $label, $raw, string $otherVal = '') use (&$compatPrivateRows, $resolveOther, $resolveOtherArray) {
+                        if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                        if (is_array($raw)) {
+                            $display = implode(', ', $resolveOtherArray($raw, $otherVal));
+                        } else {
+                            $display = $resolveOther((string)$raw, $otherVal);
+                        }
+                        if (!empty($display)) {
+                            $compatPrivateRows[] = ['label' => $label, 'value' => $display];
                         }
                     };
 
@@ -242,10 +267,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         $tsView['negotiation_style'] ?? '', '');
                     $addRow('Decision-Making Style',
                         $tsView['decision_making_style'] ?? '', '');
-                    $addRow('Concerns or Barriers',
+                    // Relabelled at the form to "What would you like your agent to know about
+                    // your situation?"; the display label follows the question, and both are now
+                    // owner-only. Stored answers written under the old prompt are covered by the
+                    // same gate, which is the point of gating the row rather than the wording.
+                    $addOwnRow('What you would like your agent to know',
                         $tsView['concerns_or_barriers'] ?? '', '');
-                    $addRow('Additional Compatibility Notes',
+                    $addOwnRow('Additional Compatibility Notes',
                         $tsView['additional_compatibility_notes'] ?? '', '');
+
+                    $compatVisibleRows = array_merge($compatRows, ($hlaViewerIsOwner ?? false) ? $compatPrivateRows : []);
 
                     $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
                     if ($referralPct === '') {
@@ -370,7 +401,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 'terms'              => $tnaHasTerms,
                 'pre-screening'      => $tnaHasPreScreening,
                 'additional-details' => $tnaHasAdditionalDetails,
-                'representation'     => ! empty($compatRows),
+                'representation'     => ! empty($compatVisibleRows),
                 'referral'           => $referralPctDisplay !== '',
                 'role-info'          => $tnaHasOwnerInfo,
                 'agent-credentials'  => $tnaHasAgentCredentials,
@@ -969,7 +1000,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     // deleting these lines would remove padding that is part of the rendered page.
                 @endphp
 
-                @if ($tnaDetailRedesign ? $tnaShows('representation') : (!empty($compatRows)))
+                @if ($tnaDetailRedesign ? $tnaShows('representation') : (!empty($compatVisibleRows)))
                 @if (! ($tnaDetailRedesign ?? false))<hr />@endif
                 {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
                      rendered text is unchanged. Passing &amp; here would double-escape it. --}}
@@ -981,7 +1012,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                      own markup, so a pair that ever did arrive empty disappears here instead of
                      printing a bare label. The label is passed WITHOUT its colon — the legacy
                      branch appends one, matching what this loop spelled by hand. --}}
-                @foreach ($compatRows as $compatRow)
+                @foreach ($compatVisibleRows as $compatRow)
                 <x-hire-agent.field :redesign="$tnaDetailRedesign ?? false" :label="$compatRow['label']" :value="$compatRow['value']" />
                 @endforeach
                 </x-hire-agent.detail-section>

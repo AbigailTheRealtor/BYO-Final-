@@ -105,6 +105,78 @@ Service order, compensation fields, and UI display decisions are driven by confi
 
 `config/bya_compatibility.php` has a **kill switch** (`BYA_COMPATIBILITY_KILL_SWITCH`, defaults `true` = all consumer-facing compatibility blocked) and a GA flag (`BYA_COMPATIBILITY_GA_ENABLED`, defaults `false`). Do not enable GA without coordinating with the owner.
 
+### Hire Agent compatibility preferences — the allowlist boundary
+
+`compatibility_preferences` is one EAV meta blob per listing, keyed `{role}_specific`. **Every write
+goes through `CompatibilityPreferencePolicy::project()`** (`app/Support/HireAgent/`), which rebuilds
+the sub-array from the allowlist in `config/hire_agent_compatibility_keys.php` — that config has one
+reader and a test asserts it.
+
+**Validation cannot do this job, and assuming it could is what made the policy necessary.**
+`$compatibility_preferences` is a public Livewire property, so a client can set any nested path;
+`validate()` checks the keys named in `rules()` and leaves the rest on the property; the persist then
+wrote the sub-array verbatim. A `prohibited` rule narrows only the paths that reach full validation,
+and a draft save does not. So the gate is at the write, it is an **intersection** (a key survives by
+being named, never by escaping a deny-list), and it covers Create, Save Draft, Save Edit and the
+three still-routed legacy per-role create components.
+
+**Landlord keys are scoped by property type.** `preferred_business_use` /
+`preferred_business_use_other` are commercial-only. Anything that is not exactly
+`Commercial Property` — null, `''`, a legacy spelling — is treated as residential, because
+`property_type` is EAV and can be absent on an older row. **On Edit the STORED property type governs**
+(`propertyTypeForProjection()`): one request can otherwise flip the listing commercial and supply the
+commercial-only key in the same message.
+
+**Retired for Fair Housing reasons, and not to be reintroduced:**
+`tenant_type_preference` / `tenant_type_preference_other` (mixed occupant categories — Individual /
+Family, Young Professionals, Students — with business ones, rendered on residential and commercial
+listings alike, and published on a route with no auth middleware). Residential has **no** replacement
+occupant question. Commercial answers **Preferred Business Use** instead; its options live in
+`config/landlord_business_use_options.php`. Landlord `risk_tolerance` became
+`applicant_screening_approach` (method, not tolerance) and is `informational_context` only — never a
+trait slot, because a slot is what a future scorer reads. Buyer `risk_tolerance` is unrelated and
+stays. `HireAgentFairHousingWordingTest` guards the wording and the keys at source.
+
+`php artisan hireagent:retire-tenant-type` remediates stored values. It is a command rather than a
+migration because nothing schema-shaped changes and `deploy/start-production.sh` is the single
+migration owner. **Not yet run against any database, and running `--write` against one requires
+separate explicit approval.**
+
+It runs in **two phases, and the order is the safety property**. *Phase A* plans: it scans every
+candidate row and computes each affected listing's exact original and remediated blob, writing
+nothing in either mode — the default invocation is Phase A plus a report, and creates no backup row,
+no rollback record and no timestamp change. *Phase B* is reached only under `--write`: every affected
+listing's original is persisted, **then every backup is read back out of the database and
+checksum-verified, and only then does the first compatibility blob change.** Any failure in backup or
+verification aborts with `FAILURE` having performed zero remediation writes.
+
+**The rollback record lives in the database, not the filesystem** — one row per listing in
+`landlord_agent_auction_metas` under `fair_housing_backup_compatibility_preferences`, holding the
+original bytes, a SHA-256 over them and the run id. `storage/app` was the wrong home: the Replit
+container is rebuilt from the image on deploy and on restart, `storage/` has no persistent mount and
+the file is not in git, so the undo evaporated while the deletion stayed. **Nothing at runtime
+resolves that key** — every meta consumer reads a named key, `$auction->get->namedKey`, or an
+explicit field whitelist (`LandlordFieldMap::sections()`, Ask AI's `CANONICAL_SOURCE_MAP`), so the
+row is inert to the application. It is **written once per listing and never overwritten**, so the
+path back to the value the landlord actually submitted survives any re-dirty / re-remediate cycle.
+
+`--list-backups` (read-only) lists the restorable runs; `--restore=RUN_ID` undoes one **named** run —
+no default, no "latest", and one unreadable envelope anywhere refuses the whole restore, because an
+envelope that cannot be decoded is one whose run cannot be ruled out. Restore is idempotent and
+leaves the backup rows in place.
+
+**Malformed rows are skipped, never repaired, and now counted.** A blob that is not valid JSON and a
+`landlord_specific` that is present but not an object are reported separately, and the run ends with
+an explicit `REMEDIATION INCOMPLETE` warning — those listings may still hold retired values. A
+`landlord_specific` that is simply *absent* is normal and is not counted.
+
+**Detail-page visibility.** Representation rows are built in two buckets: `$repAdd()` is public,
+`$repAddOwn()` is owner-only (free text, screening posture, and the seller's own motivation and price
+firmness). The gate is `$hlaViewerIsOwner`, resolved in the four controllers from
+`HireAgentProposalAccess::isListingOwner()` — **the ownership relationship, not the audience tier**,
+because `audienceFor()` resolves widest-match-first and would otherwise hide an owner's own answers
+from them whenever that owner also holds an agent account.
+
 ### Deployment & migrations
 
 **`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.

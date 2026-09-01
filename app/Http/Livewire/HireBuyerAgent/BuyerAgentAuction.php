@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\HireBuyerAgent;
 
+use App\Support\HireAgent\CompatibilityPreferencePolicy;
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
 
 use App\Support\Listing\ListingWorkflow;
@@ -2083,7 +2084,12 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('property_exclusions', $this->property_exclusions);
         $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
         $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
-        $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+        // Projected through the shared allowlist before it is written. These legacy
+            // per-role create components are still routed, so a key retired from the live
+            // component would otherwise survive here. See CompatibilityPreferencePolicy.
+            $auction->saveMeta('compatibility_preferences', json_encode(
+                CompatibilityPreferencePolicy::projectAll($this->compatibility_preferences, null)
+            ));
 
         // Seller Financing Additional Fields - DEBUG LOG
         \Log::info('[FINANCING FOLLOWUPS - VALUES AT SAVE TIME]', [
