@@ -3,7 +3,9 @@
 namespace App\Http\Livewire;
 
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
+use App\Support\HireAgent\CompatibilityPreferencePolicy;
 use App\Support\Listing\ListingWorkflow;
+use Illuminate\Validation\Rule;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -385,13 +387,20 @@ class TenantAgentAuction extends Component
             'negotiation_style'                   => '',
             'representation_priorities'           => [],
             'primary_leasing_goal_other'          => '',
-            'tenant_type_preference'              => '',
-            'tenant_type_preference_other'        => '',
+            // Commercial-only (property_type === 'Commercial Property'). Declared for every
+            // landlord listing because the array shape must be stable for hydration; kept OFF a
+            // residential listing by CompatibilityPreferencePolicy at the write, not by this
+            // declaration and not by the Blade gate. See config/hire_agent_compatibility_keys.php.
+            'preferred_business_use'              => [],
+            'preferred_business_use_other'        => '',
             'lease_duration_preference'           => '',
             'property_management_involvement'     => '',
             'preferred_contact_method'            => '',
             'response_time_expectation'           => '',
-            'risk_tolerance'                      => '',
+            // Replaces `risk_tolerance`. New key rather than new options on the old one: the old
+            // values ("High – Willing to Work With Most Tenants") do not map onto process-based
+            // choices, and a shared key would render retired wording back to the owner.
+            'applicant_screening_approach'        => '',
             'concessions_willingness'             => '',
             'lease_terms_flexibility'             => '',
             'additional_representation_notes'     => '',
@@ -4135,13 +4144,30 @@ class TenantAgentAuction extends Component
             $rules['compatibility_preferences.landlord_specific.representation_priorities'] = 'required|array|min:1';
             // Optional landlord compat fields
             $rules['compatibility_preferences.landlord_specific.primary_leasing_goal_other']      = 'nullable|string|max:500';
-            $rules['compatibility_preferences.landlord_specific.tenant_type_preference']           = 'nullable|string';
-            $rules['compatibility_preferences.landlord_specific.tenant_type_preference_other']     = 'nullable|string|max:500';
             $rules['compatibility_preferences.landlord_specific.lease_duration_preference']        = 'nullable|string';
             $rules['compatibility_preferences.landlord_specific.property_management_involvement']  = 'nullable|string';
             $rules['compatibility_preferences.landlord_specific.preferred_contact_method']         = 'nullable|string';
             $rules['compatibility_preferences.landlord_specific.response_time_expectation']        = 'nullable|string';
-            $rules['compatibility_preferences.landlord_specific.risk_tolerance']                   = 'nullable|string';
+            $rules['compatibility_preferences.landlord_specific.applicant_screening_approach']     = 'nullable|string';
+
+            // Preferred Business Use — commercial listings only.
+            //
+            // These rules are a USER-FACING guard, not the security boundary. Validation cannot
+            // keep a key off a residential listing: validate() leaves unlisted keys on the public
+            // Livewire property, and a draft save does not run the full rule set at all. The
+            // boundary is CompatibilityPreferencePolicy, applied at every write. What this adds is
+            // an honest error message when someone reaches the state through the UI.
+            if (CompatibilityPreferencePolicy::isCommercial($this->property_type)) {
+                $rules['compatibility_preferences.landlord_specific.preferred_business_use']   = 'nullable|array';
+                $rules['compatibility_preferences.landlord_specific.preferred_business_use.*'] = [
+                    'string',
+                    Rule::in(config('landlord_business_use_options.options', [])),
+                ];
+                $rules['compatibility_preferences.landlord_specific.preferred_business_use_other'] = 'nullable|string|max:500';
+            } else {
+                $rules['compatibility_preferences.landlord_specific.preferred_business_use']       = 'prohibited';
+                $rules['compatibility_preferences.landlord_specific.preferred_business_use_other'] = 'prohibited';
+            }
             $rules['compatibility_preferences.landlord_specific.concessions_willingness']          = 'nullable|string';
             $rules['compatibility_preferences.landlord_specific.lease_terms_flexibility']          = 'nullable|string';
             $rules['compatibility_preferences.landlord_specific.additional_representation_notes']  = 'nullable|string';
@@ -4872,10 +4898,25 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Representation Preferences & Compatibility (all full_service roles — Task #1169)
+        //
+        // THE PROJECTION IS THE SECURITY BOUNDARY, not the Blade gate and not rules(). This used
+        // to write $this->compatibility_preferences[$roleKey] verbatim, and because that property
+        // is public and Livewire syncs arbitrary nested paths into it, a crafted request could
+        // persist any key it liked — including the retired tenant-type keys and, once it existed,
+        // a commercial-only key on a residential listing. Everything the listing may hold is now
+        // named in config/hire_agent_compatibility_keys.php and everything else is dropped here.
         if ($this->service_type === 'full_service') {
             $stored = json_decode($auction->info('compatibility_preferences'), true) ?? [];
             $roleKey = $this->user_type . '_specific';
-            $stored[$roleKey] = $this->compatibility_preferences[$roleKey];
+
+            // Create: the submitted property type IS the one being persisted on this same save,
+            // so it governs. (On Edit the stored value governs instead — see the Edit component.)
+            $stored[$roleKey] = CompatibilityPreferencePolicy::project(
+                $this->compatibility_preferences[$roleKey] ?? [],
+                $this->user_type,
+                $this->property_type
+            );
+
             $auction->saveMeta('compatibility_preferences', json_encode($stored));
         }
 

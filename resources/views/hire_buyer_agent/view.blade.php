@@ -427,6 +427,18 @@
             $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
             if (!empty($display)) { $repRows[] = ['label' => $label, 'value' => $display]; }
         };
+        /*
+         | Owner-only rows. This route carries no auth middleware, so everything $repAdd() emits
+         | is published to anonymous visitors; free text written about a transaction, about third
+         | parties, or about the client's own negotiating position does not belong there.
+         | Owner-only rather than owner-and-agents in this batch — see the controller note.
+         */
+        $repPrivateRows = [];
+        $repAddOwn = function(string $label, $raw, string $otherVal = '') use (&$repPrivateRows, $repResolve, $repResolveArr) {
+            if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+            $display = is_array($raw) ? implode(', ', $repResolveArr($raw, $otherVal)) : $repResolve((string)$raw, $otherVal);
+            if (!empty($display)) { $repPrivateRows[] = ['label' => $label, 'value' => $display]; }
+        };
 
         // Phase 5/6 QA Follow-up (Buyer Rep & Compatibility): full listing
         // parity — every captured field renders here when populated, with
@@ -444,8 +456,12 @@
         $repAdd('Negotiation Style', $bsView['negotiation_style'] ?? '', '');
         $repAdd('Preferred Agent Working Style', $bsView['preferred_agent_working_style'] ?? '', $bsView['preferred_agent_working_style_other'] ?? '');
         $repAdd('Expected Level of Agent Support', $bsView['support_level'] ?? '', '');
-        $repAdd('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
-        $repAdd('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
+        // Free text with an explicit "would disqualify a property or agent" prompt, plus the
+        // catch-all. Both are the shape that carries area-quality and demographic phrasing.
+        $repAddOwn('Non-Negotiable Requirements / Deal Breakers', $bsView['deal_breakers'] ?? '', '');
+        $repAddOwn('Additional Notes for Agent', $bsView['additional_compatibility_notes'] ?? '', '');
+
+        $repVisibleRows = array_merge($repRows, ($hlaViewerIsOwner ?? false) ? $repPrivateRows : []);
 
         /*
          | M7 Phase 4 — SECTION NAVIGATION.
@@ -682,7 +698,7 @@
                     'terms'              => $byaHasTerms,
                     'financing'          => $hasAnyFinancingDetails || @$auction->get->offered_financing != null,
                     'additional-details' => $byaHasAdditionalDetails,
-                    'representation'     => ! empty($repRows),
+                    'representation'     => ! empty($repVisibleRows),
                     'role-info'          => $byaHasOwnerInfo,
                     'referral'           => $referralPctDisplay !== '',
                     'agent-credentials'  => $byaHasAgentCredentials,
@@ -2106,7 +2122,7 @@
      visibility and the rendered rows. There is no derived boolean beside it to drift from. --}}
 @if (! ($byaDetailRedesign ?? false) || $byaShows('representation'))
 <x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" :legacy-header="false" id="hla-section-representation" title="Representation Preferences & Compatibility:" icon="fa-solid fa-handshake">
-                        @if (!empty($repRows))
+                        @if (!empty($repVisibleRows))
 @if (! ($byaDetailRedesign ?? false))                        <hr />
 @endif
                         {{-- Literal & in the prop: Blade escapes it back to &amp; on output, so the
@@ -2119,7 +2135,7 @@
                              share it. The rows still route through the adapter rather than emitting
                              their own markup, so a pair that ever did arrive empty disappears here
                              instead of printing a bare label. --}}
-                        @foreach ($repRows as $repRow)
+                        @foreach ($repVisibleRows as $repRow)
                         <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" :label="$repRow['label']" :value="$repRow['value']" />
                         @endforeach
                         @endif

@@ -139,7 +139,7 @@
                 wire:model.defer="compatibility_preferences.tenant_specific.other_timeline_urgency"
                 class="form-control has-icon"
                 data-icon="fa-solid fa-pen"
-                placeholder="Enter timeline details (e.g., Waiting for home sale, Relocating after school year, Flexible after lease ends)"
+                placeholder="Enter timeline details (e.g., Waiting for home sale, Flexible after my current lease ends)"
                 maxlength="500">
         </div>
     </div>
@@ -329,7 +329,7 @@
                 wire:model.defer="compatibility_preferences.tenant_specific.other_most_important_agent_traits"
                 class="form-control has-icon"
                 data-icon="fa-solid fa-pen"
-                placeholder="Enter agent trait (e.g., Multilingual or Specialized in commercial properties)"
+                placeholder="Enter agent trait (e.g., Experienced with first-time renters, Specialized in commercial properties)"
                 maxlength="500">
         </div>
     </div>
@@ -419,7 +419,7 @@
             <option value="Quick – ready to commit fast">Quick – ready to commit fast</option>
             <option value="Deliberate – need time to consider options">Deliberate – need time to consider options</option>
             <option value="Research-driven – want all facts before deciding">Research-driven – want all facts before deciding</option>
-            <option value="Collaborative – involve family / partner in decisions">Collaborative – involve family / partner in decisions</option>
+            <option value="Collaborative — I consult others before deciding">Collaborative — I consult others before deciding</option>
         </select>
     </div>
     @error('compatibility_preferences.tenant_specific.decision_making_style')
@@ -430,9 +430,9 @@
 {{-- 13. Concerns or Barriers (optional, textarea) --}}
 <div class="form-group">
     <label class="fw-bold">
-        Concerns or Barriers:
+        What would you like your agent to know about your situation?:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Share any concerns, barriers, or sensitivities that may affect your rental search or the Agent relationship.">
+            title="Anything that would help an Agent represent you well — timing, budget, accessibility needs, or anything else you want them to plan around.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -441,7 +441,7 @@
         <input type="text" wire:model.defer="compatibility_preferences.tenant_specific.concerns_or_barriers"
             class="form-control has-icon"
             data-icon="fa-solid fa-comment-dots"
-            placeholder="Enter concerns or barriers (e.g., Prior eviction concern, Limited rental history)"
+            placeholder="Enter anything your agent should know (e.g., I need a ground-floor unit, I am relocating for work in March)"
             maxlength="2000">
     </div>
     @error('compatibility_preferences.tenant_specific.concerns_or_barriers')

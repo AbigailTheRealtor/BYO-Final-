@@ -251,11 +251,17 @@ class ByaNormalizationServiceTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Test 3: Landlord with populated tenant_type_preference emits proxy risk
-    //         flag at both top level and within property_strategy_fit
+    // Test 3: Landlord tenant_type_preference is RETIRED. A stored blob that still
+    //         holds both keys — the real state between the code deploy and the
+    //         remediation run — must surface neither, and must raise no flag.
+    //
+    // This test used to assert the opposite: that a populated tenant_type_preference
+    // emitted a proxy_risk_flag at top level and inside property_strategy_fit. The
+    // field is gone, and with it the flag. A flag is advisory metadata that nothing
+    // enforces; not collecting the field is the control.
     // -------------------------------------------------------------------------
 
-    public function test_landlord_with_tenant_type_preference_emits_proxy_risk_flag_at_top_level_and_in_slot(): void
+    public function test_landlord_retired_tenant_type_keys_never_reach_the_payload(): void
     {
         $listing = $this->makeListingStub(2290, [
             'landlord_specific' => [
@@ -265,10 +271,13 @@ class ByaNormalizationServiceTest extends TestCase
                 'negotiation_style'             => 'Collaborative Win-Win',
                 'property_management_involvement' => 'Minimal Involvement',
                 'preferred_agent_working_style' => 'Proactive & Assertive',
-                'primary_leasing_goal'          => 'Long-Term Stable Tenant',
+                'primary_leasing_goal'          => 'Long-Term Tenancy',
+                // Both retired keys planted deliberately: this is what a stored blob looks
+                // like after the code deploy and before hireagent:retire-tenant-type runs.
                 'tenant_type_preference'        => 'Individual / Family',
+                'tenant_type_preference_other'  => 'Long-term professional tenant',
                 'representation_priorities'     => ['Tenant Screening & Vetting', 'Lease Negotiation'],
-                'risk_tolerance'                => 'Moderate – Standard Criteria',
+                'applicant_screening_approach'  => 'Written criteria, applied uniformly',
                 'lease_duration_preference'     => '1 Year',
                 'concessions_willingness'       => 'Open to Minor Concessions',
                 'lease_terms_flexibility'       => 'Somewhat Flexible',
@@ -277,28 +286,28 @@ class ByaNormalizationServiceTest extends TestCase
 
         $payload = $this->service->normalize($listing, 'landlord');
 
-        // Top-level proxy_risk_flags must be populated
-        $this->assertNotEmpty($payload['proxy_risk_flags']);
-        $this->assertCount(1, $payload['proxy_risk_flags']);
+        // NEITHER RETIRED KEY MAY APPEAR ANYWHERE IN THE PAYLOAD. Asserted against the
+        // serialised payload rather than key-by-key, so a future slot or context entry
+        // that reintroduced either one fails here too.
+        $encoded = json_encode($payload);
+        $this->assertStringNotContainsString('tenant_type_preference', $encoded,
+            'A retired tenant-type key reached the normalized payload.');
+        $this->assertStringNotContainsString('Individual / Family', $encoded,
+            'A retired tenant-type VALUE reached the normalized payload.');
+        $this->assertStringNotContainsString('Long-term professional tenant', $encoded,
+            'The retired tenant-type free-text companion reached the normalized payload. '
+            . 'This is the specific hole the retirement closed: the dropdown was suppressed '
+            . 'while its free-text twin was surfaced.');
 
-        $topFlag = $payload['proxy_risk_flags'][0];
-        $this->assertSame('tenant_type_preference', $topFlag['field']);
-        $this->assertSame('property_strategy_fit', $topFlag['trait']);
-        $this->assertIsString($topFlag['reason']);
-        $this->assertNotEmpty($topFlag['reason']);
-
-        // property_strategy_fit slot must carry embedded proxy_risk_flags sub-key
+        // No flags at all, and no in-slot flag on property_strategy_fit.
+        $this->assertSame([], $payload['proxy_risk_flags']);
         $stratFit = $payload['traits']['property_strategy_fit'];
-        $this->assertFalse($stratFit['missing']);
-        $this->assertArrayHasKey('proxy_risk_flags', $stratFit,
-            'property_strategy_fit slot must carry proxy_risk_flags sub-key for Landlord');
-        $this->assertCount(1, $stratFit['proxy_risk_flags']);
+        $this->assertArrayNotHasKey('proxy_risk_flags', $stratFit);
 
-        $inSlotFlag = $stratFit['proxy_risk_flags'][0];
-        $this->assertSame('tenant_type_preference', $inSlotFlag['field']);
-        $this->assertSame('property_strategy_fit', $inSlotFlag['trait']);
-        $this->assertIsString($inSlotFlag['reason']);
-        $this->assertNotEmpty($inSlotFlag['reason']);
+        // POSITIVE CONTROL. Without this the assertions above would pass on an empty
+        // payload — which is exactly how an absence test lies.
+        $this->assertFalse($stratFit['missing']);
+        $this->assertSame('Long-Term Tenancy', $stratFit['value']);
 
         // Landlord naming crosswalks
         // communication_channel ← communication_style (channel data despite key name)
@@ -327,10 +336,22 @@ class ByaNormalizationServiceTest extends TestCase
         // All 12 traits present
         $this->assertCount(12, $payload['traits']);
 
-        // informational_context has exactly 6 keys for Landlord
-        $this->assertCount(6, $payload['informational_context']);
+        // informational_context has exactly 8 keys for Landlord: the retired
+        // tenant_type_preference_other is gone; preferred_business_use, its companion and
+        // applicant_screening_approach are new.
+        $this->assertCount(8, $payload['informational_context']);
         $this->assertArrayHasKey('additional_representation_notes', $payload['informational_context']);
         $this->assertArrayHasKey('lease_duration_preference', $payload['informational_context']);
+        $this->assertArrayHasKey('preferred_business_use', $payload['informational_context']);
+        $this->assertArrayNotHasKey('tenant_type_preference_other', $payload['informational_context']);
+
+        // Screening posture is informational ONLY — never a trait slot, because a slot is
+        // what a future scorer reads.
+        $this->assertSame('Written criteria, applied uniformly',
+            $payload['informational_context']['applicant_screening_approach']);
+        $this->assertTrue($payload['traits']['risk_tolerance']['missing'],
+            'Landlord must not fill the risk_tolerance trait slot: a screening posture is not '
+            . 'a transaction risk appetite and must not be scored.');
     }
 
     // -------------------------------------------------------------------------
@@ -687,10 +708,11 @@ class ByaNormalizationServiceTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Additional: Landlord without tenant_type_preference has empty proxy flags
+    // Additional: Landlord proxy_risk_flags is now ALWAYS empty — it is no longer
+    // conditional on any field, because the only field that populated it is retired.
     // -------------------------------------------------------------------------
 
-    public function test_landlord_without_tenant_type_preference_has_empty_proxy_risk_flags(): void
+    public function test_landlord_proxy_risk_flags_is_always_empty(): void
     {
         $listing = $this->makeListingStub(2291, [
             'landlord_specific' => [
@@ -707,12 +729,16 @@ class ByaNormalizationServiceTest extends TestCase
 
         $payload = $this->service->normalize($listing, 'landlord');
 
-        $this->assertEmpty($payload['proxy_risk_flags'],
-            'Landlord without tenant_type_preference must have empty top-level proxy_risk_flags');
+        $this->assertSame([], $payload['proxy_risk_flags'],
+            'Landlord proxy_risk_flags must be empty unconditionally.');
 
         $this->assertArrayNotHasKey('proxy_risk_flags',
             $payload['traits']['property_strategy_fit'],
-            'property_strategy_fit must not carry proxy_risk_flags when tenant_type_preference is absent');
+            'property_strategy_fit must never carry an in-slot proxy_risk_flags sub-key.');
+
+        // Positive control — the payload is real, not empty.
+        $this->assertFalse($payload['traits']['property_strategy_fit']['missing']);
+        $this->assertSame('Maximize Monthly Rent', $payload['traits']['property_strategy_fit']['value']);
     }
 
     // -------------------------------------------------------------------------

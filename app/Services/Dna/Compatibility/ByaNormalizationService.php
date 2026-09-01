@@ -41,23 +41,7 @@ class ByaNormalizationService
         'property_strategy_fit',
     ];
 
-    /**
-     * Exact reason string for the in-slot proxy_risk_flags entry (Section 4.3.3).
-     */
-    private const PROXY_FLAG_REASON_IN_SLOT =
-        'tenant_type_preference includes options that may correlate with protected-class characteristics. ' .
-        'Scoring use is restricted to agent stated specialization; this value must never weight or penalize ' .
-        'agents on a demographic basis.';
 
-    /**
-     * Exact reason string for the top-level proxy_risk_flags entry (Section 6).
-     */
-    private const PROXY_FLAG_REASON_TOP_LEVEL =
-        'tenant_type_preference includes options (Individual / Family, Young Professionals, Students, ' .
-        'Corporate / Relocation, Small Business, Retail Business, Office Tenant) that may correlate with ' .
-        'protected-class characteristics under the Fair Housing Act. Scoring use is restricted to matching ' .
-        'an agent\'s stated commercial-versus-residential tenant specialization. This field must never be ' .
-        'used to weight, penalize, or filter agents on the basis of which demographic group they serve.';
 
     /**
      * Normalize a consumer listing's compatibility preferences into a BYA_NORM_V1 payload.
@@ -314,10 +298,18 @@ class ByaNormalizationService
      */
     private function resolveRiskTolerance(string $role, array $raw): array
     {
+        // LANDLORD NO LONGER FILLS THIS SLOT. Its `risk_tolerance` was a leasing-risk tolerance
+        // ("willing to work with most tenants"), which is a screening posture, not a transaction
+        // risk appetite — and a screening posture correlates with protected characteristics, so it
+        // must not sit in a slot that exists to be scored. It was replaced by
+        // `applicant_screening_approach`, which is informational_context only.
+        //
+        // Buyer keeps this slot: theirs is about offer strategy (waiving contingencies) and is
+        // unrelated despite the shared former key name.
         return match ($role) {
-            'buyer', 'landlord' => $this->slotFromKey($raw, 'risk_tolerance'),
-            'seller', 'tenant'  => ['value' => null, 'missing' => true],
-            default             => ['value' => null, 'missing' => true],
+            'buyer'                        => $this->slotFromKey($raw, 'risk_tolerance'),
+            'seller', 'tenant', 'landlord' => ['value' => null, 'missing' => true],
+            default                        => ['value' => null, 'missing' => true],
         };
     }
 
@@ -398,8 +390,10 @@ class ByaNormalizationService
      *   Landlord → `primary_leasing_goal`
      *   Tenant   → `primary_rental_goal`
      *
-     * Slot exception (Section 4.3.3) — Landlord only, when `tenant_type_preference` is populated:
-     *   Embeds a `proxy_risk_flags` sub-array within this slot (Fair Housing governance flag).
+     * NO SLOT EXCEPTION ANY MORE. This slot used to embed a `proxy_risk_flags` entry whenever the
+     * Landlord's `tenant_type_preference` was populated. That field has been retired: a field that
+     * needs a Fair Housing warning attached to it is a field that should not be in the payload, and
+     * a flag is advice that nothing enforces. It is gone rather than annotated.
      */
     private function resolvePropertyStrategyFit(string $role, array $raw): array
     {
@@ -409,16 +403,6 @@ class ByaNormalizationService
             'tenant'          => $this->slotFromKey($raw, 'primary_rental_goal'),
             default           => ['value' => null, 'missing' => true],
         };
-
-        if ($role === 'landlord' && $this->isNonEmpty($raw['tenant_type_preference'] ?? null)) {
-            $slot['proxy_risk_flags'] = [
-                [
-                    'field'  => 'tenant_type_preference',
-                    'trait'  => 'property_strategy_fit',
-                    'reason' => self::PROXY_FLAG_REASON_IN_SLOT,
-                ],
-            ];
-        }
 
         return $slot;
     }
@@ -478,14 +462,29 @@ class ByaNormalizationService
     }
 
     /**
-     * Landlord informational_context — 6 keys (Section 5.3).
+     * Landlord informational_context — 8 keys.
+     *
+     * `tenant_type_preference_other` USED TO BE HERE, AND THAT WAS THE HOLE. The categorical
+     * `tenant_type_preference` value was suppressed from this payload and routed to a proxy-risk
+     * flag, while its free-text companion — which says the same thing in the landlord's own words
+     * — was passed straight through. Suppressing the dropdown and surfacing the sentence is not a
+     * Fair Housing control. Both are retired now, and neither key is read anywhere in this class.
+     *
+     * `applicant_screening_approach` is informational ONLY and deliberately holds no trait slot:
+     * a screening posture must not become a scoring signal. See resolveRiskTolerance().
+     *
+     * `preferred_business_use` replaces the retired field for COMMERCIAL listings. It is a
+     * business-activity preference about premises. It must never be read as a person signal, a
+     * residential compatibility signal, or an input to any inferred demographic characteristic.
      */
     private function landlordInfoContext(array $raw): array
     {
         return [
             'additional_representation_notes' => $this->infoScalar($raw, 'additional_representation_notes'),
             'primary_leasing_goal_other'      => $this->infoScalar($raw, 'primary_leasing_goal_other'),
-            'tenant_type_preference_other'    => $this->infoScalar($raw, 'tenant_type_preference_other'),
+            'preferred_business_use'          => $this->infoArray($raw, 'preferred_business_use'),
+            'preferred_business_use_other'    => $this->infoScalar($raw, 'preferred_business_use_other'),
+            'applicant_screening_approach'    => $this->infoScalar($raw, 'applicant_screening_approach'),
             'lease_duration_preference'       => $this->infoScalar($raw, 'lease_duration_preference'),
             'concessions_willingness'         => $this->infoScalar($raw, 'concessions_willingness'),
             'lease_terms_flexibility'         => $this->infoScalar($raw, 'lease_terms_flexibility'),
@@ -525,29 +524,21 @@ class ByaNormalizationService
     // -------------------------------------------------------------------------
 
     /**
-     * Build the top-level proxy_risk_flags array (Section 6).
+     * Build the top-level proxy_risk_flags array.
      *
-     * At BYA_NORM_V1, only one field is flagged: Landlord `tenant_type_preference`
-     * when it is populated with a non-null, non-empty value.
-     * All other roles and all Landlord payloads where the field is absent → empty array.
+     * ALWAYS EMPTY, AND THE KEY IS KEPT ANYWAY. At BYA_NORM_V1 the only populated flag was
+     * Landlord `tenant_type_preference`, which has been retired outright. Nothing in the current
+     * payload carries proxy risk, so there is nothing to flag.
+     *
+     * The key stays because consumers read it and an absent key is a different contract from an
+     * empty one. The METHOD stays because the next field that needs flagging should extend a
+     * mechanism that exists rather than reinvent it — but read the retirement first: a flag is
+     * advisory metadata that nothing enforces, so "flag it" is the weaker answer to a field that
+     * correlates with a protected class, and "do not collect it" is the stronger one.
      */
     private function buildProxyRiskFlags(string $role, array $raw): array
     {
-        if ($role !== 'landlord') {
-            return [];
-        }
-
-        if (!$this->isNonEmpty($raw['tenant_type_preference'] ?? null)) {
-            return [];
-        }
-
-        return [
-            [
-                'field'  => 'tenant_type_preference',
-                'trait'  => 'property_strategy_fit',
-                'reason' => self::PROXY_FLAG_REASON_TOP_LEVEL,
-            ],
-        ];
+        return [];
     }
 
     // -------------------------------------------------------------------------

@@ -1435,6 +1435,21 @@
                             @this.set('compatibility_preferences.landlord_specific.representation_priorities', selectedValues);
                         });
                 }
+                // Preferred Business Use — commercial landlord only. Same shape as the field
+                // above; the element does not exist on residential listings, and the .length
+                // guard means nothing runs there.
+                if ($('#compat_preferred_business_use_landlord').length && !$('#compat_preferred_business_use_landlord').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#compat_preferred_business_use_landlord'));
+                    $('#compat_preferred_business_use_landlord')
+                        .off('change.buSync')
+                        .on('change.buSync', function() {
+                            let buVals = $(this).val() || [];
+                            @this.set('compatibility_preferences.landlord_specific.preferred_business_use', buVals);
+                            window.dispatchEvent(new CustomEvent('update-business-use-other', {
+                                detail: { hasOther: buVals.indexOf('Other') !== -1 }
+                            }));
+                        });
+                }
             }
 
             // Function to toggle "auction time" input field
@@ -1934,6 +1949,21 @@
                             @this.set('compatibility_preferences.landlord_specific.representation_priorities', selectedValues);
                         });
                 }
+                // Preferred Business Use — commercial landlord only. Same shape as the field
+                // above; the element does not exist on residential listings, and the .length
+                // guard means nothing runs there.
+                if ($('#compat_preferred_business_use_landlord').length && !$('#compat_preferred_business_use_landlord').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#compat_preferred_business_use_landlord'));
+                    $('#compat_preferred_business_use_landlord')
+                        .off('change.buSync')
+                        .on('change.buSync', function() {
+                            var buVals = $(this).val() || [];
+                            @this.set('compatibility_preferences.landlord_specific.preferred_business_use', buVals);
+                            window.dispatchEvent(new CustomEvent('update-business-use-other', {
+                                detail: { hasOther: buVals.indexOf('Other') !== -1 }
+                            }));
+                        });
+                }
             });
 
 
@@ -1962,6 +1992,10 @@
                     var $rp = $('#compat_representation_priorities_landlord');
                     if ($rp.length && $rp.hasClass('select2-hidden-accessible')) {
                         @this.set('compatibility_preferences.landlord_specific.representation_priorities', $rp.val() || []);
+                    }
+                    var $bu = $('#compat_preferred_business_use_landlord');
+                    if ($bu.length && $bu.hasClass('select2-hidden-accessible')) {
+                        @this.set('compatibility_preferences.landlord_specific.preferred_business_use', $bu.val() || []);
                     }
                 }
             };
