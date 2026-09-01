@@ -13,6 +13,9 @@ and neither restarts the other.
 | Web | `.replit` → `[deployment] run` | `bash deploy/start-production.sh` |
 | Scheduler | manual Replit setup (see `SCHEDULER.md`) | `bash deploy/scheduler.sh` |
 
+A **supervisor restart** of the web process is a third start path and a different
+event from a deployment — see "Two entry points" below.
+
 ## The canonical serving worktree
 
 The port-5000 workflow serves from exactly one path:
@@ -71,6 +74,99 @@ Committing this path does **not** switch production to it. Creating the
 `production-serve` worktree and repointing the live supervisor is a separate,
 controlled deployment event.
 
+## Two entry points: deployment vs supervisor restart
+
+Two different events start a web server, and they are not the same event.
+
+| | Explicit deployment | Supervisor restart |
+|---|---|---|
+| Triggered by | `.replit` → `[deployment] run` | port-5000 workspace workflow |
+| Script | `deploy/start-production.sh` | `deploy/start-serving.sh` |
+| Ships a new commit | yes | **no** — the commit is already pinned |
+| Deploy lock | `acquire_deploy_lock`, 30s bound | same lock, **180s** bound |
+| Preflight report | yes (`deploy:preflight`) | no |
+| Migrations | **applies them** | **never** |
+| Schema check | migration *is* the check | `deploy:migrations-pending`, read-only |
+| Records deploy SHA | yes, after migrations succeed | **never** |
+| Ends with | `exec php artisan serve …` | `exec php artisan serve …` |
+
+### Why a restart may not migrate
+
+The supervisor restarts the port-5000 process for reasons that have nothing to do
+with shipping: a container restart, a workflow re-run, someone pressing the
+button. Before this, that path ran a bare `php artisan serve`, which will happily
+serve new code against an old schema — the exact failure the rest of this
+document exists to close.
+
+The obvious fix, pointing the restart at `start-production.sh`, is worse: it
+would make **migrating production a side effect of a container restart**, at a
+moment nobody chose and in a log nobody is reading. Migration is a deployment
+decision. A restart is not entitled to make it.
+
+So the restart verifies instead, and refuses rather than improvising.
+
+### The readiness gate
+
+```
+php artisan deploy:migrations-pending
+    0  ready         every migration this code ships is applied
+    1  pending       at least one is not
+    2  undetermined  the answer could not be established
+```
+
+The **exit code is the contract**; nothing parses the command's text. That is not
+a stylistic preference — it is the only option available:
+
+- `migrate:status` cannot gate anything on Laravel 8. Its handler renders a table
+  and returns `null`, so Symfony exits `0` whether nothing is pending or
+  everything is. It exits non-zero for exactly one condition, a missing
+  `migrations` table, and this Laravel version has no `--pending` option.
+- `deploy:preflight` always exits `0` by design — it reports, it does not gate,
+  and `start-production.sh` even calls it with `|| true`.
+
+`deploy:migrations-pending` (merged in PR #113) exists for this call site. It is
+read-only: two `SELECT`s, no writes, no migration, no filesystem change.
+
+**Anything that is not `0` refuses to serve**, including exit codes nobody has
+defined yet. A restart that serves while the schema state is unknown is, from
+outside, indistinguishable from one that serves while the schema is known-bad.
+
+### Why the restart waits longer than a deployment
+
+`DEPLOY_LOCK_TIMEOUT` defaults to **30s** in `start-production.sh` and **180s**
+in `start-serving.sh`, and the asymmetry is deliberate. A deployment queued
+behind another deployment is an outage with extra steps, so it should fail fast
+and be visible. A restart queued behind a deployment is simply a restart that
+ought to wait for the deploy to finish — waiting is the correct answer, and 180s
+covers a normal migration run while staying bounded.
+
+Both take the **same** `flock`, through the same `deploy/lib/deploy-state.sh`, so
+a restart cannot read a half-applied schema mid-deployment.
+
+### The deploy SHA is a deployment record, not a restart record
+
+`start-serving.sh` never calls `record_deploy_sha` and never writes
+`.ops-backups/current-deploy-sha`. Exactly one script writes that file, and a
+test asserts the inventory.
+
+> **Only an explicit, controlled deployment may repin production to a new SHA.**
+> An ordinary supervisor restart merely serves the already-pinned, schema-ready
+> commit.
+
+Enforcing that at runtime — comparing the worktree's HEAD against the recorded
+SHA and refusing on a mismatch — is **not implemented** and is deliberately out
+of scope here. For now the invariant is carried by the fact that nothing on the
+restart path can change either value.
+
+### What `start-serving.sh` must never do
+
+`migrate` in any form; write the deploy SHA; terminate whatever currently holds
+port 5000 (the supervisor owns that process, and a script reaching for its own
+predecessor races the supervisor's own restart logic); background the server.
+`DeployStartServingTest` asserts each of these, and runs the real script against a
+fake `php` to prove that a non-zero readiness result actually stops it reaching
+`serve`.
+
 ## Migrations: the web start script owns them
 
 `deploy/start-production.sh` is the **only** thing that migrates:
@@ -128,6 +224,9 @@ and asserts positively that `deploy/start-production.sh` still owns the job.
 | Recorded deploy SHA | `.ops-backups/current-deploy-sha` | written after migrations succeed |
 | Persistent backups | `.ops-backups/` | never `/tmp` |
 | Startup ordering | preflight → migrate → record → serve | a failed migration never reaches `serve` |
+| Non-mutating restart path | `deploy/start-serving.sh` | same lock, read-only readiness gate, never migrates |
+| Restart readiness gate | `deploy:migrations-pending` | fail-closed: only exit `0` may serve |
+| Single deploy-SHA writer | `deploy/start-production.sh` | the restart path never repins production |
 | Code rollback | re-pin previous SHA, restart | schema rollback is separate and manual |
 
 Single ownership stops a *second script* migrating. It never stopped *this
@@ -138,9 +237,14 @@ triggered close together. The lock is the mechanism Laravel 8 does not provide.
 
 - **Automated post-start smoke check.** See "What verifies a start" below — not
   implemented, deliberately.
-- **Canonical `production-serve` worktree** (PR #110). The committed `.replit`
-  change is open but unmerged, the worktree does not exist, and production still
-  serves from `.worktrees/postmerge-validate-current-main`.
+- **Canonical `production-serve` worktree and the serve-only wiring** (PR #110).
+  The committed `.replit` change and `deploy/start-serving.sh` are open but
+  unmerged, the worktree does not exist, and production still serves from
+  `.worktrees/postmerge-validate-current-main` via a hand-edited local `.replit`.
+  Nothing in this PR switches live traffic.
+- **HEAD-vs-recorded-SHA enforcement on restart.** Not implemented. The restart
+  path cannot change either value, but it does not yet refuse a worktree whose
+  HEAD disagrees with `current-deploy-sha`.
 - **`APP_DEBUG=false` in production.** Still an open question — see "Environment
   mode" below.
 
@@ -155,8 +259,10 @@ The platform verifies **that the port binds and the process stays up**. There is
 no `healthCheckPath` configured under `[deployment]`, and `waitForPort = 5000`
 belongs to the workspace workflow, not the deployment.
 
-Nothing verifies that the application *answers correctly* after boot. That gap is
-known and deliberately left open: the script ends with
+Nothing verifies that the application *answers correctly* after boot — for either
+entry point. That gap is known and **still not implemented**; do not read the
+readiness gate as a smoke check, because it inspects the schema and never issues
+a request. Both scripts end with
 
 ```
 exec php artisan serve …

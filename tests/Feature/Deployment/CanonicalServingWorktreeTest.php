@@ -27,6 +27,17 @@ use Tests\TestCase;
  *
  * This pins the canonical path in git, where it is reviewable and durable.
  *
+ * WHAT THE WORKFLOW NOW INVOKES
+ * -----------------------------
+ * Pointing the workflow at a durable path was only half the problem. The other
+ * half is what it RUNS there: a bare `php artisan serve` serves whatever schema
+ * it finds, so a supervisor restart could bring the application up against a
+ * schema its code no longer matches. The workflow therefore goes through
+ * `deploy/start-serving.sh`, which verifies readiness and refuses rather than
+ * improvises. Its behaviour is covered by DeployStartServingTest; what is
+ * asserted HERE is the wiring — that the committed `.replit` actually routes
+ * through it, and that no direct server command remains to bypass it.
+ *
  * WHAT THIS DOES NOT DO
  * ---------------------
  * It does not create `production-serve`, promote anything, or switch live
@@ -113,6 +124,66 @@ class CanonicalServingWorktreeTest extends TestCase
                 $forbidden,
                 $args,
                 "The port-5000 workflow must not serve from '{$forbidden}' — it is not a durable production target"
+            );
+        }
+    }
+
+    public function test_the_port_5000_workflow_goes_through_the_serve_only_script(): void
+    {
+        $args = $this->portFiveThousandWorkflowArgs();
+
+        $this->assertStringContainsString(
+            'deploy/start-serving.sh',
+            $args,
+            'The port-5000 workflow must start the server through the serve-only script'
+        );
+
+        $this->assertFileExists(
+            base_path('deploy/start-serving.sh'),
+            'The script the workflow names must actually exist in the repository'
+        );
+    }
+
+    /**
+     * Nothing in the workflow may start a server directly.
+     *
+     * A direct command is not merely redundant — it is a way past the readiness
+     * gate, which is the entire reason the workflow was rewired.
+     */
+    public function test_the_port_5000_workflow_starts_no_server_directly(): void
+    {
+        $args = $this->portFiveThousandWorkflowArgs();
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/artisan\s+serve/',
+            $args,
+            'The workflow must not invoke the server directly and bypass the readiness gate'
+        );
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/php\s+-S\b/',
+            $args,
+            'The workflow must not use the PHP built-in server directly'
+        );
+    }
+
+    /**
+     * The live-only preamble must stay out of git.
+     *
+     * The hand-edited file on disk cleared port 5000 with `kill $(lsof -ti :5000)`
+     * and then slept. That races the supervisor, which is itself responsible for
+     * stopping the previous process, and a sleep is a race waiting to be lost
+     * rather than a synchronisation primitive.
+     */
+    public function test_the_workflow_carries_no_live_only_process_preamble(): void
+    {
+        $args = $this->portFiveThousandWorkflowArgs();
+
+        foreach (['kill ', 'lsof', 'pkill', 'fuser', 'sleep '] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $args,
+                "The live-only '{$forbidden}' preamble must not be committed"
             );
         }
     }
