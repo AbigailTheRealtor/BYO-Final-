@@ -137,10 +137,38 @@ occupant question. Commercial answers **Preferred Business Use** instead; its op
 trait slot, because a slot is what a future scorer reads. Buyer `risk_tolerance` is unrelated and
 stays. `HireAgentFairHousingWordingTest` guards the wording and the keys at source.
 
-`php artisan hireagent:retire-tenant-type` remediates stored values. **Dry-run by default**; `--write`
-backs every original blob up first and `--restore=FILE` is the only rollback, since deleting JSON keys
-has no `down()`. It is a command rather than a migration because nothing schema-shaped changes and
-`deploy/start-production.sh` is the single migration owner. **Not yet run against any database.**
+`php artisan hireagent:retire-tenant-type` remediates stored values. It is a command rather than a
+migration because nothing schema-shaped changes and `deploy/start-production.sh` is the single
+migration owner. **Not yet run against any database, and running `--write` against one requires
+separate explicit approval.**
+
+It runs in **two phases, and the order is the safety property**. *Phase A* plans: it scans every
+candidate row and computes each affected listing's exact original and remediated blob, writing
+nothing in either mode — the default invocation is Phase A plus a report, and creates no backup row,
+no rollback record and no timestamp change. *Phase B* is reached only under `--write`: every affected
+listing's original is persisted, **then every backup is read back out of the database and
+checksum-verified, and only then does the first compatibility blob change.** Any failure in backup or
+verification aborts with `FAILURE` having performed zero remediation writes.
+
+**The rollback record lives in the database, not the filesystem** — one row per listing in
+`landlord_agent_auction_metas` under `fair_housing_backup_compatibility_preferences`, holding the
+original bytes, a SHA-256 over them and the run id. `storage/app` was the wrong home: the Replit
+container is rebuilt from the image on deploy and on restart, `storage/` has no persistent mount and
+the file is not in git, so the undo evaporated while the deletion stayed. **Nothing at runtime
+resolves that key** — every meta consumer reads a named key, `$auction->get->namedKey`, or an
+explicit field whitelist (`LandlordFieldMap::sections()`, Ask AI's `CANONICAL_SOURCE_MAP`), so the
+row is inert to the application. It is **written once per listing and never overwritten**, so the
+path back to the value the landlord actually submitted survives any re-dirty / re-remediate cycle.
+
+`--list-backups` (read-only) lists the restorable runs; `--restore=RUN_ID` undoes one **named** run —
+no default, no "latest", and one unreadable envelope anywhere refuses the whole restore, because an
+envelope that cannot be decoded is one whose run cannot be ruled out. Restore is idempotent and
+leaves the backup rows in place.
+
+**Malformed rows are skipped, never repaired, and now counted.** A blob that is not valid JSON and a
+`landlord_specific` that is present but not an object are reported separately, and the run ends with
+an explicit `REMEDIATION INCOMPLETE` warning — those listings may still hold retired values. A
+`landlord_specific` that is simply *absent* is normal and is not counted.
 
 **Detail-page visibility.** Representation rows are built in two buckets: `$repAdd()` is public,
 `$repAddOwn()` is owner-only (free text, screening posture, and the seller's own motivation and price
