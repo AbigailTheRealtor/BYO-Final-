@@ -17,8 +17,6 @@ DB_DATABASE = "heliumdb"
 DB_USERNAME = "postgres"
 DB_PASSWORD = "password"
 APP_NAME = "BidYourOffer"
-APP_ENV = "local"
-APP_DEBUG = "true"
 APP_URL = "https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev"
 CACHE_DRIVER = "file"
 SESSION_DRIVER = "file"
@@ -60,7 +58,7 @@ waitForPort = 5000
 [deployment]
 deploymentTarget = "vm"
 run = ["bash", "deploy/start-production.sh"]
-build = ["composer", "install", "--no-dev", "--optimize-autoloader", ";", "npm", "install", ";", "npm", "run", "prod", ";", "php", "artisan", "config:cache", ";", "php", "artisan", "route:cache", ";", "php", "artisan", "view:cache"]
+build = ["composer", "install", "--no-dev", "--optimize-autoloader", ";", "npm", "install", ";", "npm", "run", "prod", ";", "php", "artisan", "route:cache", ";", "php", "artisan", "view:cache"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
