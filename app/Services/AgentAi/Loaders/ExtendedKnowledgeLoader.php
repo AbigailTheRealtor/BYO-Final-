@@ -4,6 +4,7 @@ namespace App\Services\AgentAi\Loaders;
 
 use App\Models\AiFaqAnswer;
 use App\Models\AskAiKnowledgeSnapshot;
+use App\Services\AskAi\AskAiFaqEnrichmentService;
 use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationDna;
 
@@ -114,8 +115,43 @@ class ExtendedKnowledgeLoader
      */
     private function loadFaqAnswers(string $listingType, int $listingId): array
     {
+        // ADMISSION BOUNDARY (Fair Housing P0-B — reader side).
+        //
+        // This loader is a SECOND prompt-context builder: it feeds `faq_answers` to the
+        // Agent AI V2 assistant without passing through
+        // AskAiContextBuilderService::buildFaqAnswers(), so the gate there does not cover
+        // it. It reads `ai_faq_answers` directly, and before this guard it forwarded
+        // every stored row verbatim.
+        //
+        // Guarding the writer in AskAiFaqEnrichmentService::sync() is not sufficient on
+        // its own. Rows created before that guard existed are still in the table, and a
+        // retired question — one deleted from config/ai_faq_*.php — leaves rows behind by
+        // definition. The boundary has to be enforced where the value is consumed, or a
+        // key stops being asked and keeps being answered.
+        //
+        // Same SSOT as the other two gates (config/ai_faq_{seller,buyer,landlord}.php and
+        // config/tenant_ai_faq.php), and deliberately not a second hand-maintained list:
+        // three copies of "which questions are legitimate" would drift, and the copy that
+        // drifted would be the one nobody was reading.
+        //
+        // FAIL CLOSED: an unknown listing type, or a config that cannot be loaded, yields
+        // an empty index and therefore no FAQ content. The loader simply contributes
+        // nothing to the fragment, which is a supported outcome — __invoke() already
+        // returns null when every source is empty.
+        $registered = AskAiFaqEnrichmentService::buildConfigIndex($listingType);
+
+        if (empty($registered)) {
+            return [];
+        }
+
+        // The allowlist is applied in the QUERY as well as in the loop below. Filtering
+        // only in PHP would let stale unregistered rows consume the MAX_FAQ_ENTRIES budget
+        // and crowd legitimate answers out of the fragment — the guard would then quietly
+        // cost the assistant real content. The in-loop check is kept as defence in depth
+        // so the boundary does not depend on one query clause staying correct.
         $rows = AiFaqAnswer::where('listing_type', $listingType)
             ->where('listing_id', $listingId)
+            ->whereIn('question_key', array_keys($registered))
             ->orderBy('question_group')
             ->orderBy('id')
             ->limit(self::MAX_FAQ_ENTRIES)
@@ -123,8 +159,14 @@ class ExtendedKnowledgeLoader
 
         $answers = [];
         foreach ($rows as $row) {
-            if ($row->question_key && $row->answer_text) {
-                $answers[$row->question_key] = self::truncateText($row->answer_text);
+            $key = (string) ($row->question_key ?? '');
+
+            if (! array_key_exists($key, $registered)) {
+                continue;
+            }
+
+            if ($key !== '' && $row->answer_text) {
+                $answers[$key] = self::truncateText($row->answer_text);
             }
         }
 

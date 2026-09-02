@@ -1132,6 +1132,21 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Controllers/BuyerCriteriaAuctionController.php',
             'resources/views/buyer_criteria/add.blade.php',
             'resources/views/buyer_criteria/edit.blade.php',
+
+            // Create Offer Fair Housing — Phase 1, P0-B completion.
+            //
+            // The pre-PR audit found that gating AskAiContextBuilderService::buildFaqAnswers()
+            // closed Ask AI V1 only. A second, independent route to a prompt bypassed it:
+            // AskAiFaqEnrichmentService::sync() wrote ANY key into ai_faq_answers using the
+            // same `?? [nulls]` umbrella, and AgentAi\Loaders\ExtendedKnowledgeLoader read
+            // that table verbatim into Agent AI V2 context. Both ends now enforce the same
+            // config-SSOT membership check as the V1 gate.
+            //
+            // The reader guard is required in addition to the writer guard, not instead of
+            // it: rows written before the guard existed remain, and retiring a question from
+            // config leaves rows behind by definition.
+            'app/Services/AskAi/AskAiFaqEnrichmentService.php',
+            'app/Services/AgentAi/Loaders/ExtendedKnowledgeLoader.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
