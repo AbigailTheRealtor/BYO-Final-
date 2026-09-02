@@ -2346,7 +2346,11 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_S_faq_answers_populated_from_seller_eav_json(): void
     {
-        $faqData = ['roof_age' => 'Replaced in 2020', 'hvac' => 'Serviced in 2024'];
+        // Registered seller keys from the config SSOT (config/ai_faq_seller.php). The
+        // earlier fixture used 'roof_age' / 'hvac', which the config does not define — the
+        // registered-only admission boundary (Fair Housing P0-B) correctly drops those, so
+        // the fixture, not the behaviour, was what this test needed.
+        $faqData = ['roof_age_and_condition' => 'Replaced in 2020', 'hvac_system_age' => 'Serviced in 2024'];
 
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
@@ -2356,21 +2360,26 @@ class AskAiContextBuilderServiceTest extends TestCase
         $result = $service->buildForListing('seller', 1);
 
         $this->assertIsArray($result['faq_answers']);
-        $this->assertArrayHasKey('roof_age', $result['faq_answers'],
-            "faq_answers must include 'roof_age' from EAV listing_ai_faq JSON");
-        $this->assertIsArray($result['faq_answers']['roof_age'],
+        $this->assertArrayHasKey('roof_age_and_condition', $result['faq_answers'],
+            "faq_answers must include 'roof_age_and_condition' from EAV listing_ai_faq JSON");
+        $this->assertIsArray($result['faq_answers']['roof_age_and_condition'],
             "Each faq_answers entry must be an enriched array, not a raw string");
-        $this->assertSame('Replaced in 2020', $result['faq_answers']['roof_age']['answer_text'],
+        $this->assertSame('Replaced in 2020', $result['faq_answers']['roof_age_and_condition']['answer_text'],
             "answer_text must contain the original answer string");
-        $this->assertArrayHasKey('config_key', $result['faq_answers']['roof_age']);
-        $this->assertArrayHasKey('question_label', $result['faq_answers']['roof_age']);
-        $this->assertArrayHasKey('question_group', $result['faq_answers']['roof_age']);
-        $this->assertArrayHasKey('intelligence_category', $result['faq_answers']['roof_age']);
+        $this->assertArrayHasKey('config_key', $result['faq_answers']['roof_age_and_condition']);
+        $this->assertArrayHasKey('question_label', $result['faq_answers']['roof_age_and_condition']);
+        $this->assertArrayHasKey('question_group', $result['faq_answers']['roof_age_and_condition']);
+        $this->assertArrayHasKey('intelligence_category', $result['faq_answers']['roof_age_and_condition']);
+        $this->assertArrayHasKey('hvac_system_age', $result['faq_answers'],
+            'The second registered key must be admitted alongside the first');
     }
 
     public function test_case_S_faq_answers_populated_from_landlord_eav_json(): void
     {
-        $faqData = ['parking_details' => 'One assigned spot in garage', 'laundry' => 'In-unit washer/dryer'];
+        // Registered landlord keys from the config SSOT (config/ai_faq_landlord.php).
+        // 'parking_details' / 'laundry' are not defined there; the registered-only
+        // admission boundary drops them, so the fixture is what changed, not the behaviour.
+        $faqData = ['guest_parking' => 'One assigned spot in garage', 'furnished_or_unfurnished' => 'Unfurnished'];
 
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
@@ -2380,14 +2389,21 @@ class AskAiContextBuilderServiceTest extends TestCase
         $result = $service->buildForListing('landlord', 1);
 
         $this->assertIsArray($result['faq_answers']);
-        $this->assertArrayHasKey('parking_details', $result['faq_answers']);
-        $this->assertIsArray($result['faq_answers']['parking_details']);
-        $this->assertSame('One assigned spot in garage', $result['faq_answers']['parking_details']['answer_text']);
+        $this->assertArrayHasKey('guest_parking', $result['faq_answers']);
+        $this->assertIsArray($result['faq_answers']['guest_parking']);
+        $this->assertSame('One assigned spot in garage', $result['faq_answers']['guest_parking']['answer_text']);
+        $this->assertArrayHasKey('furnished_or_unfurnished', $result['faq_answers'],
+            'The second registered key must be admitted alongside the first');
     }
 
     public function test_case_S_faq_answers_populated_from_tenant_native_column(): void
     {
-        $faqData = ['move_in_flexibility' => 'Can move in within 30 days'];
+        // Registered tenant key from the config SSOT (config/tenant_ai_faq.php), and one
+        // that is NOT on AskAiViewerAuthorizationService::APPLICANT_SENSITIVE_FAQ_KEYS, so
+        // this test stays about native-column population rather than viewer redaction.
+        // 'move_in_flexibility' is not defined in the config and is correctly dropped by
+        // the registered-only admission boundary.
+        $faqData = ['tenant_rental_needs' => 'Can move in within 30 days'];
 
         $stub                   = $this->makeListingStub();
         $stub->listing_ai_faq   = json_encode($faqData);
@@ -2398,14 +2414,23 @@ class AskAiContextBuilderServiceTest extends TestCase
         $result = $service->buildForListing('tenant', 1);
 
         $this->assertIsArray($result['faq_answers']);
-        $this->assertArrayHasKey('move_in_flexibility', $result['faq_answers']);
-        $this->assertIsArray($result['faq_answers']['move_in_flexibility']);
-        $this->assertSame('Can move in within 30 days', $result['faq_answers']['move_in_flexibility']['answer_text']);
+        $this->assertArrayHasKey('tenant_rental_needs', $result['faq_answers']);
+        $this->assertIsArray($result['faq_answers']['tenant_rental_needs']);
+        $this->assertSame('Can move in within 30 days', $result['faq_answers']['tenant_rental_needs']['answer_text']);
     }
 
     public function test_case_S_faq_answers_skips_null_and_empty_values(): void
     {
-        $faqData = ['good_key' => 'Has value', 'empty_key' => '', 'null_key' => null];
+        // All three keys are REGISTERED seller keys (config/ai_faq_seller.php). That is the
+        // point: this test is about the null/empty-answer rule, so every key must clear the
+        // registered-only admission boundary first, or a pass would prove nothing about the
+        // rule under test. The earlier 'good_key'/'empty_key'/'null_key' fixture was
+        // unregistered and is now correctly dropped at admission.
+        $faqData = [
+            'unique_selling_points'        => 'Has value',
+            'nearby_amenities_description' => '',
+            'property_lifestyle_support'   => null,
+        ];
 
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
@@ -2414,13 +2439,13 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $result = $service->buildForListing('seller', 1);
 
-        $this->assertArrayHasKey('good_key', $result['faq_answers']);
-        $this->assertIsArray($result['faq_answers']['good_key']);
-        $this->assertSame('Has value', $result['faq_answers']['good_key']['answer_text']);
-        $this->assertArrayNotHasKey('empty_key', $result['faq_answers'],
-            "faq_answers must exclude keys with empty string values");
-        $this->assertArrayNotHasKey('null_key', $result['faq_answers'],
-            "faq_answers must exclude keys with null values");
+        $this->assertArrayHasKey('unique_selling_points', $result['faq_answers']);
+        $this->assertIsArray($result['faq_answers']['unique_selling_points']);
+        $this->assertSame('Has value', $result['faq_answers']['unique_selling_points']['answer_text']);
+        $this->assertArrayNotHasKey('nearby_amenities_description', $result['faq_answers'],
+            "faq_answers must exclude registered keys with empty string values");
+        $this->assertArrayNotHasKey('property_lifestyle_support', $result['faq_answers'],
+            "faq_answers must exclude registered keys with null values");
     }
 
     public function test_case_S_faq_answers_enriched_shape_has_all_required_keys(): void
@@ -2448,9 +2473,26 @@ class AskAiContextBuilderServiceTest extends TestCase
         $this->assertNotNull($entry['intelligence_category'], "Known config key must resolve a non-null intelligence_category");
     }
 
-    public function test_case_S_faq_answers_unknown_key_gets_null_metadata(): void
+    /**
+     * INVERTED (Fair Housing P0-B). This test previously asserted the vulnerability:
+     * "Unknown keys must still produce an enriched array entry", with null metadata. That
+     * `?? [nulls]` umbrella is what let an arbitrary key from the untrusted
+     * `listing_ai_faq` blob — `com_tenant_type` among them — reach LLM prompt context, and
+     * it is retired. A regression guard that pins the behaviour a fix removed does not
+     * merely fail; while it is green it argues for putting the hole back.
+     *
+     * The boundary is an INTERSECTION against the config SSOT: an unregistered key is
+     * omitted from the normalized FAQ context entirely, rather than admitted with empty
+     * metadata. It is dropped WITHOUT taking its registered neighbour with it, so the
+     * guard cannot be satisfied by discarding the whole blob.
+     */
+    public function test_case_S_faq_answers_omits_an_unregistered_key_entirely(): void
     {
-        $faqData = ['some_unknown_key' => 'Answer text here'];
+        $faqData = [
+            'some_unknown_key'      => 'Answer text here',
+            'com_tenant_type'       => 'Young professionals preferred',
+            'unique_selling_points' => 'Quiet cul-de-sac',
+        ];
 
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
@@ -2459,13 +2501,22 @@ class AskAiContextBuilderServiceTest extends TestCase
 
         $result = $service->buildForListing('seller', 1);
 
-        $entry = $result['faq_answers']['some_unknown_key'] ?? null;
-        $this->assertIsArray($entry, "Unknown keys must still produce an enriched array entry");
-        $this->assertSame('some_unknown_key', $entry['config_key']);
-        $this->assertSame('Answer text here', $entry['answer_text']);
-        $this->assertNull($entry['question_label'],        "Unknown key must have null question_label");
-        $this->assertNull($entry['question_group'],        "Unknown key must have null question_group");
-        $this->assertNull($entry['intelligence_category'], "Unknown key must have null intelligence_category");
+        $this->assertArrayNotHasKey('some_unknown_key', $result['faq_answers'],
+            'An unregistered key must be omitted from faq_answers entirely, not admitted with null metadata');
+        $this->assertArrayNotHasKey('com_tenant_type', $result['faq_answers'],
+            'com_tenant_type is registered in no Ask AI config and must never reach prompt context');
+
+        $this->assertArrayHasKey('unique_selling_points', $result['faq_answers'],
+            'Dropping unregistered keys must not take a registered neighbour with them');
+        $this->assertSame('Quiet cul-de-sac', $result['faq_answers']['unique_selling_points']['answer_text']);
+
+        foreach (array_keys($result['faq_answers']) as $admitted) {
+            $this->assertArrayHasKey(
+                $admitted,
+                \App\Services\AskAi\AskAiFaqEnrichmentService::buildConfigIndex('seller'),
+                "Admitted FAQ key '{$admitted}' is not registered in the config SSOT"
+            );
+        }
     }
 
     public function test_case_S_faq_answers_present_in_empty_payload_and_is_array(): void
