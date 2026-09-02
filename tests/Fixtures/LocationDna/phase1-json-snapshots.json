@@ -4,7 +4,7 @@
         "seeded_by": "LocationDnaJsonSnapshotParityTest and Phase1CertificationTest read the `seed` block below.",
         "regenerate": "Only when the JSON contract intentionally changes: run the parity test with UPDATE_LDNA_SNAPSHOTS=1 and say so in the commit message. A regenerated snapshot is a silenced alarm, not a passing test.",
         "canonical_flags": "JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE",
-        "summary_sha256": "9f1fd12fe544937437f450cd24acf273a88076748e64606f01922a08003cef89",
+        "summary_sha256": "beeab9fef34047b0eee9301f031399273055580d3d66f21a605b440d669fcda7",
         "lifestyle_sha256": "955dae1ca000adcc684e0eeb3f5a80be864d8bbb01b063018c29df436e2cf976"
     },
     "seed": {
@@ -347,6 +347,17 @@
         "transportation": {
             "nearest_transit_miles": 0.7,
             "nearest_gas_station_miles": 0.4
+        },
+        "education": {
+            "nearest_school_miles": 1.1
+        },
+        "health_and_fitness": {
+            "nearest_hospital_miles": null,
+            "nearest_gym_miles": null,
+            "nearest_fitness_center_miles": null
+        },
+        "shopping": {
+            "nearest_shopping_center_miles": null
         },
         "missing_categories": [
             "hospital"

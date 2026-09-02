@@ -92,6 +92,7 @@ tests/Feature/LocationDna/NeighborhoodTierBindingTest.php
 tests/Feature/LocationDna/NeighborhoodTierSurfaceTest.php
 tests/Feature/LocationDna/Phase1CertificationTest.php
 tests/Feature/LocationDna/SellerLandlordCascadeExclusionTest.php
+tests/Feature/LocationDna/StellarNearbyAmenitiesCategoryCoverageTest.php
 tests/Feature/LocationDna/SupplementalLayerIsolationTest.php
 tests/Feature/LocationDnaAdminPreviewTest.php
 tests/Feature/LocationDnaPipelineTriggerTest.php
