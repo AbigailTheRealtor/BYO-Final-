@@ -70,6 +70,31 @@ class LocationDnaSummaryService
             'transit_station' => 'nearest_transit_miles',
             'gas_station'     => 'nearest_gas_station_miles',
         ],
+
+        // ── v3: the five categories that were fetched but unreachable ──────────────
+        //
+        // school, hospital, shopping_center, gym and fitness_center have always been
+        // fetched by LocationDnaPoiDistanceService and written to
+        // property_location_pois, and they appear in nearest_by_category. They simply
+        // belonged to no thematic block, and the consumer-facing Stellar panel reads
+        // ONLY thematic blocks — so a stored school could never be displayed there
+        // while the Seller/Landlord panel showed it the whole time.
+        //
+        // These are NEW blocks rather than additions to the four above, and that is
+        // deliberate: LocationDnaLifestyleScoreService reads named keys out of
+        // coastal / daily_convenience / outdoor_recreation / transportation. Leaving
+        // those four byte-identical means this change cannot move a lifestyle score.
+        'education' => [
+            'school' => 'nearest_school_miles',
+        ],
+        'health_and_fitness' => [
+            'hospital'       => 'nearest_hospital_miles',
+            'gym'            => 'nearest_gym_miles',
+            'fitness_center' => 'nearest_fitness_center_miles',
+        ],
+        'shopping' => [
+            'shopping_center' => 'nearest_shopping_center_miles',
+        ],
     ];
 
     public function __construct(

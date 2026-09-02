@@ -26,6 +26,23 @@
     $convenience  = $summary['daily_convenience'] ?? [];
     $outdoor      = $summary['outdoor_recreation'] ?? [];
     $transport    = $summary['transportation']     ?? [];
+    $education    = $summary['education']            ?? [];
+    $health       = $summary['health_and_fitness']   ?? [];
+    $shopping     = $summary['shopping']             ?? [];
+
+    // gym and fitness_center are a CATEGORY_GROUPS pair sharing one raw fetch, so they
+    // routinely resolve to the SAME business. Listing it twice reads as a data error, so
+    // the secondary (fitness_center) is dropped when both name the same place. Scoped to
+    // this pair on purpose: a blanket name-dedupe would also collapse legitimate repeats
+    // elsewhere — a supermarket that is genuinely both the nearest grocery and the
+    // nearest pharmacy is real information, not a duplicate.
+    if (
+        ($health['nearest_fitness_center_miles'] ?? null) !== null
+        && ($byCategory['gym']['name'] ?? null) !== null
+        && ($byCategory['fitness_center']['name'] ?? null) === ($byCategory['gym']['name'] ?? null)
+    ) {
+        unset($health['nearest_fitness_center_miles']);
+    }
 
     // Label map for distance keys
     $distanceLabels = [
@@ -44,6 +61,11 @@
         'nearest_waterfront_park_miles' => 'Waterfront Park',
         'nearest_transit_miles'         => 'Transit',
         'nearest_gas_station_miles'     => 'Gas Station',
+        'nearest_school_miles'          => 'School',
+        'nearest_hospital_miles'        => 'Hospital',
+        'nearest_gym_miles'             => 'Gym',
+        'nearest_fitness_center_miles'  => 'Fitness Center',
+        'nearest_shopping_center_miles' => 'Shopping Center',
     ];
 
     $sections = array_filter([
@@ -51,6 +73,9 @@
         'Daily Convenience'  => $convenience,
         'Parks & Recreation' => $outdoor,
         'Transportation'     => $transport,
+        'Education'          => $education,
+        'Health & Fitness'   => $health,
+        'Shopping'           => $shopping,
     ], fn($s) => count($s) > 0);
 
     // Get POI name from nearest_by_category for a given key
@@ -71,6 +96,11 @@
         'nearest_waterfront_park_miles' => 'waterfront_park',
         'nearest_transit_miles'         => 'transit_station',
         'nearest_gas_station_miles'     => 'gas_station',
+        'nearest_school_miles'          => 'school',
+        'nearest_hospital_miles'        => 'hospital',
+        'nearest_gym_miles'             => 'gym',
+        'nearest_fitness_center_miles'  => 'fitness_center',
+        'nearest_shopping_center_miles' => 'shopping_center',
     ];
 @endphp
 
