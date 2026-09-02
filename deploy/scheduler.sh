@@ -28,4 +28,29 @@ cd "$(dirname "$0")/.."
 # scheduler process loads the same PHP configuration as the app.
 export PHP_INI_SCAN_DIR="$PWD/deploy/php"
 
+# ── production runtime environment ──────────────────────────────────────────
+# Set unconditionally, and BEFORE any Laravel process starts.
+#
+# NOT `${APP_ENV:-production}`. A `:-` default keeps whatever the parent already
+# supplied, and a parent value being present and WRONG is exactly the situation:
+# `.replit` used to declare APP_ENV=local and APP_DEBUG=true under
+# `[userenv.shared]`, and the live web process was verified running with both.
+# APP_DEBUG=true renders full stack traces — including database credentials and
+# environment values — to anyone who triggers an error.
+#
+# `config/app.php` already defaults safely (`env('APP_ENV', 'production')`,
+# `env('APP_DEBUG', false)`), so the danger was never a missing default; it was
+# an ambient value that was present and wrong. Overriding is what is required.
+#
+# This works because Illuminate\Support\Env builds an IMMUTABLE phpdotenv
+# repository, which will not overwrite a variable already in the process
+# environment — so what is exported here beats the same key in `.env`.
+#
+# It only works while no configuration cache exists. A cached config freezes
+# every env() result at build time and makes Laravel skip `.env` entirely, so a
+# run-time export would be inert. That is why `config:cache` was removed from the
+# `[deployment] build`. See deploy/DEPLOYMENT.md ("Configuration cache policy").
+export APP_ENV=production
+export APP_DEBUG=false
+
 exec php artisan schedule:work --no-interaction

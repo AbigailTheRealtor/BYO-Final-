@@ -167,6 +167,112 @@ predecessor races the supervisor's own restart logic); background the server.
 fake `php` to prove that a non-zero readiness result actually stops it reaching
 `serve`.
 
+## The production environment contract
+
+**Every production Laravel process sets its own environment before Laravel boots.**
+
+| Process | Script | Sets |
+|---|---|---|
+| Web (deployment) | `deploy/start-production.sh` | `APP_ENV=production`, `APP_DEBUG=false` |
+| Web (supervisor restart) | `deploy/start-serving.sh` | `APP_ENV=production`, `APP_DEBUG=false` |
+| Scheduler | `deploy/scheduler.sh` | `APP_ENV=production`, `APP_DEBUG=false` |
+
+Set **unconditionally** — never `${APP_ENV:-production}`. A `:-` default keeps
+whatever the parent already supplied, and *a parent value being present and wrong*
+is exactly the situation this exists for.
+
+### What went wrong
+
+`.replit` declared `APP_ENV = "local"` and `APP_DEBUG = "true"` under
+`[userenv.shared]`, with no production override, and the live web process was
+verified running with both. `APP_DEBUG=true` renders full stack traces — including
+database credentials and environment values — to anyone who triggers an error.
+
+Note that `config/app.php` was never the problem:
+
+```php
+'env'   => env('APP_ENV', 'production'),
+'debug' => (bool) env('APP_DEBUG', false),
+```
+
+Absent those variables the framework already defaults to production/false. The
+danger was not a missing default — it was an **ambient value that was present and
+wrong**, supplied by a shared, development-oriented setting that nothing on the
+deployment path overrode.
+
+### Why exporting is enough
+
+`Illuminate\Support\Env` builds its repository with `$builder->immutable()`, and
+on phpdotenv v5 an immutable repository will not overwrite a variable already
+present in the process environment. So a variable exported by the start script
+beats the same key in `.env`. Verified, not assumed — see
+`ProductionRuntimeEnvironmentTest`, which boots a real Laravel process with
+hostile parent values and reads `config('app.debug')` back.
+
+### Why `[userenv.shared]` no longer declares them
+
+Shared userenv reaches development and workspace shells too, so it is the wrong
+authority in **both** directions: `local`/`true` endangers production, and
+`production`/`false` would push every development shell into production mode. The
+keys belong to neither — the entrypoints own them, and development keeps using its
+own `.env`.
+
+`.env.example` still reads `APP_ENV=local` / `APP_DEBUG=true` and is **unchanged
+on purpose**. It is a development template; nothing in `.replit`, `deploy/` or
+`scripts/` consumes it as production configuration.
+
+## Configuration cache policy
+
+**The production deployment build does NOT run `php artisan config:cache`.**
+
+It used to. `[deployment] build` ended with `config:cache`, `route:cache`,
+`view:cache`, and the build runs *before* `[deployment] run` invokes the start
+script — so a cache always existed by the time anything exported anything.
+
+That makes the environment contract above completely inert:
+
+- `LoadEnvironmentVariables::bootstrap()` returns early when
+  `configurationIsCached()`, so **`.env` is never loaded at all**;
+- `LoadConfiguration::bootstrap()` `require`s the cached array and skips
+  `loadConfigurationFiles()`, so **`config/app.php` is never re-evaluated** — every
+  `env()` call was already resolved at BUILD time.
+
+Demonstrated rather than argued:
+
+```
+$ env APP_ENV=local APP_DEBUG=true   php artisan config:cache
+$ env APP_ENV=production APP_DEBUG=false php -r '<boot>; echo config("app.debug");'
+  config(app.env)=local  config(app.debug)=true      ← export ignored
+
+$ php artisan config:clear
+$ env APP_ENV=production APP_DEBUG=false php -r '<boot>; …'
+  config(app.env)=production  config(app.debug)=false ← export honoured
+```
+
+Had the exports shipped while the build still cached, the change would have passed
+every shell-level test, passed a fresh-process Laravel test (a fresh worktree has
+no cache), and still served `APP_DEBUG=true` to visitors. That is worse than the
+original bug, because it would look solved.
+
+**Correctness takes precedence over the boot-time optimisation.** Config caching
+may be reintroduced later, in a separate PR, and only once the *build phase* has a
+proven production-scoped environment contract of its own — that is, only once we
+can show what the build bakes in. `route:cache` and `view:cache` are unaffected and
+remain in the build; neither freezes `env()` values.
+
+`ProductionRuntimeEnvironmentTest` asserts no production path creates
+`bootstrap/cache/config.php`. `scripts/post-merge.sh` still runs `config:clear`;
+that is the Replit **workspace** hook, it does not fire on deploy, and clearing is
+not creating.
+
+### Not yet applied to the running process
+
+This is a change to committed configuration only. **The live process has not been
+restarted and still runs `APP_ENV=local` / `APP_DEBUG=true`.** The values above
+take effect on the next controlled deployment or supervisor restart of the
+canonical worktree — a separate, deliberate promotion event. Do not read this
+section as describing what is currently serving.
+
 ## Migrations: the web start script owns them
 
 `deploy/start-production.sh` is the **only** thing that migrates:
@@ -227,6 +333,8 @@ and asserts positively that `deploy/start-production.sh` still owns the job.
 | Non-mutating restart path | `deploy/start-serving.sh` | same lock, read-only readiness gate, never migrates |
 | Restart readiness gate | `deploy:migrations-pending` | fail-closed: only exit `0` may serve |
 | Single deploy-SHA writer | `deploy/start-production.sh` | the restart path never repins production |
+| Production environment contract | all three entrypoints | `APP_ENV=production`, `APP_DEBUG=false`, set unconditionally |
+| No build-time config cache | `[deployment] build` | a cached config would freeze build-time `APP_DEBUG` |
 | Code rollback | re-pin previous SHA, restart | schema rollback is separate and manual |
 
 Single ownership stops a *second script* migrating. It never stopped *this
@@ -245,8 +353,10 @@ triggered close together. The lock is the mechanism Laravel 8 does not provide.
 - **HEAD-vs-recorded-SHA enforcement on restart.** Not implemented. The restart
   path cannot change either value, but it does not yet refuse a worktree whose
   HEAD disagrees with `current-deploy-sha`.
-- **`APP_DEBUG=false` in production.** Still an open question — see "Environment
-  mode" below.
+- **`APP_DEBUG=false` on the RUNNING process.** The contract is now committed (see
+  "The production environment contract"), but the live process has not been
+  restarted and still runs `APP_ENV=local` / `APP_DEBUG=true`. It changes at the
+  next controlled promotion, not before.
 
 ### What verifies a start, and what does not
 
@@ -347,26 +457,31 @@ That is also why `ProvenanceSchemaReadiness` exists as a second line of defence:
 the deploy step makes the schema correct, the guard makes being wrong
 survivable, and neither substitutes for the other.
 
-## Environment mode — OPEN QUESTION
+## Environment mode — RESOLVED IN CONFIG, still open at the platform level
 
-`.replit` declares, under `[userenv.shared]`:
+**Resolved:** `.replit` no longer declares `APP_ENV` or `APP_DEBUG` under
+`[userenv.shared]`, and all three production entrypoints now set
+`APP_ENV=production` / `APP_DEBUG=false` unconditionally before Laravel boots.
+See "The production environment contract" above. The committed configuration can
+no longer put a production process into debug mode.
 
-```
-APP_ENV   = "local"
-APP_DEBUG = "true"
-```
+**Still open, and worth keeping:** whether a Replit VM deployment inherits
+`[userenv]` at all is still undocumented — Replit's published `.replit` reference
+does not mention it. That question no longer decides whether production runs in
+debug mode, because the entrypoints override whatever they inherit. It still
+matters for two things:
 
-There is **no production override** — no `[userenv.production]` or deployment
-equivalent anywhere in the file.
+1. **Anything else `[userenv.shared]` supplies** — the database connection among
+   them — is inherited on the same unknown terms.
+2. **The build phase**, which runs before any entrypoint and inherits the same
+   unknown environment. That is a second reason `config:cache` was removed: a
+   build that bakes an unknown environment into a frozen config array is a
+   contract nobody can state. See "Configuration cache policy".
 
-**Whether a Replit VM deployment inherits `[userenv.shared]` is undocumented.**
-Replit's published `.replit` configuration reference does not mention
-`[userenv]` at all, so this could not be settled by reading anything available
-to us, and it was deliberately **not** changed on a guess.
-
-**If deployments do inherit it, production runs with `APP_DEBUG=true`**, which
-renders full stack traces to visitors — including database credentials and
-environment values.
+**What used to be the danger, recorded for history:** `[userenv.shared]` declared
+`APP_ENV = "local"` and `APP_DEBUG = "true"` with no production override, and the
+live process was verified running with both. `APP_DEBUG=true` renders full stack
+traces to visitors, including database credentials and environment values.
 
 ### How to settle it
 
@@ -385,10 +500,15 @@ it permanently:
 ────────────────────────────────────────────────────
 ```
 
-If that shows `APP_DEBUG true` on a real deployment, fix it as its own change —
-set production values via Replit deployment secrets or a production `userenv`
-section. It was kept out of G4.5 on purpose: an unverified environment-mode
-rewrite does not belong in a migration-safety change.
+With the contract in place, a deployment log should now read `APP_ENV production`
+/ `APP_DEBUG false`. **Read the next deployment log to confirm it.** If it still
+shows `local` / `true`, the entrypoint is not the process that started the
+application — investigate the platform's run command before changing anything
+else, because that would mean something is starting Laravel outside
+`deploy/start-production.sh`.
+
+The same line also answers question (1) above, since it prints the resolved
+database name.
 
 The preflight never prints credentials, and a test asserts that.
 
