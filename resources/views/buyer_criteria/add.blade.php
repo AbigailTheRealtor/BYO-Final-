@@ -6844,9 +6844,6 @@
                                 <textarea name="listing_ai_faq_com_lease_terms" class="form-control" rows="2" placeholder="What lease terms are preferred (NNN, gross, modified gross, etc.)?"></textarea>
                             </div>
                             <div class="form-group">
-                                <textarea name="listing_ai_faq_com_tenant_type" class="form-control" rows="2" placeholder="What type of tenants are preferred?"></textarea>
-                            </div>
-                            <div class="form-group">
                                 <textarea name="listing_ai_faq_com_zoning" class="form-control" rows="2" placeholder="What zoning classifications are acceptable?"></textarea>
                             </div>
                             <div class="form-group">

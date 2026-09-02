@@ -58,8 +58,6 @@ class LandlordFieldMap
 
             'Leasing Terms' => [
                 'Occupant Status' => 'occupant_status',
-                'Occupant Types' => 'occupant_types',
-                'Occupant Types (Tenant)' => 'occupant_types_tenant',
                 'Occupant (Tenant)' => 'occupant_tenant',
                 'Leasing Space (Property)' => 'leasing_space_property',
                 'Leasing Spaces' => 'leasing_spaces',
@@ -126,8 +124,6 @@ class LandlordFieldMap
                 'Number of Pets' => 'number_of_pets',
                 'Has Breed Restrictions' => 'has_breed_restrictions',
                 'Breed Restrictions' => 'breed_restrictions',
-                'Service Animal' => 'service_animal',
-                'Support Animal' => 'support_animal',
                 'Breed of Pets' => 'breed_of_pets',
                 'Pet Types' => 'type_of_pets',
                 'Pet Weight (lbs)' => 'weight_of_pets',

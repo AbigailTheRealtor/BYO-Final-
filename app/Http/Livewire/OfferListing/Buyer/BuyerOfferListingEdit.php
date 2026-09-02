@@ -248,7 +248,6 @@ class BuyerOfferListingEdit extends Component
     public $target_closing_date = '';
     public $service_animal = '';
     public $emotional_support_animal = '';
-    public $occupant_types = '';
 
     // Lease terms
     public $lease_for = [];
@@ -1600,7 +1599,6 @@ class BuyerOfferListingEdit extends Component
             'service_animal'                  => $this->service_animal,
             'emotional_support_animal'        => $this->emotional_support_animal,
             'target_closing_date'             => $this->target_closing_date,
-            'occupant_types'                  => $this->occupant_types,
             'other_services'                  => $this->other_services,
             'additional_details'              => $this->additional_details,
             'commission_structure'            => $this->commission_structure,
@@ -2169,7 +2167,6 @@ class BuyerOfferListingEdit extends Component
             $this->target_closing_date = $auction->get->target_closing_date ?? '';
             $this->service_animal = $auction->get->service_animal ?? '';
             $this->emotional_support_animal = $auction->get->emotional_support_animal ?? '';
-            $this->occupant_types = $auction->get->occupant_types ?? '';
 
             // Lease terms
             $leaseForRaw = $auction->get->lease_for ?? null;
@@ -2661,7 +2658,6 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('target_closing_date', $this->target_closing_date);
         $auction->saveMeta('service_animal', $this->service_animal);
         $auction->saveMeta('emotional_support_animal', $this->emotional_support_animal);
-        $auction->saveMeta('occupant_types', $this->occupant_types);
 
         // Lease Terms
         $auction->saveMeta('lease_for', json_encode($this->lease_for));

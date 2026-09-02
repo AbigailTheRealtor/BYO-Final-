@@ -376,7 +376,6 @@ class TenantOfferListingEdit extends Component
     public $brokerage_relationship = '';
     public $maximum_budget = '';
     public $interest_rate = '';
-    public $occupant_types = '';
     public $occupant_status = '';
     public $occupant_tenant = '';
     public $desired_rental_amount = '';

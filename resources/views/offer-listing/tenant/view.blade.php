@@ -560,7 +560,14 @@
                         if ($heroHSqft) $_tSnapRows[] = ['icon'=>'fa-solid fa-ruler-combined','label'=>'Min. Sq Ft','val'=>number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)).' sq ft'];
                         $_tMoveIn = $fmtDate($str('move_in_date_earliest'));
                         if ($_tMoveIn) $_tSnapRows[] = ['icon'=>'fa-solid fa-calendar-days','label'=>'Move-In','val'=>$_tMoveIn];
-                        $_tCredit = $str('credit_score_range');
+                        /*
+                         * Fair Housing P0-D — the hero snapshot is a SECOND render of the
+                         * same credit disclosure, and gating only the Pre-Screening card
+                         * below would have left this one public. Same owner-only rule.
+                         */
+                        $_tCredit = (auth()->check() && (int) auth()->id() === (int) $ownerId)
+                            ? $str('credit_score_range')
+                            : '';
                         if ($_tCredit) $_tSnapRows[] = ['icon'=>'fa-solid fa-chart-line','label'=>'Credit Range','val'=>$_tCredit];
                         $_tIncomeRaw = $str('monthly_income');
                         if ($_tIncomeRaw) $_tSnapRows[] = ['icon'=>'fa-solid fa-wallet','label'=>'Mo. Income','val'=>$fmtMoney($_tIncomeRaw)];
@@ -1238,12 +1245,48 @@
 
     {{-- ===== PRE-SCREENING / TENANT DETAILS ===== --}}
     @php
-        $hasPrescreening = $ifFilled($str('prior_eviction')) || $ifFilled($str('prior_felony'))
-            || $ifFilled($str('monthly_income')) || $ifFilled($str('screening_concerns'))
-            || $ifFilled($str('current_status')) || $ifFilled($str('credit_score_range'))
+        /*
+         * Fair Housing P0-D — OWNER-ONLY SCREENING DISCLOSURES.
+         *
+         * This route (/offer-listing/tenant/view/{id}) is deliberately public: web.php
+         * documents the four detail views as reachable without auth so anonymous visitors
+         * can open a card from the public search pages. The controller gates only
+         * archived and draft/unapproved listings. Everything rendered below is therefore
+         * rendered to the open internet unless it is gated here.
+         *
+         * These four values are the tenant's own answers about their rental, credit,
+         * criminal and background history. `screening_concerns` is literally asked as
+         * "Is there anything in your rental, credit, criminal, or background history that
+         * you would like THE LANDLORD to be aware of" — a promise about audience that a
+         * public page does not keep. Publishing them broadcasts a protected-class-adjacent
+         * profile of a named consumer to anyone with the URL.
+         *
+         * The gate is the OWNER, and only the owner — the same `$ownerId` comparison this
+         * file already uses for the contact block and the owner tools. No new permission
+         * tier is introduced here on purpose: "any logged-in user", or "any agent", would
+         * be a broader audience wearing the word "authorized", and inventing one is a
+         * product decision, not a rendering fix. If a genuine counterparty surface is
+         * wanted later, it belongs in an explicit authorization model, not in this Blade.
+         *
+         * The free-text `screening_concerns_explanation` needs no gate here: it is already
+         * listed in $knownKeys under "private / sensitive (never public)", so it renders in
+         * no named section and is suppressed from the Additional Information fallback.
+         * These four keys are in $knownKeys too, which is what stops them reappearing in
+         * that fallback now that the named rows are gated.
+         */
+        $viewerOwnsListing = auth()->check() && (int) auth()->id() === (int) $ownerId;
+
+        $hasOwnerOnlyPrescreening = $ifFilled($str('prior_eviction')) || $ifFilled($str('prior_felony'))
+            || $ifFilled($str('screening_concerns')) || $ifFilled($str('credit_score_range'));
+
+        $hasPublicPrescreening = $ifFilled($str('monthly_income'))
+            || $ifFilled($str('minimum_annual_net_income'))
+            || $ifFilled($str('current_status'))
             || $ifFilled($str('commute_destination_zip')) || $ifFilled($str('max_commute_minutes'))
             || $ifFilled($str('commute_mode')) || $ifFilled($str('rental_purpose'))
             || $ifFilled($str('smoking_preference')) || $ifFilled($str('accessibility_requirements'));
+
+        $hasPrescreening = $hasPublicPrescreening || ($viewerOwnsListing && $hasOwnerOnlyPrescreening);
     @endphp
     @if($hasPrescreening)
     <div class="card section-card" id="section-prescreening">
@@ -1251,12 +1294,16 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Prior Eviction', $yesNo($str('prior_eviction'))) !!}
-                    {!! $row('Prior Felony', $yesNo($str('prior_felony'))) !!}
+                    @if($viewerOwnsListing)
+                        {!! $row('Prior Eviction', $yesNo($str('prior_eviction'))) !!}
+                        {!! $row('Prior Felony', $yesNo($str('prior_felony'))) !!}
+                    @endif
                     {!! $row('Monthly Income', $fmtMoney($str('monthly_income'))) !!}
                     {!! $row('Min Annual Net Income', $fmtMoney($str('minimum_annual_net_income'))) !!}
-                    {!! $row('Credit Score Range', $str('credit_score_range')) !!}
-                    {!! $row('Rental History Disclosure', $str('screening_concerns')) !!}
+                    @if($viewerOwnsListing)
+                        {!! $row('Credit Score Range', $str('credit_score_range')) !!}
+                        {!! $row('Rental History Disclosure', $str('screening_concerns')) !!}
+                    @endif
                 </div>
                 <div class="col-md-6">
                     {!! $row('Current Status', $str('current_status')) !!}

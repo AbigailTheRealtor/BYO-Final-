@@ -992,7 +992,7 @@
                     {!! $row('Working with an Agent', $str('working_with_agent')) !!}
                     {!! $row('Sale Provision', $orOther($str('sale_provision'), $str('sale_provision_other'))) !!}
                     {!! $row('Buyer Sell Contract Required', $str('buyer_sell_contract')) !!}
-                    {!! $row('Number of Occupants', $str('number_occupant') ?: $str('occupant_types')) !!}
+                    {!! $row('Number of Occupants', $str('number_occupant')) !!}
                     {!! $row('Purchase Purpose', $str('purchase_purpose')) !!}
                 </div>
             </div>
