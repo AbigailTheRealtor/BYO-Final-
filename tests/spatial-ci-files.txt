@@ -1,0 +1,280 @@
+# Spatial / Location DNA CI inventory
+#
+# The explicit, reviewed list of PHPUnit FILES that the "Spatial / Location DNA Tests"
+# workflow (.github/workflows/spatial-location-dna-tests.yml) executes.
+#
+# WHY A COMMITTED MANIFEST RATHER THAN A GLOB
+# -------------------------------------------
+# This suite was previously reconstructed ad hoc with a path regex along the lines of
+# `LocationDna|Location|Place|Spatial|...`. That is not a definition of the suite, it is a
+# string match on filenames, and it quietly swept in tests that have nothing to do with
+# geography because an unrelated word contains a matching substring:
+#
+#   PropertyTypePlaceholderHelperTest        "Place"  inside "Placeholder"
+#   BatchFourAgentCredentialsPlaceholderTest "Place"  inside "Placeholder"
+#   MlsImportEntryPointTest                  "Poi"    inside "EntryPoint"
+#
+# All three assert UI copy or modal routing and contain no spatial logic; the first was red
+# on main for reasons no spatial change could ever fix. A regex cannot tell those apart from
+# real POI and place tests, so the membership rule is a reviewed file list instead. Adding a
+# spatial test means adding its line here, in a diff someone reads.
+#
+# The inverse case is why membership is decided by SUBSTANCE, not by the filename:
+# DatabaseGuardPoisoningTest also matches only incidentally ("Poi" inside "Poisoning"), but
+# it proves TestCase::assertSafeTestDatabase() actually aborts the run — the isolation this
+# entire suite depends on — so it is listed deliberately.
+#
+# FORMAT
+#   * one repository-relative *Test.php path per line
+#   * `#` comments and blank lines are ignored by the runner
+#   * ordering is deterministic (LC_ALL=C sort) so the diff of an edit is legible
+#   * no globs, no directory entries, no wildcards
+#
+# The workflow fails if any listed path does not exist, so a renamed or deleted file cannot
+# silently drop out of the gate. Every file is run in its OWN phpunit invocation: PHPUnit 9
+# accepts one test target from the command line and SILENTLY IGNORES additional paths, so
+# `phpunit a.php b.php` runs only a.php and still exits 0 (the same false-green documented in
+# .github/workflows/migration-tests.yml).
+#
+# Known, deliberate environment-dependent skips are documented in the workflow.
+tests/Feature/Agent/AgentLocationDnaOutcomeTest.php
+tests/Feature/Agent/AgentLocationDnaPanelTest.php
+tests/Feature/Census/CensusGeographyImportTest.php
+tests/Feature/Census/VerifyCensusGeographyCommandTest.php
+tests/Feature/HireAddressAutocompleteTest.php
+tests/Feature/HireAgent/HireAgentCoordinateIntegrationTest.php
+tests/Feature/HireAgent/HireAgentCoordinateWiringTest.php
+tests/Feature/ListingImport/MlsListingKeyCoordinateActivationTest.php
+tests/Feature/ListingImport/MlsQuickImportCoordinateResolutionTest.php
+tests/Feature/Location/AddressImportCorpusCommandTest.php
+tests/Feature/Location/AddressPointCoordinateAdapterTest.php
+tests/Feature/Location/AddressPointSuggestionProviderTest.php
+tests/Feature/Location/AddressSuggestionContractInertTest.php
+tests/Feature/Location/CensusGeocoderAdapterTest.php
+tests/Feature/Location/CensusProviderSafetyTest.php
+tests/Feature/Location/CoordinateProvenanceEnrichmentTest.php
+tests/Feature/Location/CoordinateProvenanceTest.php
+tests/Feature/Location/CoordinateSourcePrecedenceTest.php
+tests/Feature/Location/CreateOfferCoordinateIntegrationTest.php
+tests/Feature/Location/CreateOfferCoordinateRerouteTest.php
+tests/Feature/Location/CreateOfferCoordinateWiringTest.php
+tests/Feature/Location/LocalCoordinateLadderTest.php
+tests/Feature/Location/ProbeCensusAddressCommandTest.php
+tests/Feature/Location/PropertyAddressFillParityTest.php
+tests/Feature/Location/PropertyAddressValidationFlowTest.php
+tests/Feature/Location/PropertyCoordinateResolverInertTest.php
+tests/Feature/Location/ProvenanceSchemaReadinessTest.php
+tests/Feature/Location/SharedAddressAutocompleteAdoptionTest.php
+tests/Feature/Location/ValidStreetAddressRuleTest.php
+tests/Feature/LocationDna/BuildLocationPlacesTest.php
+tests/Feature/LocationDna/BuyerTenantPrecedenceParityTest.php
+tests/Feature/LocationDna/CensusCriteriaGeographyRepositoryTest.php
+tests/Feature/LocationDna/CensusCriteriaNeighborhoodRepositoryTest.php
+tests/Feature/LocationDna/CensusEloquentParityTest.php
+tests/Feature/LocationDna/CreateTenantGeographySurfaceTest.php
+tests/Feature/LocationDna/CreateTenantGeographyWiringTest.php
+tests/Feature/LocationDna/CreateTenantLegacyGeographyBackfillTest.php
+tests/Feature/LocationDna/CriteriaGeographyRulesTest.php
+tests/Feature/LocationDna/EloquentCriteriaGeographyRepositoryTest.php
+tests/Feature/LocationDna/GeographyCascadeStateResolutionTest.php
+tests/Feature/LocationDna/GeographySearchBindingTest.php
+tests/Feature/LocationDna/GeographySourceBindingTest.php
+tests/Feature/LocationDna/HireBuyerGeographyCascadeWiringTest.php
+tests/Feature/LocationDna/HireBuyerGeographySearchTest.php
+tests/Feature/LocationDna/HireTenantGeographySurfaceTest.php
+tests/Feature/LocationDna/LdnaBenchmarkTilePrecisionCommandTest.php
+tests/Feature/LocationDna/LdnaPoiCostReportCommandTest.php
+tests/Feature/LocationDna/LegacyZipBackfillTest.php
+tests/Feature/LocationDna/LocationDnaIntelligenceSummaryComponentTest.php
+tests/Feature/LocationDna/LocationPlaceResolverTest.php
+tests/Feature/LocationDna/LocationPlaceSearchRepositoryTest.php
+tests/Feature/LocationDna/NeighborhoodTierBindingTest.php
+tests/Feature/LocationDna/NeighborhoodTierSurfaceTest.php
+tests/Feature/LocationDna/Phase1CertificationTest.php
+tests/Feature/LocationDna/SellerLandlordCascadeExclusionTest.php
+tests/Feature/LocationDna/SupplementalLayerIsolationTest.php
+tests/Feature/LocationDnaAdminPreviewTest.php
+tests/Feature/LocationDnaPipelineTriggerTest.php
+tests/Feature/Offers/HireSearchAreasParityTest.php
+tests/Feature/Offers/ImportantPlacesRoundTripTest.php
+tests/Feature/Offers/ImportantPlacesSubmitFeedbackTest.php
+tests/Feature/Offers/SearchAreasStateCountyRoundTripTest.php
+tests/Feature/Offers/TenantOfferListingEditImportantPlacesGuardTest.php
+tests/Feature/Safeguards/DatabaseGuardPoisoningTest.php
+tests/Feature/Safeguards/GooglePlacesTestEnvGuardTest.php
+tests/Feature/Safeguards/SpatialDatabaseIdentityTest.php
+tests/Feature/SearchAreasPartialTest.php
+tests/Feature/Security/GeocodeBackfillKillSwitchTest.php
+tests/Feature/Security/GeocodeCommandHonestFailureTest.php
+tests/Feature/Security/GooglePlacesCredentialGuardTest.php
+tests/Feature/Security/GooglePlacesKillSwitchTest.php
+tests/Feature/Spatial/CorpusExtractOvertureCommandTest.php
+tests/Feature/Spatial/CorpusImportAuthorityOverlayCommandTest.php
+tests/Feature/Spatial/CorpusImportBoundariesCommandTest.php
+tests/Feature/Spatial/CorpusImportFemaBoundariesCommandTest.php
+tests/Feature/Spatial/CorpusImportOvertureCommandTest.php
+tests/Feature/Spatial/CorpusImportTigerBoundariesCommandTest.php
+tests/Feature/Spatial/CorpusLinkAuthorityCommandTest.php
+tests/Feature/Spatial/Gate1ValidateCommandTest.php
+tests/Feature/Spatial/Gate2CoverageMatrixCommandTest.php
+tests/Feature/Spatial/Gate2MeasureCoverageCommandTest.php
+tests/Feature/Spatial/SpatialFirstSliceSeederIsolationTest.php
+tests/Feature/Spatial/SpatialMigrationGuardTest.php
+tests/Feature/Spatial/SpatialMigrationIsolationTest.php
+tests/Feature/Spatial/SpatialMigrationOrderingTest.php
+tests/Feature/Spatial/TigerShpToNdjsonConverterTest.php
+tests/Feature/Stellar/BuyerMatchingEngineTest.php
+tests/Feature/Stellar/BuyerTenantStateMatchingTest.php
+tests/Feature/Stellar/GeographicMatchingCurrentContractTest.php
+tests/Feature/Stellar/StellarBuyerResultsCriteriaLinkerTest.php
+tests/Feature/Stellar/StellarBuyerResultsPageTest.php
+tests/Feature/Stellar/TenantCommercialLeaseMatchingTest.php
+tests/Feature/Stellar/TenantOfferListingZipResolutionTest.php
+tests/Unit/Http/Livewire/OfferListing/SearchAreasHydrationCharacterisationTest.php
+tests/Unit/Jobs/ComputeLocationDnaChainTest.php
+tests/Unit/LocationDna/CanonicalLocationMergerTest.php
+tests/Unit/LocationDna/CanonicalPoiAssemblerTest.php
+tests/Unit/LocationDna/LocationDnaRankingProfileValidationTest.php
+tests/Unit/LocationDna/LocationDnaVersionServiceTest.php
+tests/Unit/LocationDna/LocationProviderRegistryTest.php
+tests/Unit/LocationDna/NearbyPoiFetcherFactoryTest.php
+tests/Unit/Offers/ImportantPlacesServiceTest.php
+tests/Unit/Providers/PoiLookupAdapterBindingTest.php
+tests/Unit/Services/Location/AddressCorpus/GeoJsonSourceReaderTest.php
+tests/Unit/Services/Location/AddressCorpus/NadRowNormalizerTest.php
+tests/Unit/Services/Location/AddressCorpus/Ng911RowNormalizerTest.php
+tests/Unit/Services/Location/AddressShapeValidatorTest.php
+tests/Unit/Services/Location/Coordinates/Adapters/BridgeMlsCoordinatesAdapterTest.php
+tests/Unit/Services/Location/Coordinates/Adapters/ExistingCoordinatesAdapterTest.php
+tests/Unit/Services/Location/Coordinates/PropertyAddressProvenanceTest.php
+tests/Unit/Services/Location/Coordinates/PropertyAddressTest.php
+tests/Unit/Services/Location/Coordinates/PropertyCoordinateResultTest.php
+tests/Unit/Services/Location/Coordinates/StreetSuffixNormalizationTest.php
+tests/Unit/Services/Location/Suggestions/AddressCandidateTest.php
+tests/Unit/Services/LocationDna/BoundaryLookupServicePrecedenceTest.php
+tests/Unit/Services/LocationDna/CanonicalCategoryRegistryParityTest.php
+tests/Unit/Services/LocationDna/CanonicalCategoryRegistryTest.php
+tests/Unit/Services/LocationDna/CategoryExclusionRulesRegressionTest.php
+tests/Unit/Services/LocationDna/CensusSchoolDistrictAdapterTest.php
+tests/Unit/Services/LocationDna/CommuteTimeLookupServiceTest.php
+tests/Unit/Services/LocationDna/Criteria/FakeCriteriaGeographyRepositoryTest.php
+tests/Unit/Services/LocationDna/Criteria/FakeCriteriaNeighborhoodRepositoryTest.php
+tests/Unit/Services/LocationDna/Criteria/GeographyOptionIdentityTest.php
+tests/Unit/Services/LocationDna/Criteria/Projection/GeographyLabelProjectorTest.php
+tests/Unit/Services/LocationDna/Criteria/Projection/GeographySelectionHydratorTest.php
+tests/Unit/Services/LocationDna/Criteria/Projection/NeighborhoodRoundTripTest.php
+tests/Unit/Services/LocationDna/Criteria/Rules/GeographyNeighborhoodTierTest.php
+tests/Unit/Services/LocationDna/Criteria/Rules/GeographySelectionResolverTest.php
+tests/Unit/Services/LocationDna/Criteria/Rules/GeographySelectionTest.php
+tests/Unit/Services/LocationDna/Criteria/Rules/GeographySelectionValidatorTest.php
+tests/Unit/Services/LocationDna/Criteria/Search/FakeGeographySearchRepositoryTest.php
+tests/Unit/Services/LocationDna/Criteria/Search/GeographyMatchRankerTest.php
+tests/Unit/Services/LocationDna/Criteria/Search/GeographyQueryTest.php
+tests/Unit/Services/LocationDna/Criteria/Search/TermMatcherTest.php
+tests/Unit/Services/LocationDna/FemaFloodZoneAdapterTest.php
+tests/Unit/Services/LocationDna/FloodZoneLookupServiceTest.php
+tests/Unit/Services/LocationDna/GooglePlacesHttpClientBindingTest.php
+tests/Unit/Services/LocationDna/LocationDnaAuditServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaChipPresenterTest.php
+tests/Unit/Services/LocationDna/LocationDnaEnrichmentRunnerTest.php
+tests/Unit/Services/LocationDna/LocationDnaGeocodeServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaIntelligenceContextServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaJsonSnapshotParityTest.php
+tests/Unit/Services/LocationDna/LocationDnaLifestyleScoreServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaMarketingContextServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaPoiDistanceServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaPoiGeometryPrecedenceTest.php
+tests/Unit/Services/LocationDna/LocationDnaPoiTileCacheTest.php
+tests/Unit/Services/LocationDna/LocationDnaPoiVersioningTest.php
+tests/Unit/Services/LocationDna/LocationDnaPropertyContextServiceTest.php
+tests/Unit/Services/LocationDna/LocationDnaRankingEngineGoldenMasterTest.php
+tests/Unit/Services/LocationDna/LocationDnaRankingEngineTest.php
+tests/Unit/Services/LocationDna/LocationDnaSummaryServiceTest.php
+tests/Unit/Services/LocationDna/LocationIntelligenceComposerTest.php
+tests/Unit/Services/LocationDna/LocationIntelligenceSummaryServiceTest.php
+tests/Unit/Services/LocationDna/LocationMatchEngineTest.php
+tests/Unit/Services/LocationDna/LocationMatchInsightServiceTest.php
+tests/Unit/Services/LocationDna/LocationMatchIntegrationServiceTest.php
+tests/Unit/Services/LocationDna/LocationPreferenceAnalyzerTest.php
+tests/Unit/Services/LocationDna/Places/PlaceNameKeyParityTest.php
+tests/Unit/Services/LocationDna/PoiBaselineDiffHarnessTest.php
+tests/Unit/Services/LocationDna/PoiCandidateGoldenMasterParityTest.php
+tests/Unit/Services/LocationDna/PoiCandidateTest.php
+tests/Unit/Services/LocationDna/PoiCanonicalEnvelopePersistenceTest.php
+tests/Unit/Services/LocationDna/PoiConfidenceScorerTest.php
+tests/Unit/Services/LocationDna/PoiDistanceLookupServiceGovernanceTest.php
+tests/Unit/Services/LocationDna/PoiDistanceLookupServiceRichShapeRegressionTest.php
+tests/Unit/Services/LocationDna/PoiDistanceLookupServiceTest.php
+tests/Unit/Services/LocationDna/PoiLookupAdapterInterfaceContractTest.php
+tests/Unit/Services/LocationDna/PropertyLocationPoiVersionColumnsTest.php
+tests/Unit/Services/LocationDna/RankingEnginePersistencePassthroughTest.php
+tests/Unit/Services/LocationDna/RankingGoldenMasterRemediationTest.php
+tests/Unit/Services/LocationDna/RecomputeRankingsFromCacheTest.php
+tests/Unit/Services/LocationDna/SchoolDistrictLookupServiceTest.php
+tests/Unit/Spatial/AuthorityLinkAcceptanceTest.php
+tests/Unit/Spatial/AuthorityLinkMatcherTest.php
+tests/Unit/Spatial/AuthorityOverlayAcceptanceTest.php
+tests/Unit/Spatial/AuthorityOverlaySqlManifestTest.php
+tests/Unit/Spatial/AuthorityStagingMaterializerTest.php
+tests/Unit/Spatial/BoundaryGeometryTest.php
+tests/Unit/Spatial/BoundaryImportAcceptanceTest.php
+tests/Unit/Spatial/BoundaryImportSqlManifestTest.php
+tests/Unit/Spatial/BoundaryRecordTest.php
+tests/Unit/Spatial/BoundaryRowMaterializerTest.php
+tests/Unit/Spatial/CensusTigerBoundarySourceTest.php
+tests/Unit/Spatial/CmsHospitalOverlaySourceTest.php
+tests/Unit/Spatial/CorpusActivationServiceTest.php
+tests/Unit/Spatial/CorpusCopyLoaderTest.php
+tests/Unit/Spatial/CorpusImportAcceptanceTest.php
+tests/Unit/Spatial/CorpusImportLedgerTest.php
+tests/Unit/Spatial/CorpusPartitionManagerTest.php
+tests/Unit/Spatial/CorpusSizingProjectorTest.php
+tests/Unit/Spatial/ExplainPlanShapeTest.php
+tests/Unit/Spatial/FemaBoundaryImportSqlManifestTest.php
+tests/Unit/Spatial/FemaNfhlBoundarySourceTest.php
+tests/Unit/Spatial/FixtureCorpusPlanTest.php
+tests/Unit/Spatial/Gate1/Gate1RankSanityEvaluatorTest.php
+tests/Unit/Spatial/Gate1/Gate1ScenarioSetTest.php
+tests/Unit/Spatial/Gate2/CorpusCoverageObservationSourceTest.php
+tests/Unit/Spatial/Gate2/CoverageCellTest.php
+tests/Unit/Spatial/Gate2/CoverageMatrixTest.php
+tests/Unit/Spatial/Gate2/CoverageQueryCatalogTest.php
+tests/Unit/Spatial/Gate2/Gate2CoverageAssemblerTest.php
+tests/Unit/Spatial/Gate2/Gate2CoverageReportTest.php
+tests/Unit/Spatial/Gate2/Gate2CoverageSqlManifestTest.php
+tests/Unit/Spatial/Gate2/TerritoryCoverageLedgerWriterTest.php
+tests/Unit/Spatial/LinkAuthoritySqlManifestTest.php
+tests/Unit/Spatial/NameNormalizerTest.php
+tests/Unit/Spatial/NormalizedExtractIoTest.php
+tests/Unit/Spatial/NormalizedPlaceRecordTest.php
+tests/Unit/Spatial/OvertureCategoryMapTest.php
+tests/Unit/Spatial/OvertureExtractSqlManifestTest.php
+tests/Unit/Spatial/OvertureFloridaLoadGuardTest.php
+tests/Unit/Spatial/OvertureFloridaLoadSqlManifestTest.php
+tests/Unit/Spatial/OvertureImportSqlManifestTest.php
+tests/Unit/Spatial/OverturePlaceNormalizerFlatShapeTest.php
+tests/Unit/Spatial/OverturePlaceNormalizerTest.php
+tests/Unit/Spatial/OverturePlaceNormalizerV117Test.php
+tests/Unit/Spatial/PadUsBoundarySourceTest.php
+tests/Unit/Spatial/PlaceAuthorityLinkMaterializerTest.php
+tests/Unit/Spatial/PlaceRowMaterializerTest.php
+tests/Unit/Spatial/SpatialFirstSliceSeederShapeTest.php
+tests/Unit/Spatial/TigerBoundaryImportSqlManifestTest.php
+tests/Unit/Spatial/TigerLoadRunbookGuardTest.php
+tests/Unit/Spatial/UsgsBoatRampOverlaySourceTest.php
+tests/Unit/Stellar/BuyerResultViewMapperDetailedTest.php
+tests/Unit/Stellar/CriteriaListingResolverPreferredTest.php
+tests/Unit/Stellar/LocationDnaRoundTripTest.php
+tests/Unit/Stellar/MatchCheck/CriteriaIntentDetectorTest.php
+tests/Unit/Stellar/MatchCheck/ListingVisibilityGateTest.php
+tests/Unit/Stellar/MatchCheck/LocationDnaEnrichmentGuardTest.php
+tests/Unit/Stellar/MatchCheck/MatchCheckAnalysisCompositionTest.php
+tests/Unit/Stellar/MatchCheck/MatchCheckAnalysisReportStepTest.php
+tests/Unit/Stellar/MatchCheck/MatchCheckCriteriaLoaderTest.php
+tests/Unit/Stellar/MatchCheck/MatchCheckOrchestratorTest.php
+tests/Unit/Stellar/MatchCheck/MatchCheckResultTest.php
+tests/Unit/Stellar/MatchCheck/MatchCheckScorerTest.php
+tests/Unit/Stellar/MatchCheck/MatchReportFactoryTest.php
+tests/Unit/Stellar/MatchCheck/MatchReportTest.php
+tests/Unit/Stellar/Matching/BuyerMatchResultBuilderReportBlocksTest.php
+tests/Unit/Stellar/Matching/BuyerMatchResultOptionalFieldsTest.php

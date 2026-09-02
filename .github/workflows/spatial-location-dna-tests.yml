@@ -1,0 +1,141 @@
+name: Spatial / Location DNA Tests
+
+# Runs the application's Spatial / Location DNA PHPUnit suite.
+#
+# WHY THIS EXISTS. security-tests.yml covers tests/Feature/Security and the migration workflows
+# cover the schema, but the largest body of behaviour in this repository — Location DNA, the
+# coordinate ladder, the Census/geography corpus, POI lookup, Search Areas, the Stellar matching
+# surfaces — had no CI gate at all. A spatial regression could go green on every required check
+# without one of its tests having run. This job closes that gap.
+#
+# WHAT IT RUNS. Exactly the files listed in tests/spatial-ci-files.txt, and nothing else.
+#
+# ALLOWLIST, DELIBERATELY — AND THE OPPOSITE CHOICE FROM security-tests.yml.
+# That workflow globs a directory because everything under tests/Feature/Security is security by
+# construction, so inclusion-by-default is right there. There is no such directory here: spatial
+# tests live in a dozen trees next to unrelated ones. The suite was previously reconstructed with
+# a filename regex, which swept in three tests that assert UI copy and modal routing purely
+# because "Placeholder" contains "Place" and "EntryPoint" contains "Poi" — one of them red on main
+# for reasons no spatial change could fix. A regex cannot tell those from real place/POI tests, so
+# membership is a reviewed list. The cost is that a new spatial test must be added to the manifest;
+# tests/spatial-ci-files.txt says so, and the job fails if a listed path stops existing, so the
+# list cannot rot silently in the other direction.
+#
+# ONE FILE PER PHPUNIT INVOCATION. PHPUnit 9 takes a single test target from the command line and
+# SILENTLY IGNORES additional paths — `phpunit a.php b.php` runs only a.php and still exits 0.
+# Handing it 241 paths would report a confident green having run one file. scripts/run-spatial-tests.sh
+# loops instead. The same false-green is documented in .github/workflows/migration-tests.yml.
+#
+# NOTHING IS SUPPRESSED. No `|| true`, no continue-on-error, no grep-based success masking. The job
+# fails if any listed file fails, errors, is missing, or cannot execute.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  spatial-location-dna:
+    name: Run spatial / Location DNA tests
+    runs-on: ubuntu-latest
+
+    # SQLite in-memory, matching the repository convention and security-tests.yml. phpunit.xml
+    # forces DB_CONNECTION=sqlite and DB_DATABASE=:memory: with force="true", and
+    # tests/bootstrap.php blanks the connection variables before the autoloader. No database
+    # service is provisioned here ON PURPOSE: see the isolation step below.
+    env:
+      APP_ENV: testing
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      TELESCOPE_ENABLED: false
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo, pdo_sqlite, sqlite3, mbstring, xml, ctype, fileinfo, json, bcmath
+          coverage: none
+
+      # GDAL supplies ogr2ogr for tests/Feature/Spatial/TigerShpToNdjsonConverterTest.php, which
+      # exercises the TIGER shapefile -> NDJSON converter end to end. Without it that test skips
+      # its live half (2 tests / 10 assertions, 1 skipped); with it the file runs whole
+      # (2 tests / 26 assertions, 0 skipped) — verified locally against GDAL 3.8.5 before this
+      # workflow was written.
+      #
+      # Installing is worth it because the test is SELF-CONTAINED: it writes its own two-feature
+      # GeoJSON to a temp directory and converts that. It downloads nothing, reads no Census
+      # endpoint and touches no secret, so adding the binary buys real coverage without adding a
+      # network dependency. gdal-bin is a stock Ubuntu package, so this stays deterministic.
+      # `jq`, the converter's other dependency, is preinstalled on ubuntu-latest.
+      - name: Install GDAL (ogr2ogr) for the TIGER converter test
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdal-bin
+          ogr2ogr --version
+          jq --version
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      # A normal install into the checkout under test, as security-tests.yml does. A symlinked
+      # vendor directory resolves Composer's PSR-4 base path through the symlink, so `App\` can
+      # load from a different tree and the run reports on code that is not the code under review.
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare environment file
+        run: cp .env.example .env && php artisan key:generate --force
+
+      - name: Verify autoload resolves from this checkout
+        run: |
+          php -r '
+            require "vendor/autoload.php";
+            $f = (new ReflectionClass("App\\Services\\LocationDna\\LocationMatchEngine"))->getFileName();
+            $expected = getcwd() . "/app/Services/LocationDna/LocationMatchEngine.php";
+            if (realpath($f) !== realpath($expected)) {
+                fwrite(STDERR, "Autoload resolved to $f, expected $expected\n");
+                exit(1);
+            }
+            echo "Autoload verified: $f\n";
+          '
+
+      # ── DATABASE / NETWORK ISOLATION (PR #102) ──────────────────────────────────────────────
+      #
+      # These run BEFORE the manifest loop and are hard gates: the suite must not proceed if the
+      # process can reach a real database. Isolation itself is NOT reimplemented here — a second
+      # competing mechanism in YAML would be one more thing that can disagree with the real one.
+      # tests/bootstrap.php blanks DATABASE_URL, every SPATIAL_* variable and every libpq PG*
+      # fallback before the autoloader, and these two tests assert the RESOLVED connection rather
+      # than the values anyone wrote.
+      #
+      # The strongest guarantee here is a negative one: this job provisions no `services:` block,
+      # so there is no database for a leak to reach even if the bootstrap regressed. No heliumdb,
+      # no production database, no live spatial PostgreSQL, no seeders. GOOGLE_PLACES_API_KEY is
+      # forced blank by phpunit.xml and tests/bootstrap.php, and tests/TestCase.php binds a
+      # fail-loud HTTP client plus a stray-request guard, so an un-mocked outbound call throws
+      # rather than reaching the network.
+      #
+      # Invoked once per file: `phpunit a.php b.php` would run only the first and exit 0.
+      - name: Database identity safeguards (hard gate)
+        run: |
+          set -euo pipefail
+          php vendor/bin/phpunit --testdox tests/Feature/Safeguards/TestDatabaseIdentityTest.php
+          php vendor/bin/phpunit --testdox tests/Feature/Safeguards/SpatialDatabaseIdentityTest.php
+
+      # The runner validates every manifest path exists, refuses an empty or duplicated manifest,
+      # runs one phpunit invocation per file, preserves the first failing exit code, and prints the
+      # file-count summary. See scripts/run-spatial-tests.sh.
+      - name: Run the spatial / Location DNA suite
+        run: bash scripts/run-spatial-tests.sh tests/spatial-ci-files.txt
