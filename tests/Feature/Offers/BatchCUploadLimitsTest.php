@@ -21,8 +21,11 @@ use Tests\TestCase;
  *
  * THE FIX is deployment config, not application code:
  *   - deploy/php/uploads.ini declares the real limits (50M/file, 150M POST, 50 files, 512M mem).
- *   - .replit sets PHP_INI_SCAN_DIR to that dir; ServeCommand passes the env to the worker,
- *     and a starting PHP process scans PHP_INI_SCAN_DIR — so the values reach the worker.
+ *   - the production entrypoints add that dir to PHP_INI_SCAN_DIR; ServeCommand passes the env
+ *     to the worker, and a starting PHP process scans PHP_INI_SCAN_DIR — so the values reach it.
+ *     ADD, not replace: the variable overrides PHP's own scan directory outright, and assigning
+ *     it bare unloaded every extension the interpreter declares there. See
+ *     deploy/lib/php-runtime.sh and tests/Feature/Deployment/PhpIniScanDirTest.php.
  *
  * The Laravel/Livewire APPLICATION rules were already correct at 50M and are unchanged; the
  * per-file rule is guarded below so a future edit can't silently loosen it.
@@ -60,33 +63,57 @@ class BatchCUploadLimitsTest extends TestCase
     }
 
     /**
-     * #6/#7: .replit applies the ini via PHP_INI_SCAN_DIR for BOTH the dev workflow and the
-     * deployment run command, and no longer relies on the inert `-d` flags that never reached
-     * the request-handling worker.
+     * #6/#7: every production entrypoint points its PHP worker at the ini override dir.
+     *
+     * RETARGETED. This assertion used to read `.replit`, because that is where the env prefix
+     * lived when Batch C shipped. It does not live there any more: `[deployment] run` and the
+     * port-5000 workflow both invoke a script now, and the scripts own their own runtime
+     * configuration. The assertion did not follow, so it had been failing against a `.replit`
+     * with zero occurrences of PHP_INI_SCAN_DIR — asserting about a file that no longer decides
+     * anything, while the three files that do decide it went unguarded.
+     *
+     * It also pinned the WRONG SHAPE. `PHP_INI_SCAN_DIR=$PWD/deploy/php` replaces the
+     * interpreter's own scan directory rather than adding to it, which unloaded every extension
+     * — PDO included — and is what eventually stopped production from serving. So the regex that
+     * demanded that exact form was actively protecting the bug.
+     *
+     * What is guarded now: the overlay still reaches the worker, via the shared helper, in all
+     * three entrypoints. That the resulting runtime keeps its extensions AND its raised limits is
+     * proven by running the real scripts in
+     * tests/Feature/Deployment/PhpIniScanDirTest.php — this is the cheap structural half.
      */
-    public function test_replit_points_the_worker_at_the_ini_override_dir(): void
+    public function test_every_production_entrypoint_points_the_worker_at_the_ini_override_dir(): void
     {
-        // Read the raw TOML; quotes inside string values are backslash-escaped, so match on
-        // the meaningful tokens rather than exact quote characters.
-        $replit = file_get_contents($this->repoPath('.replit'));
+        foreach ([
+            'deploy/start-production.sh',
+            'deploy/start-serving.sh',
+            'deploy/scheduler.sh',
+        ] as $script) {
+            $source = file_get_contents($this->repoPath($script));
 
-        // The scan dir must be wired in BOTH places: the dev "Laravel Server" workflow AND the
-        // deployment run command (>= 2 occurrences).
-        $this->assertGreaterThanOrEqual(
-            2,
-            substr_count($replit, 'PHP_INI_SCAN_DIR'),
-            '.replit must apply PHP_INI_SCAN_DIR for both the dev workflow and the deployment run.'
-        );
-        $this->assertMatchesRegularExpression('/PHP_INI_SCAN_DIR=.{0,4}\$PWD\/deploy\/php/', $replit);
+            $this->assertStringContainsString(
+                'configure_php_ini_scan_dir "$PWD/deploy/php"',
+                $source,
+                "$script must point its PHP process at deploy/php, or the raised upload limits never reach the worker."
+            );
 
-        // The dev workflow applies it before `php artisan serve`.
-        $this->assertMatchesRegularExpression('/PHP_INI_SCAN_DIR=.*deploy\/php.*php artisan serve/', $replit);
+            $this->assertStringContainsString(
+                'deploy/lib/php-runtime.sh',
+                $source,
+                "$script must source the shared helper that owns this."
+            );
 
-        // The deployment run command uses bash -c so the env prefix actually takes effect.
-        $this->assertMatchesRegularExpression('/run\s*=\s*\[.*bash.*-c.*PHP_INI_SCAN_DIR.*deploy\/php.*artisan serve/s', $replit);
+            // The bare assignment is the destructive form. It applied uploads.ini correctly and
+            // silently dropped every extension the interpreter loads for itself.
+            $this->assertStringNotContainsString(
+                'export PHP_INI_SCAN_DIR=',
+                $source,
+                "$script must not assign PHP_INI_SCAN_DIR directly — that replaces PHP's own scan directory."
+            );
 
-        // The inert `-d post_max_size=55M` approach must be gone (it never reached the worker).
-        $this->assertStringNotContainsString('-d post_max_size=55M', $replit);
+            // The inert `-d post_max_size=55M` approach must stay gone (it never reached the worker).
+            $this->assertStringNotContainsString('-d post_max_size=55M', $source);
+        }
     }
 
     /** #7: the app-layer per-file rule stays at 50 MB (51200 KB) in both role handlers. */

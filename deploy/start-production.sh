@@ -59,10 +59,6 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# Mirror the PHP ini scan dir used by the workflow and the scheduler so every
-# process loads the same PHP configuration.
-export PHP_INI_SCAN_DIR="$PWD/deploy/php"
-
 # ── production runtime environment ──────────────────────────────────────────
 # Set unconditionally, and BEFORE any Laravel process starts.
 #
@@ -87,6 +83,19 @@ export PHP_INI_SCAN_DIR="$PWD/deploy/php"
 # `[deployment] build`. See deploy/DEPLOYMENT.md ("Configuration cache policy").
 export APP_ENV=production
 export APP_DEBUG=false
+
+# ── PHP runtime ─────────────────────────────────────────────────────────────
+# Mirror the PHP ini scan dir used by the workflow and the scheduler so every
+# process loads the same PHP configuration.
+#
+# AFTER the exports above, deliberately: resolving the interpreter's own scan
+# directory starts a PHP process, and that process must not be the one that sees
+# a hostile parent APP_ENV / APP_DEBUG.
+#
+# shellcheck source=deploy/lib/php-runtime.sh
+. "$PWD/deploy/lib/php-runtime.sh"
+
+configure_php_ini_scan_dir "$PWD/deploy/php"
 
 # shellcheck source=deploy/lib/deploy-state.sh
 . "$PWD/deploy/lib/deploy-state.sh"

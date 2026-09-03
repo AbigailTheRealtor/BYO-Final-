@@ -18,11 +18,17 @@ crontab entry; on Replit there is no per-minute cron, so we run a dedicated
 ## What still requires manual Replit setup
 
 The Replit VM **Deployment** (`.replit` → `[deployment]`) runs a single command,
-the web server:
+which starts the web server:
 
 ```
-PHP_INI_SCAN_DIR="$PWD/deploy/php" php artisan serve --host=0.0.0.0 --port=5000
+bash deploy/start-production.sh
 ```
+
+That script owns the PHP runtime configuration — the production `APP_ENV` /
+`APP_DEBUG` and the `PHP_INI_SCAN_DIR` overlay — via `deploy/lib/php-runtime.sh`.
+The env prefix is deliberately **not** written inline here any more: assigning
+`PHP_INI_SCAN_DIR="$PWD/deploy/php"` replaces PHP's own scan directory instead of
+adding to it, which unloads every extension including PDO.
 
 The scheduler must run as a **second, independent always-on process** — it cannot
 be expressed inside that single `run` line without fragile shell chaining, and we
