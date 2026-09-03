@@ -495,8 +495,6 @@
     @php $ofv::row('Other Tenant Pays', $fmt($getMeta('tenant_pays_other') ?? $getMeta('other_tenant_pays'))); @endphp
     @if(!empty($d['owner_pays'])) @php $ofv::tags('Owner Pays', $d['owner_pays']); @endphp @endif
     @php $ofv::row('Other Owner Pays', $fmt($getMeta('owner_pays_other') ?? $getMeta('other_owner_pays'))); @endphp
-    @php $ofv::row('Occupant Types', $fmt($d['occupant_types'])); @endphp
-    @php $ofv::row('Occupant Types (Tenant)', $fmt($d['occupant_types_tenant'])); @endphp
     @php $ofv::row('Lease Available Date', $fmtDate($d['lease_available_date'])); @endphp
     @php $ofv::row('Security Deposit Amount', $fmt($d['security_deposit_amount'] ?: $d['security_deposit_required'])); @endphp
     @php $ofv::badge('Last Month Rent Required', $fmtBool($d['last_month_rent_required'])); @endphp

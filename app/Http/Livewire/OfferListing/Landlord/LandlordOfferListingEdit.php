@@ -98,8 +98,6 @@ class LandlordOfferListingEdit extends Component
     public $tenant_require = '';
     public $carport_needed = '';
     public $other_carport_needed = '';
-    public $occupant_types = '';
-    public $occupant_types_tenant = '';
     public $leasing_space_property = '';
     public $desired_rental_amount_tenant = '';
 
@@ -588,8 +586,6 @@ class LandlordOfferListingEdit extends Component
     // Pet/animal fields
     public $has_breed_restrictions = '';
     public $breed_restrictions = '';
-    public $service_animal = '';
-    public $support_animal = '';
 
     // MLS Property Detail Fields — Residential + Commercial shared
     public $year_built = '';
@@ -1745,8 +1741,6 @@ class LandlordOfferListingEdit extends Component
             'tenant_require'                  => json_encode($this->ensureArray($this->tenant_require)),
             'carport_needed'                  => $this->carport_needed,
             'other_carport_needed'            => $this->other_carport_needed,
-            'occupant_types'                  => $this->occupant_types,
-            'occupant_types_tenant'           => $this->occupant_types_tenant,
             'leasing_space_property'          => $this->leasing_space_property,
             'lease_amount_frequency'          => $this->lease_amount_frequency,
             'desired_lease_length'            => json_encode($this->ensureArray($this->desired_lease_length)),
@@ -1900,8 +1894,6 @@ class LandlordOfferListingEdit extends Component
             'custom_enhancement'              => $this->custom_enhancement,
             'has_breed_restrictions'          => $this->has_breed_restrictions,
             'breed_restrictions'              => $this->breed_restrictions,
-            'service_animal'                  => $this->service_animal,
-            'support_animal'                  => $this->support_animal,
             'year_built'                      => $this->year_built,
             'heating_fuel'                    => json_encode($this->ensureArray($this->heating_fuel)),
             'other_heating_fuel'              => $this->other_heating_fuel,
@@ -2492,8 +2484,6 @@ class LandlordOfferListingEdit extends Component
 
             $this->carport_needed = $auction->get->carport_needed ?? null;
             $this->other_carport_needed = $auction->get->other_carport_needed ?? null;
-            $this->occupant_types = $auction->get->occupant_types ?? null;
-            $this->occupant_types_tenant = $auction->get->occupant_types_tenant ?? null;
             $this->leasing_space_property = $auction->get->leasing_space_property ?? null;
 
 
@@ -2806,8 +2796,6 @@ class LandlordOfferListingEdit extends Component
             $this->custom_enhancement = $auction->get->custom_enhancement ?? null;
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? null;
             $this->breed_restrictions = $auction->get->breed_restrictions ?? null;
-            $this->service_animal = $auction->get->service_animal ?? null;
-            $this->support_animal = $auction->get->support_animal ?? null;
 
             // MLS Property Detail Fields
             $this->year_built = $auction->get->year_built ?? '';
@@ -3229,8 +3217,6 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('tenant_require', json_encode($this->tenant_require));
         $auction->saveMeta('carport_needed', $this->carport_needed);
         $auction->saveMeta('other_carport_needed', $this->other_carport_needed);
-        $auction->saveMeta('occupant_types', $this->occupant_types);
-        $auction->saveMeta('occupant_types_tenant', $this->occupant_types_tenant);
         $auction->saveMeta('leasing_space_property', $this->leasing_space_property);
 
 
@@ -3371,8 +3357,6 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
         $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
-        $auction->saveMeta('service_animal', $this->service_animal);
-        $auction->saveMeta('support_animal', $this->support_animal);
         $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
         $auction->saveMeta('lease_type', $this->lease_type);
         $auction->saveMeta('purchase_type', $this->purchase_type);

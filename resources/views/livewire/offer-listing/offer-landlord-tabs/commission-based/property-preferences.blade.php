@@ -1870,33 +1870,6 @@
                 </div>
                 <span class="error mt-2" id="breed_restrictions_error"></span>
             </div>
-            <!-- Service Animal -->
-            {{-- <div class="form-group">
-            <label class="fw-bold">Service Animal:</label>
-            <div class="input-cover">
-                <i class="input-icon fa-solid fa-dog"></i>
-                <select wire:model="service_animal" class="form-control has-icon" data-icon="fa-solid fa-dog">
-                    <option value="">Select</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="service_animal_error"></span>
-        </div>
-
-        <!-- Emotional Support Animal -->
-        <div class="form-group">
-            <label class="fw-bold">Emotional Support Animal:</label>
-            <div class="input-cover">
-                <i class="input-icon fa-solid fa-heart"></i>
-                <select wire:model="support_animal" class="form-control has-icon" data-icon="fa-solid fa-heart">
-                    <option value="">Select</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="support_animal_error"></span>
-        </div> --}}
         </div>
     @endif
 @endif

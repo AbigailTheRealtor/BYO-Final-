@@ -1994,17 +1994,40 @@ class AskAiContextBuilderService
 
             $answers = [];
 
-            if (is_array($raw)) {
-                $configIndex = AskAiFaqEnrichmentService::buildConfigIndex($canonicalType);
+            // ADMISSION BOUNDARY (Fair Housing P0-B).
+            //
+            // The stored FAQ blob is NOT a trusted source. `listing_ai_faq` is written
+            // verbatim from a public Livewire array property on every Create Offer
+            // component, so a client can place any key at any path into it. Until this
+            // gate existed, `$configIndex[$qKey] ?? [nulls]` admitted an unrecognised key
+            // with null metadata rather than rejecting it — the "umbrella" — and it then
+            // travelled unfiltered through viewer authorization (which only strips an
+            // enumerated deny-list, and only for the tenant role) and through the prompt
+            // builder's sanitizer (which filters fields WITHIN an entry, never the set of
+            // keys). The result was that an arbitrary key such as `com_tenant_type`
+            // reached LLM prompt context.
+            //
+            // The gate is an INTERSECTION against the config SSOT
+            // (config/ai_faq_{seller,buyer,landlord}.php and config/tenant_ai_faq.php, via
+            // AskAiFaqEnrichmentService::buildConfigIndex()). A key survives by being
+            // named there, never by failing to appear on a deny-list. There is
+            // deliberately no second hand-maintained allowlist: the questions the product
+            // asks and the questions Ask AI may read are the same list, so a retired
+            // question stops reaching the model the moment it leaves the config.
+            //
+            // FAIL CLOSED: an unknown role, or a config that cannot be loaded, yields an
+            // empty index and therefore admits nothing. Dropping FAQ context degrades an
+            // answer; admitting an unvetted key is the failure this gate exists to stop.
+            $configIndex = AskAiFaqEnrichmentService::buildConfigIndex($canonicalType);
 
+            if (is_array($raw)) {
                 foreach ($raw as $qKey => $answerText) {
                     $qKey = (string) $qKey;
+                    if (! array_key_exists($qKey, $configIndex)) {
+                        continue;
+                    }
                     if ($answerText !== null && $answerText !== '' && $answerText !== false) {
-                        $meta = $configIndex[$qKey] ?? [
-                            'question_group'        => null,
-                            'question_label'        => null,
-                            'intelligence_category' => null,
-                        ];
+                        $meta = $configIndex[$qKey];
                         $answers[$qKey] = [
                             'config_key'            => $qKey,
                             'answer_text'           => (string) $answerText,
@@ -2024,9 +2047,18 @@ class AskAiContextBuilderService
 
                 foreach ($dbRows as $row) {
                     $text = $row->answer_text ?? null;
+                    $qKey = (string) ($row->question_key ?? '');
+
+                    // Same admission boundary as the inline path. `ai_faq_answers` is
+                    // synced FROM the same untrusted blob by SyncFaqAnswers, so gating
+                    // only the inline path would leave the identical value reachable one
+                    // sync later.
+                    if (! array_key_exists($qKey, $configIndex)) {
+                        continue;
+                    }
+
                     if (!empty($text)) {
                         $normalized    = is_array($row->answer_normalized) ? $row->answer_normalized : [];
-                        $qKey          = (string) $row->question_key;
                         $answers[$qKey] = [
                             'config_key'            => $normalized['config_key'] ?? $qKey,
                             'answer_text'           => (string) $text,

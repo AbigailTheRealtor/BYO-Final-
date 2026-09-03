@@ -1105,6 +1105,48 @@ class OfferWorkflowReadinessTest extends TestCase
             // Exact paths, not a HireSellerAgent/ wildcard, for the reason the M2 entry
             // gives — the next file under this role should be a decision somebody made and
             // wrote down.
+
+            // Create Offer Fair Housing — Phase 1 (P0 launch blockers only).
+            //
+            // Five retirements, each removing a way for a protected-class-adjacent value to
+            // be written, published, exported or fed to the LLM. The Livewire components,
+            // the two public detail views and AskAiContextBuilderService are already listed
+            // above; these four are the additions this task reaches.
+            //
+            //   LandlordFieldMap.php
+            //     Drops the 'Service Animal' / 'Support Animal' export columns (P0-A) and
+            //     the 'Occupant Types' / 'Occupant Types (Tenant)' columns (P0-E). Removing
+            //     the reader is what makes an already-stored value inert ahead of any data
+            //     remediation, which this phase deliberately does not perform.
+            //
+            //   BuyerCriteriaAuctionController.php
+            //     Removes 'com_tenant_type' from the accepted-key list on BOTH storeAuction()
+            //     and updateAuction() (P0-C). The blob is built by iterating that list, so a
+            //     key absent from it has no path in even if the field is hand-posted.
+            //
+            //   buyer_criteria/add.blade.php, buyer_criteria/edit.blade.php
+            //     Delete the "What type of tenants are preferred?" textarea (P0-C). The
+            //     objective commercial questions it sat beside — com_property_use and
+            //     com_zoning — are untouched, and no replacement occupant question is added.
+            'app/Exports/ListingFieldMaps/LandlordFieldMap.php',
+            'app/Http/Controllers/BuyerCriteriaAuctionController.php',
+            'resources/views/buyer_criteria/add.blade.php',
+            'resources/views/buyer_criteria/edit.blade.php',
+
+            // Create Offer Fair Housing — Phase 1, P0-B completion.
+            //
+            // The pre-PR audit found that gating AskAiContextBuilderService::buildFaqAnswers()
+            // closed Ask AI V1 only. A second, independent route to a prompt bypassed it:
+            // AskAiFaqEnrichmentService::sync() wrote ANY key into ai_faq_answers using the
+            // same `?? [nulls]` umbrella, and AgentAi\Loaders\ExtendedKnowledgeLoader read
+            // that table verbatim into Agent AI V2 context. Both ends now enforce the same
+            // config-SSOT membership check as the V1 gate.
+            //
+            // The reader guard is required in addition to the writer guard, not instead of
+            // it: rows written before the guard existed remain, and retiring a question from
+            // config leaves rows behind by definition.
+            'app/Services/AskAi/AskAiFaqEnrichmentService.php',
+            'app/Services/AgentAi/Loaders/ExtendedKnowledgeLoader.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

@@ -6856,9 +6856,6 @@
                                 <textarea name="listing_ai_faq_com_lease_terms" class="form-control" rows="2" placeholder="What lease terms are preferred (NNN, gross, modified gross, etc.)?">{{ old('listing_ai_faq_com_lease_terms', $faq['com_lease_terms'] ?? '') }}</textarea>
                             </div>
                             <div class="form-group">
-                                <textarea name="listing_ai_faq_com_tenant_type" class="form-control" rows="2" placeholder="What type of tenants are preferred?">{{ old('listing_ai_faq_com_tenant_type', $faq['com_tenant_type'] ?? '') }}</textarea>
-                            </div>
-                            <div class="form-group">
                                 <textarea name="listing_ai_faq_com_zoning" class="form-control" rows="2" placeholder="What zoning classifications are acceptable?">{{ old('listing_ai_faq_com_zoning', $faq['com_zoning'] ?? '') }}</textarea>
                             </div>
                             <div class="form-group">

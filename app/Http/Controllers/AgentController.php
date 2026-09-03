@@ -712,8 +712,6 @@ class AgentController extends Controller
             'unit_type_configurations' => $parseJsonMeta('unit_type_configurations'),
             'occupant_status'        => $meta['occupant_status']        ?? '',
             'occupant_tenant'        => $meta['occupant_tenant']        ?? '',
-            'occupant_types'         => $meta['occupant_types']         ?? '',
-            'occupant_types_tenant'  => $meta['occupant_types_tenant']  ?? '',
             'occupied_until'         => $meta['occupied_until']         ?? '',
             'occupancy_status'       => $meta['occupancy_status']       ?? '',
 

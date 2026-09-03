@@ -1589,20 +1589,43 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Tenant Type Required', $str('tenant_require')) !!}
-                    {!! $row('Occupant Type(s)', $str('occupant_types')) !!}
                     {!! $row('Monthly Income Requirement', $str('monthly_income')) !!}
                     {!! $row('Minimum Income Requirement', $str('min_income_requirement')) !!}
                     @php $creditRatings = $arr('credit_scroe_rating'); @endphp
                     {!! $listRow('Credit Score Rating Required', $creditRatings) !!}
                 </div>
+                {{--
+                    Fair Housing P0-D — OWNER-ONLY.
+
+                    These four keys were rendering to anonymous visitors on a route that
+                    web.php deliberately leaves unauthenticated. They are NOT landlord
+                    screening criteria despite sitting under "Desired Tenant Criteria":
+                    `prior_eviction` and `prior_felony` have a UI control in exactly one
+                    place in the codebase — the TENANT pre-screening tab — so on a landlord
+                    listing they are consumer-shaped disclosure fields that this form never
+                    asks and that only a crafted payload can populate. Publishing them, and
+                    especially the two free-text "Circumstances" explanations, put criminal
+                    and eviction history on a public page.
+
+                    Gated to the owner using this file's existing owner idiom
+                    (auth()->id() == $auction->user_id). No new permission tier: see the
+                    matching note in offer-listing/tenant/view.blade.php.
+
+                    The underlying hidden write path on the Landlord components is NOT
+                    closed here — that is deliberately out of Phase 1 scope, which limits
+                    field retirement to occupant_types. Suppressing the render is what makes
+                    any stored value inert on the public surface.
+                --}}
                 <div class="col-md-6">
-                    {!! $row('Prior Eviction', $yesNo($str('prior_eviction'))) !!}
-                    @if($str('prior_eviction') && strtolower($str('prior_eviction')) !== 'no')
-                        {!! $row('Eviction Explanation / Circumstances', $str('eviction_explanation')) !!}
-                    @endif
-                    {!! $row('Prior Felony', $yesNo($str('prior_felony'))) !!}
-                    @if($str('prior_felony') && strtolower($str('prior_felony')) !== 'no')
-                        {!! $row('Felony Explanation / Circumstances', $str('prior_felony_explanation')) !!}
+                    @if(auth()->check() && auth()->id() == $auction->user_id)
+                        {!! $row('Prior Eviction', $yesNo($str('prior_eviction'))) !!}
+                        @if($str('prior_eviction') && strtolower($str('prior_eviction')) !== 'no')
+                            {!! $row('Eviction Explanation / Circumstances', $str('eviction_explanation')) !!}
+                        @endif
+                        {!! $row('Prior Felony', $yesNo($str('prior_felony'))) !!}
+                        @if($str('prior_felony') && strtolower($str('prior_felony')) !== 'no')
+                            {!! $row('Felony Explanation / Circumstances', $str('prior_felony_explanation')) !!}
+                        @endif
                     @endif
                 </div>
             </div>

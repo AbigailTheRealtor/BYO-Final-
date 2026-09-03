@@ -78,11 +78,28 @@ class AskAiFaqEnrichmentService
                 continue;
             }
 
-            $meta = $index[$configKey] ?? [
-                'question_group'        => null,
-                'question_label'        => null,
-                'intelligence_category' => null,
-            ];
+            // ADMISSION BOUNDARY (Fair Housing P0-B — writer side).
+            //
+            // The same intersection AskAiContextBuilderService::buildFaqAnswers() applies
+            // when it reads, applied here when we write. `$raw` comes from the
+            // `listing_ai_faq` blob, which is a public array Livewire property on every
+            // Create Offer component and an unfiltered `$request->listing_ai_faq` on two
+            // legacy controllers — so it can carry any key a client chooses.
+            //
+            // The previous `?? [nulls]` created an `ai_faq_answers` row for an
+            // unrecognised key with null metadata. That row is a laundering step: once it
+            // exists, a consumer reading the TABLE rather than the blob has no way to tell
+            // it from a legitimate answer. Skipping the write is what stops an
+            // unregistered key from acquiring the appearance of a curated one.
+            //
+            // Reported as skipped, not silently dropped: the caller's summary is how an
+            // operator sees that a stored blob contains keys the product no longer asks.
+            if (! array_key_exists($configKey, $index)) {
+                $skipped[] = $configKey;
+                continue;
+            }
+
+            $meta = $index[$configKey];
 
             AiFaqAnswer::updateOrCreate(
                 [

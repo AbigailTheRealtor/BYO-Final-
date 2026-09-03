@@ -4,6 +4,7 @@ namespace Tests\Unit\AgentAi;
 
 use App\Enums\AgentAiContextScope;
 use App\Models\AiFaqAnswer;
+use App\Services\AskAi\AskAiFaqEnrichmentService;
 use App\Models\AskAiFact;
 use App\Models\AskAiKnowledgeSnapshot;
 use App\Models\PropertyLocationDna;
@@ -204,11 +205,25 @@ class ExtendedKnowledgeLoaderTest extends TestCase
         $user    = User::factory()->create();
         $listing = SellerAgentAuction::create(['user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'is_sold' => false]);
 
-        for ($i = 0; $i < 10; $i++) {
+        // Seeded from the config SSOT rather than from invented keys. The loader applies
+        // the registered-only admission boundary (Fair Housing P0-B) in its query, so the
+        // previous `faq_key_0..9` fixture produced zero rows, an empty fragment and a null
+        // return — the token budget was no longer being exercised at all. Taking the keys
+        // from buildConfigIndex() keeps the fixture honest as the config changes.
+        $registeredKeys = array_slice(
+            array_keys(AskAiFaqEnrichmentService::buildConfigIndex('seller')),
+            0,
+            10
+        );
+
+        $this->assertCount(10, $registeredKeys,
+            'Fixture precondition: the seller FAQ config must register at least 10 keys.');
+
+        foreach ($registeredKeys as $i => $questionKey) {
             AiFaqAnswer::create([
                 'listing_type'  => 'seller',
                 'listing_id'    => $listing->id,
-                'question_key'  => "faq_key_{$i}",
+                'question_key'  => $questionKey,
                 'answer_text'   => str_repeat("FAQ answer text for question {$i}. ", 5),
             ]);
         }
@@ -216,6 +231,8 @@ class ExtendedKnowledgeLoaderTest extends TestCase
         $result = ($this->loader)($this->makeScopeContext('seller', $listing->id));
 
         $this->assertNotNull($result);
+        $this->assertCount(10, $result['content']['faq_answers'] ?? [],
+            'All 10 registered FAQ answers must reach the fragment, or the token budget below is vacuous.');
         $this->assertLessThanOrEqual(3000, $result['token_estimate'],
             "ExtendedKnowledgeLoader token_estimate must not exceed 3,000 tokens for the seller scope.");
     }
