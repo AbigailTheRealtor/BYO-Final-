@@ -170,4 +170,41 @@ release_deploy_lock
 
 # `exec` on purpose: the server replaces this shell, so the supervisor's SIGTERM
 # reaches the server directly rather than a wrapper that may not forward it.
-exec php artisan serve --host=0.0.0.0 --port=5000
+#
+# ── why --no-reload is load-bearing, not a tuning flag ──────────────────────
+# `artisan serve` does not handle requests. It spawns a SECOND process
+# (`php -S … server.php`) and that child is the web server. Everything this
+# script has established so far — the exports above, and the scan dir
+# `configure_php_ini_scan_dir` just composed — lands in THIS shell, which is only
+# the launcher. What reaches the child is decided by
+# Illuminate\Foundation\Console\ServeCommand::startProcess(), and when a `.env`
+# file exists (ours does) that method filters the child's environment down to a
+# fixed allowlist and DELETES everything else:
+#
+#     APP_ENV, LARAVEL_SAIL, PHP_CLI_SERVER_WORKERS, PHP_IDE_CONFIG,
+#     SYSTEMROOT, XDEBUG_CONFIG, XDEBUG_MODE, XDEBUG_SESSION
+#
+# `APP_ENV` is on that list. `APP_DEBUG` is not, and neither is
+# `PHP_INI_SCAN_DIR`. Measured on the tip that shipped the scan-dir repair: the
+# worker held APP_ENV=production, no APP_DEBUG at all, and a PHP_INI_SCAN_DIR
+# reset to the interpreter's own default. It fell through to `.env`, where
+# APP_DEBUG=true, and a single bad route parameter returned 659,514 bytes across
+# 168 stack frames — SQL text and absolute paths included.
+#
+# So the launcher was correct and the server was not. That is also why
+# deploy/php/uploads.ini never reached the process handling uploads, however
+# carefully the scan dir was composed upstream of this line.
+#
+# `--no-reload` takes the other branch of that same conditional and passes the
+# launcher's environment through unfiltered. It additionally switches off the
+# `.env`-mtime watcher that restarts the server when that file changes, which
+# production has no use for: a release changes code, not `.env` beneath a running
+# server, and an unannounced self-restart mid-request is a liability.
+#
+# Nothing else changes. The process topology is identical with and without it
+# (launcher plus one `php -S` child binding the port), so `exec`, SIGTERM
+# delivery and supervisor restart behaviour are untouched.
+#
+# Proven by tests/Feature/Deployment/ServeWorkerRuntimeEnvironmentTest.php, which
+# boots a real server from this line and reads the worker's own environment back.
+exec php artisan serve --host=0.0.0.0 --port=5000 --no-reload
