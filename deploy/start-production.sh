@@ -141,4 +141,17 @@ release_deploy_lock
 # it stays attached to the supervisor and receives SIGTERM/SIGINT directly.
 # Backgrounding it to run a post-start smoke check would orphan it from process
 # supervision — see deploy/DEPLOYMENT.md for why that check is still pending.
-exec php artisan serve --host=0.0.0.0 --port=5000
+#
+# `--no-reload` is what carries this script's environment into the process that
+# actually answers HTTP. `artisan serve` spawns a `php -S` child, and with a
+# `.env` present ServeCommand::startProcess() strips every variable outside a
+# fixed allowlist before handing it over. `APP_ENV` survives that filter;
+# `APP_DEBUG` and `PHP_INI_SCAN_DIR` do not — so the worker fell back to `.env`
+# (APP_DEBUG=true) and rendered stack traces, and the scan dir composed by
+# `configure_php_ini_scan_dir` above never reached it either. The flag passes the
+# environment through intact and disables the `.env`-mtime restart watcher, which
+# a production release has no use for.
+#
+# See the long-form explanation in deploy/start-serving.sh and
+# tests/Feature/Deployment/ServeWorkerRuntimeEnvironmentTest.php.
+exec php artisan serve --host=0.0.0.0 --port=5000 --no-reload
