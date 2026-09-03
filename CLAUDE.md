@@ -177,6 +177,60 @@ firmness). The gate is `$hlaViewerIsOwner`, resolved in the four controllers fro
 because `audienceFor()` resolves widest-match-first and would otherwise hide an owner's own answers
 from them whenever that owner also holds an agent account.
 
+### Landlord applicant screening — the second write boundary (Fair Housing Phase 2)
+
+The landlord **Applicant Requirements** tab has its own allowlist, separate from the Hire Agent
+one and for the same reason. Every screening key is a public Livewire property that `saveMeta()`
+wrote verbatim, and the audit found **no validation rule referencing any of them** — so deleting
+an `<option>` changed the form and nothing else.
+
+`config/landlord_screening_options.php` is the SSOT. It has exactly two readers: the Blade
+partial that renders the options and `LandlordScreeningPolicy` (`app/Support/OfferListing/`)
+that enforces them on the write; a test asserts both. Every governed write on Create **and**
+Edit goes through `LandlordScreeningPolicy::project()`, which is an **intersection** — a value
+survives by being named in the allowlist, never by escaping a deny-list.
+
+**One partial serves Create and Edit** (`applicant-requirements.blade.php`), so option lists
+cannot drift between the two wizards. That is structural, and a test pins it.
+
+**The policy must not depend on a booted container.** It is called from Blade, from both Livewire
+components, and from the Ask AI landlord extractor — and that extractor's unit test extends
+PHPUnit's `TestCase` directly with no application. A `config()` call there raises,
+`AskAiContextBuilderService::buildForListing()` catches every `Throwable`, and the symptom is not
+a missing screening key but an **entirely empty listing context**, with the real error swallowed
+several frames away. `LandlordScreeningPolicy::conf()` uses the container when one is bound and
+reads the file when it is not; a test runs the policy in a separate process to prove it.
+
+**Retired for Fair Housing reasons, and not to be reintroduced:** `employment_requirement`,
+`custom_employment_requirement`, `employment_verification_requirement`. They required an
+employment *status* ("Employed", "Retired allowed", "Student allowed"), which gates tenancy on
+how income is earned rather than whether rent can be paid. **There is no replacement control** —
+`income_qualification_method`, `min_income_requirement` / `min_monthly_income_fixed` and
+`income_verification_requirement` (relabelled *Income documentation required*) already ask the
+objective question, and the income block carries fixed copy stating that all lawful verifiable
+income counts. Do not add an "accepted income sources" checklist: a landlord who ticks everything
+except benefit letters has rebuilt source-of-income exclusion inside a field that looks neutral.
+
+**Stale values are suppressed or normalized, and the difference is deliberate.** A blanket
+`No criminal background` is **suppressed** — rendering it as `Individualized review of
+convictions` would credit a listing with a process it never had. `Case-by-case review` is
+**normalized** forward, because the meaning survives the rename. `Compensating factors
+considered` normalizes to the generic documented-criteria wording, **not** to the new deposit /
+co-signer option, which would assert a remedy the landlord never chose. No rows are deleted;
+remediation is a later backup-first operation.
+
+**The rental qualification page is a second publication of these values** on a route with **no
+auth middleware** (`offer.listing.landlord.qualification.check`). It reads landlord policy to
+show applicants what is required — the safe direction — but it must resolve through
+`LandlordScreeningPolicy::displayValue()`, or a retired requirement stays published there after
+the field that set it is gone.
+
+**`criminal_background` is not `criminal_background_requirement`.** The first is what an
+*applicant* discloses about themselves on the legacy qualification and offer-terms forms; the
+second is what a *landlord* requires. They share the option string `No criminal background` and
+are one word apart. `LegacyApplicantDisclosureContainmentTest` fails if anything ever aliases one
+onto the other. The legacy applicant *controls* are deferred work and were not changed.
+
 ### Deployment & migrations
 
 **`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.
