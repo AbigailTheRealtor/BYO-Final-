@@ -2593,15 +2593,6 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'What income qualification method does the landlord use?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.employment_requirement' => [
-                'roles'                => ['landlord'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'employment_requirement',
-                'label'                => 'Employment Requirement',
-                'sample_question'      => 'Is proof of employment required to rent this property?',
-                'sample_question_2'    => 'Does the landlord require tenants to be employed?',
-                'keyword_route_status' => 'listing_native',
-            ],
             'listing.eviction_history_requirement' => [
                 'roles'                => ['landlord'],
                 'field_type'           => 'listing_model',

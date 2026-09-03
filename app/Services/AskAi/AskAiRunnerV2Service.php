@@ -2665,11 +2665,6 @@ class AskAiRunnerV2Service
             'income verification requirement for this rental',
             'how do i qualify by income',
         ],
-        'listing.employment_requirement' => [
-            'is employment required to rent here',
-            'employment requirement for this rental',
-            'does this rental require proof of employment',
-        ],
         'listing.eviction_history_requirement' => [
             'eviction history requirement',
             'does eviction history disqualify a renter',

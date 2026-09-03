@@ -846,21 +846,13 @@
         $hasApplicantSection =
             $str('min_income_requirement') || $str('number_of_occupants_allowed') || $str('number_occupant') ||
             $str('landlord_approval_conditions') || $str('min_credit_score') ||
-            ($str('income_qualification_method') && $str('income_qualification_method') !== 'No Requirement') ||
-            ($str('employment_requirement') && $str('employment_requirement') !== 'No Requirement') ||
-            ($str('eviction_history_requirement') && $str('eviction_history_requirement') !== 'No Requirement') ||
-            ($str('bankruptcy_requirement') && $str('bankruptcy_requirement') !== 'No Requirement') ||
-            $str('credit_score_flexibility') ||
-            (function() use ($str) {
-                $pprRaw = $str('pet_policy_requirement');
-                $pprArr = is_array(json_decode($pprRaw, true)) ? json_decode($pprRaw, true) : ($pprRaw ? [$pprRaw] : []);
-                return count(array_filter($pprArr, fn($v) => !empty($v) && strtolower($v) !== 'no requirement')) > 0;
-            })() ||
-            ($str('smoking_policy_requirement') && $str('smoking_policy_requirement') !== 'No requirement') ||
-            ($str('criminal_background_requirement') && $str('criminal_background_requirement') !== 'No requirement') ||
-            ($str('reference_requirement') && $str('reference_requirement') !== 'No requirement') ||
-            ($str('employment_verification_requirement') && $str('employment_verification_requirement') !== 'No requirement') ||
-            ($str('income_verification_requirement') && $str('income_verification_requirement') !== 'No requirement') ||
+            (strcasecmp($str('income_qualification_method'), 'No requirement') !== 0 && $str('income_qualification_method')) ||
+            /* Fair Housing Phase 2: every screening field is resolved by the policy, so
+               the header cannot open on a value the rows will refuse to print — a stale
+               retired value now counts as no answer here exactly as it does below. */
+            \App\Support\OfferListing\LandlordScreeningPolicy::hasAnyDisplayableValue($str) ||
+            (strcasecmp($str('smoking_policy_requirement'), 'No requirement') !== 0 && $str('smoking_policy_requirement')) ||
+            (strcasecmp($str('reference_requirement'), 'No requirement') !== 0 && $str('reference_requirement')) ||
             ($str('preferred_move_in_timeframe') && $str('preferred_move_in_timeframe') !== 'No preference') ||
             $str('est_water_sewer_trash') || $str('est_electric') || $str('est_internet') || $str('est_cable');
     @endphp
@@ -1310,8 +1302,12 @@
                     @if($creditDisplay)
                         {!! $row('Minimum Credit Score', $creditDisplay) !!}
                     @endif
-                    @if(!empty($str('credit_score_flexibility')))
-                        {!! $row('Credit Score Flexibility', $str('credit_score_flexibility')) !!}
+                    @php
+                        $creditFlexDisplay = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                            'credit_score_flexibility', $str('credit_score_flexibility'));
+                    @endphp
+                    @if($creditFlexDisplay)
+                        {!! $row('Credit Score Flexibility', $creditFlexDisplay) !!}
                     @endif
                 </div>
                 <div class="col-md-6">
@@ -1331,29 +1327,19 @@
                     @if($incomeDisplay)
                         {!! $row('Income Qualification', $incomeDisplay) !!}
                     @endif
+                    {{-- Employment Requirement row retired (Fair Housing Phase 2). The field
+                         gated tenancy on employment status; stored values are left in place
+                         for a later backup-first remediation but are never rendered. --}}
                     @php
-                        $empReq = $str('employment_requirement');
-                        $empDisplay = ($empReq && strtolower($empReq) !== 'no requirement')
-                            ? ($empReq === 'Other' && $str('custom_employment_requirement') ? $str('custom_employment_requirement') : $empReq)
-                            : null;
-                    @endphp
-                    @if($empDisplay)
-                        {!! $row('Employment Requirement', $empDisplay) !!}
-                    @endif
-                    @php
-                        $evicReq = $str('eviction_history_requirement');
-                        $evicDisplay = ($evicReq && strtolower($evicReq) !== 'no requirement')
-                            ? ($evicReq === 'Other' && $str('custom_eviction_requirement') ? $str('custom_eviction_requirement') : $evicReq)
-                            : null;
+                        $evicDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+                            'eviction_history_requirement', $str('eviction_history_requirement'), $str('custom_eviction_requirement'));
                     @endphp
                     @if($evicDisplay)
                         {!! $row('Eviction History', $evicDisplay) !!}
                     @endif
                     @php
-                        $bankReq = $str('bankruptcy_requirement');
-                        $bankDisplay = ($bankReq && strtolower($bankReq) !== 'no requirement')
-                            ? ($bankReq === 'Other' && $str('custom_bankruptcy_requirement') ? $str('custom_bankruptcy_requirement') : $bankReq)
-                            : null;
+                        $bankDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+                            'bankruptcy_requirement', $str('bankruptcy_requirement'), $str('custom_bankruptcy_requirement'));
                     @endphp
                     @if($bankDisplay)
                         {!! $row('Bankruptcy Requirement', $bankDisplay) !!}
@@ -1361,39 +1347,37 @@
                 </div>
             </div>
             @php
-                $petReqRaw = $str('pet_policy_requirement');
-                // pet_policy_requirement is stored as JSON array; support both new (JSON) and legacy (string) formats.
-                $petPolicyArr = is_array(json_decode($petReqRaw, true))
-                    ? json_decode($petReqRaw, true)
-                    : ($petReqRaw ? [$petReqRaw] : []);
-                $petPolicyArr = array_filter($petPolicyArr, fn($v) => !empty($v) && strtolower($v) !== 'no requirement');
-                $petDisplayV = count($petPolicyArr) > 0 ? implode(', ', $petPolicyArr) : null;
+                /* Pet policy is stored as a JSON array; the policy accepts that shape and the
+                   legacy single-string shape, and returns only current valid options. */
+                $petDisplayV = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                    'pet_policy_requirement', $str('pet_policy_requirement'));
                 $smokeReqV    = $str('smoking_policy_requirement');
                 $smokeDisplayV = null;
                 if ($smokeReqV && strtolower($smokeReqV) !== 'no requirement') {
                     $smokeDisplayV = ($smokeReqV === 'Other' && $str('custom_smoking_policy_requirement')) ? $str('custom_smoking_policy_requirement') : $smokeReqV;
                 }
-                $crimReqV    = $str('criminal_background_requirement');
-                $crimDisplayV = null;
-                if ($crimReqV && strtolower($crimReqV) !== 'no requirement') {
-                    $crimDisplayV = ($crimReqV === 'Other' && $str('custom_criminal_background_requirement')) ? $str('custom_criminal_background_requirement') : $crimReqV;
-                }
+                /* A stale blanket "No criminal background" is SUPPRESSED, not relabelled:
+                   printing it as an individualized review would credit the listing with a
+                   process it never had. It reads as no answer until the owner picks one. */
+                $crimDisplayV = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                    'criminal_background_requirement', $str('criminal_background_requirement'),
+                    $str('custom_criminal_background_requirement'));
                 $refReqV    = $str('reference_requirement');
                 $refDisplayV = null;
                 if ($refReqV && strtolower($refReqV) !== 'no requirement') {
                     $refDisplayV = ($refReqV === 'Other' && $str('custom_reference_requirement')) ? $str('custom_reference_requirement') : $refReqV;
                 }
-                $empVerifReqV = $str('employment_verification_requirement');
-                $incVerifReqV = $str('income_verification_requirement');
+                /* employment_verification_requirement is retired (Fair Housing Phase 2);
+                   income documentation is the source-neutral question that replaced it. */
+                $incVerifDisplayV = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                    'income_verification_requirement', $str('income_verification_requirement'));
                 $moveInPrefV  = $str('preferred_move_in_timeframe');
                 $moveInDisplayV = null;
                 if ($moveInPrefV && strtolower($moveInPrefV) !== 'no preference') {
                     $moveInDisplayV = ($moveInPrefV === 'Other' && $str('custom_preferred_move_in_timeframe')) ? $str('custom_preferred_move_in_timeframe') : $moveInPrefV;
                 }
                 $hasLifestyle = $petDisplayV || $smokeDisplayV || !empty($str('pet_restrictions'));
-                $hasBackground = $crimDisplayV || $refDisplayV
-                    || ($empVerifReqV && strtolower($empVerifReqV) !== 'no requirement')
-                    || ($incVerifReqV && strtolower($incVerifReqV) !== 'no requirement');
+                $hasBackground = $crimDisplayV || $refDisplayV || $incVerifDisplayV;
                 $hasMoveInPref = (bool) $moveInDisplayV;
             @endphp
             @if($hasLifestyle)
@@ -1416,16 +1400,13 @@
             <h6 class="fw-semibold mb-3" style="font-size:.9rem;letter-spacing:0;">Background requirements</h6>
             <div class="row">
                 @if($crimDisplayV)
-                <div class="col-md-6">{!! $row('Criminal Background', $crimDisplayV) !!}</div>
+                <div class="col-md-6">{!! $row('Criminal History Policy', $crimDisplayV) !!}</div>
                 @endif
                 @if($refDisplayV)
                 <div class="col-md-6">{!! $row('Prior Landlord Reference', $refDisplayV) !!}</div>
                 @endif
-                @if($empVerifReqV && strtolower($empVerifReqV) !== 'no requirement')
-                <div class="col-md-6">{!! $row('Employment Verification', $empVerifReqV) !!}</div>
-                @endif
-                @if($incVerifReqV && strtolower($incVerifReqV) !== 'no requirement')
-                <div class="col-md-6">{!! $row('Income Verification', $incVerifReqV) !!}</div>
+                @if($incVerifDisplayV)
+                <div class="col-md-6">{!! $row('Income Documentation Required', $incVerifDisplayV) !!}</div>
                 @endif
             </div>
             @endif
