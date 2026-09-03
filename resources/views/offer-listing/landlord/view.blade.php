@@ -1303,7 +1303,7 @@
                         {!! $row('Minimum Credit Score', $creditDisplay) !!}
                     @endif
                     @php
-                        $creditFlexDisplay = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                        $creditFlexDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
                             'credit_score_flexibility', $str('credit_score_flexibility'));
                     @endphp
                     @if($creditFlexDisplay)
@@ -1349,7 +1349,7 @@
             @php
                 /* Pet policy is stored as a JSON array; the policy accepts that shape and the
                    legacy single-string shape, and returns only current valid options. */
-                $petDisplayV = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                $petDisplayV = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
                     'pet_policy_requirement', $str('pet_policy_requirement'));
                 $smokeReqV    = $str('smoking_policy_requirement');
                 $smokeDisplayV = null;
@@ -1359,7 +1359,7 @@
                 /* A stale blanket "No criminal background" is SUPPRESSED, not relabelled:
                    printing it as an individualized review would credit the listing with a
                    process it never had. It reads as no answer until the owner picks one. */
-                $crimDisplayV = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                $crimDisplayV = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
                     'criminal_background_requirement', $str('criminal_background_requirement'),
                     $str('custom_criminal_background_requirement'));
                 $refReqV    = $str('reference_requirement');
@@ -1369,7 +1369,7 @@
                 }
                 /* employment_verification_requirement is retired (Fair Housing Phase 2);
                    income documentation is the source-neutral question that replaced it. */
-                $incVerifDisplayV = \\App\\Support\\OfferListing\\LandlordScreeningPolicy::displayValue(
+                $incVerifDisplayV = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
                     'income_verification_requirement', $str('income_verification_requirement'));
                 $moveInPrefV  = $str('preferred_move_in_timeframe');
                 $moveInDisplayV = null;

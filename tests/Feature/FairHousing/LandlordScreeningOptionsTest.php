@@ -499,11 +499,63 @@ class LandlordScreeningOptionsTest extends TestCase
             $this->assertNull(LandlordScreeningPolicy::displayValue('employment_requirement', $value));
         }
 
+        // All three surfaces that publish the landlord's screening policy. The
+        // review page is here because Phase 2's first pass missed it: it read the
+        // retired keys AND scored applicants against them, while every string
+        // assertion in this file stayed green.
+        foreach ([
+            self::PUBLIC_VIEW,
+            'resources/views/offer-listing/landlord/qualification/check.blade.php',
+            'resources/views/offer-listing/landlord/qualification/review.blade.php',
+        ] as $surface) {
+            $source = file_get_contents(base_path($surface));
+
+            foreach (self::RETIRED_EMPLOYMENT_KEYS as $key) {
+                $this->assertStringNotContainsString(
+                    "\$str('{$key}')",
+                    $source,
+                    "{$surface} still reads the retired key {$key}."
+                );
+            }
+        }
+
         $view = $this->publicView();
-        $this->assertStringNotContainsString("\$str('employment_requirement')", $view);
-        $this->assertStringNotContainsString("\$str('employment_verification_requirement')", $view);
         $this->assertStringNotContainsString("'Employment Requirement'", $view);
         $this->assertStringNotContainsString("'Employment Verification'", $view);
+    }
+
+    /**
+     * @test
+     *
+     * Every surface that publishes a governed value resolves it through the
+     * boundary. A raw read is how a suppressed value gets republished on a page
+     * nobody re-checked.
+     */
+    public function every_screening_surface_resolves_governed_values_through_the_policy(): void
+    {
+        foreach ([
+            self::PUBLIC_VIEW,
+            'resources/views/offer-listing/landlord/qualification/check.blade.php',
+            'resources/views/offer-listing/landlord/qualification/review.blade.php',
+        ] as $surface) {
+            $source = file_get_contents(base_path($surface));
+
+            $this->assertStringContainsString(
+                'LandlordScreeningPolicy',
+                $source,
+                "{$surface} publishes screening values without the boundary."
+            );
+
+            // A governed key may appear only as an argument to the resolver, never
+            // as a bare read assigned straight into a display variable.
+            foreach (self::GOVERNED_KEYS as $key) {
+                $this->assertDoesNotMatchRegularExpression(
+                    '/=\s*\$str\(\s*\'' . preg_quote($key, '/') . '\'\s*\)/',
+                    $source,
+                    "{$surface} assigns {$key} directly from \$str(), bypassing LandlordScreeningPolicy."
+                );
+            }
+        }
     }
 
     /** @test */

@@ -347,9 +347,16 @@ class AskAiRefactorParityTest extends TestCase
     {
         $result = $this->invokeLandlordManual();
 
-        $this->assertCount(39, $result,
+        // 39 -> 38: Fair Housing Phase 2 retired ONE landlord manual-override field,
+        // `employment_verification_requirement`. It asked whether an applicant must
+        // prove EMPLOYMENT, which a retiree or anyone on lawful non-wage income
+        // cannot do; income documentation is the source-neutral question and it
+        // remains in this set. `employment_requirement` was also retired but was a
+        // plain CANONICAL_SOURCE_MAP entry, not a manual override, so it does not
+        // count here — the map itself went 431 -> 429 for the two together.
+        $this->assertCount(38, $result,
             '§30C: Landlord override count changed — '
-            . 'update only if intentional. All 39 keys require JSON decode, '
+            . 'update only if intentional. All 38 keys require JSON decode, '
             . 'resolveOtherValue(), or field-alias transformation.');
     }
 

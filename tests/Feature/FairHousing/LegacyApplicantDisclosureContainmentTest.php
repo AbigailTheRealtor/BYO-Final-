@@ -139,6 +139,36 @@ class LegacyApplicantDisclosureContainmentTest extends TestCase
         }
     }
 
+    /**
+     * @test
+     *
+     * The review page is the one place the two vocabularies genuinely meet: it puts
+     * the landlord's policy and the applicant's own disclosure side by side. That is
+     * the safe direction, but only while it stays a comparison — it must read the
+     * policy through the boundary and write nothing at all.
+     */
+    public function the_review_page_compares_the_two_vocabularies_without_ever_writing(): void
+    {
+        $blade = file_get_contents(base_path('resources/views/offer-listing/landlord/qualification/review.blade.php'));
+
+        // No write path of any kind.
+        foreach (['saveMeta(', '->save()', '::create(', '->update(', '<form'] as $writePattern) {
+            $this->assertStringNotContainsString(
+                $writePattern,
+                $blade,
+                "The review page gained a write path ({$writePattern}); an applicant disclosure could reach the landlord's policy."
+            );
+        }
+
+        // Landlord policy is resolved, not read raw.
+        $this->assertStringContainsString('LandlordScreeningPolicy', $blade);
+
+        // And the applicant's disclosure is never used to populate a policy key.
+        foreach (self::LANDLORD_POLICY_KEYS as $key) {
+            $this->assertStringNotContainsString('name="' . $key . '"', $blade);
+        }
+    }
+
     /** @test */
     public function no_legacy_form_writes_a_landlord_screening_policy_key(): void
     {
