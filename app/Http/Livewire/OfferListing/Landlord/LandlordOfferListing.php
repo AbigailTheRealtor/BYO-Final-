@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire\OfferListing\Landlord;
 
+use App\Support\OfferListing\LandlordScreeningPolicy;
+
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
 
 use App\Support\Listing\ListingWorkflow;
@@ -372,11 +374,14 @@ class LandlordOfferListing extends Component
     public $income_qualification_method = 'No Requirement';
     public $min_monthly_income_fixed = '';
     public $custom_income_requirement = '';
-    public $employment_requirement = 'No Requirement';
-    public $custom_employment_requirement = '';
-    public $eviction_history_requirement = 'No Requirement';
+    // Fair Housing Phase 2: employment_requirement, custom_employment_requirement and
+    // employment_verification_requirement are retired. They are not declared, not
+    // hydrated and not persisted, so a crafted Livewire payload naming them sets no
+    // property and reaches no write. Existing meta rows are left untouched for a
+    // later backup-first remediation; nothing reads them.
+    public $eviction_history_requirement = 'No requirement';
     public $custom_eviction_requirement = '';
-    public $bankruptcy_requirement = 'No Requirement';
+    public $bankruptcy_requirement = 'No requirement';
     public $custom_bankruptcy_requirement = '';
     public $credit_score_flexibility = '';
     public $pet_policy_requirement = [];
@@ -388,7 +393,6 @@ class LandlordOfferListing extends Component
     public $custom_criminal_background_requirement = '';
     public $reference_requirement = '';
     public $custom_reference_requirement = '';
-    public $employment_verification_requirement = '';
     public $income_verification_requirement = '';
     public $preferred_move_in_timeframe = '';
     public $custom_preferred_move_in_timeframe = '';
@@ -2881,25 +2885,24 @@ class LandlordOfferListing extends Component
             $this->income_qualification_method = $auction->get->income_qualification_method ?? 'No Requirement';
             $this->min_monthly_income_fixed = $auction->get->min_monthly_income_fixed ?? '';
             $this->custom_income_requirement = $auction->get->custom_income_requirement ?? '';
-            $this->employment_requirement = $auction->get->employment_requirement ?? 'No Requirement';
-            $this->custom_employment_requirement = $auction->get->custom_employment_requirement ?? '';
-            $this->eviction_history_requirement = $auction->get->eviction_history_requirement ?? 'No Requirement';
-            $this->custom_eviction_requirement = $auction->get->custom_eviction_requirement ?? '';
-            $this->bankruptcy_requirement = $auction->get->bankruptcy_requirement ?? 'No Requirement';
-            $this->custom_bankruptcy_requirement = $auction->get->custom_bankruptcy_requirement ?? '';
-            $this->credit_score_flexibility = $auction->get->credit_score_flexibility ?? '';
-            $rawPetPolicyReq = $auction->get->pet_policy_requirement ?? '[]';
-            $this->pet_policy_requirement = is_array($rawPetPolicyReq) ? $rawPetPolicyReq : (json_decode($rawPetPolicyReq, true) ?? []);
+            $this->eviction_history_requirement = LandlordScreeningPolicy::normalize('eviction_history_requirement', $auction->get->eviction_history_requirement ?? '');
+            $this->custom_eviction_requirement = LandlordScreeningPolicy::normalizeCustomText('eviction_history_requirement', $auction->get->eviction_history_requirement ?? '', $auction->get->custom_eviction_requirement ?? '');
+            $this->bankruptcy_requirement = LandlordScreeningPolicy::normalize('bankruptcy_requirement', $auction->get->bankruptcy_requirement ?? '');
+            $this->custom_bankruptcy_requirement = LandlordScreeningPolicy::normalizeCustomText('bankruptcy_requirement', $auction->get->bankruptcy_requirement ?? '', $auction->get->custom_bankruptcy_requirement ?? '');
+            $this->credit_score_flexibility = LandlordScreeningPolicy::normalize('credit_score_flexibility', $auction->get->credit_score_flexibility ?? '');
+            $this->pet_policy_requirement = LandlordScreeningPolicy::normalizeMulti(
+                'pet_policy_requirement',
+                $auction->get->pet_policy_requirement ?? '[]'
+            );
             $this->custom_pet_policy_requirement = $auction->get->custom_pet_policy_requirement ?? '';
             $this->pet_restrictions = $auction->get->pet_restrictions ?? '';
             $this->smoking_policy_requirement = $auction->get->smoking_policy_requirement ?? '';
             $this->custom_smoking_policy_requirement = $auction->get->custom_smoking_policy_requirement ?? '';
-            $this->criminal_background_requirement = $auction->get->criminal_background_requirement ?? '';
-            $this->custom_criminal_background_requirement = $auction->get->custom_criminal_background_requirement ?? '';
+            $this->criminal_background_requirement = LandlordScreeningPolicy::normalize('criminal_background_requirement', $auction->get->criminal_background_requirement ?? '');
+            $this->custom_criminal_background_requirement = LandlordScreeningPolicy::normalizeCustomText('criminal_background_requirement', $auction->get->criminal_background_requirement ?? '', $auction->get->custom_criminal_background_requirement ?? '');
             $this->reference_requirement = $auction->get->reference_requirement ?? '';
             $this->custom_reference_requirement = $auction->get->custom_reference_requirement ?? '';
-            $this->employment_verification_requirement = $auction->get->employment_verification_requirement ?? '';
-            $this->income_verification_requirement = $auction->get->income_verification_requirement ?? '';
+            $this->income_verification_requirement = LandlordScreeningPolicy::normalize('income_verification_requirement', $auction->get->income_verification_requirement ?? '');
             $this->preferred_move_in_timeframe = $auction->get->preferred_move_in_timeframe ?? '';
             $this->custom_preferred_move_in_timeframe = $auction->get->custom_preferred_move_in_timeframe ?? '';
             $this->est_water_sewer_trash = $auction->get->est_water_sewer_trash ?? '';
@@ -3524,24 +3527,35 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('income_qualification_method', $this->income_qualification_method);
         $auction->saveMeta('min_monthly_income_fixed', $this->min_monthly_income_fixed);
         $auction->saveMeta('custom_income_requirement', $this->custom_income_requirement);
-        $auction->saveMeta('employment_requirement', $this->employment_requirement);
-        $auction->saveMeta('custom_employment_requirement', $this->custom_employment_requirement);
-        $auction->saveMeta('eviction_history_requirement', $this->eviction_history_requirement);
-        $auction->saveMeta('custom_eviction_requirement', $this->custom_eviction_requirement);
-        $auction->saveMeta('bankruptcy_requirement', $this->bankruptcy_requirement);
-        $auction->saveMeta('custom_bankruptcy_requirement', $this->custom_bankruptcy_requirement);
-        $auction->saveMeta('credit_score_flexibility', $this->credit_score_flexibility);
-        $auction->saveMeta('pet_policy_requirement', json_encode($this->ensureArray($this->pet_policy_requirement)));
+
+        // Fair Housing Phase 2 — screening writes go through the policy, never direct.
+        //
+        // These are public Livewire properties with no validation rule anywhere, so
+        // until this projection existed a crafted payload could set any string on any
+        // of them and the save wrote it verbatim. The projection is an INTERSECTION
+        // against config/landlord_screening_options.php: a value is stored because it
+        // appears in the allowlist, never because it failed to appear on a deny-list.
+        // Retired values, unknown values and unreachable "Other" text all collapse to
+        // an empty string, which reads as "this listing states no policy".
+        foreach (LandlordScreeningPolicy::project([
+            'eviction_history_requirement'           => $this->eviction_history_requirement,
+            'custom_eviction_requirement'            => $this->custom_eviction_requirement,
+            'bankruptcy_requirement'                 => $this->bankruptcy_requirement,
+            'custom_bankruptcy_requirement'          => $this->custom_bankruptcy_requirement,
+            'credit_score_flexibility'               => $this->credit_score_flexibility,
+            'pet_policy_requirement'                 => $this->pet_policy_requirement,
+            'criminal_background_requirement'        => $this->criminal_background_requirement,
+            'custom_criminal_background_requirement' => $this->custom_criminal_background_requirement,
+            'income_verification_requirement'        => $this->income_verification_requirement,
+        ]) as $screeningKey => $screeningValue) {
+            $auction->saveMeta($screeningKey, $screeningValue);
+        }
         $auction->saveMeta('custom_pet_policy_requirement', $this->custom_pet_policy_requirement);
         $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
         $auction->saveMeta('smoking_policy_requirement', $this->smoking_policy_requirement);
         $auction->saveMeta('custom_smoking_policy_requirement', $this->custom_smoking_policy_requirement);
-        $auction->saveMeta('criminal_background_requirement', $this->criminal_background_requirement);
-        $auction->saveMeta('custom_criminal_background_requirement', $this->custom_criminal_background_requirement);
         $auction->saveMeta('reference_requirement', $this->reference_requirement);
         $auction->saveMeta('custom_reference_requirement', $this->custom_reference_requirement);
-        $auction->saveMeta('employment_verification_requirement', $this->employment_verification_requirement);
-        $auction->saveMeta('income_verification_requirement', $this->income_verification_requirement);
         $auction->saveMeta('preferred_move_in_timeframe', $this->preferred_move_in_timeframe);
         $auction->saveMeta('custom_preferred_move_in_timeframe', $this->custom_preferred_move_in_timeframe);
         $auction->saveMeta('est_water_sewer_trash', $this->est_water_sewer_trash);

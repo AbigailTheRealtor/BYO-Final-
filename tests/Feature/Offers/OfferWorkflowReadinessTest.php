@@ -1147,6 +1147,49 @@ class OfferWorkflowReadinessTest extends TestCase
             // config leaves rows behind by definition.
             'app/Services/AskAi/AskAiFaqEnrichmentService.php',
             'app/Services/AgentAi/Loaders/ExtendedKnowledgeLoader.php',
+
+            // Create Offer Fair Housing — Phase 2 (landlord applicant screening).
+            //
+            // Phase 2 retires the landlord employment gate (employment_requirement,
+            // custom_employment_requirement, employment_verification_requirement), removes
+            // the blanket lifetime "No criminal background" option, and renames the
+            // standardless "Case-by-case review" / "Compensating factors considered"
+            // options. The two Livewire components, AskAiContextBuilderService,
+            // AskAiRunnerV2Service and the landlord public view are already listed above;
+            // these are the files this task adds.
+            //
+            //   config/landlord_screening_options.php
+            //     The option SSOT. It exists because the audit found NO validation rule for
+            //     any screening key: they are public Livewire properties that saveMeta()
+            //     wrote verbatim, so deleting an <option> changed the form and nothing else.
+            //     Read by exactly two things — the form that renders and the policy that
+            //     enforces — so the two cannot drift.
+            //
+            //   app/Support/OfferListing/LandlordScreeningPolicy.php
+            //     The write boundary. An INTERSECTION against that SSOT: a value is stored
+            //     because it is named there, never because it escaped a deny-list. Also the
+            //     single resolver for stale values, which is why suppression (the blanket
+            //     criminal ban) and normalization (the renamed options) cannot diverge
+            //     between surfaces.
+            //
+            //   applicant-requirements.blade.php
+            //     The one partial both the Create and the Edit wizard include, so the option
+            //     lists cannot drift between them.
+            //
+            //   qualification/check.blade.php, qualification/review.blade.php
+            //     The two other places the landlord's screening policy is published. check
+            //     shows applicants what is required (a route with no auth middleware);
+            //     review is the landlord's applicant scorecard, which not only displayed the
+            //     retired employment requirement but SCORED applicants against it. Both now
+            //     resolve through the policy, and review computes no verdict from criminal
+            //     history at all — a page comparing two dropdown strings cannot conduct the
+            //     individualized review the current option names.
+            'config/landlord_screening_options.php',
+            'app/Support/OfferListing/LandlordScreeningPolicy.php',
+            'app/Services/AskAi/AskAiFieldQuestionRegistryService.php',
+            'resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/applicant-requirements.blade.php',
+            'resources/views/offer-listing/landlord/qualification/check.blade.php',
+            'resources/views/offer-listing/landlord/qualification/review.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

@@ -30,7 +30,7 @@
         }
     }
 
-    $creditFlexibility = $str('credit_score_flexibility');
+    $creditFlexibility = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue('credit_score_flexibility', $str('credit_score_flexibility'));
 
     $incomeMethod  = $str('income_qualification_method');
     $incomeDisplay = null;
@@ -44,26 +44,17 @@
         }
     }
 
-    $empReq    = $str('employment_requirement');
-    $empDisplay = ($empReq && strtolower($empReq) !== 'no requirement')
-        ? ($empReq === 'Other' && $str('custom_employment_requirement') ? $str('custom_employment_requirement') : $empReq)
-        : null;
+    /* Fair Housing Phase 2: the employment gate is retired, so this page — which
+       shows an applicant what a landlord requires, on a route with no auth
+       middleware — no longer reads or republishes it at all. */
 
-    $evicReq    = $str('eviction_history_requirement');
-    $evicDisplay = ($evicReq && strtolower($evicReq) !== 'no requirement')
-        ? ($evicReq === 'Other' && $str('custom_eviction_requirement') ? $str('custom_eviction_requirement') : $evicReq)
-        : null;
+    $evicDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+        'eviction_history_requirement', $str('eviction_history_requirement'), $str('custom_eviction_requirement'));
 
-    $bankReq    = $str('bankruptcy_requirement');
-    $bankDisplay = ($bankReq && strtolower($bankReq) !== 'no requirement')
-        ? ($bankReq === 'Other' && $str('custom_bankruptcy_requirement') ? $str('custom_bankruptcy_requirement') : $bankReq)
-        : null;
+    $bankDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+        'bankruptcy_requirement', $str('bankruptcy_requirement'), $str('custom_bankruptcy_requirement'));
 
-    $petReq    = $str('pet_policy_requirement');
-    $petDisplay = null;
-    if ($petReq && strtolower($petReq) !== 'no requirement') {
-        $petDisplay = ($petReq === 'Other' && $str('custom_pet_policy_requirement')) ? $str('custom_pet_policy_requirement') : $petReq;
-    }
+    $petDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue('pet_policy_requirement', $str('pet_policy_requirement'));
 
     $smokeReq    = $str('smoking_policy_requirement');
     $smokeDisplay = null;
@@ -71,19 +62,21 @@
         $smokeDisplay = ($smokeReq === 'Other' && $str('custom_smoking_policy_requirement')) ? $str('custom_smoking_policy_requirement') : $smokeReq;
     }
 
-    $criminalReq    = $str('criminal_background_requirement');
-    $criminalDisplay = null;
-    if ($criminalReq && strtolower($criminalReq) !== 'no requirement') {
-        $criminalDisplay = ($criminalReq === 'Other' && $str('custom_criminal_background_requirement')) ? $str('custom_criminal_background_requirement') : $criminalReq;
-    }
+    /* A stale blanket "No criminal background" is suppressed here for the same
+       reason it is on the listing page: it must not be republished, and must not
+       be relabelled into a policy the landlord never chose. */
+    $criminalDisplay = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+        'criminal_background_requirement', $str('criminal_background_requirement'),
+        $str('custom_criminal_background_requirement'));
 
     $refReq    = $str('reference_requirement');
     $refDisplay = ($refReq && strtolower($refReq) !== 'no requirement')
         ? (($refReq === 'Other' && $str('custom_reference_requirement')) ? $str('custom_reference_requirement') : $refReq)
         : null;
 
-    $empVerifReq   = $str('employment_verification_requirement');
-    $incVerifReq   = $str('income_verification_requirement');
+    /* employment_verification_requirement is retired; income documentation is the
+       source-neutral question that replaced it. */
+    $incVerifReq   = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue('income_verification_requirement', $str('income_verification_requirement'));
     $moveInPref    = $str('preferred_move_in_timeframe');
     $moveInDisplay = null;
     if ($moveInPref && strtolower($moveInPref) !== 'no preference') {
@@ -94,9 +87,9 @@
     $maxOccupants   = $str('number_of_occupants_allowed') ?: $str('number_occupant');
     $approvalConds  = $str('landlord_approval_conditions');
 
-    $hasRequirements = $creditDisplay || $incomeDisplay || $empDisplay || $evicDisplay || $bankDisplay
+    $hasRequirements = $creditDisplay || $incomeDisplay || $evicDisplay || $bankDisplay
         || $minIncome || $maxOccupants || $approvalConds || $petDisplay || $smokeDisplay
-        || $criminalDisplay || $refDisplay || $empVerifReq || $incVerifReq || $moveInDisplay
+        || $criminalDisplay || $refDisplay || $incVerifReq || $moveInDisplay
         || $creditFlexibility;
 
     /* ── Estimated Utility Costs (mirrors public card logic) ── */
@@ -224,12 +217,6 @@
             <span class="rqc-req-value">{{ $incomeDisplay }}</span>
         </div>
         @endif
-        @if($empDisplay)
-        <div class="rqc-req-row">
-            <span class="rqc-req-label">Employment requirement</span>
-            <span class="rqc-req-value">{{ $empDisplay }}</span>
-        </div>
-        @endif
         @if($evicDisplay)
         <div class="rqc-req-row">
             <span class="rqc-req-label">Eviction history</span>
@@ -262,7 +249,7 @@
         @endif
         @if($criminalDisplay)
         <div class="rqc-req-row">
-            <span class="rqc-req-label">Criminal background</span>
+            <span class="rqc-req-label">Criminal history policy</span>
             <span class="rqc-req-value">{{ $criminalDisplay }}</span>
         </div>
         @endif
@@ -272,15 +259,9 @@
             <span class="rqc-req-value">{{ $refDisplay }}</span>
         </div>
         @endif
-        @if($empVerifReq && strtolower($empVerifReq) !== 'no requirement')
+        @if($incVerifReq)
         <div class="rqc-req-row">
-            <span class="rqc-req-label">Employment verification</span>
-            <span class="rqc-req-value">{{ $empVerifReq }}</span>
-        </div>
-        @endif
-        @if($incVerifReq && strtolower($incVerifReq) !== 'no requirement')
-        <div class="rqc-req-row">
-            <span class="rqc-req-label">Income verification</span>
+            <span class="rqc-req-label">Income documentation required</span>
             <span class="rqc-req-value">{{ $incVerifReq }}</span>
         </div>
         @endif
