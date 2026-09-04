@@ -672,36 +672,62 @@ class LocationDnaPoiDistanceService
                 }
             }
 
-            // (e0) Phase 0 / S2 — master kill switch. Short-circuits before any HTTP
-            // call, and after the cache-return paths above so cached rows still serve.
-            // Fail-safe default is DISABLED (config/google_places.php). Until this
-            // commit the switch was referenced by zero application code.
-            if (! config('google_places.enabled', false)) {
-                $output = $this->failedOutput(
-                    $listingType,
-                    $listingId,
-                    $sourceLat,
-                    $sourceLng,
-                    'google_places_disabled',
-                );
-                $this->audit($listingType, $listingId, $output);
-                $this->setLastRunStats($listingType, $listingId, null);
-                return $output;
-            }
+            // (e0/e) PROVIDER-SPECIFIC WHOLE-RUN GUARDS.
+            //
+            // These two guards are Google's, and they are scoped to Google. They ask
+            // whether the GOOGLE PLACES credential and kill switch permit a run, which is
+            // a meaningful question only when Google is the provider that would be asked.
+            //
+            // Until the corpus provider existed there was no distinction to draw: Google
+            // was the only provider that could ever be the effective base, so an
+            // unconditional guard and a provider-scoped one were the same guard. They stop
+            // being the same the moment a second provider can be selected — an
+            // unconditional check would refuse a run that was never going to call Google,
+            // reporting `google_places_disabled` for a lookup against a local corpus with
+            // no credential to be missing.
+            //
+            // `$this->currentProvenanceProvider` is the registry's answer for
+            // `poi.default`, already resolved by resolveProvenanceBase() above and already
+            // the value stamped into every persisted row's provenance. Using it here means
+            // the guard, the fetcher and the provenance can never disagree about which
+            // provider this run belongs to.
+            //
+            // TODAY THIS CHANGES NOTHING. `overture_corpus` ships disabled, so
+            // effectiveBase('poi.default') still resolves to google_places and both guards
+            // run exactly as before, in the same order, returning the same two error
+            // strings. That equivalence is asserted rather than asserted-in-a-comment: see
+            // PoiRunProviderGuardTest::the_google_guards_still_fire_on_the_shipped_config().
+            if ($this->currentProvenanceProvider === 'google_places') {
+                // Phase 0 / S2 — master kill switch. Short-circuits before any HTTP
+                // call, and after the cache-return paths above so cached rows still serve.
+                // Fail-safe default is DISABLED (config/google_places.php).
+                if (! config('google_places.enabled', false)) {
+                    $output = $this->failedOutput(
+                        $listingType,
+                        $listingId,
+                        $sourceLat,
+                        $sourceLng,
+                        'google_places_disabled',
+                    );
+                    $this->audit($listingType, $listingId, $output);
+                    $this->setLastRunStats($listingType, $listingId, null);
+                    return $output;
+                }
 
-            // (e) API key guard
-            $apiKey = config('services.google.places_key');
-            if (blank($apiKey)) {
-                $output = $this->failedOutput(
-                    $listingType,
-                    $listingId,
-                    $sourceLat,
-                    $sourceLng,
-                    'missing_google_api_key',
-                );
-                $this->audit($listingType, $listingId, $output);
-                $this->setLastRunStats($listingType, $listingId, null);
-                return $output;
+                // API key guard
+                $apiKey = config('services.google.places_key');
+                if (blank($apiKey)) {
+                    $output = $this->failedOutput(
+                        $listingType,
+                        $listingId,
+                        $sourceLat,
+                        $sourceLng,
+                        'missing_google_api_key',
+                    );
+                    $this->audit($listingType, $listingId, $output);
+                    $this->setLastRunStats($listingType, $listingId, null);
+                    return $output;
+                }
             }
 
             // Phase 1 Batch 2: the raw provider fetch is resolved through the

@@ -4,6 +4,7 @@ namespace App\Services\LocationDna\Providers;
 
 use App\Contracts\NearbyPoiFetcherInterface;
 use App\Services\LocationDna\GooglePlacesPoiAdapter;
+use App\Services\LocationDna\OvertureCorpusPoiAdapter;
 use App\Services\LocationDna\StubNearbyPoiFetcher;
 use GuzzleHttp\ClientInterface;
 
@@ -50,9 +51,25 @@ class NearbyPoiFetcherFactory
     {
         $registry = new LocationProviderRegistry($this->config);
         $base     = $registry->effectiveBase(self::POI_DEFAULT_KEY);
+        $provider = $base['provider'] ?? null;
+
+        // Local corpus. Checked FIRST because it is the base when enabled, and because a
+        // corpus that is selected but unreadable must land on the stub rather than on
+        // Google: a provider outage is not a licence to start spending.
+        //
+        // `isAvailable()` is consulted here rather than left to the adapter, so that a
+        // misconfigured corpus (flag on, version unpinned, cluster unreachable) yields an
+        // inert fetcher instead of an adapter that raises on every category. The adapter
+        // still guards itself — it is safe to construct directly — but the factory is
+        // where "this provider cannot serve right now" belongs.
+        if ($provider === OvertureCorpusPoiAdapter::PROVIDER_ID) {
+            $adapter = new OvertureCorpusPoiAdapter();
+
+            return $adapter->isAvailable() ? $adapter : new StubNearbyPoiFetcher();
+        }
 
         if (
-            ($base['provider'] ?? null) === 'google_places'
+            $provider === 'google_places'
             && ! blank(config('services.google.places_key'))
         ) {
             return new GooglePlacesPoiAdapter($client);
