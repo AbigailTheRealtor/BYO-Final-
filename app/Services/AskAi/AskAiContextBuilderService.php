@@ -984,6 +984,65 @@ class AskAiContextBuilderService
         $manualFields = $this->extractManualFields($listing, $canonicalType, $infoGet, $nativeGet);
 
         $factual = array_merge($resolved, $manualFields);
+
+        // ── Fair Housing Phase 3: provider-prose value gate ──────────────────────
+        //
+        // Phase 1 decides WHICH landlord fields may reach a prompt at all (the
+        // registered-only boundary). This does not touch that and adds no second
+        // registry: it is a VALUE gate applied after admission, so the rule is
+        //
+        //     registered provider field + safe value  = eligible for prompt context
+        //     registered provider field + unsafe prose = null, key carries nothing
+        //
+        // It lives here, once, after both the resolver loop and the manual overrides,
+        // because a governed meta key can reach context by either route — and because
+        // hiding unsafe prose from Blade while it still reaches a prompt would be the
+        // Phase 2 review-page failure in a new place.
+        //
+        // Suppression is keyed off the SOURCE meta key and clears every context field
+        // fed by it, so `description` (sourced from `additional_details`) is covered
+        // without naming it here and without drifting if the map changes.
+        //
+        // Consumer text is untouched: LandlordProviderTextPolicy only knows landlord
+        // provider fields, and this block runs for landlord listings only.
+        if ($canonicalType === 'landlord') {
+            $suppressSourceKey = function (string $metaKey) use (&$factual, $sourceMap): void {
+                foreach ($sourceMap as $contextKey => $source) {
+                    $sources = is_array($source) ? $source : [$source];
+                    if (in_array($metaKey, $sources, true) && array_key_exists($contextKey, $factual)) {
+                        $factual[$contextKey] = null;
+                    }
+                }
+                if (array_key_exists($metaKey, $factual)) {
+                    $factual[$metaKey] = null;
+                }
+            };
+
+            foreach (\App\Support\OfferListing\LandlordProviderTextPolicy::fields() as $providerKey => $unused) {
+                $raw = $infoGet($providerKey);
+                if (! is_string($raw) || trim($raw) === '') {
+                    continue;
+                }
+                if (! \App\Support\OfferListing\LandlordProviderTextPolicy::isAllowed($providerKey, $raw)) {
+                    $suppressSourceKey($providerKey);
+                }
+            }
+
+            // Parent-gated custom text: an "Other" free-text sibling whose parent no
+            // longer selects the unlocking value must not reach a prompt either. The
+            // write boundary stops new ones; this covers rows already stored.
+            foreach (\App\Support\OfferListing\LandlordScreeningPolicy::customFields() as $customKey => $definition) {
+                $rawCustom = $infoGet($customKey);
+                if (! is_string($rawCustom) || trim($rawCustom) === '') {
+                    continue;
+                }
+                $parentRaw = $infoGet($definition['parent'] ?? '');
+                if (\App\Support\OfferListing\LandlordScreeningPolicy::customDisplayValue($customKey, $parentRaw, $rawCustom) === null) {
+                    $suppressSourceKey($customKey);
+                }
+            }
+        }
+
         return array_merge($base, $factual);
     }
 

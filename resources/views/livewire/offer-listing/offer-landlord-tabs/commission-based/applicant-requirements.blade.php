@@ -273,6 +273,21 @@
             </select>
         </div>
     </div>
+    {{-- Fair Housing Phase 3 — assistance animals are not pets.
+
+         The landlord Yes/No assistance-animal controls were RETIRED in Phase 1 and are
+         not coming back: asking a landlord to pre-declare a policy on assistance animals
+         invites a blanket answer to what is an individualised accommodation request.
+         This is the opposite — one fixed, informational sentence, no control and no
+         stored value, so the pet policy above cannot be read as governing them.
+
+         It sits here, next to the pet fields, because that is where the mistake is made. --}}
+    <div class="alert alert-light border d-flex align-items-start gap-2 py-2 px-3 mt-2 mb-2"
+         style="font-size:.82rem;color:#334155;background:#f8fafc;">
+        <i class="fa-solid fa-circle-info mt-1" style="color:#64748b;"></i>
+        <span>Assistance animals are accommodation requests and are not governed by ordinary pet restrictions.</span>
+    </div>
+
     {{-- Pet restrictions — shown when any "allowed" option is selected. --}}
     {{-- Visibility is server-rendered (style attr) and also toggled by JS for instant feedback. --}}
     <div class="mt-2" id="pet-restrictions-wrapper"

@@ -32,7 +32,38 @@
     /** Return meta value as a plain string (array → comma list, nested arrays → JSON) */
     $str = function (string $key) use ($meta): string {
         $v = $meta[$key] ?? '';
-        return is_array($v) ? implode(', ', array_map(fn($e) => is_array($e) ? json_encode($e) : (string)$e, $v)) : (string) $v;
+        $v = is_array($v) ? implode(', ', array_map(fn($e) => is_array($e) ? json_encode($e) : (string)$e, $v)) : (string) $v;
+
+        /*
+         * Fair Housing Phase 3 — suppression happens HERE, in the one resolver every
+         * row on this page already goes through, rather than at each call site.
+         *
+         * Two boundaries, both read-time and both leaving stored bytes untouched:
+         *
+         *   1. Landlord-authored PROSE that states an unlawful tenant preference
+         *      resolves to '' — including rows written before Phase 3 existed, which
+         *      is what makes historical text inert without a remediation pass.
+         *
+         *   2. Parent-gated CUSTOM text whose parent no longer authorises it also
+         *      resolves to '', so a dropdown changed on a later edit cannot leave
+         *      orphaned "Other" text published underneath it.
+         *
+         * Putting this at the call sites instead is exactly how Phase 2's review page
+         * ended up applying a criterion the listing page had already stopped showing.
+         */
+        if (\App\Support\OfferListing\LandlordProviderTextPolicy::isGovernedField($key)) {
+            return (string) (\App\Support\OfferListing\LandlordProviderTextPolicy::displayValue($key, $v) ?? '');
+        }
+
+        if (\App\Support\OfferListing\LandlordScreeningPolicy::isGovernedCustomField($key)) {
+            $definition = \App\Support\OfferListing\LandlordScreeningPolicy::customFields()[$key];
+            $parentRaw  = $meta[$definition['parent']] ?? '';
+            $parentRaw  = is_array($parentRaw) ? '' : (string) $parentRaw;
+
+            return (string) (\App\Support\OfferListing\LandlordScreeningPolicy::customDisplayValue($key, $parentRaw, $v) ?? '');
+        }
+
+        return $v;
     };
 
     /** Return meta value as an array (double-decode JSON strings) */
@@ -1569,7 +1600,16 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Tenant Type Required', $str('tenant_require')) !!}
+                    {{-- Fair Housing Phase 3 — LABEL CORRECTION, no data change.
+                         `tenant_require` stores a FURNISHINGS value ("Furnished",
+                         "Unfurnished", "Turnkey"…): the Create/Edit control is labelled
+                         "Furnishings" with a couch icon, and the Hire Agent view's own
+                         code comment records the stored value as "Furnished". Publishing
+                         it as "Tenant Type Required" announced an occupant-category
+                         requirement the listing never made — the concept Phase 1 retired
+                         as `tenant_type_preference`. The meta key is deliberately NOT
+                         renamed: that would be a data migration for a copy defect. --}}
+                    {!! $row('Furnishings', $str('tenant_require')) !!}
                     {!! $row('Monthly Income Requirement', $str('monthly_income')) !!}
                     {!! $row('Minimum Income Requirement', $str('min_income_requirement')) !!}
                     @php $creditRatings = $arr('credit_scroe_rating'); @endphp

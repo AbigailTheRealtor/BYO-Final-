@@ -3,7 +3,38 @@
 @php
     $str = function (string $key) use ($meta): string {
         $v = $meta[$key] ?? '';
-        return is_array($v) ? implode(', ', array_map(fn($e) => is_array($e) ? json_encode($e) : (string)$e, $v)) : (string) $v;
+        $v = is_array($v) ? implode(', ', array_map(fn($e) => is_array($e) ? json_encode($e) : (string)$e, $v)) : (string) $v;
+
+        /*
+         * Fair Housing Phase 3 — suppression happens HERE, in the one resolver every
+         * row on this page already goes through, rather than at each call site.
+         *
+         * Two boundaries, both read-time and both leaving stored bytes untouched:
+         *
+         *   1. Landlord-authored PROSE that states an unlawful tenant preference
+         *      resolves to '' — including rows written before Phase 3 existed, which
+         *      is what makes historical text inert without a remediation pass.
+         *
+         *   2. Parent-gated CUSTOM text whose parent no longer authorises it also
+         *      resolves to '', so a dropdown changed on a later edit cannot leave
+         *      orphaned "Other" text published underneath it.
+         *
+         * Putting this at the call sites instead is exactly how Phase 2's review page
+         * ended up applying a criterion the listing page had already stopped showing.
+         */
+        if (\App\Support\OfferListing\LandlordProviderTextPolicy::isGovernedField($key)) {
+            return (string) (\App\Support\OfferListing\LandlordProviderTextPolicy::displayValue($key, $v) ?? '');
+        }
+
+        if (\App\Support\OfferListing\LandlordScreeningPolicy::isGovernedCustomField($key)) {
+            $definition = \App\Support\OfferListing\LandlordScreeningPolicy::customFields()[$key];
+            $parentRaw  = $meta[$definition['parent']] ?? '';
+            $parentRaw  = is_array($parentRaw) ? '' : (string) $parentRaw;
+
+            return (string) (\App\Support\OfferListing\LandlordScreeningPolicy::customDisplayValue($key, $parentRaw, $v) ?? '');
+        }
+
+        return $v;
     };
 
     $addrParts = array_filter([
