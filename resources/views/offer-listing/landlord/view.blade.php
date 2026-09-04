@@ -362,10 +362,17 @@
     @endif
 
     @php
-        /* ── Address display ── */
+        /* ── Address display ──
+           Gated on the feed's own InternetAddressDisplayYN. When the MLS forbids
+           public address display the street line and unit are withheld from
+           non-owners; city/state/ZIP remain, which is what an address-suppressed
+           IDX listing is meant to show. The owner always sees their own address
+           and is told why a visitor does not. */
+        $mlsAddressVisible = $mlsAddressVisible ?? true;
+
         $addrParts = array_filter([
-            $meta['address'] ?? null,
-            !empty($meta['unit_number']) ? $meta['unit_number'] : null,
+            $mlsAddressVisible ? ($meta['address'] ?? null) : null,
+            $mlsAddressVisible && !empty($meta['unit_number']) ? $meta['unit_number'] : null,
             $meta['property_city'] ?? null,
         ]);
         $addrState  = trim($meta['property_state'] ?? '');
@@ -374,7 +381,11 @@
         if ($stateZip) $addrParts[] = $stateZip;
         $fullAddress = implode(', ', array_filter($addrParts));
 
-        $pageTitle = ($str('listing_title') ?: $auction->title) ?: ($fullAddress ?: 'Rental Property Listing');
+        /* The quick import seeds `title` FROM the address, so a restricted
+           listing must not fall back to it. */
+        $pageTitle = $mlsAddressVisible
+            ? ((($str('listing_title') ?: $auction->title) ?: ($fullAddress ?: 'Rental Property Listing')))
+            : (($str('listing_title') ?: null) ?: 'Rental Property Listing');
 
         /* ── Hero price ── */
         $heroPrice = null;
@@ -496,6 +507,9 @@
                     @endif
                     @if($fullAddress)
                         <div class="lol-hero-address"><i class="fa-solid fa-location-dot me-1" style="color:#0f766e;"></i>{{ $fullAddress }}</div>
+                    @endif
+                    @if(!empty($mlsAddressNotice))
+                        <div class="lol-hero-address small"><i class="fa-solid fa-circle-info me-1"></i>{{ $mlsAddressNotice }} Only you can see it here.</div>
                     @endif
                     <div class="lol-hero-meta">
                         @if($heroBeds)<span class="lol-hero-meta-item"><i class="fa-solid fa-bed"></i>{{ $heroBeds }} Beds</span>@endif
@@ -1129,7 +1143,9 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Property Type', $str('property_type')) !!}
-                    {!! $row('Address', $str('address')) !!}
+                    @if($mlsAddressVisible ?? true)
+                        {!! $row('Address', $str('address')) !!}
+                    @endif
                     {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('City', $str('property_city')) !!}
                     {!! $row('County', $str('property_county')) !!}
@@ -1208,6 +1224,19 @@
             @endif
         </div>
     </div>
+
+    {{-- Supplemental MLS facts — the same partial the seller listing and the
+         quick-import review screen render, so the three cannot drift apart. --}}
+    @include('offer-listing.partials._mls_property_facts', [
+        'details'    => $mlsDetails ?? null,
+        'mlsHeading' => 'MLS Property Details',
+    ])
+
+    @include('offer-listing.partials._mls_attribution', [
+        'mlsImported' => $mlsImported ?? false,
+        'details'     => $mlsDetails ?? null,
+    ])
+
 
     {{-- ================================================================
          LEASING TERMS

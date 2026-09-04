@@ -1,0 +1,555 @@
+Field	PhpType	Populated	Seen	Example	Residential	Commercial Lease	Income	Commercial Sale	Business Opportunity	Vacant Land	Residential Lease
+@odata.id	string	1202	1202	https://api.bridgedataoutput.com/api/v2/OData/stellar/Property('e8ea2e5193b25dbab98d77f1e1	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+AccessibilityFeatures	array	59	1202	["Accessible Approach with Ramp","Accessible Common Area","Accessible Doors","Accessible F	0/18	0/3	0/1	43/501	12/199	0/1	4/501
+AdditionalParcelsDescription	string	83	1202	253017000000021440	0/18	0/3	0/1	77/501	6/199	0/1	0/501
+AdditionalParcelsYN	boolean	557	1202	false	3/18	0/3	0/1	499/501	54/199	0/1	1/501
+Appliances	array	600	1202	["Dryer","Microwave","Range","Refrigerator","Washer"]	3/18	0/3	0/1	67/501	33/199	0/1	497/501
+ApprovalStatus	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ArchitecturalStyle	array	1	1202	["Contemporary"]	1/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationAmenities	array	113	1202	["Cable TV","Elevator(s)","Golf Course","Shuffleboard Court","Tennis Court(s)"]	1/18	0/3	0/1	0/501	0/199	0/1	112/501
+AssociationFee	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationFee2	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationFee2Frequency	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationFeeFrequency	string	1	1202	Monthly	1/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationFeeIncludes	array	5	1202	["Insurance","Maintenance Structure","Maintenance Grounds","Maintenance Repairs","Sewer","	2/18	0/3	0/1	0/501	0/199	0/1	3/501
+AssociationName	string	472	1202	Jerilyn Smith	2/18	0/3	0/1	27/501	1/199	0/1	442/501
+AssociationName2	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationPhone	string	144	1202	813-522-6346	2/18	0/3	0/1	18/501	1/199	0/1	123/501
+AssociationPhone2	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+AssociationYN	boolean	451	1202	true	3/18	0/3	0/1	1/501	0/199	0/1	447/501
+AttachedGarageYN	boolean	272	1202	false	1/18	0/3	0/1	1/501	0/199	0/1	270/501
+AvailabilityDate	string	503	1202	2019-03-01	0/18	0/3	0/1	2/501	0/199	0/1	501/501
+Basement	array	10	1202	["Other"]	0/18	0/3	0/1	10/501	0/199	0/1	0/501
+BathroomsFull	integer	505	1202	1	3/18	0/3	0/1	1/501	0/199	0/1	501/501
+BathroomsHalf	integer	487	1202	0	3/18	0/3	0/1	1/501	0/199	0/1	483/501
+BathroomsOneQuarter	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BathroomsPartial	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BathroomsThreeQuarter	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BathroomsTotalDecimal	integer	505	1202	1	3/18	0/3	0/1	1/501	0/199	0/1	501/501
+BathroomsTotalInteger	integer	1201	1202	1	3/18	0/3	0/1	499/501	198/199	0/1	501/501
+BedroomsTotal	integer	505	1202	1	3/18	0/3	0/1	1/501	0/199	0/1	501/501
+BodyType	array	6	1202	["Double Wide"]	0/18	0/3	0/1	0/501	0/199	0/1	6/501
+BridgeModificationTimestamp	string	1202	1202	2026-07-29T18:18:04.958Z	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+BuilderModel	string	8	1202	Carolina	0/18	0/3	0/1	0/501	0/199	0/1	8/501
+BuilderName	string	9	1202	Lennar	0/18	0/3	0/1	0/501	0/199	0/1	9/501
+BuildingAreaSource	string	986	1202	Public Records	3/18	0/3	0/1	496/501	91/199	0/1	396/501
+BuildingAreaTotal	integer	1007	1202	480	3/18	0/3	0/1	500/501	90/199	0/1	414/501
+BuildingAreaUnits	string	1199	1202	Square Feet	3/18	0/3	0/1	500/501	198/199	0/1	498/501
+BuildingFeatures	array	196	1202	["Bathrooms","Common Lighting","Dumpsters"]	0/18	0/3	0/1	162/501	34/199	0/1	0/501
+BusinessName	string	199	1202	NA	0/18	0/3	0/1	1/501	198/199	0/1	0/501
+BusinessType	array	211	1202	["Other"]	0/18	0/3	0/1	13/501	198/199	0/1	0/501
+BuyerAgentAOR	string	3	1202	New Smyrna Beach Board of Realtors	0/18	0/3	0/1	0/501	0/199	0/1	3/501
+BuyerAgentFirstName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerAgentFullName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerAgentKeyNumeric	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerAgentLastName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerAgentMlsId	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerAgentStateLicense	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerOfficeKeyNumeric	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerOfficeMlsId	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerOfficeName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+BuyerTeamName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CapRate	double	13	1203	5.55	0/18	0/3	1/1	8/501	4/199	0/1	0/501
+CarportSpaces	integer	191	1202	1	0/18	0/3	0/1	0/501	0/199	0/1	191/501
+CarportYN	boolean	491	1202	false	3/18	0/3	0/1	1/501	0/199	0/1	487/501
+City	string	1196	1202	CLEARWATER	3/18	0/3	0/1	500/501	192/199	0/1	501/501
+CloseDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ClosePrice	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerAgentFirstName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerAgentFullName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerAgentKeyNumeric	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerAgentLastName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerAgentMlsId	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerAgentStateLicense	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerOfficeKeyNumeric	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerOfficeMlsId	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoBuyerOfficeName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoListAgentFirstName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoListAgentFullName	string	143	1202	Cindy Costa	0/18	0/3	0/1	89/501	29/199	0/1	25/501
+CoListAgentKeyNumeric	integer	143	1202	579242290	0/18	0/3	0/1	89/501	29/199	0/1	25/501
+CoListAgentLastName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoListAgentMlsId	string	143	1202	256501019	0/18	0/3	0/1	89/501	29/199	0/1	25/501
+CoListAgentStateLicense	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CoListOfficeKeyNumeric	integer	143	1202	579203010	0/18	0/3	0/1	89/501	29/199	0/1	25/501
+CoListOfficeMlsId	string	143	1202	256500277	0/18	0/3	0/1	89/501	29/199	0/1	25/501
+CoListOfficeName	string	144	1202	REALTY CENTRAL, INC.	0/18	0/3	0/1	89/501	29/199	0/1	26/501
+CommonWalls	array	39	1202	["End Unit"]	0/18	0/3	0/1	0/501	0/199	0/1	39/501
+CommunityFeatures	array	391	1202	["None"]	2/18	0/3	0/1	32/501	6/199	0/1	351/501
+Concessions	string	20	1202	No	0/18	0/3	0/1	3/501	0/199	0/1	17/501
+ConcessionsAmount	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ConstructionMaterials	array	569	1202	["Block","Stucco"]	3/18	0/3	0/1	498/501	65/199	0/1	3/501
+ContractStatusChangeDate	string	1202	1202	2026-07-13	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+Cooling	array	1093	1202	["Mini-Split Unit(s)"]	3/18	0/3	0/1	498/501	93/199	0/1	499/501
+CoolingYN	boolean	1093	1202	true	3/18	0/3	0/1	498/501	93/199	0/1	499/501
+Coordinates	array	1192	1202	[-82.717138,27.918374]	3/18	0/3	0/1	497/501	191/199	0/1	501/501
+CopyrightNotice	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+Country	string	1202	1202	US	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+CountyOrParish	string	1191	1202	Pinellas	3/18	0/3	0/1	500/501	187/199	0/1	501/501
+CoveredSpaces	integer	334	1202	2	1/18	0/3	0/1	0/501	0/199	0/1	333/501
+CrossStreet	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+CumulativeDaysOnMarket	integer	1202	1202	16	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+CurrentUse	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+DOH1	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+DOH2	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+DOH3	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+DaysOnMarket	integer	1202	1202	16	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+DirectionFaces	string	193	1202	North	3/18	0/3	0/1	122/501	31/199	0/1	37/501
+Directions	string	1137	1202	Travel east on East Bay Drive. Just past US Hwy 19 and turn left at Bradford St. Turn left	3/18	0/3	0/1	500/501	133/199	0/1	501/501
+Disclosures	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+DocumentsCount	integer	1202	1202	0	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+DoorFeatures	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+Electric	array	70	1202	["100 Amp Service"]	0/18	0/3	0/1	56/501	13/199	0/1	1/501
+ElementarySchool	string	69	1202	East Elementary	1/18	0/3	0/1	0/501	0/199	0/1	68/501
+Exclusions	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ExteriorFeatures	array	135	1202	["Sidewalk"]	3/18	0/3	0/1	1/501	0/199	0/1	131/501
+FeedTypes	array	1202	1202	["IDX"]	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+Fencing	array	15	1202	["Fenced"]	0/18	0/3	0/1	0/501	0/199	0/1	15/501
+FireplaceFeatures	array	9	1202	["Living Room"]	0/18	0/3	0/1	0/501	0/199	0/1	9/501
+FireplaceYN	boolean	122	1202	false	3/18	0/3	0/1	1/501	0/199	0/1	118/501
+FireplacesTotal	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+Flooring	array	351	1202	["Laminate"]	3/18	0/3	0/1	150/501	39/199	0/1	159/501
+FoundationDetails	array	557	1202	["Slab"]	3/18	0/3	0/1	492/501	62/199	0/1	0/501
+FrontageLength	string	3	1202	Canal: 60	0/18	0/3	0/1	0/501	0/199	0/1	3/501
+Furnished	string	504	1202	Unfurnished	2/18	0/3	0/1	1/501	0/199	0/1	501/501
+GarageSpaces	integer	257	1202	2	1/18	0/3	0/1	0/501	0/199	0/1	256/501
+GarageYN	boolean	498	1202	false	3/18	0/3	0/1	1/501	0/199	0/1	494/501
+Gas	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+GreenBuildingVerificationType	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+GreenEnergyEfficient	array	3	1202	["Solar Energy Storage On Site"]	0/18	0/3	0/1	1/501	1/199	0/1	1/501
+GreenEnergyGeneration	array	6	1202	["Solar"]	0/18	0/3	0/1	4/501	0/199	0/1	2/501
+GreenIndoorAirQuality	array	4	1202	["No Smoking-Interior Buildg"]	0/18	0/3	0/1	2/501	0/199	0/1	2/501
+GreenLocation	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+GreenSustainability	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+GreenWaterConservation	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+GrossIncome	integer	22	1202	96000	0/18	0/3	0/1	9/501	13/199	0/1	0/501
+GrossScheduledIncome	integer	24	1204	54000	0/18	0/3	1/1	16/501	7/199	0/1	0/501
+Heating	array	691	1202	["Central","Other"]	3/18	0/3	0/1	144/501	45/199	0/1	499/501
+HeatingYN	boolean	691	1202	true	3/18	0/3	0/1	144/501	45/199	0/1	499/501
+HighSchool	string	69	1202	Charlotte High	1/18	0/3	0/1	0/501	0/199	0/1	68/501
+HighSchoolDistrict	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+HomeWarrantyYN	boolean	20	1202	false	0/18	0/3	0/1	3/501	0/199	0/1	17/501
+HorseAmenities	array	1	1202	["Other","Stable(s)"]	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+IDXParticipationYN	boolean	1202	1202	true	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+InteriorFeatures	array	467	1202	["Cathedral Ceiling(s)","Open Floorplan","PrimaryBedroom Upstairs","Vaulted Ceiling(s)"]	3/18	0/3	0/1	0/501	0/199	0/1	464/501
+InternetAddressDisplayYN	boolean	1202	1202	true	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+InternetAutomatedValuationDisplayYN	boolean	1200	1202	true	3/18	0/3	0/1	498/501	198/199	0/1	501/501
+InternetConsumerCommentYN	boolean	1201	1202	false	3/18	0/3	0/1	499/501	198/199	0/1	501/501
+InternetEntireListingDisplayYN	boolean	1202	1202	true	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+LandLeaseAmount	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+LandLeaseYN	boolean	3	1202	false	3/18	0/3	0/1	0/501	0/199	0/1	0/501
+Latitude	double	1192	1202	27.918374	3/18	0/3	0/1	497/501	191/199	0/1	501/501
+LaundryFeatures	array	364	1202	["Laundry Closet"]	3/18	0/3	0/1	0/501	0/199	0/1	361/501
+LeaseAmountFrequency	string	500	1202	Monthly	0/18	0/3	0/1	0/501	0/199	0/1	500/501
+LeaseConsideredYN	boolean	3	1202	true	3/18	0/3	0/1	0/501	0/199	0/1	0/501
+LeaseTerm	string	216	1205	24 Months	0/18	3/3	0/1	4/501	0/199	0/1	209/501
+Levels	array	673	1202	["Two"]	3/18	0/3	0/1	123/501	53/199	0/1	494/501
+License1	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+License2	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+License3	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ListAOR	string	1202	1202	Suncoast Tampa	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListAgentAOR	string	1202	1202	Suncoast Tampa	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListAgentEmail	string	1202	1202	Abigail@RealEstateMatchmakerClub.com	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListAgentFirstName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ListAgentFullName	string	1202	1202	Abigail Sweeney	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListAgentKey	string	1202	1202	15c8b5f049e923c990a16e7d51222739	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListAgentLastName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ListAgentMlsId	string	1202	1202	260036749	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListAgentPreferredPhone	string	1198	1202	727-776-2013	3/18	0/3	0/1	497/501	197/199	0/1	501/501
+ListAgentStateLicense	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ListOfficeKey	string	1202	1202	d853820ecd03b7d8317758bcc438f0c6	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListOfficeMlsId	string	1202	1202	260033704	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListOfficeName	string	1202	1202	REAL ESTATE MATCHMAKER CLUB	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListOfficePhone	string	1202	1202	727-776-2013	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListPrice	integer	1202	1202	100000	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListTeamName	string	15	1202	The No BS Group	0/18	0/3	0/1	8/501	1/199	0/1	6/501
+ListingContractDate	string	1202	1202	2026-07-13	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListingId	string	1202	1202	TB8528949	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListingKey	string	1224	1224	e8ea2e5193b25dbab98d77f1e11e070d	18/18	3/3	1/1	501/501	199/199	1/1	501/501
+ListingKeyNumeric	integer	1202	1202	799934446	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+ListingTerms	array	359	1202	["Cash","Conventional"]	1/18	0/3	0/1	256/501	99/199	0/1	3/501
+LivingArea	integer	970	1202	480	3/18	0/3	0/1	369/501	97/199	0/1	501/501
+LivingAreaSource	string	509	1202	Public Records	3/18	0/3	0/1	248/501	73/199	0/1	185/501
+LivingAreaUnits	string	1200	1202	Square Feet	3/18	0/3	0/1	500/501	198/199	0/1	499/501
+LockBoxLocation	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+LockBoxSerialNumber	string	2	1202	02395278	0/18	0/3	0/1	1/501	0/199	0/1	1/501
+LockBoxType	array	2	1202	["SentriLock"]	0/18	0/3	0/1	1/501	0/199	0/1	1/501
+Longitude	double	1192	1202	-82.717138	3/18	0/3	0/1	497/501	191/199	0/1	501/501
+LotFeatures	array	261	1202	["Central Business District"]	0/18	0/3	0/1	152/501	34/199	0/1	75/501
+LotSizeAcres	double	1061	1202	0.8	2/18	0/3	0/1	500/501	78/199	0/1	481/501
+LotSizeArea	integer	982	1202	34791	1/18	0/3	0/1	495/501	80/199	0/1	406/501
+LotSizeDimensions	string	217	1202	146 x 299	0/18	0/3	0/1	149/501	18/199	0/1	50/501
+LotSizeSquareFeet	integer	1064	1202	34791	2/18	0/3	0/1	500/501	81/199	0/1	481/501
+LotSizeUnits	string	982	1202	Square Feet	1/18	0/3	0/1	495/501	80/199	0/1	406/501
+MLSAreaMajor	string	1202	1202	33760 - Clearwater	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+Make	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+MaloneId	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+Media	array	1202	1202	[{"MediaKey":"e8ea2e5193b25dbab98d77f1e11e070d-m1","MediaCategory":"Photo","MediaURL":"htt	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+MiddleOrJuniorSchool	string	68	1202	Punta Gorda Middle	1/18	0/3	0/1	0/501	0/199	0/1	67/501
+MlsStatus	string	1202	1202	Active	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+MobileLength	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+MobileWidth	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+Model	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ModificationTimestamp	string	1202	1202	2026-07-29T18:13:48.823Z	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+NetOperatingIncome	integer	1	1	38000	0/18	0/3	1/1	0/501	0/199	0/1	0/501
+NewConstructionYN	boolean	1090	1202	false	3/18	0/3	0/1	499/501	91/199	0/1	497/501
+NumberOfBuildings	integer	548	1202	2	0/18	0/3	0/1	499/501	49/199	0/1	0/501
+NumberOfLots	integer	126	1202	2	0/18	0/3	0/1	113/501	13/199	0/1	0/501
+NumberOfPads	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+NumberOfSeparateElectricMeters	integer	57	1202	1	0/18	0/3	0/1	57/501	0/199	0/1	0/501
+NumberOfSeparateGasMeters	integer	11	1202	1	0/18	0/3	0/1	11/501	0/199	0/1	0/501
+NumberOfSeparateWaterMeters	integer	44	1202	1	0/18	0/3	0/1	44/501	0/199	0/1	0/501
+NumberOfUnitsLeased	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+NumberOfUnitsTotal	integer	80	1202	30	0/18	0/3	0/1	72/501	8/199	0/1	0/501
+OccupantType	string	631	1202	Tenant	3/18	0/3	0/1	144/501	37/199	0/1	447/501
+OffMarketDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+OffMarketTimestamp	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+OnMarketDate	string	1134	1202	2026-07-13	3/18	0/3	0/1	491/501	196/199	0/1	444/501
+OpenParkingSpaces	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+OpenParkingYN	boolean	45	1202	true	0/18	0/3	0/1	0/501	0/199	0/1	45/501
+OriginalEntryTimestamp	string	1202	1202	2026-07-14T02:07:24.770Z	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+OriginalListPrice	integer	1202	1202	100000	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+OriginatingSystemKey	string	1202	1202	stellar	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+OriginatingSystemName	string	1202	1202	Stellar MLS	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+OtherParking	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+OtherStructures	array	100	1202	["Garage(s)"]	0/18	0/3	0/1	60/501	12/199	0/1	28/501
+OwnerPays	array	500	1202	["Cable TV","Electricity","Internet","Laundry","Sewer","Trash Collection","Water"]	0/18	0/3	0/1	0/501	0/199	0/1	500/501
+Ownership	string	699	1202	Fee Simple	3/18	0/3	0/1	498/501	198/199	0/1	0/501
+ParcelNumber	string	1089	1202	322916106750020308	3/18	0/3	0/1	500/501	85/199	0/1	501/501
+ParkName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+ParkingFeatures	array	288	1202	["6 to 12 Spaces"]	0/18	0/3	0/1	136/501	33/199	0/1	119/501
+PatioAndPorchFeatures	array	140	1202	["Covered","Patio","Rear Porch","Screened"]	0/18	0/3	0/1	0/501	0/199	0/1	140/501
+PetsAllowed	array	528	1202	["Cats OK","Dogs OK","Size Limit","Yes"]	2/18	0/3	0/1	20/501	7/199	0/1	499/501
+PhotosChangeTimestamp	string	1202	1202	2026-07-14T02:11:03.496Z	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+PhotosCount	integer	1202	1202	13	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+PoolFeatures	array	205	1202	["In Ground"]	0/18	0/3	0/1	0/501	0/199	0/1	205/501
+PoolPrivateYN	boolean	501	1202	false	3/18	0/3	0/1	0/501	0/199	0/1	498/501
+Possession	array	203	1202	["Close Of Escrow"]	0/18	0/3	0/1	113/501	46/199	0/1	44/501
+PossibleUse	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+PostalCode	string	1198	1202	33760	3/18	0/3	0/1	500/501	194/199	0/1	501/501
+PostalCodePlus4	string	741	1202	1909	2/18	0/3	0/1	318/501	49/199	0/1	372/501
+PreviousListPrice	integer	418	1202	675000	0/18	0/3	0/1	179/501	72/199	0/1	167/501
+PriceChangeTimestamp	string	449	1202	2024-12-08T14:45:14.123Z	0/18	0/3	0/1	194/501	74/199	0/1	181/501
+PropertyAttachedYN	boolean	34	1202	true	0/18	0/3	0/1	0/501	0/199	0/1	34/501
+PropertyCondition	array	287	1202	["Completed"]	1/18	0/3	0/1	154/501	51/199	0/1	81/501
+PropertySubType	string	1124	1202	Condominium	3/18	0/3	0/1	499/501	121/199	0/1	501/501
+PropertyType	string	1202	1202	Residential	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+PublicRemarks	string	1202	1202	Welcome to this charming corner-unit 1-bedroom, 1-bath loft-style condo offering character	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+PublicSurveyRange	string	518	1202	16	2/18	0/3	0/1	439/501	77/199	0/1	0/501
+PublicSurveySection	string	517	1202	32	2/18	0/3	0/1	439/501	76/199	0/1	0/501
+PublicSurveyTownship	string	517	1202	29	2/18	0/3	0/1	439/501	76/199	0/1	0/501
+PurchaseContractDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+RentIncludes	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+RoadFrontageType	array	624	1202	["Highway"]	0/18	0/3	0/1	499/501	88/199	0/1	37/501
+RoadResponsibility	array	189	1202	["Public Maintained Road"]	0/18	0/3	0/1	137/501	31/199	0/1	21/501
+RoadSurfaceType	array	1026	1202	["Paved"]	3/18	0/3	0/1	490/501	90/199	0/1	443/501
+Roof	array	251	1202	["Shingle"]	3/18	0/3	0/1	212/501	34/199	0/1	2/501
+RoomType	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+RoomsTotal	integer	436	1202	3	3/18	0/3	0/1	1/501	0/199	0/1	432/501
+STELLAR_ActiveOpenHouseCount	integer	7	1202	0	0/18	0/3	0/1	6/501	1/199	0/1	0/501
+STELLAR_AdditionalApplicantFee	integer	51	1202	50	0/18	0/3	0/1	0/501	0/199	0/1	51/501
+STELLAR_AdditionalLeaseRestrictions	string	3	1202	Confirm all lease restrictions with HOA.	3/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_AdditionalMembershipAvailableYN	boolean	1	1202	false	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_AdditionalPetFees	string	34	1202	Pet fee is an additional $150	0/18	0/3	0/1	0/501	0/199	0/1	34/501
+STELLAR_AdditionalRooms	array	73	1202	["Florida Room"]	0/18	0/3	0/1	0/501	0/199	0/1	73/501
+STELLAR_AdditionalWaterInformation	string	12	1202	Property and building BACK UP to the river but property FRONTS on paved rd. Did have steps	0/18	0/3	0/1	5/501	1/199	0/1	6/501
+STELLAR_AdjoiningProperty	array	156	1202	["Residential"]	0/18	0/3	0/1	123/501	33/199	0/1	0/501
+STELLAR_AffidavitYN	boolean	1	1202	true	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_AlternateKeyFolioNum	string	384	1202	322916106750020308	2/18	0/3	0/1	323/501	59/199	0/1	0/501
+STELLAR_AmenitiesAdditionalFees	string	1	1202	GATE,POOL	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_AnnualExpenses	integer	28	1202	55000	0/18	0/3	0/1	18/501	10/199	0/1	0/501
+STELLAR_AnnualIncomeType	string	48	1202	Actual	0/18	0/3	0/1	32/501	16/199	0/1	0/501
+STELLAR_AnnualNetIncome	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_AnnualRent	integer	1	1202	3500	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_ApplicationFee	integer	498	1202	100	0/18	0/3	0/1	0/501	0/199	0/1	498/501
+STELLAR_ApprovalProcess	string	2	1202	Confirm all lease restrictions with HOA.	2/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_AssociationApplicationFee	integer	3	1202	50	0/18	0/3	0/1	0/501	0/199	0/1	3/501
+STELLAR_AssociationApprovalFee	integer	129	1202	214	0/18	0/3	0/1	0/501	0/199	0/1	129/501
+STELLAR_AssociationApprovalRequiredYN	boolean	175	1202	true	2/18	0/3	0/1	0/501	0/199	0/1	173/501
+STELLAR_AssociationEmail	string	20	1202	Karla Baumann <kscpoa@aol.com>	1/18	0/3	0/1	18/501	1/199	0/1	0/501
+STELLAR_AssociationFeeRequirement	string	329	1202	None	2/18	0/3	0/1	1/501	0/199	0/1	326/501
+STELLAR_AssociationURL	string	10	1202	https://www.citadelpmg.com/	0/18	0/3	0/1	9/501	1/199	0/1	0/501
+STELLAR_AuctionFirmURL	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_AuctionPropAccessYN	boolean	5	1202	false	0/18	0/3	0/1	5/501	0/199	0/1	0/501
+STELLAR_AuctionTime	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_AuctionType	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_BOMDate	string	101	1202	2025-08-06T04:00:00.000Z	0/18	0/3	0/1	70/501	20/199	0/1	11/501
+STELLAR_BarnFeatures	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_BuilderLicenseNumber	string	2	1202	CBC1260831	0/18	0/3	0/1	0/501	0/199	0/1	2/501
+STELLAR_BuildingElevatorYN	boolean	120	1202	false	2/18	0/3	0/1	0/501	0/199	0/1	118/501
+STELLAR_BuildingNameNumber	string	328	1202	2142	2/18	0/3	0/1	0/501	0/199	0/1	326/501
+STELLAR_BusinessOpportunityWithRealEstateYN	boolean	197	1202	false	0/18	0/3	0/1	0/501	197/199	0/1	0/501
+STELLAR_BuyersCountryofResidence	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_BuyersIntendedUse	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_BuyersPremium	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_BuyersZipCode	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CDDYN	boolean	3	1202	false	3/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CalculatedListPriceByCalculatedSqFt	double	1094	1202	208.33	3/18	0/3	0/1	500/501	90/199	0/1	501/501
+STELLAR_CallCenterPhoneNumber	string	99	1202	3865664966	0/18	0/3	0/1	55/501	12/199	0/1	32/501
+STELLAR_CeilingHeight	string	86	1202	8 to 9 Feet	0/18	0/3	0/1	65/501	21/199	0/1	0/501
+STELLAR_CeilingType	array	89	1202	["Drywall"]	0/18	0/3	0/1	66/501	23/199	0/1	0/501
+STELLAR_CensusBlock	string	227	1202	2	2/18	0/3	0/1	192/501	33/199	0/1	0/501
+STELLAR_CensusTract	string	368	1202	024508	2/18	0/3	0/1	308/501	58/199	0/1	0/501
+STELLAR_ClosePriceByCalculatedListPriceRatio	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ClosePriceByCalculatedSqFt	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ComTransactionTerms	array	26	1202	["For Exchange","Pre Sale"]	0/18	0/3	0/1	6/501	4/199	0/1	16/501
+STELLAR_ComTransactionType	array	15	1202	["Commercial Sale"]	0/18	0/3	0/1	13/501	2/199	0/1	0/501
+STELLAR_ComingSoonDate	string	2	1202	2026-05-29	0/18	0/3	0/1	1/501	1/199	0/1	0/501
+STELLAR_ComplexCommunityNameNCCB	string	10	1202	LYNN HAVEN	0/18	0/3	0/1	3/501	4/199	0/1	3/501
+STELLAR_ComplexDevelopmentName	string	40	1202	Parktowne Industrial Center	0/18	0/3	0/1	30/501	10/199	0/1	0/501
+STELLAR_ConditionExpDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CondoEnvironmentYN	boolean	112	1202	false	0/18	0/3	0/1	92/501	20/199	0/1	0/501
+STELLAR_CondoFees	integer	45	1202	250	2/18	0/3	0/1	41/501	2/199	0/1	0/501
+STELLAR_CondoFeesTerm	string	44	1202	Monthly	2/18	0/3	0/1	41/501	1/199	0/1	0/501
+STELLAR_CondoLandIncludedYN	boolean	2	1202	false	2/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ContractStatus	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ConvertedResidenceYN	boolean	82	1202	false	0/18	0/3	0/1	58/501	24/199	0/1	0/501
+STELLAR_CountyLandUseCode	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CountyPropertyUseCode	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CreateAutomaticVirtualTourYN	boolean	1196	1202	true	3/18	0/3	0/1	500/501	198/199	0/1	495/501
+STELLAR_CurrencyMonthlyRentAmt	integer	1	1202	1200	1/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CurrentAdjacentUse	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_CurrentPrice	integer	1202	1202	100000	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_DPRURL	string	4	1202	https://www.workforce-resource.com/dpr/listing/MFRMLS/TB8528949?w=Agent&skip_sso=true	3/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_DPRURL2	string	4	1202	https://www.workforce-resource.com/dpr/listing/MFRMLS/TB8528949?w=Customer	3/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_DPRYN	boolean	4	1202	true	3/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_DaysNoticeToTenantIfNotRenew	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_DaysToClosed	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_DaystoContract	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_DepositsYN	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_Development	string	121	1202	Parktowne Industrial Center	0/18	0/3	0/1	58/501	16/199	0/1	47/501
+STELLAR_DisasterMitigation	array	8	1202	["Above Flood Plain"]	0/18	0/3	0/1	4/501	0/199	0/1	4/501
+STELLAR_DockDescrip	array	31	1202	["Dock - Concrete"]	0/18	0/3	0/1	2/501	1/199	0/1	28/501
+STELLAR_DockDimensions	string	13	1202	14X12	0/18	0/3	0/1	2/501	0/199	0/1	11/501
+STELLAR_DockLiftCap	integer	3	1202	3	0/18	0/3	0/1	1/501	0/199	0/1	2/501
+STELLAR_DockMntncFee	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_DockMntncFeeFrqncy	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_DockYN	boolean	192	1202	false	0/18	0/3	0/1	88/501	33/199	0/1	71/501
+STELLAR_DockYrBlt	integer	1	1202	1965	0/18	0/3	0/1	1/501	0/199	0/1	0/501
+STELLAR_DoorHeight	string	9	1202	14	0/18	0/3	0/1	7/501	2/199	0/1	0/501
+STELLAR_DoorWidth	string	11	1202	12	0/18	0/3	0/1	9/501	2/199	0/1	0/501
+STELLAR_Easements	string	3	1202	Other	0/18	0/3	0/1	3/501	0/199	0/1	0/501
+STELLAR_EavesHeight	string	6	1202	20	0/18	0/3	0/1	5/501	1/199	0/1	0/501
+STELLAR_EscrowAgentEmail	string	215	1202	tspanola@brokerstitle.net	1/18	0/3	0/1	169/501	45/199	0/1	0/501
+STELLAR_EscrowAgentFax	string	25	1202	863-678-3620	0/18	0/3	0/1	20/501	5/199	0/1	0/501
+STELLAR_EscrowAgentName	string	222	1202	Tracey Spanola	1/18	0/3	0/1	171/501	50/199	0/1	0/501
+STELLAR_EscrowAgentPhone	string	215	1202	813-355-5100	1/18	0/3	0/1	170/501	44/199	0/1	0/501
+STELLAR_EscrowCity	string	209	1202	Tampa	0/18	0/3	0/1	168/501	41/199	0/1	0/501
+STELLAR_EscrowCompany	string	228	1202	Brokers Title of Florida	1/18	0/3	0/1	178/501	49/199	0/1	0/501
+STELLAR_EscrowPostalCode	string	201	1202	33618	0/18	0/3	0/1	161/501	40/199	0/1	0/501
+STELLAR_EscrowState	string	698	1202	FL	3/18	0/3	0/1	496/501	198/199	0/1	1/501
+STELLAR_EscrowStreetName	string	198	1202	Madaca Lane	0/18	0/3	0/1	159/501	39/199	0/1	0/501
+STELLAR_EscrowStreetNumber	string	204	1202	3644	0/18	0/3	0/1	164/501	40/199	0/1	0/501
+STELLAR_EstAnnualMarketIncome	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ExistLseTenantYN	boolean	9	1202	true	3/18	0/3	0/1	1/501	0/199	0/1	5/501
+STELLAR_ExpectedClosingDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ExpectedLeaseDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ExpectedOnMarketDate	string	2	1202	2026-05-28	0/18	0/3	0/1	1/501	1/199	0/1	0/501
+STELLAR_ExpireRenewalDate	string	1	1202	2016-08-01	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_FCHRURLYN	boolean	1	1202	true	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_FloodZoneCode	string	576	1202	X	3/18	0/3	0/1	497/501	75/199	0/1	1/501
+STELLAR_FloodZoneDate	string	268	1202	2016-12-22	0/18	0/3	0/1	221/501	46/199	0/1	1/501
+STELLAR_FloodZonePanel	string	262	1202	12105C0700G	0/18	0/3	0/1	216/501	45/199	0/1	1/501
+STELLAR_FloorNumber	string	303	1202	1	3/18	0/3	0/1	0/501	0/199	0/1	300/501
+STELLAR_ForLeaseYN	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_FreestandingYN	boolean	84	1202	true	0/18	0/3	0/1	84/501	0/199	0/1	0/501
+STELLAR_FreezerSpaceYN	boolean	67	1202	true	0/18	0/3	0/1	42/501	25/199	0/1	0/501
+STELLAR_FutureLandUse	string	28	1202	commerical	0/18	0/3	0/1	26/501	2/199	0/1	0/501
+STELLAR_GarageDimensions	string	6	1202	21x21	0/18	0/3	0/1	0/501	0/199	0/1	6/501
+STELLAR_GarageDoorHeight	string	10	1202	14	0/18	0/3	0/1	9/501	1/199	0/1	0/501
+STELLAR_Geolocation	string	17	1202	Edgewater N:442-NSB City Limit	0/18	0/3	0/1	8/501	0/199	0/1	9/501
+STELLAR_GiftedDonated	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_GreenEnergyGenerationYN	boolean	739	1202	false	2/18	0/3	0/1	365/501	178/199	0/1	194/501
+STELLAR_GreenLandscaping	array	1	1202	["Xeriscape"]	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_GreenVerificationCount	integer	935	1202	0	2/18	0/3	0/1	448/501	189/199	0/1	296/501
+STELLAR_HERSIndex	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_HomesteadYN	boolean	4	1202	false	3/18	0/3	0/1	1/501	0/199	0/1	0/501
+STELLAR_ILSTotalSQFT	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ILSUnderAirSQFT	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_InLawSuiteDescrip	array	2	1202	["1 Bathroom","1 Bedroom","Attached","Kitchen","Private Entrance"]	0/18	0/3	0/1	0/501	0/199	0/1	2/501
+STELLAR_InLawSuiteYN	boolean	350	1202	false	3/18	0/3	0/1	0/501	0/199	0/1	347/501
+STELLAR_LastDateAvailable	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_LastMonthsRent	integer	1	1202	0	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_LeasableArea	integer	15	1202	4041	0/18	0/3	0/1	13/501	2/199	0/1	0/501
+STELLAR_LeasableAreaUnits	string	3	1202	Square Feet	0/18	0/3	0/1	3/501	0/199	0/1	0/501
+STELLAR_LeasePricePerAcre	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_LeaseRestrictionsYN	boolean	3	1202	true	3/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ListOfficeContactPreferred	string	1202	1202	727-776-2013	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_ListOfficeHeadOfficeKeyNumeric	integer	1202	1202	591592334	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_ListSource	string	1202	1202	MATRIX	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_ListSourceOriginal	string	1183	1202	MATRIX	3/18	0/3	0/1	496/501	198/199	0/1	486/501
+STELLAR_LongTermYN	boolean	500	1202	false	0/18	0/3	0/1	1/501	0/199	0/1	499/501
+STELLAR_Management	string	137	1202	Owner Manager	0/18	0/3	0/1	69/501	44/199	0/1	24/501
+STELLAR_ManufacturingSpaceHeated	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ManufacturingSpaceTotal	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_MasterBedSize	string	80	1202	Queen	0/18	0/3	0/1	0/501	0/199	0/1	80/501
+STELLAR_MatrixTesting	boolean	1202	1202	false	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_MaxPetWeight	integer	62	1202	10	1/18	0/3	0/1	0/501	0/199	0/1	61/501
+STELLAR_MillageRate	double	15	1202	16.64	0/18	0/3	0/1	3/501	0/199	0/1	12/501
+STELLAR_MinimumLease	string	213	1202	No Minimum	3/18	0/3	0/1	0/501	0/199	0/1	210/501
+STELLAR_MlsMajorChangeType	string	1201	1202	New Listing	3/18	0/3	0/1	499/501	198/199	0/1	501/501
+STELLAR_MonthToMonthOrWeeklyYN	boolean	1	1202	false	1/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_MonthlyCondoFeeAmount	integer	44	1202	250	2/18	0/3	0/1	41/501	1/199	0/1	0/501
+STELLAR_MonthlyHOAAmount	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_MonthsAvailable	array	362	1202	["2021 June","2021 July","2021 August","2021 September","2021 October","2021 November","20	0/18	0/3	0/1	0/501	0/199	0/1	362/501
+STELLAR_MontlyMaintAmtAdditionToHOA	integer	2	1202	0	2/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_NetOperatingIncomeType	string	43	1202	Actual	0/18	0/3	0/1	28/501	15/199	0/1	0/501
+STELLAR_NoDriveBeach	string	1	1202	See Remark(s)	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_NumOfOwnYearsPriorToLse	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_NumTimesperYear	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_NumberOfPaddocksPastures	integer	1	1202	6	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_NumberOfPets	string	103	1202	2	0/18	0/3	0/1	0/501	0/199	0/1	103/501
+STELLAR_NumberOfSeptics	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_NumberOfStalls	integer	2	1202	4	0/18	0/3	0/1	0/501	0/199	0/1	2/501
+STELLAR_NumberOfWells	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_NumofBays	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_NumofBaysDockHigh	integer	6	1202	1	0/18	0/3	0/1	4/501	2/199	0/1	0/501
+STELLAR_NumofBaysGradeLevel	integer	15	1202	7	0/18	0/3	0/1	13/501	2/199	0/1	0/501
+STELLAR_NumofConferenceMeetingRooms	integer	15	1202	1	0/18	0/3	0/1	13/501	2/199	0/1	0/501
+STELLAR_NumofOffices	integer	49	1202	1	0/18	0/3	0/1	41/501	8/199	0/1	0/501
+STELLAR_OffSeasonRent	integer	138	1202	2625	0/18	0/3	0/1	0/501	0/199	0/1	138/501
+STELLAR_OfficeIDXOfficeParticipationYN	boolean	1202	1202	true	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_OfficeRetailSpaceSqFt	integer	62	1202	3762	0/18	0/3	0/1	51/501	11/199	0/1	0/501
+STELLAR_OfficeSyndicateTo	array	1202	1202	["Apartments.com","International MLS","Realtor.com","Zillow Rental","SkySlope Offers"]	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_OpenHouseCount	integer	7	1202	0	0/18	0/3	0/1	6/501	1/199	0/1	0/501
+STELLAR_OriginatingSystemTimestamp	string	10	1202	2020-02-09T05:30:10.867Z	0/18	0/3	0/1	2/501	0/199	0/1	8/501
+STELLAR_OtherExemptionsYN	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_OtherFeesAmount	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_OtherFeesDescription	string	1	1202	First time background check $35 to $50 each	0/18	0/3	0/1	0/501	0/199	0/1	1/501
+STELLAR_OtherFeesTerm	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ParkingFeeTenants	integer	3	1202	0	0/18	0/3	0/1	0/501	0/199	0/1	3/501
+STELLAR_ParkingFeeTenantsFrequency	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_PetDepositFee	integer	64	1202	150	0/18	0/3	0/1	0/501	0/199	0/1	64/501
+STELLAR_PetFeeNonRefundable	integer	44	1202	75	0/18	0/3	0/1	0/501	0/199	0/1	44/501
+STELLAR_PetMonthlyFee	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_PetRestrictions	string	66	1202	breed restrictions	0/18	0/3	0/1	0/501	0/199	0/1	66/501
+STELLAR_PetSize	string	72	1202	Very Small (Under 15 Lbs.)	1/18	0/3	0/1	0/501	0/199	0/1	71/501
+STELLAR_PlannedUnitDevelopmentYN	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_PoolDimensions	string	9	1202	28x14	0/18	0/3	0/1	0/501	0/199	0/1	9/501
+STELLAR_PreviousStatus	string	157	1202	Temporarily Off-Market	0/18	0/3	0/1	87/501	20/199	0/1	50/501
+STELLAR_PricePerAcre	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ProjectedCompletionDate	string	17	1202	2027-06-30T04:00:00.000Z	1/18	0/3	0/1	15/501	0/199	0/1	1/501
+STELLAR_PropertyManager	string	31	1202	lambert	0/18	0/3	0/1	26/501	5/199	0/1	0/501
+STELLAR_PropertyManagerPhone	string	24	1202	9544835111	0/18	0/3	0/1	20/501	4/199	0/1	0/501
+STELLAR_PublicRemarksAgent	string	1202	1202	Welcome to this charming corner-unit 1-bedroom, 1-bath loft-style condo offering character	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_PublicRemarksRequired	string	26	1202	Pre-Construction. To be built.	1/18	0/3	0/1	21/501	1/199	0/1	3/501
+STELLAR_PublicRemarksSpanishReq	string	24	1202	Construcción Previa.	0/18	0/3	0/1	21/501	1/199	0/1	2/501
+STELLAR_RATIO_ClosePrice_By_ListPrice	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_RATIO_ClosePrice_By_OriginalListPrice	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_RATIO_CurrentPrice_By_BuildingAreaTotal	double	1007	1202	208.33	3/18	0/3	0/1	500/501	90/199	0/1	414/501
+STELLAR_RATIO_CurrentPrice_By_CalculatedSqFt	double	1094	1202	208.33	3/18	0/3	0/1	500/501	90/199	0/1	501/501
+STELLAR_RETSUpdateTransactionYN	boolean	1202	1202	false	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_RealtorInfo	array	245	1202	["Currently Leased"]	0/18	0/3	0/1	122/501	43/199	0/1	80/501
+STELLAR_RealtorInfoConfidential	array	17	1202	["Go To Site"]	0/18	0/3	0/1	13/501	1/199	0/1	3/501
+STELLAR_RegionalAOR	string	4	1202	Sarasota - Manatee	0/18	0/3	0/1	0/501	0/199	0/1	4/501
+STELLAR_RentSpreeURL	string	98	1202	https://apply.link/4815vVa	0/18	0/3	0/1	0/501	0/199	0/1	98/501
+STELLAR_RentSpreeYN	boolean	296	1202	true	0/18	0/3	0/1	0/501	0/199	0/1	296/501
+STELLAR_Representation	string	29	1202	Seller Represented	0/18	0/3	0/1	23/501	3/199	0/1	3/501
+STELLAR_SDEOYN	boolean	1202	1202	false	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_SWSubdivCommunityName	string	345	1202	Tropical Gulf Acres	1/18	0/3	0/1	0/501	0/199	0/1	344/501
+STELLAR_SWSubdivCondoNum	string	2	1202	7478	0/18	0/3	0/1	0/501	0/199	0/1	2/501
+STELLAR_SeasonalRent	integer	154	1202	3875	0/18	0/3	0/1	0/501	0/199	0/1	154/501
+STELLAR_SecurityDeposit	integer	216	1202	500	0/18	0/3	0/1	0/501	0/199	0/1	216/501
+STELLAR_SellerRepresentation	string	616	1202	Transaction Broker	2/18	0/3	0/1	427/501	187/199	0/1	0/501
+STELLAR_ShowingConsiderations	array	258	1202	["Pet(s) on Premises"]	2/18	0/3	0/1	112/501	35/199	0/1	109/501
+STELLAR_ShowingRequirements	array	1199	1202	["Call Listing Agent"]	3/18	0/3	0/1	499/501	198/199	0/1	499/501
+STELLAR_ShowingTime	string	3	1202	View Instructions	0/18	0/3	0/1	0/501	0/199	0/1	3/501
+STELLAR_SolarLeaseFinanceTerms	string	1	1202	Assumable	0/18	0/3	0/1	1/501	0/199	0/1	0/501
+STELLAR_SolarPanelOwnership	string	5	1202	Owned Outright	0/18	0/3	0/1	4/501	0/199	0/1	1/501
+STELLAR_SoldRemarks	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_SpaceType	string	17	1202	New	0/18	0/3	0/1	13/501	4/199	0/1	0/501
+STELLAR_StateLandUseCode	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_StatePropertyUseCode	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_SubdivisionNum	string	14	1202	53406	0/18	0/3	0/1	13/501	1/199	0/1	0/501
+STELLAR_SubdivisionSectionNumber	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_TempOffMarketDate	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_TenantName	string	2	1202	OWNER	0/18	0/3	0/1	1/501	0/199	0/1	1/501
+STELLAR_TenantPhone	string	2	1202	000-000-0000	0/18	0/3	0/1	1/501	0/199	0/1	1/501
+STELLAR_ThirdPartyYN	boolean	1201	1202	true	3/18	0/3	0/1	499/501	198/199	0/1	501/501
+STELLAR_TotalAcreage	string	545	1202	1/2 to less than 1	1/18	0/3	0/1	500/501	44/199	0/1	0/501
+STELLAR_TotalAnnualFees	integer	1162	1202	3000	3/18	0/3	0/1	493/501	198/199	0/1	468/501
+STELLAR_TotalDocumentsCount	integer	482	1202	0	1/18	0/3	0/1	202/501	43/199	0/1	236/501
+STELLAR_TotalMonthlyExpenses	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_TotalMonthlyFees	integer	1162	1202	250	3/18	0/3	0/1	493/501	198/199	0/1	468/501
+STELLAR_TotalPhotosCount	integer	1202	1202	13	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_UnitCount	integer	1	1202	0	0/18	0/3	0/1	1/501	0/199	0/1	0/501
+STELLAR_UnitNumberYN	boolean	1202	1202	false	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+STELLAR_UniversalPropertyId	string	1082	1202	US-12103-N-322916106750020308-S-308	3/18	0/3	0/1	499/501	83/199	0/1	497/501
+STELLAR_UnparsedAddress	string	1198	1202	2142 BRADFORD ST #308	3/18	0/3	0/1	500/501	194/199	0/1	501/501
+STELLAR_UseCode	string	48	1202	2100	0/18	0/3	0/1	42/501	6/199	0/1	0/501
+STELLAR_VirtualTourURLBranded2	string	3	1202	www.floridastripcentersforsale.com	0/18	0/3	0/1	1/501	1/199	0/1	1/501
+STELLAR_VirtualTourURLUnbranded2	string	20	1202	https://opulent-rem.aryeo.com/sites/gqqrnrq/unbranded	0/18	0/3	0/1	12/501	3/199	0/1	5/501
+STELLAR_VirtuallyStagedYN	boolean	1091	1202	false	3/18	0/3	0/1	496/501	91/199	0/1	501/501
+STELLAR_WarehouseSpaceHeated	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_WarehouseSpaceTotal	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_WaterAccess	array	155	1202	["Pond"]	1/18	0/3	0/1	13/501	3/199	0/1	138/501
+STELLAR_WaterAccessYN	boolean	1198	1202	true	3/18	0/3	0/1	499/501	198/199	0/1	498/501
+STELLAR_WaterExtras	array	45	1202	["Seawall - Concrete"]	0/18	0/3	0/1	3/501	2/199	0/1	40/501
+STELLAR_WaterExtrasYN	boolean	1199	1202	false	3/18	0/3	0/1	499/501	198/199	0/1	499/501
+STELLAR_WaterView	array	189	1202	["Pond"]	1/18	0/3	0/1	20/501	3/199	0/1	165/501
+STELLAR_WaterViewYN	boolean	1199	1202	true	3/18	0/3	0/1	499/501	198/199	0/1	499/501
+STELLAR_WaterfrontFeetTotal	integer	1189	1202	20	3/18	0/3	0/1	496/501	198/199	0/1	492/501
+STELLAR_WeeklyRent	integer	5	1202	1200	0/18	0/3	0/1	0/501	0/199	0/1	5/501
+STELLAR_WeeksAvailable	array	74	1202	["2024 Nov 3 until Nov 9","2024 Nov 10 until Nov 16","2025","May 04 until May 10","2025","	0/18	0/3	0/1	0/501	0/199	0/1	74/501
+STELLAR_YrsOfOwnerPriorToLeasingReqYN	boolean	2	1202	false	2/18	0/3	0/1	0/501	0/199	0/1	0/501
+STELLAR_ZoningCompatibleYN	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+SecurityFeatures	array	161	1202	["Fire Sprinkler System","Security System"]	0/18	0/3	0/1	60/501	26/199	0/1	75/501
+SeniorCommunityYN	boolean	493	1202	false	3/18	0/3	0/1	0/501	0/199	0/1	490/501
+SerialU	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+SerialX	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+SerialXX	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+Sewer	array	403	1202	["Public Sewer"]	3/18	0/3	0/1	218/501	59/199	0/1	123/501
+Skirt	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+SourceSystemKey	string	1202	1202	799934446	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+SourceSystemName	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+SpaFeatures	array	42	1202	["Heated","In Ground"]	0/18	0/3	0/1	0/501	0/199	0/1	42/501
+SpaYN	boolean	64	1202	true	0/18	0/3	0/1	0/501	0/199	0/1	64/501
+SpecialListingConditions	array	700	1202	["None"]	3/18	0/3	0/1	499/501	198/199	0/1	0/501
+StandardStatus	string	1202	1202	Active	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+StateOrProvince	string	1202	1202	FL	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+StatusChangeTimestamp	string	1201	1202	2026-07-14T02:07:24.770Z	3/18	0/3	0/1	500/501	198/199	0/1	500/501
+Stories	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+StoriesTotal	integer	507	1202	2	2/18	0/3	0/1	238/501	45/199	0/1	222/501
+StreetAdditionalInfo	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+StreetDirPrefix	string	310	1202	NW	0/18	0/3	0/1	205/501	69/199	0/1	36/501
+StreetDirSuffix	string	91	1202	SE	1/18	0/3	0/1	43/501	13/199	0/1	34/501
+StreetName	string	1129	1202	BRADFORD	3/18	0/3	0/1	486/501	155/199	0/1	485/501
+StreetNumber	string	1127	1202	2142	3/18	0/3	0/1	486/501	153/199	0/1	485/501
+StreetNumberNumeric	integer	1175	1202	2142	3/18	0/3	0/1	491/501	180/199	0/1	501/501
+StreetSuffix	string	985	1202	STREET	3/18	0/3	0/1	386/501	132/199	0/1	464/501
+StreetSuffixModifier	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+StructureType	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+SubdivisionName	string	877	1202	BRADFORD ACRES A CONDO	3/18	0/3	0/1	347/501	61/199	0/1	466/501
+TaxAnnualAmount	double	594	1202	1786.38	3/18	0/3	0/1	445/501	69/199	0/1	77/501
+TaxBlock	string	430	1202	0	2/18	0/3	0/1	377/501	51/199	0/1	0/501
+TaxBookNumber	string	468	1202	81-126	2/18	0/3	0/1	396/501	67/199	0/1	3/501
+TaxExemptions	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+TaxLegalDescription	string	531	1202	BRADFORD ACRES CONDO PHASE II BLDG 3, UNIT 308 TOGETHER WITH THE USE OF PARKING SPACE 308	3/18	0/3	0/1	444/501	81/199	0/1	3/501
+TaxLot	string	504	1202	0	3/18	0/3	0/1	435/501	66/199	0/1	0/501
+TaxOtherAnnualAssessmentAmount	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+TaxYear	integer	715	1202	2025	3/18	0/3	0/1	446/501	189/199	0/1	77/501
+Telephone	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+TenantPays	array	214	1202	["Electricity","Water"]	0/18	0/3	0/1	1/501	0/199	0/1	213/501
+Topography	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+TotalActualRent	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+UnitNumber	string	399	1202	308	2/18	0/3	0/1	69/501	25/199	0/1	303/501
+UnitTypeType	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+UnparsedAddress	string	1129	1202	2142 BRADFORD STREET UNIT 308	3/18	0/3	0/1	486/501	155/199	0/1	485/501
+Utilities	array	384	1202	["Cable Available","Cable Connected","Public","Sewer Available","Sewer Connected"]	3/18	0/3	0/1	197/501	64/199	0/1	120/501
+Vegetation	array	69	1202	["Trees\/Landscaped"]	0/18	0/3	0/1	57/501	11/199	0/1	1/501
+View	array	151	1202	["Water"]	0/18	0/3	0/1	0/501	0/199	0/1	151/501
+ViewYN	boolean	1202	1202	false	3/18	0/3	0/1	500/501	198/199	0/1	501/501
+VirtualTourURLBranded	string	32	1202	https://autoranch-palmcoast.mybuzz.page/	0/18	0/3	0/1	17/501	5/199	0/1	10/501
+VirtualTourURLUnbranded	string	979	1202	https://www.propertypanorama.com/instaview/stellar/TB8528949	3/18	0/3	0/1	404/501	136/199	0/1	436/501
+VirtualTourURLZillow	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+WaterBodyName	string	33	1202	PEACE RIVER	0/18	0/3	0/1	3/501	1/199	0/1	29/501
+WaterSource	array	393	1202	["Public"]	3/18	0/3	0/1	198/501	60/199	0/1	132/501
+WaterfrontFeatures	array	143	1202	["Pond"]	1/18	0/3	0/1	11/501	3/199	0/1	128/501
+WaterfrontYN	boolean	1199	1202	true	3/18	0/3	0/1	498/501	198/199	0/1	500/501
+WindowFeatures	array	174	1202	["Aluminum Frames"]	0/18	0/3	0/1	51/501	18/199	0/1	105/501
+YearBuilt	integer	1085	1202	1986	3/18	0/3	0/1	498/501	86/199	0/1	498/501
+YearBuiltEffective	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+YearBuiltSource	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+YearEstablished	integer	198	1202	1976	0/18	0/3	0/1	0/501	198/199	0/1	0/501
+Zoning	string	437	1204	CG	1/18	0/3	0/1	368/501	63/199	1/1	4/501
+ZoningDescription	-	0	1202		0/18	0/3	0/1	0/501	0/199	0/1	0/501
+seeded	boolean	22	22	true	15/18	3/3	1/1	1/501	1/199	1/1	0/501

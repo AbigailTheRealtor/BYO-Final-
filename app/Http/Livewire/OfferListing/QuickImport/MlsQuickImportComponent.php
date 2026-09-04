@@ -6,7 +6,7 @@ use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
-use App\Services\ListingImport\MlsPropertyDetailsPresenter;
+use App\Services\ListingImport\Mls\MlsSupplementalDetails;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
 use App\Services\ListingImport\QuickImport\MlsQuickImportResult;
 use App\Services\ListingImport\QuickImport\MlsQuickImportService;
@@ -646,7 +646,7 @@ abstract class MlsQuickImportComponent extends Component
             'termsPartial' => $this->canonicalTermsPartial(),
             'termsReview'  => $this->usesCanonicalTerms() ? $this->canonicalTermsReview() : [],
             'methods'     => $this->availableMethods(),
-            'mlsDetails'  => $this->mlsDetailsFor($auction),
+            'mlsDetails'  => $this->reviewDetailsFor($auction),
             'priceField'  => $this->priceField(),
         ])->extends('layouts.main')->section('content');
     }
@@ -776,27 +776,58 @@ abstract class MlsQuickImportComponent extends Component
      * Read from the cached feed record through the display allow-list. The raw
      * record is never handed to a view.
      */
-    protected function mlsDetailsFor(?object $auction): array
+    protected function mlsDetailsFor(?object $auction): MlsSupplementalDetails
     {
         if ($auction === null) {
-            return [];
+            return MlsSupplementalDetails::empty();
         }
 
         $listingKey = (string) $auction->info(MlsQuickImportDraftWriter::META_LISTING_KEY);
 
         if ($listingKey === '') {
-            return [];
+            return MlsSupplementalDetails::empty();
         }
 
         $property = \App\Models\BridgeProperty::where('listing_key', $listingKey)->first();
 
         if ($property === null || empty($property->raw_json)) {
-            return [];
+            return MlsSupplementalDetails::empty();
         }
 
         $raw = json_decode($property->raw_json, true);
 
-        return is_array($raw) ? app(MlsPropertyDetailsPresenter::class)->present($raw) : [];
+        return is_array($raw)
+            ? MlsSupplementalDetails::fromRecord($raw, $this->role())
+            : MlsSupplementalDetails::empty();
+    }
+
+    /**
+     * The MLS Details the review screen shows.
+     *
+     * Reads the blob the import already PERSISTED, and only rebuilds from the
+     * cached feed record when there is none.
+     *
+     * Both halves matter. Reading the persisted blob is what makes the review
+     * screen and the published listing show the same thing — they render the
+     * same bytes through the same partial, so "the review promised more than the
+     * listing delivered" is not a state this flow can reach. It also keeps the
+     * Member/Office/OpenHouse enrichment on the screen without re-fetching it on
+     * every Livewire render, which a rebuild would do.
+     *
+     * The rebuild is the fallback for a draft imported before this blob existed,
+     * and for the moment between lookup and materialise.
+     */
+    protected function reviewDetailsFor(?object $auction): MlsSupplementalDetails
+    {
+        if ($auction === null) {
+            return MlsSupplementalDetails::empty();
+        }
+
+        $stored = MlsSupplementalDetails::fromStored(
+            $auction->info(MlsQuickImportDraftWriter::META_PROPERTY_DETAILS)
+        );
+
+        return $stored->isEmpty() ? $this->mlsDetailsFor($auction) : $stored;
     }
 
     /**

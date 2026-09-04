@@ -1147,6 +1147,88 @@ class OfferWorkflowReadinessTest extends TestCase
             // config leaves rows behind by definition.
             'app/Services/AskAi/AskAiFaqEnrichmentService.php',
             'app/Services/AgentAi/Loaders/ExtendedKnowledgeLoader.php',
+
+            // ── Stellar MLS import — complete data parity (2026-09-04) ───────
+            //
+            // The payload audit found Bridge sending 553 Property fields, all of
+            // them preserved in raw_json, and only 41 facts reaching a published
+            // listing: 359 populated fields the importer ignored, and 59 more it
+            // extracted and then discarded because MlsQuickImportResult::$details
+            // was never handed to the draft writer. This is that closed.
+            //
+            //   Mls/  (new namespace)
+            //     MlsFieldCatalog — the single classification authority. Every
+            //     populated Bridge field resolves to exactly one of eleven
+            //     dispositions or the no-drop contract test fails naming it.
+            //     MlsDisplayPermissions, MlsValueFormatter, the three presenters,
+            //     MlsSupplementalDetails, MlsRelatedResources, the reader.
+            //
+            //   MlsQuickImportDraftWriter / MlsQuickImportResult / …Service /
+            //   MlsQuickImportComponent / HasMlsImport
+            //     Persist the supplemental payload as ONE meta blob and record
+            //     the feed's display permissions. No schema change.
+            //
+            //   MlsListingPrefillService / PropertyCandidate /
+            //   BridgePropertyCandidateAdapter / MlsFactVocabulary
+            //     19 Tier-1 mappings whose destination control was verified to
+            //     have a wire:model binding before it was added.
+            //
+            //   Seller/LandlordOfferListingController + their two views + the new
+            //   shared partial
+            //     Render the MLS Details sections, and honour
+            //     InternetAddressDisplayYN — false on 71 of 1,202 cached records
+            //     and read by nothing before this.
+            //
+            //   Stellar/PropertyDetailViewMapper, BuyerResultViewMapper,
+            //   StellarPropertyDetailController
+            //     The same display-permission enforcement on the search side, so
+            //     the two surfaces cannot answer the question differently.
+            //
+            //   BridgeApiService / BridgeRelatedResourceService /
+            //   ProbeBridgeResources / config/mls_related_resources.php
+            //     Member, Office and OpenHouse enrichment. A live probe on
+            //     2026-09-04 confirmed all three are exposed and that Room and
+            //     Unit are 404. Cached per member/office key, capped per import,
+            //     and every failure costs only its own section.
+            //
+            //   config/mls_media.php
+            //     The 50-image ceiling truncated 186 of 1,202 cached listings.
+            //     MLS media is referenced, never copied, so the manual uploader's
+            //     limit never applied to it. LICENSE_ACKNOWLEDGED is untouched.
+            'app/Console/Commands/ProbeBridgeResources.php',
+            'app/Http/Controllers/LandlordOfferListingController.php',
+            'app/Http/Controllers/SellerOfferListingController.php',
+            'app/Http/Controllers/Stellar/StellarPropertyDetailController.php',
+            'app/Http/Livewire/OfferListing/Concerns/HasMlsImport.php',
+            'app/Http/Livewire/OfferListing/QuickImport/MlsQuickImportComponent.php',
+            'app/Services/Bridge/BridgeApiService.php',
+            'app/Services/Bridge/BridgePropertyCandidateAdapter.php',
+            'app/Services/Bridge/BridgeRelatedResourceService.php',
+            'app/Services/ListingImport/Media/MlsMediaExtractor.php',
+            'app/Services/ListingImport/Mls/MlsContactsPresenter.php',
+            'app/Services/ListingImport/Mls/MlsDisplayPermissions.php',
+            'app/Services/ListingImport/Mls/MlsFieldCatalog.php',
+            'app/Services/ListingImport/Mls/MlsListingContextPresenter.php',
+            'app/Services/ListingImport/Mls/MlsListingDetailsReader.php',
+            'app/Services/ListingImport/Mls/MlsRelatedResources.php',
+            'app/Services/ListingImport/Mls/MlsSupplementalDetails.php',
+            'app/Services/ListingImport/Mls/MlsValueFormatter.php',
+            'app/Services/ListingImport/MlsListingPrefillService.php',
+            'app/Services/ListingImport/MlsPropertyDetailsPresenter.php',
+            'app/Services/ListingImport/QuickImport/MlsQuickImportDraftWriter.php',
+            'app/Services/ListingImport/QuickImport/MlsQuickImportResult.php',
+            'app/Services/ListingImport/QuickImport/MlsQuickImportService.php',
+            'app/Services/Property/PropertyCandidate.php',
+            'app/Services/Stellar/BuyerResultViewMapper.php',
+            'app/Services/Stellar/PropertyDetailViewMapper.php',
+            'app/Support/Listing/MlsFactVocabulary.php',
+            'config/mls_media.php',
+            'config/mls_related_resources.php',
+            'resources/views/livewire/offer-listing/quick-import/mls-quick-import.blade.php',
+            'resources/views/offer-listing/landlord/view.blade.php',
+            'resources/views/offer-listing/partials/_mls_attribution.blade.php',
+            'resources/views/offer-listing/partials/_mls_property_facts.blade.php',
+            'resources/views/offer-listing/seller/view.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

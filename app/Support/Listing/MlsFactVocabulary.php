@@ -142,4 +142,233 @@ final class MlsFactVocabulary
 
         return $features;
     }
+
+    // =========================================================================
+    // Parity vocabularies (2026-09-04 payload audit)
+    // =========================================================================
+
+    /**
+     * The Seller "Business Type" option list, verbatim from
+     * offer-seller-tabs/commission-based/property-preferences.blade.php.
+     *
+     * Stellar's own `BusinessType` enumeration is the same vocabulary — every
+     * one of the 39 distinct values in the cached corpus matches an entry here
+     * exactly — which is what makes this mapping a filter rather than a
+     * translation. A value that ever stops matching is dropped and still shown
+     * verbatim under Commercial / Business, so nothing is lost either way.
+     *
+     * @return list<string>
+     */
+    public static function businessTypes(): array
+    {
+        return [
+            'Aeronautical', 'Agriculture', 'Arts and Entertainment', 'Assembly Hall',
+            'Assisted Living', 'Auto Dealer', 'Auto Service', 'Bar/Tavern/Lounge',
+            'Barber/Beauty', 'Car Wash', 'Child Care', 'Church', 'Commercial',
+            'Concession Trailers/Vehicles', 'Construction/Contractor', 'Convenience Store',
+            'Distribution', 'Distributor Routine Ven', 'Education/School', 'Farm',
+            'Fashion/Specialty', 'Flex Space', 'Florist/Nursery', 'Food & Beverage',
+            'Gas Station', 'Grocery', 'Heavy Weight Sales Service', 'Hotel/Motel',
+            'Industrial', 'Light Items Sales Only', 'Manufacturing', 'Marine/Marina',
+            'Medical', 'Mixed', 'Mobile/Trailer Park', 'Personal Service',
+            'Professional Service', 'Professional/Office', 'Recreation',
+            'Research & Development', 'Residential', 'Restaurant', 'Retail',
+            'Shopping Center/Strip Center', 'Storage', 'Theatre', 'Timberland',
+            'Veterinary', 'Warehouse', 'Wholesale', 'Other',
+        ];
+    }
+
+    /**
+     * The acreage bands the Seller/Landlord "Total Acreage" select offers,
+     * verbatim from config('property_types.acreage_options').
+     *
+     * @return list<string>
+     */
+    public static function acreageBands(): array
+    {
+        return [
+            '0 to less than 1/4 acre', '1/4 to less than 1/2 acre', '1/2 to less than 1 acre',
+            '1 to less than 2 acres', '2 to less than 5 acres', '5 to less than 10 acres',
+            '10 to less than 20 acres', '20 to less than 50 acres', '50 to less than 100 acres',
+            '100 to less than 200 acres', '200 to less than 500 acres', '500+ acres',
+            'Non-Applicable',
+        ];
+    }
+
+    /**
+     * The band a numeric acreage falls into, or null.
+     *
+     * DERIVED FROM THE NUMBER, NOT FROM `STELLAR_TotalAcreage`.
+     * Stellar publishes both: a numeric `LotSizeAcres` (populated on 1,061 of
+     * 1,224 cached records) and a pre-banded `STELLAR_TotalAcreage` string
+     * (545). Their spellings differ from ours by a suffix — "1/2 to less than 1"
+     * against "1/2 to less than 1 acre" — so matching on the string means
+     * matching on punctuation, and it covers half as many listings. Bucketing
+     * the number is exact, covers every listing that has one, and cannot drift
+     * if Stellar re-words a band.
+     *
+     * A zero or negative acreage returns null: the feed's way of saying it has
+     * no lot measurement, not a claim that the lot is smaller than a quarter
+     * acre.
+     */
+    public static function acreageBand(float|int|string|null $acres): ?string
+    {
+        if ($acres === null || $acres === '' || ! is_numeric($acres)) {
+            return null;
+        }
+
+        $value = (float) $acres;
+
+        if ($value <= 0.0) {
+            return null;
+        }
+
+        return match (true) {
+            $value < 0.25  => '0 to less than 1/4 acre',
+            $value < 0.5   => '1/4 to less than 1/2 acre',
+            $value < 1     => '1/2 to less than 1 acre',
+            $value < 2     => '1 to less than 2 acres',
+            $value < 5     => '2 to less than 5 acres',
+            $value < 10    => '5 to less than 10 acres',
+            $value < 20    => '10 to less than 20 acres',
+            $value < 50    => '20 to less than 50 acres',
+            $value < 100   => '50 to less than 100 acres',
+            $value < 200   => '100 to less than 200 acres',
+            $value < 500   => '200 to less than 500 acres',
+            default        => '500+ acres',
+        };
+    }
+
+    /**
+     * Stellar's `LivingAreaSource` in the words the form's own select uses.
+     *
+     * The two vocabularies overlap but are not identical: the feed says
+     * "Owner" and "Appraiser" where the form offers "Owner Provided" and
+     * "Appraisal". "Estimated" has no option at all and is dropped rather than
+     * stored as a value that would never render as selected — the fact still
+     * appears verbatim under Property Details.
+     */
+    public static function livingAreaSource(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return match (strtolower(trim($value))) {
+            'public records'  => 'Public Records',
+            'owner', 'owner provided' => 'Owner Provided',
+            'builder'         => 'Builder',
+            'appraiser', 'appraisal'  => 'Appraisal',
+            'measured'        => 'Measured',
+            default           => null,
+        };
+    }
+
+    /**
+     * Keep only feed values the Business Type select actually offers.
+     *
+     * @param  list<string>|string|null  $values
+     * @return list<string>
+     */
+    public static function filterBusinessTypes(mixed $values): array
+    {
+        return self::filterAgainst($values, self::businessTypes());
+    }
+
+    /**
+     * Case-insensitive intersection with an option list, returning the OPTION's
+     * spelling so the stored value matches the markup exactly.
+     *
+     * Feed order is preserved rather than option order, so re-importing an
+     * unchanged record produces an identical array — which is what makes the
+     * write idempotent.
+     *
+     * @param  list<string>|string|null  $values
+     * @param  list<string>              $allowed
+     * @return list<string>
+     */
+    public static function filterAgainst(mixed $values, array $allowed): array
+    {
+        if ($values === null || $values === '' || $values === []) {
+            return [];
+        }
+
+        $lookup = [];
+        foreach ($allowed as $option) {
+            $lookup[mb_strtolower($option)] = $option;
+        }
+
+        $out = [];
+        foreach (is_array($values) ? $values : explode(',', (string) $values) as $value) {
+            if (! is_scalar($value)) {
+                continue;
+            }
+
+            $key = mb_strtolower(trim((string) $value));
+
+            if ($key !== '' && isset($lookup[$key]) && ! in_array($lookup[$key], $out, true)) {
+                $out[] = $lookup[$key];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Translate one canonical import value into the destination control's own
+     * vocabulary, or return null to skip the write entirely.
+     *
+     * WHY BOTH WRITE PATHS CALL THIS AND NEITHER OWNS IT
+     * --------------------------------------------------
+     * There are two ways a Bridge fact reaches a listing — the tabbed wizard's
+     * `HasMlsImport::applyImportedFields()` and the quick import's
+     * `MlsQuickImportDraftWriter::writeFacts()`. They already carried two
+     * lookalike copies of the property-type and furnished rules, which is how
+     * "the same import behaves differently depending on which button you
+     * pressed" gets built. Every vocabulary rule added since lives here, and
+     * both callers ask the same question.
+     *
+     * Returning null means SKIP, not "store empty". A value the destination
+     * select cannot offer would be stored, never render as chosen, and read to
+     * the user as a field the import failed to fill — while the fact itself is
+     * already preserved verbatim under MLS Details. Dropping it is the honest
+     * outcome, and it is the same fail-closed direction as every other MLS
+     * boundary here.
+     *
+     * A canonical key with no rule is returned unchanged; this is a narrow
+     * translation table, not a gate.
+     */
+    public static function toFormValue(string $canonicalKey, mixed $value): mixed
+    {
+        if ($value === null || $value === '' || $value === []) {
+            return null;
+        }
+
+        return match ($canonicalKey) {
+            'lot_size_acres'            => self::acreageBand(is_scalar($value) ? $value : null),
+            'sqft_heated_source'        => self::livingAreaSource(is_scalar($value) ? (string) $value : null),
+            'association_fee_frequency' => self::nullIfBlank(
+                \App\Services\ListingImport\MlsNormalizer::normalizeHoaFeeFrequency((string) $value)
+            ),
+            'lease_amount_frequency'    => self::nullIfBlank(
+                \App\Services\ListingImport\MlsNormalizer::normalizeLeaseFrequency((string) $value)
+            ),
+            // A single-select destination: the feed sends an array and the form
+            // holds one value, so the first recognised entry wins and the rest
+            // stay visible under Commercial / Business.
+            'business_type'             => self::filterBusinessTypes($value)[0] ?? null,
+            default                     => $value,
+        };
+    }
+
+    private static function nullIfBlank(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
 }

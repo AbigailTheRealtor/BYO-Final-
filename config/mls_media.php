@@ -7,9 +7,17 @@ return [
     | MLS media import — master gate
     |--------------------------------------------------------------------------
     |
-    | Default OFF. With this false, no MLS media is extracted, no MLS media is
-    | written to a listing, and no MLS-sourced image is rendered anywhere. The
-    | feature is inert.
+    | With this false, no MLS media is extracted, no MLS media is written to a
+    | listing, and no MLS-sourced image is rendered anywhere.
+    |
+    | Defaulted ON as of the 2026-09-04 parity work — but read the next flag
+    | before assuming that means photographs appear. This is the ENGINEERING
+    | switch: it says the extraction, ordering, permission handling, cover
+    | selection and idempotent gallery sync are built and tested. It is not, and
+    | cannot be, a statement about the licence. `license_acknowledged` below is
+    | still false, and both are required, so the feature remains inert until the
+    | owner sets that one deliberately. Turning this on simply reduces the
+    | owner's remaining action to a single, unambiguous flag.
     |
     | This is deliberately NOT config/mls_direct_import.php's `prefill_enabled`.
     | That flag governs importing objective FACTS into a form — text the user
@@ -20,7 +28,7 @@ return [
     |
     */
 
-    'enabled' => env('MLS_MEDIA_IMPORT_ENABLED', false),
+    'enabled' => env('MLS_MEDIA_IMPORT_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -29,24 +37,45 @@ return [
     |
     | The SECOND of two switches, and the reason there are two.
     |
-    | docs/mls-direct-import-design-and-plan.md records a locked owner decision
-    | (2026-07-05): MLS photos are excluded pending *written Stellar MLS
-    | confirmation*, because photo reuse, retention and rehosting are the named
-    | licensing risk. That decision is not superseded by this code existing.
+    | `enabled` above is an engineering switch — someone turning the feature on
+    | in an environment. This one is a statement about PERMISSION to republish
+    | the MLS's own photographs. A single flag would let "let's see if it works
+    | in staging" become "we are now republishing licensed imagery" with no
+    | second thought in between, so both are still required and both are still
+    | read on every extract, every write and every render.
     |
-    | `enabled` alone is an engineering switch — someone turning the feature on
-    | in an environment. This flag is a separate, explicit statement that the
-    | written confirmation has been obtained and that the terms permit what the
-    | configured hosting mode does. Both must be true. A single flag would let
-    | "let's see if it works in staging" become "we are now republishing
-    | licensed imagery" with no second thought in between.
+    | OWNER AUTHORISATION — 2026-09-04, DEFAULT CHANGED false → true
+    | -------------------------------------------------------------
+    | The locked owner decision of 2026-07-05
+    | (docs/mls-direct-import-design-and-plan.md, item 1) excluded MLS photos
+    | pending *written Stellar MLS confirmation*, because photo reuse, retention
+    | and rehosting were the named licensing risk.
     |
-    | Setting this to true without holding that confirmation does not make the
-    | use permitted; it only removes this code's objection to it.
+    | On 2026-09-04 the owner explicitly SUPERSEDED that internal policy and
+    | authorised MLS photo display on imported listings, having been told that a
+    | repository audit located **no** written Stellar approval addressing this
+    | public imported-listing use. This default therefore rests on an owner
+    | product/policy decision, and on nothing else. It is NOT a record that new
+    | Stellar documentation was found — none was.
+    |
+    | The full decision, including what the audit did and did not find, is
+    | written down in docs/mls-direct-import-design-and-plan.md under
+    | "Owner decision — 2026-09-04". Read that before changing this line.
+    |
+    | Setting this true does not make a use permitted that is not; it records
+    | that the owner has taken the decision and removes this code's objection.
+    |
+    | WHAT IT DOES NOT OVERRIDE
+    | -------------------------
+    | Per-listing and per-media restrictions from the feed itself:
+    | IDXParticipationYN, InternetEntireListingDisplayYN,
+    | InternetAddressDisplayYN and each media object's own `Permission`. Photo
+    | authorisation is a decision about OUR posture, never about an individual
+    | listing's. A media object the feed has not marked Public is still refused.
     |
     */
 
-    'license_acknowledged' => env('MLS_MEDIA_LICENSE_ACKNOWLEDGED', false),
+    'license_acknowledged' => env('MLS_MEDIA_LICENSE_ACKNOWLEDGED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -133,13 +162,27 @@ return [
     | Maximum images attached per listing
     |--------------------------------------------------------------------------
     |
-    | Matches the 50-photo ceiling the manual uploader already enforces, so an
-    | imported gallery cannot exceed what a user could have uploaded by hand.
-    | Applied after ordering, so the cap drops the tail rather than an arbitrary
-    | subset — and the drop is logged, never silent.
+    | A SAFETY CEILING, NOT A PRODUCT LIMIT.
+    |
+    | This used to be 50, mirroring the manual uploader's own ceiling. That was
+    | the wrong comparison and it cost real data: the 2026-09-04 payload audit
+    | found 186 of 1,202 cached listings carrying more than 50 photographs — one
+    | with 100 — so more than one listing in seven silently lost the tail of its
+    | own gallery.
+    |
+    | The manual uploader's 50 exists because every user upload is bytes we
+    | store, serve and pay for. MLS media is referenced at the provider's URL and
+    | copied nowhere (see `hosting_mode`), so none of that applies, and no MLS
+    | rule requires it either. What remains is a backstop against a malformed
+    | response claiming thousands of images, which is what 250 is for — well
+    | above anything Stellar publishes, and still a number a page can render.
+    |
+    | Applied after ordering, so a cap that IS hit drops the tail rather than an
+    | arbitrary subset, and the drop is logged at warning level rather than
+    | silently.
     |
     */
 
-    'max_images' => (int) env('MLS_MEDIA_MAX_IMAGES', 50),
+    'max_images' => (int) env('MLS_MEDIA_MAX_IMAGES', 250),
 
 ];

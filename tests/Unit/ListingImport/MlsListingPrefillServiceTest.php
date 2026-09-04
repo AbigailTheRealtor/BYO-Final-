@@ -304,6 +304,30 @@ class MlsListingPrefillServiceTest extends TestCase
             // permits the fact and does not restate the split.
             'flooring'              => 'flooring',
             'furnished'             => 'furnished',
+
+            // Parity additions (2026-09-04 payload audit). Each one was verified
+            // to have a bound `wire:model` destination before being added — see
+            // the note in ALLOWED_FIELDS about the four map targets that have no
+            // binding and are therefore deliberately absent.
+            'lotSizeAcres'            => 'lot_size_acres',
+            'lotDimensions'           => 'lot_dimensions',
+            'zoning'                  => 'zoning',
+            'carport'                 => 'carport',
+            'additionalParcels'       => 'additional_parcels',
+            'floodZonePanel'          => 'flood_zone_panel',
+            'floodZoneDate'           => 'flood_zone_date',
+            'livingAreaSource'        => 'sqft_heated_source',
+            'associationFeeFrequency' => 'association_fee_frequency',
+            'waterfrontFeet'          => 'waterfront_feet',
+            'numberOfLots'            => 'total_parcel_count',
+            'availabilityDate'        => 'available_date',
+            'leaseAvailabilityDate'   => 'lease_available_date',
+            'leaseAmountFrequency'    => 'lease_amount_frequency',
+            'securityDeposit'         => 'minimum_security_deposit',
+            'officeRetailSqft'        => 'office_area_sqft',
+            'grossAnnualIncome'       => 'gross_annual_income',
+            'annualOperatingExpenses' => 'annual_operating_expenses',
+            'businessType'            => 'business_type',
         ], MlsListingPrefillService::ALLOWED_FIELDS);
     }
 

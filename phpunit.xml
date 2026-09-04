@@ -56,5 +56,32 @@
         <server name="GOOGLE_PLACES_ENABLED" value="false" force="true"/>
         <server name="GOOGLE_PLACES_DAILY_LIMIT" value="100" force="true"/>
         <server name="GOOGLE_PLACES_HOURLY_LIMIT" value="25" force="true"/>
+
+        <!-- Bridge/Stellar safeguards. SAME FAILURE MODE, SAME FIX.
+
+             Replit injects BRIDGE_DATASET and BRIDGE_SERVER_TOKEN as system
+             variables, exactly as it injected GOOGLE_PLACES_API_KEY above. The
+             Member/Office/OpenHouse enrichment added in the 2026-09-04 MLS
+             parity work runs inside the ordinary import path, so with live
+             credentials visible every import-flow test issued real requests to
+             Bridge — the ListingImport suite went from 1m47s to over 40 minutes,
+             and the requests were real quota spent by CI.
+
+             That is the Google Places incident again in a different provider, so
+             it gets the same treatment: blank the credentials and switch the
+             secondary-resource fetch off, both with force="true" because without
+             it PHPUnit will NOT overwrite a variable already in the process
+             environment — which is the precise detail that let the first
+             incident happen.
+
+             Tests that exercise the enrichment set `mls_related_resources.*`
+             and `bridge.*` config themselves and fake the HTTP client; nothing
+             here prevents that. What it prevents is a test reaching the live
+             provider by ACCIDENT.
+
+             Asserted by tests/Feature/Security/BridgeCredentialGuardTest.php. -->
+        <server name="BRIDGE_DATASET" value="" force="true"/>
+        <server name="BRIDGE_SERVER_TOKEN" value="" force="true"/>
+        <server name="MLS_RELATED_RESOURCES_ENABLED" value="false" force="true"/>
     </php>
 </phpunit>

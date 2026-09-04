@@ -7,6 +7,7 @@ use App\Models\BridgeProperty;
 use App\Models\PropertyDnaProfile;
 use App\Services\Dna\PropertyPersonalityService;
 use App\Services\LocationDna\LocationDnaSummaryService;
+use App\Services\ListingImport\Mls\MlsDisplayPermissions;
 use App\Services\Stellar\PropertyDetailViewMapper;
 use App\Services\Stellar\PropertyMatchContextService;
 use Illuminate\Http\Request;
@@ -33,16 +34,22 @@ class StellarPropertyDetailController extends Controller
             ->where('standard_status', 'Active')
             ->firstOrFail();
 
-        // IDX gate — same normalisation as BuyerMatchService
+        // Feed display gate.
+        //
+        // This used to read `IDXParticipationYN` and nothing else.
+        // `InternetEntireListingDisplayYN` is a second, independent refusal —
+        // the MLS stating that this listing may not be shown on the internet at
+        // all — and either one alone is decisive. Both now resolve through
+        // MlsDisplayPermissions so that this page, the results card and the
+        // import path cannot answer the question three different ways.
+        //
+        // The address is a THIRD, narrower permission and is not a 403: a
+        // listing whose address may not be shown is still a listing that may be
+        // shown. PropertyDetailViewMapper suppresses the address components.
         $raw = $listing->raw_json ? (json_decode($listing->raw_json, true) ?? []) : [];
-        if (array_key_exists('IDXParticipationYN', $raw)) {
-            $idxRaw    = $raw['IDXParticipationYN'];
-            $idxPassed = is_bool($idxRaw)
-                ? $idxRaw
-                : filter_var($idxRaw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== false;
-            if (!$idxPassed) {
-                abort(403, 'This listing is not eligible for IDX display.');
-            }
+
+        if (! MlsDisplayPermissions::fromRecord($raw)->listingDisplayable()) {
+            abort(403, 'This listing is not eligible for IDX display.');
         }
 
         // Section 1 — MLS data

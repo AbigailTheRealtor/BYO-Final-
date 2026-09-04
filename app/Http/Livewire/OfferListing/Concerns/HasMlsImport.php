@@ -492,6 +492,26 @@ trait HasMlsImport
                 continue;
             }
 
+            // Destination controls that speak their own vocabulary — an acreage
+            // band, a square-footage source, a fee frequency, a business type.
+            // The identical call is made by MlsQuickImportDraftWriter, from the
+            // shared rule in MlsFactVocabulary, so the two import surfaces
+            // cannot answer the same question differently. Null means the feed's
+            // value has no option on this form: the field is left for the user
+            // rather than filled with something that would never render as
+            // chosen, and the fact is still shown under MLS Details.
+            // BRIDGE IMPORTS ONLY. See applyImportedFields() for why the
+            // URL/text importer is deliberately excluded.
+            if ($this->importedFromBridge()) {
+                $translated = \App\Support\Listing\MlsFactVocabulary::toFormValue($canonicalKey, $value);
+
+                if ($translated === null || $translated === '' || $translated === []) {
+                    continue;
+                }
+
+                $value = is_array($translated) ? implode(', ', $translated) : (string) $translated;
+            }
+
             $existingValue = $this->{$propName};
             $hasExisting   = is_array($existingValue)
                 ? !empty($existingValue)
@@ -618,6 +638,32 @@ trait HasMlsImport
                 $rawValue = static::normalizePropertyTypeForRole($rawValue, $role);
             }
 
+            // Destination controls that speak their own vocabulary — an acreage
+            // band, a square-footage source, a fee frequency, a business type.
+            // The identical call is made by MlsQuickImportDraftWriter from the
+            // shared rule in MlsFactVocabulary, so the two import surfaces
+            // cannot answer the same question differently. Null means the feed's
+            // value has no option on this form: the field is left for the user
+            // rather than filled with a value that would never render as chosen,
+            // and the fact is still preserved and shown under MLS Details.
+            // BRIDGE IMPORTS ONLY.
+            //
+            // The URL/text importer is a different provider with different
+            // value shapes — it emits "2.5 acres" where Bridge emits 2.5 — and
+            // it is deliberately out of scope for this work. Running the Bridge
+            // vocabulary over its output would silently change what the Listing
+            // Link importer has always written, which is a regression in a flow
+            // nobody asked to touch. Its behaviour is unchanged byte for byte.
+            if ($this->importedFromBridge()) {
+                $translated = \App\Support\Listing\MlsFactVocabulary::toFormValue($canonicalKey, $rawValue);
+
+                if ($translated === null || $translated === '' || $translated === []) {
+                    continue;
+                }
+
+                $rawValue = is_array($translated) ? implode(', ', $translated) : (string) $translated;
+            }
+
             $existingValue = $this->{$propName};
             $hasExisting   = is_array($existingValue)
                 ? !empty($existingValue)
@@ -675,6 +721,7 @@ trait HasMlsImport
                     $model->saveMeta('mls_address_raw', $mls_address_raw);
                 }
                 $this->saveMlsListingKeyMeta($model, $allParsedFields);
+                $this->saveMlsSupplementalDetails($model, $role, $allParsedFields);
             }
         }
 
@@ -765,6 +812,30 @@ trait HasMlsImport
      *
      * @param  array<string,mixed> $parsedFields canonical-key data from the import
      */
+    /**
+     * Did the staged import come from the Bridge MLS # lookup?
+     *
+     * The two importers share this trait's preview and apply machinery on
+     * purpose — that shared shape is what lets one review table serve both — but
+     * they do NOT share value vocabularies. Bridge sends RESO enumerations and
+     * numbers; the URL/text parser sends whatever a listing page happened to say.
+     * Only the first is safe to translate against a form's option list.
+     *
+     * Read from the staged payload's own source marker rather than from a flag a
+     * caller sets, so it cannot disagree with the data it describes.
+     */
+    private function importedFromBridge(): bool
+    {
+        if ($this->mlsParsedDataJson === '') {
+            return false;
+        }
+
+        $decoded = json_decode($this->mlsParsedDataJson, true);
+        $source  = is_array($decoded) ? (string) ($decoded['source'] ?? '') : '';
+
+        return str_starts_with($source, 'bridge_mls:');
+    }
+
     private function saveMlsListingKeyMeta(object $model, array $parsedFields): void
     {
         $listingKey = trim((string) ($parsedFields['mls_listing_key'] ?? ''));
@@ -774,6 +845,83 @@ trait HasMlsImport
         }
 
         $model->saveMeta('mls_listing_key', $listingKey);
+    }
+
+    /**
+     * Persist the supplemental MLS payload for a Bridge import made through the
+     * tabbed wizard.
+     *
+     * WHY THE WIZARD NEEDS THIS TOO
+     * -----------------------------
+     * There are two ways to import an MLS listing — the standalone quick-import
+     * flow and the "Import by MLS #" control inside the Create Offer wizard —
+     * and they end at the SAME listing page. If only one of them wrote the MLS
+     * Details blob, the same property imported two ways would produce two
+     * visibly different listings, and which one you got would depend on which
+     * button you happened to press. So both write it, from the same builder,
+     * under the same meta keys.
+     *
+     * Only reachable for a Bridge import: the listing key is what identifies the
+     * cached feed record, and the URL/text importer has none. A listing imported
+     * from a public web page therefore gets no MLS Details section, which is
+     * correct — we hold no MLS record for it.
+     *
+     * Best-effort. A missing or unreadable cache row leaves the listing exactly
+     * as it would have been before this method existed; supplemental display
+     * data must never be able to fail an import the user already completed.
+     */
+    private function saveMlsSupplementalDetails(object $model, string $role, array $parsedFields): void
+    {
+        $listingKey = trim((string) ($parsedFields['mls_listing_key'] ?? ''));
+
+        if ($listingKey === '' || !method_exists($model, 'saveMeta')) {
+            return;
+        }
+
+        try {
+            $property = \App\Models\BridgeProperty::where('listing_key', $listingKey)->first();
+
+            if ($property === null || empty($property->raw_json)) {
+                return;
+            }
+
+            $raw = json_decode($property->raw_json, true);
+
+            if (!is_array($raw)) {
+                return;
+            }
+
+            $details = \App\Services\ListingImport\Mls\MlsSupplementalDetails::fromRecord(
+                $raw,
+                $role,
+                // The same Member / Office / OpenHouse enrichment the quick
+                // import applies. Both surfaces end at the same listing page, so
+                // both must produce the same listing.
+                \App\Services\ListingImport\Mls\MlsRelatedResources::fetch(
+                    $raw,
+                    app(\App\Services\Bridge\BridgeRelatedResourceService::class),
+                ),
+            );
+
+            // Permissions are stored even when the details blob is empty — the
+            // address gate has to work for a listing that has nothing else.
+            $model->saveMeta(
+                \App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter::META_DISPLAY_PERMISSIONS,
+                $details->permissions,
+            );
+
+            if (!$details->isEmpty()) {
+                $model->saveMeta(
+                    \App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter::META_PROPERTY_DETAILS,
+                    $details->toArray(),
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('MLS # import: supplemental details could not be persisted', [
+                'listing_key' => $listingKey,
+                'error'       => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

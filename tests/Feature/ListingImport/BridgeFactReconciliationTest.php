@@ -375,14 +375,33 @@ class BridgeFactReconciliationTest extends TestCase
         $listing  = SellerAgentAuction::find($r->listingId);
         $stored   = json_encode($listing->meta()->pluck('meta_value', 'meta_key')->toArray());
 
+        // Authored prose, private remarks, access instructions and broker
+        // compensation stay out of a listing entirely. These are the licensing
+        // and safety boundaries, and they are unchanged.
         foreach ([
             'RESTRICTED_PUBLIC_REMARKS',
             'RESTRICTED_PRIVATE_REMARKS',
-            'RESTRICTED_AGENT',
-            'RESTRICTED_BROKER',
         ] as $marker) {
             $this->assertStringNotContainsString($marker, (string) $stored);
         }
+
+        // Listing agent and brokerage are NO LONGER in that group, and their
+        // absence from this list is the deliberate part.
+        //
+        // The 2026-09-04 payload audit found this codebase holding two opposite
+        // positions on the same data: the import path withheld `ListOfficeName`
+        // as "brokerage identity" while /stellar/property/{key} rendered it
+        // publicly. IDX display rules generally REQUIRE the listing brokerage to
+        // be named on a displayed listing, which is why the Stellar page already
+        // did. So attribution is now preserved and rendered on both surfaces,
+        // under the feed's own display permissions, rather than withheld on one
+        // and published on the other.
+        //
+        // What is still withheld is the COUNTERPARTY — BuyerAgent*, CoBuyerAgent*
+        // and BuyerOffice* remain in MlsFieldCatalog::RESTRICTED — along with
+        // escrow contacts and the showing call-centre number.
+        $this->assertStringContainsString('RESTRICTED_AGENT', (string) $stored);
+        $this->assertStringContainsString('RESTRICTED_BROKER', (string) $stored);
     }
 
     /**
