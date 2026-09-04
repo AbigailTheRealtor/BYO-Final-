@@ -163,6 +163,31 @@ case "$readiness" in
         ;;
 esac
 
+# ── required product flags: INFORMATIONAL ONLY ──────────────────────────────
+# `--report` plus `|| true`, and both are load-bearing.
+#
+# THIS IS NOT THE PRODUCTION GATE. deploy/start-production.sh calls the same
+# command WITHOUT `--report` and WITHOUT `|| true`, and that call can refuse a
+# deployment. This one can refuse nothing: `--report` makes the command exit 0
+# whatever it finds, and `|| true` means even an unexpected non-zero — a fatal
+# error, a missing command after a bad checkout — cannot stop this script.
+# Belt and braces on purpose: it must be impossible for a visibility line to cost
+# somebody their local server.
+#
+# WHY IT IS HERE AT ALL. The workspace is where a flag gets flipped to try
+# something and then forgotten. Printing the contract on every start means the
+# answer to "why does my listing page look old" is already in the terminal
+# scrollback, rather than being rediscovered by reading config files.
+#
+# WHY IT IS NOT A GATE HERE. Turning a flag off locally to test the legacy path
+# is legitimate work. A workspace that refused to start until the modern platform
+# was fully enabled would make that work impossible, and would convert a
+# development convenience into a deployment-grade constraint on the one machine
+# where experimenting is the point.
+#
+# Read-only, like every other call to this command: it compares and prints.
+php artisan deploy:require-flags --report || true
+
 # Hand the lock back before the server takes over. Holding it across `exec` would
 # leave the serving process owning it for its whole life, and no future
 # deployment could ever acquire it.

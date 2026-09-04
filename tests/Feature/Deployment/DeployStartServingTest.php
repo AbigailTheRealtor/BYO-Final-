@@ -424,8 +424,35 @@ SH);
         );
     }
 
+    /**
+     * No DECISION in this script may suppress its own exit code.
+     *
+     * This assertion used to take a blanket form — "nothing in a fail-closed script may be
+     * suppressed with || true" — and that was exactly right while every executable line in the
+     * script was a gate. It stopped being right when the script gained a line that is
+     * informational BY DESIGN: it prints the required-production-flag contract, and it must be
+     * incapable of refusing anything. A workspace that would not start until the modern platform
+     * was fully enabled would make testing the legacy path impossible, and would turn a
+     * visibility line into a deployment-grade constraint on the one machine where experimenting
+     * is the point.
+     *
+     * SO THE EXCEPTION IS NAMED, SINGULAR AND PINNED, and the assertion around it is STRICTER
+     * than the blanket one it replaces on every other count:
+     *
+     *   - it now rejects ANY `||` short-circuit, not only the literal `|| true`, so `|| :` and
+     *     `|| echo …` can no longer slip a suppression past a string match;
+     *   - the one permitted line must match the informational call BYTE FOR BYTE, so it cannot
+     *     drift into a different command or lose `--report`;
+     *   - `--report` is what makes that line unable to gate. Without it the line would be a gate
+     *     whose refusal had been silenced, which is the precise thing this test exists to stop.
+     *
+     * The readiness check keeps its own explicit assertion below, unchanged.
+     */
     public function test_the_readiness_result_is_never_suppressed(): void
     {
+        // The only line in this script permitted to swallow its exit code.
+        $informational = 'php artisan deploy:require-flags --report || true';
+
         foreach ($this->executableLines($this->servingScript()) as $line) {
             if (str_contains($line, 'deploy:migrations-pending')) {
                 $this->assertStringNotContainsString(
@@ -434,12 +461,25 @@ SH);
                     'The readiness check must never be suppressed with || true'
                 );
             }
+
+            if (! str_contains($line, '||')) {
+                continue;
+            }
+
+            $this->assertSame(
+                $informational,
+                $line,
+                'Only the informational required-flag report may suppress its exit code; '
+                . 'everything else in a fail-closed script must be able to refuse.'
+            );
         }
 
-        $this->assertStringNotContainsString(
-            '|| true',
+        // And that permitted line must actually be present as written — an exception nobody
+        // uses is fine, but an exception that has quietly become something else is not.
+        $this->assertStringContainsString(
+            $informational,
             $this->executableSource($this->servingScript()),
-            'Nothing in a fail-closed script may be suppressed with || true'
+            'The one suppressed line must remain the --report call, exactly as written.'
         );
     }
 

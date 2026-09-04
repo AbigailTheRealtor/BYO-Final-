@@ -8,9 +8,19 @@ return [
     |--------------------------------------------------------------------------
     |
     | Master gate for the Seller/Landlord "Import by MLS #" entry point on the
-    | Create Offer Listing forms. Default OFF: the input is not rendered and the
-    | Livewire action returns early, so the feature is inert until the owner
-    | enables it.
+    | Create Offer Listing forms.
+    |
+    | DEFAULT NOW ON. It shipped off so the feature stayed inert until the owner
+    | enabled it; the owner has enabled it and it is verified in production. The off
+    | default has since done the only harm it can do — an environment that lost its
+    | variables removed a working entry point from the form with no error anywhere,
+    | which is indistinguishable from the feature having been withdrawn. Turning it
+    | off is still one variable: MLS_DIRECT_IMPORT_PREFILL_ENABLED=false.
+    |
+    | THIS DEFAULT DOES NOT SUPPLY CREDENTIALS. Bridge credentials are still
+    | required — see config/bridge.php. On with credentials absent, the lookup
+    | reports "MLS data service unavailable" rather than "listing not found", and it
+    | reaches nothing.
     |
     | This flag governs the BRIDGE MLS # lookup ONLY. The pre-existing
     | URL / raw-text importer (MlsListingImportService) is deliberately NOT
@@ -28,7 +38,7 @@ return [
     |
     */
 
-    'prefill_enabled' => env('MLS_DIRECT_IMPORT_PREFILL_ENABLED', false),
+    'prefill_enabled' => env('MLS_DIRECT_IMPORT_PREFILL_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -59,7 +69,8 @@ return [
     | different blast radii. `prefill_enabled` adds an input to a form the user
     | is already filling in; this adds a whole creation path that writes a draft
     | listing. Both must be on for the flow to be reachable — this is an
-    | additional gate, never a replacement one.
+    | additional gate, never a replacement one, and it stays a separate gate even
+    | though both now default on.
     |
     | Deliberately NOT tied to config/mls_media.php. The flow's core promise is
     | delivered by the facts alone and is useful with the photo gallery switched
@@ -71,6 +82,6 @@ return [
     |
     */
 
-    'quick_import_enabled' => env('MLS_DIRECT_IMPORT_QUICK_IMPORT_ENABLED', false),
+    'quick_import_enabled' => env('MLS_DIRECT_IMPORT_QUICK_IMPORT_ENABLED', true),
 
 ];
