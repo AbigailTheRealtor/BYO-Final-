@@ -786,7 +786,8 @@
     @if($hasAddlDetails || !empty($d['tenant_require']))
     @php $ofv::section('fa-solid fa-circle-info', 'Additional Details'); @endphp
     @if(!empty($d['tenant_require']))
-    @php $ofv::tags('Tenant Requirements', $d['tenant_require']); @endphp
+    {{-- Phase 3: `tenant_require` is a FURNISHINGS value, not an occupant requirement. --}}
+    @php $ofv::tags('Furnishings', $d['tenant_require']); @endphp
     @endif
     @if($d['listing_title'])
     @php $ofv::row('Listing Title', $d['listing_title']); @endphp

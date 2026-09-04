@@ -1568,9 +1568,26 @@
             return ucwords(str_replace('_', ' ', $key));
         };
 
+        /*
+         * Fair Housing Phase 3 — DENY-LIST INVERTED TO AN ALLOWLIST.
+         *
+         * This loop used to read `if (in_array($mKey, $knownKeys, true)) continue;`,
+         * which made PUBLIC the default disposition of every tenant meta key on a
+         * route with no auth middleware. A key stayed private only if a developer
+         * remembered to add it to $knownKeys; a new key shipped by anyone who had not
+         * read that array was published the first time a tenant filled it in.
+         *
+         * Now a key renders here only by being named in
+         * config/tenant_public_overflow_keys.php. Unknown keys, newly added keys and
+         * retired keys render nowhere. $knownKeys is retained above because the named
+         * sections still use it, and because it documents what each key is.
+         */
+        $publicOverflowKeys = (array) config('tenant_public_overflow_keys.public_keys', []);
+
         // Collect remaining populated keys
         $remainingFields = [];
         foreach ($meta as $mKey => $mVal) {
+            if (! in_array($mKey, $publicOverflowKeys, true)) continue;
             if (in_array($mKey, $knownKeys, true)) continue;
             if ($mVal === null || $mVal === '' || $mVal === false) continue;
             if (is_array($mVal)) {
