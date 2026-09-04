@@ -142,12 +142,32 @@ return [
     |                    that has not been taken. Being wired is what makes adding
     |                    it SAFE, not what makes it due.
     |
-    |   `create_tenant`  NOT WIRED. Must not be added here. Its components own live
-    |                    `$zipCodes` state and write a legacy `zipCodes` mirror from
-    |                    that property, while its load path never folds that legacy
-    |                    key into the Location DNA blob — so a cascade attached today
-    |                    would hydrate empty and overwrite a populated field with an
-    |                    empty one. The load-side normalization has to land first.
+    |   `create_tenant`  WIRED but NOT LISTED, exactly like `hire_tenant`.
+    |
+    |                    THIS ENTRY PREVIOUSLY READ "NOT WIRED. Must not be added
+    |                    here." That was true when it was written (d5473e68f,
+    |                    2026-08-11 17:33) and stopped being true four hours later,
+    |                    and the correction matters because the stale text does not
+    |                    merely describe the wrong state — it warns AGAINST the
+    |                    restoration, on a data-safety ground that no longer holds.
+    |
+    |                    The objection was real: these components own live `$zipCodes`
+    |                    state and write a legacy `zipCodes` mirror from it, while
+    |                    their load path did not fold that legacy key into the blob —
+    |                    so a cascade would hydrate empty and project an empty list
+    |                    over stored ZIPs. `5ca23ff65` (20:41) landed exactly that
+    |                    load-side normalization, and `bbfec52c0` (21:13) then wired
+    |                    both Create Tenant surfaces on top of it. Neither commit
+    |                    updated this file, which is how the warning outlived its
+    |                    cause.
+    |
+    |                    The precondition is pinned, not assumed:
+    |                    `CreateTenantLegacyGeographyBackfillTest` asserts legacy
+    |                    tenant ZIPs reach the blob on both surfaces and that a
+    |                    populated blob is never overwritten, and
+    |                    `CreateTenantGeographyWiringTest` asserts the cascade cannot
+    |                    write `$zipCodes` and that `create_tenant` is correctly
+    |                    absent from ZIP_MIRROR_WORKFLOWS.
     |
     | Seller and Landlord are excluded STRUCTURALLY, not by this list — their tabs
     | carry no geography surface, and every component that serves them maps their

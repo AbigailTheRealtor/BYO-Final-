@@ -458,6 +458,34 @@
   var ldnaOverlays       = [];
   var ldnaObservers      = [];
 
+  /* ── Overlay authority — the data-safety guard for stored geometry ─────────
+     `ldnaOverlays` is the ONLY thing ldnaSerialize() rebuilds `polygons` and
+     `radius_searches` from, and it is populated in exactly one place: the two
+     hydration loops in ldnaInitMap(). Until those have run the array is empty,
+     and an EMPTY OVERLAY ARRAY DOES NOT MEAN "this listing has no geometry" —
+     it means "we have not read the stored geometry onto the map yet".
+
+     Serialising through that ambiguity is a silent destructive write. When the
+     Maps SDK is absent (no credential, blocked script, offline) ldnaInitMap()
+     is never reached at all, yet ldnaSerialize() stays fully reachable from the
+     Preferred State input, the ZIP tag handlers, the Flexible Location checkbox
+     and the Location Notes textarea — none of which need a map. So a user could
+     edit a note on a listing carrying five polygons and save `"polygons":[]`,
+     with no error and no map on which to notice. The same hazard exists as a
+     race even WITH a working SDK: type into Location Notes before the async
+     script finishes and the same empty arrays are written.
+
+     This flag makes the distinction explicit. It flips only after BOTH stored
+     collections have been mirrored into ldnaOverlays, not merely when the map
+     object exists — ldnaMapInitialized is set at the TOP of ldnaInitMap(), so
+     guarding on it would leave exactly the window this exists to close.
+
+     While false, ldnaSerialize() leaves ldnaState.polygons / .radius_searches
+     holding the values the server seeded ldnaState with above, so the blob round
+     trips byte-for-byte and a later successful init hydrates from them as usual.
+     Nothing else about the serialised document changes in either state. */
+  var ldnaOverlaysAuthoritative = false;
+
   /* Boundary overlays: key → [google.maps.Data.Feature] */
   var ldnaBoundaryOverlays = {};
 
@@ -490,26 +518,33 @@
     var stateEl = document.getElementById('ldna-state-input');
     if (stateEl) ldnaState.state = stateEl.value.trim();
 
-    ldnaState.polygons        = [];
-    ldnaState.radius_searches = [];
+    /* Geometry is rebuilt from the live overlays ONLY once those overlays are
+       the authoritative copy of the stored geometry. Before that, the seeded
+       ldnaState values are left exactly as they are — see the comment on
+       ldnaOverlaysAuthoritative. Every other key above is edited by controls
+       that need no map, so they serialise unconditionally as they always did. */
+    if (ldnaOverlaysAuthoritative) {
+      ldnaState.polygons        = [];
+      ldnaState.radius_searches = [];
 
-    ldnaOverlays.forEach(function (item) {
-      if (!item) return; /* deleted */
-      if (item.type === 'polygon') {
-        var path = [];
-        item.overlay.getPath().forEach(function (ll) {
-          path.push({ lat: ll.lat(), lng: ll.lng() });
-        });
-        ldnaState.polygons.push({ label: item.label, path: path });
-      } else if (item.type === 'circle' || item.type === 'radius_search') {
-        var c  = item.overlay.getCenter();
-        var rm = parseFloat((item.overlay.getRadius() / 1609.34).toFixed(2));
-        var entry = { lat: c.lat(), lng: c.lng(), radius_miles: rm };
-        if (item.data && item.data.address) { entry.address = item.data.address; }
-        else                                { entry.label   = item.label; }
-        ldnaState.radius_searches.push(entry);
-      }
-    });
+      ldnaOverlays.forEach(function (item) {
+        if (!item) return; /* deleted */
+        if (item.type === 'polygon') {
+          var path = [];
+          item.overlay.getPath().forEach(function (ll) {
+            path.push({ lat: ll.lat(), lng: ll.lng() });
+          });
+          ldnaState.polygons.push({ label: item.label, path: path });
+        } else if (item.type === 'circle' || item.type === 'radius_search') {
+          var c  = item.overlay.getCenter();
+          var rm = parseFloat((item.overlay.getRadius() / 1609.34).toFixed(2));
+          var entry = { lat: c.lat(), lng: c.lng(), radius_miles: rm };
+          if (item.data && item.data.address) { entry.address = item.data.address; }
+          else                                { entry.label   = item.label; }
+          ldnaState.radius_searches.push(entry);
+        }
+      });
+    }
 
     var field = document.getElementById('ldna-json-field');
     if (field) field.value = JSON.stringify(ldnaState);
@@ -1509,6 +1544,15 @@
       google.maps.event.addListener(gmCircle, 'center_changed', ldnaSerialize);
       ldnaAddOverlayListItem(idx, label, 'fa-circle-dot text-secondary');
     });
+
+    /* ── Overlays now mirror the stored geometry: serialisation may rebuild ──
+       Set AFTER both hydration loops above and BEFORE anything that can call
+       ldnaSerialize(), so the first serialise of the page is already reading a
+       complete overlay set. Deliberately not set alongside ldnaMapInitialized
+       at the top of this function: between there and here ldnaOverlays is still
+       empty, and a serialise landing in that window is the very write this
+       guards against. */
+    ldnaOverlaysAuthoritative = true;
 
     /* ── 9C: render saved place pins/circles + wire their address autocompletes ── */
     if (typeof ldnaIpRenderAllOverlays === 'function') ldnaIpRenderAllOverlays();

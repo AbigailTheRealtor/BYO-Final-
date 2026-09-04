@@ -117,6 +117,55 @@ $byoBlankedCredentials = [
     'PGUSER'     => '',
     'PGPASSWORD' => '',
     'PGSERVICE'  => '',
+
+    // ── CRITERIA LOCATION DNA RUNTIME FLAGS ──────────────────────────────────
+    //
+    // The suite must start from the SHIPPED CONFIG DEFAULTS, so that a test which
+    // does not mention the cascade is testing the cascade as it ships. Roughly
+    // twenty tests assert exactly that — `the_master_gate_ships_disabled`,
+    // `the_shipped_default_is_still_eloquent`, `the_scope_list_names_only_the_
+    // wired_workflow` — and they are the guard against a rollout widening by
+    // accident.
+    //
+    // These four are Replit SECRETS, not `.env` keys, so they arrive as real
+    // process environment variables and phpdotenv's immutable repository will not
+    // overwrite them. The moment the cascade was enabled in the deployed runtime
+    // (census source, all four workflows), 19 of those tests began failing — on a
+    // branch whose source diff could not have caused it. The application was
+    // correct; the SUITE was reading the deployment's configuration.
+    //
+    // NOTE THE TWO SHAPES BELOW, because using one shape for all four is wrong:
+    //
+    //   Blanked to '' — the two booleans. `(bool) env(KEY, false)` on an empty
+    //   string is false, which IS the shipped default, so blanking is exact.
+    //
+    //   Pinned to the literal default — the two non-booleans, for the same reason
+    //   `DB_CONNECTION` above is pinned to 'sqlite' rather than blanked. `env()`
+    //   returns its default ONLY when the key is absent; a key present-but-empty
+    //   returns ''. So blanking these would NOT restore the default, it would
+    //   invent a third state: `geography_source` would become '' and
+    //   AppServiceProvider's binding — which deliberately refuses to fall back —
+    //   would throw `Unknown criteria_location_dna.geography_source ''` on every
+    //   test that resolves the repository, and `geography_cascade_workflows` would
+    //   become [] rather than the shipped ['hire_buyer', 'create_buyer'].
+    //
+    // Unsetting instead of pinning was rejected for the reason given throughout
+    // this file: an unset variable is repopulated from `.env`.
+    //
+    // THIS DOES NOT DISABLE THE CASCADE FOR TESTS THAT WANT IT. Opt-in happens
+    // through `config()->set('criteria_location_dna.…')` after the application has
+    // booted, which overrides the resolved config directly and never consults the
+    // environment. Every test that exercises the census source, the enabled gate,
+    // the workflow scope or the search flag already opts in that way and is
+    // unaffected by these values.
+    //
+    // Production is untouched: this file is the PHPUnit bootstrap and is loaded by
+    // nothing else. `config/criteria_location_dna.php` keeps its own defaults, and
+    // the deployed runtime keeps reading the Replit Secrets.
+    'CRITERIA_LDNA_CASCADE_ENABLED'   => '',
+    'CRITERIA_LDNA_SEARCH_ENABLED'    => '',
+    'CRITERIA_LDNA_GEOGRAPHY_SOURCE'  => 'eloquent',
+    'CRITERIA_LDNA_CASCADE_WORKFLOWS' => 'hire_buyer,create_buyer',
 ];
 
 foreach ($byoBlankedCredentials as $name => $value) {
