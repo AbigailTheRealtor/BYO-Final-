@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\OfferListing\Landlord;
 
+use App\Support\OfferListing\LandlordProviderTextPolicy;
 use App\Support\OfferListing\LandlordScreeningPolicy;
 
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
@@ -3281,7 +3282,7 @@ class LandlordOfferListingEdit extends Component
 
         // Services
         $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('additional_details', $this->additional_details);
+        $auction->saveMeta('additional_details', LandlordProviderTextPolicy::projectForStorage('additional_details', $this->additional_details));
 
         // Broker Compensation
         $auction->saveMeta('commission_structure', $this->commission_structure);
@@ -3526,16 +3527,13 @@ class LandlordOfferListingEdit extends Component
         [$petFeeAmount, $petFeeOther] = $this->canonicalPetFeeValues();
         $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
         $auction->saveMeta('parking_terms', $this->parking_terms);
-        $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
+        $auction->saveMeta('landlord_approval_conditions', LandlordProviderTextPolicy::projectForStorage('landlord_approval_conditions', $this->landlord_approval_conditions));
         // Phase D Landlord Tier 2 & Tier 3 EAV keys
         $auction->saveMeta('min_income_requirement', $this->min_income_requirement);
 
         // Applicant Requirements tab EAV keys
         $auction->saveMeta('min_credit_score', $this->min_credit_score);
-        $auction->saveMeta('custom_credit_score_requirement', $this->custom_credit_score_requirement);
         $auction->saveMeta('income_qualification_method', $this->income_qualification_method);
-        $auction->saveMeta('min_monthly_income_fixed', $this->min_monthly_income_fixed);
-        $auction->saveMeta('custom_income_requirement', $this->custom_income_requirement);
 
         // Fair Housing Phase 2 — screening writes go through the policy, never direct.
         //
@@ -3559,14 +3557,37 @@ class LandlordOfferListingEdit extends Component
         ]) as $screeningKey => $screeningValue) {
             $auction->saveMeta($screeningKey, $screeningValue);
         }
+
+        // Fair Housing Phase 3 — parent-gated custom text.
+        //
+        // These six inputs are rendered under an Alpine `x-show`, which is a CSS
+        // decision made in the browser. It hides an input; it does not stop a crafted
+        // Livewire payload from setting the public property directly, and neither
+        // component declared a validation rule for any of them. Until this projection
+        // existed the save wrote whatever was on the property.
+        //
+        // The unlocking value is read from config, not assumed to be 'Other':
+        // `min_monthly_income_fixed` unlocks on 'Fixed Monthly Income'.
+        foreach (LandlordScreeningPolicy::projectCustomFields([
+            'min_credit_score'                   => $this->min_credit_score,
+            'custom_credit_score_requirement'    => $this->custom_credit_score_requirement,
+            'income_qualification_method'        => $this->income_qualification_method,
+            'custom_income_requirement'          => $this->custom_income_requirement,
+            'min_monthly_income_fixed'           => $this->min_monthly_income_fixed,
+            'smoking_policy_requirement'         => $this->smoking_policy_requirement,
+            'custom_smoking_policy_requirement'  => $this->custom_smoking_policy_requirement,
+            'reference_requirement'              => $this->reference_requirement,
+            'custom_reference_requirement'       => $this->custom_reference_requirement,
+            'preferred_move_in_timeframe'        => $this->preferred_move_in_timeframe,
+            'custom_preferred_move_in_timeframe' => $this->custom_preferred_move_in_timeframe,
+        ]) as $customKey => $customValue) {
+            $auction->saveMeta($customKey, $customValue);
+        }
         $auction->saveMeta('custom_pet_policy_requirement', $this->custom_pet_policy_requirement);
-        $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
+        $auction->saveMeta('pet_restrictions', LandlordProviderTextPolicy::projectForStorage('pet_restrictions', $this->pet_restrictions));
         $auction->saveMeta('smoking_policy_requirement', $this->smoking_policy_requirement);
-        $auction->saveMeta('custom_smoking_policy_requirement', $this->custom_smoking_policy_requirement);
         $auction->saveMeta('reference_requirement', $this->reference_requirement);
-        $auction->saveMeta('custom_reference_requirement', $this->custom_reference_requirement);
         $auction->saveMeta('preferred_move_in_timeframe', $this->preferred_move_in_timeframe);
-        $auction->saveMeta('custom_preferred_move_in_timeframe', $this->custom_preferred_move_in_timeframe);
         $auction->saveMeta('est_water_sewer_trash', $this->est_water_sewer_trash);
         $auction->saveMeta('est_electric', $this->est_electric);
         $auction->saveMeta('est_internet', $this->est_internet);
@@ -3780,6 +3801,17 @@ class LandlordOfferListingEdit extends Component
             // could be blanked and re-published.
             // A1.10: validate() inside try so a ValidationException on a hidden tab is
             // surfaced as a flash banner (parity with create store()).
+            // Fair Housing Phase 3 — runs BEFORE the required-field validation, deliberately.
+            //
+            // Both throw ValidationException and both are caught by this method's own
+            // catch, which turns the first failure into a flash banner. If the gate ran
+            // second, a listing that was merely incomplete would never reach it, and a
+            // landlord could fill in the missing fields one submit at a time and only
+            // discover the wording problem at the very end — or, worse, publish before
+            // anyone noticed. The Fair Housing answer does not depend on whether the
+            // rest of the form is finished, so it is asked first.
+            $this->assertProviderTextIsPublishable();
+
             $this->validate($this->getConditionalRules(), $this->getValidationMessages());
 
             $this->isDraft = 0;
@@ -4176,4 +4208,54 @@ class LandlordOfferListingEdit extends Component
             $this->other_owner_pays = '';
         }
     }
+
+    /**
+     * Fair Housing Phase 3 — the publish gate for landlord-authored prose.
+     *
+     * Called from the SUBMIT/PUBLISH path only. Save Draft deliberately does not call
+     * it: a draft must keep exactly what the landlord typed, including wording that is
+     * not publishable yet, so they can come back and revise it. Nothing is deleted,
+     * redacted or rewritten at any point — the text stays, publication is what is
+     * refused, and `LandlordProviderTextPolicy::displayValue()` keeps the value off
+     * the public page and out of AI context in the meantime.
+     *
+     * Errors are keyed by the Livewire property so the message renders beneath the
+     * field the landlord must edit, and each one names the offending phrase.
+     */
+    protected function assertProviderTextIsPublishable(): void
+    {
+        $errors = [];
+
+        foreach (\App\Support\OfferListing\LandlordProviderTextPolicy::fields() as $field => $definition) {
+            if (! property_exists($this, $field)) {
+                continue;
+            }
+
+            $message = \App\Support\OfferListing\LandlordProviderTextPolicy::publishError($field, $this->{$field});
+
+            if ($message !== null) {
+                $errors[$field] = $message;
+            }
+        }
+
+        if ($errors !== []) {
+            // addError() BEFORE throwing, deliberately.
+            //
+            // store()/update() wrap their publish path in a try/catch that turns a
+            // ValidationException into a flash banner (the component's existing A1.10
+            // behaviour, so a required field on a hidden tab does not make submit look
+            // like it did nothing). A bare throw would therefore be swallowed and the
+            // landlord would get a banner with no indication of WHICH field to edit.
+            //
+            // Populating the error bag first survives that catch, so the message lands
+            // beneath the field it is about — which is the whole point of refusing at
+            // publish rather than silently dropping the text.
+            foreach ($errors as $field => $message) {
+                $this->addError($field, $message);
+            }
+
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+    }
+
 }

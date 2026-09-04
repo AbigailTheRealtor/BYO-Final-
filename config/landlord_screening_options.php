@@ -238,6 +238,69 @@ return [
     ],
 
     /*
+    |--------------------------------------------------------------------------
+    | Parent-gated custom text (Fair Housing Phase 3)
+    |--------------------------------------------------------------------------
+    |
+    | Phase 2 gave three screening dropdowns a `custom_key` and gated its text on
+    | the parent's value, so "Other" text became unreachable — and therefore
+    | unstorable — when the parent was not "Other". The audit found FIVE MORE
+    | custom inputs on the same tab with the same shape and none of that
+    | protection: rendered under an Alpine `x-show`, written verbatim by
+    | `saveMeta()`, with no validation rule anywhere. An `x-show` is a CSS
+    | decision in the browser; it is not a write boundary, and a crafted Livewire
+    | payload sets the property directly without ever rendering the form.
+    |
+    | THE TRIGGER IS READ FROM HERE, NOT ASSUMED. Five of these six do use
+    | "Other", but `min_monthly_income_fixed` does not — it unlocks on
+    | "Fixed Monthly Income". Hard-coding "Other" would have silently discarded
+    | every landlord's fixed income amount on the next save, which is exactly the
+    | class of bug this file exists to make impossible to write.
+    |
+    | `min_monthly_income_fixed` is included even though it is a number rather
+    | than prose: it is the same bypass, on the same tab, one line away in the
+    | same config. Fixing its five neighbours and leaving it open would be
+    | shipping a known hole.
+    |
+    | These are DISTINCT from `fields` above. Entries there own a whole governed
+    | option list (the parent's own value is normalised against an allowlist).
+    | Entries here govern only the RELATIONSHIP between a parent that Phase 3
+    | does not otherwise touch and the text it unlocks.
+    */
+    'custom_fields' => [
+        'custom_credit_score_requirement' => [
+            'parent'     => 'min_credit_score',
+            'unlocks_on' => 'Other',
+            'max_length' => 500,
+        ],
+        'custom_income_requirement' => [
+            'parent'     => 'income_qualification_method',
+            'unlocks_on' => 'Other',
+            'max_length' => 500,
+        ],
+        'min_monthly_income_fixed' => [
+            'parent'     => 'income_qualification_method',
+            'unlocks_on' => 'Fixed Monthly Income',
+            'max_length' => 32,
+        ],
+        'custom_smoking_policy_requirement' => [
+            'parent'     => 'smoking_policy_requirement',
+            'unlocks_on' => 'Other',
+            'max_length' => 500,
+        ],
+        'custom_reference_requirement' => [
+            'parent'     => 'reference_requirement',
+            'unlocks_on' => 'Other',
+            'max_length' => 500,
+        ],
+        'custom_preferred_move_in_timeframe' => [
+            'parent'     => 'preferred_move_in_timeframe',
+            'unlocks_on' => 'Other',
+            'max_length' => 500,
+        ],
+    ],
+
+    /*
     | Length ceiling for the one surviving screening free-text field. Phase 2
     | is not the content-moderation phase (that is Phase 3); this is only a
     | bound on an unbounded input, so an oversized payload cannot be stored.
