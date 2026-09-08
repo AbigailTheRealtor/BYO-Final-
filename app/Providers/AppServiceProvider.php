@@ -60,6 +60,7 @@ use App\Services\LocationDna\FemaFloodZoneAdapter;
 use App\Services\LocationDna\CommuteTimeStubAdapter;
 use App\Services\LocationDna\CensusSchoolDistrictAdapter;
 use App\Services\LocationDna\GooglePlacesPoiAdapter;
+use App\Services\LocationDna\OvertureCorpusPoiAdapter;
 use App\Services\LocationDna\StubPoiLookupAdapter;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
@@ -256,9 +257,21 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PoiLookupAdapterInterface::class, function ($app) {
             $registry = new LocationProviderRegistry((array) config('location_providers', []));
             $base     = $registry->effectiveBase('poi.default');
+            $provider = $base['provider'] ?? null;
+
+            // Local corpus, checked first for the same reasons as in
+            // NearbyPoiFetcherFactory::make(): it is the base when enabled, and a corpus
+            // that is selected but unreadable must degrade to the stub rather than to a
+            // billable provider. Note this path serves only the two buyer/tenant slugs the
+            // corpus holds rows for; the other five return [] from the adapter itself.
+            if ($provider === OvertureCorpusPoiAdapter::PROVIDER_ID) {
+                $adapter = new OvertureCorpusPoiAdapter();
+
+                return $adapter->isAvailable() ? $adapter : new StubPoiLookupAdapter();
+            }
 
             if (
-                ($base['provider'] ?? null) === 'google_places'
+                $provider === 'google_places'
                 && !blank(config('services.google.places_key'))
             ) {
                 return new GooglePlacesPoiAdapter();
