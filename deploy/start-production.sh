@@ -116,6 +116,37 @@ fi
 # future non-zero exit, NOT a suppressed gate. See deploy/DEPLOYMENT.md.
 php artisan deploy:preflight || true
 
+# ── required product flags ──────────────────────────────────────────────────
+# A GATE, not a report — and the only gate in this script that is not about the
+# schema. No `|| true`: `set -euo pipefail` means a non-zero exit here stops the
+# deploy before `migrate` and long before a port is bound.
+#
+# WHY THIS IS WORTH FAILING A DEPLOY FOR
+# --------------------------------------
+# Every other failure this script guards against is loud. A failed migration
+# throws; an unresolvable SHA refuses. A wrong feature flag is silent: the
+# application boots, answers 200, passes the health check, and serves a
+# superseded design or a missing entry point until a person happens to notice.
+# That has already happened once, when these flags lived only in a machine-local
+# `.env` that a container rebuild discarded.
+#
+# The shipped config defaults now cover the ABSENT variable. This covers the
+# variable that is present and WRONG, which a default cannot reach.
+#
+# DELIBERATELY BEFORE `migrate`. Refusing costs nothing while no migration has
+# been applied, so a deploy stopped here is trivially re-runnable once the
+# environment is fixed. Refusing afterwards would leave a schema moved forward by
+# a release that never served.
+#
+# The deploy lock is held on fd 9 by this shell, so exiting here releases it with
+# the process — a refusal cannot strand a later deploy.
+#
+# Contract: config/required_production_flags.php. Read-only: the command compares
+# and reports, and can enable nothing. Escape hatch:
+# REQUIRED_PRODUCTION_FLAGS_ENFORCED=false, which warns loudly and continues.
+# Proven by tests/Feature/Deployment/RequiredProductionFlagsTest.php.
+php artisan deploy:require-flags
+
 # Apply pending migrations. --force because a production APP_ENV would otherwise
 # prompt; --no-interaction because there is no terminal attached.
 #

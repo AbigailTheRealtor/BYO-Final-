@@ -2,21 +2,44 @@
      APPLICANT REQUIREMENTS TAB
      Landlord Offer Listing — Commission-Based (Create & Edit)
      Tab index: 4 (Create) / 10 (Edit)
-     EAV keys (existing): min_credit_score, custom_credit_score_requirement,
+
+     One partial serves both wizards, so the option lists cannot drift
+     between Create and Edit.
+
+     SCREENING OPTIONS ARE NOT WRITTEN HERE. Every option list below is
+     rendered from config/landlord_screening_options.php and enforced on the
+     write by App\Support\OfferListing\LandlordScreeningPolicy. Editing an
+     option in this file alone changes the form and nothing else — the save
+     would still reject it. Change the config.
+
+     RETIRED (Fair Housing Phase 2), not to be reintroduced:
+       employment_requirement, custom_employment_requirement — required an
+       employment STATUS ("Employed", "Retired allowed", "Student allowed"),
+       which gates tenancy on how income is earned instead of whether rent can
+       be paid. No replacement control: the objective question is already
+       asked by income_qualification_method + min_income_requirement /
+       min_monthly_income_fixed + income_verification_requirement.
+       employment_verification_requirement — "proof of employment" is the same
+       exclusion once removed; income documentation is requested through
+       income_verification_requirement, relabelled below.
+
+     EAV keys: min_credit_score, custom_credit_score_requirement,
              income_qualification_method, min_monthly_income_fixed,
-             custom_income_requirement, employment_requirement,
-             custom_employment_requirement, eviction_history_requirement,
+             custom_income_requirement, eviction_history_requirement,
              custom_eviction_requirement, bankruptcy_requirement,
-             custom_bankruptcy_requirement, est_water_sewer_trash,
-             est_electric, est_internet, est_cable
-     EAV keys (new): credit_score_flexibility, pet_policy_requirement,
-             custom_pet_policy_requirement, pet_restrictions,
-             smoking_policy_requirement, custom_smoking_policy_requirement,
-             criminal_background_requirement, custom_criminal_background_requirement,
-             reference_requirement, custom_reference_requirement,
-             employment_verification_requirement, income_verification_requirement,
-             preferred_move_in_timeframe, custom_preferred_move_in_timeframe
+             custom_bankruptcy_requirement, credit_score_flexibility,
+             pet_policy_requirement, custom_pet_policy_requirement,
+             pet_restrictions, smoking_policy_requirement,
+             custom_smoking_policy_requirement, criminal_background_requirement,
+             custom_criminal_background_requirement, reference_requirement,
+             custom_reference_requirement, income_verification_requirement,
+             preferred_move_in_timeframe, custom_preferred_move_in_timeframe,
+             est_water_sewer_trash, est_electric, est_internet, est_cable
      ============================================================== --}}
+
+@php
+    use App\Support\OfferListing\LandlordScreeningPolicy;
+@endphp
 
 <div class="tab-content-inner">
     <h5 class="mb-4"><i class="fa-solid fa-user-check me-2"></i>Applicant Requirements</h5>
@@ -101,33 +124,15 @@
                             placeholder="Enter income requirement (e.g., Verified bank statements, 6 months reserves)">
                     </div>
                 </div>
-            </div>
 
-            {{-- Employment Requirement --}}
-            <div class="form-group" x-data>
-                <label class="fw-bold">Employment requirement:</label>
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select the employment status requirement for tenant qualification.">
-                    <i class="fa-solid fa-circle-info"></i>
-                </span>
-                <small class="d-block text-muted mb-1">Specifies the work status or income source applicants must have to qualify.</small>
-                <div class="input-cover">
-                    <select wire:model="employment_requirement" class="form-control has-icon" data-icon="fa-solid fa-briefcase">
-                        <option value="">Select</option>
-                        <option value="No requirement">No requirement</option>
-                        <option value="Employed">Employed</option>
-                        <option value="Self-employed allowed">Self-employed allowed</option>
-                        <option value="Retired allowed">Retired allowed</option>
-                        <option value="Student allowed">Student allowed</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div x-show="$wire.employment_requirement === 'Other'" x-cloak class="mt-2">
-                    <div class="input-cover">
-                        <input type="text" wire:model="custom_employment_requirement" class="form-control has-icon"
-                            data-icon="fa-solid fa-briefcase"
-                            placeholder="Enter employment requirement (e.g., Government employee, Independent contractor accepted)">
-                    </div>
+                {{-- Fixed, non-editable. States that the income test is applied to the
+                     AMOUNT of lawful income, never to its source. This is what replaced
+                     the retired employment-status gate; it is deliberately copy rather
+                     than a control, so no listing can offer a narrower version of it. --}}
+                <div class="alert alert-light border mt-2 mb-0 py-2 px-3">
+                    <small class="text-muted d-block">
+                        <i class="fa-solid fa-circle-info me-1"></i>{{ LandlordScreeningPolicy::copy('income_sources_helper') }}
+                    </small>
                 </div>
             </div>
 
@@ -142,20 +147,16 @@
                 <div class="input-cover">
                     <select wire:model="eviction_history_requirement" class="form-control has-icon" data-icon="fa-solid fa-gavel">
                         <option value="">Select</option>
-                        <option value="No requirement">No requirement</option>
-                        <option value="No prior evictions">No prior evictions</option>
-                        <option value="Evictions older than 7 years accepted">Evictions older than 7 years accepted</option>
-                        <option value="Evictions older than 5 years accepted">Evictions older than 5 years accepted</option>
-                        <option value="Evictions older than 3 years accepted">Evictions older than 3 years accepted</option>
-                        <option value="Case-by-case review">Case-by-case review</option>
-                        <option value="Other">Other</option>
+                        @foreach(LandlordScreeningPolicy::optionsFor('eviction_history_requirement') as $opt)
+                            <option value="{{ $opt }}">{{ $opt }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div x-show="$wire.eviction_history_requirement === 'Other'" x-cloak class="mt-2">
                     <div class="input-cover">
                         <input type="text" wire:model="custom_eviction_requirement" class="form-control has-icon"
                             data-icon="fa-solid fa-gavel"
-                            placeholder="Enter eviction requirement (e.g., No evictions within 10 years, Case-by-case review)">
+                            placeholder="Enter eviction requirement (e.g., No evictions within 10 years)">
                     </div>
                 </div>
             </div>
@@ -171,13 +172,9 @@
                 <div class="input-cover">
                     <select wire:model="bankruptcy_requirement" class="form-control has-icon" data-icon="fa-solid fa-scale-balanced">
                         <option value="">Select</option>
-                        <option value="No requirement">No requirement</option>
-                        <option value="No bankruptcy">No bankruptcy</option>
-                        <option value="Bankruptcy discharged more than 7 years ago accepted">Bankruptcy discharged more than 7 years ago accepted</option>
-                        <option value="Bankruptcy discharged more than 5 years ago accepted">Bankruptcy discharged more than 5 years ago accepted</option>
-                        <option value="Bankruptcy discharged more than 2 years ago accepted">Bankruptcy discharged more than 2 years ago accepted</option>
-                        <option value="Case-by-case review">Case-by-case review</option>
-                        <option value="Other">Other</option>
+                        @foreach(LandlordScreeningPolicy::optionsFor('bankruptcy_requirement') as $opt)
+                            <option value="{{ $opt }}">{{ $opt }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div x-show="$wire.bankruptcy_requirement === 'Other'" x-cloak class="mt-2">
@@ -250,10 +247,9 @@
         <div class="input-cover">
             <select wire:model="credit_score_flexibility" class="form-control has-icon" data-icon="fa-solid fa-sliders">
                 <option value="">Select</option>
-                <option value="No additional flexibility">No additional flexibility</option>
-                <option value="Strict requirement">Strict requirement</option>
-                <option value="Case-by-case review">Case-by-case review</option>
-                <option value="Compensating factors considered">Compensating factors considered</option>
+                @foreach(LandlordScreeningPolicy::optionsFor('credit_score_flexibility') as $opt)
+                    <option value="{{ $opt }}">{{ $opt }}</option>
+                @endforeach
             </select>
         </div>
     </div>
@@ -271,13 +267,9 @@
         <div class="input-cover has-select-icon" wire:ignore>
             <select id="pet_policy_requirement" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-paw" data-placeholder="Select all that apply" multiple>
-                <option value="Dogs allowed" {{ is_array($pet_policy_requirement) && in_array('Dogs allowed', $pet_policy_requirement) ? 'selected' : '' }}>Dogs allowed</option>
-                <option value="Cats allowed" {{ is_array($pet_policy_requirement) && in_array('Cats allowed', $pet_policy_requirement) ? 'selected' : '' }}>Cats allowed</option>
-                <option value="Small pets allowed" {{ is_array($pet_policy_requirement) && in_array('Small pets allowed', $pet_policy_requirement) ? 'selected' : '' }}>Small pets allowed</option>
-                <option value="Large pets allowed" {{ is_array($pet_policy_requirement) && in_array('Large pets allowed', $pet_policy_requirement) ? 'selected' : '' }}>Large pets allowed</option>
-                <option value="Exotic pets allowed" {{ is_array($pet_policy_requirement) && in_array('Exotic pets allowed', $pet_policy_requirement) ? 'selected' : '' }}>Exotic pets allowed</option>
-                <option value="No pets" {{ is_array($pet_policy_requirement) && in_array('No pets', $pet_policy_requirement) ? 'selected' : '' }}>No pets</option>
-                <option value="Case-by-case review" {{ is_array($pet_policy_requirement) && in_array('Case-by-case review', $pet_policy_requirement) ? 'selected' : '' }}>Case-by-case review</option>
+                @foreach(LandlordScreeningPolicy::optionsFor('pet_policy_requirement') as $opt)
+                    <option value="{{ $opt }}" {{ is_array($pet_policy_requirement) && in_array($opt, $pet_policy_requirement) ? 'selected' : '' }}>{{ $opt }}</option>
+                @endforeach
             </select>
         </div>
     </div>
@@ -324,27 +316,31 @@
     {{-- ===== SECTION: BACKGROUND REQUIREMENTS ===== --}}
     <h6 class="fw-semibold border-bottom pb-2 mb-3 mt-4">Background requirements</h6>
 
-    {{-- Criminal Background Requirement --}}
+    {{-- Criminal History Policy --}}
+    {{-- Phase 2: the blanket lifetime "No criminal background" option is retired.
+         No fixed lookback window is offered — a 3/5/7-year list reads as a legal
+         standard, and the applicable limits are state and local. --}}
     <div class="form-group" x-data>
-        <label class="fw-bold">Criminal background requirement:</label>
+        <label class="fw-bold">{{ LandlordScreeningPolicy::copy('criminal_label') }}:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Specify any criminal background requirements for prospective tenants.">
+            title="{{ LandlordScreeningPolicy::copy('criminal_tooltip') }}">
             <i class="fa-solid fa-circle-info"></i>
         </span>
+        <small class="d-block text-muted mb-1">{{ LandlordScreeningPolicy::copy('criminal_helper') }}</small>
         <div class="input-cover">
             <select wire:model="criminal_background_requirement" class="form-control has-icon" data-icon="fa-solid fa-shield-halved">
                 <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="No criminal background">No criminal background</option>
-                <option value="Case-by-case review">Case-by-case review</option>
-                <option value="Other">Other</option>
+                @foreach(LandlordScreeningPolicy::optionsFor('criminal_background_requirement') as $opt)
+                    <option value="{{ $opt }}">{{ $opt }}</option>
+                @endforeach
             </select>
         </div>
         <div x-show="$wire.criminal_background_requirement === 'Other'" x-cloak class="mt-2">
             <div class="input-cover">
                 <input type="text" wire:model="custom_criminal_background_requirement" class="form-control has-icon"
                     data-icon="fa-solid fa-shield-halved"
-                    placeholder="Enter criminal background requirement (e.g., No felonies within 7 years, Non-violent only)">
+                    maxlength="{{ LandlordScreeningPolicy::customTextMaxLength() }}"
+                    placeholder="Describe how conviction history is considered">
             </div>
         </div>
     </div>
@@ -374,36 +370,19 @@
         </div>
     </div>
 
-    {{-- Employment Verification Requirement --}}
-    <div class="form-group">
-        <label class="fw-bold">Employment verification requirement:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Specify whether tenants must provide proof of employment (e.g., pay stubs, offer letter).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="employment_verification_requirement" class="form-control has-icon" data-icon="fa-solid fa-file-contract">
-                <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="Required">Required</option>
-                <option value="Preferred">Preferred</option>
-            </select>
-        </div>
-    </div>
-
     {{-- Income Verification Requirement --}}
     <div class="form-group">
-        <label class="fw-bold">Income verification requirement:</label>
+        <label class="fw-bold">{{ LandlordScreeningPolicy::copy('income_documentation_label') }}:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Specify whether tenants must provide proof of income (e.g., bank statements, tax returns).">
+            title="{{ LandlordScreeningPolicy::copy('income_documentation_tooltip') }}">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
             <select wire:model="income_verification_requirement" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
-                <option value="No requirement">No requirement</option>
-                <option value="Required">Required</option>
-                <option value="Preferred">Preferred</option>
+                @foreach(LandlordScreeningPolicy::optionsFor('income_verification_requirement') as $opt)
+                    <option value="{{ $opt }}">{{ $opt }}</option>
+                @endforeach
             </select>
         </div>
     </div>

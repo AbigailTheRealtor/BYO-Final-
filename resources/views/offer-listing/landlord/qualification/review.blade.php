@@ -39,7 +39,7 @@
     }
 
     $applicantCreditRaw = strtolower(trim($check->estimated_credit_score ?? ''));
-    $creditFlexibility  = $str('credit_score_flexibility');
+    $creditFlexibility  = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue('credit_score_flexibility', $str('credit_score_flexibility'));
 
     // Compare credit bands
     $creditStatus = null; // 'pass', 'fail', 'flexible', 'na'
@@ -61,35 +61,22 @@
         }
     }
 
-    // Employment status comparison
-    $landlordEmpReq = $str('employment_requirement');
-    $applicantEmp   = $check->employment_status;
+    // Employment status comparison — REMOVED (Fair Housing Phase 2).
+    //
+    // This block scored an applicant pass/review by matching their reported
+    // employment status against the landlord's `employment_requirement`: it read
+    // "retired allowed" and "student allowed" as landlord permissions and handed
+    // out a verdict accordingly. That is the retired gate being APPLIED to a real
+    // person, which is worse than the form that collected it, and it survived the
+    // first pass of Phase 2 because this page was not on the inventory.
+    //
+    // No verdict replaces it. Whether the applicant can pay is answered by the
+    // income comparison below, which is untouched.
     $empStatus = 'na';
-    if ($landlordEmpReq && strtolower($landlordEmpReq) !== 'no requirement') {
-        if (!$applicantEmp) {
-            $empStatus = 'unknown';
-        } else {
-            $lEmp = strtolower($landlordEmpReq);
-            $aEmp = strtolower($applicantEmp);
-            // Map: "employed" covers "employed full-time" and "employed part-time"
-            if (str_contains($aEmp, 'employed') && ($lEmp === 'employed' || str_contains($lEmp, 'employed'))) {
-                $empStatus = 'pass';
-            } elseif ($lEmp === 'self-employed allowed' && str_contains($aEmp, 'self-employed')) {
-                $empStatus = 'pass';
-            } elseif ($lEmp === 'retired allowed' && str_contains($aEmp, 'retired')) {
-                $empStatus = 'pass';
-            } elseif ($lEmp === 'student allowed' && str_contains($aEmp, 'student')) {
-                $empStatus = 'pass';
-            } elseif (str_contains($lEmp, 'other')) {
-                $empStatus = 'review';
-            } else {
-                $empStatus = 'review';
-            }
-        }
-    }
 
     // Eviction comparison
-    $landlordEvic = $str('eviction_history_requirement');
+    $landlordEvic = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+        'eviction_history_requirement', $str('eviction_history_requirement'), $str('custom_eviction_requirement'));
     $applicantEvic = $check->eviction_history;
     $evicStatus = 'na';
     if ($landlordEvic && strtolower($landlordEvic) !== 'no requirement') {
@@ -103,7 +90,7 @@
     }
 
     // Pet policy comparison
-    $landlordPets  = $str('pet_policy_requirement');
+    $landlordPets  = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue('pet_policy_requirement', $str('pet_policy_requirement'));
     $applicantPets = $check->has_pets;
     $petStatus = 'na';
     if ($landlordPets && strtolower($landlordPets) !== 'no requirement') {
@@ -134,19 +121,25 @@
         }
     }
 
-    // Criminal background comparison
-    $landlordCriminal  = $str('criminal_background_requirement');
+    // Criminal history — policy shown, no verdict computed (Fair Housing Phase 2).
+    //
+    // The landlord's policy is resolved through the screening boundary, so a stale
+    // blanket "No criminal background" reads as no policy at all and cannot be
+    // republished here or drive an outcome.
+    //
+    // Nor is a verdict computed for the current option. "Individualized review of
+    // convictions" means a human weighs the offence, its recency and its relevance;
+    // a page comparing two dropdown strings cannot do that, and the old code's
+    // "anything other than a clean record" branch was a blanket screen wearing an
+    // individualised label. The policy and the applicant's own disclosure are shown
+    // side by side and the reviewer draws the conclusion.
+    $landlordCriminal  = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+        'criminal_background_requirement',
+        $str('criminal_background_requirement'),
+        $str('custom_criminal_background_requirement')
+    );
     $applicantCriminal = $check->criminal_background;
     $crimStatus = 'na';
-    if ($landlordCriminal && strtolower($landlordCriminal) !== 'no requirement') {
-        if (!$applicantCriminal) {
-            $crimStatus = 'unknown';
-        } elseif (strtolower($applicantCriminal) === 'no criminal background') {
-            $crimStatus = 'pass';
-        } else {
-            $crimStatus = 'review';
-        }
-    }
 
     // Reference comparison
     $landlordRef  = $str('reference_requirement');
@@ -165,8 +158,8 @@
     }
 
     // Bankruptcy comparison — uses landlord's bankruptcy_requirement key
-    $landlordBankruptcy = $str('bankruptcy_requirement');
-    if ($landlordBankruptcy === 'Other') $landlordBankruptcy = $str('custom_bankruptcy_requirement');
+    $landlordBankruptcy = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+        'bankruptcy_requirement', $str('bankruptcy_requirement'), $str('custom_bankruptcy_requirement'));
     $applicantBankruptcy = $check->bankruptcy_history;
     $bankruptcyStatus = 'na';
     if ($landlordBankruptcy && strtolower($landlordBankruptcy) !== 'no requirement') {
@@ -247,18 +240,17 @@
         }
     }
 
-    // Employment verification
-    $landlordEmpVerif = $str('employment_verification_requirement');
-    $applicantEmpVerif = $check->employment_verification_available;
+    // Employment verification — REMOVED (Fair Housing Phase 2).
+    //
+    // `employment_verification_requirement` is retired: "proof of employment" is
+    // the same exclusion as the employment gate one step removed, since a retiree
+    // or anyone on lawful non-wage income cannot produce it. It could previously
+    // mark an applicant "Below requirement" outright. Income documentation is the
+    // source-neutral question, and it is compared below.
     $empVerifStatus = 'na';
-    if ($landlordEmpVerif && strtolower($landlordEmpVerif) === 'required') {
-        $empVerifStatus = $applicantEmpVerif === 'Yes' ? 'pass' : ($applicantEmpVerif ? 'fail' : 'unknown');
-    } elseif ($landlordEmpVerif && strtolower($landlordEmpVerif) === 'preferred') {
-        $empVerifStatus = $applicantEmpVerif === 'Yes' ? 'pass' : ($applicantEmpVerif ? 'review' : 'unknown');
-    }
 
     // Income verification
-    $landlordIncVerif = $str('income_verification_requirement');
+    $landlordIncVerif = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue('income_verification_requirement', $str('income_verification_requirement'));
     $applicantIncVerif = $check->income_verification_available;
     $incVerifStatus = 'na';
     if ($landlordIncVerif && strtolower($landlordIncVerif) === 'required') {
@@ -388,25 +380,21 @@
                         if ($landlordCreditDisplay === 'Other') $landlordCreditDisplay = $str('custom_credit_score_requirement');
                         if (!$landlordCreditDisplay) $landlordCreditDisplay = 'No requirement';
 
-                        $landlordEmpDisplay = $str('employment_requirement');
-                        if ($landlordEmpDisplay === 'Other') $landlordEmpDisplay = $str('custom_employment_requirement');
-                        if (!$landlordEmpDisplay || strtolower($landlordEmpDisplay) === 'no requirement') $landlordEmpDisplay = 'No requirement';
+                        // Retired (Fair Housing Phase 2): the landlord column for the
+                        // employment row is intentionally empty. The applicant's own
+                        // reported income source still shows beside it.
+                        $landlordEmpDisplay = '';
 
-                        $landlordEvicDisplay = $str('eviction_history_requirement');
-                        if ($landlordEvicDisplay === 'Other') $landlordEvicDisplay = $str('custom_eviction_requirement');
-                        if (!$landlordEvicDisplay || strtolower($landlordEvicDisplay) === 'no requirement') $landlordEvicDisplay = 'No requirement';
+                        $landlordEvicDisplay = $landlordEvic ?: 'No requirement';
 
-                        $landlordPetDisplay = $str('pet_policy_requirement');
-                        if ($landlordPetDisplay === 'Other') $landlordPetDisplay = $str('custom_pet_policy_requirement');
-                        if (!$landlordPetDisplay || strtolower($landlordPetDisplay) === 'no requirement') $landlordPetDisplay = 'No requirement';
+                        $landlordPetDisplay = $landlordPets ?: 'No requirement';
 
                         $landlordSmokeDisplay = $str('smoking_policy_requirement');
                         if ($landlordSmokeDisplay === 'Other') $landlordSmokeDisplay = $str('custom_smoking_policy_requirement');
                         if (!$landlordSmokeDisplay || strtolower($landlordSmokeDisplay) === 'no requirement') $landlordSmokeDisplay = 'No requirement';
 
-                        $landlordCrimDisplay = $str('criminal_background_requirement');
-                        if ($landlordCrimDisplay === 'Other') $landlordCrimDisplay = $str('custom_criminal_background_requirement');
-                        if (!$landlordCrimDisplay || strtolower($landlordCrimDisplay) === 'no requirement') $landlordCrimDisplay = 'No requirement';
+                        // Boundary-resolved above; a stale blanket ban reads as no policy.
+                        $landlordCrimDisplay = $landlordCriminal ?: 'No requirement';
 
                         $landlordRefDisplay = $str('reference_requirement');
                         if ($landlordRefDisplay === 'Other') $landlordRefDisplay = $str('custom_reference_requirement');
@@ -428,12 +416,10 @@
                         $landlordBankReqDisplay = ($landlordBankruptcy && strtolower($landlordBankruptcy) !== 'no requirement')
                             ? $landlordBankruptcy : 'No requirement';
 
-                        // Emp/income verification requirement display
-                        $landlordEmpVerifDisplay = $str('employment_verification_requirement');
-                        if (!$landlordEmpVerifDisplay || strtolower($landlordEmpVerifDisplay) === 'no requirement') $landlordEmpVerifDisplay = 'No requirement';
-
-                        $landlordIncVerifDisplay = $str('income_verification_requirement');
-                        if (!$landlordIncVerifDisplay || strtolower($landlordIncVerifDisplay) === 'no requirement') $landlordIncVerifDisplay = 'No requirement';
+                        // Income documentation display. The employment-verification
+                        // requirement is retired, so its landlord column stays empty.
+                        $landlordEmpVerifDisplay = '';
+                        $landlordIncVerifDisplay = $landlordIncVerif ?: 'No requirement';
                     @endphp
                     {!! $compRow(
                         'Minimum credit score',
@@ -448,7 +434,7 @@
                         $incomeStatus
                     ) !!}
                     {!! $compRow(
-                        'Employment / income source',
+                        'Income source (applicant-reported)',
                         $landlordEmpDisplay,
                         implode(' / ', array_filter([
                             $check->employment_status
@@ -487,7 +473,7 @@
                         $smokeStatus
                     ) !!}
                     {!! $compRow(
-                        'Criminal background',
+                        'Criminal history policy',
                         $landlordCrimDisplay,
                         $check->criminal_background
                             ? $check->criminal_background . ($check->criminal_background_other ? ': ' . $check->criminal_background_other : '')

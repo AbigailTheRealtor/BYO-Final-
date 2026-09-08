@@ -463,7 +463,6 @@ class AskAiContextBuilderService
             // ── Applicant Screening ───────────────────────────────────────────
             'min_credit_score'               => 'min_credit_score',
             'income_qualification_method'    => 'income_qualification_method',
-            'employment_requirement'         => 'employment_requirement',
             'eviction_history_requirement'   => 'eviction_history_requirement',
             'bankruptcy_requirement'         => 'bankruptcy_requirement',
             // ── Estimated Utility Costs ───────────────────────────────────────
@@ -493,7 +492,6 @@ class AskAiContextBuilderService
             'smoking_policy_requirement'          => ['smoking_policy_requirement', 'custom_smoking_policy_requirement'],
             'criminal_background_requirement'     => ['criminal_background_requirement', 'custom_criminal_background_requirement'],
             'reference_requirement'               => ['reference_requirement', 'custom_reference_requirement'],
-            'employment_verification_requirement' => 'employment_verification_requirement',
             'income_verification_requirement'     => 'income_verification_requirement',
             'preferred_move_in_timeframe'         => ['preferred_move_in_timeframe', 'custom_preferred_move_in_timeframe'],
         ],
@@ -1524,17 +1522,20 @@ class AskAiContextBuilderService
                                                       $infoGet,
                                                       'custom_smoking_policy_requirement'
                                                   ),
-            'criminal_background_requirement'  => $this->resolveOtherValue(
+            // Fair Housing Phase 2. Resolved by the screening policy rather than read
+            // raw: a retired value (the blanket "No criminal background") must not reach
+            // prompt context at all, and must not be relabelled into a current option on
+            // the way there either. The policy returns null for it, which drops the key.
+            'criminal_background_requirement'  => \App\Support\OfferListing\LandlordScreeningPolicy::displayValue(
+                                                      'criminal_background_requirement',
                                                       $infoGet('criminal_background_requirement'),
-                                                      $infoGet,
-                                                      'custom_criminal_background_requirement'
+                                                      $infoGet('custom_criminal_background_requirement')
                                                   ),
             'reference_requirement'            => $this->resolveOtherValue(
                                                       $infoGet('reference_requirement'),
                                                       $infoGet,
                                                       'custom_reference_requirement'
                                                   ),
-            'employment_verification_requirement' => $infoGet('employment_verification_requirement') ?: null,
             'income_verification_requirement'     => $infoGet('income_verification_requirement') ?: null,
             'preferred_move_in_timeframe'      => $this->resolveOtherValue(
                                                       $infoGet('preferred_move_in_timeframe'),

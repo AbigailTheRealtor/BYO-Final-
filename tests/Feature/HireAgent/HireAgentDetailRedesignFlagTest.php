@@ -6,24 +6,48 @@ use App\Support\HireAgent\HireAgentDetailRedesign;
 use Tests\TestCase;
 
 /**
- * M5.0 — the detail-page redesign flag.
+ * The detail-page redesign flag.
  *
- * The flag ships before anything reads it, so this milestone's whole claim is that it is INERT:
- * off by default, independent of the hero flag, and read in exactly one place. Each of those is
- * asserted here rather than assumed, because all three are the kind of property that is true on
- * the day it is written and quietly false three milestones later.
+ * M5.0's claim was that the flag was INERT — off by default — because it shipped before anything
+ * read it. THAT CLAIM EXPIRED WHEN THE ROLLOUT COMPLETED. The redesign is now the platform design
+ * for all four roles, the shipped default is ON, and an off default would describe a regression
+ * rather than an inert merge: an environment that lost its variables would silently serve the
+ * superseded layout.
+ *
+ * WHAT DID NOT CHANGE, and is still asserted below: the flag is independent of the hero flag, it
+ * is read in exactly one place, the reader follows the config in both directions, and a MISSING
+ * key still reads as OFF. That last one is not the same question as the default — a config file
+ * that failed to load must not enable a page layout — and it is why
+ * HireAgentDetailRedesign::enabled() keeps its own `false` fallback.
+ *
+ * The default is asserted here against the shipped configuration. The stronger claim — that the
+ * default holds with the environment supplying NOTHING AT ALL, which is the container-rebuild
+ * case — is proven in Tests\Feature\Deployment\RequiredProductionDefaultsTest, which strips the
+ * variables from a child process rather than trusting this suite's inherited environment.
  */
 class HireAgentDetailRedesignFlagTest extends TestCase
 {
-    /** Merging M5.0 must change nothing, which requires the default to be off. */
-    public function test_the_flag_is_off_by_default(): void
+    /**
+     * The shipped default is ON, for every role.
+     *
+     * This is the version-controlled floor: an environment that supplies nothing still serves the
+     * current design. Losing a variable must not bring the old platform back.
+     */
+    public function test_the_flag_is_on_by_default_for_every_role(): void
     {
-        $this->assertFalse(
+        $this->assertTrue(
             config('hire_agent_detail.redesign_enabled'),
-            'The detail redesign must default to off so merging it is inert.'
+            'The detail redesign is the platform default; an absent variable must not disable it.'
         );
 
-        $this->assertFalse(HireAgentDetailRedesign::enabled());
+        $this->assertTrue(HireAgentDetailRedesign::enabled());
+
+        foreach (['seller', 'buyer', 'landlord', 'tenant'] as $role) {
+            $this->assertTrue(
+                HireAgentDetailRedesign::enabledFor($role),
+                "The detail redesign must default on for the {$role} role."
+            );
+        }
     }
 
     /** A missing key reads as off, not as on — a config that failed to load must not enable it. */

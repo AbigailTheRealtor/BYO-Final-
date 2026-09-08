@@ -9,8 +9,20 @@ return [
     |
     | Master switch for the redesigned Hire Agent listing detail page: section
     | navigation, quick actions, sidebar, information cards and photo gallery.
-    | Default false means the branch is INERT — merging it changes nothing on any
-    | page, and rollback is an environment change rather than a revert.
+    |
+    | THE DEFAULT IS NOW TRUE, AND THE REASON IT CHANGED MATTERS. It shipped false
+    | so that merging M5.0 was inert. That rollout has finished: the redesign is
+    | the platform's design for all four roles and has been verified live. A false
+    | default now means the OPPOSITE of safe — it means an environment that loses
+    | its variables silently serves the superseded layout, which is exactly what a
+    | container rebuild did when these values lived only in a machine-local `.env`.
+    | Rollback is still an environment change, not a revert: set
+    | HIRE_AGENT_DETAIL_REDESIGN_ENABLED=false.
+    |
+    | THE READER KEEPS ITS OWN `false` FALLBACK FOR A MISSING KEY, and that is a
+    | different question from this default. A config file that failed to load must
+    | still read as off; HireAgentDetailRedesign::enabled() is where that rule
+    | lives, and it is unchanged.
     |
     | SEPARATE FROM THE HERO FLAG, DELIBERATELY. config/hire_agent_hero.php gates
     | the M4 hero and is currently enabled for landlord in at least one
@@ -25,7 +37,7 @@ return [
     |
     */
 
-    'redesign_enabled' => env('HIRE_AGENT_DETAIL_REDESIGN_ENABLED', false),
+    'redesign_enabled' => env('HIRE_AGENT_DETAIL_REDESIGN_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -54,8 +66,15 @@ return [
     | than after it.
     |
     | INDEPENDENT OF THE MASTER SWITCH, and both must agree — the same contract
-    | config/hire_agent_hero.php uses. Widening this list is a rollout decision, not
-    | a code change, and it is the ONLY thing that grants a role the new layout.
+    | config/hire_agent_hero.php uses. It is the ONLY thing that grants a role the
+    | new layout.
+    |
+    | THE DEFAULT IS NOW ALL FOUR ROLES rather than the landlord pilot. The pilot is
+    | over. Leaving 'landlord' here would mean an environment that lost its
+    | variables served three roles the old layout and one the new — a worse state
+    | than either being uniformly wrong, because a mixed platform reads as a
+    | rendering bug rather than as a missing variable. NARROWING this list is still
+    | a rollout decision and still a value change, not a code change.
     |
     | Read exclusively through HireAgentDetailRedesign::enabledFor($role). Nothing
     | may read this key directly, and no Blade file may test a role name inline —
@@ -66,7 +85,7 @@ return [
 
     'redesign_roles' => array_values(array_filter(array_map(
         'trim',
-        explode(',', (string) env('HIRE_AGENT_DETAIL_REDESIGN_ROLES', 'landlord'))
+        explode(',', (string) env('HIRE_AGENT_DETAIL_REDESIGN_ROLES', 'seller,buyer,landlord,tenant'))
     ))),
 
 ];
