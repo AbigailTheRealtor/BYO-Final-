@@ -31,5 +31,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "overrides": {
+    "webpack": "5.94.0"
+  }
 }
