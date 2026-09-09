@@ -158,10 +158,41 @@ php artisan migrate --force --no-interaction
 # Only now, after migrations succeeded. Recording earlier would name a SHA that
 # never actually reached a healthy schema, which is worse than no record: it
 # would be a rollback target that was never good.
-if ! record_deploy_sha; then
-    echo "start-production: could not determine the deploy SHA; refusing to start." >&2
-    exit 1
-fi
+# Two different answers, and they must not share a fate.
+#
+# A release we cannot NAME is not the same as an environment that is BROKEN. The
+# recorded SHA is a rollback breadcrumb, not a safety gate — the gates are
+# `deploy:preflight`, `deploy:require-flags` and `migrate`, and all three have
+# already run and passed by the time we get here. Refusing to serve a release
+# that is otherwise healthy, because `.git` was not included in the deployment
+# snapshot, trades a real outage for a missing note.
+#
+# Replit publishes no commit SHA to the runtime (REPL_ID identifies the repl,
+# not the revision, and using it would record a fabrication), so whether `.git`
+# survives into a Reserved VM snapshot is a platform detail we do not control
+# and have not been able to prove. Set DEPLOY_SHA to make this deterministic.
+#
+# What we will NOT do is invent a value: an unproven SHA in the rollback record
+# is worse than an empty one, because it would be trusted.
+set +e
+record_deploy_sha
+deploy_sha_status=$?
+set -e
+
+case "$deploy_sha_status" in
+    0)
+        ;;
+    2)
+        echo "start-production: WARNING - the release SHA could not be established" >&2
+        echo "start-production: (no DEPLOY_SHA set and no readable git metadata in this snapshot)." >&2
+        echo "start-production: serving anyway; NO ROLLBACK POINT WAS RECORDED for this release." >&2
+        echo "start-production: set DEPLOY_SHA in the deployment environment to fix this permanently." >&2
+        ;;
+    *)
+        echo "start-production: the deploy SHA record could not be written; refusing to start." >&2
+        exit 1
+        ;;
+esac
 
 # Release before the server takes over. Holding the lock across `exec` would
 # leave the serving process owning it for its entire life, and no future deploy

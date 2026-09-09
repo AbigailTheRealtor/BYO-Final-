@@ -418,7 +418,10 @@ SH);
     {
         $shared = $this->sharedUserenvBlock();
 
-        foreach (['APP_NAME', 'APP_URL', 'DB_CONNECTION', 'DB_DATABASE', 'CACHE_DRIVER', 'SESSION_DRIVER', 'QUEUE_CONNECTION', 'ASSET_URL'] as $key) {
+        // APP_URL and ASSET_URL are deliberately NOT in this list any more — they
+        // were removed for the same reason APP_ENV and APP_DEBUG were, and
+        // ProductionUrlIsolationTest owns that assertion now.
+        foreach (['APP_NAME', 'DB_CONNECTION', 'DB_DATABASE', 'CACHE_DRIVER', 'SESSION_DRIVER', 'QUEUE_CONNECTION'] as $key) {
             $this->assertMatchesRegularExpression(
                 '/^\s*' . $key . '\s*=/m',
                 $shared,

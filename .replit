@@ -10,6 +10,22 @@ packages = ["unzip", "orbiton"]
 [userenv]
 
 [userenv.shared]
+# APP_URL / ASSET_URL are deliberately NOT declared here.
+#
+# Shared userenv reaches deployments as well as development shells, and
+# Illuminate\Support\Env builds an IMMUTABLE repository - a value already in the
+# process environment beats the same key in `.env`. Declaring a *.replit.dev
+# workspace host here therefore forced every production asset, mail and console
+# URL onto the development workspace, which is reachable only while that
+# workspace is awake.
+#
+# Absent is the correct value, not a placeholder. With ASSET_URL unset,
+# UrlGenerator::asset() falls back to the live request root, so assets resolve
+# against whatever host actually served the page. Do not substitute a guessed
+# production hostname; if a deployment ever needs an explicit one, set it as a
+# deployment-scoped variable, never here.
+#
+# ProductionUrlIsolationTest pins this.
 DB_CONNECTION = "pgsql"
 DB_HOST = "helium"
 DB_PORT = "5432"
@@ -17,12 +33,10 @@ DB_DATABASE = "heliumdb"
 DB_USERNAME = "postgres"
 DB_PASSWORD = "password"
 APP_NAME = "BidYourOffer"
-APP_URL = "https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev"
 CACHE_DRIVER = "file"
 SESSION_DRIVER = "file"
 QUEUE_CONNECTION = "sync"
 BROADCAST_DRIVER = "log"
-ASSET_URL = "https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev"
 
 [userenv.development]
 ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION = "true"

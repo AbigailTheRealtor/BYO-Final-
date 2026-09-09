@@ -221,6 +221,34 @@ own `.env`.
 on purpose**. It is a development template; nothing in `.replit`, `deploy/` or
 `scripts/` consumes it as production configuration.
 
+### `APP_URL` and `ASSET_URL` are not declared there either, for the same reason
+
+They used to be, both set to the `*.spock.replit.dev` **development workspace**
+host. Shared userenv reaches deployments, and the immutable env repository means
+that value beat `.env` — so a production release would have served every
+stylesheet, script and image from the development workspace, a host that answers
+only while that workspace is awake.
+
+`ASSET_URL` is the sharp one. It becomes `app.asset_url`, which
+`RoutingServiceProvider` hands to `UrlGenerator` as `$assetRoot`, and
+`UrlGenerator::asset()` is `$this->assetRoot ?: $this->formatRoot(...)` — a
+non-empty asset root short-circuits the request entirely.
+
+**Absent is the correct production value, not a placeholder.** With `ASSET_URL`
+unset, `asset()` falls back to the live request root, and `TrustProxies`
+(`$proxies = '*'`, honouring `X-Forwarded-Host` / `-Proto`) makes that the real
+external host and scheme. Do not substitute a guessed hostname; if a deployment
+ever needs an explicit one, set it as a deployment-scoped variable.
+
+`APP_URL` still matters in one place: `SetRequestForConsole` builds the console
+Request from `config('app.url')`, so absolute URLs generated from CLI — not from
+an HTTP request — fall back to `http://localhost`. That is visibly wrong rather
+than silently wrong, which is the point. Set `APP_URL` to the real production
+hostname once the first deploy has assigned one.
+
+`ProductionUrlIsolationTest` pins all of this, with a generic `replit.dev` guard
+rather than today's workspace UUID.
+
 ## Configuration cache policy
 
 **The production deployment build does NOT run `php artisan config:cache`.**
