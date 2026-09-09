@@ -165,7 +165,12 @@
                 <x-stellar.matchmaker-missing :items="$matchContext['missing_data']" />
             @endif
 
-            <x-stellar.matchmaker-nearby :location-summary="$locationSummary" />
+            {{-- `location-pois` is passed for ATTRIBUTION ONLY — the nearby list itself
+                 still renders from $locationSummary, unchanged. The flood-zone component
+                 below displays no place names and so owes no place attribution. --}}
+            <x-stellar.matchmaker-nearby
+                :location-summary="$locationSummary"
+                :location-pois="$locationPois ?? collect()" />
 
             <x-stellar.matchmaker-flood-zone :location-summary="$locationSummary" />
 

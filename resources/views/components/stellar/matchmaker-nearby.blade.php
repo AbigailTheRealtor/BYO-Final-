@@ -1,9 +1,26 @@
 {{--
   matchmaker-nearby — nearby amenities from Location DNA pipeline.
   Section 2 (BidYourOffer Matchmaker Intelligence).
-  Props: $locationSummary (full LocationDnaSummaryService response, or [])
+
+  Props:
+    $locationSummary (full LocationDnaSummaryService response, or [])
+    $locationPois    (persisted PropertyLocationPoi rows for THIS listing, or empty)
+
+  WHY A SECOND PROP RATHER THAN READING THE SUMMARY.
+  This component publishes place NAMES, and two of the licenses behind our POI data
+  (CDLA-Permissive-2.0 and Apache-2.0, the Foursquare slice of Overture Places)
+  require attribution wherever the data is published. The summary's
+  `nearest_by_category` entries carry no provenance — only a `data_source` column
+  that was written as the literal 'google_places' on every row regardless of which
+  adapter answered, until that was corrected. Resolving attribution from it would
+  credit Google for Overture data: a false statement about a third party, on the one
+  surface where being wrong is a licence breach rather than a bug.
+
+  So the persisted rows are passed in by the controller and the shared partial
+  resolves obligations from each row's own `provenance_json.provider`. The component
+  fetches nothing itself, and the nearby list below is unchanged.
 --}}
-@props(['locationSummary' => []])
+@props(['locationSummary' => [], 'locationPois' => []])
 
 @php
     $status  = $locationSummary['status'] ?? null;
@@ -155,6 +172,24 @@
                 Location analysis not yet available for this property. Check back shortly.
             </div>
         @endif
+
+        {{-- Attribution for the place names above.
+
+             ONCE PER COMPONENT, not once per category or per section — the obligation
+             attaches to the surface that publishes the data, and repeating it beside
+             every row would be noise rather than compliance.
+
+             Placed inside the card, after the results, so it reads as subordinate to
+             them. The partial renders NOTHING when the rows carry no provenance we can
+             place, so a listing with no POIs, or with rows from an unmapped provider,
+             produces no markup at all rather than a default credit.
+
+             This is NOT the Stellar MLS attribution block, which states where the
+             LISTING came from under the Bridge/Stellar IDX terms. Separate obligation,
+             separate source, separate statement. --}}
+        @include('partials.location-dna._data-attribution', [
+            'pois' => $locationPois ?? [],
+        ])
 
     </div>
 </div>
