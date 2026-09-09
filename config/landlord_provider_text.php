@@ -75,8 +75,10 @@ return [
         'pet_restrictions' => [
             'label'      => 'Pet restrictions',
             'max_length' => 500,
-            // Assistance animals are not pets. A restriction written here that
-            // reaches for them is the one case this field must catch.
+            // Ordinary pet TERMS applied to an assistance animal — "subject to the
+            // pet fee", "counts toward the two-pet limit" — only mean anything on a
+            // field that is a pet policy. Outright assistance-animal EXCLUSIONS are
+            // not listed here: they are universal (see `assistance_animal_exclusion`).
             'extra_categories' => ['assistance_animal_as_pet'],
         ],
         'additional_details' => [
@@ -87,12 +89,81 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | MLS-sourced provider prose — explicit semantic aliases
+    |----------------------------------------------------------------------
+    |
+    | Current main publishes an imported Stellar/Bridge payload on the landlord
+    | and seller listing pages through `_mls_property_facts.blade.php`. The
+    | landlord page has NO auth middleware, so those rows are anonymous
+    | publication — the same audience as the landlord's own prose, arriving by a
+    | different route and, before this map, past no boundary at all.
+    |
+    | A Bridge field is governed by being named here, and it inherits the
+    | SEMANTICS of the landlord field it is mapped to. Nothing else about the MLS
+    | payload is moderated: this is a short, explicit alias map, deliberately not
+    | a sanitiser applied to all 347 rendered fields.
+    |
+    | WHY SO FEW ENTRIES. Every rendered field was classified against REAL VALUES
+    | in tests/fixtures/mls/bridge/*.json, not against its name, and almost all of
+    | them are structured — RESO enum pick-lists that arrive as arrays. Three
+    | traps that a name-based reading gets wrong:
+    |
+    |   OccupantType         "Owner" / "Tenant" / "Vacant" — a single enum of
+    |                        occupancy STATUS. It is a structured fact and is
+    |                        deliberately NOT governed.
+    |   STELLAR_RealtorInfo  labelled "Listing Notes", which reads like prose, but
+    |                        arrives as an enum array ("Brochure Available",
+    |                        "Survey Available"). Not governed.
+    |   Disclosures          also an enum pick-list, not disclosure narrative.
+    |                        Not governed.
+    |
+    | Moderating a structured enum would be pure false-positive risk: those values
+    | cannot express an exclusion, and suppressing one would delete a property
+    | fact for no safety gain.
+    |
+    | READ-TIME ONLY. This map is applied when a stored blob is read back for
+    | rendering (`MlsSupplementalDetails::fromStored()`). The imported payload is
+    | stored complete and is never edited, so MLS import completeness is
+    | untouched and a rule change here re-governs history on the next page load.
+    */
+    'mls_prose_aliases' => [
+        // Free narrative about pets — the field the pre-PR audit named. It is
+        // "Pet Restrictions" on the page, one word from the landlord's own
+        // `pet_restrictions`, and it inherits that field's semantics including
+        // the pet-policy-specific assistance-animal rules.
+        'STELLAR_PetRestrictions' => 'pet_restrictions',
+
+        // Free narrative about lease restrictions — fixtures carry sentences
+        // ("Lease term: Minimum 6 months, maximum 12 months."). Screening-shaped
+        // prose belongs to the general approval-conditions semantics.
+        'STELLAR_AdditionalLeaseRestrictions' => 'landlord_approval_conditions',
+
+        // Open-house narrative, published on the same anonymous page. General
+        // marketing-prose semantics, i.e. the additional-details rules.
+        'OpenHouseRemarks' => 'additional_details',
+    ],
+
+    /*
+    |----------------------------------------------------------------------
     | Categories
     |----------------------------------------------------------------------
     |
     | `patterns` are case-insensitive regular expressions run against the
     | whitespace-normalised text. `message` is shown to the landlord verbatim,
     | so it must name what to change rather than scold.
+    |
+    | SCOPE. A category is UNIVERSAL by default — it is evaluated on every
+    | governed field. `'opt_in' => true` narrows it to the fields that name it in
+    | their own `extra_categories`, and is for rules that are meaningless
+    | elsewhere rather than for rules that are merely inconvenient.
+    |
+    | Getting that distinction wrong is what the Phase 3 pre-PR audit found:
+    | assistance-animal EXCLUSIONS were opt-in to `pet_restrictions`, so
+    | "No emotional support animals" typed into Landlord approval conditions or
+    | Additional details published untouched. A refusal to house an assistance
+    | animal is a disability/accommodation exclusion in whichever box it is typed;
+    | only the "an assistance animal is subject to ordinary PET TERMS" rules are
+    | genuinely specific to a pet policy. Hence the two categories below.
     */
     'categories' => [
 
@@ -101,12 +172,20 @@ return [
             'patterns' => [
                 // "professionals only", "adults only", "students only"
                 '/\b(professionals?|adults?|singles?|students?|couples?|families|christians?|seniors?)\s+only\b/i',
-                // "no children", "no kids", "no families"
-                '/\bno\s+(children|kids|infants|toddlers|families|family\s+with\s+children)\b/i',
+                // "no children", "no kids", "no families", "no-children", "No child".
+                // The singular and the hyphenated spelling are here because the pre-PR
+                // audit found both slipping past a `children|kids` alternation.
+                '/\bno[\s-]+(child|children|kid|kids|infants?|toddlers?|babies|families|family\s+with\s+children)\b/i',
+                // "Children are not allowed", "kids not permitted" — the same exclusion
+                // written as a statement rather than as a "no X" phrase.
+                '/\b(children|kids|infants?|toddlers?|babies|families)\s+(?:are\s+|is\s+)?not\s+(?:allowed|permitted|accepted|welcome)\b/i',
+                '/\b(?:do\s+not|don\'?t|cannot|can\'?t|will\s+not|won\'?t)\s+(?:allow|permit|accept|rent\s+to)\s+(?:any\s+)?(children|kids|families|students?)\b/i',
                 // "adults preferred", "professionals preferred"
                 '/\b(adults?|professionals?|singles?|couples?|seniors?|students?)\s+(are\s+)?preferred\b/i',
-                // "prefer a single occupant", "prefer professionals"
-                '/\bprefer(?:red|s|ring)?\s+(?:a\s+)?(?:single\s+occupants?|professionals?|adults?\s+without\s+children|childless)\b/i',
+                // "prefer a single occupant", "prefer professionals", "we prefer adults".
+                // The noun list is person-CATEGORIES only, so "prefer applicants with
+                // good credit" and "prefer a 12-month lease" stay allowed.
+                '/\b(?:we\s+)?prefer(?:red|s|ring)?\s+(?:to\s+rent\s+to\s+)?(?:a\s+|an\s+)?(?:single\s+occupants?|professionals?|adults?|mature\s+adults?|singles?|couples?|seniors?|retirees?|students?|childless(?:\s+couples?)?)\b/i',
                 // "suitable for adults", "not suitable for children"
                 '/\b(?:not\s+)?suitable\s+for\s+(?:children|kids|families|adults\s+only)\b/i',
                 // explicit religion / national origin / race gating
@@ -132,16 +211,43 @@ return [
             ],
         ],
 
-        'assistance_animal_as_pet' => [
-            'message' => 'Assistance animals are accommodation requests, not pets, and cannot be excluded by a pet policy. Ordinary pet terms — species, size, count, breed, pet deposit — are fine here.',
+        /*
+         * UNIVERSAL. Refusing an assistance animal is a disability/accommodation
+         * exclusion, not a pet term, so it is caught in every governed field —
+         * approval conditions and additional details included. This category was
+         * split out of `assistance_animal_as_pet` when the pre-PR audit proved the
+         * opt-in scoping let the same sentence publish from the other two boxes.
+         *
+         * Note what these patterns require: an assistance-animal noun WRAPPED IN A
+         * REFUSAL. "Service animals welcome" and "ESA documentation accepted" do not
+         * match, and must never be made to.
+         */
+        'assistance_animal_exclusion' => [
+            'message' => 'Assistance animals are accommodation requests, not pets, and cannot be refused by a pet policy or a condition of approval. Ordinary pet terms — species, size, count, breed, pet deposit — are fine.',
             'patterns' => [
-                '/\bno\s+(?:service|assistance|support|emotional\s+support|therapy)\s+(?:animals?|dogs?|pets?)\b/i',
+                '/\bno\s+(?:service|assistance|support|emotional\s+support|therapy|companion)\s+(?:animals?|dogs?|pets?)\b/i',
                 '/\bno\s+esas?\b/i',
-                '/\b(?:service|assistance|emotional\s+support|support)\s+animals?\s+(?:are\s+)?(?:not\s+(?:allowed|permitted|accepted)|excluded|prohibited)\b/i',
-                // subjecting an assistance animal to the ordinary pet policy
-                '/\b(?:service|assistance|emotional\s+support|support)\s+animals?\s+(?:are\s+)?(?:subject\s+to|count\s+(?:as|toward)|treated\s+as|considered)\s+(?:the\s+)?(?:ordinary\s+)?pets?\b/i',
-                '/\b(?:service|assistance|emotional\s+support|support)\s+animals?\s+(?:are\s+)?subject\s+to\s+(?:the\s+)?pet\s+(?:policy|fee|deposit|rent|restrictions?|limits?|weight)\b/i',
-                '/\bpet\s+(?:fee|deposit|rent)\s+applies\s+to\s+(?:all\s+)?(?:service|assistance|emotional\s+support|support)\s+animals?\b/i',
+                '/\b(?:service|assistance|emotional\s+support|support|therapy|companion)\s+(?:animals?|dogs?)\s+(?:are\s+|will\s+be\s+)?(?:not\s+(?:allowed|permitted|accepted|welcome)|excluded|prohibited|refused|denied)\b/i',
+                // "we do not allow service animals" / "we don't accept ESAs"
+                '/\b(?:do\s+not|don\'?t|cannot|can\'?t|will\s+not|won\'?t)\s+(?:allow|permit|accept|take)\s+(?:any\s+)?(?:service|assistance|emotional\s+support|support|therapy|companion)\s+(?:animals?|dogs?)\b/i',
+                '/\b(?:do\s+not|don\'?t|will\s+not|won\'?t)\s+(?:allow|permit|accept)\s+esas?\b/i',
+            ],
+        ],
+
+        /*
+         * PET-POLICY SPECIFIC. Not a refusal — an attempt to run an assistance
+         * animal through the ordinary pet machinery (fee, deposit, weight limit,
+         * pet count). That only has a meaning on a field that IS a pet policy,
+         * which is why this one stays opt-in and `pet_restrictions` names it.
+         */
+        'assistance_animal_as_pet' => [
+            'opt_in'  => true,
+            'message' => 'Assistance animals are accommodation requests, not pets, so ordinary pet fees, deposits, weight limits and pet counts cannot be applied to them. Those terms are fine for actual pets.',
+            'patterns' => [
+                '/\b(?:service|assistance|emotional\s+support|support|therapy|companion)\s+animals?\s+(?:are\s+)?(?:subject\s+to|count\s+(?:as|toward)|treated\s+as|considered)\s+(?:the\s+)?(?:ordinary\s+)?pets?\b/i',
+                '/\b(?:service|assistance|emotional\s+support|support|therapy|companion)\s+animals?\s+(?:are\s+)?subject\s+to\s+(?:the\s+)?(?:same\s+)?pet\s+(?:policy|fee|deposit|rent|restrictions?|limits?|weight)\b/i',
+                '/\bpet\s+(?:fee|deposit|rent)\s+applies\s+to\s+(?:all\s+)?(?:service|assistance|emotional\s+support|support|therapy|companion)\s+animals?\b/i',
+                '/\b(?:service|assistance|emotional\s+support|support|therapy|companion)\s+animals?\s+(?:still\s+)?(?:pay|require)\s+(?:a\s+|the\s+)?pet\s+(?:fee|deposit|rent)\b/i',
             ],
         ],
 

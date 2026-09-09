@@ -134,6 +134,58 @@ class LandlordProviderTextPolicy
         return array_key_exists($key, self::fields());
     }
 
+    /** @return array<string,string> Bridge/Stellar field => governed field whose semantics apply */
+    public static function mlsProseAliases(): array
+    {
+        $map = self::conf()['mls_prose_aliases'] ?? [];
+
+        return is_array($map) ? $map : [];
+    }
+
+    /**
+     * The governed field whose semantics an imported MLS field inherits, or null
+     * when that MLS field is not provider prose we moderate.
+     */
+    public static function mlsAliasFor(string $mlsField): ?string
+    {
+        $target = self::mlsProseAliases()[$mlsField] ?? null;
+
+        return is_string($target) && self::isGovernedField($target) ? $target : null;
+    }
+
+    /**
+     * Publication eligibility for one row of imported MLS prose.
+     *
+     * Returns the value when it may be published and NULL when it may not, exactly
+     * like `displayValue()` — a suppressed MLS row reads as "the feed says nothing
+     * here", which is what the renderer already does with an empty value.
+     *
+     * AN UNMAPPED FIELD IS RETURNED UNCHANGED. That is the whole design: the 300-odd
+     * structured RESO enums that make up the rest of the payload are never examined,
+     * so no property fact can be suppressed by a rule written for prose. Which fields
+     * are prose is a decision recorded in `mls_prose_aliases`, made against real
+     * fixture values rather than field names.
+     *
+     * This never writes. The imported payload stays complete in storage; only what
+     * a page may render is decided here.
+     */
+    public static function mlsDisplayValue(string $mlsField, $stored): ?string
+    {
+        if (! is_string($stored)) {
+            return null;
+        }
+
+        $trimmed = trim($stored);
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $target = self::mlsAliasFor($mlsField);
+
+        return $target === null ? $trimmed : self::displayValue($target, $trimmed);
+    }
+
     /** Storage bound for a governed field. Applied to safe and unsafe text alike. */
     public static function maxLength(string $key): int
     {
@@ -149,9 +201,16 @@ class LandlordProviderTextPolicy
     }
 
     /**
-     * The categories that apply to one field: the shared set, plus any the field
-     * opts into. `pet_restrictions` is the only field today that adds one —
-     * assistance-animal-as-pet is meaningless on a field that is not a pet policy.
+     * The categories that apply to one field: every UNIVERSAL category, plus any
+     * opt-in category the field names in `extra_categories`.
+     *
+     * SCOPE IS DECLARED, NOT INFERRED. This method used to treat a category as
+     * opt-in because some field happened to name it — so adding
+     * `assistance_animal_as_pet` to `pet_restrictions` silently removed that whole
+     * category from the other two fields, and "No emotional support animals" in
+     * Landlord approval conditions or Additional details published untouched. The
+     * pre-PR audit caught it. A category is narrow now only by saying
+     * `'opt_in' => true` about itself, which is visible in the config diff.
      */
     private static function categoriesFor(string $key): array
     {
@@ -167,11 +226,7 @@ class LandlordProviderTextPolicy
 
         $out = [];
         foreach ($all as $name => $definition) {
-            // A category listed as "extra" on some field is opt-in ONLY: it applies
-            // to the fields that name it, never to every field by default.
-            $isExtraSomewhere = self::isOptInCategory($name);
-
-            if ($isExtraSomewhere && ! in_array($name, $extra, true)) {
+            if (self::isOptInCategory($name) && ! in_array($name, $extra, true)) {
                 continue;
             }
 
@@ -181,17 +236,15 @@ class LandlordProviderTextPolicy
         return $out;
     }
 
-    /** True when some field opts into this category, making it opt-in everywhere. */
+    /**
+     * True only when the category DECLARES itself opt-in. Anything else is
+     * universal and is evaluated on every governed field.
+     */
     private static function isOptInCategory(string $category): bool
     {
-        foreach (self::fields() as $field) {
-            $extra = $field['extra_categories'] ?? [];
-            if (is_array($extra) && in_array($category, $extra, true)) {
-                return true;
-            }
-        }
+        $definition = self::conf()['categories'][$category] ?? [];
 
-        return false;
+        return is_array($definition) && ($definition['opt_in'] ?? false) === true;
     }
 
     /**
@@ -294,14 +347,32 @@ class LandlordProviderTextPolicy
     }
 
     /**
-     * The write projection. Length is bounded here for every governed field, safe or
-     * not, because a 40KB paragraph is a storage problem independent of its content.
+     * The write projection. IT PRESERVES THE LANDLORD'S BYTES EXACTLY, other than
+     * trimming surrounding whitespace.
      *
-     * NOTE WHAT THIS DOES NOT DO: it does not drop, redact or rewrite unsafe text.
-     * Save Draft must keep exactly what the landlord typed so they can come back and
-     * revise it; publication is refused separately, by validation. Suppression at
-     * read time (`displayValue()`) is what keeps unsafe prose off the page and out of
-     * the prompt in the meantime — including for rows that predate Phase 3.
+     * IT USED TO TRUNCATE, AND THAT WAS A DEFECT ON TWO COUNTS. `mb_substr($text, 0,
+     * max_length)` on the way to storage meant:
+     *
+     *   1. Silent data loss. A landlord who wrote 1,400 characters got 1,000 stored,
+     *      with no error and no warning. The draft they came back to was not the
+     *      draft they wrote, and nothing anywhere said so.
+     *
+     *   2. A moderation hole. Truncation happened at the WRITE, so a sentence
+     *      beginning after character 1,000 was discarded before it was stored — and
+     *      every later boundary examined the short copy. "Filler to 1,000 characters,
+     *      then the unsafe sentence" is an evasion under that ordering. Both the
+     *      publish gate and read-time suppression now see the FULL value, so it isn't.
+     *
+     * There is no schema pressure to truncate — the meta value column is `text`.
+     * Length is therefore a PUBLICATION rule enforced by `publishError()`, not a
+     * storage rule: an over-long draft is kept intact and simply cannot be published
+     * until the landlord shortens it, which is the same shape as unsafe wording.
+     *
+     * NOTE WHAT THIS STILL DOES NOT DO: it does not drop, redact or rewrite unsafe
+     * text. Save Draft keeps exactly what the landlord typed so they can come back
+     * and revise it; publication is refused separately. Suppression at read time
+     * (`displayValue()`) is what keeps unsafe prose off the page and out of the
+     * prompt in the meantime — including for rows that predate Phase 3.
      */
     public static function projectForStorage(string $field, $text): string
     {
@@ -309,33 +380,54 @@ class LandlordProviderTextPolicy
             return '';
         }
 
-        $text = trim($text);
+        return trim($text);
+    }
 
-        if ($text === '' || ! self::isGovernedField($field)) {
-            return $text;
+    /** Is this governed value within the length it is allowed to PUBLISH at? */
+    public static function withinMaxLength(string $field, $text): bool
+    {
+        if (! is_string($text) || ! self::isGovernedField($field)) {
+            return true;
         }
 
-        return mb_substr($text, 0, self::maxLength($field));
+        return mb_strlen(trim($text)) <= self::maxLength($field);
     }
 
     /**
      * Publish-time message for one field, or null when it may be published.
      * Names the offending phrase so "what do I change?" has an answer.
+     *
+     * TWO INDEPENDENT REASONS TO REFUSE, both non-destructive: the wording states an
+     * unlawful preference, or the value is longer than the field may publish. Wording
+     * is checked FIRST, so a landlord who is both over length and using unsafe
+     * wording hears about the wording — shortening would not have helped them.
+     *
+     * Length is evaluated against the FULL value. Nothing upstream truncates any
+     * more; see `projectForStorage()` for why that ordering is load-bearing.
      */
     public static function publishError(string $field, $text): ?string
     {
         $decision = self::decide($field, $text);
+        $where    = self::label($field);
 
-        if ($decision['allowed']) {
-            return null;
+        if (! $decision['allowed']) {
+            $matched = $decision['matched'] ?? '';
+
+            return $matched === ''
+                ? sprintf('%s: %s', $where, $decision['message'])
+                : sprintf('%s: please revise “%s”. %s', $where, $matched, $decision['message']);
         }
 
-        $matched = $decision['matched'] ?? '';
-        $where   = self::label($field);
+        if (! self::withinMaxLength($field, $text)) {
+            return sprintf(
+                '%s: please shorten this to %d characters or fewer to publish (currently %d). Your full text is saved — nothing has been removed.',
+                $where,
+                self::maxLength($field),
+                mb_strlen(trim((string) $text))
+            );
+        }
 
-        return $matched === ''
-            ? sprintf('%s: %s', $where, $decision['message'])
-            : sprintf('%s: please revise “%s”. %s', $where, $matched, $decision['message']);
+        return null;
     }
 
     /**

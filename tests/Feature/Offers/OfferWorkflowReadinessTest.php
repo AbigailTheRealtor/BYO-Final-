@@ -1230,6 +1230,23 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/offer-listing/tenant/view.blade.php',
             'resources/views/agent/offer-listing-view.blade.php',
 
+            // Phase 3 pre-PR blocker fixes. Both files were already permitted by
+            // earlier task blocks above, so nothing new is added to the allowlist
+            // here — they are named again only so this task's scope is legible:
+            //
+            //   AgentController
+            //     Routes the three governed provider fields through
+            //     LandlordProviderTextPolicy::displayValue() before the
+            //     authenticated agent view renders them, and supplies the
+            //     `security_deposit_amount` key that view has always read and this
+            //     controller never provided (a pre-existing 500 on that route).
+            //
+            //   MlsSupplementalDetails
+            //     Applies the MLS prose alias map when a stored payload is READ.
+            //     Ingestion, storage and import completeness are untouched.
+            'app/Http/Controllers/AgentController.php',
+            'app/Services/ListingImport/Mls/MlsSupplementalDetails.php',
+
             // ── Stellar MLS import — complete data parity (2026-09-04) ───────
             //
             // The payload audit found Bridge sending 553 Property fields, all of

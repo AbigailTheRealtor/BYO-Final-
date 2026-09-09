@@ -3,6 +3,7 @@
 namespace App\Services\ListingImport\Mls;
 
 use App\Services\ListingImport\MlsPropertyDetailsPresenter;
+use App\Support\OfferListing\LandlordProviderTextPolicy;
 
 /**
  * The supplemental MLS payload that is persisted with an imported listing, and
@@ -154,10 +155,37 @@ final class MlsSupplementalDetails
 
                 $value = isset($row['value']) && is_scalar($row['value']) ? trim((string) $row['value']) : '';
                 $label = isset($row['label']) && is_scalar($row['label']) ? trim((string) $row['label']) : '';
+                $key   = isset($row['key']) && is_scalar($row['key']) ? (string) $row['key'] : '';
+
+                /*
+                 * Fair Housing Phase 3 — publication eligibility for imported prose.
+                 *
+                 * A few Bridge fields are provider-authored NARRATIVE, not structured
+                 * facts, and this blob is rendered on the landlord listing page, which
+                 * has no auth middleware. "No emotional support animals" arriving in
+                 * STELLAR_PetRestrictions is the same anonymous publication as the
+                 * landlord typing it into their own Pet restrictions box, so it meets
+                 * the same boundary, by the alias map in
+                 * config/landlord_provider_text.php.
+                 *
+                 * HERE, AND NOT IN fromRecord(), ON PURPOSE. fromRecord() builds what
+                 * gets STORED, and the imported payload must stay complete — Phase 3
+                 * changes nothing about ingestion, storage or MLS completeness. This
+                 * is the read path, so the bytes are untouched, historical rows are
+                 * governed with no remediation pass, and a change to the rules takes
+                 * effect on the next page load.
+                 *
+                 * Unmapped fields — the ~344 structured RESO enums — are returned
+                 * unchanged and never examined.
+                 */
+                if ($key !== '' && $value !== '') {
+                    $value = (string) (LandlordProviderTextPolicy::mlsDisplayValue($key, $value) ?? '');
+                }
 
                 // A stored row with no value is dropped rather than rendered.
                 // Blobs written before a bug fix, or hand-edited ones, must not
-                // be able to put an empty row on a page.
+                // be able to put an empty row on a page. A row suppressed just
+                // above arrives here empty and takes the same exit.
                 if ($value === '' || $label === '') {
                     continue;
                 }

@@ -881,6 +881,16 @@ class AgentController extends Controller
             'lease_date'                  => $meta['lease_date']                  ?? '',
             'lease_available_date'        => $meta['lease_available_date']        ?? '',
             'security_deposit_required'   => $meta['security_deposit_required']   ?? '',
+            // Its sibling, omitted here while the view has always read it:
+            // `offer-listing-view.blade.php` renders
+            // `$d['security_deposit_amount'] ?: $d['security_deposit_required']`, so
+            // the missing key raised "Undefined array key" and the whole page 500'd
+            // for any landlord listing. Both landlord components write this meta key
+            // (LandlordLeasingTerms::$security_deposit_amount), so the value existed
+            // the entire time — only the mapping was absent. Found while adding the
+            // Phase 3 render regression test for this route, which could not reach a
+            // 200 without it.
+            'security_deposit_amount'     => $meta['security_deposit_amount']     ?? '',
             'first_month_rent_required'   => $meta['first_month_rent_required']   ?? '',
             'last_month_rent_required'    => $meta['last_month_rent_required']    ?? '',
             'total_move_in_funds_required' => $meta['total_move_in_funds_required'] ?? '',
@@ -1377,6 +1387,36 @@ class AgentController extends Controller
             'number_of_occupants_allowed'                  => $meta['number_of_occupants_allowed']                  ?? '',
             'photo'                                        => $meta['photo']                                        ?? '',
         ];
+
+        /*
+         * Fair Housing Phase 3 — the authenticated reader is a reader too.
+         *
+         * This page renders landlord-authored prose (`landlord_approval_conditions`,
+         * `additional_details`, `pet_restrictions`) to whoever can reach the route —
+         * which includes admins, who are by definition not the listing's owner. The
+         * pre-PR audit found all three arriving here straight from `$meta`, so text
+         * the anonymous landlord page had already stopped showing was still published
+         * here. "Authenticated" is not "entitled to unlawful screening criteria".
+         *
+         * Applied ONCE, on the assembled array, rather than at each of the four
+         * `$meta[...]` reads above: a fifth read added later is covered by
+         * construction. This is the same decision `displayValue()` makes for the
+         * public view, the qualification pages and Ask AI — one boundary, no parallel
+         * banned list, and nothing here re-implements a rule.
+         *
+         * READ-TIME ONLY. `$meta` is deliberately left untouched and is still passed
+         * to the view alongside `$data`: stored bytes do not change, and the owner's
+         * own edit screens (a different route, a different component) are unaffected,
+         * so the landlord can still see and revise exactly what they wrote.
+         */
+        foreach (array_keys(\App\Support\OfferListing\LandlordProviderTextPolicy::fields()) as $governedField) {
+            if (array_key_exists($governedField, $data)) {
+                $data[$governedField] = (string) (\App\Support\OfferListing\LandlordProviderTextPolicy::displayValue(
+                    $governedField,
+                    $data[$governedField]
+                ) ?? '');
+            }
+        }
 
         return view('agent.offer-listing-view', compact('data', 'meta'));
     }
