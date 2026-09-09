@@ -24,3 +24,10 @@ attached_assets/Pasted-*.txt
 # Reusable generators live in scripts/; substantial docs live in docs/.
 scratch/
 scratchpad/
+
+# Playwright browser suite artefacts (tests/browser)
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+playwright-results.json

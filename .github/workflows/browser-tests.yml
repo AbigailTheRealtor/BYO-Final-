@@ -1,0 +1,148 @@
+name: Browser Tests (Location DNA map)
+
+# The first browser-level gate this repository has ever had.
+#
+# WHY THIS EXISTS. Every other workflow runs PHPUnit. PHPUnit renders the Location
+# DNA Blade partial and asserts on the TEXT of the JavaScript inside it — it cannot
+# execute that JavaScript, so it cannot see a map that fails to initialise, a
+# serializer that writes an empty array over saved geometry, or a request going to
+# a host it should not. Both of those defects reached production while every
+# required check was green. This job closes that class of gap.
+#
+# WHAT IT RUNS. tests/browser/, driven by Playwright against static fixtures. No
+# database, no Laravel boot, no authentication — the risk being tested lives in the
+# JavaScript, and testing it directly is both faster and more honest than driving a
+# full application to reach it.
+#
+# NO BILLABLE CALLS, ENFORCED RATHER THAN TRUSTED. tests/browser/support/network.js
+# aborts every request leaving the fixture origin and records the attempt, and
+# harness.spec.js proves the recorder works by contacting a forbidden host on
+# purpose. A green "no Google requests" result is therefore a real absence, not a
+# recorder that was never wired up. This is the same discipline as the PHP suite's
+# credential blanking in tests/bootstrap.php.
+#
+# WEBGL. MapLibre requires WebGL2. GitHub's ubuntu runners provide it through
+# SwiftShader with the flags set in playwright.config.js, so the pixel-level specs
+# in renderer-gl.spec.js RUN here — unlike in the Replit container, where no WebGL
+# is available and those three specs skip. That asymmetry is the reason this
+# workflow matters: CI is the only place the basemap is actually verified.
+#
+# NOTHING IS SUPPRESSED. No `|| true`, no continue-on-error.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'resources/js/spatial/**'
+      - 'resources/views/partials/location-dna/**'
+      - 'resources/views/components/location-dna-map.blade.php'
+      - 'tests/browser/**'
+      - 'playwright.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'webpack.mix.js'
+      - '.github/workflows/browser-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    name: Playwright — Location DNA renderer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Installs the TRACKED dependency graph. This used to hand-pick three
+      # packages because `npm ci` pulled websocket-driver@0.7.4, which the package
+      # firewall blocks. PR #128 repaired that graph, so the workaround is gone and
+      # CI now resolves exactly what the lockfile pins — the same tree the
+      # application builds with.
+      - name: Install dependencies
+        run: npm ci
+
+      # The real Laravel Mix build. The specs themselves drive the renderer through
+      # UMD globals and never load this output, so a suite that skipped the build
+      # would stay green while the MapLibre entry failed to compile. Building here
+      # is what makes that a red build instead of a surprise at deploy time.
+      - name: Build assets with Laravel Mix
+        run: npm run dev
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # ALL THREE REPORTERS MUST BE NAMED HERE.
+      #
+      # `--reporter` REPLACES the config's list outright, it does not extend it.
+      # `--reporter=list,json` therefore silently dropped the `html` reporter that
+      # playwright.config.js configures under CI, and the upload step below found
+      # no playwright-report/ to collect — so the run that failed was also the run
+      # with no report to diagnose it from. json is required by the WebGL guard
+      # that follows; html is required by the artifact upload; list is the console.
+      #
+      # PLAYWRIGHT_HTML_OPEN carries the `open: 'never'` that the config sets and
+      # this override discards, so the reporter never tries to launch a browser.
+      - name: Run the browser suite
+        run: npm run test:browser -- --reporter=list,json,html
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
+          PLAYWRIGHT_HTML_OPEN: never
+
+      # THE WEBGL SPECS MUST ACTUALLY RUN HERE, AND THIS ENFORCES IT.
+      #
+      # renderer-gl.spec.js skips itself when the browser exposes no WebGL2. That
+      # is correct in the Replit container, which has none — but on a runner it
+      # would silently convert "the basemap is verified" into "the basemap was
+      # never tested", behind a green tick. A skip that is invisible is exactly the
+      # failure mode this whole suite exists to end.
+      #
+      # So CI treats a skipped GL spec as a FAILURE. If this step ever trips, the
+      # runner lost WebGL — investigate the browser launch flags in
+      # playwright.config.js rather than deleting this check.
+      #
+      # No xvfb is needed: Playwright runs headless Chromium, which reaches WebGL2
+      # through SwiftShader with the ANGLE flags the config passes. xvfb would only
+      # matter for --headed.
+      - name: Assert the WebGL specs actually ran
+        if: always()
+        run: |
+          node -e '
+            const r = require("./playwright-results.json");
+            const gl = [];
+            const walk = (s) => {
+              (s.specs || []).forEach((spec) => {
+                if ((spec.file || "").includes("renderer-gl.spec.js")) {
+                  spec.tests.forEach((t) => gl.push({ title: spec.title, status: t.status, results: t.results.map(x => x.status) }));
+                }
+              });
+              (s.suites || []).forEach(walk);
+            };
+            (r.suites || []).forEach(walk);
+
+            if (gl.length === 0) {
+              console.error("FAIL: renderer-gl.spec.js contributed no tests at all.");
+              process.exit(1);
+            }
+            const skipped = gl.filter(t => t.status === "skipped" || t.results.includes("skipped"));
+            gl.forEach(t => console.log(`  ${t.status.padEnd(10)} ${t.title}`));
+            if (skipped.length) {
+              console.error(`FAIL: ${skipped.length} of ${gl.length} WebGL specs SKIPPED on this runner.`);
+              console.error("The basemap was NOT verified. Check WebGL2/SwiftShader availability.");
+              process.exit(1);
+            }
+            console.log(`OK: all ${gl.length} WebGL specs executed.`);
+          '
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
