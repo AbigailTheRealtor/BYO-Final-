@@ -8,6 +8,7 @@ use App\Services\AskAi\AskAiContextBuilderService;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\LocationIntelligenceComposer;
+use App\Services\LocationDna\PublicGeometryProjection;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 use App\Services\Offers\BiddingWindowService;
 use Illuminate\Http\Request;
@@ -129,6 +130,17 @@ class TenantOfferListingController extends Controller
         } catch (\Throwable $e) {
             $locationIntelligenceSummary = ['summary_lines' => []];
         }
+
+        // Public viewer route: withhold exact user-authored geometry and free-text
+        // notes from the browser. Applied AFTER the enrichment calls above, which
+        // legitimately require full geometry server-side and never reach the page.
+        $publicGeometry         = app(PublicGeometryProjection::class);
+        $locationDnaPreferences = $publicGeometry->project($locationDnaPreferences);
+        // The decoded meta bag is a second route to the browser: this view's
+        // "Additional Information" section renders meta keys it has no named
+        // section for. It is allowlist-driven today and excludes this key, but the
+        // allowlist lives in another file — remove the raw blob here regardless.
+        $meta                   = $publicGeometry->stripFromMetaBag($meta);
 
         $biddingWindow = $this->biddingWindowFor($auction);
 
