@@ -142,7 +142,29 @@ class SellerOfferListingController extends Controller
         $canViewBidFeed = $feed->canView(auth()->user(), $auction, 'seller');
         $bidFeed        = $canViewBidFeed ? $feed->build($offerAuction, 'seller') : [];
 
-        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + $page_data);
+
+        // ── MLS import payload and the feed's own display permissions ────────
+        //
+        // Resolved here rather than in the template so the permission check
+        // cannot be skipped by a view that forgets it. `$mlsAddressVisible` is
+        // false only for a NON-owner viewing a listing whose feed set
+        // InternetAddressDisplayYN = false — the audit found that flag false on
+        // 71 of 1,202 cached records, and before this the import path honoured
+        // it nowhere. The owner always sees their own address and is told, via
+        // $mlsAddressNotice, why a visitor does not.
+        $mlsReader         = app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class);
+        $mlsDetails        = $mlsReader->detailsFrom($meta);
+        $viewerOwnsListing = (int) $auction->user_id === (int) auth()->id();
+        $mlsAddressVisible = $mlsReader->addressVisibleTo($meta, $viewerOwnsListing);
+        $mlsAddressNotice  = $viewerOwnsListing ? $mlsReader->addressRestrictionNotice($meta) : null;
+
+        // Drives the Stellar/Bridge attribution block. Resolved from PROVENANCE
+        // meta, never from "does this listing have MLS-looking data" — a
+        // manually created listing must never carry an attribution it did not
+        // earn, and a false provenance claim is worse than a missing one.
+        $mlsImported       = $mlsReader->isMlsImported($meta);
+
+        return view('offer-listing.seller.view', compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + ['mlsDetails' => $mlsDetails, 'mlsAddressVisible' => $mlsAddressVisible, 'mlsAddressNotice' => $mlsAddressNotice, 'mlsImported' => $mlsImported] + $page_data);
     }
 
     /**

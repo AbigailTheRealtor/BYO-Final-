@@ -71,13 +71,26 @@ dispositions reconcile back to the populated count — no field disappears unexp
 > Reason: avoids Stellar MLS licensing risk (photo/remarks reuse, retention, rehosting).
 > Fuller media only after written Stellar MLS confirmation.
 
-The **photo** clause has since been superseded in this environment: `MLS_MEDIA_LICENSE_ACKNOWLEDGED`
-is set, which `config/mls_media.php` defines as an explicit statement that the written
-confirmation has been obtained.
+> **CORRECTION (2026-09-04).** The paragraph that stood here claimed the photo clause had "since
+> been superseded in this environment: `MLS_MEDIA_LICENSE_ACKNOWLEDGED` is set". **That was false.**
+> A licence-flag audit on 2026-09-04 found the variable absent from `.env`, `.env.example`,
+> `.env.testing`, the deploy configuration and the process environment, and
+> `config('mls_media.license_acknowledged')` resolving to `false`. It had never been set to `true`
+> in any tracked file. The claim was an inference from a misread configuration state, and no
+> written Stellar confirmation existed — or exists — in this repository.
+>
+> The photo clause **has** since been superseded, but by a different route and on a later date: an
+> **explicit owner decision on 2026-09-04**, taken with the audit result in hand and recorded in
+> `docs/mls-direct-import-design-and-plan.md` under "Owner decision — 2026-09-04". That is an owner
+> product/policy decision, not a discovery of Stellar documentation.
 
-The **agent/office** and **PublicRemarks** clauses have **not** been superseded in writing.
-They are therefore classified `PERMISSION NEEDS CONFIRMATION` rather than implemented,
-per the instruction not to expand licensing-sensitive behaviour by assumption.
+The **PublicRemarks** clause has **not** been superseded and remains excluded.
+
+The **agent/office** clause was resolved separately in the 2026-09-04 parity work: brokerage and
+listing-agent attribution is now displayed, on the reasoning that IDX display rules generally
+*require* the listing brokerage to be named on a displayed listing — which is why the authenticated
+Stellar property-detail page had always named it. The counterparty (`BuyerAgent*`, `CoBuyerAgent*`,
+`BuyerOffice*`), escrow contacts, showing instructions and lockbox data remain restricted.
 
 ---
 

@@ -3,6 +3,7 @@
 namespace App\Services\Stellar;
 
 use App\Models\BridgeProperty;
+use App\Services\ListingImport\Mls\MlsDisplayPermissions;
 
 /**
  * Maps a BridgeProperty model to a Blade-safe array for the property detail page.
@@ -22,6 +23,15 @@ class PropertyDetailViewMapper
     public function map(BridgeProperty $listing): array
     {
         $raw = $listing->raw_json ? (json_decode($listing->raw_json, true) ?? []) : [];
+
+        // The feed's own per-listing display permissions. `InternetAddressDisplayYN`
+        // is a SEPARATE instruction from IDX participation, and until the
+        // 2026-09-04 payload audit nothing read it — so 71 of 1,202 cached
+        // listings had their street address published against the MLS's
+        // instruction. City, state and ZIP are deliberately unaffected: an
+        // address-suppressed IDX listing is meant to show those.
+        $permissions   = MlsDisplayPermissions::fromRecord($raw);
+        $showAddress   = $permissions->addressDisplayable();
 
         $listPrice = $listing->list_price !== null ? (float) $listing->list_price : null;
         $origPrice = isset($raw['OriginalListPrice']) && $raw['OriginalListPrice'] !== ''
@@ -46,8 +56,9 @@ class PropertyDetailViewMapper
             // ----------------------------------------------------------------
             // Location
             // ----------------------------------------------------------------
-            'address'             => $listing->unparsed_address ?: null,
-            'unit_number'         => $this->scalar($raw['UnitNumber'] ?? null),
+            'address'             => $showAddress ? ($listing->unparsed_address ?: null) : null,
+            'unit_number'         => $showAddress ? $this->scalar($raw['UnitNumber'] ?? null) : null,
+            'address_display_permitted' => $showAddress,
             'city'                => $listing->city ?: null,
             'state'               => $listing->state_or_province ?: null,
             'postal_code'         => $listing->postal_code ?: null,

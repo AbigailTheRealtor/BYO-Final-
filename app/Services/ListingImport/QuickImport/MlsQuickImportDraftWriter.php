@@ -5,6 +5,7 @@ namespace App\Services\ListingImport\QuickImport;
 use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
+use App\Services\ListingImport\Mls\MlsSupplementalDetails;
 use App\Services\ListingImport\MlsFieldMap;
 use App\Services\Listing\ListingWorkflowResolver;
 use App\Support\Listing\ListingPhotoEntry;
@@ -70,6 +71,29 @@ class MlsQuickImportDraftWriter
     public const META_ORDER_CUSTOM  = 'property_photos_order_customized';
     public const META_QUICK_IMPORT  = 'mls_quick_import';
     public const META_SOURCE_PTYPE  = 'mls_source_property_type';
+
+    /**
+     * The supplemental MLS payload — every legitimate fact the feed supplied
+     * that has no editable Create Offer field, already filtered through the
+     * display allow-lists and already stripped of empty values.
+     *
+     * ONE meta key holding one JSON document, not sixty keys. The listing views
+     * read it, `MlsSupplementalDetails::fromStored()` validates it, and a
+     * re-import overwrites it wholesale — which is what makes a refresh
+     * idempotent instead of leaving orphaned rows from a previous shape.
+     */
+    public const META_PROPERTY_DETAILS = 'mls_property_details';
+
+    /**
+     * The feed's own display permissions for this listing, as they stood at
+     * import. Read by the listing views through {@see MlsDisplayPermissions}
+     * before anything MLS-sourced — including the address — is printed.
+     *
+     * Stored separately from the details blob even though the blob also carries
+     * a copy: the address gate has to work for a listing whose details blob is
+     * missing, malformed, or written by a version this code does not know.
+     */
+    public const META_DISPLAY_PERMISSIONS = 'mls_display_permissions';
 
     public function __construct(
         private readonly MlsListingGallerySync $gallerySync,
@@ -203,6 +227,7 @@ class MlsQuickImportDraftWriter
 
         $this->writeFacts($auction, $role, $result);
         $this->writeGallery($auction, $result);
+        $this->writeSupplementalDetails($auction, $result);
         $this->writeProvenance($auction, $result, $isNew);
 
         return $auction->fresh();
@@ -278,6 +303,19 @@ class MlsQuickImportDraftWriter
                 if ($stored === []) {
                     continue;
                 }
+            }
+
+            // Every other destination whose control speaks its own vocabulary —
+            // an acreage band, a square-footage source, a fee frequency, a
+            // business type. The rule lives in MlsFactVocabulary because the
+            // wizard's own apply path needs the identical answer; null means the
+            // feed's value has no option on this form, so the field is left for
+            // the user rather than filled with something that would never render
+            // as chosen. The fact is still shown under MLS Details.
+            $stored = MlsFactVocabulary::toFormValue($canonicalKey, $stored);
+
+            if ($stored === null || $stored === '' || $stored === []) {
+                continue;
             }
 
             $auction->saveMeta($metaKey, $stored);
@@ -369,6 +407,53 @@ class MlsQuickImportDraftWriter
             'updated'             => $sync->updated,
             'removed'             => $sync->removed,
             'user_photos_kept'    => $sync->userPhotosPreserved,
+        ]);
+    }
+
+    /**
+     * Persist the supplemental MLS facts, contacts and listing context.
+     *
+     * THIS IS THE FIX AT THE CENTRE OF THE WHOLE CHANGE.
+     * The lookup service has always built these; the writer has always ignored
+     * them. `$result->facts` was persisted and `$result->details` was shown once
+     * on the review screen and dropped, which is why an imported listing carried
+     * 41 facts while the MLS had supplied several hundred.
+     *
+     * Written wholesale rather than merged. The blob is derived entirely from
+     * the feed and contains nothing a user authored, so a refresh should replace
+     * it completely — a merge would leave rows from a previous import for fields
+     * the MLS has since cleared, and a listing asserting a fact the MLS has
+     * retracted is worse than one missing it. User-entered fields are a
+     * different store entirely and are never touched here.
+     *
+     * An import that produced no supplemental detail leaves whatever is already
+     * stored alone, for the same reason the gallery does: one thin response must
+     * not empty a listing that was previously complete.
+     */
+    private function writeSupplementalDetails(object $auction, MlsQuickImportResult $result): void
+    {
+        $details = $result->details;
+
+        if (! $details instanceof MlsSupplementalDetails) {
+            return;
+        }
+
+        // Permissions are written even when there is nothing else to write:
+        // "the MLS forbids showing this address" is exactly the case where the
+        // details blob may be empty, and it is the case where the gate matters
+        // most.
+        $auction->saveMeta(self::META_DISPLAY_PERMISSIONS, $details->permissions);
+
+        if ($details->isEmpty()) {
+            return;
+        }
+
+        $auction->saveMeta(self::META_PROPERTY_DETAILS, $details->toArray());
+
+        Log::info('[MLS QUICK IMPORT] supplemental MLS details written', [
+            'listing_id' => $auction->id,
+            'sections'   => count($details->sections),
+            'rows'       => $details->rowCount(),
         ]);
     }
 

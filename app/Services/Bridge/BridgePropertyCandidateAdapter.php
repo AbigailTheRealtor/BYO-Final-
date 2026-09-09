@@ -112,6 +112,39 @@ class BridgePropertyCandidateAdapter
             flooring:              $this->toList($raw, 'Flooring'),
             furnished:             $this->toText($raw, 'Furnished')
                                        ?? $this->toText($raw, 'FurnishedYN'),
+
+            // ── Parity additions (2026-09-04 payload audit) ─────────────────
+            //
+            // Same discipline as the block above: NAMED KEYS ONLY. No loop over
+            // $raw, no prefix match, nothing that could pick up a field the feed
+            // adds tomorrow. Each one is a fact the feed populates and a Create
+            // Offer control already exists for.
+            lotSizeAcres:            $this->toFloat($raw['LotSizeAcres'] ?? null),
+            lotDimensions:           $this->toText($raw, 'LotSizeDimensions'),
+            zoning:                  $this->toText($raw, 'Zoning'),
+            carport:                 $this->rawBool($raw, 'CarportYN'),
+            additionalParcels:       $this->rawBool($raw, 'AdditionalParcelsYN'),
+            floodZonePanel:          $this->toText($raw, 'STELLAR_FloodZonePanel'),
+            floodZoneDate:           $this->toDate($raw, 'STELLAR_FloodZoneDate'),
+            livingAreaSource:        $this->toText($raw, 'LivingAreaSource'),
+            associationFeeFrequency: $this->toText($raw, 'AssociationFeeFrequency'),
+            waterfrontFeet:          $this->toInt($raw['STELLAR_WaterfrontFeetTotal'] ?? null),
+            numberOfLots:            $this->toInt($raw['NumberOfLots'] ?? null),
+
+            // One feed value, two destinations. See the note on the DTO.
+            availabilityDate:        $this->toDate($raw, 'AvailabilityDate'),
+            leaseAvailabilityDate:   $this->toDate($raw, 'AvailabilityDate'),
+            leaseAmountFrequency:    $this->toText($raw, 'LeaseAmountFrequency'),
+            securityDeposit:         $this->toInt($raw['STELLAR_SecurityDeposit'] ?? null),
+            officeRetailSqft:        $this->toInt($raw['STELLAR_OfficeRetailSpaceSqFt'] ?? null),
+
+            // GrossIncome is the actual figure; GrossScheduledIncome is what the
+            // property would collect fully let. Preferring the actual is the
+            // conservative read — a listing that reports both should not have the
+            // optimistic number copied into the owner's own income field.
+            grossAnnualIncome:       $this->toInt($raw['GrossIncome'] ?? $raw['GrossScheduledIncome'] ?? null),
+            annualOperatingExpenses: $this->toInt($raw['STELLAR_AnnualExpenses'] ?? null),
+            businessType:            $this->toList($raw, 'BusinessType'),
         );
     }
 
@@ -156,6 +189,46 @@ class BridgePropertyCandidateAdapter
         $trimmed = trim((string) $value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+
+    /**
+     * A boolean straight off the raw record, or null when the key is absent.
+     *
+     * Distinct from toBool(), which casts an already-typed column. A feed sends
+     * these as JSON booleans and occasionally as the strings "true"/"false"; a
+     * naive (bool) cast turns the string "false" into true, which for
+     * CarportYN means telling a seller their property has a carport it does not.
+     */
+    private function rawBool(array $raw, string $key): ?bool
+    {
+        if (! array_key_exists($key, $raw) || $raw[$key] === null || $raw[$key] === '') {
+            return null;
+        }
+
+        return filter_var($raw[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    /**
+     * A feed date as `Y-m-d`.
+     *
+     * The destinations are `<input type="date">`, which silently renders blank
+     * for anything that is not `Y-m-d` — so a value passed through untouched
+     * would look exactly like a field the import failed to fill. Stellar sends
+     * both plain dates and full ISO-8601 timestamps in these columns.
+     * Unparseable values return null rather than a guess.
+     */
+    private function toDate(array $raw, string $key): ?string
+    {
+        $value = $this->toText($raw, $key);
+
+        if ($value === null) {
+            return null;
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? null : date('Y-m-d', $timestamp);
     }
 
     private function toInt(mixed $v): ?int

@@ -1,0 +1,554 @@
+BridgeField	Type	Populated/1224	Example	NativeColumn	OnPropertyCandidate	ImportMapsToForm	ReviewPresenterSection	StellarDetailDisplays	ImportedListingDisplays	Status
+@odata.id	string	1202	https://api.bridgedataoutput.com/api/v2/OData/stellar/Property('e8ea2e5193b25dbab98d77f1e1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+AccessibilityFeatures	array	59	["Accessible Approach with Ramp","Accessible Common Area","Accessible Doors","Accessible F	—	N	N	Interior	Y	N	SEARCH + REVIEW ONLY (import loses)
+AdditionalParcelsDescription	string	83	253017000000021440	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+AdditionalParcelsYN	boolean	557	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Appliances	array	600	["Dryer","Microwave","Range","Refrigerator","Washer"]	—	Y	Y	Interior	Y	Y	FULL PARITY
+ApprovalStatus	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ArchitecturalStyle	array	1	["Contemporary"]	—	N	N	Exterior	N	N	REVIEW ONLY (not persisted)
+AssociationAmenities	array	113	["Cable TV","Elevator(s)","Golf Course","Shuffleboard Court","Tennis Court(s)"]	—	N	N	Community	Y	N	SEARCH + REVIEW ONLY (import loses)
+AssociationFee	-	0		association_fee	Y	Y	Community	Y	Y	NOT POPULATED IN SAMPLE
+AssociationFee2	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+AssociationFee2Frequency	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+AssociationFeeFrequency	string	1	Monthly	—	N	N	Community	Y	N	SEARCH + REVIEW ONLY (import loses)
+AssociationFeeIncludes	array	5	["Insurance","Maintenance Structure","Maintenance Grounds","Maintenance Repairs","Sewer","	—	N	N	Community	N	N	REVIEW ONLY (not persisted)
+AssociationName	string	472	Jerilyn Smith	—	N	N	N	Y	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+AssociationName2	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+AssociationPhone	string	144	813-522-6346	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+AssociationPhone2	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+AssociationYN	boolean	451	true	association_yn	Y	Y	Community	Y	Y	FULL PARITY
+AttachedGarageYN	boolean	272	false	—	N	N	Parking	N	N	REVIEW ONLY (not persisted)
+AvailabilityDate	string	503	2019-03-01	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Basement	array	10	["Other"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BathroomsFull	integer	505	1	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+BathroomsHalf	integer	487	0	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+BathroomsOneQuarter	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BathroomsPartial	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BathroomsThreeQuarter	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BathroomsTotalDecimal	integer	505	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BathroomsTotalInteger	integer	1201	1	bathrooms_total_integer	Y	Y	N	Y	Y	FULL PARITY
+BedroomsTotal	integer	505	1	bedrooms_total	Y	Y	N	Y	Y	FULL PARITY
+BodyType	array	6	["Double Wide"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BridgeModificationTimestamp	string	1202	2026-07-29T18:18:04.958Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuilderModel	string	8	Carolina	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuilderName	string	9	Lennar	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuildingAreaSource	string	986	Public Records	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuildingAreaTotal	integer	1007	480	—	Y	Y	N	N	Y	IMPORT ONLY
+BuildingAreaUnits	string	1199	Square Feet	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuildingFeatures	array	196	["Bathrooms","Common Lighting","Dumpsters"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BusinessName	string	199	NA	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BusinessType	array	211	["Other"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuyerAgentAOR	string	3	New Smyrna Beach Board of Realtors	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+BuyerAgentFirstName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerAgentFullName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerAgentKeyNumeric	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerAgentLastName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerAgentMlsId	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerAgentStateLicense	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerOfficeKeyNumeric	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerOfficeMlsId	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerOfficeName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+BuyerTeamName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CapRate	double	13	5.55	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CarportSpaces	integer	191	1	—	N	N	Parking	Y	N	SEARCH + REVIEW ONLY (import loses)
+CarportYN	boolean	491	false	—	N	N	Parking	N	N	REVIEW ONLY (not persisted)
+City	string	1196	CLEARWATER	city	Y	Y	N	Y	Y	FULL PARITY
+CloseDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ClosePrice	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerAgentFirstName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerAgentFullName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerAgentKeyNumeric	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerAgentLastName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerAgentMlsId	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerAgentStateLicense	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerOfficeKeyNumeric	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerOfficeMlsId	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoBuyerOfficeName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoListAgentFirstName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoListAgentFullName	string	143	Cindy Costa	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CoListAgentKeyNumeric	integer	143	579242290	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CoListAgentLastName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoListAgentMlsId	string	143	256501019	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CoListAgentStateLicense	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CoListOfficeKeyNumeric	integer	143	579203010	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CoListOfficeMlsId	string	143	256500277	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CoListOfficeName	string	144	REALTY CENTRAL, INC.	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CommonWalls	array	39	["End Unit"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CommunityFeatures	array	391	["None"]	—	N	N	Community	Y	N	SEARCH + REVIEW ONLY (import loses)
+Concessions	string	20	No	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ConcessionsAmount	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ConstructionMaterials	array	569	["Block","Stucco"]	—	Y	Y	Exterior	Y	Y	FULL PARITY
+ContractStatusChangeDate	string	1202	2026-07-13	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Cooling	array	1093	["Mini-Split Unit(s)"]	—	Y	Y	Interior	Y	Y	FULL PARITY
+CoolingYN	boolean	1093	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Coordinates	array	1192	[-82.717138,27.918374]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CopyrightNotice	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+Country	string	1202	US	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CountyOrParish	string	1191	Pinellas	county_or_parish	Y	Y	N	Y	Y	FULL PARITY
+CoveredSpaces	integer	334	2	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CrossStreet	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+CumulativeDaysOnMarket	integer	1202	16	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+CurrentUse	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+DOH1	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+DOH2	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+DOH3	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+DaysOnMarket	integer	1202	16	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+DirectionFaces	string	193	North	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Directions	string	1137	Travel east on East Bay Drive. Just past US Hwy 19 and turn left at Bradford St. Turn left	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Disclosures	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+DocumentsCount	integer	1202	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+DoorFeatures	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+Electric	array	70	["100 Amp Service"]	—	N	N	Utilities	N	N	REVIEW ONLY (not persisted)
+ElementarySchool	string	69	East Elementary	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+Exclusions	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ExteriorFeatures	array	135	["Sidewalk"]	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+FeedTypes	array	1202	["IDX"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Fencing	array	15	["Fenced"]	—	N	N	Exterior	N	N	REVIEW ONLY (not persisted)
+FireplaceFeatures	array	9	["Living Room"]	—	N	N	Interior	Y	N	SEARCH + REVIEW ONLY (import loses)
+FireplaceYN	boolean	122	false	—	N	N	Interior	Y	N	SEARCH + REVIEW ONLY (import loses)
+FireplacesTotal	-	0		—	N	N	Interior	N	N	NOT POPULATED IN SAMPLE
+Flooring	array	351	["Laminate"]	—	Y	Y	Interior	Y	Y	FULL PARITY
+FoundationDetails	array	557	["Slab"]	—	Y	Y	Exterior	Y	Y	FULL PARITY
+FrontageLength	string	3	Canal: 60	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Furnished	string	504	Unfurnished	—	Y	Y	Interior	N	Y	IMPORT ONLY
+GarageSpaces	integer	257	2	—	N	N	Parking	Y	N	SEARCH + REVIEW ONLY (import loses)
+GarageYN	boolean	498	false	garage_yn	Y	Y	Parking	Y	Y	FULL PARITY
+Gas	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+GreenBuildingVerificationType	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+GreenEnergyEfficient	array	3	["Solar Energy Storage On Site"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+GreenEnergyGeneration	array	6	["Solar"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+GreenIndoorAirQuality	array	4	["No Smoking-Interior Buildg"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+GreenLocation	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+GreenSustainability	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+GreenWaterConservation	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+GrossIncome	integer	22	96000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+GrossScheduledIncome	integer	24	54000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Heating	array	691	["Central","Other"]	—	Y	Y	Interior	Y	Y	FULL PARITY
+HeatingYN	boolean	691	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+HighSchool	string	69	Charlotte High	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+HighSchoolDistrict	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+HomeWarrantyYN	boolean	20	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+HorseAmenities	array	1	["Other","Stable(s)"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+IDXParticipationYN	boolean	1202	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+InteriorFeatures	array	467	["Cathedral Ceiling(s)","Open Floorplan","PrimaryBedroom Upstairs","Vaulted Ceiling(s)"]	—	Y	Y	Interior	Y	Y	FULL PARITY
+InternetAddressDisplayYN	boolean	1202	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+InternetAutomatedValuationDisplayYN	boolean	1200	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+InternetConsumerCommentYN	boolean	1201	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+InternetEntireListingDisplayYN	boolean	1202	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LandLeaseAmount	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+LandLeaseYN	boolean	3	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Latitude	double	1192	27.918374	latitude	Y	Y	N	Y	Y	FULL PARITY
+LaundryFeatures	array	364	["Laundry Closet"]	—	N	N	Interior	Y	N	SEARCH + REVIEW ONLY (import loses)
+LeaseAmountFrequency	string	500	Monthly	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LeaseConsideredYN	boolean	3	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LeaseTerm	string	216	24 Months	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Levels	array	673	["Two"]	—	N	N	Interior	Y	N	SEARCH + REVIEW ONLY (import loses)
+License1	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+License2	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+License3	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ListAOR	string	1202	Suncoast Tampa	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListAgentAOR	string	1202	Suncoast Tampa	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListAgentEmail	string	1202	Abigail@RealEstateMatchmakerClub.com	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListAgentFirstName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ListAgentFullName	string	1202	Abigail Sweeney	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListAgentKey	string	1202	15c8b5f049e923c990a16e7d51222739	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListAgentLastName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ListAgentMlsId	string	1202	260036749	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListAgentPreferredPhone	string	1198	727-776-2013	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListAgentStateLicense	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ListOfficeKey	string	1202	d853820ecd03b7d8317758bcc438f0c6	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListOfficeMlsId	string	1202	260033704	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListOfficeName	string	1202	REAL ESTATE MATCHMAKER CLUB	—	N	N	N	Y	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListOfficePhone	string	1202	727-776-2013	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListPrice	integer	1202	100000	list_price	Y	Y	N	Y	Y	FULL PARITY
+ListTeamName	string	15	The No BS Group	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListingContractDate	string	1202	2026-07-13	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListingId	string	1202	TB8528949	listing_id	Y	Y	N	N	Y	IMPORT ONLY
+ListingKey	string	1224	e8ea2e5193b25dbab98d77f1e11e070d	listing_key	Y	Y	N	Y	Y	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+ListingKeyNumeric	integer	1202	799934446	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ListingTerms	array	359	["Cash","Conventional"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LivingArea	integer	970	480	living_area	Y	Y	N	Y	Y	FULL PARITY
+LivingAreaSource	string	509	Public Records	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LivingAreaUnits	string	1200	Square Feet	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LockBoxLocation	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+LockBoxSerialNumber	string	2	02395278	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LockBoxType	array	2	["SentriLock"]	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+Longitude	double	1192	-82.717138	longitude	Y	Y	N	Y	Y	FULL PARITY
+LotFeatures	array	261	["Central Business District"]	—	N	N	Exterior	N	N	REVIEW ONLY (not persisted)
+LotSizeAcres	double	1061	0.8	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+LotSizeArea	integer	982	34791	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LotSizeDimensions	string	217	146 x 299	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+LotSizeSquareFeet	integer	1064	34791	lot_size_sqft	Y	Y	N	Y	Y	FULL PARITY
+LotSizeUnits	string	982	Square Feet	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+MLSAreaMajor	string	1202	33760 - Clearwater	—	N	N	Property Details	N	N	REVIEW ONLY (not persisted)
+Make	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+MaloneId	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+Media	array	1202	[{"MediaKey":"e8ea2e5193b25dbab98d77f1e11e070d-m1","MediaCategory":"Photo","MediaURL":"htt	—	N	N	N	Y	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+MiddleOrJuniorSchool	string	68	Punta Gorda Middle	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+MlsStatus	string	1202	Active	mls_status	Y	Y	N	Y	Y	FULL PARITY
+MobileLength	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+MobileWidth	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+Model	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ModificationTimestamp	string	1202	2026-07-29T18:13:48.823Z	modification_timestamp	Y	N	N	N	N	NORMALIZER CARRIES / IMPORT MAPPER DROPS IT
+NetOperatingIncome	integer	1	38000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+NewConstructionYN	boolean	1090	false	new_construction_yn	Y	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+NumberOfBuildings	integer	548	2	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+NumberOfLots	integer	126	2	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+NumberOfPads	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+NumberOfSeparateElectricMeters	integer	57	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+NumberOfSeparateGasMeters	integer	11	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+NumberOfSeparateWaterMeters	integer	44	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+NumberOfUnitsLeased	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+NumberOfUnitsTotal	integer	80	30	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+OccupantType	string	631	Tenant	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+OffMarketDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+OffMarketTimestamp	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+OnMarketDate	string	1134	2026-07-13	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+OpenParkingSpaces	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+OpenParkingYN	boolean	45	true	—	N	N	Parking	N	N	REVIEW ONLY (not persisted)
+OriginalEntryTimestamp	string	1202	2026-07-14T02:07:24.770Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+OriginalListPrice	integer	1202	100000	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+OriginatingSystemKey	string	1202	stellar	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+OriginatingSystemName	string	1202	Stellar MLS	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+OtherParking	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+OtherStructures	array	100	["Garage(s)"]	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+OwnerPays	array	500	["Cable TV","Electricity","Internet","Laundry","Sewer","Trash Collection","Water"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Ownership	string	699	Fee Simple	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+ParcelNumber	string	1089	322916106750020308	—	Y	Y	N	N	Y	IMPORT ONLY
+ParkName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+ParkingFeatures	array	288	["6 to 12 Spaces"]	—	N	N	Parking	Y	N	SEARCH + REVIEW ONLY (import loses)
+PatioAndPorchFeatures	array	140	["Covered","Patio","Rear Porch","Screened"]	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+PetsAllowed	array	528	["Cats OK","Dogs OK","Size Limit","Yes"]	pets_allowed	Y	N	Community	Y	N	SEARCH + REVIEW ONLY (import loses)
+PhotosChangeTimestamp	string	1202	2026-07-14T02:11:03.496Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PhotosCount	integer	1202	13	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PoolFeatures	array	205	["In Ground"]	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+PoolPrivateYN	boolean	501	false	pool_private_yn	Y	Y	Exterior	Y	Y	FULL PARITY
+Possession	array	203	["Close Of Escrow"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PossibleUse	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+PostalCode	string	1198	33760	postal_code	Y	Y	N	Y	Y	FULL PARITY
+PostalCodePlus4	string	741	1909	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PreviousListPrice	integer	418	675000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PriceChangeTimestamp	string	449	2024-12-08T14:45:14.123Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PropertyAttachedYN	boolean	34	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PropertyCondition	array	287	["Completed"]	—	N	N	Exterior	N	N	REVIEW ONLY (not persisted)
+PropertySubType	string	1124	Condominium	property_sub_type	Y	Y	N	Y	Y	FULL PARITY
+PropertyType	string	1202	Residential	property_type	Y	Y	N	Y	Y	FULL PARITY
+PublicRemarks	string	1202	Welcome to this charming corner-unit 1-bedroom, 1-bath loft-style condo offering character	—	N	N	N	Y	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+PublicSurveyRange	string	518	16	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PublicSurveySection	string	517	32	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PublicSurveyTownship	string	517	29	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+PurchaseContractDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+RentIncludes	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+RoadFrontageType	array	624	["Highway"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+RoadResponsibility	array	189	["Public Maintained Road"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+RoadSurfaceType	array	1026	["Paved"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Roof	array	251	["Shingle"]	—	Y	Y	Exterior	Y	Y	FULL PARITY
+RoomType	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+RoomsTotal	integer	436	3	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ActiveOpenHouseCount	integer	7	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdditionalApplicantFee	integer	51	50	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdditionalLeaseRestrictions	string	3	Confirm all lease restrictions with HOA.	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdditionalMembershipAvailableYN	boolean	1	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdditionalPetFees	string	34	Pet fee is an additional $150	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdditionalRooms	array	73	["Florida Room"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdditionalWaterInformation	string	12	Property and building BACK UP to the river but property FRONTS on paved rd. Did have steps	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AdjoiningProperty	array	156	["Residential"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AffidavitYN	boolean	1	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AlternateKeyFolioNum	string	384	322916106750020308	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AmenitiesAdditionalFees	string	1	GATE,POOL	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AnnualExpenses	integer	28	55000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AnnualIncomeType	string	48	Actual	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AnnualNetIncome	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_AnnualRent	integer	1	3500	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ApplicationFee	integer	498	100	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ApprovalProcess	string	2	Confirm all lease restrictions with HOA.	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AssociationApplicationFee	integer	3	50	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AssociationApprovalFee	integer	129	214	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AssociationApprovalRequiredYN	boolean	175	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AssociationEmail	string	20	Karla Baumann <kscpoa@aol.com>	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+STELLAR_AssociationFeeRequirement	string	329	None	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AssociationURL	string	10	https://www.citadelpmg.com/	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AuctionFirmURL	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_AuctionPropAccessYN	boolean	5	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_AuctionTime	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_AuctionType	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_BOMDate	string	101	2025-08-06T04:00:00.000Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_BarnFeatures	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_BuilderLicenseNumber	string	2	CBC1260831	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_BuildingElevatorYN	boolean	120	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_BuildingNameNumber	string	328	2142	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_BusinessOpportunityWithRealEstateYN	boolean	197	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_BuyersCountryofResidence	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_BuyersIntendedUse	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_BuyersPremium	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_BuyersZipCode	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_CDDYN	boolean	3	false	cdd_yn	Y	Y	N	Y	Y	FULL PARITY
+STELLAR_CalculatedListPriceByCalculatedSqFt	double	1094	208.33	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CallCenterPhoneNumber	string	99	3865664966	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CeilingHeight	string	86	8 to 9 Feet	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CeilingType	array	89	["Drywall"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CensusBlock	string	227	2	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CensusTract	string	368	024508	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ClosePriceByCalculatedListPriceRatio	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ClosePriceByCalculatedSqFt	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ComTransactionTerms	array	26	["For Exchange","Pre Sale"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ComTransactionType	array	15	["Commercial Sale"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ComingSoonDate	string	2	2026-05-29	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ComplexCommunityNameNCCB	string	10	LYNN HAVEN	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ComplexDevelopmentName	string	40	Parktowne Industrial Center	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ConditionExpDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_CondoEnvironmentYN	boolean	112	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CondoFees	integer	45	250	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CondoFeesTerm	string	44	Monthly	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CondoLandIncludedYN	boolean	2	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ContractStatus	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ConvertedResidenceYN	boolean	82	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CountyLandUseCode	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_CountyPropertyUseCode	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_CreateAutomaticVirtualTourYN	boolean	1196	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CurrencyMonthlyRentAmt	integer	1	1200	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_CurrentAdjacentUse	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_CurrentPrice	integer	1202	100000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DPRURL	string	4	https://www.workforce-resource.com/dpr/listing/MFRMLS/TB8528949?w=Agent&skip_sso=true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DPRURL2	string	4	https://www.workforce-resource.com/dpr/listing/MFRMLS/TB8528949?w=Customer	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DPRYN	boolean	4	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DaysNoticeToTenantIfNotRenew	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_DaysToClosed	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_DaystoContract	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_DepositsYN	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_Development	string	121	Parktowne Industrial Center	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DisasterMitigation	array	8	["Above Flood Plain"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DockDescrip	array	31	["Dock - Concrete"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DockDimensions	string	13	14X12	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DockLiftCap	integer	3	3	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DockMntncFee	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_DockMntncFeeFrqncy	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_DockYN	boolean	192	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DockYrBlt	integer	1	1965	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DoorHeight	string	9	14	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_DoorWidth	string	11	12	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_Easements	string	3	Other	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EavesHeight	string	6	20	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowAgentEmail	string	215	tspanola@brokerstitle.net	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowAgentFax	string	25	863-678-3620	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowAgentName	string	222	Tracey Spanola	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowAgentPhone	string	215	813-355-5100	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowCity	string	209	Tampa	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowCompany	string	228	Brokers Title of Florida	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowPostalCode	string	201	33618	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowState	string	698	FL	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowStreetName	string	198	Madaca Lane	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EscrowStreetNumber	string	204	3644	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_EstAnnualMarketIncome	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ExistLseTenantYN	boolean	9	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ExpectedClosingDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ExpectedLeaseDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ExpectedOnMarketDate	string	2	2026-05-28	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ExpireRenewalDate	string	1	2016-08-01	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_FCHRURLYN	boolean	1	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_FloodZoneCode	string	576	X	—	Y	Y	N	N	Y	IMPORT ONLY
+STELLAR_FloodZoneDate	string	268	2016-12-22	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_FloodZonePanel	string	262	12105C0700G	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_FloorNumber	string	303	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ForLeaseYN	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_FreestandingYN	boolean	84	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_FreezerSpaceYN	boolean	67	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_FutureLandUse	string	28	commerical	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_GarageDimensions	string	6	21x21	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_GarageDoorHeight	string	10	14	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_Geolocation	string	17	Edgewater N:442-NSB City Limit	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_GiftedDonated	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_GreenEnergyGenerationYN	boolean	739	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_GreenLandscaping	array	1	["Xeriscape"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_GreenVerificationCount	integer	935	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_HERSIndex	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_HomesteadYN	boolean	4	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ILSTotalSQFT	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ILSUnderAirSQFT	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_InLawSuiteDescrip	array	2	["1 Bathroom","1 Bedroom","Attached","Kitchen","Private Entrance"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_InLawSuiteYN	boolean	350	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_LastDateAvailable	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_LastMonthsRent	integer	1	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_LeasableArea	integer	15	4041	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_LeasableAreaUnits	string	3	Square Feet	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_LeasePricePerAcre	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_LeaseRestrictionsYN	boolean	3	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ListOfficeContactPreferred	string	1202	727-776-2013	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ListOfficeHeadOfficeKeyNumeric	integer	1202	591592334	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ListSource	string	1202	MATRIX	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ListSourceOriginal	string	1183	MATRIX	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_LongTermYN	boolean	500	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_Management	string	137	Owner Manager	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ManufacturingSpaceHeated	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ManufacturingSpaceTotal	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_MasterBedSize	string	80	Queen	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MatrixTesting	boolean	1202	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MaxPetWeight	integer	62	10	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MillageRate	double	15	16.64	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MinimumLease	string	213	No Minimum	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MlsMajorChangeType	string	1201	New Listing	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MonthToMonthOrWeeklyYN	boolean	1	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MonthlyCondoFeeAmount	integer	44	250	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MonthlyHOAAmount	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_MonthsAvailable	array	362	["2021 June","2021 July","2021 August","2021 September","2021 October","2021 November","20	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_MontlyMaintAmtAdditionToHOA	integer	2	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NetOperatingIncomeType	string	43	Actual	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NoDriveBeach	string	1	See Remark(s)	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumOfOwnYearsPriorToLse	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_NumTimesperYear	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_NumberOfPaddocksPastures	integer	1	6	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumberOfPets	string	103	2	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumberOfSeptics	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_NumberOfStalls	integer	2	4	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumberOfWells	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_NumofBays	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_NumofBaysDockHigh	integer	6	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumofBaysGradeLevel	integer	15	7	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumofConferenceMeetingRooms	integer	15	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_NumofOffices	integer	49	1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OffSeasonRent	integer	138	2625	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OfficeIDXOfficeParticipationYN	boolean	1202	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OfficeRetailSpaceSqFt	integer	62	3762	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OfficeSyndicateTo	array	1202	["Apartments.com","International MLS","Realtor.com","Zillow Rental","SkySlope Offers"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OpenHouseCount	integer	7	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OriginatingSystemTimestamp	string	10	2020-02-09T05:30:10.867Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OtherExemptionsYN	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_OtherFeesAmount	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_OtherFeesDescription	string	1	First time background check $35 to $50 each	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_OtherFeesTerm	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ParkingFeeTenants	integer	3	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ParkingFeeTenantsFrequency	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_PetDepositFee	integer	64	150	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PetFeeNonRefundable	integer	44	75	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PetMonthlyFee	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_PetRestrictions	string	66	breed restrictions	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PetSize	string	72	Very Small (Under 15 Lbs.)	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PlannedUnitDevelopmentYN	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_PoolDimensions	string	9	28x14	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PreviousStatus	string	157	Temporarily Off-Market	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PricePerAcre	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_ProjectedCompletionDate	string	17	2027-06-30T04:00:00.000Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PropertyManager	string	31	lambert	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PropertyManagerPhone	string	24	9544835111	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PublicRemarksAgent	string	1202	Welcome to this charming corner-unit 1-bedroom, 1-bath loft-style condo offering character	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+STELLAR_PublicRemarksRequired	string	26	Pre-Construction. To be built.	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_PublicRemarksSpanishReq	string	24	Construcción Previa.	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RATIO_ClosePrice_By_ListPrice	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_RATIO_ClosePrice_By_OriginalListPrice	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_RATIO_CurrentPrice_By_BuildingAreaTotal	double	1007	208.33	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RATIO_CurrentPrice_By_CalculatedSqFt	double	1094	208.33	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RETSUpdateTransactionYN	boolean	1202	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RealtorInfo	array	245	["Currently Leased"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RealtorInfoConfidential	array	17	["Go To Site"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RegionalAOR	string	4	Sarasota - Manatee	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RentSpreeURL	string	98	https://apply.link/4815vVa	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_RentSpreeYN	boolean	296	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_Representation	string	29	Seller Represented	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SDEOYN	boolean	1202	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SWSubdivCommunityName	string	345	Tropical Gulf Acres	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SWSubdivCondoNum	string	2	7478	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SeasonalRent	integer	154	3875	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SecurityDeposit	integer	216	500	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SellerRepresentation	string	616	Transaction Broker	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ShowingConsiderations	array	258	["Pet(s) on Premises"]	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+STELLAR_ShowingRequirements	array	1199	["Call Listing Agent"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ShowingTime	string	3	View Instructions	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SolarLeaseFinanceTerms	string	1	Assumable	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SolarPanelOwnership	string	5	Owned Outright	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SoldRemarks	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_SpaceType	string	17	New	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_StateLandUseCode	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_StatePropertyUseCode	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_SubdivisionNum	string	14	53406	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_SubdivisionSectionNumber	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_TempOffMarketDate	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_TenantName	string	2	OWNER	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_TenantPhone	string	2	000-000-0000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ThirdPartyYN	boolean	1201	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_TotalAcreage	string	545	1/2 to less than 1	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_TotalAnnualFees	integer	1162	3000	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_TotalDocumentsCount	integer	482	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_TotalMonthlyExpenses	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_TotalMonthlyFees	integer	1162	250	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_TotalPhotosCount	integer	1202	13	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_UnitCount	integer	1	0	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_UnitNumberYN	boolean	1202	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_UniversalPropertyId	string	1082	US-12103-N-322916106750020308-S-308	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_UnparsedAddress	string	1198	2142 BRADFORD ST #308	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_UseCode	string	48	2100	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_VirtualTourURLBranded2	string	3	www.floridastripcentersforsale.com	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_VirtualTourURLUnbranded2	string	20	https://opulent-rem.aryeo.com/sites/gqqrnrq/unbranded	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_VirtuallyStagedYN	boolean	1091	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WarehouseSpaceHeated	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_WarehouseSpaceTotal	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+STELLAR_WaterAccess	array	155	["Pond"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WaterAccessYN	boolean	1198	true	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WaterExtras	array	45	["Seawall - Concrete"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WaterExtrasYN	boolean	1199	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WaterView	array	189	["Pond"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WaterViewYN	boolean	1199	true	water_view_yn	Y	N	N	Y	N	SEARCH ONLY (import loses)
+STELLAR_WaterfrontFeetTotal	integer	1189	20	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WeeklyRent	integer	5	1200	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_WeeksAvailable	array	74	["2024 Nov 3 until Nov 9","2024 Nov 10 until Nov 16","2025","May 04 until May 10","2025","	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_YrsOfOwnerPriorToLeasingReqYN	boolean	2	false	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+STELLAR_ZoningCompatibleYN	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+SecurityFeatures	array	161	["Fire Sprinkler System","Security System"]	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+SeniorCommunityYN	boolean	493	false	senior_community_yn	Y	N	Community	Y	N	SEARCH + REVIEW ONLY (import loses)
+SerialU	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+SerialX	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+SerialXX	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+Sewer	array	403	["Public Sewer"]	—	Y	Y	Utilities	Y	Y	FULL PARITY
+Skirt	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+SourceSystemKey	string	1202	799934446	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+SourceSystemName	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+SpaFeatures	array	42	["Heated","In Ground"]	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+SpaYN	boolean	64	true	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+SpecialListingConditions	array	700	["None"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StandardStatus	string	1202	Active	standard_status	Y	N	N	N	N	NORMALIZER CARRIES / IMPORT MAPPER DROPS IT
+StateOrProvince	string	1202	FL	state_or_province	Y	Y	N	Y	Y	FULL PARITY
+StatusChangeTimestamp	string	1201	2026-07-14T02:07:24.770Z	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Stories	-	0		—	N	N	N	Y	N	NOT POPULATED IN SAMPLE
+StoriesTotal	integer	507	2	—	N	N	Interior	N	N	REVIEW ONLY (not persisted)
+StreetAdditionalInfo	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+StreetDirPrefix	string	310	NW	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StreetDirSuffix	string	91	SE	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StreetName	string	1129	BRADFORD	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StreetNumber	string	1127	2142	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StreetNumberNumeric	integer	1175	2142	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StreetSuffix	string	985	STREET	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+StreetSuffixModifier	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+StructureType	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+SubdivisionName	string	877	BRADFORD ACRES A CONDO	—	N	N	Community	Y	N	SEARCH + REVIEW ONLY (import loses)
+TaxAnnualAmount	double	594	1786.38	tax_annual_amount	Y	Y	Property Details	Y	Y	FULL PARITY
+TaxBlock	string	430	0	—	N	N	Property Details	N	N	REVIEW ONLY (not persisted)
+TaxBookNumber	string	468	81-126	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+TaxExemptions	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+TaxLegalDescription	string	531	BRADFORD ACRES CONDO PHASE II BLDG 3, UNIT 308 TOGETHER WITH THE USE OF PARKING SPACE 308	—	Y	Y	N	N	Y	IMPORT ONLY
+TaxLot	string	504	0	—	N	N	Property Details	N	N	REVIEW ONLY (not persisted)
+TaxOtherAnnualAssessmentAmount	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+TaxYear	integer	715	2025	—	Y	Y	Property Details	N	Y	IMPORT ONLY
+Telephone	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+TenantPays	array	214	["Electricity","Water"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Topography	-	0		—	N	N	Exterior	N	N	NOT POPULATED IN SAMPLE
+TotalActualRent	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+UnitNumber	string	399	308	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+UnitTypeType	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+UnparsedAddress	string	1129	2142 BRADFORD STREET UNIT 308	unparsed_address	Y	Y	N	Y	Y	FULL PARITY
+Utilities	array	384	["Cable Available","Cable Connected","Public","Sewer Available","Sewer Connected"]	—	Y	Y	Utilities	Y	Y	FULL PARITY
+Vegetation	array	69	["Trees\/Landscaped"]	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+View	array	151	["Water"]	—	N	N	Exterior	Y	N	SEARCH + REVIEW ONLY (import loses)
+ViewYN	boolean	1202	false	view_yn	Y	N	N	Y	N	SEARCH ONLY (import loses)
+VirtualTourURLBranded	string	32	https://autoranch-palmcoast.mybuzz.page/	—	N	N	N	N	N	PERMISSION/DISPLAY-RIGHTS RESTRICTION
+VirtualTourURLUnbranded	string	979	https://www.propertypanorama.com/instaview/stellar/TB8528949	—	N	N	N	Y	N	SEARCH ONLY (import loses)
+VirtualTourURLZillow	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+WaterBodyName	string	33	PEACE RIVER	—	N	N	Exterior	N	N	REVIEW ONLY (not persisted)
+WaterSource	array	393	["Public"]	—	Y	Y	Utilities	Y	Y	FULL PARITY
+WaterfrontFeatures	array	143	["Pond"]	—	Y	Y	Exterior	Y	Y	FULL PARITY
+WaterfrontYN	boolean	1199	true	waterfront_yn	Y	Y	Exterior	Y	Y	FULL PARITY
+WindowFeatures	array	174	["Aluminum Frames"]	—	N	N	Interior	Y	N	SEARCH + REVIEW ONLY (import loses)
+YearBuilt	integer	1085	1986	year_built	Y	Y	Property Details	Y	Y	FULL PARITY
+YearBuiltEffective	-	0		—	N	N	Property Details	N	N	NOT POPULATED IN SAMPLE
+YearBuiltSource	-	0		—	N	N	N	N	N	NOT POPULATED IN SAMPLE
+YearEstablished	integer	198	1976	—	N	N	N	N	N	RAW-JSON ONLY (never read)
+Zoning	string	437	CG	—	N	N	Property Details	N	N	REVIEW ONLY (not persisted)
+ZoningDescription	-	0		—	N	N	Property Details	N	N	NOT POPULATED IN SAMPLE

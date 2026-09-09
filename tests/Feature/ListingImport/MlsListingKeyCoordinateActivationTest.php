@@ -50,6 +50,16 @@ class MlsListingKeyCoordinateActivationTest extends TestCase
         Bus::fake();
         Http::fake(); // nothing here should ever reach the network
 
+        // The Member/Office/OpenHouse enrichment is switched OFF for this test,
+        // and only for this test. It legitimately makes secondary Bridge requests
+        // during an import — that is the point of it — while everything this file
+        // asserts is that the COORDINATE rung resolves from the stored ListingKey
+        // with no network at all. Leaving enrichment on would make
+        // Http::assertNothingSent() fail for a reason unrelated to coordinates,
+        // and weakening that assertion would cost the guarantee the file exists
+        // for. Enrichment has its own tests.
+        config(['mls_related_resources.enabled' => false]);
+
         config([
             'mls_direct_import.prefill_enabled' => true,
             'mls_direct_import.prefill_roles'   => ['seller', 'landlord'],
