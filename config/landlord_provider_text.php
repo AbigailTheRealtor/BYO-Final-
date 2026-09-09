@@ -141,6 +141,20 @@ return [
         // Open-house narrative, published on the same anonymous page. General
         // marketing-prose semantics, i.e. the additional-details rules.
         'OpenHouseRemarks' => 'additional_details',
+
+        // Free narrative describing who an association will approve. The final
+        // pre-PR audit found this one after the first three: it is catalogued in
+        // PROPERTY_FACTS as "Approval Process", it is in none of the structured
+        // groups (RESTRICTED / INTERNAL / DERIVED / ADDRESS_COMPONENT /
+        // DISPLAY_CONTROL / URL_FIELDS), and its only fixture value is a plain
+        // sentence — "Application, fee, and association approval required".
+        //
+        // It describes APPROVAL CRITERIA FOR OCCUPANCY, which makes it the MLS
+        // twin of the landlord's own `landlord_approval_conditions`, so it takes
+        // that field's semantics. Left ungoverned it published verbatim on the
+        // no-auth landlord route; the audit demonstrated "No children under 12.
+        // No emotional support animals." rendering in full.
+        'STELLAR_ApprovalProcess' => 'landlord_approval_conditions',
     ],
 
     /*

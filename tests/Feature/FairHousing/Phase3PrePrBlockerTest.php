@@ -532,6 +532,80 @@ class Phase3PrePrBlockerTest extends TestCase
     /**
      * @test
      *
+     * BLOCKER 5, FOURTH FIELD — found by the final independent pre-PR audit.
+     *
+     * `STELLAR_ApprovalProcess` renders as "Approval Process" on the no-auth
+     * landlord route and is free narrative describing who an association will
+     * approve — the MLS twin of `landlord_approval_conditions`. It was outside
+     * the first three aliases, so it published unlawful screening prose verbatim.
+     */
+    public function unsafe_mls_approval_process_prose_is_suppressed_on_the_anonymous_page(): void
+    {
+        $auction = $this->landlordListingWithMlsRows([
+            ['key' => 'STELLAR_ApprovalProcess', 'label' => 'Approval Process',
+             'value' => 'No children under 12. No emotional support animals.'],
+        ]);
+
+        $this->get(route('offer.listing.landlord.view', $auction->id))
+            ->assertStatus(200)
+            ->assertDontSee('No children under 12', false)
+            ->assertDontSee('No emotional support animals', false);
+
+        // Read-time only: the imported bytes are untouched.
+        $stored = LandlordAgentAuctionMeta::query()
+            ->where('landlord_agent_auction_id', $auction->id)
+            ->where('meta_key', MlsQuickImportDraftWriter::META_PROPERTY_DETAILS)
+            ->value('meta_value');
+
+        $this->assertStringContainsString('No children under 12.', (string) $stored);
+        $this->assertStringContainsString('No emotional support animals.', (string) $stored);
+    }
+
+    /**
+     * @test
+     *
+     * POSITIVE CONTROL for the field above, plus a neighbouring structured value
+     * on the same listing — so "suppressed" cannot be confused with "the section
+     * stopped rendering", and a rule written for prose cannot be seen to touch an
+     * ordinary MLS fact.
+     */
+    public function safe_mls_approval_process_prose_and_its_neighbours_still_render(): void
+    {
+        $auction = $this->landlordListingWithMlsRows([
+            ['key' => 'STELLAR_ApprovalProcess', 'label' => 'Approval Process',
+             'value' => 'Application, fee, and association approval required.'],
+            ['key' => 'STELLAR_AdditionalMembershipAvailableYN', 'label' => 'Additional Membership Available',
+             'value' => 'Yes'],
+            ['key' => 'OccupantType', 'label' => 'Currently Occupied By', 'value' => 'Tenant'],
+        ]);
+
+        $this->get(route('offer.listing.landlord.view', $auction->id))
+            ->assertStatus(200)
+            ->assertSee('Application, fee, and association approval required.', false)
+            ->assertSee('Additional Membership Available', false)
+            ->assertSee('Currently Occupied By', false);
+    }
+
+    /**
+     * @test
+     *
+     * The alias map is the entire surface of MLS moderation, so it is pinned
+     * exactly. Growing it is a deliberate act with fixture evidence behind it —
+     * not something that happens because a value is a string.
+     */
+    public function the_mls_prose_alias_map_is_exactly_these_four_entries(): void
+    {
+        $this->assertSame([
+            'STELLAR_PetRestrictions'             => 'pet_restrictions',
+            'STELLAR_AdditionalLeaseRestrictions' => 'landlord_approval_conditions',
+            'OpenHouseRemarks'                    => 'additional_details',
+            'STELLAR_ApprovalProcess'             => 'landlord_approval_conditions',
+        ], \App\Support\OfferListing\LandlordProviderTextPolicy::mlsProseAliases());
+    }
+
+    /**
+     * @test
+     *
      * The imported payload is STORED COMPLETE. Phase 3 changes publication
      * eligibility at read time and nothing about ingestion, storage or MLS import
      * completeness — so the suppressed sentence is still in the row afterwards.
