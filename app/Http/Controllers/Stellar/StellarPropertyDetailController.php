@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Stellar;
 use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
 use App\Models\PropertyDnaProfile;
+use App\Models\PropertyLocationPoi;
 use App\Services\Dna\PropertyPersonalityService;
 use App\Services\LocationDna\LocationDnaSummaryService;
 use App\Services\ListingImport\Mls\MlsDisplayPermissions;
@@ -107,6 +108,33 @@ class StellarPropertyDetailController extends Controller
         } catch (\Throwable) {
         }
 
+        // The persisted POI rows behind that summary, loaded ONLY to resolve the
+        // attribution their licenses require.
+        //
+        // WHY THE ROWS AND NOT THE SUMMARY. `summarizeForListing()` returns
+        // `nearest_by_category` entries carrying label/name/distance/status/data_source
+        // and no provenance at all. Attribution is resolved from each row's own
+        // `provenance_json.provider` — never from `data_source`, which was written as the
+        // literal 'google_places' on every row regardless of adapter until that was
+        // corrected, so a corpus row read through it would credit Google for Overture
+        // data. The summary schema is deliberately left alone; the rows already carry
+        // what is needed.
+        //
+        // Same query shape the seller/landlord controllers already use for their own
+        // panels, scoped to this listing and to listing_type='bridge', so no other
+        // listing's rows can reach this page.
+        $locationPois = collect();
+        try {
+            $locationPois = PropertyLocationPoi::where('listing_type', 'bridge')
+                ->where('listing_id', $listing->id)
+                ->orderBy('poi_category')
+                ->orderBy('rank')
+                ->get();
+        } catch (\Throwable) {
+            // Attribution must never take the page down. An empty collection renders
+            // no attribution, which is correct when we cannot establish provenance.
+        }
+
         // Section 2c — Property personality + target audience (requires DNA profile)
         $personality = null;
         try {
@@ -137,6 +165,7 @@ class StellarPropertyDetailController extends Controller
             'askAiCriteriaId' => $askAiCriteriaId,
             'matchContext'    => $matchContext,
             'locationSummary' => $locationSummary,
+            'locationPois'    => $locationPois,
             'personality'     => $personality,
             'listingId'       => $listing->id,
         ]);
