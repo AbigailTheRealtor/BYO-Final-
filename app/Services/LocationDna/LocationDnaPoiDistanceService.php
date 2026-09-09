@@ -1490,7 +1490,26 @@ class LocationDnaPoiDistanceService
             'ranking_score'            => $rankingScore,
             'ranking_reasons_json'     => $rankingReasons,
             'travel_time_minutes'      => null,
-            'data_source'              => 'google_places',
+            /*
+             | The provider that actually answered, NOT the literal 'google_places'
+             | this column carried since before the provider registry existed.
+             |
+             | The old literal was written on every row regardless of which adapter
+             | produced it, so a corpus-backed row was stored claiming Google as its
+             | source — a false provenance record about a third party's data, and one
+             | that would have contradicted `provenance_json.provider` on the very
+             | same row.
+             |
+             | Deliberately the SAME identity `provenance_json` is built from four
+             | lines above, rather than a second lookup: two independent
+             | source-selection mechanisms on one row is how they come to disagree.
+             | `resolveProvenanceBase()` sets it once per run from the registry's
+             | effective base for `poi.default`, so the two cannot diverge.
+             |
+             | Honest for every status: a not_found or error row records the provider
+             | that was asked, which is what happened.
+             */
+            'data_source'              => $this->currentProvenanceProvider,
             // Stage E0: stamp the versions this row was fetched/scored under.
             'pois_fetch_version'       => $this->currentFetchVersion !== '' ? $this->currentFetchVersion : null,
             'pois_scoring_version'     => $this->currentScoringVersion !== '' ? $this->currentScoringVersion : null,

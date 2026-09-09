@@ -2,6 +2,7 @@
 
 namespace App\Services\LocationDna;
 
+use App\Services\LocationDna\Providers\CorpusSurface;
 use App\Services\LocationDna\Providers\LocationProviderRegistry;
 
 /**
@@ -55,6 +56,16 @@ class LocationDnaVersionService
             'category_groups' => LocationDnaPoiDistanceService::CATEGORY_GROUPS,
             'radius_miles'    => (int) config('location_dna.poi.max_radius_miles', 25),
             'capability'      => $registry->capabilityHash(),
+            // WHICH CORPUS, not just which provider. `capabilityHash()` reads
+            // config/location_providers.php alone and cannot see the corpus version
+            // pinned in config/overture_corpus_poi.php — so before this line, activating
+            // a second import left every persisted row's `pois_fetch_version` unchanged
+            // and the previous corpus's rows read as current and were never refetched.
+            // Exactly the tile-cache defect, one layer down, and the same fix from the
+            // same definition. fetchVersion only: which corpus supplied a candidate has
+            // no bearing on how a stored candidate is ranked, and folding it into
+            // scoringVersion would make a re-pin masquerade as a scoring change.
+            'corpus'          => CorpusSurface::token(),
         ]);
     }
 

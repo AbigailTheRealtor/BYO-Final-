@@ -1,0 +1,126 @@
+BidYourOffer — notice of changes to the Overture Places data
+============================================================
+
+APPLICATION-AUTHORED. NOTHING BELOW IS FOURSQUARE'S OR OVERTURE'S TEXT.
+
+The upstream notice is a separate file and is reproduced verbatim there:
+
+    resources/legal/foursquare-os-places-NOTICE.txt
+
+That separation is deliberate. Foursquare's NOTICE permits appending a notice of
+changes to it, but a reader skimming a single merged file cannot tell which
+sentences Foursquare wrote and which we did — and the one thing the NOTICE
+requires above all is that its content be preserved as theirs. So their file is
+kept untouched and this one carries our statement.
+
+This file exists to satisfy the second bullet of that NOTICE: "if applicable,
+include prominent notices to the extent you've changed the Data." We have changed
+the Data. This is what we changed.
+
+
+--------------------------------------------------------------------------------
+1. The chain the data travelled before it reached us
+--------------------------------------------------------------------------------
+
+    Foursquare Open Source Places        Apache-2.0. Copyright as stated in the
+                                         upstream NOTICE.
+              |
+              |  transformed by the Overture Maps Foundation to the Overture
+              |  schema. Overture's attribution page records this change as
+              |  "Changed: 2026-03-18".
+              v
+    Overture Maps Places theme           A mixed-license aggregate: CDLA-Permissive-2.0
+                                         for most contributing sources, Apache-2.0 for
+                                         the Foursquare source, CC0-1.0 for AllThePlaces.
+              |
+              |  the changes described in section 2, by us
+              v
+    This application's local corpus
+
+We are therefore a downstream redistributor of a transformed derivative, not of
+the original Foursquare distribution. Both sets of changes are disclosed: theirs
+above, ours below.
+
+
+--------------------------------------------------------------------------------
+2. What we changed
+--------------------------------------------------------------------------------
+
+Pinned inputs (SSOT: config/overture_places.php):
+
+    Overture data release      2026-06-17.0
+    Overture schema version    v1.17.0
+    Local corpus version       overture-2026-06-17.0-fl
+
+(Storage details — which database holds the corpus and under what partition — are
+deliberately omitted. This notice is published to the public and describes changes
+to the DATA; how we store it is not a change to it, and naming our infrastructure
+on a public page would tell a reader nothing about the licence and something about
+our systems.)
+
+(a) GEOGRAPHIC FILTERING — rows outside Florida were not imported.
+    Bounding box, EPSG:4326 degrees (config/overture_places.php regions.florida):
+    west -87.63, south 24.40, east -79.97, north 31.00.
+    The box is coarse and admits some water and slivers of Georgia and Alabama;
+    it errs toward keeping a row rather than dropping a real coastal address.
+
+(b) CONFIDENCE FILTERING — rows below an existence-confidence floor of 0.90
+    were not imported (config/overture_places.php confidence_min). Overture's
+    `confidence` is numeric in [0,1].
+
+(c) CATEGORY FILTERING AND CROSSWALK — only rows whose Overture
+    `categories.primary` token appears in an eight-entry map were imported, and
+    each was crosswalked to one of our own canonical category keys
+    (App\Services\Spatial\OvertureCategoryMap). Seven of those categories are
+    servable to users (App\Services\LocationDna\Providers\CorpusPoiCategoryMap).
+    Overture's v1.17.0 `basic_category` and `taxonomy` vocabularies are NOT
+    mapped; an unmapped token is tallied and left unmapped rather than inferred.
+
+(d) SCHEMA NORMALIZATION — records were mapped from the Overture schema into this
+    application's own spatial schema
+    (App\Services\Spatial\OverturePlaceNormalizer): field renaming, geometry
+    reduced to a point, and our own corpus/version columns added.
+
+(e) PER-SOURCE ATTRIBUTION WAS NOT RETAINED, AND THIS IS THE CHANGE THAT MATTERS
+    MOST FOR ATTRIBUTION. The Overture record carries `sources[].dataset`, naming
+    which member supplied the row. Our normalizer COUNTS those datasets into an
+    integer `source_count` and discards the names; the stored row carries
+    `source = 'overture'` and an `attrs` holding only `geometry_type`.
+
+    The consequence: we cannot tell which of our rows came from Foursquare, and
+    therefore cannot tell which are Apache-2.0 rather than CDLA-Permissive-2.0 or
+    CC0-1.0. We do not guess. Every row is treated as though it could be the
+    Foursquare slice, so the Apache-2.0 obligations — the copy of the license, this
+    notice of changes, and preservation of the upstream NOTICE — are applied to
+    the whole corpus.
+
+    Recovering per-row precision is a corpus change (retaining `sources[].dataset`
+    and re-importing), not a configuration change, and is deliberately not faked
+    in the meantime.
+
+(f) MEASURED SIZE — the Florida extract measured 29,434 rows.
+
+NOT CHANGED: the substance of individual place records. We filter, crosswalk and
+restructure; we do not edit place names, coordinates or attributes, and we add no
+places of our own to the corpus.
+
+
+--------------------------------------------------------------------------------
+3. Where the required material lives
+--------------------------------------------------------------------------------
+
+    Upstream Foursquare NOTICE, verbatim
+        resources/legal/foursquare-os-places-NOTICE.txt
+
+    Apache License, Version 2.0, in full
+        resources/legal/apache-2.0-LICENSE.txt
+
+    This notice of changes
+        resources/legal/overture-corpus-MODIFICATIONS.txt
+
+    Attribution shown to users
+        /data-sources (public, unauthenticated), and the compact attribution
+        rendered beside any points of interest on a listing page.
+
+    Machine-readable declaration
+        config/location_attribution.php

@@ -454,6 +454,64 @@ Route::get('/faq', function () {
     return view('faqs', $page_data);
 })->name('faqs');
 
+/*
+| Data Sources & Licenses.
+|
+| PUBLIC AND UNAUTHENTICATED ON PURPOSE. This is the surface that discharges the
+| attribution obligations attached to our open-data sources — CDLA-Permissive-2.0
+| and Apache-2.0 both require the notice to accompany the published data, and the
+| pages that publish it (`/offer-listing/{seller,landlord}/view/{id}`) sit outside
+| the auth group themselves. An attribution page a visitor cannot reach would
+| discharge nothing for the visitors who are actually being shown the data.
+|
+| Content comes from config/location_attribution.php and the repository NOTICE
+| file, so a source cannot be added to the system and omitted here.
+*/
+Route::get('/data-sources', function () {
+    $page_data['title'] = "Data Sources & Licenses";
+
+    $noticePath = base_path((string) (config('location_attribution.notice_path') ?: 'NOTICE'));
+
+    // A missing file must not 500 a public page. It is a deployment fault worth
+    // seeing, not worth serving an error over — and everything else still renders.
+    $read = static fn (?string $rel): string => ($rel && is_file(base_path($rel)))
+        ? (string) file_get_contents(base_path($rel))
+        : '';
+
+    $overture = \App\Support\LocationDna\LocationDataAttribution::source('overture_places') ?? [];
+
+    return view('data-sources', $page_data + [
+        'sources' => \App\Support\LocationDna\LocationDataAttribution::allSources(),
+        'notice'  => is_file($noticePath) ? (string) file_get_contents($noticePath) : '',
+
+        // The two artifacts the Apache-2.0 slice obliges us to put in front of a
+        // recipient, rendered separately and labelled, so nobody reads our change
+        // notice as Foursquare's words or the reverse.
+        'upstreamNotice'      => $read($overture['notice_path'] ?? null),
+        'modificationNotice'  => $read($overture['modifications_path'] ?? null),
+    ]);
+})->name('data-sources');
+
+/*
+| A copy of the Apache License, Version 2.0, served as plain text.
+|
+| The Foursquare NOTICE requires that we "provide recipients with a copy of the
+| License". A link to apache.org is a pointer to someone else's copy; this serves
+| the bytes we actually shipped, from the repository, so the obligation is
+| discharged by us rather than by a third party staying online.
+|
+| Public for the same reason /data-sources is: the pages publishing the data are.
+*/
+Route::get('/data-sources/apache-2.0', function () {
+    $path = base_path('resources/legal/apache-2.0-LICENSE.txt');
+
+    abort_unless(is_file($path), 404);
+
+    return response(file_get_contents($path), 200, [
+        'Content-Type' => 'text/plain; charset=utf-8',
+    ]);
+})->name('data-sources.license');
+
 Route::get('/author/{id}', [UserController::class, 'author'])->name('author');
 Route::get('/u/{uri}', [UserController::class, 'short_uri'])->name('short.uri');
 Route::get('get-qr-code', function (Request $request) {
