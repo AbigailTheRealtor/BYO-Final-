@@ -8,6 +8,7 @@ use App\Services\AskAi\AskAiContextBuilderService;
 use App\Services\LocationDna\BoundaryLookupService;
 use App\Services\LocationDna\FloodZoneLookupService;
 use App\Services\LocationDna\LocationIntelligenceComposer;
+use App\Services\LocationDna\PublicGeometryProjection;
 use App\Services\LocationDna\SchoolDistrictLookupService;
 use App\Services\Offers\BiddingWindowService;
 use Illuminate\Http\Request;
@@ -132,6 +133,16 @@ class BuyerOfferListingController extends Controller
             'id'      => $id,
             'auth_id' => auth()->id(),
         ];
+
+        // Public viewer route: withhold exact user-authored geometry and free-text
+        // notes from the browser. Applied AFTER the enrichment calls above, which
+        // legitimately require full geometry server-side and never reach the page.
+        $publicGeometry         = app(PublicGeometryProjection::class);
+        $locationDnaPreferences = $publicGeometry->project($locationDnaPreferences);
+        // Defence in depth: strip the raw blob from the decoded meta bag too, so a
+        // catch-all meta renderer cannot reintroduce the exposure by a route that
+        // never names a geometry key.
+        $meta                   = $publicGeometry->stripFromMetaBag($meta);
 
         $biddingWindow = $this->biddingWindowFor($auction);
 

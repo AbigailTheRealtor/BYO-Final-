@@ -941,8 +941,17 @@
                                  Displays the tenant's location preferences from the parent auction.
                             ─────────────────────────────────────────────────────────────────── --}}
                             @php
-                              $dnaPrefRaw = $auction->info('location_dna_preferences');
-                              $dnaPrefs   = $dnaPrefRaw ? json_decode($dnaPrefRaw, true) : null;
+                              /* This panel used to decode `location_dna_preferences` itself,
+                                 which made it a SECOND, independent route from the stored blob
+                                 to a public page — one that printed radius-centre street
+                                 addresses and free-text notes as visible text. It is reachable
+                                 by any visitor once the owner has pressed "Show Bids", which is
+                                 a choice about bids, not about the tenant's address notes.
+
+                                 It now reads the controller's already-projected variable, so
+                                 there is exactly one containment point for this page instead of
+                                 a Blade-local mask that has to be remembered. */
+                              $dnaPrefs = $locationDnaPreferences ?? null;
                             @endphp
                             <div class="mt-2 mb-3 p-2 border rounded bg-light" style="font-size:0.82rem;">
                               <div class="fw-semibold mb-1 text-muted" style="font-size:0.8rem;">
@@ -985,6 +994,17 @@
                                 @if(!empty($dnaPrefs['flexible_location']) && $dnaPrefs['flexible_location'])
                                   <div class="mt-1">
                                     <span class="badge bg-success fw-normal">Flexible on location</span>
+                                  </div>
+                                @endif
+                                {{-- Presence-only indicators for withheld detail. --}}
+                                @if(!empty($dnaPrefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_GEOMETRY]))
+                                  <div class="mt-1 text-muted" style="font-size:0.78rem;">
+                                    <i class="fa-solid fa-draw-polygon me-1"></i>Search area preferences provided
+                                  </div>
+                                @endif
+                                @if(!empty($dnaPrefs[\App\Services\LocationDna\PublicGeometryProjection::WITHHELD_NOTES]))
+                                  <div class="mt-1 text-muted" style="font-size:0.78rem;">
+                                    <i class="fa-solid fa-note-sticky me-1"></i>Additional location preferences provided
                                   </div>
                                 @endif
                               @else
