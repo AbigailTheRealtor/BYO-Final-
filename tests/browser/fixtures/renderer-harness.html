@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Location DNA renderer harness</title>
+<!--
+    Harness for the MapLibre Location DNA renderer.
+
+    Loads the renderer SOURCE as written (served from resources/js/spatial), not a
+    bundled artefact — see tests/browser/support/static-server.js for why. The
+    maplibre-gl and pmtiles namespaces are imported natively and injected, which is
+    exactly the seam the renderer was designed around.
+
+    The page reproduces the structural facts that matter to the widget under test:
+    a map container inside a HIDDEN tab pane, plus unrelated form fields whose
+    editing must never disturb geometry.
+-->
+<link rel="stylesheet" href="/vendor/maplibre-gl/dist/maplibre-gl.css">
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 0; padding: 16px; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+  #ldna-map { width: 640px; height: 360px; background: #eceff2; }
+  .ldna-place-pin { width: 14px; height: 14px; border-radius: 50%; background: #b4310a; border: 2px solid #fff; }
+  .ldna-property-pin { width: 18px; height: 18px; border-radius: 50%; background: #0e7361; border: 3px solid #fff; }
+  fieldset { margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<button id="reveal-tab" type="button">Open map tab</button>
+
+<div id="tab-pane" class="pane">
+  <div
+    id="ldna-map"
+    data-ldna-maplibre
+    data-attribution="© OpenStreetMap contributors · Protomaps"
+    data-longitude="-82.7"
+    data-latitude="27.85"
+    data-zoom="9"
+    data-max-zoom="15"
+  ></div>
+  <p data-ldna-map-status hidden></p>
+</div>
+
+<!-- Unrelated dimensions. Editing these must never touch geometry. -->
+<fieldset>
+  <legend>Unrelated fields</legend>
+  <label>Preferred state <input id="ldna-state-input" value="FL"></label>
+  <label>Notes <textarea id="ldna-notes"></textarea></label>
+</fieldset>
+
+<!--
+    pmtiles as a classic script, not an ES module. Its ESM build imports `fflate`
+    as a BARE specifier, which a browser cannot resolve without an import map; the
+    dist/pmtiles.js IIFE is self-contained and exposes a `pmtiles` global. maplibre
+    stays ESM because its distribution resolves only relative paths.
+-->
+<script src="/vendor/pmtiles/dist/pmtiles.js"></script>
+
+<script type="module">
+import * as realMaplibre from '/vendor/maplibre-gl/dist/maplibre-gl.mjs';
+import { createLdnaRenderer } from '/js/spatial/ldna-maplibre-renderer.js';
+import { registerPmtilesProtocol, resetPmtilesProtocol } from '/js/spatial/ldna-basemap.js';
+import { createFakeMaplibre, createFakePmtiles } from '/fake-maplibre.js';
+
+// The bundled build needs an explicitly copied worker asset; under native ESM
+// `import.meta.url` already resolves to a real http URL, so we point the
+// registration at the vendored worker rather than the production copy path.
+window.__ldnaWorkerUrl = '/vendor/maplibre-gl/dist/maplibre-gl-worker.mjs';
+
+/** Everything the specs need, on one object, created only when asked. */
+window.LDNA = {
+  events: [],
+  status: [],
+  renderer: null,
+
+  /**
+   * @param {object} opts
+   * @param {object} [opts.state]        stored geometry to hydrate
+   * @param {string} [opts.pmtilesUrl]   omit for the no-archive (degraded) path
+   * @param {boolean} [opts.autoInit]    default true
+   * @param {boolean} [opts.hydrate]     default true
+   */
+  boot(opts = {}) {
+    const container = document.getElementById('ldna-map');
+
+    // `fake: true` swaps the THIRD-PARTY LIBRARY only. The renderer under test is
+    // the real module either way. See tests/browser/fixtures/fake-maplibre.js.
+    const maplibregl = opts.fake ? createFakeMaplibre() : realMaplibre;
+    const pmtilesLib = opts.fake ? createFakePmtiles() : window.pmtiles;
+    window.LDNA.lib = maplibregl;
+
+    if (opts.pmtilesUrl) {
+      resetPmtilesProtocol();
+      registerPmtilesProtocol(maplibregl, pmtilesLib, { workerUrl: window.__ldnaWorkerUrl });
+    }
+
+    const renderer = createLdnaRenderer({
+      maplibregl,
+      pmtiles: pmtilesLib,
+      container,
+      config: {
+        pmtilesUrl: opts.pmtilesUrl || '',
+        attribution: container.dataset.attribution,
+        longitude: container.dataset.longitude,
+        latitude: container.dataset.latitude,
+        zoom: container.dataset.zoom,
+        maxZoom: container.dataset.maxZoom,
+      },
+      onChange: (state) => { window.LDNA.events.push(JSON.parse(JSON.stringify(state))); },
+      onStatus: (state, message) => {
+        window.LDNA.status.push({ state, message });
+        container.setAttribute('data-ldna-map-state', state);
+      },
+    });
+
+    window.LDNA.renderer = renderer;
+
+    if (opts.autoInit !== false) renderer.init();
+    if (opts.hydrate !== false) renderer.hydrate(opts.state || {});
+
+    return true;
+  },
+
+  /** Canvas dimensions, for the hidden-tab / resize assertions. */
+  canvasSize() {
+    const canvas = document.querySelector('#ldna-map canvas');
+    return canvas ? { width: canvas.clientWidth, height: canvas.clientHeight } : null;
+  },
+
+  /** Feature count in one of the renderer's GeoJSON sources. */
+  sourceFeatureCount(sourceId) {
+    const map = window.LDNA.renderer && window.LDNA.renderer.getMap();
+    if (!map || !map.getSource(sourceId)) return null;
+    const data = map.getSource(sourceId)._data;
+    return data && data.features ? data.features.length : 0;
+  },
+
+  sourceFeatures(sourceId) {
+    const map = window.LDNA.renderer && window.LDNA.renderer.getMap();
+    if (!map || !map.getSource(sourceId)) return null;
+    const data = map.getSource(sourceId)._data;
+    return data && data.features ? JSON.parse(JSON.stringify(data.features)) : [];
+  },
+
+  placePinCount() {
+    return document.querySelectorAll('.ldna-place-pin').length;
+  },
+
+  propertyPinCount() {
+    return document.querySelectorAll('[data-ldna-property-pin]').length;
+  },
+};
+
+document.getElementById('reveal-tab').addEventListener('click', () => {
+  document.getElementById('tab-pane').classList.add('active');
+});
+
+window.__ldnaHarnessReady = true;
+</script>
+</body>
+</html>
