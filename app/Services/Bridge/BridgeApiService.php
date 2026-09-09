@@ -152,4 +152,147 @@ class BridgeApiService
         $json = $response->json();
         return $json['value'] ?? [];
     }
+
+    /**
+     * Ask Bridge for ONE page of an arbitrary OData resource, and report exactly
+     * what happened.
+     *
+     * WHY THIS EXISTS AND WHAT IT IS NOT FOR
+     * --------------------------------------
+     * The 2026-09-04 payload audit established that several things a complete
+     * listing wants are not on the Property resource at all: open houses, room
+     * detail, unit rosters, and the deeper agent/office contact columns
+     * (`ListAgentDirectPhone`, `ListOfficeURL`, an office address). Those live on
+     * Bridge's `Member`, `Office`, `OpenHouse`, `Room` and `Unit` resources — IF
+     * this dataset exposes them, which cannot be established without asking, and
+     * could not be asked at implementation time because no Bridge credentials
+     * exist in this environment.
+     *
+     * So this method is the ASK, and nothing else. It is called from exactly one
+     * place — {@see \App\Console\Commands\ProbeBridgeResources}, an operator-run,
+     * force-flagged, never-scheduled command — and from no application path. It
+     * does not cache, does not upsert, and does not feed a view. Building a real
+     * enrichment layer against resources nobody has confirmed exist would be
+     * writing code against a guess; this turns the guess into an answer first.
+     *
+     * @param  string $resource  an OData entity set name, e.g. 'Member'
+     * @return array{ok: bool, status: int|null, count: int|null, fields: list<string>, error: string|null}
+     */
+    public function probeResource(string $resource, int $top = 1): array
+    {
+        $dataset = config('bridge.dataset');
+        $token   = config('bridge.token');
+
+        if (empty($dataset) || empty($token)) {
+            return ['ok' => false, 'status' => null, 'count' => null, 'fields' => [], 'error' => self::FAILURE_NOT_CONFIGURED];
+        }
+
+        // Entity-set names only. A path segment assembled from an argument must
+        // not be able to become a traversal or a second query string.
+        if (! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', $resource)) {
+            return ['ok' => false, 'status' => null, 'count' => null, 'fields' => [], 'error' => 'invalid_resource_name'];
+        }
+
+        try {
+            $response = Http::timeout(30)->get("{$this->baseUrl}/{$dataset}/{$resource}", [
+                '$top'         => $top,
+                'access_token' => $token,
+            ]);
+
+            if (! $response->successful()) {
+                return [
+                    'ok'     => false,
+                    'status' => $response->status(),
+                    'count'  => null,
+                    'fields' => [],
+                    // A status line, never a body: a probe's output is read by a
+                    // human and pasted into notes, and response bodies from a
+                    // token-bearing request should not travel that way.
+                    'error'  => self::FAILURE_HTTP_ERROR,
+                ];
+            }
+
+            $rows   = $response->json()['value'] ?? [];
+            $first  = is_array($rows) && isset($rows[0]) && is_array($rows[0]) ? $rows[0] : [];
+
+            return [
+                'ok'     => true,
+                'status' => $response->status(),
+                'count'  => is_array($rows) ? count($rows) : 0,
+                'fields' => array_keys($first),
+                'error'  => null,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('BridgeApiService: probe failed for ' . $resource);
+
+            return ['ok' => false, 'status' => null, 'count' => null, 'fields' => [], 'error' => self::FAILURE_TRANSPORT_ERROR];
+        }
+    }
+
+    /**
+     * Read one page of a related OData resource with a targeted filter.
+     *
+     * The read half of the Member / Office / OpenHouse enrichment. Kept separate
+     * from {@see fetchProperties()} because its failure posture is different:
+     * enrichment is ADDITIVE, so a failure here must cost the enrichment and
+     * nothing else. It therefore swallows every error and returns an empty array
+     * exactly as if the resource had no matching rows — an import must never
+     * fail because a brokerage's phone number could not be fetched.
+     *
+     * The caller distinguishes "empty" from "unavailable" only through
+     * {@see lastFailure()}, and currently no caller needs to: both mean "render
+     * what we already have".
+     *
+     * @param  string $resource  an OData entity set name, e.g. 'Member'
+     * @param  string|null $filter an OData $filter expression
+     * @return list<array<string,mixed>>
+     */
+    public function fetchRelated(string $resource, ?string $filter = null, int $top = 1): array
+    {
+        $this->lastFailure = null;
+
+        $dataset = config('bridge.dataset');
+        $token   = config('bridge.token');
+
+        if (empty($dataset) || empty($token)) {
+            $this->lastFailure = self::FAILURE_NOT_CONFIGURED;
+
+            return [];
+        }
+
+        // Entity-set names only. A path segment built from an argument must not
+        // be able to become a traversal or a second query string.
+        if (! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', $resource)) {
+            $this->lastFailure = self::FAILURE_HTTP_ERROR;
+
+            return [];
+        }
+
+        $params = ['$top' => $top, 'access_token' => $token];
+
+        if ($filter !== null) {
+            $params['$filter'] = $filter;
+        }
+
+        try {
+            $response = Http::timeout((int) config('mls_related_resources.timeout', 10))
+                ->get("{$this->baseUrl}/{$dataset}/{$resource}", $params);
+
+            if (! $response->successful()) {
+                Log::warning('BridgeApiService: related fetch returned ' . $response->status() . ' for ' . $resource);
+                $this->lastFailure = self::FAILURE_HTTP_ERROR;
+
+                return [];
+            }
+
+            $rows = $response->json()['value'] ?? [];
+
+            return is_array($rows) ? array_values(array_filter($rows, 'is_array')) : [];
+        } catch (\Throwable $e) {
+            Log::warning('BridgeApiService: related fetch failed for ' . $resource . ' — ' . $e->getMessage());
+            $this->lastFailure = self::FAILURE_TRANSPORT_ERROR;
+
+            return [];
+        }
+    }
 }

@@ -68,8 +68,23 @@ class MlsMediaExtractor
     /** Feed-side modification stamp. */
     private const MODIFIED_FIELDS = ['MediaModificationTimestamp', 'ModificationTimestamp', 'ChangedDate'];
 
-    /** The feed's own public-display permission. */
+    /** The feed's own public-display permission, as a boolean column. */
     private const PUBLIC_DISPLAY_FIELDS = ['PermittedForPublicDisplay', 'PublicDisplayYN', 'InternalOnlyYN'];
+
+    /**
+     * The feed's own public-display permission, as a LIST.
+     *
+     * Stellar does not send any of the boolean columns above. What it sends,
+     * on every one of the 34,248 media objects in the cached corpus, is
+     * `Permission: ["Public"]` — and nothing read it. The boolean chain
+     * therefore resolved to null on every image, `MlsMediaPolicy::allowsItem()`
+     * saw "the feed did not object", and an object arriving one day as
+     * `["Private"]` would have been published. This is that gap closed.
+     */
+    private const PERMISSION_LIST_FIELDS = ['Permission', 'Permissions'];
+
+    /** The value in a Permission list that means "may be shown publicly". */
+    private const PUBLIC_PERMISSION = 'public';
 
     /** Fields whose truth is INVERTED relative to "may be displayed publicly". */
     private const INVERTED_PUBLIC_DISPLAY_FIELDS = ['InternalOnlyYN'];
@@ -186,6 +201,16 @@ class MlsMediaExtractor
      */
     private function publicDisplayFlag(array $raw): ?bool
     {
+        // A Permission LIST is checked first, because it is the one this feed
+        // actually populates. An explicit list that does not name "Public" is a
+        // refusal, not silence — so it must not be able to fall through to a
+        // boolean column that is absent and would resolve to "no objection".
+        $listPermission = $this->permissionListFlag($raw);
+
+        if ($listPermission !== null) {
+            return $listPermission;
+        }
+
         foreach (self::PUBLIC_DISPLAY_FIELDS as $field) {
             if (! array_key_exists($field, $raw)) {
                 continue;
@@ -215,6 +240,49 @@ class MlsMediaExtractor
      * @param  list<MlsMediaItem>  $items
      * @return list<MlsMediaItem>
      */
+    /**
+     * The feed's `Permission` list as a yes/no, or null when it says nothing.
+     *
+     * Present and containing "Public" is a yes. Present and NOT containing it is
+     * an explicit no — an object marked `["Private"]`, `["Office"]` or
+     * `["IDX","Private"]` is one the MLS has told us not to publish, and an
+     * allow-list that only recognised the affirmative case would treat all three
+     * as permission granted.
+     *
+     * Absent, empty, or a shape we do not recognise returns null, which leaves
+     * the boolean columns and then the category allow-list to decide. That is
+     * the correct fallback for a feed that does not send the column at all,
+     * which several RESO providers do not.
+     */
+    private function permissionListFlag(array $raw): ?bool
+    {
+        foreach (self::PERMISSION_LIST_FIELDS as $field) {
+            if (! array_key_exists($field, $raw)) {
+                continue;
+            }
+
+            $value = $raw[$field];
+
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            foreach (is_array($value) ? $value : [$value] as $entry) {
+                if (! is_scalar($entry)) {
+                    continue;
+                }
+
+                if (strtolower(trim((string) $entry)) === self::PUBLIC_PERMISSION) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return null;
+    }
+
     private function deduplicate(array $items): array
     {
         $seen = [];
@@ -289,7 +357,11 @@ class MlsMediaExtractor
             return $items;
         }
 
-        Log::info('[MLS MEDIA] gallery truncated to the configured ceiling', [
+        // Warning, not info. Truncating a gallery means a listing is now showing
+        // fewer photographs than the MLS published for it, which is the exact
+        // silent-loss failure this ceiling was raised to stop; it should be
+        // visible in a log an operator actually reads.
+        Log::warning('[MLS MEDIA] gallery truncated to the configured ceiling', [
             'listing_key' => $listingKey,
             'available'   => count($items),
             'kept'        => $max,

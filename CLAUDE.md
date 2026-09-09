@@ -85,6 +85,85 @@ Address suggestions live in `app/Services/Location/Suggestions/` (`AddressSugges
 
 `php artisan location:probe-census-address` sends one live request on demand. Dry-run only, refuses to run without `--force-probe` while the flag is off, never scheduled, never called from application code.
 
+### MLS import — the three tiers and the no-drop contract
+
+Bridge sends **553 Property fields**; `bridge_properties.raw_json` keeps every one of them, and
+`BridgeApiService` sends **no `$select`** — which is *why* the payload is complete. **Do not add
+one.** Everything that was ever lost was lost after the data was already in our database.
+
+Every populated Bridge field resolves to exactly one disposition in
+`MlsFieldCatalog` (`app/Services/ListingImport/Mls/`) — the single classification authority:
+
+* **Tier 1 `TIER1_BYO`** — imported into an existing editable Create Offer field.
+* **Tier 2 `PROPERTY_FACTS` / `LISTING_CONTEXT` / `CONTACTS`** — legitimate facts with no editable
+  equivalent, persisted as supplemental MLS metadata and rendered in MLS Details.
+* **Tier 3 `RELATED_RESOURCE`** — belongs to Media / OpenHouse / Member / Office.
+* plus `DISPLAY_CONTROL`, `ADDRESS_COMPONENT`, `INTERNAL`, `RESTRICTED`, `DERIVED`, `UNSUPPORTED`.
+
+`MlsNoFieldDropContractTest` fails the build, naming the field and the property type, when a
+populated field in any of the **seven per-type fixtures** (`tests/fixtures/mls/bridge/`) resolves to
+none of them. `MlsSearchImportParityTest` does the same for every field
+`PropertyDetailViewMapper` renders, so a field added to Stellar search and forgotten on import is a
+red build. **There is deliberately no generic bucket** — `UNSUPPORTED` is empty and an entry added
+there must carry a sentence saying why.
+
+**Adding a field to a display allow-list is a licensing decision, not a mapping tweak.** All the
+allow-lists fail closed; a field nobody has cleared is rendered nowhere.
+
+**Tier 1 is not repeated in Tier 2** — except where the listing page does not actually render the
+destination. `TIER1_MAPPED_BUT_UNRENDERED` names those (landlord's `air_conditioning`, `sewer`,
+`water`, `floor_covering`, …) and is re-derived from the Blade templates by the parity test, so it
+cannot go stale in either direction.
+
+**Do not map a field whose NAME matches and whose MEANING does not.** `minimum_cap_rate` and
+`minimum_annual_net_income` are the seller's *desired minimum*, not the property's actual figures;
+`garage_parking_spaces` is a Yes/No control, not a count; `unit_number` is the address's unit, not a
+building's unit count; and the lease-term vocabularies do not intersect the feed's. All seven such
+fields are preserved and displayed under MLS Details instead. Four map targets (`water_view`,
+`pet_policy`, `tenant_pays`, `rent_includes`) have **no `wire:model` binding** — importing into them
+would write a value the user can neither see nor correct, so they are Tier 2 as well.
+
+**Empty is never rendered.** `MlsValueFormatter` is the one place that decides: null, blank,
+whitespace, empty array/object and a `false` boolean all become nothing, so a field with no value
+never becomes a row and a section with no rows never becomes a section. **Zero does render** — an
+application fee of $0 is a fact; `false` does not, because a wall of "No" buries the facts a reader
+came for.
+
+**Display permissions are the feed's, not ours.** `MlsDisplayPermissions` reads
+`IDXParticipationYN`, `InternetEntireListingDisplayYN`, `InternetAddressDisplayYN`,
+`InternetAutomatedValuationDisplayYN` and `InternetConsumerCommentYN`. An explicit `false` is
+absolute; a *missing* flag permits, because these columns are populated on 1,202/1,202 records and
+treating absence as refusal would blank every address the day Stellar renames a column.
+`InternetAddressDisplayYN` is false on **71 of 1,202** cached records — the address is still
+imported, still stored, still drives the coordinate ladder, and is shown to the listing's owner; it
+is withheld from the public and from the Stellar page. **Preservation and display are separate
+permissions and must stay separate.**
+
+**Related resources, probed live 2026-09-04** (`php artisan mls:probe-resources --force-probe` —
+read-only, refuses without the flag, never scheduled): **Member (79 fields), Office (55) and
+OpenHouse (36) are exposed; Room and Unit return 404.** `BridgeRelatedResourceService` caches on the
+**member/office key, never the listing** — which is the whole N+1 answer, since one brokerage lists
+hundreds of properties — with a per-import ceiling counted after the cache. Every failure resolves to
+an empty section: **an import must never fail because a phone number could not be fetched.** Do not
+synthesise Rooms or Units from `RoomsTotal` / `NumberOfUnitsTotal`; a count is not a roster.
+
+**Precedence on re-import.** Editable fields: the **user wins** — a populated field is never
+overwritten. Supplemental MLS details: the **feed wins, wholesale** — the blob is replaced, so a fact
+the MLS retracted disappears rather than lingering. Photographs: the feed owns MLS entries, the user
+owns their uploads, their cover choice and their ordering.
+
+`mls_media.max_images` was **50 and is now 250**: the old ceiling mirrored the manual uploader's,
+which is about bytes *we* store, and MLS media is referenced not copied — it truncated 186 of 1,202
+cached listings. **Both `MLS_MEDIA_IMPORT_ENABLED` and `MLS_MEDIA_LICENSE_ACKNOWLEDGED` now default
+true**, by an **owner decision of 2026-09-04** that explicitly superseded the photo clause of the
+locked 2026-07-05 policy. A licence audit taken immediately before it found **no written Stellar
+approval in this repository** for public imported-listing photo use — the decision rests on owner
+authority, not on discovered documentation, and
+`docs/mls-direct-import-design-and-plan.md` § "Owner decision — 2026-09-04" is the record. Both
+flags are still read on every extract, write and render, and neither overrides the feed's own
+per-listing or per-media controls. MLS-sourced listings carry a Stellar/Bridge attribution block
+(`_mls_attribution.blade.php`), gated on import provenance so a manual listing never claims it.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.

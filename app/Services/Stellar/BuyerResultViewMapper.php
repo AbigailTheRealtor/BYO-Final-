@@ -110,9 +110,21 @@ class BuyerResultViewMapper
         $priceDisplay = $listPrice !== null ? '$' . number_format($listPrice, 0) : null;
 
         // -----------------------------------------------------------------------
-        // Address — safe per IDX gate (all results have passed IDXParticipationYN check)
+        // Address — gated on the feed's OWN per-listing display permission.
+        //
+        // The IDX participation check upstream is necessary and was not
+        // sufficient. `InternetAddressDisplayYN` is a separate instruction, and
+        // the 2026-09-04 payload audit found it false on 71 of 1,202 cached
+        // records — listings the MLS says may be shown WITHOUT their street
+        // address. Nothing read it, so every one of them published the address
+        // on this card. City/state/ZIP below are unaffected: an
+        // address-suppressed IDX listing is meant to show them.
         // -----------------------------------------------------------------------
-        $address = $listing->unparsed_address ?: null;
+        $address = \App\Services\ListingImport\Mls\MlsDisplayPermissions::fromRecord(
+            $listing->raw_json ? (json_decode($listing->raw_json, true) ?? []) : []
+        )->addressDisplayable()
+            ? ($listing->unparsed_address ?: null)
+            : null;
 
         // -----------------------------------------------------------------------
         // City / State / ZIP

@@ -3,6 +3,7 @@
 namespace App\Services\ListingImport\QuickImport;
 
 use App\Services\ListingImport\Media\MlsMediaItem;
+use App\Services\ListingImport\Mls\MlsSupplementalDetails;
 
 /**
  * The outcome of an MLS quick-import lookup, ready for the confirmation screen.
@@ -33,14 +34,18 @@ class MlsQuickImportResult
      * @param  array<string,string>   $facts          canonical-key facts from the facts-only boundary
      * @param  list<MlsMediaItem>     $media          permitted, ordered media
      * @param  array<string,mixed>    $headline       address/price/beds/baths/sqft for the confirmation card
-     * @param  array<string,list<array{label:string,value:string}>> $details  display-only MLS attributes
+     * @param  MlsSupplementalDetails|null $details  the supplemental MLS payload:
+     *         property facts with no editable form field, listing agent and
+     *         brokerage attribution, and the MLS's own listing context — each
+     *         already through its own display allow-list and already stripped of
+     *         empty values, so nothing downstream has to re-decide either.
      */
     private function __construct(
         public readonly string $status,
         public readonly array $facts = [],
         public readonly array $media = [],
         public readonly array $headline = [],
-        public readonly array $details = [],
+        public readonly ?MlsSupplementalDetails $details = null,
         public readonly ?string $listingKey = null,
         public readonly ?string $mlsNumber = null,
         public readonly ?string $mlsStatus = null,
@@ -50,7 +55,7 @@ class MlsQuickImportResult
         array $facts,
         array $media,
         array $headline,
-        array $details,
+        ?MlsSupplementalDetails $details,
         ?string $listingKey,
         ?string $mlsNumber,
         ?string $mlsStatus,

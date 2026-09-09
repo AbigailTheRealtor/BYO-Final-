@@ -464,25 +464,13 @@
             </div>
         </div>
 
-        {{-- Additional permitted MLS details (Layer C) --}}
-        @if(!empty($mlsDetails))
-            <div class="card shadow-sm mb-3">
-                <div class="card-body">
-                    <h5 class="fw-semibold mb-3">Property Details</h5>
-                    @foreach($mlsDetails as $section => $rows)
-                        <div class="mb-3">
-                            <div class="text-uppercase small fw-semibold text-muted mb-1">{{ $section }}</div>
-                            <dl class="row mb-0 small">
-                                @foreach($rows as $row)
-                                    <dt class="col-sm-4 fw-normal text-muted">{{ $row['label'] }}</dt>
-                                    <dd class="col-sm-8">{{ $row['value'] }}</dd>
-                                @endforeach
-                            </dl>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
+        {{-- Supplemental MLS details — the SAME partial the published listing
+             uses, so the review screen cannot promise more than the listing
+             will show. --}}
+        @include('offer-listing.partials._mls_property_facts', [
+            'details'    => $mlsDetails,
+            'mlsHeading' => 'MLS Property Details',
+        ])
 
         {{-- BidYourOffer terms --}}
         <div class="card shadow-sm mb-3">

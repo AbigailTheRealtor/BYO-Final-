@@ -3,10 +3,12 @@
 namespace App\Services\ListingImport\QuickImport;
 
 use App\Services\Bridge\BridgeListingLookupService;
+use App\Services\Bridge\BridgeRelatedResourceService;
+use App\Services\ListingImport\Mls\MlsRelatedResources;
 use App\Services\ListingImport\Media\MlsMediaExtractor;
 use App\Services\ListingImport\Media\MlsMediaPolicy;
 use App\Services\ListingImport\MlsListingPrefillService;
-use App\Services\ListingImport\MlsPropertyDetailsPresenter;
+use App\Services\ListingImport\Mls\MlsSupplementalDetails;
 use App\Services\Property\PropertyCandidate;
 use Illuminate\Support\Facades\Log;
 
@@ -32,17 +34,22 @@ use Illuminate\Support\Facades\Log;
  * return:
  *
  *   · {@see MlsMediaExtractor} + {@see MlsMediaPolicy} — permitted photographs;
- *   · {@see MlsPropertyDetailsPresenter} — permitted display-only attributes.
+ *   · {@see MlsSupplementalDetails} — which fans out to the property-facts,
+ *     contacts and listing-context allow-lists, and applies the feed's own
+ *     display permissions before any of it is kept.
  *
  * Both are allow-list shaped and both fail closed, so a field the feed adds
  * tomorrow is excluded by default rather than included by accident. The facts
  * that reach a form still come from {@see MlsListingPrefillService}, whose
  * ALLOWED_FIELDS constant and guard test are untouched by this feature.
  *
- * Three separate allow-lists rather than one is not duplication: they answer
- * three different questions — what may be written into an editable form, what
- * may be shown as an image, and what may be shown as text — and those have
- * different answers.
+ * Separate allow-lists rather than one is not duplication: they answer different
+ * questions — what may be written into an editable form, what may be shown as an
+ * image, what may be shown as a property fact, what may be shown as attribution
+ * — and those have different answers, and different gates. The contact and
+ * listing-context lists are additionally gated on the feed's own
+ * {@see \App\Services\ListingImport\Mls\MlsDisplayPermissions}, which the
+ * property-facts list is not.
  */
 class MlsQuickImportService
 {
@@ -51,7 +58,7 @@ class MlsQuickImportService
         private readonly MlsListingPrefillService $prefill,
         private readonly MlsMediaExtractor $mediaExtractor,
         private readonly MlsMediaPolicy $mediaPolicy,
-        private readonly MlsPropertyDetailsPresenter $detailsPresenter,
+        private readonly BridgeRelatedResourceService $related,
     ) {}
 
     /**
@@ -130,7 +137,15 @@ class MlsQuickImportService
             facts:      $prefilled['data'],
             media:      $this->mediaFor($candidate, $role),
             headline:   $this->headline($candidate),
-            details:    $this->detailsPresenter->present($candidate->raw),
+            details:    MlsSupplementalDetails::fromRecord(
+                $candidate->raw,
+                $role,
+                // Member / Office / OpenHouse. Additive and best-effort: every
+                // failure inside the enrichment resolves to an empty section, so
+                // the worst case is a listing with exactly the facts it would
+                // have had before this existed.
+                MlsRelatedResources::fetch($candidate->raw, $this->related),
+            ),
             listingKey: $candidate->listingKey,
             mlsNumber:  $candidate->mlsNumber,
             mlsStatus:  $candidate->mlsStatus ?? $candidate->standardStatus,

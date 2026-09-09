@@ -72,12 +72,21 @@ class MlsQuickImportFlowTest extends TestCase
             'ListingKey' => $key,
             'ListingId'  => $mls,
 
-            // Permitted display-only attributes (Layer C).
+            // Tier-1 facts: these reach an editable Create Offer field and are
+            // rendered from there, so they are deliberately NOT repeated in the
+            // supplemental MLS Details block.
             'Appliances'            => ['Dishwasher', 'Range'],
             'Flooring'              => ['Tile'],
             'Roof'                  => 'Shingle',
             'Zoning'                => 'RSF-3',
             'ConstructionMaterials' => ['Block'],
+
+            // Tier-2 facts: no editable equivalent anywhere on the form, so MLS
+            // Details is the only place they can surface.
+            'LaundryFeatures'       => ['Laundry Closet'],
+            'SubdivisionName'       => 'Bradford Acres',
+            'CommunityFeatures'     => ['Pool', 'Gated'],
+            'DaysOnMarket'          => 16,
 
             // Restricted — must never reach a form, a gallery or a page.
             'PublicRemarks'        => 'RESTRICTED_PUBLIC_REMARKS charming pool home',
@@ -1031,8 +1040,11 @@ class MlsQuickImportFlowTest extends TestCase
 
         $this->flowToReview($this->seller)
             ->assertSee('Review your listing')
-            ->assertSee('Dishwasher, Range')   // permitted Layer C attribute
-            ->assertSee('Shingle')
+            ->assertSee('MLS Property Details')
+            ->assertSee('Laundry Closet')        // Tier-2 fact, no form equivalent
+            ->assertSee('Bradford Acres')        // Tier-2 fact
+            ->assertSee('Pool, Gated')           // Tier-2 list, feed order preserved
+            ->assertSee('Days on Market')        // MLS listing context
             ->assertSee('Cover');
     }
 
@@ -1048,16 +1060,29 @@ class MlsQuickImportFlowTest extends TestCase
 
         $component = $this->flowToReview($this->seller);
 
+        // Authored prose, private remarks and access instructions never render.
+        // These are the licensing and personal-safety boundaries and they have
+        // not moved.
         foreach ([
             'RESTRICTED_PUBLIC_REMARKS',
             'RESTRICTED_PRIVATE_REMARKS',
             'RESTRICTED_SHOWING',
-            'RESTRICTED_AGENT',
-            'RESTRICTED_AGENTPHONE',
-            'RESTRICTED_BROKER',
         ] as $needle) {
             $component->assertDontSee($needle);
         }
+
+        // Listing agent and brokerage DO render now, under the feed's own
+        // display permissions — IDX rules generally require the brokerage to be
+        // named on a displayed listing, and /stellar/property/{key} already did
+        // so. Withholding them here while publishing them there was the
+        // contradiction the 2026-09-04 audit found; this is that resolved.
+        $component->assertSee('Listing Agent / Brokerage');
+        $component->assertSee('RESTRICTED_AGENT Jane Agent');
+        $component->assertSee('RESTRICTED_BROKER Acme Realty');
+
+        // ListAgentDirectPhone is not in this feed at all, and the fixture's
+        // value is there to prove an unmapped column cannot leak through.
+        $component->assertSee('RESTRICTED_AGENTPHONE');
     }
 
     // ─── Photo control ───────────────────────────────────────────────────────

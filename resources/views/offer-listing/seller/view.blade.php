@@ -809,11 +809,21 @@
     {{-- Page Header --}}
     <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1 fw-bold" style="color:#1e293b;">{{ $auction->title ?? ($meta['address'] ?? 'Seller Offer Listing') }}</h2>
             @php
+                /* MLS address display permission.
+                   `InternetAddressDisplayYN = false` is the feed instructing us to
+                   publish the listing WITHOUT its street address. The listing still
+                   renders; the street line and unit do not, and neither does the
+                   title when the title is the address. City/state/ZIP stay, which is
+                   what an address-suppressed IDX listing is meant to show.
+                   The owner always sees their own address — see $mlsAddressNotice. */
+                $mlsAddressVisible = $mlsAddressVisible ?? true;
+
                 $addrParts = array_filter([
-                    $meta['address'] ?? null,
-                    !empty($meta['unit_number']) ? $meta['unit_number'] : (!empty($meta['unit']) ? 'Unit ' . $meta['unit'] : null),
+                    $mlsAddressVisible ? ($meta['address'] ?? null) : null,
+                    $mlsAddressVisible
+                        ? (!empty($meta['unit_number']) ? $meta['unit_number'] : (!empty($meta['unit']) ? 'Unit ' . $meta['unit'] : null))
+                        : null,
                     $meta['property_city'] ?? null,
                 ]);
                 $addrState = trim($meta['property_state'] ?? '');
@@ -821,9 +831,22 @@
                 $stateZip  = trim($addrState . ($addrState && $addrZip ? ' ' : '') . $addrZip);
                 if ($stateZip) $addrParts[] = $stateZip;
                 $fullAddress = implode(', ', array_filter($addrParts));
+
+                /* The quick import seeds `title` FROM the address, so a restricted
+                   listing must not fall back to it. */
+                $headerTitle = $mlsAddressVisible
+                    ? ($auction->title ?? ($meta['address'] ?? 'Seller Offer Listing'))
+                    : (($meta['listing_title'] ?? null) ?: 'Seller Offer Listing');
             @endphp
+            <h2 class="mb-1 fw-bold" style="color:#1e293b;">{{ $headerTitle }}</h2>
             @if($fullAddress)
                 <p class="text-muted mb-0"><i class="fa-solid fa-location-dot me-1"></i>{{ $fullAddress }}</p>
+            @endif
+            @if(!empty($mlsAddressNotice))
+                <p class="small text-muted mb-0 mt-1">
+                    <i class="fa-solid fa-circle-info me-1"></i>{{ $mlsAddressNotice }}
+                    Only you can see it here.
+                </p>
             @endif
         </div>
         @if(auth()->id() == $auction->user_id)
@@ -1553,7 +1576,9 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Property Type', $str('property_type')) !!}
-                    {!! $row('Address', $str('address')) !!}
+                    @if($mlsAddressVisible ?? true)
+                        {!! $row('Address', $str('address')) !!}
+                    @endif
                     {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('City', $str('property_city')) !!}
                     {!! $row('County', $str('property_county')) !!}
@@ -1861,6 +1886,22 @@
 
         </div>
     </div>
+
+    {{-- Supplemental MLS facts — the same partial the landlord listing and the
+         quick-import review screen render, so the three cannot drift apart.
+         A sibling section rather than a nested one: the partial renders its own
+         card, and a card inside the Property Details card body reads as a
+         rendering mistake. --}}
+    @include('offer-listing.partials._mls_property_facts', [
+        'details'    => $mlsDetails ?? null,
+        'mlsHeading' => 'MLS Property Details',
+    ])
+
+    @include('offer-listing.partials._mls_attribution', [
+        'mlsImported' => $mlsImported ?? false,
+        'details'     => $mlsDetails ?? null,
+    ])
+
 
     {{-- Sale Terms --}}
     <div class="card section-card" id="section-financing">

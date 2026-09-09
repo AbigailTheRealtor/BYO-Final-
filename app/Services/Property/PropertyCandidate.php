@@ -135,6 +135,51 @@ class PropertyCandidate
         /** @var list<string>|null */
         public readonly ?array $flooring = null,
         public readonly ?string $furnished = null,
+
+        // ── Parity additions (2026-09-04 payload audit, Tier 1) ─────────────
+        //
+        // Every property below is a Bridge field that the feed populates, that
+        // already had a bound Create Offer destination on Seller and/or
+        // Landlord, and that the import nonetheless discarded because nothing
+        // carried it off the raw record. The audit measured the gap; these
+        // properties close it.
+        //
+        // They are FACTS in the feed's own terms. Translating a fact into the
+        // destination control's vocabulary (an acreage band, a square-footage
+        // source, a fee frequency) is not this DTO's job and does not happen
+        // here — see {@see \App\Support\Listing\MlsFactVocabulary}. Keeping the
+        // raw fact here is what lets the same DTO feed a form, a display layer
+        // and a future consumer that wants the number rather than the band.
+        public readonly ?float $lotSizeAcres = null,
+        public readonly ?string $lotDimensions = null,
+        public readonly ?string $zoning = null,
+        public readonly ?bool $carport = null,
+        public readonly ?bool $additionalParcels = null,
+        public readonly ?string $floodZonePanel = null,
+        public readonly ?string $floodZoneDate = null,
+        public readonly ?string $livingAreaSource = null,
+        public readonly ?string $associationFeeFrequency = null,
+        public readonly ?int $waterfrontFeet = null,
+        public readonly ?int $numberOfLots = null,
+
+        // Lease / rental. `availabilityDate` and `leaseAvailabilityDate` carry
+        // the SAME feed value on purpose: the landlord form has two distinct
+        // bound date inputs for it ("Available Date" on the property tab and
+        // "Lease Available Date" on the leasing tab), the allow-list is keyed by
+        // DTO property so one property cannot serve two canonical keys, and
+        // leaving either input blank when the feed answered it is the exact
+        // failure this work exists to remove.
+        public readonly ?string $availabilityDate = null,
+        public readonly ?string $leaseAvailabilityDate = null,
+        public readonly ?string $leaseAmountFrequency = null,
+        public readonly ?int $securityDeposit = null,
+        public readonly ?int $officeRetailSqft = null,
+
+        // Income / business (Seller destinations).
+        public readonly ?int $grossAnnualIncome = null,
+        public readonly ?int $annualOperatingExpenses = null,
+        /** @var list<string>|null */
+        public readonly ?array $businessType = null,
     ) {}
 
     /**
@@ -178,6 +223,24 @@ class PropertyCandidate
             'new_construction'       => $this->newConstruction,
             'cdd'                    => $this->cdd,
             'modification_timestamp' => $this->modificationTimestamp,
+            'lot_size_acres'         => $this->lotSizeAcres,
+            'lot_dimensions'         => $this->lotDimensions,
+            'zoning'                 => $this->zoning,
+            'carport'                => $this->carport,
+            'additional_parcels'     => $this->additionalParcels,
+            'flood_zone_panel'       => $this->floodZonePanel,
+            'flood_zone_date'        => $this->floodZoneDate,
+            'living_area_source'     => $this->livingAreaSource,
+            'association_fee_frequency' => $this->associationFeeFrequency,
+            'waterfront_feet'        => $this->waterfrontFeet,
+            'number_of_lots'         => $this->numberOfLots,
+            'availability_date'      => $this->availabilityDate,
+            'lease_amount_frequency' => $this->leaseAmountFrequency,
+            'security_deposit'       => $this->securityDeposit,
+            'office_retail_sqft'     => $this->officeRetailSqft,
+            'gross_annual_income'    => $this->grossAnnualIncome,
+            'annual_operating_expenses' => $this->annualOperatingExpenses,
+            'business_type'          => $this->businessType,
         ];
 
         if ($includeRaw) {

@@ -174,6 +174,59 @@ class MlsListingPrefillService
         'flooring'              => 'flooring',
         'furnished'             => 'furnished',
 
+        // ── Parity additions (2026-09-04 payload audit) ─────────────────────
+        //
+        // Every entry below satisfies the same three conditions the block above
+        // does, and was verified against the live markup before being added:
+        // the feed populates it, a canonical key already exists in
+        // {@see MlsFieldMap}, and the destination control is actually BOUND with
+        // a `wire:model`. That last check is not ceremony — the audit found four
+        // map targets (`water_view`, `pet_policy`, `tenant_pays`,
+        // `rent_includes`) whose controls have no binding at all, so importing
+        // into them would write a value the user can neither see nor correct.
+        // Those four are deliberately NOT here; their facts are preserved and
+        // displayed under MLS Details instead.
+        //
+        // Nothing here is prose, imagery, a person, or a term of the
+        // transaction. The facts-only boundary is unchanged, only better fed.
+        'lotSizeAcres'            => 'lot_size_acres',
+        'lotDimensions'           => 'lot_dimensions',
+        'zoning'                  => 'zoning',
+        'carport'                 => 'carport',
+        'additionalParcels'       => 'additional_parcels',
+        'floodZonePanel'          => 'flood_zone_panel',
+        'floodZoneDate'           => 'flood_zone_date',
+        'livingAreaSource'        => 'sqft_heated_source',
+        'associationFeeFrequency' => 'association_fee_frequency',
+        'waterfrontFeet'          => 'waterfront_feet',
+        'numberOfLots'            => 'total_parcel_count',
+
+        // Landlord-only destinations. The role split is enforced by MlsFieldMap
+        // — a canonical key with no entry for a role is skipped by the writer —
+        // so it is not restated here.
+        'availabilityDate'        => 'available_date',
+        'leaseAvailabilityDate'   => 'lease_available_date',
+        'leaseAmountFrequency'    => 'lease_amount_frequency',
+        'securityDeposit'         => 'minimum_security_deposit',
+        'officeRetailSqft'        => 'office_area_sqft',
+
+        // Seller-only destinations.
+        'grossAnnualIncome'       => 'gross_annual_income',
+        'annualOperatingExpenses' => 'annual_operating_expenses',
+        'businessType'            => 'business_type',
+
+        // DELIBERATELY ABSENT — `LeaseTerm`, `STELLAR_MinimumLease`,
+        // `STELLAR_CeilingHeight`, `NumberOfUnitsTotal`, `GarageSpaces`,
+        // `CapRate`, `NetOperatingIncome`.
+        // Each has a form field whose NAME matches and whose MEANING does not.
+        // `minimum_cap_rate` and `minimum_annual_net_income` are the seller's
+        // stated minimum acceptable return, not the property's actual figures;
+        // `garage_parking_spaces` is a Yes/No control on this form, not a count;
+        // `unit_number` is the address's unit, not a building's unit count; and
+        // the two lease vocabularies do not intersect the feed's. Writing any of
+        // them would be a confident false statement in the owner's own listing.
+        // All seven are preserved and displayed under MLS Details.
+
         // DELIBERATELY ABSENT — `OccupantType`.
         // It is an objective MLS fact, and a matching canonical field
         // (`occupant_status`) exists — but that field lives on the Sale Terms /

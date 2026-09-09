@@ -43,7 +43,11 @@ class MlsQuickImportWorkflowStampTest extends TestCase
             facts:      ['bedrooms' => '3', 'bathrooms' => '2', 'year_built' => '1998'],
             media:      [],
             headline:   ['address' => '2142 BRADFORD STREET UNIT 308'],
-            details:    [],
+            // The supplemental MLS payload is now a typed object rather than a
+            // bare array. This file is about the workflow STAMP, so it passes
+            // none — `null` is the "this import carried no MLS Details" case,
+            // which the writer must handle without complaint.
+            details:    null,
             listingKey: $key,
             mlsNumber:  $mls,
             mlsStatus:  'Active',

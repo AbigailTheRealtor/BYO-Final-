@@ -168,7 +168,13 @@ class MlsPropertyDetailsPresenterTest extends TestCase
         $rendered = $this->flatten($sections);
         $this->assertStringContainsString('Dishwasher, Microwave, Range', $rendered);
         $this->assertStringContainsString('Shingle', $rendered);
-        $this->assertStringContainsString('RSF-3', $rendered);
+        $this->assertStringContainsString('Public Sewer', $rendered);
+
+        // `Zoning` is deliberately NOT asserted here any more. It became a Tier-1
+        // field — it is imported into the listing's own editable Zoning input and
+        // rendered from there — so repeating it in MLS Details would print the
+        // same fact twice. The supplemental layer is what has NO editable
+        // equivalent; that boundary is the point of the split.
     }
 
     /** @test */
@@ -197,7 +203,7 @@ class MlsPropertyDetailsPresenterTest extends TestCase
     /** @test */
     public function a_section_with_no_populated_field_is_omitted_entirely(): void
     {
-        $sections = $this->presenter()->present(['Zoning' => 'RSF-3']);
+        $sections = $this->presenter()->present(['SubdivisionName' => 'Bradford Acres']);
 
         $this->assertSame(['Property Details'], array_keys($sections));
     }
@@ -206,10 +212,10 @@ class MlsPropertyDetailsPresenterTest extends TestCase
     public function null_and_empty_values_are_skipped_safely(): void
     {
         $sections = $this->presenter()->present([
-            'Appliances' => [],
-            'Flooring'   => null,
-            'Roof'       => '   ',
-            'Zoning'     => 'RSF-3',
+            'Appliances'      => [],
+            'Flooring'        => null,
+            'Roof'            => '   ',
+            'SubdivisionName' => 'Bradford Acres',
         ]);
 
         $this->assertSame(['Property Details'], array_keys($sections));
@@ -230,12 +236,22 @@ class MlsPropertyDetailsPresenterTest extends TestCase
             'NewConstructionYN' => 'false',
         ]);
 
-        $rendered = $this->flatten($sections);
+        $labels = [];
+        foreach ($sections as $rows) {
+            foreach ($rows as $row) {
+                $labels[] = $row['label'];
+            }
+        }
 
-        $this->assertStringContainsString('Private Pool Yes', $rendered);
-        $this->assertStringNotContainsString('Waterfront', $rendered);
-        $this->assertStringNotContainsString('Spa', $rendered);
-        $this->assertStringNotContainsString('New Construction', $rendered);
+        $this->assertStringContainsString('Private Pool Yes', $this->flatten($sections));
+
+        // Asserted against ROW LABELS rather than the flattened string, because
+        // the flattened string now includes section titles and one of those is
+        // literally "Pool / Spa". A substring search there would fail on the
+        // heading while the row it is meant to police was already absent.
+        $this->assertNotContains('Waterfront', $labels);
+        $this->assertNotContains('Spa', $labels);
+        $this->assertNotContains('New Construction', $labels);
     }
 
     /** @test */
