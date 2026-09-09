@@ -1,20 +1,28 @@
 {{--
     MLS Details — the supplemental Stellar/Bridge payload for an imported listing.
 
-    ONE PARTIAL, THREE SURFACES.
-    The quick-import review screen, the seller listing page and the landlord
-    listing page all include this file. That is deliberate and it is the whole
-    of the search-vs-import parity guarantee at the view layer: "what the review
-    screen showed me" and "what my published listing shows" cannot drift apart,
-    because there is only one template.
+    THE QUICK-IMPORT REVIEW SCREEN'S PRESENTATION.
+    The review step is a single wizard panel showing everything the import found,
+    so it renders every section in one card. The published seller and landlord
+    pages no longer include this file: they place the same sections into the
+    page's own cards through {@see \App\Services\ListingImport\Mls\MlsDetailLayout},
+    because a listing page that carries a second "Property Details" block beside
+    its own reads as the same house described twice.
 
-    EVERY ROW HERE IS POPULATED, BY CONSTRUCTION.
-    Nothing in this file tests a value for emptiness, and it must stay that way.
-    MlsSupplementalDetails drops empty values, empty rows and empty sections at
-    build time and again at read time, so a section that reaches this template
-    has content and a row that reaches it has a value. A blank-row guard here
-    would be a second implementation of that rule, and the two would eventually
-    disagree.
+    THE PARITY GUARANTEE IS UNCHANGED, AND IS NOW AT THE ROW LEVEL.
+    "What the review screen showed me" and "what my published listing shows"
+    still cannot drift apart, because all three surfaces render their rows
+    through ONE template — `_mls_facts_rows.blade.php` — from ONE payload. What
+    differs between them is only which card a section is placed in, which is the
+    thing that was supposed to differ all along.
+
+    EVERY ROW IS POPULATED, BY CONSTRUCTION.
+    Nothing in this file or in the row partial tests a value for emptiness, and
+    it must stay that way. MlsSupplementalDetails drops empty values, empty rows
+    and empty sections at build time and again at read time, so a section that
+    reaches this template has content and a row that reaches it has a value. A
+    blank-row guard here would be a second implementation of that rule, and the
+    two would eventually disagree.
 
     Expects:
       $details      MlsSupplementalDetails
@@ -38,35 +46,11 @@
                 </span>
             </div>
 
-            @foreach($details->sections as $section)
-                <div class="mb-3 mls-facts-section">
-                    <div class="text-uppercase small fw-semibold text-muted mb-1">{{ $section['title'] }}</div>
-                    <dl class="row mb-0 small">
-                        @foreach($section['rows'] as $row)
-                            <dt class="col-sm-4 fw-normal text-muted">{{ $row['label'] }}</dt>
-                            <dd class="col-sm-8">
-                                @php
-                                    // One href per row at most. Both are validated
-                                    // in MlsSupplementalDetails on the way out of
-                                    // storage — anything that is not an absolute
-                                    // https URL or a real mailto arrives as null
-                                    // and the value renders as plain text.
-                                    $href = $row['url'] ?? $row['link'] ?? null;
-                                @endphp
-                                @if($href)
-                                    <a href="{{ $href }}"
-                                       @if(! \Illuminate\Support\Str::startsWith($href, 'mailto:'))
-                                           target="_blank" rel="noopener noreferrer nofollow"
-                                       @endif
-                                    >{{ $row['value'] }}</a>
-                                @else
-                                    {{ $row['value'] }}
-                                @endif
-                            </dd>
-                        @endforeach
-                    </dl>
-                </div>
-            @endforeach
+            @include('offer-listing.partials._mls_facts_rows', [
+                'sections'      => $details->sections,
+                'headings'      => true,
+                'headingPrefix' => '',
+            ])
         </div>
     </div>
 @endif

@@ -132,6 +132,24 @@
         if (!count($items)) return '';
         return $row($label, implode(', ', $items));
     };
+
+    // ── MLS payload placement ───────────────────────────────────────────────
+    //
+    // Resolved once so every card below can ask where its share of the imported
+    // payload goes. Sections with a canonical card of the same name are MERGED
+    // into it; the rest become ordinary section-cards. @see MlsDetailLayout
+    $mlsLayout = \App\Services\ListingImport\Mls\MlsDetailLayout::from($mlsDetails ?? null);
+    $mlsSlot   = fn(string $slot) => $mlsLayout->slot($slot);
+
+    // This page's own row styling, handed to the MLS row partial so imported
+    // rows are indistinguishable from the rows beside them.
+    $mlsLabelStyle = 'font-size:.875rem;';
+    $mlsValueStyle = 'overflow-wrap:break-word;word-break:break-word;font-size:.925rem;';
+
+    // Shared parent/child display rules for Your Terms. The gate is the PARENT
+    // selection; a surviving child value never re-opens a branch the landlord
+    // has since closed. @see \App\Support\OfferListing\ConditionalTerms
+    $terms = \App\Support\OfferListing\ConditionalTerms::class;
 @endphp
 
 @push('styles')
@@ -876,10 +894,17 @@
             || $str('phone_number') || $str('agent_brokerage') || $str('agent_license_number');
 
         /* Tax, Legal, HOA & CDD */
+        // The MLS's own HOA and tax sections are merged into THIS card rather
+        // than published as cards of their own — the listing already answers "is
+        // there an association, what does it cost", and a second HOA heading
+        // elsewhere reads as a competing answer. They are therefore part of the
+        // card's gate too: an imported listing can carry a complete fee schedule
+        // while every canonical tax field is still blank.
+        $mlsTaxHoa      = $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_TAX_HOA);
         $navHasTaxLegal = $str('parcel_id') || $str('annual_property_taxes') || $str('tax_year')
             || $str('legal_description') || $str('total_parcel_count') || $str('additional_parcels')
             || $str('flood_zone_code') || $str('has_cdd') || $str('has_special_assessments')
-            || $str('has_hoa');
+            || $str('has_hoa') || count($mlsTaxHoa);
 
         /* Structural Details */
         $navHasStructural = $str('year_built') || $str('lot_dimensions') || $str('zoning')
@@ -1100,7 +1125,10 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Listing Title', $str('listing_title') ?: $auction->title) !!}
-                    {!! $row('Auction / Listing Type', $str('auction_type')) !!}
+                    {{-- "Listing Method" is what every screen that ASKS this question
+                         calls it — the Create Listing tab and the MLS quick-import
+                         step alike. --}}
+                    {!! $row('Listing Method', $str('auction_type')) !!}
                     {!! $row('Listing Status', $str('listing_status')) !!}
                 </div>
                 <div class="col-md-6">
@@ -1202,14 +1230,24 @@
                     ['Restrictions', $str('restrictions')],
                     ['Maintenance By', $str('maintenance_by')],
                     ['Maintenance Response Time', $str('maintenance_response_time')],
+                    // Four leasing-space variants each have their own storage pair;
+                    // the commercial SINGLE-unit one was missing from both rows, so a
+                    // landlord letting one commercial unit answered the storage
+                    // questions and the listing showed neither answer.
                     ['Storage Space Included',
                         $str('included_storage_space_res_both')
                         ?: $str('included_storage_space_res_single')
-                        ?: $str('included_storage_space_com_entire')],
+                        ?: $str('included_storage_space_com_entire')
+                        ?: $str('included_storage_space_com_single')],
                     ['Storage Space Details',
                         $str('storage_space_res_both')
                         ?: $str('storage_space_res_single')
-                        ?: $str('storage_space_com_entire')],
+                        ?: $str('storage_space_com_entire')
+                        ?: $str('storage_space_com_single')],
+                    // Commercial space descriptions. Stored by both wizards and by
+                    // quick import; rendered by nothing until now.
+                    ['Space Features', $str('space_features')],
+                    ['Neighboring Tenants Include', $str('neighboring_tenants')],
                     ['Guests Allowed', $str('guests_allowed')],
                     ['Common Areas Access', $str('common_areas_access')],
                     ['Common Areas Cleaning', $str('common_areas_cleaning')],
@@ -1245,19 +1283,28 @@
                 @endif
             </div>
             @endif
+
+            {{-- Imported MLS property facts, INSIDE this card rather than beside
+                 it. They used to render as a second, differently-styled block
+                 titled "MLS Property Details" directly below, so the page
+                 described the same property twice in two visual languages. --}}
+            @include('offer-listing.partials._mls_facts_rows', [
+                'sections'    => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_PROPERTY),
+                'leadingRule' => true,
+                'labelStyle'  => $mlsLabelStyle,
+                'valueStyle'  => $mlsValueStyle,
+            ])
         </div>
     </div>
 
-    {{-- Supplemental MLS facts — the same partial the seller listing and the
-         quick-import review screen render, so the three cannot drift apart. --}}
-    @include('offer-listing.partials._mls_property_facts', [
-        'details'    => $mlsDetails ?? null,
-        'mlsHeading' => 'MLS Property Details',
-    ])
-
-    @include('offer-listing.partials._mls_attribution', [
-        'mlsImported' => $mlsImported ?? false,
-        'details'     => $mlsDetails ?? null,
+    {{-- MLS sections with no canonical card of their own — Interior, Exterior,
+         Waterfront / Views, Lease / Rental and the rest — as ordinary listing
+         cards. @see MlsDetailLayout for how a section chooses its place. --}}
+    @include('offer-listing.partials._mls_facts_cards', [
+        'sections'   => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_FACTS),
+        'mlsNumber'  => ($mlsDetails ?? null)?->mlsNumber,
+        'labelStyle' => $mlsLabelStyle,
+        'valueStyle' => $mlsValueStyle,
     ])
 
 
@@ -1273,9 +1320,15 @@
                     {!! $row('Lease Start Date', $fmtDate($str('lease_date'))) !!}
                     {!! $row('Lease Duration', $str('lease_by')) !!}
                     @php
-                        $leaseLengthItems = $subOther(
+                        // "Other" on Desired Lease Length opens a text box bound to
+                        // `other_lease_term`. This row substituted `other_lease_for`,
+                        // a key no current flow writes, so the landlord's own lease
+                        // term ("8 Months") was stored and never published — the page
+                        // printed the literal word "Other". The legacy key is kept as
+                        // a fallback for rows written before the rename.
+                        $leaseLengthItems = $terms::withOther(
                             $arr('desired_lease_length') ?: $arr('lease_for'),
-                            $str('other_lease_for')
+                            $str('other_lease_term') ?: $str('other_lease_for')
                         );
                     @endphp
                     {!! $listRow('Desired Lease Length(s)', $leaseLengthItems) !!}
@@ -1292,7 +1345,11 @@
             </div>
 
             {{-- Residential: what's included in rent --}}
-            @php $rentIncludes = $arr('rent_includes'); @endphp
+            @php
+                // "Other" here opens `other_rent_include`, which was stored and
+                // never rendered — so the page listed "Other" and not what it was.
+                $rentIncludes = $terms::withOther($arr('rent_includes'), $str('other_rent_include'));
+            @endphp
             @if(count($rentIncludes))
             <hr>
             <div class="row"><div class="col-md-12">{!! $listRow('Rent Includes', $rentIncludes) !!}</div></div>
@@ -1301,7 +1358,9 @@
             {{-- Commercial lease terms --}}
             @php
                 $commLeaseType = $orOther($str('commercial_lease_type'), $str('commercial_lease_type_other'));
-                $termsOfLease  = $arr('terms_of_lease');
+                // "Other" on Terms of Lease opens `custom_lease_term` — stored by all
+                // three entry paths and rendered by none of them.
+                $termsOfLease  = $terms::withOther($arr('terms_of_lease'), $str('custom_lease_term'));
                 $hasCommFields = $commLeaseType || $str('cam_nnn_additional_rent_charges') || $str('rent_escalation_terms')
                     || $str('tenant_improvement_buildout_terms') || $str('permitted_use_restrictions')
                     || $str('signage_rights') || $str('personal_guarantee_requirement')
@@ -1540,8 +1599,11 @@
          UTILITIES & FEES
          ============================================================== --}}
     @php
-        $tenantPays = $arr('tenant_pays');
-        $ownerPays  = $arr('owner_pays');
+        // Both lists offer "Other", each with its own text box. Neither box was
+        // ever rendered, so a landlord who itemised an unusual utility split saw
+        // the page publish the bare word "Other" against it.
+        $tenantPays = $terms::withOther($arr('tenant_pays'), $str('other_tenant_pays'));
+        $ownerPays  = $terms::withOther($arr('owner_pays'),  $str('other_owner_pays'));
         $utilFields = array_filter([
             ['Utilities Included in Rent', $str('utilities')],
             ['CAM / NNN Additional Rent Charges', $str('cam_nnn_additional_rent_charges')],
@@ -1918,10 +1980,16 @@
                     {!! $row('Association Type', $orOther($str('association_type'), $str('association_type_other'))) !!}
                     {!! $row('Association Name', $str('association_name')) !!}
                     @php
-                        $_freq = $str('association_fee_frequency');
-                        $_freqDisplay = $_freq ? (' / ' . $orOther($_freq, $str('association_fee_frequency_other'))) : '';
+                        // An imported listing often carries association_fee_frequency
+                        // with no amount beside it, and concatenating the two
+                        // unconditionally published the literal row
+                        // "Association Fee: / monthly".
+                        $_freq    = $orOther($str('association_fee_frequency'), $str('association_fee_frequency_other'));
+                        $_feeAmt  = $fmtMoney($str('association_fee_amount'));
+                        $_feeText = $_feeAmt ? ($_feeAmt . ($_freq ? ' / ' . $_freq : '')) : null;
                     @endphp
-                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . $_freqDisplay) !!}
+                    {!! $row('Association Fee', $_feeText) !!}
+                    {!! $row('Association Fee Frequency', $_feeText ? null : $_freq) !!}
                     {!! $row('Application Fee', $fmtMoney($str('association_application_fee'))) !!}
                 </div>
                 <div class="col-md-6">
@@ -1950,9 +2018,44 @@
             @endif
             @endif
 
+            @include('offer-listing.partials._mls_facts_rows', [
+                'sections'    => $mlsTaxHoa,
+                'leadingRule' => true,
+                'labelStyle'  => $mlsLabelStyle,
+                'valueStyle'  => $mlsValueStyle,
+            ])
         </div>
     </div>
     @endif
+
+    {{-- The MLS's own contact and bookkeeping sections, and the attribution that
+         goes with them.
+
+         LAST ON THE PAGE, AND TOGETHER. The listing agent, the brokerage, the
+         association contact and the MLS's record-keeping are statements ABOUT
+         the feed's listing rather than about the property, and the required
+         Stellar/Bridge disclaimer governs every one of them. The attribution
+         block used to sit directly under the old MLS block half-way up the page,
+         where it read as a footnote to that block alone rather than to the
+         imported facts now spread across the cards above. --}}
+    @include('offer-listing.partials._mls_facts_cards', [
+        'sections'   => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_CONTACTS),
+        'mlsNumber'  => ($mlsDetails ?? null)?->mlsNumber,
+        'labelStyle' => $mlsLabelStyle,
+        'valueStyle' => $mlsValueStyle,
+    ])
+
+    @include('offer-listing.partials._mls_facts_cards', [
+        'sections'   => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_MLS_INFO),
+        'mlsNumber'  => ($mlsDetails ?? null)?->mlsNumber,
+        'labelStyle' => $mlsLabelStyle,
+        'valueStyle' => $mlsValueStyle,
+    ])
+
+    @include('offer-listing.partials._mls_attribution', [
+        'mlsImported' => $mlsImported ?? false,
+        'details'     => $mlsDetails ?? null,
+    ])
 
     {{-- Owner edit button (bottom) --}}
     @if(auth()->check() && auth()->id() == $auction->user_id)
