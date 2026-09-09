@@ -1191,6 +1191,62 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/offer-listing/landlord/qualification/check.blade.php',
             'resources/views/offer-listing/landlord/qualification/review.blade.php',
 
+            // Create Offer Fair Housing — Phase 3 (provider-authored free text).
+            //
+            // Phase 2 closed the screening DROPDOWNS. Phase 3 closes the PROSE and the
+            // custom-text inputs beside them, which the audit found written verbatim by
+            // saveMeta() with no validation rule anywhere and rendered on two anonymous
+            // routes. The two landlord Livewire components, AskAiContextBuilderService,
+            // the landlord public view and both qualification pages are already listed
+            // above; these are the files this task adds.
+            //
+            //   config/landlord_provider_text.php
+            //     The prose rules SSOT. Patterns match an EXCLUSION STRUCTURE, never a
+            //     word: "wheelchair accessible" and "benefit award letter" are kept while
+            //     "no wheelchair users" and "no vouchers" are refused, and a rule that
+            //     cannot tell those apart is wrong by construction.
+            //
+            //   app/Support/OfferListing/LandlordProviderTextPolicy.php
+            //     The semantic boundary. Deterministic, container-optional (the Phase 2
+            //     lesson — a bare config() here empties the whole Ask AI context), and
+            //     author-aware BY CONSTRUCTION: it takes a field key, only landlord
+            //     provider fields are named, so pointing it at consumer text does nothing.
+            //
+            //   config/tenant_public_overflow_keys.php
+            //     Inverts the tenant "Additional Information" DENY-list to an allowlist.
+            //     That section's rule was "any populated key not in this list is public",
+            //     on a route with no auth middleware — so PUBLIC was the default
+            //     disposition of every tenant meta key.
+            //
+            //   resources/views/offer-listing/tenant/view.blade.php
+            //     Consumes that allowlist.
+            //
+            //   resources/views/agent/offer-listing-view.blade.php
+            //     Label only: `tenant_require` holds a FURNISHINGS value and was published
+            //     as "Tenant Requirements". No data or key change.
+            'config/landlord_provider_text.php',
+            'app/Support/OfferListing/LandlordProviderTextPolicy.php',
+            'config/tenant_public_overflow_keys.php',
+            'resources/views/offer-listing/tenant/view.blade.php',
+            'resources/views/agent/offer-listing-view.blade.php',
+
+            // Phase 3 pre-PR blocker fixes. Both files were already permitted by
+            // earlier task blocks above, so nothing new is added to the allowlist
+            // here — they are named again only so this task's scope is legible:
+            //
+            //   AgentController
+            //     Routes the three governed provider fields through
+            //     LandlordProviderTextPolicy::displayValue() before the
+            //     authenticated agent view renders them, and supplies the
+            //     `security_deposit_amount` key that view has always read and this
+            //     controller never provided (a pre-existing 500 on that route).
+            //
+            //   MlsSupplementalDetails
+            //     Applies the MLS prose alias map when a stored payload is READ.
+            //     Ingestion, storage and import completeness are untouched.
+            'app/Http/Controllers/AgentController.php',
+            'app/Services/ListingImport/Mls/MlsSupplementalDetails.php',
+
             // ── Stellar MLS import — complete data parity (2026-09-04) ───────
             //
             // The payload audit found Bridge sending 553 Property fields, all of

@@ -282,6 +282,110 @@ class LandlordScreeningPolicy
      * @param  array<string, mixed>  $input  raw Livewire state, keyed by meta key
      * @return array<string, string>
      */
+    /**
+     * The Phase 3 parent-gated custom-text map, from the same SSOT.
+     *
+     * @return array<string,array{parent:string,unlocks_on:string,max_length:int}>
+     */
+    public static function customFields(): array
+    {
+        $c = self::confGet('custom_fields', []);
+
+        return is_array($c) ? $c : [];
+    }
+
+    public static function isGovernedCustomField(string $key): bool
+    {
+        return array_key_exists($key, self::customFields());
+    }
+
+    /**
+     * Project the Phase 3 custom-text fields against their real parents.
+     *
+     * Phase 2 proved the shape on three fields; the audit found five more with an
+     * Alpine `x-show` and nothing else. `x-show` is a CSS decision made in the
+     * browser — it hides an input, it does not stop a crafted Livewire payload from
+     * setting the public property directly, and neither component declared a single
+     * validation rule for any of them.
+     *
+     * The gate is the parent's ACTUAL unlocking value, read from config rather than
+     * assumed to be 'Other': `min_monthly_income_fixed` unlocks on
+     * 'Fixed Monthly Income', and defaulting to 'Other' would have quietly dropped
+     * every stored fixed-income amount on the next save.
+     *
+     * Text that the parent does not authorise collapses to '' — the same answer
+     * Phase 2 gives, and one that reads as "this listing states nothing here".
+     *
+     * @param  array $input  raw component state, keyed by meta key
+     * @return array<string,string> custom key => value to store
+     */
+    public static function projectCustomFields(array $input): array
+    {
+        $out = [];
+
+        foreach (self::customFields() as $key => $definition) {
+            $parentKey  = (string) ($definition['parent'] ?? '');
+            $unlocksOn  = (string) ($definition['unlocks_on'] ?? '');
+            $maxLength  = (int) ($definition['max_length'] ?? 0);
+            $maxLength  = $maxLength > 0 ? $maxLength : self::customTextMaxLength();
+
+            $text = $input[$key] ?? null;
+
+            if ($parentKey === '' || $unlocksOn === '' || ! is_string($text)) {
+                $out[$key] = self::NONE;
+                continue;
+            }
+
+            $parentValue = $input[$parentKey] ?? null;
+            $parentValue = is_string($parentValue) ? trim($parentValue) : '';
+
+            if ($parentValue !== $unlocksOn) {
+                $out[$key] = self::NONE;
+                continue;
+            }
+
+            $text = trim($text);
+            $out[$key] = $text === '' ? self::NONE : mb_substr($text, 0, $maxLength);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Read side of the same gate. A stored custom value whose parent no longer
+     * authorises it reads as no answer, so a parent changed on a later edit cannot
+     * leave orphaned text published on the listing page.
+     */
+    public static function customDisplayValue(string $key, $storedParent, $storedText): ?string
+    {
+        if (! self::isGovernedCustomField($key) || ! is_string($storedText)) {
+            return null;
+        }
+
+        $definition  = self::customFields()[$key];
+        $parentValue = is_string($storedParent) ? trim($storedParent) : '';
+
+        if ($parentValue !== (string) ($definition['unlocks_on'] ?? '')) {
+            return null;
+        }
+
+        $text = trim($storedText);
+
+        return $text === '' ? null : $text;
+    }
+
+    /**
+     * Project a whole submitted screening payload down to what may be stored.
+     *
+     * This is the method the Livewire components call immediately before
+     * `saveMeta()`. The returned array is authoritative: retired keys are
+     * absent, governed keys hold a current valid value or NONE, and the
+     * multi-select key is returned already JSON-encoded in the shape the meta
+     * row has always used.
+     *
+     * @param  array<string, mixed>  $input  raw Livewire state, keyed by meta key
+     * @return array<string, string>
+     */
     public static function project(array $input): array
     {
         $out = [];

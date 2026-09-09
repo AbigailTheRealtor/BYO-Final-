@@ -395,6 +395,82 @@ second is what a *landlord* requires. They share the option string `No criminal 
 are one word apart. `LegacyApplicantDisclosureContainmentTest` fails if anything ever aliases one
 onto the other. The legacy applicant *controls* are deferred work and were not changed.
 
+### Landlord provider-authored free text — the third write boundary (Fair Housing Phase 3)
+
+Phase 2 closed the screening **dropdowns**. Phase 3 closes the **prose** beside them and the
+custom-text inputs the audit found with the same shape and none of the protection.
+
+`config/landlord_provider_text.php` is the SSOT and `LandlordProviderTextPolicy`
+(`app/Support/OfferListing/`) is the boundary. Three landlord fields are governed:
+`landlord_approval_conditions`, `pet_restrictions`, `additional_details` — all three were
+written verbatim by `saveMeta()` with **no validation rule anywhere**, and all three render on
+two routes with no auth middleware and reach Ask AI.
+
+**Patterns match an exclusion STRUCTURE, never a word, and that is the whole design.** The same
+nouns appear in the sentences most worth keeping: *"Property is wheelchair accessible with a
+zero-step entry"* and *"Two most recent pay stubs or benefit award letter"* must pass while
+*"No wheelchair users"* and *"No housing vouchers"* must not. A vocabulary filter cannot tell
+those apart, so a rule that fires on either kept example is wrong by construction. Categories:
+protected-class preference, disability exclusion, assistance-animal-as-pet, source-of-income
+exclusion, steering.
+
+**Authorship is part of the rule, enforced structurally.** There is no "moderate this string"
+entry point — every method takes a FIELD KEY, and only landlord provider fields are named. An
+unknown key is `allowed` and untouched, so pointing the policy at consumer text does nothing.
+That matters because provider and consumer text meet in `AskAiContextBuilderService`, and the
+identical words mean opposite things by author: a landlord's *"No emotional support animals"* is
+an exclusion; a tenant's *"I have an emotional support animal"* is a lawful first-person
+disclosure that Phase 1 already keeps private.
+
+**Nothing is ever rewritten.** `decide()` returns a verdict, not a cleaned string, and there is
+no redaction path. **Save Draft preserves the landlord's exact prose** so they can revise it;
+**Submit/Publish refuses**, with the error attached to the field and naming the offending phrase.
+The gate runs **before** the required-field validation, because both throw `ValidationException`
+into the same catch and a listing that is merely incomplete would otherwise never reach it.
+`addError()` is called before throwing, since `store()`/`update()` turn that exception into a
+flash banner and a bare throw would tell the landlord nothing about which field to edit.
+
+**Suppression is read-time and shared.** `LandlordProviderTextPolicy::displayValue()` returns
+null for unsafe prose, and the landlord public view, both qualification pages and the Ask AI
+context builder all resolve through it — the views via the one `$str` helper every row already
+uses, rather than at each call site. That is deliberate: editing call sites is how Phase 2's
+review page ended up scoring applicants against a criterion the listing page had stopped showing.
+**Historical prose becomes inert with no remediation pass and no changed bytes.**
+
+**Five custom inputs had no parent gate at all** (`custom_credit_score_requirement`,
+`custom_income_requirement`, `custom_smoking_policy_requirement`, `custom_reference_requirement`,
+`custom_preferred_move_in_timeframe`), plus `min_monthly_income_fixed`. They were rendered under
+an Alpine `x-show`, which is a CSS decision in the browser and not a write boundary. They now go
+through `LandlordScreeningPolicy::projectCustomFields()` against `custom_fields` in
+`config/landlord_screening_options.php`. **The trigger is read from config, never assumed to be
+`Other`** — `min_monthly_income_fixed` unlocks on `Fixed Monthly Income`, and hard-coding `Other`
+would have silently discarded every landlord's fixed income amount on the next save.
+
+**The tenant "Additional Information" section was a deny-list** — "any populated key not in this
+list will appear" — on a route with no auth middleware, so PUBLIC was the default disposition of
+every tenant meta key and staying private depended on someone remembering to add it to a
+200-entry Blade array. It is now an allowlist, `config/tenant_public_overflow_keys.php`, which
+**ships empty**: the section was never a designed surface, everything the page means to show has
+a named section above it, and seeding a list by guessing which consumer answers are safe to
+broadcast is the mistake being fixed. Adding a key is a reviewable edit plus a test.
+
+**`tenant_require` holds a FURNISHINGS value** ("Furnished", "Unfurnished", "Turnkey"). The
+landlord public view published it as **"Tenant Type Required"** and the agent view as "Tenant
+Requirements" — announcing an occupant-category requirement the listing never made, which is the
+concept Phase 1 retired as `tenant_type_preference`. Both are relabelled **"Furnishings"**. The
+meta key is deliberately **not** renamed: that would be a data migration for a copy defect. The
+tenant view's own "Tenant Requirements" row is a different key on a different table and is
+correct as-is.
+
+**A fixed line of copy sits by the pet policy**: *Assistance animals are accommodation requests
+and are not governed by ordinary pet restrictions.* It is informational, has no control and no
+stored value. The retired landlord Yes/No assistance-animal fields are **not** reintroduced —
+asking a landlord to pre-declare a policy invites a blanket answer to an individualised request.
+
+**Deferred, deliberately:** `custom_pet_policy_requirement` (its parent is a multi-select, so the
+unlocking value is ambiguous and guessing it would drop stored text), the lease/commercial prose
+set, and any historical remediation command.
+
 ### Deployment & migrations
 
 **`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.

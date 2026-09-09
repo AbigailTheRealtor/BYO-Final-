@@ -3,7 +3,28 @@
 @php
     $str = function (string $key) use ($meta): string {
         $v = $meta[$key] ?? '';
-        return is_array($v) ? implode(', ', array_map(fn($e) => (string)$e, $v)) : (string) $v;
+        $v = is_array($v) ? implode(', ', array_map(fn($e) => (string)$e, $v)) : (string) $v;
+
+        /*
+         * Fair Housing Phase 3 — same suppression as the listing and qualification
+         * pages, in the one resolver every row here already goes through. This page
+         * is the landlord's applicant scorecard, so a suppressed value must read as
+         * "no policy" to the COMPARISON as well as to the display: Phase 2's lesson
+         * was that a page can stop showing a criterion and keep scoring against it.
+         */
+        if (\App\Support\OfferListing\LandlordProviderTextPolicy::isGovernedField($key)) {
+            return (string) (\App\Support\OfferListing\LandlordProviderTextPolicy::displayValue($key, $v) ?? '');
+        }
+
+        if (\App\Support\OfferListing\LandlordScreeningPolicy::isGovernedCustomField($key)) {
+            $definition = \App\Support\OfferListing\LandlordScreeningPolicy::customFields()[$key];
+            $parentRaw  = $meta[$definition['parent']] ?? '';
+            $parentRaw  = is_array($parentRaw) ? '' : (string) $parentRaw;
+
+            return (string) (\App\Support\OfferListing\LandlordScreeningPolicy::customDisplayValue($key, $parentRaw, $v) ?? '');
+        }
+
+        return $v;
     };
 
     $addrParts = array_filter([
