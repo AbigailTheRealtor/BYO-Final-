@@ -78,13 +78,22 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      # `--reporter=list,json` is load-bearing: playwright.config.js emits list+html
-      # under CI and no JSON, and the WebGL assertion below reads the JSON report.
-      # Dropping this flag would leave that guard with nothing to inspect.
+      # ALL THREE REPORTERS MUST BE NAMED HERE.
+      #
+      # `--reporter` REPLACES the config's list outright, it does not extend it.
+      # `--reporter=list,json` therefore silently dropped the `html` reporter that
+      # playwright.config.js configures under CI, and the upload step below found
+      # no playwright-report/ to collect — so the run that failed was also the run
+      # with no report to diagnose it from. json is required by the WebGL guard
+      # that follows; html is required by the artifact upload; list is the console.
+      #
+      # PLAYWRIGHT_HTML_OPEN carries the `open: 'never'` that the config sets and
+      # this override discards, so the reporter never tries to launch a browser.
       - name: Run the browser suite
-        run: npm run test:browser -- --reporter=list,json
+        run: npm run test:browser -- --reporter=list,json,html
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
+          PLAYWRIGHT_HTML_OPEN: never
 
       # THE WEBGL SPECS MUST ACTUALLY RUN HERE, AND THIS ENFORCES IT.
       #

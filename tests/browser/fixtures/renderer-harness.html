@@ -130,18 +130,43 @@ window.LDNA = {
     return canvas ? { width: canvas.clientWidth, height: canvas.clientHeight } : null;
   },
 
-  /** Feature count in one of the renderer's GeoJSON sources. */
-  sourceFeatureCount(sourceId) {
+  /**
+   * The GeoJSON a source actually holds, or null when the source is absent.
+   *
+   * Read through MapLibre's PUBLIC `getData()`, never `source._data`. Those are
+   * NOT the same value. Real MapLibre stores a tagged wrapper — exactly one of
+   * `{ geojson }`, `{ url }` or `{ updateable }` (maplibre-gl 6.8.0,
+   * GeoJSONSource) — so `_data.features` is `undefined` against the real
+   * library. The old accessor reported that as a feature count of ZERO, which is
+   * indistinguishable from a genuinely empty source, and no amount of waiting
+   * could change it. The fake stored the collection bare, so every fake-backed
+   * spec agreed with the assertion and only the real-WebGL spec disagreed.
+   */
+  async sourceData(sourceId) {
     const map = window.LDNA.renderer && window.LDNA.renderer.getMap();
-    if (!map || !map.getSource(sourceId)) return null;
-    const data = map.getSource(sourceId)._data;
+    const source = map && map.getSource(sourceId);
+    if (!source) return null;
+
+    // Loud rather than silent. If a library or the fixture ever stops offering
+    // the public accessor, this must fail by name — reporting zero features is
+    // how the original defect stayed invisible to 46 passing specs.
+    if (typeof source.getData !== 'function') {
+      throw new Error(`source ${sourceId} exposes no getData(); cannot read its contents`);
+    }
+
+    return source.getData();
+  },
+
+  /** Feature count in one of the renderer's GeoJSON sources. */
+  async sourceFeatureCount(sourceId) {
+    const data = await window.LDNA.sourceData(sourceId);
+    if (data === null) return null;
     return data && data.features ? data.features.length : 0;
   },
 
-  sourceFeatures(sourceId) {
-    const map = window.LDNA.renderer && window.LDNA.renderer.getMap();
-    if (!map || !map.getSource(sourceId)) return null;
-    const data = map.getSource(sourceId)._data;
+  async sourceFeatures(sourceId) {
+    const data = await window.LDNA.sourceData(sourceId);
+    if (data === null) return null;
     return data && data.features ? JSON.parse(JSON.stringify(data.features)) : [];
   },
 

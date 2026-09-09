@@ -34,6 +34,21 @@ class FakeSource {
     setData(data) {
         this._data = data;
     }
+
+    /**
+     * MapLibre's PUBLIC accessor, and the only way the harness reads a source.
+     *
+     * Real MapLibre does not keep the collection bare on `_data` — it keeps a
+     * tagged wrapper and hands the GeoJSON back through this async method. The
+     * fake once modelled only the private field, so the harness read a shape
+     * that existed here and nowhere else: fake-backed specs agreed with every
+     * assertion while the real library silently reported zero features. Modelling
+     * the public method instead is what keeps the two libraries answering the
+     * same question.
+     */
+    async getData() {
+        return this._data;
+    }
 }
 
 class FakeMap {
