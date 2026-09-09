@@ -2,15 +2,21 @@
 
 namespace App\Services\LocationDna;
 
+use App\Services\LocationDna\Providers\CorpusSurface;
 use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * LocationDnaPoiTileCache — Spatial tile cache for Google Places raw candidates.
+ * LocationDnaPoiTileCache — Spatial tile cache for raw POI candidates.
  *
- * Converts (lat, lng, google_type, keyword, provider-surface) into a stable tile
- * cache key by rounding coordinates to a configurable decimal precision read from
- * config('location_dna.poi.tile_precision').
+ * Not Google-specific despite the inherited `google_type` vocabulary in the key: it
+ * caches whatever the effective base fetcher returned, which after the corpus is
+ * activated is the local Overture corpus rather than an API. That is precisely why
+ * the key carries a corpus token as well as a capability token — see $corpusToken.
+ *
+ * Converts (lat, lng, google_type, keyword, provider-surface, corpus-surface) into a
+ * stable tile cache key by rounding coordinates to a configurable decimal precision
+ * read from config('location_dna.poi.tile_precision').
  *
  * Safe disabled/default mode:
  *   When LOCATION_DNA_POI_TILE_PRECISION is absent or empty, the tile cache is disabled
@@ -34,6 +40,35 @@ class LocationDnaPoiTileCache
      */
     private readonly string $capabilityToken;
 
+    /**
+     * Corpus-surface token: the identity of the LOCAL CORPUS the POI provider would
+     * read, mixed into every tile key alongside $capabilityToken.
+     *
+     * WHY $capabilityToken IS NOT ENOUGH, AND WHY THIS IS A CORRECTNESS FIX.
+     * `LocationProviderRegistry::capabilityHash()` hashes `config/location_providers.php`
+     * only — enabled providers, their tier/license/serves, the capability map and the
+     * regional overrides. Which CORPUS VERSION the Overture adapter reads lives in a
+     * different file (`config/overture_corpus_poi.php`), because it is a different kind
+     * of decision: the registry routes to a provider, the pin selects the import that
+     * provider serves.
+     *
+     * The consequence, before this token existed: activating a second corpus import —
+     * re-pinning OVERTURE_CORPUS_POI_VERSION, exactly the operation the two-corpus
+     * design exists to make possible — changed nothing in `location_providers`, so the
+     * capability hash was unchanged, so every tile key was unchanged. The v1 candidates
+     * already in the cache would keep being served under the v2 pin for the remainder
+     * of the tile TTL (7 days by default), with no error, no diff and nothing on the
+     * page to indicate which corpus a place came from. The verification step the pin is
+     * FOR would be reading stale rows.
+     *
+     * A key change is self-healing — a miss, a refetch, and one tile's worth of work —
+     * which is the correct trade against serving a previous corpus's answers.
+     *
+     * {@see CorpusSurface} carries the full reasoning and is the single definition this
+     * and LocationDnaVersionService::fetchVersion() both read.
+     */
+    private readonly string $corpusToken;
+
     public function __construct()
     {
         $raw = config('location_dna.poi.tile_precision');
@@ -49,6 +84,10 @@ class LocationDnaPoiTileCache
             0,
             16
         );
+
+        // One shared definition of "the corpus surface", so this cache and the row-level
+        // fetch-version stamp cannot drift apart about what counts as a different corpus.
+        $this->corpusToken = CorpusSurface::token();
 
         // Resolve the backing store name. null → application default store
         // (correct for production: a persistent, cross-process store). Coerce
@@ -129,6 +168,7 @@ class LocationDnaPoiTileCache
             (string) $keyword,
             number_format($precision, 10, '.', ''),
             $this->capabilityToken,
+            $this->corpusToken,
         ]);
 
         return 'ldna_poi_tile_' . hash('sha256', $raw);

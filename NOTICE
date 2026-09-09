@@ -1,0 +1,139 @@
+BidYourOffer — third-party data attribution notices
+===================================================
+
+This file collects the attribution notices owed to upstream data providers whose
+data this application redistributes to end users. It exists because two of those
+licenses REQUIRE it: CDLA-Permissive-2.0 requires attribution to accompany the
+data, and Apache-2.0 §4(d) requires that a readable copy of the attribution
+notices from a redistributed work's own NOTICE file travel with it.
+
+A notice here is not documentation. It is a license obligation, and the surface
+that discharges it for end users is the "Data Sources & Licenses" page
+(route `data-sources`) together with the Location DNA attribution component
+(`resources/views/partials/location-dna/_data-attribution.blade.php`). Editing
+this file without updating `config/location_attribution.php` will fail
+`tests/Unit/LocationDna/LocationDataAttributionTest.php`, which asserts the two
+agree.
+
+
+--------------------------------------------------------------------------------
+Overture Maps Foundation — Places theme
+--------------------------------------------------------------------------------
+
+Portions of the points-of-interest data in this application are derived from the
+Overture Maps Foundation Places theme.
+
+  https://overturemaps.org/
+  https://docs.overturemaps.org/attribution/
+
+THE PLACES THEME IS A MIXED-LICENSE AGGREGATE. It is NOT ODbL. Four of Overture's
+six themes (Buildings, Transportation, Divisions, Base) are ODbL; Places is not
+one of them, and treating it as ODbL is the common and incorrect assumption. The
+Places theme combines contributions under three licenses:
+
+  CDLA-Permissive-2.0   the bulk of the theme — Meta, Microsoft, PinMeTo, Krick,
+                        RenderSEO, DAC, BrightQuery.
+                        ATTRIBUTION REQUIRED.
+                        https://cdla.dev/permissive-2-0/
+
+  Apache-2.0            the Foursquare Open Source Places slice.
+                        ATTRIBUTION REQUIRED, AND the upstream NOTICE file must
+                        be reproduced — see the section below.
+                        https://www.apache.org/licenses/LICENSE-2.0
+
+  CC0-1.0               the AllThePlaces slice.
+                        No requirements.
+                        https://creativecommons.org/publicdomain/zero/1.0/
+
+WE CANNOT TELL WHICH ROW CAME FROM WHICH MEMBER. The raw Overture record carries
+`sources[].dataset`, but the import normalizer counts those datasets and discards
+their names: the corpus retains `source_count` (an integer) and `source = 'overture'`
+only. Verified against the loaded corpus — 29,434 rows, zero carrying per-source
+attribution. Per-row license precision is therefore a corpus change (teaching the
+importer to retain `sources[].dataset` and re-importing), not a config change.
+
+The consequence for attribution is the important part: because any given row MAY
+be the Foursquare slice, EVERY published row must be treated as though it is. The
+strictest obligation in the aggregate — the Apache-2.0 NOTICE requirement — governs
+the whole theme as we hold it. Naming CDLA alone would be false for the Foursquare
+and AllThePlaces rows and would silently drop the one obligation here that could
+actually be breached.
+
+
+--------------------------------------------------------------------------------
+Foursquare Open Source Places — Apache-2.0 NOTICE and change notice
+--------------------------------------------------------------------------------
+
+Apache-2.0 §4(d) obliges us to reproduce the attribution notices contained in the
+NOTICE file of the work we redistribute, and the Foursquare NOTICE itself states
+the same three obligations in its own words: provide recipients with a copy of the
+License, include prominent notices to the extent the Data has been changed, and
+preserve attribution to Foursquare including the full content of that NOTICE.
+
+All three are satisfied by files in this repository:
+
+  resources/legal/foursquare-os-places-NOTICE.txt
+      Foursquare's NOTICE, VERBATIM AND UNEDITED. Retrieved 2026-09-09 from
+      https://opensource.foursquare.com/places-notice-txt/ — the URL Overture's
+      own attribution page links as the authoritative source. Foursquare publishes
+      it as a web page rather than a downloadable .txt, so the committed file is
+      that page's notice content with HTML markup removed and nothing else changed.
+
+  resources/legal/apache-2.0-LICENSE.txt
+      The Apache License, Version 2.0, in full, as published at
+      https://www.apache.org/licenses/LICENSE-2.0.txt
+
+  resources/legal/overture-corpus-MODIFICATIONS.txt
+      OUR notice of changes. Application-authored, and deliberately NOT merged into
+      Foursquare's NOTICE: that NOTICE permits appending a change notice to it, but
+      a merged file leaves a reader unable to tell whose sentences are whose, and
+      preserving the NOTICE as Foursquare's is the point of the obligation.
+
+The Foursquare copyright is reproduced in the committed NOTICE and is carried into
+the user-visible attribution on /data-sources and beside any points of interest.
+
+NOTE ON THE COPYRIGHT YEAR. Overture's attribution page quotes the Foursquare
+credit as "Copyright 2024 Foursquare Labs, Inc. All rights reserved."; the NOTICE
+that page links to states "© 2026 Foursquare Labs, Inc. All rights reserved." The
+committed file preserves what the NOTICE itself says, because that is the artifact
+whose full content we are required to preserve.
+
+--------------------------------------------------------------------------------
+US Census Bureau — TIGER/Line and Geocoder
+--------------------------------------------------------------------------------
+
+School district, city, county and ZIP boundaries, and address-range geocoding, are
+derived from US Census Bureau TIGER/Line products and the Census Geocoder.
+
+  https://www.census.gov/programs-surveys/geography.html
+
+US Government works are in the public domain (17 U.S.C. §105). No attribution is
+required. It is given because naming the source of a boundary is useful to the
+reader, not because a license compels it.
+
+
+--------------------------------------------------------------------------------
+FEMA — National Flood Hazard Layer
+--------------------------------------------------------------------------------
+
+Flood zone determinations are derived from the FEMA National Flood Hazard Layer.
+
+  https://www.fema.gov/flood-maps/national-flood-hazard-layer
+
+Public domain. No attribution required; given for the same reason as the Census
+entry above. FEMA flood zone data is informational and is not a substitute for an
+official flood determination.
+
+
+--------------------------------------------------------------------------------
+Google Places
+--------------------------------------------------------------------------------
+
+Where points of interest are supplied by the Google Places API, they are subject
+to the Google Maps Platform Terms of Service rather than to an open data license.
+
+  https://cloud.google.com/maps-platform/terms
+
+Google's terms govern caching and display separately from the open-data sources
+above: Place content is not persisted beyond what those terms permit, and the
+provenance record for a Google-sourced row carries the place_id reference only.

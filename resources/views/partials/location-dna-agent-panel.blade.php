@@ -201,6 +201,19 @@ use App\Presenters\LocationDnaPresenter;
         <div class="text-muted small">No nearby POIs recorded for this listing.</div>
         @endif
 
+        {{-- Attribution for the POIs rendered above.
+
+             Placed here, inside the `@if($locationDna)` body and after the POI
+             blocks, because that is the only position where it is bound to the
+             thing it describes: no DNA record means no places on the page and
+             nothing owed. The partial resolves its sources from each row's own
+             provenance and renders no markup when none is owed, so this include
+             is inert today and stays inert for a listing whose POIs carry no
+             provider. --}}
+        @include('partials.location-dna._data-attribution', [
+            'pois' => $locationPois ?? collect(),
+        ])
+
         @endif {{-- end if $locationDna --}}
 
     </div>

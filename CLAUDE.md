@@ -21,7 +21,10 @@ php artisan migrate --pretend # dry-run SQL before executing
 php artisan migrate           # run pending
 
 # Key artisan commands
-php artisan ldna:generate {listing_id}   # run Location DNA pipeline for one listing
+# The command is location-dna:generate, NOT ldna:generate — this line said the latter
+# for a long time and no such command exists.
+php artisan location-dna:generate {seller|landlord|bridge} {listing_id}   # one listing, one run
+php artisan location-dna:generate bridge {id} --canary --dry-run          # canary posture, writes nothing
 php artisan ldna:refresh-all             # re-run pipeline for all listings
 php artisan ldna:audit-listing {id}      # inspect pipeline state for a listing
 ```
@@ -55,6 +58,88 @@ Bid forms are multi-tab Livewire components located in `app/Http/Livewire/` subd
 ### Location DNA pipeline
 
 `LocationDnaPipelineRunner` (in `app/Services/LocationDna/`) orchestrates async enrichment for a property: POI lookup (Google Places via `GooglePlacesPoiAdapter`), flood zone (FEMA API), school districts (Census TIGER), and commute times. Results are cached via `LocationDnaPoiTileCache`. The pipeline runs as a queued job (`app/Jobs/ComputeLocationDna.php`). FEMA bounding-box size limits are configured in `config/location_dna.php`.
+
+### Location DNA attribution, and the Overture pre-activation gate
+
+**Nothing here activates the corpus.** `OVERTURE_CORPUS_POI_ENABLED` and the registry's
+`location_providers.providers.overture_corpus.enabled` are both `false`, no corpus version is
+pinned, and `OvertureActivationReadinessTest` fails if any of that changes.
+
+**Places is not ODbL, and that is the mistake to avoid.** Four of Overture's six themes are ODbL;
+the Places theme is three permissive licenses at once — CDLA-Permissive-2.0 (the bulk),
+**Apache-2.0 (the Foursquare slice)** and CC0-1.0. The corpus as imported cannot say which member
+supplied a given row: `OverturePlaceNormalizer` counts `sources[].dataset` and discards the names.
+So every published row is treated as though it could be the Foursquare slice, and **the strictest
+obligation governs the whole theme** — which is why the Apache NOTICE requirement, the one thing
+here that can actually be breached, is the blocking prerequisite.
+
+**The Apache-2.0 obligations are discharged by three separate files, and the separation is the
+point.** `resources/legal/foursquare-os-places-NOTICE.txt` is Foursquare's NOTICE **verbatim**
+(retrieved 2026-09-09 from `https://opensource.foursquare.com/places-notice-txt/`, the URL Overture's
+attribution page names as authoritative; they publish it as a web page, so the file is that page's
+notice content with markup removed and nothing else changed).
+`resources/legal/apache-2.0-LICENSE.txt` is the licence in full, served to recipients at
+`/data-sources/apache-2.0` from our own bytes rather than by linking apache.org.
+`resources/legal/overture-corpus-MODIFICATIONS.txt` is **ours**, disclosing the FL bbox filter, the
+0.90 confidence floor, the 8-token category crosswalk, schema normalisation, and the discarding of
+`sources[].dataset`. That NOTICE permits appending our changes to it — we do not, because a merged
+file leaves a reader unable to tell whose sentences are whose, and preserving the NOTICE *as
+Foursquare's* is the obligation. Storage details are deliberately absent from the published notice.
+
+`notice_verified` is now **`true`**, and `LocationDnaNoticeComplianceTest` asserts the artifacts
+rather than the flag. **This is not activation authorization** — the two provider gates are
+independent, still false, and `OvertureActivationReadinessTest` asserts that a satisfied NOTICE did
+not move either. The canary command says the same thing out loud, because an operator who has just
+watched the licensing prerequisite clear is the person most likely to read it as permission.
+
+**Attribution resolves from the ROWS, never from the active provider.** A POI row persists: switch
+the corpus off and its rows are still on the page tomorrow, still owing Overture; switch it on and
+yesterday's Google rows are still there. Provider config says what will be fetched *next*; a
+license obligation is about what is on the screen *now*. So `LocationDataAttribution::forPois()`
+reads each row's own `provenance_json.provider`.
+
+**`data_source` used to lie, and now does not.** It was written as the literal `'google_places'` on
+every row regardless of which adapter answered — it predates the provider registry — so activating
+the corpus would have stored rows claiming Foursquare/Overture places came from Google, contradicting
+`provenance_json` on the same row. It now takes `$currentProvenanceProvider`, the **same** identity
+`provenance_json` is built from, deliberately rather than a second lookup: two independent
+source-selection mechanisms on one row is how they come to disagree. Attribution still reads
+`provenance_json` — it is the richer record, and any row written before the fix still carries the old
+literal. `PoiProviderProvenanceTest` pins both values and the no-contradiction invariant.
+
+**Two attribution blocks on one page, kept apart deliberately.**
+`offer-listing/partials/_mls_attribution.blade.php` states where the *listing* came from under the
+Bridge/Stellar IDX terms; `partials/location-dna/_data-attribution.blade.php` states where the
+*places beside it* came from under open-data licenses. Merged into one "data sources" line, a
+reader would take the Stellar copyright as covering the nearby-restaurants list, or the reverse.
+Shared visual language, separate claims — `LocationDnaAttributionSurfaceTest` pins it.
+
+The Location DNA component is included **once**, in the shared
+`partials/location-dna-agent-panel.blade.php`, which is why neither the seller nor the landlord
+view file needed to change. `config/location_attribution.php` is the SSOT with exactly two readers
+(the support class, and `routes/web.php` for the NOTICE path); no Blade file reads it, so a
+template edit cannot change an attribution claim. `/data-sources` is public and unauthenticated
+because the pages publishing the data are.
+
+**Corpus identity is one definition, `CorpusSurface`, with two readers.** `capabilityHash()` hashes
+`config/location_providers.php` alone, and the corpus version is pinned in a different file — so
+re-pinning `OVERTURE_CORPUS_POI_VERSION`, the exact operation the two-corpus design exists to make
+possible, was invisible to **both** things that depend on it: the tile key (the previous corpus's raw
+candidates kept being served for the tile TTL) *and* `LocationDnaVersionService::fetchVersion()`, the
+stamp on every row's `pois_fetch_version` (already-persisted rows from the previous import read as
+current and were never refetched). Same defect, two layers. Fixing them separately would have left
+two definitions that must agree forever, so both read `CorpusSurface::token()`. **`fetchVersion` only
+— never `scoringVersion`**: a re-pin requires a refetch but is not a scoring change, and the two
+stamps are independent on purpose.
+
+**The Bridge canary.** `location-dna:generate` accepts `bridge` (the pipeline runner always could;
+only the command refused). It requires `--canary` — a canary you can start by typing the wrong word
+is not one — and refuses any `listing_id` that is not a single positive integer, because
+`(int)'all'` is `0` and `(int)'12,13'` is `12`, and both would read afterwards as a successful run
+against the wrong record. There is no `--all` and no id list. `--dry-run` reports the provider and
+licensing posture and writes nothing. One-listing isolation is the service's own property — every
+POI delete is scoped to `(listing_type, listing_id)` — and the posture report prints the listing's
+existing row count so a re-run's idempotency is observable rather than assumed.
 
 ### Property coordinate ladder (separate from the Location DNA pipeline)
 
@@ -373,6 +458,8 @@ Beyond standard Laravel keys, this app requires:
 | `ADDRESS_POINT_CORPUS_ENABLED` | Master gate for `AddressPointCoordinateAdapter`, the ladder rung that reads our own address-point corpus. Default `false`. Off is not a placeholder: the corpus holds **zero rows** and no importer exists, so an enabled rung would spend a query per resolution to return `address_point_not_found` forever. Turn it on only after an import has been loaded and verified. Unlike the Census flag, an enabled rung here cannot reach the network — the worst case is a wasted local query. |
 | `ADDRESS_POINT_CORPUS_VERSION` | Which `corpus_version` the rung reads. **Both this and the flag must be set** — an enabled rung with no version pinned reports itself unavailable rather than guessing which import to serve. Deliberately not "whatever the ledger says is active": two corpus versions coexisting is what makes a new import verifiable before it is trusted, and a rung that followed activation would start serving new coordinates the instant a ledger row flipped, with no deploy and no diff. |
 | `ADDRESS_POINT_CORPUS_MAX_MATCHES` | How many corpus rows one lookup line may pull back (default 25). Rows sharing a normalized line are units of one building; a handful settles whether they agree on a point. A zero or negative value falls back to the default rather than silencing the rung. |
+| `OVERTURE_CORPUS_POI_ENABLED` | Master gate for `OvertureCorpusPoiAdapter`, the local Overture Places corpus. Default `false`. The **licensing** prerequisite is now met — the verbatim Foursquare NOTICE, the Apache-2.0 text and our notice of changes are committed and served — but that cleared one blocker, not the gate: activation is a separate, reviewed decision and this ships off. Both this and the registry's `location_providers.providers.overture_corpus.enabled` must agree — two gates, two files, neither redundant. `OvertureActivationReadinessTest` asserts both are off **and** that satisfying the NOTICE did not move either. Changing this alongside `OVERTURE_CORPUS_POI_VERSION` rotates the POI tile keys and every row's `pois_fetch_version` (see `CorpusSurface`). |
+| `OVERTURE_CORPUS_POI_VERSION` | Which `corpus_version` the adapter reads, pinned explicitly rather than following the activation ledger — two corpus versions coexisting is what lets a new import be verified before it is trusted. Default unpinned; an enabled adapter with no version reports itself unavailable rather than guessing. **Changing this rotates every POI tile cache key** (`LocationDnaPoiTileCache::$corpusToken`), which is the point: before that token existed, re-pinning served the previous corpus's cached candidates under the new pin for the tile TTL. |
 | `LOCATION_DNA_FLOOD_ZONE_MAX_AREA` | FEMA API bounding-box threshold in sq-degrees |
 | `CRITERIA_LDNA_GEOGRAPHY_SOURCE` | Which `CriteriaGeographyRepository` backs the geography cascade. **Exactly three values are accepted** — `eloquent` (default; the `us_*` reference tables), `census` (the `census_*` corpus from `census:import-geography`), `fake` (in-memory fixture, local/demo only). **Anything else throws at container resolution.** That is deliberate: the binding used to fall through to `eloquent`, so a typo silently served legacy data and looked exactly like success. Selecting `census` requires the corpus to be present — run `php artisan census:verify-geography` first, and in the deploy sequence of any environment using it, or every tier enumerates empty with no error. |
 | `CRITERIA_LDNA_PREVIEW_ENABLED` | Geography preview surface. Default `false`. |
