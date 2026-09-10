@@ -7,6 +7,7 @@
     @auth
         <meta name="user-id" content="{{ auth()->id() }}">
     @endauth
+    @include('partials._realtime-config')
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ isset($title) ? $title . ' - ' . get_setting('title') : get_setting('title') }}</title>

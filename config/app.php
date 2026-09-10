@@ -187,7 +187,9 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
+        // Self-inert while BROADCAST_CLIENT_ENABLED is off: it registers no route and
+        // defines no channel until realtime is switched on. See the provider's docblock.
+        App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\AgentAiServiceProvider::class,
