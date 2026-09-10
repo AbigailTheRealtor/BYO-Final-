@@ -1436,6 +1436,34 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Support/Listing/MlsLinkedListingStatus.php',
             'app/Support/Listing/MlsSourceStatus.php',
             'config/mls_sync.php',
+
+            // ── Agent shared listing identity (2026-09-10) ───────────────────
+            //
+            // The Offer Listings hub lists ROLE listings — rows of
+            // seller_agent_auctions, landlord_agent_auctions, buyer_agent_auctions
+            // and tenant_agent_auctions — and built its View link out of the role
+            // listing's own primary key, while the destination resolved
+            // OfferAuction::where('id', $id). Five independent auto-increment
+            // sequences, one integer, no way to tell which table it came from: a
+            // collision rendered a different record and the absence of one 404'd a
+            // listing the agent was looking at a moment earlier.
+            //
+            //   app/Support/Listing/AgentListingIdentity.php
+            //     The route identity, naming its own domain. `seller-7` can only
+            //     mean seller_agent_auctions row 7; a bare `7` can only mean
+            //     offer_auctions row 7. Parsing is strict — no leading zeros, no
+            //     coercion — because `(int) 'all'` is 0 and reads afterwards as a
+            //     successful lookup. Nothing infers a table from a number and
+            //     nothing scans several tables for a matching id.
+            //
+            // AgentController, routes/web.php and the agent view are already
+            // permitted by earlier task blocks above and are not re-listed. The
+            // controller resolves the identity deliberately, reaches the underlying
+            // role listing through the established ListingOfferAuctionLinker on the
+            // OfferAuction branch, and hands the Blade one prepared
+            // `listing_status_display`; the Blade renders it. No new status
+            // mapping, no OfferAuction MLS-awareness, no writes.
+            'app/Support/Listing/AgentListingIdentity.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

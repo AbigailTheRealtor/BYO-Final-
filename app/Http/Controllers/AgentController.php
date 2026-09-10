@@ -16,6 +16,9 @@ use App\Models\TenantAgentAuction as TenantAgentAuctionModel;
 use App\Models\BuyerAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Models\OfferAuction as OfferAuctionModel;
+use App\Services\Offers\ListingOfferAuctionLinker;
+use App\Support\Listing\AgentListingIdentity;
+use App\Support\Listing\ListingStatusDisplay;
 use Carbon\Carbon;
 
 class AgentController extends Controller
@@ -492,37 +495,96 @@ class AgentController extends Controller
     // OFFER LISTINGS HUB (Phase 6)
     // ─────────────────────────────────────────────────────────────────────
 
-    public function offerListingView(int $id)
+    /**
+     * The shared Agent listing page.
+     *
+     * THE RECORD IS CHOSEN BY THE IDENTITY IN THE URL, NEVER BY A BARE INTEGER.
+     * `$id` is an {@see AgentListingIdentity} token: `seller-7` names row 7 of
+     * `seller_agent_auctions`, a bare `7` names row 7 of `offer_auctions`. Those
+     * are independent primary-key sequences, and reading one as the other is the
+     * defect this signature exists to make impossible — the hub linked to role
+     * listings by their own id while this action looked the number up in
+     * `offer_auctions`, so a collision rendered a different record and the
+     * absence of one 404'd a listing that plainly exists.
+     *
+     * Nothing here infers a table from a number and nothing scans several tables
+     * for a matching id. An unparseable token resolves to nothing.
+     */
+    public function offerListingView(string $id)
     {
+        $identity = AgentListingIdentity::parse($id);
+
+        if ($identity === null) {
+            abort(404);
+        }
+
         $uid = Auth::id();
 
         // Admins may view any listing regardless of ownership (oversight access).
         $isAdmin = Auth::user()?->user_type === 'admin';
 
-        // Offer listings are stored in the OfferAuction model (offer_auctions table).
-        $query = OfferAuctionModel::where('id', $id)->with('metas');
-        if (!$isAdmin) {
-            $query->where('user_id', $uid);
+        $allowedRoles = ['seller', 'buyer', 'landlord', 'tenant'];
+
+        if ($identity->isRoleListing()) {
+            // The hub's own listings. The subject is the role listing itself —
+            // the one record the agent selected — and the role is structural:
+            // it selected the table, so it cannot mislabel what was loaded.
+            $modelClass = $identity->modelClass();
+
+            $query = $modelClass::where('id', $identity->id)->with('meta');
+            if (!$isAdmin) {
+                $query->where('user_id', $uid);
+            }
+            $auction = $query->first();
+
+            if (!$auction) {
+                abort(404);
+            }
+
+            // The underlying listing is the record itself, so there is no link to
+            // follow. Nor is one required: a hub record is not guaranteed to have
+            // an OfferAuction — a draft has never published, and rows predating
+            // ListingOfferAuctionLinker were only linked lazily by a public page
+            // render or a first offer. Routing through a link that may not exist
+            // is what would put drafts back out of reach, and creating one here to
+            // make an id line up would be a write on a GET.
+            $metas       = $auction->meta;
+            $roleListing = $auction;
+            $listingRole = $identity->role;
+            $role        = $identity->role;
+            $metaRole    = $identity->role;
+        } else {
+            // Legacy Offer Playoff listings, which are OfferAuction-native, and
+            // the seller link built by PropertyAuctionController. Resolution is
+            // exactly as it has always been.
+            $query = OfferAuctionModel::where('id', $identity->id)->with('metas');
+            if (!$isAdmin) {
+                $query->where('user_id', $uid);
+            }
+            $auction = $query->first();
+
+            if (!$auction) {
+                abort(404);
+            }
+
+            // Determine role: explicit query param takes precedence, then listing_role meta,
+            // then offer_type meta, then user_type meta, defaulting to 'seller'.
+            $requestedRole = request()->query('role');
+            $metas         = $auction->metas;
+            $metaRole      = $metas->where('meta_key', 'listing_role')->first()?->meta_value
+                          ?? $metas->where('meta_key', 'offer_type')->first()?->meta_value
+                          ?? $metas->where('meta_key', 'user_type')->first()?->meta_value
+                          ?? '';
+            $role = in_array($requestedRole, $allowedRoles) ? $requestedRole
+                  : (in_array($metaRole, $allowedRoles)    ? $metaRole : 'seller');
+
+            // The established link, in the direction this action needs it: which
+            // role listing does this OfferAuction belong to, and as which role.
+            // [null, null] for an OfferAuction-native listing, which is normal.
+            [$roleListing, $listingRole] = app(ListingOfferAuctionLinker::class)->listingFor($auction);
         }
-        $auction = $query->first();
 
-        if (!$auction) {
-            abort(404);
-        }
-
-        // Determine role: explicit query param takes precedence, then listing_role meta,
-        // then offer_type meta, then user_type meta, defaulting to 'seller'.
-        $allowedRoles  = ['seller', 'buyer', 'landlord', 'tenant'];
-        $requestedRole = request()->query('role');
-        $metas         = $auction->metas;
-        $metaRole      = $metas->where('meta_key', 'listing_role')->first()?->meta_value
-                      ?? $metas->where('meta_key', 'offer_type')->first()?->meta_value
-                      ?? $metas->where('meta_key', 'user_type')->first()?->meta_value
-                      ?? '';
-        $role = in_array($requestedRole, $allowedRoles) ? $requestedRole
-              : (in_array($metaRole, $allowedRoles)    ? $metaRole : 'seller');
-
-        $meta = $auction->metas->pluck('meta_value', 'meta_key');
+        $meta = $metas->pluck('meta_value', 'meta_key');
 
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = (bool) $auction->is_approved;
@@ -581,12 +643,16 @@ class AgentController extends Controller
         // photograph. Preserving that convention is the whole reason the choice is an explicit
         // argument rather than a default. See ListingPhotoPathConvention.
         //
-        // THE MEDIA GATE IS ASKED WITH THE STORED ROLE, NOT $role. $role above honours a
-        // ?role= query parameter, which makes it client-influenced; it is fine for choosing an
-        // edit link, but a licensing gate must not be movable from a query string. The role
-        // recorded on the listing is used instead, and an unrecognised one yields null — which
-        // ListingGalleryView reads as "no MLS media", the same fail-closed answer it gives any
-        // surface that cannot establish its role.
+        // THE MEDIA GATE IS ASKED WITH THE STORED ROLE, NOT $role. On the OfferAuction branch
+        // $role above honours a ?role= query parameter, which makes it client-influenced; it is
+        // fine for choosing an edit link, but a licensing gate must not be movable from a query
+        // string. The role recorded on the listing is used instead, and an unrecognised one
+        // yields null — which ListingGalleryView reads as "no MLS media", the same fail-closed
+        // answer it gives any surface that cannot establish its role.
+        //
+        // On the role-listing branch $metaRole is the identity's own role, which is stronger
+        // still: it chose the table the record was loaded from, so it cannot describe the row
+        // as anything other than what it is.
         $mediaRole = in_array($metaRole, $allowedRoles, true) ? $metaRole : null;
 
         $propertyPhotos = \App\Support\Listing\ListingGalleryView::forRoleWithConvention(
@@ -612,6 +678,7 @@ class AgentController extends Controller
             'auction_type'          => $meta['auction_type']           ?? '',
             'offer_type'            => $meta['offer_type']             ?? '',
             'listing_status'        => $meta['listing_status']         ?? '',
+            'listing_status_display' => $this->agentListingStatusDisplay($roleListing, $listingRole, $meta),
             'listing_date'          => $meta['listing_date']           ?? '',
             'desired_agent_hire_date' => $meta['desired_agent_hire_date'] ?? '',
             'expiration_date'       => $meta['expiration_date']        ?? $expiryRaw,
@@ -1421,6 +1488,48 @@ class AgentController extends Controller
         return view('agent.offer-listing-view', compact('data', 'meta'));
     }
 
+    /**
+     * What the shared Agent page prints in its "Listing Status" row.
+     *
+     * SELLER AND LANDLORD ASK THE CONTRACT THEIR OWN DETAIL PAGES ASK.
+     * {@see ListingStatusDisplay} is the single definition of what a listing
+     * detail page shows: on an MLS-linked listing the market status is
+     * Stellar's, and the platform's stored `listing_status` is the value the
+     * owner typed into a form weeks earlier. The seller page (PR #141) and the
+     * landlord page (PR #142) already consume it; this page read the raw meta
+     * value and so contradicted them about the same listing.
+     *
+     * It is reached with the UNDERLYING ROLE LISTING, not with whatever record
+     * the URL happened to address. A status is a fact about the listing, so it
+     * is resolved from the listing — which is why this takes the model the
+     * identity (or the established link) produced rather than a meta bag.
+     *
+     * BUYER AND TENANT KEEP THEIR EXISTING SEMANTICS, DELIBERATELY. Their models
+     * have no MLS branch, their listings describe search criteria across many
+     * areas rather than one property, and there is no feed that owns their
+     * status. They print the stored value, exactly as this page always has —
+     * now read off the record the agent actually selected.
+     *
+     * The same fallback covers an OfferAuction-native listing with no role
+     * listing behind it: nothing has been established about a feed, so nothing
+     * is asserted. Blank stays blank and renders no row, which is this page's
+     * existing rule for every other field.
+     *
+     * READ-ONLY, like everything else in this action.
+     *
+     * @param  \Illuminate\Support\Collection<string,mixed>  $meta
+     */
+    private function agentListingStatusDisplay(?object $listing, ?string $listingRole, $meta): ?string
+    {
+        if ($listing !== null && in_array($listingRole, ['seller', 'landlord'], true)) {
+            return ListingStatusDisplay::for($listing);
+        }
+
+        $stored = $meta['listing_status'] ?? null;
+
+        return is_string($stored) && trim($stored) !== '' ? $stored : null;
+    }
+
     public function offerListings(Request $request)
     {
         $uid    = Auth::id();
@@ -1516,7 +1625,17 @@ class AgentController extends Controller
         $editRoute = route('offer.listing.' . $role . '.edit', $editRouteParams);
         $draftRoute = $isDraft ? $editRoute : null;
 
-        $viewRoute = route('offer.listing.view', ['id' => $auction->id, 'role' => $role]);
+        // The identity names its own table. `$auction->id` here is a role listing's
+        // primary key — `seller_agent_auctions`, `landlord_agent_auctions`, … — and
+        // this link used to hand it over as if it were an `offer_auctions.id`, which
+        // is what the destination resolved. Two unrelated sequences: where the
+        // numbers collided the agent was shown a different record, and where they did
+        // not the View button 404'd. No `?role=` is appended any more; the token
+        // carries the role, and a second, contradictable source for it is precisely
+        // the shape of the bug being removed.
+        $viewRoute = route('offer.listing.view', [
+            'id' => AgentListingIdentity::forRoleListing($role, (int) $auction->id)->token(),
+        ]);
 
         return [
             'id'           => $auction->id,
