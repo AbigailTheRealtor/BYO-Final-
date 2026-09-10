@@ -7,6 +7,7 @@ on:
     branches: ["main"]
     paths:
       - ".githooks/pre-commit"
+      - "scripts/ci/check-added-debug-statements.sh"
       - "tests/hooks/**"
 
 jobs:
@@ -20,3 +21,6 @@ jobs:
 
       - name: Run pre-commit hook tests
         run: bash tests/hooks/test-pre-commit.sh
+
+      - name: Run diff-aware debug-statement gate tests
+        run: bash tests/hooks/test-debug-statement-gate.sh

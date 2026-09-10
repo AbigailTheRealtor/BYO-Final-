@@ -12,6 +12,13 @@
 # │         location.  Do NOT add directory filters here; debug statements must
 # │         be caught wherever they appear.
 # │
+# │  ADDED LINES ONLY.  The check judges the lines this commit ADDS, not the
+# │         whole content of the files it touches.  Editing one line in a file
+# │         that already contains debug statements is not an offence, and used
+# │         to be treated as one — which meant the only way to commit was to
+# │         clean up code the change never touched.  Adding a debug statement
+# │         is still blocked, wherever in the file it lands.
+# │
 # │  File types in scope:
 # │    PHP group   — *.php (includes *.blade.php, config/*.php, routes/*.php,
 # │                          tests/**/*.php, and any other .php file)
@@ -24,10 +31,14 @@
 # │    PHP/Twig  : dd(, var_dump(, dump(
 # │    JS/TS/Vue : console.log(, debugger;
 # │
+# │  The extension lists and patterns above now live in ONE place — the
+# │  "pre-commit" profile inside scripts/ci/check-added-debug-statements.sh —
+# │  shared with the two CI workflows.  Each gate keeps its OWN profile: the
+# │  three sets differ on purpose and were not harmonised.
+# │
 # │  To add a new file type in the future:
 # │    1. Identify which debug patterns are relevant for that type.
-# │    2. Add the extension to the appropriate [[ "$file" =~ ... ]] condition
-# │       below (or create a new loop if it needs distinct patterns).
+# │    2. Add the extension to the "pre-commit" profile in the shared checker.
 # │    3. Update the "File types in scope" list in this header comment.
 # └────────────────────────────────────────────────────────────────────────────
 #
@@ -75,69 +86,40 @@ fi
 # harmful anywhere in the codebase, including test files.  Do NOT add a DIRS
 # filter or path prefix here — doing so would silently allow debug statements
 # through in any file outside those directories (e.g. tests/, routes/, etc.).
+#
+# The scan itself is delegated to the shared, diff-aware checker so that the
+# hook and the two CI workflows cannot drift apart in HOW they read a change.
+# WHAT each of them prohibits stays separate: this hook selects the "pre-commit"
+# profile, whose patterns and extensions are exactly the ones documented above.
 
-# PHP debug patterns: dd(, var_dump(, dump( (Laravel/Symfony helpers).
-# Anchored with \b so the matcher targets real calls and does not match the
-# "dd(" substring inside legitimate identifiers like ->add( / ->odd(.
-PHP_DEBUG_PATTERN='\bdd\(|\bvar_dump\(|\bdump\('
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+DEBUG_GATE="$REPO_ROOT/scripts/ci/check-added-debug-statements.sh"
 
-# JS/TS/Vue/Svelte debug patterns: console.log( and debugger;
-JS_DEBUG_PATTERN='console\.log\(|debugger;'
-
-# Twig template debug patterns: dump( (Twig's built-in debug function)
-TWIG_DEBUG_PATTERN='dump\('
-
-debug_hits=()
-
-# Check all staged PHP files (*.php covers Blade, config/, routes/, tests/, etc.)
-# No directory filter — intentional, see header above.
-while IFS= read -r -d '' file; do
-    if [[ "$file" =~ \.(php)$ ]]; then
-        while IFS= read -r match; do
-            debug_hits+=("$match")
-        done < <(git show ":$file" 2>/dev/null | grep -nE "$PHP_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
-    fi
-done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
-
-# Check all staged JS/TS/Vue/Svelte files.
-# Extensions covered: .js, .mjs (ES modules), .jsx, .ts, .tsx, .vue, .svelte
-# No directory filter — intentional, see header above.
-# To add a new JS-family type, append its extension to the regex below.
-while IFS= read -r -d '' file; do
-    if [[ "$file" =~ \.(js|mjs|jsx|ts|tsx|vue|svelte)$ ]]; then
-        while IFS= read -r match; do
-            debug_hits+=("$match")
-        done < <(git show ":$file" 2>/dev/null | grep -nE "$JS_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
-    fi
-done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
-
-# Check all staged Twig template files (*.twig).
-# Twig uses dump() as its primary debug helper (requires {% debug %} to be enabled).
-# No directory filter — intentional, see header above.
-while IFS= read -r -d '' file; do
-    if [[ "$file" =~ \.(twig)$ ]]; then
-        while IFS= read -r match; do
-            debug_hits+=("$match")
-        done < <(git show ":$file" 2>/dev/null | grep -nE "$TWIG_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
-    fi
-done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
-
-if [ ${#debug_hits[@]} -gt 0 ]; then
+if [ ! -f "$DEBUG_GATE" ]; then
+    # Fail closed.  A missing checker means the commit was never inspected, and
+    # an uninspected commit must not be indistinguishable from a clean one.
     echo ""
-    echo "ERROR: Debug statements detected in staged files:"
+    echo "ERROR: debug-statement checker not found:"
     echo ""
-    for hit in "${debug_hits[@]}"; do
-        echo "$hit"
-    done
+    echo "  $DEBUG_GATE"
     echo ""
-    echo "Please remove these debug statements before committing."
-    echo "Patterns checked:"
-    echo "  PHP (*.php)                  : dd(, var_dump("
-    echo "  JS/TS (*.js *.mjs *.jsx etc) : console.log(, debugger;"
-    echo "  Twig (*.twig)                : dump("
+    echo "The pre-commit hook cannot verify this commit and is refusing rather"
+    echo "than letting it through unchecked."
     echo "If this is intentional, bypass with: git commit --no-verify"
     echo ""
     exit 1
+fi
+
+# Exit status is passed through unchanged: 1 = debug statements were added,
+# 2 = the check could not be performed.  Both block the commit, and the
+# difference is preserved so a broken gate is not misread as a dirty commit.
+set +e
+bash "$DEBUG_GATE" --profile pre-commit --staged
+debug_gate_status=$?
+set -e
+
+if [ "$debug_gate_status" -ne 0 ]; then
+    exit "$debug_gate_status"
 fi
 
 exit 0
