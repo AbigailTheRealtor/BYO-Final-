@@ -1206,7 +1206,11 @@ class MlsQuickImportFlowTest extends TestCase
     /** @test */
     public function the_landlord_flow_reaches_review_and_publishes(): void
     {
-        $this->seedBridgeProperty(2, [], 'PHPUNIT-QI-LL2-KEY', 'PHPUNIT-QI-LL2-MLS');
+        // A LEASE record. A landlord may only import one — a sale record is
+        // refused by MlsQuickImportEligibility — and this test is about the
+        // landlord FLOW, not about which records are importable. Matches the
+        // seed the_landlord_flow_imports_property_and_photos_too already used.
+        $this->seedBridgeProperty(2, ['property_type' => 'Residential Lease'], 'PHPUNIT-QI-LL2-KEY', 'PHPUNIT-QI-LL2-MLS');
 
         $component = Livewire::actingAs($this->landlord)
             ->test(LandlordMlsQuickImport::class)
@@ -1247,7 +1251,7 @@ class MlsQuickImportFlowTest extends TestCase
      */
     public function canonical_leasing_terms_persist_through_landlord_quick_import(): void
     {
-        $this->seedBridgeProperty(1, [], 'PHPUNIT-QI-LL3-KEY', 'PHPUNIT-QI-LL3-MLS');
+        $this->seedBridgeProperty(1, ['property_type' => 'Residential Lease'], 'PHPUNIT-QI-LL3-KEY', 'PHPUNIT-QI-LL3-MLS');
 
         $component = Livewire::actingAs($this->landlord)
             ->test(LandlordMlsQuickImport::class)
@@ -1306,7 +1310,7 @@ class MlsQuickImportFlowTest extends TestCase
      */
     public function landlord_bidding_period_rent_pricing_persists(): void
     {
-        $this->seedBridgeProperty(1, [], 'PHPUNIT-QI-LL4-KEY', 'PHPUNIT-QI-LL4-MLS');
+        $this->seedBridgeProperty(1, ['property_type' => 'Residential Lease'], 'PHPUNIT-QI-LL4-KEY', 'PHPUNIT-QI-LL4-MLS');
 
         $component = Livewire::actingAs($this->landlord)
             ->test(LandlordMlsQuickImport::class)

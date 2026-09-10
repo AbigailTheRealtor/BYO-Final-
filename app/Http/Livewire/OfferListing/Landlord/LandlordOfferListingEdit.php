@@ -8,6 +8,7 @@ use App\Support\OfferListing\LandlordScreeningPolicy;
 use App\Http\Livewire\Concerns\BelongsToListingWorkflow;
 
 use App\Support\Listing\ListingWorkflow;
+use App\Support\Listing\PropertyTypeVocabulary;
 
 use Livewire\Component;
 use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
@@ -2354,16 +2355,20 @@ class LandlordOfferListingEdit extends Component
             $this->auction_time = $auction->get->auction_time ?? null;
 
             $this->state = $auction->get->state ?? null;
+            // Normalised through the ONE canonical mapper. This used to be an
+            // inline copy of PropertyTypeVocabulary's landlord branch —
+            // commercial, then residential, then pass through — which is a
+            // second landlord property-type mapping that had to agree with the
+            // first forever. It was proven equivalent on every value either one
+            // can see (feed spellings, BYO vocabulary, unrecognised strings,
+            // null and blank) before being replaced, and forRole() additionally
+            // trims, so a stored value with stray whitespace now normalises
+            // instead of passing through unselectable.
             $rawPt = $auction->get->property_type ?? null;
-            if ($rawPt !== null) {
-                $ptLower = strtolower((string)$rawPt);
-                if (str_contains($ptLower, 'commercial')) {
-                    $rawPt = 'Commercial Property';
-                } elseif (str_contains($ptLower, 'residential')) {
-                    $rawPt = 'Residential Property';
-                }
-            }
-            $this->property_type = $rawPt;
+
+            $this->property_type = $rawPt === null
+                ? null
+                : PropertyTypeVocabulary::forRole((string) $rawPt, 'landlord');
             $raw = $auction->get->cities ?? null;
             $this->cities = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
 

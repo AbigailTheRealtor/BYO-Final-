@@ -8,6 +8,7 @@ use App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
 use App\Services\ListingImport\Mls\MlsSupplementalDetails;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
+use App\Services\ListingImport\QuickImport\MlsQuickImportEligibility;
 use App\Services\ListingImport\QuickImport\MlsQuickImportResult;
 use App\Services\ListingImport\QuickImport\MlsQuickImportService;
 use App\Support\Listing\ListingGalleryView;
@@ -252,6 +253,41 @@ abstract class MlsQuickImportComponent extends Component
     // ─── Step 1 — find the listing ───────────────────────────────────────────
 
     /**
+     * May this role import this record? Sets the error message and returns false
+     * when not.
+     *
+     * One helper rather than the check inlined twice, so the two call sites
+     * cannot drift about what counts as importable — the situation that produced
+     * this defect in the first place was a rule that lived on one surface and not
+     * the other.
+     *
+     * The refusal is logged at info level with the reason code and the feed's own
+     * property type. A user who is told "we do not support importing Farm
+     * listings yet" will report it as a bug, and the log line is what turns that
+     * into a decision about whether BidYourOffer should gain a Farm category.
+     */
+    protected function assertImportable(MlsQuickImportResult $result): bool
+    {
+        $eligibility = MlsQuickImportEligibility::for($this->role(), $result->sourcePropertyType);
+
+        if ($eligibility->allowed) {
+            return true;
+        }
+
+        $this->errorMessage = $eligibility->message;
+
+        Log::info('[MLS QUICK IMPORT] record refused for role', [
+            'role'                 => $this->role(),
+            'reason'               => $eligibility->reason,
+            'source_property_type' => $eligibility->sourcePropertyType,
+            'transaction'          => $eligibility->transaction,
+            'mls_number'           => $result->mlsNumber,
+        ]);
+
+        return false;
+    }
+
+    /**
      * Look the MLS number up and stage the property for confirmation.
      *
      * Nothing is written here. The number is easy to mistype and a wrong one
@@ -267,6 +303,17 @@ abstract class MlsQuickImportComponent extends Component
         if (! $result->isFound()) {
             $this->errorMessage = $result->message();
 
+            return;
+        }
+
+        // Refuse a record this role cannot import, BEFORE the confirmation card
+        // is shown. Asked here as well as in acceptProperty() because a person
+        // who has just been shown a house and told "yes, this one" and only then
+        // refused has been walked into a dead end; the useful moment to say "that
+        // is a rental listing, use Landlord MLS Import" is the moment they type
+        // the number. acceptProperty() asks again because that is where the write
+        // happens and this step can be skipped.
+        if (! $this->assertImportable($result)) {
             return;
         }
 
@@ -300,6 +347,18 @@ abstract class MlsQuickImportComponent extends Component
             return;
         }
 
+        // THE WRITE BOUNDARY. findListing() asks the same question, and this
+        // asks it again for the same reason acceptProperty() re-runs the lookup
+        // rather than trusting the staged payload: a hand-crafted Livewire call
+        // can reach this method without ever having rendered step 1. Refusing
+        // BEFORE materialise() is what makes the refusal mean something — no
+        // draft row, no meta, no gallery, nothing to clean up afterwards.
+        if (! $this->assertImportable($result)) {
+            $this->step = self::STEP_LOOKUP;
+
+            return;
+        }
+
         $auction = $this->draftWriter()->materialise($this->role(), (int) Auth::id(), $result);
 
         if ($auction === null) {
@@ -319,6 +378,12 @@ abstract class MlsQuickImportComponent extends Component
         //
         // The feed's own value is not lost: it stays in the cached Bridge record
         // and is written to meta as mls_source_property_type by the draft writer.
+        //
+        // assertImportable() has already run, so this is now guaranteed to
+        // resolve to one of this role's real categories rather than to '' or to
+        // a feed string passed through — which is what used to let a partial
+        // terms form reach Review. The mapper is still the thing that decides;
+        // the guard only decides whether we get this far.
         $this->property_type = PropertyTypeVocabulary::forRole(
             (string) ($result->facts['property_type'] ?? ''),
             $this->role(),
@@ -373,6 +438,23 @@ abstract class MlsQuickImportComponent extends Component
 
     public function continueToTerms(): void
     {
+        // No listing means acceptProperty() never succeeded — it refused the
+        // record, or it was skipped entirely. Without this, a refused import
+        // could still walk forward through the wizard: chooseMethod() and this
+        // method only ever looked at auction_type, so the steps advanced against
+        // a component holding no listing at all. continueToReview() and publish()
+        // already guard, so nothing was ever written — but the user was shown
+        // three more screens after being told no, which reads as the refusal not
+        // having happened.
+        if ($this->listingId === null) {
+            $this->errorMessage = $this->errorMessage !== ''
+                ? $this->errorMessage
+                : 'Please look up an MLS number before continuing.';
+            $this->step = self::STEP_LOOKUP;
+
+            return;
+        }
+
         if ($this->auction_type === '') {
             $this->errorMessage = 'Please choose a listing method to continue.';
 

@@ -93,6 +93,40 @@ class SellerMlsQuickImport extends MlsQuickImportComponent
     }
 
     /**
+     * A list price may pre-fill the sale price ONLY when the record is a sale.
+     *
+     * THE MIRROR OF THE LANDLORD RULE, AND IT WAS MISSING.
+     * ---------------------------------------------------
+     * LandlordMlsQuickImport::seededPrice() has refused to seed a rent box from
+     * a non-lease record since the $100,000-per-month incident. The seller side
+     * had no equivalent: `MlsSyncFieldPolicy::allowsPriceSync()` began
+     * `if ($role !== 'landlord') return true;`, and this method was not
+     * overridden at all. So a seller importing a Residential Lease got the
+     * MONTHLY RENT seeded into `maximum_budget` — the key behind "Desired Sale
+     * Price" — and a rental's $2,400 was offered as the asking price of a house.
+     *
+     * assertImportable() now refuses a lease record to a seller outright, so
+     * this branch should be unreachable through the UI. It is here anyway,
+     * because the price guard and the eligibility guard protect different things:
+     * eligibility is about which flow the user is in, and this is about what a
+     * number MEANS. Anything that cannot be positively identified as a sale
+     * returns null and the seller types the price — the same fail-closed
+     * reading, and the same trade: one number typed, against publishing a
+     * monthly rent as a sale price.
+     */
+    protected function seededPrice(\App\Services\ListingImport\QuickImport\MlsQuickImportResult $result): ?string
+    {
+        if (! \App\Services\ListingImport\Sync\MlsSyncFieldPolicy::allowsPriceSync(
+            'seller',
+            $result->sourcePropertyType,
+        )) {
+            return null;
+        }
+
+        return parent::seededPrice($result);
+    }
+
+    /**
      * Seed the MLS list price into the canonical asking-price property.
      *
      * The manual tab binds $maximum_budget directly, so the seeded figure has to

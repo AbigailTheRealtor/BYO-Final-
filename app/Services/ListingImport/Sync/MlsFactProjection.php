@@ -66,6 +66,29 @@ final class MlsFactProjection
             ? MlsSyncFieldPolicy::syncableTargets($role)
             : MlsFieldMap::forRole($role);
 
+        // Which property type this listing actually IS, in BYO vocabulary, and
+        // which canonical keys that type's form renders an input for.
+        //
+        // THIS IS THE FEATURE-APPLICABILITY GATE, AND IT WAS ONLY EVER APPLIED
+        // ON THE OTHER IMPORT PATH. MlsFieldMap::propertyTypeApplicability() has
+        // existed since the URL/text importer needed it, and
+        // HasMlsImport::buildImportPreview() is the only thing that consulted
+        // it. Quick Import and sync write through this projection instead, which
+        // knew nothing about it — so an Income listing was written
+        // `garage_needed` even though the seller Income form renders no garage
+        // control, and the value became state the user can neither see nor
+        // correct: invisible data with the authority of an import behind it.
+        //
+        // It matters most for Income precisely because of the other half of this
+        // change. "Residential Income" used to normalise to `Residential`, so a
+        // multi-family sale inherited Residential-only applicability by being
+        // mislabelled. Fixing the label alone would have moved the listing into
+        // the Income track while it kept writing Residential-only fields; the
+        // label and the applicability have to move together or the fix is
+        // cosmetic.
+        $effectiveType = $this->effectivePropertyType($role, $facts, $existing, $isSync);
+        $typeScope     = MlsFieldMap::propertyTypeApplicability($role);
+
         $writes = [];
 
         foreach ($facts as $canonicalKey => $value) {
@@ -86,6 +109,19 @@ final class MlsFactProjection
             $target = $map[$canonicalKey] ?? null;
 
             if ($target === null || $target === '') {
+                continue;
+            }
+
+            // A key absent from the scope map is applicable to every type — the
+            // same default HasMlsImport uses, so this is an additive gate rather
+            // than a reinterpretation of the existing mapping.
+            //
+            // A key that IS scoped and whose type we cannot establish is
+            // skipped, not written. That is the fail-closed reading: the harm
+            // this gate exists to prevent is writing a field the form does not
+            // render, and an unknown type cannot rule that out.
+            if (isset($typeScope[$canonicalKey])
+                && ! in_array($effectiveType, $typeScope[$canonicalKey], true)) {
                 continue;
             }
 
@@ -170,6 +206,45 @@ final class MlsFactProjection
         $merged = MlsFactVocabulary::mergeFurnishedFeature($existing[$metaKey] ?? null, $value);
 
         return $merged === [] ? null : $merged;
+    }
+
+    /**
+     * The listing's property type in BidYourOffer vocabulary, for applicability.
+     *
+     * Whichever value this projection would leave on the listing wins — see the
+     * precedence note in the body. Normalised on the way out either way, since a
+     * stored value can predate the vocabulary and the scope map is written in
+     * BidYourOffer words.
+     *
+     * Returns '' when neither source says anything — which matches nothing in
+     * the scope map, so every type-gated key is skipped.
+     *
+     * @param  array<string,mixed>  $facts
+     * @param  array<string,mixed>  $existing
+     */
+    private function effectivePropertyType(string $role, array $facts, array $existing, bool $isSync): string
+    {
+        $incoming = trim((string) ($facts['property_type'] ?? ''));
+        $stored   = trim((string) ($existing['property_type'] ?? ''));
+
+        // Follow the SAME precedence this projection applies to property_type
+        // itself, so the type the features are judged against is the type the
+        // listing will actually have when the writes land.
+        //
+        // On IMPORT a populated stored value wins, because the user wins: a
+        // seller who corrected the feed's Residential to Income has a listing
+        // that renders the Income form, and judging applicability against the
+        // feed's word would write that form's absent garage control back in on
+        // the next re-import — reverting the correction by a side door while
+        // property_type itself was correctly left alone.
+        //
+        // On SYNC the incoming value wins, because Stellar owns property_type
+        // there and the features must move with it in the same pass.
+        $raw = $isSync
+            ? ($incoming !== '' ? $incoming : $stored)
+            : ($stored !== '' ? $stored : $incoming);
+
+        return $raw === '' ? '' : PropertyTypeVocabulary::forRole($raw, $role);
     }
 
     /** Does this stored value count as already answered? */

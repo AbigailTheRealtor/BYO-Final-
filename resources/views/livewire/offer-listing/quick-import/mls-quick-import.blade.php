@@ -58,7 +58,41 @@
 @includeWhen($role === 'seller', 'livewire.offer-listing.offer-seller-tabs.commission-based._seller-terms-behaviour')
 @includeWhen($role === 'landlord', 'livewire.offer-listing.offer-landlord-tabs.commission-based._lease-terms-behaviour')
 
-<div class="container py-4" style="max-width: 960px;">
+{{--
+    id="wizard-form-container" — THIS IS A STYLING CONTRACT, NOT A HOOK.
+
+    Every rule in resources/css/app.css is scoped to this ID, and its header
+    names the consumers: the Hire Agent and Offer Listing wizard forms. Quick
+    Import renders two of those wizards' own canonical partials
+    (offer-seller-tabs/…/seller-terms and offer-landlord-tabs/…/lease-terms)
+    and was simply never added to the list, so none of those rules matched here.
+
+    The visible symptom was the currency prefix. `.input-cover` is `display:flex`
+    ONLY under this ID; unmatched it falls back to `display:block`, so the
+    `<span class="input-group-text-seller">$</span>` took its own line above an
+    input that Bootstrap renders at 100% width — 27 `$`/`%` controls across the
+    two partials, rendering as
+
+        $
+        [ amount ]
+
+    instead of `$ [ amount ]`. The same miss also cost the canonical input
+    min-height, the `.input-cover`/`.has-icon` left padding, `.percentage-value-set`
+    and the Select2 sizing rules, so Quick Import's inputs did not match Create's.
+
+    This is the presentation half of exactly the defect PR #139 fixed for
+    behaviour: the canonical partials travelled to a new surface, and the
+    environment they depend on did not travel with them. Behaviour now ships in
+    _seller-terms-behaviour / _lease-terms-behaviour; presentation ships by
+    being inside this container.
+
+    The markup in those partials is already correct and is NOT touched. Do not
+    copy `.input-cover` or `.input-group-text-seller` into a @push('styles')
+    block here — app.css says so in as many words, and
+    landlord-agent-auction-bid.blade.php is the local copy that should not be
+    imitated.
+--}}
+<div id="wizard-form-container" class="container py-4" style="max-width: 960px;">
 
     {{-- ── Progress ─────────────────────────────────────────────────────── --}}
     @php

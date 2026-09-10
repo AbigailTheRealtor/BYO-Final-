@@ -109,7 +109,13 @@ class LandlordQuickImportRentTest extends TestCase
 
     public function test_the_rent_the_landlord_entered_is_what_the_published_page_shows(): void
     {
-        $this->seedSaleRecord();
+        // A LEASE record, because a landlord importing a sale record is now
+        // refused outright (MlsQuickImportEligibility) and this test is about
+        // the rent KEY, not about which records a landlord may import. The
+        // guarantee is unchanged and the case is now stronger: a lease record's
+        // 100000 legitimately seeds the rent box, the landlord replaces it with
+        // 4321, and 4321 is what the page must publish.
+        $this->seedSaleRecord('Residential Lease');
 
         $c = $this->landlordThroughToTerms()
             // The rent is a CANONICAL Leasing Terms property now — the terms step
@@ -148,7 +154,8 @@ class LandlordQuickImportRentTest extends TestCase
 
     public function test_the_published_hero_does_not_advertise_the_sale_price_per_month(): void
     {
-        $this->seedSaleRecord();
+        // Lease record — see the note on the previous test.
+        $this->seedSaleRecord('Residential Lease');
 
         $c = $this->landlordThroughToTerms()
             // The rent is a CANONICAL Leasing Terms property now — the terms step
@@ -175,6 +182,11 @@ class LandlordQuickImportRentTest extends TestCase
 
     public function test_a_sale_records_list_price_does_not_pre_fill_the_rent_input(): void
     {
+        // Still true, and now true twice over: the eligibility guard refuses a
+        // sale record to a landlord before the seed rule is ever consulted, and
+        // the seed rule would refuse it anyway. Both layers are deliberate —
+        // eligibility is about which flow the user is in, seeding is about what
+        // a number means — so this assertion is left exactly as it was.
         $this->seedSaleRecord('Residential');
 
         $c = Livewire::actingAs($this->user)
@@ -206,11 +218,15 @@ class LandlordQuickImportRentTest extends TestCase
 
     public function test_publish_is_unreachable_until_the_landlord_states_a_rent(): void
     {
-        $this->seedSaleRecord();
+        // Lease record: a landlord may only import one, and this test is about
+        // the rent being REQUIRED, not about which records are importable. The
+        // seeded figure is cleared so the missing-rent path is the one exercised
+        // — previously a sale record supplied the empty box for free, which made
+        // this test depend on the seed rule it was not written to check.
+        $this->seedSaleRecord('Residential Lease');
 
-        // Rent left untouched — with no seed there is nothing to carry a sale price
-        // through to publication.
         $c = $this->landlordThroughToTerms()
+            ->set('desired_rental_amount', '')
             ->set('multiTerms', ['desired_lease_length' => ['1 Year']])
             ->call('continueToReview');
 

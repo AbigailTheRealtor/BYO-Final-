@@ -97,9 +97,18 @@ class LandlordMlsQuickImport extends MlsQuickImportComponent
      */
     protected function seededPrice(\App\Services\ListingImport\QuickImport\MlsQuickImportResult $result): ?string
     {
-        $type = strtolower(trim((string) ($result->facts['property_type'] ?? '')));
-
-        if ($type === '' || ! str_contains($type, 'lease')) {
+        // Asked through the shared policy rather than by matching on the
+        // substring 'lease' here. The rule is unchanged — a lease record may
+        // seed the rent and nothing else may — but it now has ONE implementation
+        // that the import path, the seller mirror and the unattended sync all
+        // share, instead of a substring test here and a different one there.
+        // Two implementations of one safety rule is how they come to disagree,
+        // and this is the rule whose disagreement publishes a sale price as a
+        // monthly rent.
+        if (! \App\Services\ListingImport\Sync\MlsSyncFieldPolicy::allowsPriceSync(
+            'landlord',
+            $result->sourcePropertyType,
+        )) {
             return null;
         }
 
