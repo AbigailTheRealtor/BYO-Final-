@@ -293,6 +293,7 @@ class RequiredProductionFlagsTest extends TestCase
             'mls_match_check',        // Buyer/Tenant scoring page
             'dna_scores',             // production score generation
             'matching',               // Matching V2 persistence
+            'explore',                // Explore master gate + the VOW tier
             'bridge',                 // Bridge credentials
             'services',               // API credentials
             'database',               // database credentials
