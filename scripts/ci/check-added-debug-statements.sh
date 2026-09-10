@@ -248,6 +248,44 @@ passing gate."
     DIFF_ARGS=( diff "$MERGE_BASE" "$RANGE_HEAD" )
 fi
 
+# ── Vendored third-party artefacts ────────────────────────────────────────────
+#
+# Diff-awareness removes the need for exclusions in every case BUT ONE: a file
+# that this change ADDS.  Every line of a newly added file is an added line, so a
+# third-party artefact committed for the first time is judged on its upstream
+# author's code.  That is the gap these two paths fill, and it is why the list is
+# not a general "generated files" escape hatch — an unrelated edit to an already
+# committed vendored file needs no entry here, because the gate already ignores
+# lines the change did not write.
+#
+# Both files are copied byte-for-byte out of node_modules/maplibre-gl/dist by
+# webpack.mix.js (mix.copy) and are never parsed, bundled or minified by us, so
+# there is nothing in them to remove and no edit that would survive a rebuild.
+# They must ship beside the bundle because maplibre-gl-worker.mjs imports
+# maplibre-gl-shared.mjs by RELATIVE path.
+#
+# EXACT PATHS, deliberately — not a glob and not a directory — so the exception
+# cannot widen on its own.  Everything of ours stays scanned, in particular
+# resources/js/spatial/* (our authored source) and public/js/spatial/ldna-maplibre.js
+# (our generated application bundle), both of which contain zero debug statements.
+#
+# A skip is ANNOUNCED rather than silent: an exception nobody can see in the log
+# is one nobody re-examines when the dependency changes.
+
+declare -a VENDORED_EXCEPTIONS=(
+    'public/js/spatial/maplibre-gl-shared.mjs'
+    'public/js/spatial/maplibre-gl-worker.mjs'
+)
+
+# is_vendored <path> -> 0 when the path is an exact vendored exception
+is_vendored() {
+    local candidate="$1" vendored
+    for vendored in "${VENDORED_EXCEPTIONS[@]}"; do
+        [[ "$candidate" == "$vendored" ]] && return 0
+    done
+    return 1
+}
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 # git_diff <extra args...>
@@ -346,6 +384,11 @@ process_entry() {
         target="$p2"
     else
         target="$p1"
+    fi
+
+    if is_vendored "$target"; then
+        echo "Skipping vendored third-party artefact: $target"
+        return 0
     fi
 
     group="$(group_for_file "$target")" || return 0
