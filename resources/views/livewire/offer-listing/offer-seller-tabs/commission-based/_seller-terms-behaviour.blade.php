@@ -39,9 +39,12 @@
 
     WHY @push('scripts') AND NOT AN INLINE <script>
     -----------------------------------------------
-    layouts.main yields content at line 177 and loads jQuery at line 224, so a
-    script inline in the component body would run before $ exists. The scripts
-    stack renders at line 498, after jQuery and after @livewireScripts.
+    layouts.main yields content BEFORE it loads jQuery, so a script inline in the
+    component body would run before $ exists. The scripts stack is emitted near
+    the end of that layout — after @livewireScripts and after jQuery — which is
+    the ordering this file depends on. Stated as an order rather than as line
+    numbers on purpose: the numbers were cited here and were already stale one
+    merge later, when an unrelated <head> include shifted the whole file by one.
 
     WHY THE QUICK IMPORT WRAPPER ALSO INCLUDES THIS FILE
     ----------------------------------------------------

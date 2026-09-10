@@ -65,6 +65,42 @@ class MlsQuickImportTermsConditionalParityTest extends TestCase
         'resources/views/livewire/offer-listing/quick-import/mls-quick-import.blade.php';
 
     /**
+     * The transaction terms this branch's shared behaviour drives, parents and
+     * children. MLS sync (PR #136) must never write one: they are the seller's or
+     * landlord's own intent, not a fact about the building.
+     *
+     * @var array<string,list<string>>
+     */
+    private const BYO_OWNED_TERMS = [
+        'seller' => [
+            'sale_provision', 'sale_provision_other', 'sale_provision_assignment',
+            'offered_financing', 'other_financing',
+            'assumable_loan_type', 'assumable_balance', 'assumable_interest_rate',
+            'assumption_fee_responsibility', 'assumable_occupancy_requirement',
+            'prepayment_penalty', 'assignment_fee', 'assignment_fee_type',
+            'exchange_item', 'exchange_liens_disclosure', 'value_determination',
+            'initial_deposit', 'second_deposit', 'earnest_money', 'contingencies',
+        ],
+        'landlord' => [
+            'desired_lease_length', 'other_lease_term', 'custom_lease_term',
+            'terms_of_lease', 'owner_pays', 'other_owner_pays',
+            'tenant_pays', 'other_tenant_pays', 'rent_includes', 'other_rent_include',
+        ],
+    ];
+
+    /**
+     * Reachable as sync targets, but safe because nothing extracts them. Pinned
+     * by its own test, which fails the day that stops being true.
+     *
+     * @var list<string>
+     */
+    private const SAFE_ONLY_BY_EXTRACTION = [
+        'landlord.terms_of_lease',
+        'landlord.tenant_pays',
+        'landlord.rent_includes',
+    ];
+
+    /**
      * Every seller conditional section in the canonical tab, and the financing or
      * provision answer that opens it.
      *
@@ -430,6 +466,114 @@ class MlsQuickImportTermsConditionalParityTest extends TestCase
             $this->assertStringNotContainsString("on('change', '#sale_provision'", $src);
             $this->assertStringNotContainsString("on('change', '#offered_financing'", $src);
         }
+    }
+
+    /**
+     * @test
+     *
+     * THE FIELDS THIS BRANCH GOVERNS ARE BYO-OWNED, AND MLS SYNC MUST NOT WRITE THEM.
+     *
+     * PR #136 made the MLS authoritative for facts on a schedule. That is the
+     * owner's decision and it is right for beds, baths and square footage. It is
+     * not right for a seller's Special Sale Provision or a landlord's Owner Pays:
+     * those are terms of the transaction, authored by the person selling, and a
+     * six-hourly job that rewrites them is not a sync, it is data loss.
+     *
+     * MlsSyncFieldPolicy is an intersection, so a field reaches sync only by being
+     * named in MlsFieldMap. This asserts every parent and child control the shared
+     * behaviour drives is out of reach, and it does so per field so a failure names
+     * the one that slipped.
+     */
+    public function mls_sync_cannot_write_a_your_terms_field_this_branch_governs(): void
+    {
+        $reachable = [];
+
+        foreach (self::BYO_OWNED_TERMS as $role => $fields) {
+            $targets = array_map(
+                static fn ($t) => ltrim((string) $t, '*'),
+                array_values(\App\Services\ListingImport\Sync\MlsSyncFieldPolicy::syncableTargets($role))
+            );
+
+            foreach ($fields as $field) {
+                if (in_array($field, $targets, true)) {
+                    $reachable[] = "{$role}.{$field}";
+                }
+            }
+        }
+
+        // The landlord lease trio is the known exception and is handled by the
+        // test below, which pins the reason it is safe today.
+        $reachable = array_values(array_diff($reachable, self::SAFE_ONLY_BY_EXTRACTION));
+
+        $this->assertSame([], $reachable,
+            "MLS sync can write these BYO-owned Your Terms fields. Add them to "
+            ."MlsSyncFieldPolicy::PROTECTED_META_KEYS:\n - ".implode("\n - ", $reachable));
+    }
+
+    /**
+     * @test
+     *
+     * THE ONE GAP, PINNED RATHER THAN DESCRIBED.
+     *
+     * Three landlord controls the shared behaviour drives — terms_of_lease,
+     * tenant_pays, rent_includes — ARE named in MlsFieldMap, so
+     * MlsSyncFieldPolicy lists them as permitted sync targets and its
+     * last-line-of-defence PROTECTED_META_KEYS does not catch them.
+     *
+     * They are safe today for a reason that lives somewhere else entirely:
+     * MlsListingPrefillService deliberately does not extract them, because their
+     * controls have no wire:model binding, so no value is ever projected and sync
+     * has nothing to write. That comment says the mapping ships "the day the
+     * field is wired" — which is the day this protection silently disappears.
+     *
+     * So the safety is asserted where it can be checked, and this test is the
+     * thing that fails when the extractor changes. Sync is also off by default,
+     * which is a third layer and not one to rely on.
+     */
+    public function the_landlord_lease_trio_is_safe_only_because_nothing_extracts_it(): void
+    {
+        $source = $this->source('app/Services/ListingImport/MlsListingPrefillService.php');
+
+        // The extraction map is an array of 'BridgeField' => 'canonical_key' pairs.
+        // A governed key appearing as a VALUE there means it is now extracted.
+        foreach (['terms_of_lease', 'tenant_pays', 'rent_includes'] as $canonicalKey) {
+            $this->assertDoesNotMatchRegularExpression(
+                "/=>\s*'" . preg_quote($canonicalKey, '/') . "'/",
+                $source,
+                "MlsListingPrefillService now extracts '{$canonicalKey}'. That removes the "
+                ."only thing stopping MLS sync from overwriting a landlord's own answer. "
+                ."Add '{$canonicalKey}' to MlsSyncFieldPolicy::PROTECTED_META_KEYS."
+            );
+        }
+
+        // And the seller parents are protected by name, not by luck.
+        $this->assertTrue(
+            \App\Services\ListingImport\Sync\MlsSyncFieldPolicy::isProtectedMetaKey('offered_financing'),
+            'offered_financing must stay in PROTECTED_META_KEYS.'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * The import path does not reset the Your Terms parents either. writeFacts()
+     * was rewritten by #136 to delegate to MlsFactProjection; this drives the real
+     * wizard through it and asserts the two parents are untouched by the facts
+     * write, then that an answer given afterwards survives.
+     */
+    public function the_rewritten_writefacts_neither_sets_nor_resets_the_your_terms_parents(): void
+    {
+        $component = $this->sellerToTerms('QI-WF-PARENTS');
+
+        // Nothing the facts write produced may have populated a transaction term.
+        $component->assertSet('sale_provision', [])
+            ->assertSet('offered_financing', []);
+
+        $component->set('offered_financing', ['Assumable'])
+            ->set('sale_provision', ['Assignment Contract']);
+
+        $component->assertSet('offered_financing', ['Assumable'])
+            ->assertSet('sale_provision', ['Assignment Contract']);
     }
 
     /**
