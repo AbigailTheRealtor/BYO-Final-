@@ -349,6 +349,19 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo ($expression) ? 'checked' : ''; ?>";
         });
 
+        // @bidyouroffer … @endbidyouroffer — the ONLY way a Blade template asks
+        // which product this deployment serves. Templates never compare hostnames
+        // and never name a product: they ask whether BidYourOffer surfaces are
+        // shown, so the answer stays in App\Support\Product\ProductContext where
+        // the route gate reads it too. Content inside is hidden — never deleted —
+        // in BidYourAgent mode.
+        Blade::directive('bidyouroffer', function () {
+            return "<?php if (\\App\\Support\\Product\\ProductContext::servesBidYourOffer()): ?>";
+        });
+        Blade::directive('endbidyouroffer', function () {
+            return '<?php endif; ?>';
+        });
+
         // Force HTTPS for all generated URLs in production/Replit environment
         if (config('app.env') !== 'local' || str_contains(config('app.url'), 'replit')) {
             URL::forceScheme('https');

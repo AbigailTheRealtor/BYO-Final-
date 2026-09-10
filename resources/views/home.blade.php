@@ -175,7 +175,9 @@
                 @elseif($ut === 'tenant')
                     <a href="{{ route('hire.agent.auction', ['user_type'=>'tenant']) }}"><button class="btn-hero-primary btn">Hire Agent</button></a>
                 @else
+                    @bidyouroffer
                     <a href="{{ route('searchListing') }}"><button class="btn-hero-primary btn">Browse Listings</button></a>
+                    @endbidyouroffer
                 @endif
             @else
                 <a href="{{ route('register') }}"><button class="btn-hero-primary btn">Get Started</button></a>
@@ -363,7 +365,9 @@
         @if(!auth()->check())
             <a href="{{ route('register') }}"><button class="btn-cta btn">Get Started</button></a>
         @else
+            @bidyouroffer
             <a href="{{ route('searchListing') }}"><button class="btn-cta btn">Browse Listings</button></a>
+            @endbidyouroffer
         @endif
     </div>
 </section>

@@ -128,22 +128,30 @@
 @endpush
 
 @php
-/**
- * Resolve a mixed-storage boolean-ish value (true, false, 1, 0, 'true', 'false', '1', '0') to PHP bool.
- */
-function mlBool($v): bool {
-    if (is_bool($v)) return $v;
-    return in_array($v, [1, '1', 'true', true], true);
+// These are GLOBAL function declarations in a compiled view, so a second render in
+// the same PHP process is a fatal "cannot redeclare". One request per process hides
+// that; a test that renders this page twice — which is what proving the product
+// filter below requires — does not.
+if (! function_exists('mlBool')) {
+    /**
+     * Resolve a mixed-storage boolean-ish value (true, false, 1, 0, 'true', 'false', '1', '0') to PHP bool.
+     */
+    function mlBool($v): bool {
+        if (is_bool($v)) return $v;
+        return in_array($v, [1, '1', 'true', true], true);
+    }
 }
 
-/**
- * Return ['label', 'class'] for a listing's status.
- */
-function mlStatus($listing): array {
-    if (mlBool($listing->is_draft))     return ['Draft',            'badge-draft'];
-    if (!mlBool($listing->is_approved)) return ['Pending Approval', 'badge-pending'];
-    if (mlBool($listing->is_sold))      return ['Sold',             'badge-sold'];
-    return ['Live', 'badge-live'];
+if (! function_exists('mlStatus')) {
+    /**
+     * Return ['label', 'class'] for a listing's status.
+     */
+    function mlStatus($listing): array {
+        if (mlBool($listing->is_draft))     return ['Draft',            'badge-draft'];
+        if (!mlBool($listing->is_approved)) return ['Pending Approval', 'badge-pending'];
+        if (mlBool($listing->is_sold))      return ['Sold',             'badge-sold'];
+        return ['Live', 'badge-live'];
+    }
 }
 
 $roles = [
@@ -179,17 +187,27 @@ $roles = [
         'listRoute' => 'hireSellerAgentHireAuctions',
         'viewRoute' => 'seller.agent.auction.detail',
     ],
-    [
+];
+
+// My Listings is one page over two products: the four Hire Agent buckets, and the
+// Seller Offer Listings that share the seller_agent_auctions table with them. A
+// BidYourAgent deployment shows the Hire Agent buckets only.
+//
+// The rows are HIDDEN, never deleted, and the controller still loads them: a user
+// who arrived from the combined platform keeps every record they created, and the
+// same account on the combined platform still sees them all.
+if (\App\Support\Product\ProductContext::servesBidYourOffer()) {
+    $roles[] = [
         'key'       => 'seller_offer',
         'label'     => "Seller Offer Listing",
         'icon'      => 'fa-solid fa-list',
         'listings'  => $sellerOfferListings,
         'listRoute' => 'offer.listing.seller.searchListing',
         'viewRoute' => 'offer.listing.seller.view',
-    ],
-];
+    ];
+}
 
-$grandTotal = $tenantListings->count() + $landlordListings->count() + $buyerListings->count() + $sellerHireListings->count() + $sellerOfferListings->count();
+$grandTotal = collect($roles)->sum(fn ($cfg) => $cfg['listings']->count());
 @endphp
 
 @section('content')

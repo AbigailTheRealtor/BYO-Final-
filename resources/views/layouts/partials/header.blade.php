@@ -305,7 +305,9 @@
                     <li><a class="dropdown-item" href="{{ route('search.agents') }}"><i class="fa-solid fa-angle-right"></i> Browse Agents</a></li>
                 </ul>
             </span>
+            @bidyouroffer
             <a class="item" href="{{ route('searchListing') }}">Browse Listings</a>
+            @endbidyouroffer
             <a class="item" href="{{ route('faqs') }}">FAQ</a>
             @if (auth()->user())
                 <a class="item" href="{{ route('dashboard') }}">Dashboard</a>
@@ -398,7 +400,9 @@
                                 </ul>
                             </span>
                         </li>
+                        @bidyouroffer
                         <li><a href="{{ route('searchListing') }}">Browse Listings</a></li>
+                        @endbidyouroffer
                         <li><a href="{{ route('faqs') }}">FAQ</a></li>
                         @if (auth()->user())
                         <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
@@ -407,7 +411,11 @@
                         @endif
                         <li>
                             @if (auth()->user() && in_array(auth()->user()->user_type, ['agent']))
-                                <a href="{{ route('add-listing') }}"><button class="btn">Hire Agent</button></a>
+                                {{-- One button cannot offer the four roles the desktop dropdown does, so it
+                                     goes to the agent's Hire Agent hub, which does. It used to point at
+                                     add-listing — the legacy Create Property Listing wizard, a different
+                                     product entirely. --}}
+                                <a href="{{ route('agent.hire-listings') }}"><button class="btn">Hire Agent</button></a>
                             @elseif (auth()->user() && auth()->user()->user_type == 'seller')
                                 <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn">Hire Agent</button></a>
                             @elseif (auth()->user() && auth()->user()->user_type == 'buyer')
