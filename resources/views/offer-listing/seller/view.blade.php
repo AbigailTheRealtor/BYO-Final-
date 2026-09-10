@@ -46,6 +46,21 @@
         if ($value === null || $value === '' || $value === false) return '';
         return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7" style="overflow-wrap:break-word;word-break:break-word;">' . e($value) . '</div></div>';
     };
+
+    // ── MLS payload placement ───────────────────────────────────────────────
+    //
+    // Resolved once, here, so every card below can ask where its share of the
+    // imported payload goes. Sections that have a canonical card of the same
+    // name are MERGED into it; the rest become ordinary section-cards. See
+    // MlsDetailLayout for why an imported listing must not carry a second
+    // "Property Details" block beside the one it already has.
+    $mlsLayout = \App\Services\ListingImport\Mls\MlsDetailLayout::from($mlsDetails ?? null);
+    $mlsSlot   = fn(string $slot) => $mlsLayout->slot($slot);
+
+    // Shared parent/child display rules for Your Terms. The gate is the PARENT
+    // selection; a surviving child value never re-opens a branch the seller has
+    // since closed. @see \App\Support\OfferListing\ConditionalTerms
+    $terms     = \App\Support\OfferListing\ConditionalTerms::class;
 @endphp
 
 @push('styles')
@@ -1513,7 +1528,13 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Listing Title', $str('listing_title') ?: $auction->title) !!}
-                    {!! $row('Auction Type', $str('auction_type')) !!}
+                    {{-- "Listing Method" is what every screen that ASKS this question
+                         calls it — the Create Listing tab and the MLS quick-import
+                         step alike. The published page called it "Auction Type",
+                         which named the storage key rather than the choice the
+                         seller made, and on a Traditional listing it announced an
+                         auction that is not happening. --}}
+                    {!! $row('Listing Method', $str('auction_type')) !!}
                     {!! $row('Listing Status', $str('listing_status')) !!}
                 </div>
                 <div class="col-md-6">
@@ -1730,8 +1751,14 @@
                     ['Unit Type',                 $orOther($str('number_of_unit'), $str('number_of_unit_other'))],
                     ['Number of Unit Types',      $str('number_of_units')],
                     ['Unit Type Description',     $str('unit_type_description')],
-                    ['Value Determination',       $str('value_determination')],
-                    ['Occupancy Requirement',     $orOther($str('assumable_occupancy_requirement'), $str('assumable_occupancy_other'))],
+                    // 'Value Determination' and 'Occupancy Requirement' used to be
+                    // listed here. Both are Sale Terms answers, not property facts:
+                    // value_determination is how an Exchange/Trade item's value is
+                    // agreed, and assumable_occupancy_requirement belongs to the
+                    // Assumable Mortgage branch — where it was ALSO rendered, so the
+                    // page printed one answer twice under two different headings.
+                    // They now appear once each, in the financing branch that asks
+                    // the question.
                 ], fn($f) => !empty($f[1]));
             @endphp
             @if(count($unitSummaryFields))
@@ -1884,22 +1911,27 @@
             </div>
             @endif
 
+            {{-- Imported MLS property facts, INSIDE this card rather than beside it.
+                 They used to render as a second, differently-styled block titled
+                 "MLS Property Details" directly below — so the page described the
+                 same house twice, in two visual languages, and a reader had to
+                 decide which one to believe. Same rows, same source label, same
+                 row markup as everything above them; only the sub-heading says
+                 where they came from. --}}
+            @include('offer-listing.partials._mls_facts_rows', [
+                'sections'    => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_PROPERTY),
+                'leadingRule' => true,
+            ])
+
         </div>
     </div>
 
-    {{-- Supplemental MLS facts — the same partial the landlord listing and the
-         quick-import review screen render, so the three cannot drift apart.
-         A sibling section rather than a nested one: the partial renders its own
-         card, and a card inside the Property Details card body reads as a
-         rendering mistake. --}}
-    @include('offer-listing.partials._mls_property_facts', [
-        'details'    => $mlsDetails ?? null,
-        'mlsHeading' => 'MLS Property Details',
-    ])
-
-    @include('offer-listing.partials._mls_attribution', [
-        'mlsImported' => $mlsImported ?? false,
-        'details'     => $mlsDetails ?? null,
+    {{-- MLS sections with no canonical card of their own — Interior, Exterior,
+         Waterfront / Views, Lease / Rental and the rest — as ordinary listing
+         cards. @see MlsDetailLayout for how a section chooses its place. --}}
+    @include('offer-listing.partials._mls_facts_cards', [
+        'sections'  => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_FACTS),
+        'mlsNumber' => ($mlsDetails ?? null)?->mlsNumber,
     ])
 
 
@@ -1909,11 +1941,28 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Sale Provision', $orOther($str('sale_provision'), $str('sale_provision_other'))) !!}
-                    @if($str('sale_provision_assignment'))
+                    @php
+                        // Special Sale Provision is a MULTI-select, and its "Other"
+                        // free text is a sub-question of it. The page used to ask
+                        // whether the whole joined string equalled "Other", so a
+                        // seller who chose "Short Sale, Other" published the literal
+                        // word "Other" and never the sentence they typed.
+                        $saleProvisions = $terms::withOther($val('sale_provision'), $str('sale_provision_other'));
+
+                        // The assignment follow-ups belong to ONE option. Gating them
+                        // on "is sale_provision_assignment set" showed the fee rows to
+                        // a seller who had answered "No", and kept showing the branch
+                        // after "Assignment Contract" was deselected.
+                        $showAssignment = $terms::chose($val('sale_provision'), 'Assignment Contract');
+                        $isAssigning    = $showAssignment && $str('sale_provision_assignment') === 'Yes';
+                    @endphp
+                    {!! $row('Special Sale Provision', implode(', ', $saleProvisions)) !!}
+                    @if($showAssignment)
                         {!! $row('Seller Under Contract for Assignment', $str('sale_provision_assignment')) !!}
-                        {!! $row('Assignment Fee Type', $str('assignment_fee_type') === '$' ? 'Flat Fee' : ($str('assignment_fee_type') === '%' ? 'Percentage' : $str('assignment_fee_type'))) !!}
-                        {!! $row('Assignment Fee Amount', $str('assignment_fee_type') === '$' ? $fmtMoney($str('assignment_fee_amount')) : ($str('assignment_fee_type') === '%' ? $fmtPercent($str('assignment_fee_amount')) : $str('assignment_fee_amount'))) !!}
+                        @if($isAssigning)
+                            {!! $row('Assignment Contract Fee to Broker', $str('assignment_fee_type') === '$' ? 'Flat Fee' : ($str('assignment_fee_type') === '%' ? 'Percentage of Contract Assignment Value' : $str('assignment_fee_type'))) !!}
+                            {!! $row('Assignment Fee Amount', $terms::amount($str('assignment_fee_amount'), $str('assignment_fee_type'))) !!}
+                        @endif
                     @endif
                     {!! $row('Target Closing Timeframe', $str('target_closing_date')) !!}
                     {!! $row('Occupant Type', $str('occupant_status')) !!}
@@ -1941,9 +1990,12 @@
                     @endphp
                     {!! $row('Down Payment Amount', $_dpAmt) !!}
                     {!! $row('Buyer Sell Contract', $str('buyer_sell_contract')) !!}
-                    {!! $row('Initial Deposit Requested', $fmtMoney($str('initial_deposit_requested'))) !!}
+                    {{-- Both deposits are an amount PLUS a $ / % control beside it.
+                         The page formatted them as dollars unconditionally, so a
+                         seller asking for a 3% initial deposit published "$3". --}}
+                    {!! $row('Initial Deposit Requested', $terms::amount($str('initial_deposit_requested'), $str('initial_deposit_type'))) !!}
                     {!! $row('Initial Deposit Timeframe', $orOther($str('initial_deposit_timeframe'), $str('initial_deposit_timeframe_other'))) !!}
-                    {!! $row('Additional Deposit Requested', $fmtMoney($str('additional_deposit_requested'))) !!}
+                    {!! $row('Additional Deposit Requested', $terms::amount($str('additional_deposit_requested'), $str('additional_deposit_type'))) !!}
                     {!! $row('Additional Deposit Timeframe', $orOther($str('additional_deposit_timeframe'), $str('additional_deposit_timeframe_other'))) !!}
                     {!! $row('Escrow Agent Preference', $str('escrow_agent_preference')) !!}
                 </div>
@@ -1951,25 +2003,29 @@
         </div>
     </div>
 
-    {{-- Financing Details (sub-fields per offered_financing type) --}}
+    {{-- Financing Details — the follow-up questions each Offered Financing /
+         Currency choice opens.
+
+         THE PARENT DECIDES WHETHER A BRANCH APPEARS. Every gate below asks only
+         whether the seller currently offers that financing type. It used to ask
+         `$hasAssumable || $str('assumable_loan_type') || …`, which meant any
+         answer LEFT BEHIND by a financing type the seller had since deselected
+         re-opened its whole section: a cash-only listing kept advertising an
+         assumable mortgage because a loan type was still sitting in meta from a
+         choice made weeks earlier. The stored values are untouched — they are
+         simply not published while their parent is unselected. --}}
     @php
-        $ofFin        = $arr('offered_financing');
-        $hasCashFin   = in_array('Cash', $ofFin);
-        $hasAssumable = in_array('Assumable', $ofFin);
-        $hasCrypto    = in_array('Cryptocurrency', $ofFin);
-        $hasExchange  = in_array('Exchange/Trade', $ofFin);
-        $hasLeaseOpt  = in_array('Lease Option', $ofFin);
-        $hasLeasePur  = in_array('Lease Purchase', $ofFin);
-        $hasNFT       = in_array('Non-Fungible Token (NFT)', $ofFin);
-        $hasSellerFin = in_array('Seller Financing', $ofFin);
+        $ofFin        = $val('offered_financing');
+        $hasCashFin   = $terms::chose($ofFin, 'Cash');
+        $hasAssumable = $terms::chose($ofFin, 'Assumable');
+        $hasCrypto    = $terms::chose($ofFin, 'Cryptocurrency');
+        $hasExchange  = $terms::chose($ofFin, 'Exchange/Trade');
+        $hasLeaseOpt  = $terms::chose($ofFin, 'Lease Option');
+        $hasLeasePur  = $terms::chose($ofFin, 'Lease Purchase');
+        $hasNFT       = $terms::chose($ofFin, 'Non-Fungible Token (NFT)');
+        $hasSellerFin = $terms::chose($ofFin, 'Seller Financing');
         $showFinDetails = $hasCashFin || $hasAssumable || $hasCrypto || $hasExchange
-            || $hasLeaseOpt || $hasLeasePur || $hasNFT || $hasSellerFin
-            || $str('seller_financing_type') || $str('interest_rate')
-            || $str('assumable_loan_type')   || $str('assumable_terms')
-            || $str('lease_option_price')    || $str('lease_purchase_price')
-            || $str('cryptocurrency_type')   || $str('nft_description')
-            || $str('exchange_item_value')   || $str('cash_budget')
-            || $str('pre_approved');
+            || $hasLeaseOpt || $hasLeasePur || $hasNFT || $hasSellerFin;
     @endphp
     @if($showFinDetails)
     <div class="card section-card">
@@ -1977,7 +2033,7 @@
         <div class="card-body">
 
             {{-- Cash --}}
-            @if($hasCashFin || $str('cash_budget') || $str('pre_approved'))
+            @if($hasCashFin)
             @if($str('cash_budget') || $str('pre_approved') || $str('pre_approval_amount'))
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Cash</h6>
             @endif
@@ -1993,7 +2049,7 @@
             @endif
 
             {{-- Assumable --}}
-            @if($hasAssumable || $str('assumable_loan_type') || $str('assumable_terms'))
+            @if($hasAssumable)
             @if($str('assumable_terms') || $str('assumable_loan_type') || $str('max_assumable_rate') || $str('max_monthly_payment') || $str('assumable_monthly_escrow') || $str('outstanding_balance') || $str('gap_payment_amount') || $str('assumable_loan_term_remaining') || $str('assumable_loan_origination_date') || $str('assumable_loan_servicer') || $str('assumable_fee_amount') || $str('assumable_occupancy_requirement'))
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Assumable Mortgage</h6>
@@ -2012,14 +2068,18 @@
                     {!! $row('Loan Term Remaining', $str('assumable_loan_term_remaining')) !!}
                     {!! $row('Date Loan Originated', $str('assumable_loan_origination_date')) !!}
                     {!! $row('Loan Servicer / Lender', $str('assumable_loan_servicer')) !!}
-                    {!! $row('Assumption Fee', $str('assumable_fee_type') === '%' ? $fmtPercent($str('assumable_fee_amount')) : $fmtMoney($str('assumable_fee_amount'))) !!}
+                    {!! $row('Assumption Fee', $terms::amount($str('assumable_fee_amount'), $str('assumable_fee_type'))) !!}
+                    {{-- Who pays the assumption fee. Stored since A6.31 and asked
+                         by the tab directly beneath the fee itself, but rendered
+                         on no page until now. --}}
+                    {!! $row('Assumption Fee Responsibility', $str('assumption_fee_responsibility')) !!}
                     {!! $row('Occupancy Requirement', $orOther($str('assumable_occupancy_requirement'), $str('assumable_occupancy_other'))) !!}
                 </div>
             </div>
             @endif
 
             {{-- Cryptocurrency --}}
-            @if($hasCrypto || $str('cryptocurrency_type'))
+            @if($hasCrypto)
             @if($str('cryptocurrency_type') || $str('crypto_percentage') || $str('cash_percentage_crypto') || $str('crypto_exchange_method') || $str('crypto_custodian_wallet') || $str('crypto_transaction_fees') || $str('crypto_transfer_timing'))
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Cryptocurrency</h6>
@@ -2040,28 +2100,51 @@
             @endif
 
             {{-- Exchange / Trade --}}
-            @if($hasExchange || $str('exchange_item_value'))
-            @if($str('other_exchange_item') || $str('exchange_item_value') || $str('exchange_item_condition') || $str('additional_cash') || $str('exchange_transfer_method') || $str('exchange_liens') || $str('exchange_inspection_rights'))
+            @if($hasExchange)
+            @php
+                // The exchange ITEMS are a multi-select whose "Other" opens a text
+                // box. The page printed only that text box, so a seller trading a
+                // vehicle or a boat showed no item at all — the one row the whole
+                // branch exists to state.
+                $exchangeItems = $terms::withOther($val('exchange_item'), $str('other_exchange_item'));
+
+                // exchange_liens_disclosure is the stored key. The page read
+                // 'exchange_liens', which no flow has ever written, so a seller who
+                // answered "Yes, there are liens" published nothing, and a seller
+                // who described them published a row beginning with a dash.
+                $exchangeLiens = $terms::valueWithOther($str('exchange_liens_disclosure'), null);
+                $exchangeLiens = $exchangeLiens
+                    . ($str('exchange_liens_details') ? ($exchangeLiens ? ' – ' : '') . $str('exchange_liens_details') : '');
+                $hasExchangeAnswers = count($exchangeItems) || $str('exchange_item_value')
+                    || $str('exchange_item_condition') || $str('additional_cash')
+                    || $str('value_determination') || $str('exchange_transfer_method')
+                    || $exchangeLiens || $str('exchange_inspection_rights');
+            @endphp
+            @if($hasExchangeAnswers)
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Exchange / Trade</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Exchange Item', $str('other_exchange_item')) !!}
+                    {!! $row('Exchange Item', implode(', ', $exchangeItems)) !!}
                     {!! $row('Estimated Value of Exchange Item', $fmtMoney($str('exchange_item_value'))) !!}
                     {!! $row('Condition of Exchange Item', $str('exchange_item_condition')) !!}
                     {!! $row('Additional Cash Required', $fmtMoney($str('additional_cash'))) !!}
+                    {{-- How that value was agreed. A sub-question of this branch that
+                         the page used to print in the Property Details card, where
+                         it read as a fact about the house. --}}
+                    {!! $row('Value Determination', $str('value_determination')) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Transfer Method', $str('exchange_transfer_method')) !!}
-                    {!! $row('Liens / Encumbrances', $str('exchange_liens') . ($str('exchange_liens_details') ? ' – ' . $str('exchange_liens_details') : '')) !!}
+                    {!! $row('Liens / Encumbrances', $exchangeLiens) !!}
                     {!! $row('Inspection / Verification Rights', $str('exchange_inspection_rights')) !!}
                 </div>
             </div>
             @endif
 
             {{-- Lease Option --}}
-            @if($hasLeaseOpt || $str('lease_option_price'))
+            @if($hasLeaseOpt)
             @if($str('lease_option_price') || $str('lease_option_payment') || $str('lease_option_duration') || $str('has_option_fee') || $str('option_fee_amount') || $str('lease_option_fee_credit') || $str('lease_option_fee_credit_percentage') || $str('lease_option_conditions') || $str('lease_option_terms') || $str('lease_option_maintenance') || $str('lease_option_extension_terms'))
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Lease Option</h6>
@@ -2086,7 +2169,7 @@
             @endif
 
             {{-- Lease Purchase --}}
-            @if($hasLeasePur || $str('lease_purchase_price'))
+            @if($hasLeasePur)
             @if($str('lease_purchase_price') || $str('lease_purchase_payment') || $str('lease_purchase_duration') || $str('lease_purchase_rent_credit') || $str('lease_purchase_rent_credit_amount') || $str('lease_purchase_deposit') || $str('lease_purchase_conditions') || $str('lease_purchase_terms') || $str('lease_purchase_maintenance') || $str('lease_purchase_extension_terms'))
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Lease Purchase</h6>
@@ -2110,7 +2193,7 @@
             @endif
 
             {{-- Non-Fungible Token (NFT) --}}
-            @if($hasNFT || $str('nft_description'))
+            @if($hasNFT)
             @if($str('nft_description') || $str('nft_percentage') || $str('cash_percentage_nft') || $str('nft_valuation_method') || $str('nft_transfer_method') || $str('nft_gas_fees'))
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Non-Fungible Token (NFT)</h6>
@@ -2130,7 +2213,7 @@
             @endif
 
             {{-- Seller Financing --}}
-            @if($hasSellerFin || $str('seller_financing_type') || $str('interest_rate'))
+            @if($hasSellerFin)
             @if($str('seller_financing_type') || $str('seller_down_payment_amount') || $str('interest_rate') || $str('loan_duration') || $str('real_estate_purchase') || $str('prepayment_penalty_amount') || $str('balloon_payment') || $str('balloon_payment_amount') || $str('balloon_payment_date') || $str('seller_amortization_type') || $str('seller_payment_frequency') || $str('seller_late_fee_amount'))
             <hr>
             <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Seller Financing</h6>
@@ -2141,12 +2224,21 @@
                     {!! $row('Interest Rate', $str('interest_rate') ? $fmtPercent($str('interest_rate')) : null) !!}
                     {!! $row('Loan Duration (Years)', $str('loan_duration')) !!}
                     {!! $row('Real Estate Purchase Included', $str('real_estate_purchase')) !!}
-                    {!! $row('Prepayment Penalty Amount', $fmtMoney($str('prepayment_penalty_amount'))) !!}
+                    {{-- The Yes/No answer, not only the figure under it. The page
+                         printed the penalty AMOUNT and never whether a penalty
+                         applies, so "Prepayment Penalty: Yes" with the amount still
+                         to be negotiated appeared as no penalty at all. --}}
+                    {!! $row('Prepayment Penalty', $yesNo($str('prepayment_penalty'))) !!}
+                    @if($str('prepayment_penalty') === 'Yes')
+                        {!! $row('Prepayment Penalty Amount', $fmtMoney($str('prepayment_penalty_amount'))) !!}
+                    @endif
                 </div>
                 <div class="col-md-6">
                     {!! $row('Balloon Payment', $yesNo($str('balloon_payment'))) !!}
-                    {!! $row('Balloon Payment Amount', $fmtMoney($str('balloon_payment_amount'))) !!}
-                    {!! $row('Balloon Payment Due Date', $str('balloon_payment_date')) !!}
+                    @if($str('balloon_payment') === 'Yes')
+                        {!! $row('Balloon Payment Amount', $fmtMoney($str('balloon_payment_amount'))) !!}
+                        {!! $row('Balloon Payment Due Date', $str('balloon_payment_date')) !!}
+                    @endif
                     {!! $row('Amortization Type', $orOther($str('seller_amortization_type'), $str('seller_amortization_other'))) !!}
                     {!! $row('Payment Frequency', $orOther($str('seller_payment_frequency'), $str('seller_payment_frequency_other'))) !!}
                     {!! $row('Late Payment Fee', $fmtMoney($str('seller_late_fee_amount'))) !!}
@@ -2260,7 +2352,14 @@
 
     {{-- Tax, Legal, HOA & Disclosures --}}
     @php
-        $hasTaxLegal = $str('parcel_id') || $str('annual_property_taxes') || $str('legal_description') || $str('flood_zone_code') || $str('has_cdd') || $str('has_hoa');
+        // The MLS's own HOA and tax sections are merged into THIS card rather
+        // than published as cards of their own: the listing already answers "is
+        // there an association, what does it cost", and a second HOA heading
+        // elsewhere on the page reads as a competing answer. They are therefore
+        // also part of the card's own gate — an imported listing can carry a full
+        // association fee schedule while every canonical tax field is still blank.
+        $mlsTaxHoa   = $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_TAX_HOA);
+        $hasTaxLegal = $str('parcel_id') || $str('annual_property_taxes') || $str('legal_description') || $str('flood_zone_code') || $str('has_cdd') || $str('has_hoa') || count($mlsTaxHoa);
     @endphp
     @if($hasTaxLegal)
     <div class="card section-card">
@@ -2308,10 +2407,16 @@
                     {!! $row('Association Type', $orOther($str('association_type'), $str('association_type_other'))) !!}
                     {!! $row('Association Name', $str('association_name')) !!}
                     @php
-                        $_freq = $str('association_fee_frequency');
-                        $_freqDisplay = $_freq ? (' / ' . $orOther($_freq, $str('association_fee_frequency_other'))) : '';
+                        // The frequency alone is not a fee. An imported listing
+                        // often carries association_fee_frequency with no amount
+                        // beside it, and concatenating the two unconditionally
+                        // published the literal row "Association Fee: / monthly".
+                        $_freq    = $orOther($str('association_fee_frequency'), $str('association_fee_frequency_other'));
+                        $_feeAmt  = $fmtMoney($str('association_fee_amount'));
+                        $_feeText = $_feeAmt ? ($_feeAmt . ($_freq ? ' / ' . $_freq : '')) : null;
                     @endphp
-                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . $_freqDisplay) !!}
+                    {!! $row('Association Fee', $_feeText) !!}
+                    {!! $row('Association Fee Frequency', $_feeText ? null : $_freq) !!}
                     {!! $row('Application Fee', $fmtMoney($str('association_application_fee'))) !!}
                 </div>
                 <div class="col-md-6">
@@ -2339,6 +2444,11 @@
             </div>
             @endif
             @endif
+
+            @include('offer-listing.partials._mls_facts_rows', [
+                'sections'    => $mlsTaxHoa,
+                'leadingRule' => true,
+            ])
         </div>
     </div>
     @endif
@@ -2458,6 +2568,32 @@
         </div>
     </div>
     @endif
+
+    {{-- The MLS's own contact and bookkeeping sections, and the attribution that
+         goes with them.
+
+         LAST ON THE PAGE, AND TOGETHER. The listing agent, the brokerage, the
+         association contact and the MLS's record-keeping are all statements
+         ABOUT the feed's listing rather than about the property, and the
+         required Stellar/Bridge disclaimer is the sentence that governs every
+         one of them. The attribution block used to sit two thirds of the way up
+         the page, immediately under the old MLS block, where it read as a
+         footnote to that block alone rather than to the imported facts now
+         spread across the cards above. --}}
+    @include('offer-listing.partials._mls_facts_cards', [
+        'sections'  => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_CONTACTS),
+        'mlsNumber' => ($mlsDetails ?? null)?->mlsNumber,
+    ])
+
+    @include('offer-listing.partials._mls_facts_cards', [
+        'sections'  => $mlsSlot(\App\Services\ListingImport\Mls\MlsDetailLayout::SLOT_MLS_INFO),
+        'mlsNumber' => ($mlsDetails ?? null)?->mlsNumber,
+    ])
+
+    @include('offer-listing.partials._mls_attribution', [
+        'mlsImported' => $mlsImported ?? false,
+        'details'     => $mlsDetails ?? null,
+    ])
 
     {{-- Edit Button (bottom) --}}
     @if(auth()->id() == $auction->user_id)

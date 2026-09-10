@@ -1328,6 +1328,39 @@ class OfferWorkflowReadinessTest extends TestCase
             'resources/views/offer-listing/partials/_mls_attribution.blade.php',
             'resources/views/offer-listing/partials/_mls_property_facts.blade.php',
             'resources/views/offer-listing/seller/view.blade.php',
+
+            // ── Imported-listing presentation + Your Terms follow-ups ────────
+            //
+            // An imported listing carried TWO descriptions of the same property:
+            // its own Property Details card, and a dense block beneath it titled
+            // "MLS Property Details" in its own typography. No FIELD was
+            // duplicated — the import already suppresses a Tier-1 fact that
+            // reached an editable field — but the reader met two competing
+            // presentations of one house.
+            //
+            //   MlsDetailLayout
+            //     Gives every stored section a slot on the page: the ones with a
+            //     canonical card of the same name merge into it, the rest become
+            //     ordinary section-cards. An unrecognised title is placed by its
+            //     group rather than dropped. Also removes the related-resource
+            //     rows that repeat a contacts VALUE under a different label,
+            //     which MlsRelatedResources' label-and-value comparison misses
+            //     and which no write-time fix can reach in existing blobs.
+            //
+            //   _mls_facts_rows / _mls_facts_cards
+            //     One row template for all three surfaces, emitting the host
+            //     page's own row markup. The review screen still renders every
+            //     section in one card; only the listing pages place them.
+            //
+            //   ConditionalTerms
+            //     The parent/child rule for Your Terms, in one place: the PARENT
+            //     decides whether a branch is published, so a value left behind
+            //     by a selection since changed no longer re-opens it, and an
+            //     amount is formatted by the $ / % control beside it.
+            'app/Services/ListingImport/Mls/MlsDetailLayout.php',
+            'app/Support/OfferListing/ConditionalTerms.php',
+            'resources/views/offer-listing/partials/_mls_facts_cards.blade.php',
+            'resources/views/offer-listing/partials/_mls_facts_rows.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

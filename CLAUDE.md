@@ -249,6 +249,66 @@ flags are still read on every extract, write and render, and neither overrides t
 per-listing or per-media controls. MLS-sourced listings carry a Stellar/Bridge attribution block
 (`_mls_attribution.blade.php`), gated on import provenance so a manual listing never claims it.
 
+### Imported-listing presentation, and the Your Terms follow-ups
+
+**One property fact, one presentation.** An imported listing used to carry TWO descriptions of the
+same house: its own Property Details card, and directly beneath it a dense block titled *MLS
+Property Details* in its own typography. No **field** was duplicated — `MlsPropertyDetailsPresenter`
+already suppresses a Tier-1 fact that reached an editable field at import time — but a reader met
+two competing presentations and had to decide which to believe. The duplication was structural, not
+field-level, and that is what `MlsDetailLayout` (`app/Services/ListingImport/Mls/`) fixes.
+
+**Every stored section gets a SLOT, and an unknown title is placed rather than dropped.**
+`Property Details` merges into the page's own card under an *MLS Property Details* sub-heading;
+`HOA / Association` and `Taxes / Financial` merge into the Tax / Legal / HOA card (and are part of
+that card's gate — an imported listing can carry a whole fee schedule with every canonical tax field
+blank); everything else becomes an ordinary `section-card`. A title the class has never heard of
+lands in a slot chosen from its **group**, so widening `MlsFieldCatalog` publishes the new section
+instead of silently losing it — the failure mode a title allow-list would have.
+
+**The parity guarantee moved from one block to one ROW.** `_mls_facts_rows.blade.php` is the single
+row template for all three surfaces, and it emits the **host page's own** row markup — the seller and
+landlord `$row()` closures differ in font sizing, so the styles are passed in rather than hard-coded,
+or the imported rows would be the odd ones out on exactly one of the two pages. The review screen
+(`_mls_property_facts.blade.php`) still renders every section in one card, because it is a wizard
+panel; only the listing pages place sections. `MlsListingDetailPresentationTest` counts every stored
+row onto the page rather than sampling labels, since a section landing in no slot is precisely what
+spot-checks miss.
+
+**Related-resource rows that repeat a contacts VALUE are dropped at READ time.**
+`MlsRelatedResources::rowsFrom()` compares label **and** value, and the two presenters deliberately
+label the same fact differently (`Agent Phone` vs `Direct Phone`), so one phone number reached the
+page three times. Read time, not write time, because the duplicates are already in every stored blob.
+Contacts rows are **never** deduplicated against each other: an agent phone and a brokerage phone that
+happen to match are two facts.
+
+**Attribution is last on the page and sits with the MLS contact and bookkeeping cards.** It used to
+sit directly under the old block, two thirds of the way up, reading as a footnote to that block alone
+rather than to the imported facts now spread across the cards above it.
+
+**`auction_type` renders as "Listing Method"** on both pages — the name every screen that *asks* the
+question uses. "Auction Type" named the storage key, and on a Traditional listing announced an auction
+that is not happening.
+
+**Your Terms conditionals: the PARENT decides whether a branch is published.**
+`ConditionalTerms` (`app/Support/OfferListing/`) holds the rule, and it is display logic only — no
+stored value changes. A gate used to read `$hasAssumable || $str('assumable_loan_type') || …`, so any
+child value left behind by a financing type the seller had since **deselected** re-opened its whole
+section: a cash-only listing kept advertising an assumable mortgage. Now the branch asks only what is
+currently offered, and the child decides its own row. `amount()` formats by the `$` / `%` control
+beside the figure — a 3% initial deposit used to publish as `$3`.
+
+**Six follow-up answers were stored by every entry path and rendered by none**, and are now shown:
+`exchange_item` (only its "Other" box was printed, so a traded vehicle showed nothing),
+`exchange_liens_disclosure` (read under `exchange_liens`, a key no flow writes),
+`assumption_fee_responsibility`, `prepayment_penalty` (only its amount was printed), and the landlord
+"Other" boxes `other_lease_term` (the row substituted the legacy `other_lease_for`), `custom_lease_term`,
+`other_rent_include`, `other_tenant_pays`, `other_owner_pays`, plus the commercial single-unit storage
+pair and `space_features` / `neighboring_tenants`. `value_determination` and
+`assumable_occupancy_requirement` moved out of the Property Details card, where the second was rendered
+a **second** time. `Association Fee` no longer publishes the literal row `/ monthly` when a frequency
+arrives with no amount.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.
