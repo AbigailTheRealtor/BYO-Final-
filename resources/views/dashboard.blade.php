@@ -77,7 +77,9 @@
                                             <a href="{{ route('agent.hire-listings') }}" class="btn btn-primary btn-sm">My Hire Agent Listings</a>
                                             <a href="{{ route('myBids') }}" class="btn btn-outline-secondary btn-sm">My Bids</a>
                                             <a href="{{ route('agent.qr.settings') }}" class="btn btn-outline-secondary btn-sm">QR &amp; Hire Me</a>
+                                            @bidyouroffer
                                             <a href="{{ route('stellar.buyer.results') }}" class="btn btn-outline-primary btn-sm">View MLS Matches</a>
+                                            @endbidyouroffer
                                         @else
                                             @php
                                                 $primaryRole = $user->user_type;
@@ -86,6 +88,7 @@
                                             @if($cfg)
                                                 <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ Create Hire Agent Listing</a>
                                             @endif
+                                            @bidyouroffer
                                             <div class="dropdown">
                                                 <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     + Create Regular Listing
@@ -97,6 +100,7 @@
                                                     <li><a class="dropdown-item" href="{{ route('offer.listing.tenant', ['user_type' => 'tenant']) }}">Create Tenant Listing</a></li>
                                                 </ul>
                                             </div>
+                                            @endbidyouroffer
                                             <a href="{{ route('my.listings') }}" class="btn btn-outline-secondary btn-sm">My Listings</a>
                                             @if($user->user_type === 'tenant')
                                                 <a href="{{ route('myBids', 'agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>

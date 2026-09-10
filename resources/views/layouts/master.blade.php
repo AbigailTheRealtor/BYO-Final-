@@ -142,9 +142,7 @@
                 <a href="{{ route('sellerWorksAgent') }}"> <i class="fa-solid fa-home"></i><span> Seller’s Agent</span></a>
             </li>
 
-            <li>
-                <a href="{{ route('add-listing') }}" class="add-listing"><i class="fa-solid fa-plus text-white"></i> </a>
-            </li>
+            @include('layouts.partials.mobile_primary_action')
 
             <li>
                 <a href="{{ route('buyerWorks') }}"> <i class="fa-solid fa-home"></i><span>Buyer</span></a>
