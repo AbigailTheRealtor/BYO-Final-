@@ -18,10 +18,21 @@
 
 set -euo pipefail
 
-HOOK_SRC="$(cd "$(dirname "$0")/../.." && pwd)/.githooks/pre-commit"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK_SRC="$REPO_ROOT/.githooks/pre-commit"
+
+# The hook delegates its debug-statement scan to this shared checker, so every
+# throwaway repo needs a copy at the same repo-relative path the hook resolves.
+CHECKER_REL="scripts/ci/check-added-debug-statements.sh"
+CHECKER_SRC="$REPO_ROOT/$CHECKER_REL"
 
 if [[ ! -f "$HOOK_SRC" ]]; then
     echo "FATAL: hook not found at $HOOK_SRC" >&2
+    exit 1
+fi
+
+if [[ ! -f "$CHECKER_SRC" ]]; then
+    echo "FATAL: shared checker not found at $CHECKER_SRC" >&2
     exit 1
 fi
 
@@ -42,6 +53,11 @@ make_repo() {
     git -C "$dir" commit -q --allow-empty -m "init"
     cp "$HOOK_SRC" "$dir/.git/hooks/pre-commit"
     chmod +x "$dir/.git/hooks/pre-commit"
+    # The hook resolves the checker via `git rev-parse --show-toplevel`, so it
+    # must sit at the same repo-relative path inside the throwaway repo.
+    mkdir -p "$dir/$(dirname "$CHECKER_REL")"
+    cp "$CHECKER_SRC" "$dir/$CHECKER_REL"
+    chmod +x "$dir/$CHECKER_REL"
 }
 
 # stage_file <repo> <relative-path> <content>
@@ -329,6 +345,98 @@ run_test t36 "PHP: var_dump( with no closing paren in same line still blocked" \
     "app/Services/Svc.php" \
     '<?php var_dump(' \
     blocked
+
+echo ""
+echo "── Added-lines semantics (installed hook) ───────────────────"
+#
+# The cases above all stage brand-new files, so every line in them is an added
+# line and the outcomes are unchanged by the diff-aware gate.  The cases below
+# are the ones that distinguish the two behaviours: a file that ALREADY contains
+# a debug statement, committed first, then edited.  The old whole-file scan
+# blocked all of these; only genuinely new debug statements should block now.
+#
+# Full coverage of the checker itself (both modes, renames, odd filenames,
+# multi-commit branches) lives in tests/hooks/test-debug-statement-gate.sh.
+
+# run_history_test <id> <desc> <path> <committed_content> <staged_content> <expect>
+run_history_test() {
+    local id="$1" description="$2" file_path="$3"
+    local base_content="$4" new_content="$5" expect="$6"
+
+    local repo="$TMP/$id"
+    make_repo "$repo"
+    stage_file "$repo" "$file_path" "$base_content"
+    # --no-verify: the baseline is fixture setup, not a change under test.  Its
+    # debug statements are exactly what we want to exist BEFORE the real commit.
+    git -C "$repo" commit -q --no-verify -m "baseline containing pre-existing content"
+    stage_file "$repo" "$file_path" "$new_content"
+
+    if [[ "$expect" == "blocked" ]]; then
+        assert_blocked "$description" "$repo"
+    else
+        assert_allowed "$description" "$repo"
+    fi
+}
+
+run_history_test t37 "JS: unrelated edit to a file with a pre-existing console.log passes" \
+    "resources/js/app.js" \
+    $'console.log("legacy");\nconst version = 1;' \
+    $'console.log("legacy");\nconst version = 2;' \
+    allowed
+
+run_history_test t38 "JS: adding a NEW console.log to that same file is blocked" \
+    "resources/js/app.js" \
+    $'console.log("legacy");\nconst version = 1;' \
+    $'console.log("legacy");\nconst version = 1;\nconsole.log("brand new");' \
+    blocked
+
+run_history_test t39 "JS: removing a pre-existing console.log passes" \
+    "resources/js/app.js" \
+    $'console.log("legacy");\nconst version = 1;' \
+    $'const version = 1;' \
+    allowed
+
+run_history_test t40 "PHP: unrelated edit to a file with a pre-existing dd( passes" \
+    "app/Http/Controllers/Foo.php" \
+    $'<?php\ndd($user);\n$x = 1;' \
+    $'<?php\ndd($user);\n$x = 2;' \
+    allowed
+
+run_history_test t41 "PHP: adding a NEW var_dump( to that same file is blocked" \
+    "app/Http/Controllers/Foo.php" \
+    $'<?php\ndd($user);\n$x = 1;' \
+    $'<?php\ndd($user);\n$x = 1;\nvar_dump($x);' \
+    blocked
+
+run_history_test t42 "Twig: unrelated edit to a template with a pre-existing dump( passes" \
+    "templates/home.twig" \
+    $'{{ dump(variable) }}\n{{ title }}' \
+    $'{{ dump(variable) }}\n{{ heading }}' \
+    allowed
+
+run_history_test t43 "Twig: adding a NEW dump( to that same template is blocked" \
+    "templates/home.twig" \
+    $'{{ dump(variable) }}\n{{ title }}' \
+    $'{{ dump(variable) }}\n{{ title }}\n{{ dump(other) }}' \
+    blocked
+
+# A pure rename must not resurrect the moved file's pre-existing statements.
+t44_repo="$TMP/t44"
+make_repo "$t44_repo"
+stage_file "$t44_repo" "resources/js/old-name.js" $'console.log("legacy");\nconst v = 1;'
+git -C "$t44_repo" commit -q --no-verify -m "baseline"
+git -C "$t44_repo" mv "resources/js/old-name.js" "resources/js/new-name.js"
+assert_allowed "Rename: moving a file containing a pre-existing console.log passes" "$t44_repo"
+
+# The backup-file check is unchanged and still runs first, independently of the
+# debug gate's verdict.
+t45_repo="$TMP/t45"
+make_repo "$t45_repo"
+stage_file "$t45_repo" "resources/js/app.js" $'console.log("legacy");\nconst v = 1;'
+git -C "$t45_repo" commit -q --no-verify -m "baseline"
+stage_file "$t45_repo" "resources/js/app.js" $'console.log("legacy");\nconst v = 2;'
+stage_file "$t45_repo" "app/Models/User.bak" 'backup content'
+assert_blocked "Backup check still fires when the debug gate would have passed" "$t45_repo"
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
