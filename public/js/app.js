@@ -5070,41 +5070,101 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 window.Pusher = (pusher_js__WEBPACK_IMPORTED_MODULE_1___default());
 
-// Initialize Echo - using process.env for Laravel Mix (Webpack)
-try {
-  var csrfToken = document.querySelector('meta[name="csrf-token"]');
-  if (csrfToken) {
+// ---------------------------------------------------------------------------
+// Laravel Echo / Pusher
+//
+// Realtime is DORMANT unless the server says otherwise on the page itself.
+//
+// The server renders partials/_realtime-config.blade.php into the <head>, and it
+// emits the realtime-* meta tags only when App\Support\Realtime\RealtimeClientConfig
+// says realtime is on. No tags means off, and off means we construct nothing: no
+// Echo, no WebSocket, no POST to /broadcasting/auth, nothing in the console.
+//
+// This used to read process.env.MIX_PUSHER_APP_KEY, which Laravel Mix bakes into the
+// bundle at BUILD time, with a hardcoded key as the fallback. Both halves were wrong.
+// The build-time read meant the bundle could keep using an app key the server had
+// already moved off, with a connected-but-silent socket as the only symptom. The
+// fallback meant an install with no Pusher credentials whatsoever — which is this
+// one — still opened a socket to a third party's Pusher app on every page load,
+// including for logged-out visitors on the login screen.
+//
+// Do not reintroduce a default key here. An absent credential must mean off.
+// ---------------------------------------------------------------------------
+
+function metaContent(name) {
+  var tag = document.querySelector('meta[name="' + name + '"]');
+  if (!tag) {
+    return null;
+  }
+  var value = (tag.content || '').trim();
+  return value === '' ? null : value;
+}
+function realtimeConfig() {
+  // The broadcaster tag is what distinguishes "the server enabled realtime" from
+  // "somebody happened to leave a key tag on the page".
+  if (metaContent('realtime-broadcaster') !== 'pusher') {
+    return null;
+  }
+  var key = metaContent('realtime-key');
+  var cluster = metaContent('realtime-cluster');
+  var csrfToken = metaContent('csrf-token');
+
+  // A Pusher client is not constructible without all three: the first two are the
+  // connection itself, and the third is what /broadcasting/auth will demand the
+  // moment a private channel is subscribed.
+  if (!key || !cluster || !csrfToken) {
+    return null;
+  }
+  return {
+    key: key,
+    cluster: cluster,
+    csrfToken: csrfToken
+  };
+}
+var realtime = realtimeConfig();
+if (realtime) {
+  try {
     window.Echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_0__["default"]({
       broadcaster: 'pusher',
-      key:  false || '3a4373231eb68d1c839d',
-      cluster: "mt1" || 0,
+      key: realtime.key,
+      cluster: realtime.cluster,
       forceTLS: true,
       encrypted: true,
       authEndpoint: '/broadcasting/auth',
       auth: {
         headers: {
-          'X-CSRF-TOKEN': csrfToken.content,
+          'X-CSRF-TOKEN': realtime.csrfToken,
           'X-Requested-With': 'XMLHttpRequest'
         }
       },
       enabledTransports: ['ws', 'wss']
     });
+  } catch (e) {
+    console.warn('Echo initialization skipped:', e.message);
   }
-} catch (e) {
-  console.warn('Echo initialization skipped:', e.message);
 }
 
 // ---------------------------------------
 // Real-time notifications via Echo
+//
+// user.{id} is a PRIVATE channel, so subscribing costs a POST to /broadcasting/auth.
+// A guest has no id to subscribe with, and the id must be validated rather than merely
+// present: the meta tag is written as content="{{ auth()->id() }}", which renders as
+// an EMPTY string for a logged-out visitor if any template ever emits it outside its
+// @auth wrapper. That produced a subscription to the literal channel "user." — an
+// unauthenticated auth request that can only ever be refused. The digits check below is
+// what makes that structurally impossible rather than dependent on four templates all
+// remembering their @auth.
 // ---------------------------------------
 document.addEventListener('DOMContentLoaded', function () {
-  var userIdMeta = document.querySelector('meta[name="user-id"]');
-  if (!userIdMeta) return;
-  var userId = userIdMeta.content;
-  var channelName = 'user.' + userId;
-  window.Echo["private"](channelName).listen('.notification.created', function (e) {
-    console.log('New notification received:', e);
-
+  if (!window.Echo) {
+    return;
+  }
+  var userId = metaContent('user-id');
+  if (!userId || !/^[0-9]+$/.test(userId)) {
+    return;
+  }
+  window.Echo["private"]('user.' + userId).listen('.notification.created', function (e) {
     // Dispatch custom event to header JS
     var event = new CustomEvent('newNotification', {
       detail: e
@@ -23105,11 +23165,11 @@ module.exports = __nested_webpack_require_19901__(3).default;
 
 /***/ }),
 /* 3 */
-/***/ (function(module, __webpack_exports__, __nested_webpack_require_20105__) {
+/***/ (function(module, __nested_webpack_exports__, __nested_webpack_require_20105__) {
 
 "use strict";
 // ESM COMPAT FLAG
-__nested_webpack_require_20105__.r(__webpack_exports__);
+__nested_webpack_require_20105__.r(__nested_webpack_exports__);
 
 // CONCATENATED MODULE: ./src/runtimes/web/dom/script_receiver_factory.ts
 class ScriptReceiverFactory {
@@ -27122,7 +27182,7 @@ pusher_Pusher.Runtime = runtime;
 pusher_Pusher.ScriptReceivers = runtime.ScriptReceivers;
 pusher_Pusher.DependenciesReceivers = runtime.DependenciesReceivers;
 pusher_Pusher.auth_callbacks = runtime.auth_callbacks;
-/* harmony default export */ var core_pusher = __webpack_exports__["default"] = (pusher_Pusher);
+/* harmony default export */ var core_pusher = __nested_webpack_exports__["default"] = (pusher_Pusher);
 function checkAppKey(key) {
     if (key === null || key === undefined) {
         throw 'You must pass your app key when you instantiate Pusher.';
@@ -27147,9 +27207,9 @@ runtime.setup(pusher_Pusher);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "Channel": () => (/* binding */ u),
-/* harmony export */   "Connector": () => (/* binding */ i),
-/* harmony export */   "EventFormatter": () => (/* binding */ d),
+/* harmony export */   Channel: () => (/* binding */ u),
+/* harmony export */   Connector: () => (/* binding */ i),
+/* harmony export */   EventFormatter: () => (/* binding */ d),
 /* harmony export */   "default": () => (/* binding */ E)
 /* harmony export */ });
 class u {
@@ -28028,7 +28088,7 @@ class E {
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"axios","version":"0.21.4","description":"Promise based HTTP client for the browser and node.js","main":"index.js","scripts":{"test":"grunt test","start":"node ./sandbox/server.js","build":"NODE_ENV=production grunt build","preversion":"npm test","version":"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json","postversion":"git push && git push --tags","examples":"node ./examples/server.js","coveralls":"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js","fix":"eslint --fix lib/**/*.js"},"repository":{"type":"git","url":"https://github.com/axios/axios.git"},"keywords":["xhr","http","ajax","promise","node"],"author":"Matt Zabriskie","license":"MIT","bugs":{"url":"https://github.com/axios/axios/issues"},"homepage":"https://axios-http.com","devDependencies":{"coveralls":"^3.0.0","es6-promise":"^4.2.4","grunt":"^1.3.0","grunt-banner":"^0.6.0","grunt-cli":"^1.2.0","grunt-contrib-clean":"^1.1.0","grunt-contrib-watch":"^1.0.0","grunt-eslint":"^23.0.0","grunt-karma":"^4.0.0","grunt-mocha-test":"^0.13.3","grunt-ts":"^6.0.0-beta.19","grunt-webpack":"^4.0.2","istanbul-instrumenter-loader":"^1.0.0","jasmine-core":"^2.4.1","karma":"^6.3.2","karma-chrome-launcher":"^3.1.0","karma-firefox-launcher":"^2.1.0","karma-jasmine":"^1.1.1","karma-jasmine-ajax":"^0.1.13","karma-safari-launcher":"^1.0.0","karma-sauce-launcher":"^4.3.6","karma-sinon":"^1.0.5","karma-sourcemap-loader":"^0.3.8","karma-webpack":"^4.0.2","load-grunt-tasks":"^3.5.2","minimist":"^1.2.0","mocha":"^8.2.1","sinon":"^4.5.0","terser-webpack-plugin":"^4.2.3","typescript":"^4.0.5","url-search-params":"^0.10.0","webpack":"^4.44.2","webpack-dev-server":"^3.11.0"},"browser":{"./lib/adapters/http.js":"./lib/adapters/xhr.js"},"jsdelivr":"dist/axios.min.js","unpkg":"dist/axios.min.js","typings":"./index.d.ts","dependencies":{"follow-redirects":"^1.14.0"},"bundlesize":[{"path":"./dist/axios.min.js","threshold":"5kB"}]}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"axios","version":"0.21.4","description":"Promise based HTTP client for the browser and node.js","main":"index.js","scripts":{"test":"grunt test","start":"node ./sandbox/server.js","build":"NODE_ENV=production grunt build","preversion":"npm test","version":"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json","postversion":"git push && git push --tags","examples":"node ./examples/server.js","coveralls":"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js","fix":"eslint --fix lib/**/*.js"},"repository":{"type":"git","url":"https://github.com/axios/axios.git"},"keywords":["xhr","http","ajax","promise","node"],"author":"Matt Zabriskie","license":"MIT","bugs":{"url":"https://github.com/axios/axios/issues"},"homepage":"https://axios-http.com","devDependencies":{"coveralls":"^3.0.0","es6-promise":"^4.2.4","grunt":"^1.3.0","grunt-banner":"^0.6.0","grunt-cli":"^1.2.0","grunt-contrib-clean":"^1.1.0","grunt-contrib-watch":"^1.0.0","grunt-eslint":"^23.0.0","grunt-karma":"^4.0.0","grunt-mocha-test":"^0.13.3","grunt-ts":"^6.0.0-beta.19","grunt-webpack":"^4.0.2","istanbul-instrumenter-loader":"^1.0.0","jasmine-core":"^2.4.1","karma":"^6.3.2","karma-chrome-launcher":"^3.1.0","karma-firefox-launcher":"^2.1.0","karma-jasmine":"^1.1.1","karma-jasmine-ajax":"^0.1.13","karma-safari-launcher":"^1.0.0","karma-sauce-launcher":"^4.3.6","karma-sinon":"^1.0.5","karma-sourcemap-loader":"^0.3.8","karma-webpack":"^4.0.2","load-grunt-tasks":"^3.5.2","minimist":"^1.2.0","mocha":"^8.2.1","sinon":"^4.5.0","terser-webpack-plugin":"^4.2.3","typescript":"^4.0.5","url-search-params":"^0.10.0","webpack":"^4.44.2","webpack-dev-server":"^3.11.0"},"browser":{"./lib/adapters/http.js":"./lib/adapters/xhr.js"},"jsdelivr":"dist/axios.min.js","unpkg":"dist/axios.min.js","typings":"./index.d.ts","dependencies":{"follow-redirects":"^1.14.0"},"bundlesize":[{"path":"./dist/axios.min.js","threshold":"5kB"}]}');
 
 /***/ })
 
