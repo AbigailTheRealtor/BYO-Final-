@@ -1695,7 +1695,7 @@
      never reached, so the absolutely-positioned placeholder was never hidden, and the
      panel stayed a grey 420px box reading "Loading map…" for the life of the page. Every
      control built inside ldnaInitMap() — both draw tools, all three autocompletes, every
-     boundary overlay, the Important Places pins, the saved-geometry fitBounds — was gone
+     boundary overlay, the 9C place pins, the saved-geometry fitBounds — was gone
      with it, and nothing said so.
 
      A ceiling turns a silent permanent blank into a stated fact. It changes nothing on a

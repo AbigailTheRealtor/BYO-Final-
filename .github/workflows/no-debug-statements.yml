@@ -31,9 +31,41 @@ jobs:
 
           debug_hits=()
 
+          # ── Vendored third-party MapLibre chunks — the ONLY exception ──────────────
+          # These two files are copied byte-for-byte out of node_modules/maplibre-gl/dist
+          # by webpack.mix.js (mix.copy), never parsed, bundled or minified by us. They
+          # carry MapLibre's own console.log calls, so there is nothing in them for us to
+          # remove and no edit that would survive the next build. They must be published
+          # beside the bundle because maplibre-gl-worker.mjs imports maplibre-gl-shared.mjs
+          # by RELATIVE path.
+          #
+          # Listed as exact paths, deliberately, so the exception cannot widen on its own.
+          # Everything else stays scanned — in particular:
+          #   * resources/js/spatial/*        our authored renderer source
+          #   * public/js/spatial/ldna-maplibre.js   our generated application bundle
+          # both of which are OURS and both of which contain zero debug statements.
+          VENDORED_EXCEPTIONS=(
+            "public/js/spatial/maplibre-gl-shared.mjs"
+            "public/js/spatial/maplibre-gl-worker.mjs"
+          )
+
+          is_vendored() {
+            local candidate="$1"
+            local vendored
+            for vendored in "${VENDORED_EXCEPTIONS[@]}"; do
+              [[ "$candidate" == "$vendored" ]] && return 0
+            done
+            return 1
+          }
+
           for file in "${changed_files[@]}"; do
             # Skip files that no longer exist (e.g. renamed source side).
             [[ -f "$file" ]] || continue
+
+            if is_vendored "$file"; then
+              echo "Skipping vendored third-party chunk: $file"
+              continue
+            fi
 
             if [[ "$file" =~ \.(php)$ ]]; then
               while IFS= read -r match; do
