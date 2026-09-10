@@ -474,6 +474,94 @@ nothing runs `queue:work`, so a dispatched job executes inline in the dispatchin
 * **Hero / listing display of both the MLS List Price and the user's Your Terms** side by side.
 * **Production activation.** All three flags ship `false`.
 
+### BidYourOffer Explore (public IDX discovery surface)
+
+`/explore` is a Google Photorealistic 3D neighbourhood with eligible Stellar **FOR SALE and
+FOR RENT** listings placed at their own MLS coordinates. It is a *presentation surface over
+systems that already exist*: it synchronises nothing, imports nothing, scores nothing and
+persists nothing. Everything lives in `app/Services/Explore/`, gated by `config/explore.php`
+(`EXPLORE_ENABLED`, default `false` → every route 404s, data endpoints included).
+
+**VOW is MISSING, and that is a finding rather than a placeholder.** No approval, dataset,
+credential, registration flow, policy class or feed field exists — see
+`docs/bidyouroffer-explore-audit-2026-09-10.md`. `VowAvailability` therefore returns
+`PUBLIC_IDX` for every caller **regardless of `EXPLORE_VOW_ENABLED`**: a boolean in a config
+file is the wrong last line of defence between an unapproved licence tier and the public, so
+the refusal is in the code and the flag exists only so the posture can be reported honestly.
+The Property Intelligence control is **absent, not disabled** — greying it out would tell
+every visitor we hold off-market intelligence we are withholding. **Delayed Distribution is
+not represented in this feed at all** (no such field among the 551), so it cannot be honoured
+or leaked; `ExploreAccessTier` keeps `PUBLIC_IDX` / `VOW_REGISTERED` as separate concepts
+rather than one `is_mls_visible` boolean precisely so the distinction stays expressible.
+
+**Sale/rent is an exact-match allowlist over `PropertyType`, and it is deliberately not
+`PropertyTypeVocabulary`.** That class matches SUBSTRINGS, which is right for picking a form
+vocabulary and catastrophic here: `forRole('Residential Lease', 'seller')` is `'Residential'`,
+so a rental read through it becomes a sale and a monthly rent prints as a purchase price.
+`ExploreTransactionType` is exact and case-sensitive; SALE is Residential / Income /
+Commercial Sale / Vacant Land / **Business Opportunity** (199 live records — not omitted),
+RENT is Residential Lease / Commercial Lease. An unclassified type is excluded from **both**
+filters, because its `ListPrice` cannot be labelled. On a lease record `ListPrice` IS the
+periodic rent and the period is `LeaseAmountFrequency` — **`/mo` is wrong for about a quarter
+of the rental inventory** (live: Seasonal 78, Annually 19, Weekly 16, Daily 2 against Monthly
+386), and a rental with no stated frequency gets no suffix rather than an assumed one.
+
+**Eligibility is `ExploreEligibilityPolicy`, and it delegates rather than reimplements.**
+The feed gate is `MlsDisplayPermissions::listingDisplayable()` — note this is STRICTER than
+`ListingVisibilityGate`, which reads only `IDXParticipationYN`; where they differ the strict
+one is what a public surface must use. Status is `StandardStatus` against
+`explore.public_statuses` (**`Active` alone** — the same status both OData builders and the
+Stellar detail page already treat as consumer inventory; `Coming Soon` is excluded
+specifically because pre-marketing distribution is governed by rules this repo has no record
+of). A record whose `raw_json` cannot be read resolves to `denyAll()` — "we could not
+determine the permissions" is not "there were no permissions". **An address refusal is not a
+listing refusal**: 71 of 1,203 live records suppress the street line and postcode and keep
+the marker, the price and the facts.
+
+**`ExploreListingProjection` is the security boundary.** Every consumer-visible field is a
+named readonly property and `toArray()` writes every key by hand — no dynamic expansion, no
+extra bag, no path from a `BridgeProperty` to a response. It is an ALLOW-list: a deny-list
+would have to stay complete forever against a 553-field feed that gains fields without asking
+us. `ExploreProhibitedFieldsTest` seeds real prohibited values under their real field names
+(`STELLAR_TenantName`, `LockBoxLocation`, `PrivateRemarks`, `ListingTerms`, the ListAgent
+contact block, …) on a listing Explore genuinely publishes, and asserts against
+`MlsFieldCatalog::RESTRICTED` / `INTERNAL` / `CONTACTS` rather than a hand-written list.
+
+**Property identity is parcel + unit, never coordinates.** A parcel is routinely the whole
+building — in the live cache a condominium and the building's income listing share one parcel
+exactly — so dropping the unit would merge two homes. Proximity is absent from
+`ExplorePropertyIdentity` and must stay absent, or a forty-unit tower becomes one "property"
+with forty conflicting histories. Only an opaque hash is emitted; a parcel number leads to
+owner records.
+
+**Reused, not rebuilt:** canonical destinations are the existing public Seller/Landlord
+listing pages, resolved from the `mls_listing_key` provenance meta and batched one query per
+role (`forWorkflow()` narrows in SQL, `ListingWorkflowResolver` decides in PHP — both halves).
+Media is `MlsMediaExtractor` + `MlsMediaPolicy`, so only the **unbranded** tour is offered
+(branded is RESTRICTED) and `has_video` is correctly false until a video category is licensed.
+**Ask AI is not wired in** — `ask-ai.listing-question` answers only about a listing the
+requester OWNS and serves private offer-listings, not public MLS data. **Save does not exist
+anywhere in this application.** Schedule Showing appears only where a real BidYourOffer
+listing exists. `match_score` is null: no reliable score exists for an MLS-only property and
+Phase 1 invents none.
+
+**Explore reads `bridge_properties` and issues no outbound request of any kind** — a test
+asserts it. Its inventory is therefore whatever the existing criteria-driven lazy import has
+cached; that is a real limitation, reported rather than solved by a second sync system.
+Eligibility needs `raw_json` decoded per row (permissions and lease frequency exist only
+there), so the repository overfetches, filters, then slices under a hard read ceiling — a bare
+SQL `LIMIT` would silently shrink a page and look like a thinner neighbourhood.
+
+**The Google credential is its own, permanently.** `GOOGLE_PLACES_API_KEY` is a SERVER key and
+must never become a fallback — emitting it would publish a server credential to every visitor.
+`EXPLORE_GOOGLE_MAPS_BROWSER_KEY` is absent by default, which is a **third state**: Explore on
+with no map credential serves the page, answers the API, and states why the map is empty,
+because a blank grey rectangle is indistinguishable from a bug and no PHP test can see one.
+Only `maps3d` is requested; Places, Routes, Roads, Directions and Geocoding are asserted
+absent from the shipped renderer. The renderer is a **static asset**, not a Mix bundle and not
+part of `app.js`: it has no imports, so compiling it would buy nothing and couple `/explore`
+to a build.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.
@@ -765,5 +853,11 @@ Beyond standard Laravel keys, this app requires:
 | `CRITERIA_LDNA_GEOGRAPHY_SOURCE` | Which `CriteriaGeographyRepository` backs the geography cascade. **Exactly three values are accepted** — `eloquent` (default; the `us_*` reference tables), `census` (the `census_*` corpus from `census:import-geography`), `fake` (in-memory fixture, local/demo only). **Anything else throws at container resolution.** That is deliberate: the binding used to fall through to `eloquent`, so a typo silently served legacy data and looked exactly like success. Selecting `census` requires the corpus to be present — run `php artisan census:verify-geography` first, and in the deploy sequence of any environment using it, or every tier enumerates empty with no error. |
 | `CRITERIA_LDNA_PREVIEW_ENABLED` | Geography preview surface. Default `false`. |
 | `OFFER_PLAYOFF_ALLOWED_IDS` | Comma-separated user IDs or `*` for all |
+| `EXPLORE_ENABLED` | Master gate for BidYourOffer Explore (`/explore` plus `/api/explore/listings*`). Default `false` = every route 404s, data endpoints included, so the feature is invisible rather than advertised. Mirrors `CheckMatchCheckEnabled`. Fails closed: a config that did not load reads as off. Says nothing about VOW. |
+| `EXPLORE_VOW_ENABLED` | The Property Intelligence / VOW tier. Default `false`, **and setting it `true` grants nothing** — `VowAvailability` refuses in code, and a test asserts the flag cannot move the tier. It exists so the posture can be reported, not as the gate: no VOW approval, dataset, credential, registration flow or feed field exists in this application. Activation requirements are in `VowAvailability::activationRequirements()` and `docs/bidyouroffer-explore-audit-2026-09-10.md`. |
+| `EXPLORE_GOOGLE_MAPS_BROWSER_KEY` | Browser key for the Maps JavaScript API `maps3d` renderer. **Not `GOOGLE_PLACES_API_KEY`**, which is a server key for address validation and POI lookup and must never be emitted into a page or used as a fallback here. Absent by default — that is a distinct third state from "Explore off": the route serves, the API answers, and the map area states why it is empty, because a blank grey rectangle is indistinguishable from a bug. With no key the page issues **zero** Google requests. |
+| `EXPLORE_GOOGLE_MAPS_MAP_ID` / `EXPLORE_GOOGLE_MAPS_VERSION` | Optional styled Map ID (photorealistic tiles render without one) and the API version channel (default `alpha`, which is where `Map3DElement` currently lives). |
+| `EXPLORE_DEFAULT_LAT` / `_LNG` / `_ALTITUDE` / `_TILT` / `_HEADING` / `_RANGE` | The opening camera. Defaults to St. Petersburg / Tampa Bay because that is where this dataset's 1,225 cached records actually are; opening anywhere else shows an empty neighbourhood, which reads as a broken feature rather than an empty market. |
+| `EXPLORE_MAX_RESULTS` / `EXPLORE_MAX_SPAN_DEGREES` | Page size (default 150, hard ceiling 250) and the bounding-box span ceiling (default 1.0°). An over-large bbox is **refused with a 422, never clamped** — a clamped box returns markers for somewhere the consumer is not looking, and the thinner result reads as "nothing for sale here", which is a false statement about a real market. |
 
 `.env` is not tracked in git — back it up separately.
