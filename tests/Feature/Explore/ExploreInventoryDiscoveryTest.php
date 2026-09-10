@@ -338,6 +338,68 @@ class ExploreInventoryDiscoveryTest extends TestCase
     }
 
     /**
+     * §14-G / §6. A PARTIAL pass must not suppress anything.
+     *
+     * When pagination hits a ceiling, a listing missing from the result set
+     * means "we stopped asking", not "it is gone". Withholding on that reading
+     * would hide real, current inventory — so the confirmation rule is switched
+     * off and the response reports `complete: false` instead.
+     *
+     * @test
+     */
+    public function a_partial_pass_does_not_suppress_unconfirmed_rows(): void
+    {
+        // A locally-stored row far outside the freshness window. On a COMPLETE
+        // pass it would be withheld.
+        $stale = $this->makeListing(['listing_key' => 'STALE-BUT-REAL']);
+        $stale->forceFill(['imported_at' => now()->subDays(30)])->save();
+
+        // The provider returns more than one record while the per-pass record
+        // ceiling is one, so the importer stops early and reports the pass
+        // partial.
+        config(['explore.discovery.max_records' => 1]);
+
+        $this->provider->records = [
+            $this->providerRecord(['listing_key' => 'FRESH-A']),
+            $this->providerRecord(['listing_key' => 'FRESH-B']),
+        ];
+
+        $payload = $this->listings(['transaction_type' => 'sale']);
+
+        $this->assertSame('partial', $payload['discovery']['status']);
+        $this->assertFalse($payload['discovery']['complete']);
+        $this->assertFalse($payload['discovery']['degraded']);
+
+        $this->assertContains(
+            'STALE-BUT-REAL',
+            array_column($payload['listings'], 'id'),
+            'an unconfirmed row must survive a pass that never finished looking'
+        );
+    }
+
+    /**
+     * And the complementary half: on a COMPLETE pass the same row IS withheld,
+     * because there the absence is evidence.
+     *
+     * @test
+     */
+    public function a_complete_pass_does_suppress_unconfirmed_rows(): void
+    {
+        $stale = $this->makeListing(['listing_key' => 'STALE-BUT-REAL']);
+        $stale->forceFill(['imported_at' => now()->subDays(30)])->save();
+
+        $this->provider->records = [$this->providerRecord(['listing_key' => 'FRESH-A'])];
+
+        $payload = $this->listings(['transaction_type' => 'sale']);
+
+        $this->assertTrue($payload['discovery']['complete']);
+        $this->assertSame(['FRESH-A'], array_column($payload['listings'], 'id'));
+
+        // Withheld from display, never deleted.
+        $this->assertSame(1, BridgeProperty::where('listing_key', 'STALE-BUT-REAL')->count());
+    }
+
+    /**
      * With discovery off, Explore is cache-only — and labels itself, so a thin
      * answer is not mistaken for a thin market.
      *
