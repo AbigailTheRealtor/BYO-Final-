@@ -190,6 +190,25 @@
     letter-spacing: -0.03em;
     line-height: 1.15;
 }
+/* Says WHOSE price the number above/beside it is. Only rendered where two
+   prices coexist, so it never labels a manual listing's single figure. */
+.sol-view-page .sol-price-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+}
+.sol-view-page .sol-price-secondary {
+    margin-top: 0.25rem;
+    font-size: 0.86rem;
+    color: #475569;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
 .sol-view-page .sol-hero-address {
     color: #475569;
     font-size: 0.9rem;
@@ -919,12 +938,24 @@
         $heroPhotoUrls  = $galleryView->urls();
         $coverPhotoIdx  = $galleryView->coverIndex();
 
-        /* Hero: price — seller-appropriate field priority; no buyer fields */
-        $heroPrice = null;
-        foreach (['desired_sale_price','purchase_price','buy_now_price','starting_price','reserve_price'] as $pk) {
-            $pv = $meta[$pk] ?? '';
-            if ($pv !== '' && $pv !== null) { $heroPrice = $fmtMoney($pv); break; }
-        }
+        /* Hero: price.
+         *
+         * TWO PRICES, NEVER ONE UNLABELLED NUMBER.
+         *
+         * `$priceDisplay` resolves Stellar's authoritative list price and the
+         * seller's own BidYourOffer term separately, so the page can say which
+         * is which instead of printing whichever the old fallback chain reached
+         * first. See App\Support\Listing\ListingPriceDisplay — including why the
+         * old chain missed `maximum_budget`, the key the wizard actually writes.
+         *
+         * $heroPrice keeps its meaning for every non-MLS listing: the seller's
+         * own figure, formatted exactly as before.
+         */
+        $priceDisplay   = \App\Support\Listing\ListingPriceDisplay::forSeller($meta);
+        $mlsListPrice   = $priceDisplay::money($priceDisplay->mlsListPrice());
+        $yourTermsPrice = $priceDisplay::money($priceDisplay->yourTermsPrice());
+        $showsBothPrices = $priceDisplay->showsSeparateTerms();
+        $heroPrice      = $priceDisplay::money($priceDisplay->askingPrice());
 
         /* Hero: beds / baths / sqft */
         $heroBeds  = $str('bedrooms')  ?: null;
@@ -1011,7 +1042,16 @@
             </div>
             <div class="col-lg-4">
                 <div class="sol-hero-summary">
-                    @if($heroPrice)
+                    @if($mlsListPrice)
+                        <div class="sol-price-label">MLS List Price</div>
+                        <div class="sol-hero-price">{{ $mlsListPrice }}</div>
+                        @if($showsBothPrices)
+                            <div class="sol-price-secondary">
+                                <span class="sol-price-label">Your Terms</span>
+                                <strong>{{ $yourTermsPrice }}</strong>
+                            </div>
+                        @endif
+                    @elseif($heroPrice)
                         <div class="sol-hero-price">{{ $heroPrice }}</div>
                     @endif
                     @if($fullAddress)
@@ -1116,7 +1156,11 @@
         $hubStartPrice   = $fmtMoney($str('starting_price'));
         $hubReserve      = $fmtMoney($str('reserve_price'));
         $hubBuyNow       = $fmtMoney($str('buy_now_price'));
-        $hubAsking       = $fmtMoney($str('desired_sale_price')) ?: $fmtMoney($str('purchase_price')) ?: $heroPrice;
+        // "Asking" is a claim about the price OF RECORD, so on an MLS-linked
+        // listing it resolves to Stellar's figure, not to the seller's own term
+        // — the same rule the hero and the payment calculator now follow. On a
+        // manual listing it is the seller's term exactly as before.
+        $hubAsking       = $heroPrice;
         // Bidding close date for the Quick Actions hub — the SAME canonical window
         // the countdown and the server-side guard read. This previously read
         // bidding_end_date / offer_deadline, two meta keys that are written
@@ -1143,6 +1187,11 @@
                         @if($hubReserve && $hubReservePublic)<div>Reserve: <strong>{{ $hubReserve }}</strong></div>@endif
                         @if($hubBuyNow)<div>Buy Now: <strong>{{ $hubBuyNow }}</strong></div>@endif
                         @if($hubBidEnd)<div style="color:#94a3b8;font-size:.69rem;">Bidding ends {{ $hubBidEnd }}</div>@endif
+                    </div>
+                @elseif($mlsListPrice)
+                    <div class="sol-interaction-price-row">
+                        <div>MLS List Price: <strong>{{ $mlsListPrice }}</strong></div>
+                        @if($showsBothPrices)<div>Your Terms: <strong>{{ $yourTermsPrice }}</strong></div>@endif
                     </div>
                 @elseif($hubAsking)
                     <div class="sol-interaction-price-row">Asking: <strong>{{ $hubAsking }}</strong></div>
@@ -2674,8 +2723,14 @@
 
                 @if($heroPrice)
                 <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;text-align:center;">
-                    <div style="font-size:0.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Asking Price</div>
+                    <div style="font-size:0.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">{{ $mlsListPrice ? 'MLS List Price' : 'Asking Price' }}</div>
                     <div style="font-size:1.4rem;font-weight:800;color:#1e293b;letter-spacing:-.02em;">{{ $heroPrice }}</div>
+                    @if($showsBothPrices)
+                    <div style="margin-top:.35rem;font-size:.78rem;color:#64748b;">
+                        <span style="font-size:0.68rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Your Terms</span>
+                        <strong style="color:#475569;">{{ $yourTermsPrice }}</strong>
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
