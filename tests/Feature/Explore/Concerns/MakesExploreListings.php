@@ -25,6 +25,43 @@ trait MakesExploreListings
      */
     protected function makeListing(array $overrides = [], array $rawOverrides = []): BridgeProperty
     {
+        [$columns, $raw] = $this->exploreRecordPair($overrides, $rawOverrides);
+
+        $columns['raw_json'] = json_encode($raw);
+
+        return BridgeProperty::create($columns);
+    }
+
+    /**
+     * The same record as the PROVIDER would return it — a raw RESO array, not
+     * persisted.
+     *
+     * Built from the identical defaults as makeListing() on purpose. Discovery
+     * tests hand these to the fake provider and then assert on what Explore
+     * publishes, so a divergence between "what the provider sends" and "what a
+     * stored row looks like" would make those tests prove nothing.
+     *
+     * @return array<string,mixed>
+     */
+    protected function providerRecord(array $overrides = [], array $rawOverrides = []): array
+    {
+        return $this->exploreRecordPair($overrides, $rawOverrides)[1];
+    }
+
+    /** A provider record for a Residential Lease, where ListPrice is the rent. */
+    protected function providerRentalRecord(array $overrides = [], array $rawOverrides = []): array
+    {
+        return $this->providerRecord(
+            array_merge(['property_type' => 'Residential Lease', 'list_price' => 2750], $overrides),
+            array_merge(['LeaseAmountFrequency' => 'Monthly'], $rawOverrides),
+        );
+    }
+
+    /**
+     * @return array{0:array<string,mixed>,1:array<string,mixed>}
+     */
+    private function exploreRecordPair(array $overrides = [], array $rawOverrides = []): array
+    {
         static $sequence = 0;
         $sequence++;
 
@@ -87,9 +124,7 @@ trait MakesExploreListings
             $raw[$key] = $value;
         }
 
-        $columns['raw_json'] = json_encode($raw);
-
-        return BridgeProperty::create($columns);
+        return [$columns, $raw];
     }
 
     /** A Residential Lease record: ListPrice IS the monthly rent. */

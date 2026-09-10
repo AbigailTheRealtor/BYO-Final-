@@ -45,6 +45,15 @@ class ExploreFeatureGateTest extends TestCase
             (bool) config('explore.vow_enabled'),
             'The VOW tier must ship disabled.'
         );
+
+        // Discovery sends outbound traffic to a third-party provider. Deploying
+        // this code must not by itself start it — the same posture as
+        // mls_sync.enabled, and for the same reason: merging and activating are
+        // two decisions with two different reviews.
+        $this->assertFalse(
+            (bool) config('explore.discovery.enabled'),
+            'Viewport discovery must ship disabled.'
+        );
     }
 
     /**
