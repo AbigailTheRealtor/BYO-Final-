@@ -906,7 +906,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/agent/location-dna/{listingType}/{listingId}/generate', [AgentLocationDnaController::class, 'generate'])->name('location-dna.generate');
         });
         // Counter Bid Routes
-        Route::post('hire/agent/seller/bid/accept', [SellerAgentAuctionController::class, 'acceptSABid'])->name('acceptSABid');
+        //
+        // `hire/agent/seller/bid/accept` is NOT registered here. It was, and because a
+        // later registration of the same method + URI replaces the earlier one in the
+        // RouteCollection, this copy shadowed the consumer-scoped one above (the
+        // `auth`/`verified` block, beside the other Seller hire-agent routes) and became
+        // the only effective route. That made the endpoint unreachable for everybody:
+        // `agentAuth` redirects any account whose `user_type` is not `agent`, so the
+        // Seller never arrived, and `acceptSABid()` aborts 403 unless the caller owns the
+        // listing, so an agent who did arrive was refused. The person accepting a Seller
+        // Hire Agent bid is the Seller/listing owner, not the bidding agent.
+        //
+        // Pinned by tests/Feature/HireAgent/SellerAcceptBidRouteTest.php.
         Route::post('hire/agent/seller/bid/reject', [SellerAgentAuctionController::class, 'rejectSABid'])->name('rejectSABid');
         Route::post('hire/agent/seller/destroy/counter/{id}', [SellerCounterBidController::class, 'destroyCounter'])->name('destroySellerCounter');
 
