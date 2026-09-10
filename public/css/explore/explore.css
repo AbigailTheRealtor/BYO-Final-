@@ -1,0 +1,118 @@
+/*
+ | BidYourOffer Explore.
+ |
+ | Layout only. Nothing here decides what is visible: an ineligible listing is
+ | never sent to the browser, so there is no rule in this file whose removal
+ | would reveal anything. CSS is not the compliance layer and must never become
+ | one.
+ */
+
+.explore-shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+    min-height: 560px;
+    background: #0b1220;
+    color: #f8fafc;
+}
+
+.explore-topbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.65rem 1rem;
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    flex-wrap: wrap;
+}
+
+.explore-brand-mark { font-weight: 700; letter-spacing: .01em; }
+.explore-brand-sub { margin-left: .4rem; color: #94a3b8; font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; }
+
+.explore-filters { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+.explore-filter {
+    border: 1px solid #334155;
+    background: transparent;
+    color: #cbd5e1;
+    border-radius: 999px;
+    padding: .35rem 1rem;
+    font-size: .85rem;
+    cursor: pointer;
+}
+.explore-filter.is-active { background: #2563eb; border-color: #2563eb; color: #fff; }
+.explore-filter-intel { border-color: #7c3aed; color: #ddd6fe; }
+
+.explore-status { margin-left: auto; font-size: .8rem; color: #94a3b8; }
+
+.explore-stage { position: relative; flex: 1; display: flex; min-height: 0; }
+
+.explore-map { position: relative; flex: 1; min-height: 0; background: #111827; }
+.explore-map gmp-map-3d { width: 100%; height: 100%; display: block; }
+
+.explore-map-unavailable {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem; text-align: center;
+}
+.explore-map-unavailable-inner { max-width: 34rem; }
+.explore-map-unavailable h2 { font-size: 1.15rem; margin-bottom: .6rem; }
+.explore-map-unavailable p { color: #94a3b8; font-size: .9rem; margin-bottom: .4rem; }
+.explore-map-unavailable-note { color: #64748b; font-size: .82rem; }
+
+.explore-panel {
+    position: absolute; top: 1rem; right: 1rem; width: 22rem; max-width: calc(100% - 2rem);
+    max-height: calc(100% - 2rem); overflow-y: auto;
+    background: #0f172a; border: 1px solid #1e293b; border-radius: .8rem;
+    box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+.explore-panel-close {
+    position: absolute; top: .4rem; right: .6rem;
+    background: rgba(15,23,42,.75); border: 0; color: #e2e8f0;
+    font-size: 1.4rem; line-height: 1; border-radius: 999px; width: 1.9rem; height: 1.9rem; cursor: pointer;
+}
+.explore-panel-image { width: 100%; height: 11rem; object-fit: cover; border-radius: .8rem .8rem 0 0; display: block; }
+.explore-panel-body { padding: .9rem 1rem 1rem; }
+.explore-panel-type { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: #93c5fd; }
+.explore-panel-type-rent { color: #6ee7b7; }
+.explore-panel-price { font-size: 1.45rem; font-weight: 700; margin: .15rem 0 .35rem; }
+.explore-panel-address { font-size: .92rem; }
+.explore-panel-locality, .explore-panel-facts, .explore-panel-status { color: #94a3b8; font-size: .82rem; }
+.explore-panel-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .9rem; }
+
+.explore-action {
+    border: 1px solid #334155; border-radius: .45rem;
+    padding: .4rem .8rem; font-size: .82rem; color: #e2e8f0;
+    text-decoration: none; background: transparent; cursor: pointer;
+}
+.explore-action-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+.explore-panel-gallery { display: flex; gap: .35rem; overflow-x: auto; margin-top: .7rem; }
+.explore-panel-gallery img { width: 6.5rem; height: 4.6rem; object-fit: cover; border-radius: .35rem; flex: 0 0 auto; }
+
+.explore-panel-attribution { color: #64748b; font-size: .7rem; line-height: 1.5; margin-top: .9rem; }
+
+.explore-results {
+    width: 20rem; flex: 0 0 20rem; overflow-y: auto;
+    background: #0f172a; border-left: 1px solid #1e293b; padding: .6rem;
+}
+.explore-card {
+    display: flex; gap: .6rem; width: 100%; text-align: left;
+    background: #111a2e; border: 1px solid #1e293b; border-radius: .55rem;
+    padding: .5rem; margin-bottom: .45rem; cursor: pointer; color: inherit;
+}
+.explore-card-thumb { width: 5rem; height: 3.6rem; object-fit: cover; border-radius: .35rem; flex: 0 0 auto; }
+.explore-card-thumb-empty { background: #1e293b; display: block; }
+.explore-card-body { display: flex; flex-direction: column; min-width: 0; }
+.explore-card-type { font-size: .65rem; letter-spacing: .09em; text-transform: uppercase; color: #93c5fd; }
+.explore-card-rent .explore-card-type { color: #6ee7b7; }
+.explore-card-price { font-weight: 600; }
+.explore-card-meta { font-size: .74rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.explore-attribution { padding: .5rem 1rem; font-size: .7rem; color: #64748b; background: #0f172a; border-top: 1px solid #1e293b; }
+
+@media (max-width: 860px) {
+    .explore-stage { flex-direction: column; }
+    .explore-results { width: 100%; flex: 0 0 12rem; border-left: 0; border-top: 1px solid #1e293b; }
+    .explore-panel { top: auto; bottom: 0; right: 0; left: 0; width: auto; max-width: none; border-radius: .8rem .8rem 0 0; max-height: 60%; }
+}

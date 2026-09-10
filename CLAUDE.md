@@ -474,6 +474,161 @@ nothing runs `queue:work`, so a dispatched job executes inline in the dispatchin
 * **Hero / listing display of both the MLS List Price and the user's Your Terms** side by side.
 * **Production activation.** All three flags ship `false`.
 
+### BidYourOffer Explore (public IDX discovery surface)
+
+`/explore` is a Google Photorealistic 3D neighbourhood with eligible Stellar **FOR SALE and
+FOR RENT** listings placed at their own MLS coordinates. It is a *presentation surface over
+systems that already exist*: it synchronises nothing, imports nothing, scores nothing and
+persists nothing. Everything lives in `app/Services/Explore/`, gated by `config/explore.php`
+(`EXPLORE_ENABLED`, default `false` → every route 404s, data endpoints included).
+
+**VOW is MISSING, and that is a finding rather than a placeholder.** No approval, dataset,
+credential, registration flow, policy class or feed field exists — see
+`docs/bidyouroffer-explore-audit-2026-09-10.md`. `VowAvailability` therefore returns
+`PUBLIC_IDX` for every caller **regardless of `EXPLORE_VOW_ENABLED`**: a boolean in a config
+file is the wrong last line of defence between an unapproved licence tier and the public, so
+the refusal is in the code and the flag exists only so the posture can be reported honestly.
+The Property Intelligence control is **absent, not disabled** — greying it out would tell
+every visitor we hold off-market intelligence we are withholding. **Delayed Distribution is
+not represented in this feed at all** (no such field among the 551), so it cannot be honoured
+or leaked; `ExploreAccessTier` keeps `PUBLIC_IDX` / `VOW_REGISTERED` as separate concepts
+rather than one `is_mls_visible` boolean precisely so the distinction stays expressible.
+
+**Sale/rent is an exact-match allowlist over `PropertyType`, and it is deliberately not
+`PropertyTypeVocabulary`.** That class matches SUBSTRINGS, which is right for picking a form
+vocabulary and catastrophic here: `forRole('Residential Lease', 'seller')` is `'Residential'`,
+so a rental read through it becomes a sale and a monthly rent prints as a purchase price.
+`ExploreTransactionType` is exact and case-sensitive; SALE is Residential / Income /
+Commercial Sale / Vacant Land / **Business Opportunity** (199 live records — not omitted),
+RENT is Residential Lease / Commercial Lease. An unclassified type is excluded from **both**
+filters, because its `ListPrice` cannot be labelled. On a lease record `ListPrice` IS the
+periodic rent and the period is `LeaseAmountFrequency` — **`/mo` is wrong for about a quarter
+of the rental inventory** (live: Seasonal 78, Annually 19, Weekly 16, Daily 2 against Monthly
+386), and a rental with no stated frequency gets no suffix rather than an assumed one.
+
+**Eligibility is `ExploreEligibilityPolicy`, and it delegates rather than reimplements.**
+The feed gate is `MlsDisplayPermissions::listingDisplayable()` — note this is STRICTER than
+`ListingVisibilityGate`, which reads only `IDXParticipationYN`; where they differ the strict
+one is what a public surface must use. Status is `StandardStatus` against
+`explore.public_statuses` (**`Active` alone** — the same status both OData builders and the
+Stellar detail page already treat as consumer inventory; `Coming Soon` is excluded
+specifically because pre-marketing distribution is governed by rules this repo has no record
+of). A record whose `raw_json` cannot be read resolves to `denyAll()` — "we could not
+determine the permissions" is not "there were no permissions". **An address refusal is not a
+listing refusal**: 71 of 1,203 live records suppress the street line and postcode and keep
+the marker, the price and the facts.
+
+**`ExploreListingProjection` is the security boundary.** Every consumer-visible field is a
+named readonly property and `toArray()` writes every key by hand — no dynamic expansion, no
+extra bag, no path from a `BridgeProperty` to a response. It is an ALLOW-list: a deny-list
+would have to stay complete forever against a 553-field feed that gains fields without asking
+us. `ExploreProhibitedFieldsTest` seeds real prohibited values under their real field names
+(`STELLAR_TenantName`, `LockBoxLocation`, `PrivateRemarks`, `ListingTerms`, the ListAgent
+contact block, …) on a listing Explore genuinely publishes, and asserts against
+`MlsFieldCatalog::RESTRICTED` / `INTERNAL` / `CONTACTS` rather than a hand-written list.
+
+**Property identity is parcel + unit, never coordinates.** A parcel is routinely the whole
+building — in the live cache a condominium and the building's income listing share one parcel
+exactly — so dropping the unit would merge two homes. Proximity is absent from
+`ExplorePropertyIdentity` and must stay absent, or a forty-unit tower becomes one "property"
+with forty conflicting histories. Only an opaque hash is emitted; a parcel number leads to
+owner records.
+
+**Reused, not rebuilt:** canonical destinations are the existing public Seller/Landlord
+listing pages, resolved from the `mls_listing_key` provenance meta and batched one query per
+role (`forWorkflow()` narrows in SQL, `ListingWorkflowResolver` decides in PHP — both halves).
+Media is `MlsMediaExtractor` + `MlsMediaPolicy`, so only the **unbranded** tour is offered
+(branded is RESTRICTED) and `has_video` is correctly false until a video category is licensed.
+**Ask AI is not wired in** — `ask-ai.listing-question` answers only about a listing the
+requester OWNS and serves private offer-listings, not public MLS data. **Save does not exist
+anywhere in this application.** Schedule Showing appears only where a real BidYourOffer
+listing exists. `match_score` is null: no reliable score exists for an MLS-only property and
+Phase 1 invents none.
+
+**Explore discovers CURRENT inventory through the ONE existing MLS pipeline — it is not a
+reader of an old cache.** A viewport request hands the bbox to `ExploreInventoryService`, which
+is a *translator*, not an importer: it builds a minimal `BuyerCriteriaPayload` (property types
++ one rectangular polygon) and calls `LazyBridgeImportService::importForCriteria()`. That is
+the same advisory lock, the same `bridge_criteria_fetch_cache`, the same pagination, the same
+`BridgePropertyNormalizer::upsert()` and the same Location DNA dispatch the criteria searches
+use. **No Explore class holds a provider client, writes an MLS row, or reaches the network —
+a test scans the whole namespace for it.** The only change to shared code was additive: two
+role strings in `LazyBridgeImportService::SUPPORTED_ROLES`, and optional pagination caps that
+the importer clamps DOWNWARDS so a call site can lower a spend limit and never raise one.
+
+**Both Explore roles use the BUYER filter builder, deliberately.** Its name is historical — it
+emits `StandardStatus eq 'Active'`, a PropertyType disjunction and a lat/lng box, and knows
+nothing about purchasing — so supplying the rental PropertyTypes produces the rental filter.
+The tenant builder is NOT used: its documented rental vocabulary includes `Residential`, which
+in this dataset is a SALE type. That defect belongs to the tenant-search work and Explore must
+neither inherit nor fix it here.
+
+**The tile grid is load-bearing, not tidying.** The fetch cache is keyed on a payload hash, so
+an unsnapped viewport would mint a new key on every pixel of pan and "reuse the existing cache"
+would collapse into a provider request per camera nudge. The discovery box is snapped
+**outwards** (default 0.05°) so neighbouring viewports share one entry, a pan within a tile
+sends nothing, and the box always *contains* the viewport — a property near the screen edge
+must never be rendered from an area discovery did not ask about.
+
+**Presence is not currency, and that is how a listing disappears.** After a pass that COMPLETELY
+covered the viewport, every currently-eligible listing in it was just upserted — so a row the
+pass did not touch is one the provider no longer returns (sold, withdrawn, off IDX, gone from
+the feed) and it is withheld. The window is `ExploreFreshness`, which borrows
+`bridge.lazy_ttl_minutes` — the same value `mls_sync.freshness_minutes` borrows, for the same
+reason — against the `imported_at` stamp every upsert already writes. **Nothing is deleted**;
+declining to render is a much smaller decision than deleting MLS data on the strength of an
+absence. The rule is NOT applied after a **partial** pass (a pagination ceiling: absence means
+"we stopped asking"), nor when discovery is off, nor when the provider was unreachable — and
+the response carries `discovery.complete` / `discovery.degraded` so an empty map is never
+worded as an empty market.
+
+**The property panel re-asks about the one record it is about to publish**, through the existing
+`BridgeListingLookupService::refreshByListingKey()` — the method built precisely because every
+other lookup there is local-first and a freshness question cannot be answered from the row you
+would be handed back. One request, one record, on an explicit user action, skipped entirely
+when the row is already inside the window. Eligibility is then re-decided, so a listing that
+went Pending or lost IDX participation since the marker was drawn **404s** rather than being
+presented as available.
+
+**Discovery ships OFF** (`EXPLORE_DISCOVERY_ENABLED`), for the same reason `MLS_SYNC_ENABLED`
+does: deploying code must not by itself begin unattended traffic to a third-party provider.
+With it off Explore is cache-only **and says so** in the response, because a cache-only answer
+must not be mistaken for a complete one.
+
+**Explore being current is only half of what a consumer experiences, and the other half is
+somebody else's flag.** The canonical Seller/Landlord pages do NOT read `bridge_properties` —
+`ListingStatusDisplay` and `ListingPriceDisplay` read `mls_standard_status` / `mls_list_price`
+**meta on the auction**, and the only writer of those is `MlsListingSyncService`. Explore's
+discovery writes no listing meta, deliberately: which facts may move onto a listing is
+`MlsSyncFieldPolicy`'s decision from both ends, and a public map endpoint reaching into that
+store would be the parallel ingestion path that must not exist. So with the sync gates closed a
+consumer can see **Pending / $525,000** on the map and **Active / $535,000** on the listing they
+click through to. `ExploreCanonicalCurrentnessTest` pins that gap AND pins that the existing
+sync closes it. **A coherent launch therefore needs `MLS_SYNC_ENABLED` + `MLS_SYNC_SCHEDULE_ENABLED`
+alongside the Explore flags** — the schedule specifically, because a non-owner view sends nothing
+and only records demand, so a public visitor's page is current only if a sweep already made it so.
+
+**The throttle bounds requests, not provider fetches.** Both data routes carry `throttle:120,1`
+per user-or-IP, but a caller inside that could supply 120 far-apart bounding boxes — 120 distinct
+cold tiles — and multiply them by the per-pass page cap. Nothing bounds Explore's aggregate
+outbound Bridge volume today. The remedy is the existing provider-neutral
+`ProviderRequestBudget` guard rather than a new one; it is **reported and not wired**, because
+enabling a spend guard belongs with the decision to enable `EXPLORE_DISCOVERY_ENABLED`.
+
+Eligibility still needs `raw_json` decoded per row (permissions and lease frequency exist only
+there), so the repository overfetches, filters, then slices under a hard read ceiling — a bare
+SQL `LIMIT` would silently shrink a page and look like a thinner neighbourhood.
+
+**The Google credential is its own, permanently.** `GOOGLE_PLACES_API_KEY` is a SERVER key and
+must never become a fallback — emitting it would publish a server credential to every visitor.
+`EXPLORE_GOOGLE_MAPS_BROWSER_KEY` is absent by default, which is a **third state**: Explore on
+with no map credential serves the page, answers the API, and states why the map is empty,
+because a blank grey rectangle is indistinguishable from a bug and no PHP test can see one.
+Only `maps3d` is requested; Places, Routes, Roads, Directions and Geocoding are asserted
+absent from the shipped renderer. The renderer is a **static asset**, not a Mix bundle and not
+part of `app.js`: it has no imports, so compiling it would buy nothing and couple `/explore`
+to a build.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.
@@ -765,5 +920,14 @@ Beyond standard Laravel keys, this app requires:
 | `CRITERIA_LDNA_GEOGRAPHY_SOURCE` | Which `CriteriaGeographyRepository` backs the geography cascade. **Exactly three values are accepted** — `eloquent` (default; the `us_*` reference tables), `census` (the `census_*` corpus from `census:import-geography`), `fake` (in-memory fixture, local/demo only). **Anything else throws at container resolution.** That is deliberate: the binding used to fall through to `eloquent`, so a typo silently served legacy data and looked exactly like success. Selecting `census` requires the corpus to be present — run `php artisan census:verify-geography` first, and in the deploy sequence of any environment using it, or every tier enumerates empty with no error. |
 | `CRITERIA_LDNA_PREVIEW_ENABLED` | Geography preview surface. Default `false`. |
 | `OFFER_PLAYOFF_ALLOWED_IDS` | Comma-separated user IDs or `*` for all |
+| `EXPLORE_ENABLED` | Master gate for BidYourOffer Explore (`/explore` plus `/api/explore/listings*`). Default `false` = every route 404s, data endpoints included, so the feature is invisible rather than advertised. Mirrors `CheckMatchCheckEnabled`. Fails closed: a config that did not load reads as off. Says nothing about VOW. |
+| `EXPLORE_VOW_ENABLED` | The Property Intelligence / VOW tier. Default `false`, **and setting it `true` grants nothing** — `VowAvailability` refuses in code, and a test asserts the flag cannot move the tier. It exists so the posture can be reported, not as the gate: no VOW approval, dataset, credential, registration flow or feed field exists in this application. Activation requirements are in `VowAvailability::activationRequirements()` and `docs/bidyouroffer-explore-audit-2026-09-10.md`. |
+| `EXPLORE_GOOGLE_MAPS_BROWSER_KEY` | Browser key for the Maps JavaScript API `maps3d` renderer. **Not `GOOGLE_PLACES_API_KEY`**, which is a server key for address validation and POI lookup and must never be emitted into a page or used as a fallback here. Absent by default — that is a distinct third state from "Explore off": the route serves, the API answers, and the map area states why it is empty, because a blank grey rectangle is indistinguishable from a bug. With no key the page issues **zero** Google requests. |
+| `EXPLORE_GOOGLE_MAPS_MAP_ID` / `EXPLORE_GOOGLE_MAPS_VERSION` | Optional styled Map ID (photorealistic tiles render without one) and the API version channel (default `alpha`, which is where `Map3DElement` currently lives). |
+| `EXPLORE_DEFAULT_LAT` / `_LNG` / `_ALTITUDE` / `_TILT` / `_HEADING` / `_RANGE` | The opening camera. Defaults to St. Petersburg / Tampa Bay because that is where this dataset's 1,225 cached records actually are; opening anywhere else shows an empty neighbourhood, which reads as a broken feature rather than an empty market. |
+| `EXPLORE_DISCOVERY_ENABLED` | Whether an Explore viewport may ask the provider for the CURRENT eligible listings in that area, through `LazyBridgeImportService` — the one existing MLS ingestion pipeline. Default `false`, the same posture as `MLS_SYNC_ENABLED` and for the same reason: merging and activating are two decisions. **Off is not merely quieter, it is less complete** — Explore then renders only what some earlier workflow happened to import, which is a statement about our cache, so the response labels itself `discovery.status = "disabled"` rather than letting a thin result read as a thin market. On, a request costs at most one provider pass per transaction type per viewport, free while the tile's fetch cache is warm. |
+| `EXPLORE_DISCOVERY_TILE_DEGREES` | Grid (default `0.05°`, ~5.5 km) the discovery bbox is snapped **outwards** to before it is hashed into a fetch-cache key. **This is what makes cache reuse real**: unsnapped, the key changes with every pixel of pan and every camera nudge becomes a provider request. Outwards, never nearest, so the box always contains the viewport — otherwise a property at the screen edge would be rendered from an area discovery never asked about. |
+| `EXPLORE_DISCOVERY_MAX_PAGES` / `EXPLORE_DISCOVERY_MAX_RECORDS` | Per-pass pagination ceilings (default 5 × 500), **clamped downwards** against the global `BRIDGE_LAZY_*` envelope by the importer — a call site may lower a spend limit, never raise one. Lower than the criteria-search defaults because this runs while somebody is moving a camera rather than on a results page they are waiting for. Hitting a ceiling makes the pass *partial*, which suppresses the withhold-unconfirmed-rows rule: absence would then mean "we stopped asking", not "it is gone". |
+| `EXPLORE_MAX_RESULTS` / `EXPLORE_MAX_SPAN_DEGREES` | Page size (default 150, hard ceiling 250) and the bounding-box span ceiling (default 1.0°). An over-large bbox is **refused with a 422, never clamped** — a clamped box returns markers for somewhere the consumer is not looking, and the thinner result reads as "nothing for sale here", which is a false statement about a real market. |
 
 `.env` is not tracked in git — back it up separately.
