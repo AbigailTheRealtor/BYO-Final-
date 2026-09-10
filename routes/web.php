@@ -655,6 +655,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('hire/agent/seller/edit/{id}', [SellerAgentAuctionController::class, 'editSellerAgentHireAuction'])->name('editSellerAgentHireAuction');
     Route::post('hire/agent/seller/update', [SellerAgentAuctionController::class, 'updateSellerAgentHireAuction'])->name('updateSellerAgentHireAuction');
     Route::post('hire/agent/seller/bid/accept', [SellerAgentAuctionController::class, 'acceptSABid'])->name('acceptSABid');
+    Route::post('hire/agent/seller/bid/reject', [SellerAgentAuctionController::class, 'rejectSABid'])->name('rejectSABid');
     Route::get('seller/agents/list', [SellerAgentAuctionController::class, 'myAgents'])->name('seller.agents');
     Route::get('seller/service/auction/add', [SellerServiceAuctionController::class, 'add'])->name('seller.service.auction.add');
     Route::post('seller/service/auction/store', [SellerServiceAuctionController::class, 'store'])->name('seller.service.auction.store');
@@ -939,18 +940,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
         // Counter Bid Routes
         //
-        // `hire/agent/seller/bid/accept` is NOT registered here. It was, and because a
-        // later registration of the same method + URI replaces the earlier one in the
-        // RouteCollection, this copy shadowed the consumer-scoped one above (the
-        // `auth`/`verified` block, beside the other Seller hire-agent routes) and became
-        // the only effective route. That made the endpoint unreachable for everybody:
-        // `agentAuth` redirects any account whose `user_type` is not `agent`, so the
-        // Seller never arrived, and `acceptSABid()` aborts 403 unless the caller owns the
-        // listing, so an agent who did arrive was refused. The person accepting a Seller
-        // Hire Agent bid is the Seller/listing owner, not the bidding agent.
+        // NEITHER `hire/agent/seller/bid/accept` NOR `hire/agent/seller/bid/reject` is
+        // registered here. Both were, and both are Seller/listing-owner decisions on an
+        // incoming agent proposal — so `agentAuth` is the wrong scope for either.
         //
-        // Pinned by tests/Feature/HireAgent/SellerAcceptBidRouteTest.php.
-        Route::post('hire/agent/seller/bid/reject', [SellerAgentAuctionController::class, 'rejectSABid'])->name('rejectSABid');
+        // Accept was registered TWICE, and because a later registration of the same
+        // method + URI replaces the earlier one in the RouteCollection, this copy
+        // shadowed the consumer-scoped one above (the `auth`/`verified` block, beside
+        // the other Seller hire-agent routes) and became the only effective route.
+        // Reject had no second registration at all: this WAS its only one, so it needed
+        // no shadowing to be mis-scoped — it simply sat in the agent block.
+        //
+        // Either way the endpoint was unreachable for everybody: `agentAuth` redirects
+        // any account whose `user_type` is not `agent`, so the Seller never arrived, and
+        // `acceptSABid()`/`rejectSABid()` each abort 403 unless the caller owns the
+        // listing, so an agent who did arrive was refused. Both now live beside the
+        // other Seller hire-agent routes, under `auth` + `verified` only.
+        //
+        // Buyer, Landlord and Tenant reject were already consumer-scoped; Seller was the
+        // only role of the four affected.
+        //
+        // Pinned by tests/Feature/HireAgent/SellerAcceptBidRouteTest.php and
+        // tests/Feature/HireAgent/SellerRejectBidRouteTest.php.
         Route::post('hire/agent/seller/destroy/counter/{id}', [SellerCounterBidController::class, 'destroyCounter'])->name('destroySellerCounter');
 
         // Route::post('/landlord/agent/auction/counter/bid/{bid_id}', [LandlordAgentAuctionBidController::class, 'saveCounterBid'])->name('landlord.agent.save.counter-bid');
