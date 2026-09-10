@@ -286,6 +286,38 @@ Route::middleware('agent-ai-v2')->group(function () {
         ->name('agent-ai.escalate');
 });
 
+// ── BidYourOffer Explore ────────────────────────────────────────────────────
+//
+// Public IDX discovery surface: a Google Photorealistic 3D neighbourhood with
+// eligible Stellar FOR SALE and FOR RENT listings placed at their own MLS
+// coordinates.
+//
+// Gated by `explore` (config/explore.php, default OFF → every route 404s,
+// including the data endpoints). Registered in web.php rather than api.php on
+// purpose: the shell is a web page and the endpoints resolve the viewer from
+// the session, which is the same identity every other consumer surface uses.
+//
+// UNAUTHENTICATED BY DESIGN, AND THAT IS NOT THE PERMISSION. The pages these
+// listings already publish are public. Each endpoint decides eligibility for
+// itself on every request — see ExploreEligibilityPolicy — and the shell route
+// loads no listing data at all.
+Route::middleware('explore')->group(function () {
+    Route::get('/explore', [\App\Http\Controllers\Explore\ExploreController::class, 'index'])
+        ->name('explore.index');
+
+    // Viewport projection. Throttled because a public endpoint reading MLS
+    // inventory a bounding box at a time is exactly the shape a scraper wants;
+    // the bbox size ceiling in ExploreViewport is the other half of that.
+    Route::get('/api/explore/listings', [\App\Http\Controllers\Explore\ExploreListingApiController::class, 'index'])
+        ->middleware('throttle:120,1')
+        ->name('explore.api.listings');
+
+    Route::get('/api/explore/listings/{listingKey}', [\App\Http\Controllers\Explore\ExploreListingApiController::class, 'show'])
+        ->middleware('throttle:120,1')
+        ->where('listingKey', '[A-Za-z0-9\-]+')
+        ->name('explore.api.listing');
+});
+
 // Match Check (MLS Direct Import — Phase 4) — consumer Buyer/Tenant match lookup.
 // First surface for the feature (git-C14). Gated behind CheckMatchCheckEnabled
 // (config/mls_match_check.php, default OFF → every route 404s). Requires auth: the

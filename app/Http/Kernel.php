@@ -82,5 +82,6 @@ class Kernel extends HttpKernel
         'tenantAuth' => \App\Http\Middleware\TenantAuth::class,
         'agent-ai-v2' => \App\Http\Middleware\CheckAgentAiV2Enabled::class,
         'match-check' => \App\Http\Middleware\CheckMatchCheckEnabled::class,
+        'explore' => \App\Http\Middleware\CheckExploreEnabled::class,
     ];
 }
