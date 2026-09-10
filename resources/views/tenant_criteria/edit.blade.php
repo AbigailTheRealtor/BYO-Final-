@@ -424,7 +424,7 @@
                 </tbody>
               </table>
             </div>
-            @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? []])
+            @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'ldnaSurface' => \App\Support\Spatial\LdnaBasemapSurface::TENANT_CRITERIA])
           </div>
           <div class="wizard-step" data-step="2">
             <?php

@@ -64,6 +64,15 @@ const LYR_VERTICES = 'ldna-vertices-circles';
 const EMPTY = { type: 'FeatureCollection', features: [] };
 
 /**
+ * How long to wait for a style to finish loading before painting on a blank one.
+ *
+ * Generous rather than tight: a slow connection reading a 1.1 GB archive's header over
+ * range requests is normal, and pre-empting it would swap a basemap that was about to
+ * arrive. This is the backstop for "never fired at all", not a performance budget.
+ */
+const STYLE_WATCHDOG_MS = 12000;
+
+/**
  * Create a renderer bound to one container.
  *
  * @param {object}   deps
@@ -73,12 +82,26 @@ const EMPTY = { type: 'FeatureCollection', features: [] };
  * @param {object}   deps.config      { pmtilesUrl, attribution, longitude, latitude, zoom, maxZoom }
  * @param {Function} [deps.onChange]  called with the current { polygons, radius_searches } after any edit
  * @param {Function} [deps.onStatus]  called with ('ready'|'error'|'degraded', message)
+ * @param {Function} [deps.onReady]   called once the geometry layers are on the map, whether
+ *                                    or not the basemap backdrop loaded — the hook a caller
+ *                                    uses to fit the viewport, since fitting before the
+ *                                    layers exist fits to nothing
  */
-export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}, onChange, onStatus }) {
+export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}, onChange, onStatus, onReady }) {
     let map = null;
     let hydrated = false;
     let initialised = false;
     let destroyed = false;
+
+    // Style/paint lifecycle. `painted` tracks whether the geometry sources and layers are
+    // on the CURRENT style — it resets across a setStyle, because a style swap discards
+    // every source the previous one carried. `basemapFailed` latches: once the backdrop is
+    // known to be unusable the message must not flap back to 'ready' on a later repaint.
+    let painted = false;
+    let usingArchive = false;
+    let basemapFailed = false;
+    let degradedMessage = '';
+    let watchdog = null;
 
     // The working set. Mirrors what the host has stored; the single source of
     // truth for everything this renderer draws and reports.
@@ -412,12 +435,15 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
             let style;
 
             if (archive) {
+                usingArchive = true;
                 registerPmtilesProtocol(maplibregl, pmtiles);
                 style = buildBasemapStyle(archive, config.attribution || '', Number(config.maxZoom) || 15);
             } else {
                 // No archive configured: initialise anyway, without a backdrop.
                 style = buildBlankStyle();
-                emitStatus('degraded', 'No basemap archive configured; geometry editing remains available.');
+                basemapFailed = true;
+                degradedMessage = 'No basemap archive is configured. The map still works — your saved areas are shown and remain editable.';
+                emitStatus('degraded', degradedMessage);
             }
 
             try {
@@ -434,20 +460,96 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
                 return null;
             }
 
-            map.on('load', () => {
+            // Paint the geometry layers. Runs once per style, and `style.load` fires
+            // again after a setStyle, which is what makes the fallback below work.
+            //
+            // BOUND TO `style.load`, NOT `load`, AND THAT IS THE WHOLE POINT.
+            // `load` waits for the map to be fully loaded, which includes every declared
+            // source resolving. When the PMTiles archive cannot be read — a CORS refusal,
+            // a 403, an offline client — that never happens, so a handler on `load` never
+            // runs, the geometry sources are never added, and the user's stored polygons
+            // are invisible on a map that is otherwise alive. `style.load` fires as soon
+            // as the style object is in place, independent of whether any tile arrives.
+            const paint = () => {
+                if (painted || destroyed || !map) {
+                    return;
+                }
+                painted = true;
+                if (watchdog) {
+                    // Nothing left for it to rescue; a live timer that would call setStyle
+                    // on a working map is a hazard, not a backstop.
+                    clearTimeout(watchdog);
+                    watchdog = null;
+                }
                 addSourcesAndLayers();
                 refreshBoundaries();
                 refreshOverlays();
                 refreshPlaces();
-                emitStatus('ready', '');
-            });
+                emitStatus(basemapFailed ? 'degraded' : 'ready', basemapFailed ? degradedMessage : '');
+                if (typeof onReady === 'function') {
+                    onReady();
+                }
+            };
+
+            // BOTH events, and `paint` is idempotent so the second is free.
+            //
+            // `style.load` is the one that matters for correctness: it fires without waiting
+            // for a source to resolve, and it fires AGAIN after the setStyle below, which is
+            // what repaints the geometry onto the fallback backdrop. `load` is bound as well
+            // because it is the event every MapLibre-shaped library is certain to have, and a
+            // renderer whose geometry depends on the rarer of two events is one library
+            // revision away from an empty map.
+            map.on('style.load', paint);
+            map.on('load', paint);
 
             // A tile or source failure must NOT take the editor down with it. The
             // basemap is the optional part; the geometry is not.
+            //
+            // On the FIRST such failure the style is swapped for the blank one. Reporting
+            // "tiles unavailable" while leaving a style whose only source can never load
+            // is a half-measure: MapLibre keeps retrying the dead source on every pan, and
+            // the failure recurs for the life of the page. Swapping settles it once, and
+            // re-fires `style.load`, so the geometry is repainted onto a backdrop that
+            // works. Guarded so the swap can happen at most once and can never recurse.
             map.on('error', (event) => {
                 const detail = event && event.error && event.error.message ? event.error.message : 'unknown error';
-                emitStatus('degraded', `Basemap tiles unavailable (${detail}). Geometry editing remains available.`);
+
+                if (basemapFailed) {
+                    return;
+                }
+
+                basemapFailed = true;
+                degradedMessage = `Basemap tiles unavailable (${detail}). The map still works — your saved areas are shown and remain editable.`;
+                emitStatus('degraded', degradedMessage);
+
+                if (usingArchive && map && typeof map.setStyle === 'function') {
+                    painted = false;
+                    try {
+                        map.setStyle(buildBlankStyle());
+                    } catch (swapError) {
+                        // The swap is a recovery, not a requirement. If it throws we still
+                        // have whatever was already painted, and the message above stands.
+                        painted = true;
+                    }
+                }
             });
+
+            // Watchdog. `style.load` is reliable, but a library that never fires it at all
+            // would leave a permanently empty container with no explanation — which is the
+            // exact defect this whole migration exists to end. If nothing has painted by
+            // now, paint on the blank style and say so.
+            watchdog = setTimeout(() => {
+                if (painted || destroyed || !map) {
+                    return;
+                }
+                basemapFailed = true;
+                degradedMessage = 'Basemap did not finish loading. The map still works — your saved areas are shown and remain editable.';
+                try {
+                    map.setStyle(buildBlankStyle());
+                } catch (swapError) {
+                    paint();
+                }
+            }, STYLE_WATCHDOG_MS);
 
             map.on('click', onMapClick);
             map.on('mousedown', LYR_VERTICES, onVertexDown);
@@ -515,6 +617,65 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
         clearBoundary(key) {
             boundaries.delete(key);
             refreshBoundaries();
+            return this;
+        },
+
+        /**
+         * Fit the viewport to everything currently drawn — stored polygons, radius
+         * circles, located Important Places and the property pin.
+         *
+         * Lives here rather than in the entry point because it is geometry, and the
+         * geometry helpers are already imported here. An entry point that recomputed
+         * bounds from raw state would be a second implementation of the same maths,
+         * free to disagree with what the map is actually showing.
+         *
+         * A SINGLE POINT IS NOT A BOX. `boundsOf` on one pin yields a zero-area extent,
+         * and `fitBounds` on that snaps to maxZoom, which for a property pin is the
+         * right answer only by accident. So a degenerate extent is centred at an
+         * explicit zoom instead, which is what the Google pin map did.
+         *
+         * Silently does nothing when there is no geometry — the caller does not have to
+         * know whether this listing has any, and "no geometry" must leave the configured
+         * initial view alone rather than jumping to null island.
+         */
+        fitToGeometry({ padding = 32, zoom = 14 } = {}) {
+            if (!map) {
+                return this;
+            }
+
+            const features = [
+                ...overlaysToFeatureCollection({ polygons, radius_searches: circles }).features,
+                ...importantPlacesToFeatureCollection(places).features,
+            ];
+
+            const pin = propertyMarker ? propertyMarker.getLngLat() : null;
+            if (pin) {
+                features.push({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [pin.lng, pin.lat] },
+                    properties: {},
+                });
+            }
+
+            if (features.length === 0) {
+                return this;
+            }
+
+            const bounds = boundsOf({ type: 'FeatureCollection', features });
+
+            if (!bounds) {
+                return this;
+            }
+
+            const [[west, south], [east, north]] = bounds;
+
+            if (west === east && south === north) {
+                map.jumpTo({ center: [west, south], zoom });
+                return this;
+            }
+
+            map.fitBounds(bounds, { padding, duration: 0 });
+
             return this;
         },
 
@@ -677,6 +838,10 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
 
         destroy() {
             destroyed = true;
+            if (watchdog) {
+                clearTimeout(watchdog);
+                watchdog = null;
+            }
             clearPlaceMarkers();
             if (propertyMarker) {
                 propertyMarker.remove();

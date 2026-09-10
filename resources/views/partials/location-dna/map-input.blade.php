@@ -73,6 +73,18 @@
      merges the cascade's own projection over them immediately before persisting. The state
      input is already read behind an `if (stateEl)` guard for the same reason. */
   $ldnaGeographyCascade  = $ldnaGeographyCascade ?? false;
+
+  /* Phase 2 — renderer selection. `$ldnaSurface` is the host key
+     (App\Support\Spatial\LdnaBasemapSurface::CREATE_BUYER and friends); a host that passes
+     nothing keeps Google, byte-unchanged, because enabledFor(null) is false.
+
+     THE ANSWER IS COMPUTED ONCE AND USED BY BOTH HALVES. The markup below and the
+     serialiser further down must never disagree about which renderer is live: a panel that
+     renders MapLibre while the serialiser still rebuilds geometry from Google's
+     `ldnaOverlays` would write `"polygons":[]` over stored shapes on the next save, which is
+     the exact class of loss the PR #124 guard exists to prevent. One variable, two readers. */
+  $ldnaSurface     = $ldnaSurface ?? null;
+  $ldnaUseMaplibre = \App\Support\Spatial\LdnaBasemapSurface::enabledFor($ldnaSurface);
   $ldnaIpTypes           = \App\Services\Offers\ImportantPlacesService::TYPES;
   $ldnaIpModes           = \App\Services\Offers\ImportantPlacesService::TRAVEL_MODES;
 @endphp
@@ -261,6 +273,21 @@
   </div>
 
   {{-- ── Map panel ── --}}
+@if ($ldnaUseMaplibre)
+  {{-- MapLibre renderer. Same slot, same stored blob, same toolbar above it — only the
+       thing that paints pixels changes. The Google branch below is untouched and remains
+       the default for every surface not named in LOCATION_DNA_MAPLIBRE_SURFACES. --}}
+  @include('partials.location-dna._maplibre-panel', [
+      'ldnaMaplibreSurface' => $ldnaSurface,
+      'ldnaMaplibrePanelId' => $mapPanelId,
+      'ldnaMaplibreMode'    => 'edit',
+      'ldnaMaplibreState'   => [
+          'polygons'         => $ldnaPolygons,
+          'radius_searches'  => $ldnaRadii,
+          'important_places' => $enableImportantPlaces ? $ldnaImportantPlaces : [],
+      ],
+  ])
+@else
   <div style="position:relative;">
     <div id="{{ $mapPanelId }}" wire:ignore></div>
     <div id="{{ $mapPanelId }}-placeholder"
@@ -275,6 +302,7 @@
       @endif
     </div>
   </div>
+@endif
 
   {{-- ── Overlay list (JS populates with delete buttons on map init) ── --}}
   <ul class="list-unstyled mt-1" id="ldna-overlay-list"></ul>
@@ -438,6 +466,18 @@
   if (window[_panelKey]) return;
   window[_panelKey] = true;
 
+  /* Which renderer is live on this panel. Server-decided (LdnaBasemapSurface), never
+     sniffed from the DOM: a browser-side guess would disagree with the markup the moment
+     the bundle failed to load, and disagreement here is a destructive write. */
+  var ldnaUseMaplibre = {{ $ldnaUseMaplibre ? 'true' : 'false' }};
+
+  /* The renderer instance for THIS panel, read off the container rather than from
+     window.ldnaMaplibreRenderer — that global names only the last panel mounted. */
+  function ldnaMlRenderer() {
+    var el = document.getElementById('{{ $mapPanelId }}');
+    return (el && el._ldnaRenderer) ? el._ldnaRenderer : null;
+  }
+
   /* ── State ───────────────────────────────────────────────────────────────── */
   var ldnaState = {
     cities:            @json($ldnaCities),
@@ -523,7 +563,20 @@
        ldnaState values are left exactly as they are — see the comment on
        ldnaOverlaysAuthoritative. Every other key above is edited by controls
        that need no map, so they serialise unconditionally as they always did. */
-    if (ldnaOverlaysAuthoritative) {
+    if (ldnaUseMaplibre) {
+      /* MapLibre branch. IDENTICAL SAFETY PROPERTY, different authority flag: the renderer's
+         own isHydrated() is the exact counterpart of ldnaOverlaysAuthoritative below — it
+         goes true only after hydrate() has adopted the stored geometry, so a renderer that
+         has not read storage yet leaves the server-seeded ldnaState values untouched and the
+         blob round-trips byte-for-byte. A missing renderer (bundle blocked, JS error,
+         container never revealed) lands in the same safe branch for the same reason. */
+      var _mlRenderer = ldnaMlRenderer();
+      if (_mlRenderer && typeof _mlRenderer.isHydrated === 'function' && _mlRenderer.isHydrated()) {
+        var _mlState = _mlRenderer.getState();
+        ldnaState.polygons        = _mlState.polygons        || [];
+        ldnaState.radius_searches = _mlState.radius_searches || [];
+      }
+    } else if (ldnaOverlaysAuthoritative) {
       ldnaState.polygons        = [];
       ldnaState.radius_searches = [];
 
@@ -596,6 +649,17 @@
       if (empty) return;
       arr.push(entry);
     });
+    /* Keep the MapLibre pins in step with the rows. Google's pins are drawn per-row by
+       ldnaIpDrawOverlay (which no-ops while ldnaMap is null); MapLibre owns its pins as a
+       set, so it is handed the whole list. Coordinates only — nothing here geocodes, and a
+       row the user has not located yet simply has no pin. */
+    if (ldnaUseMaplibre) {
+      var _ipRenderer = ldnaMlRenderer();
+      if (_ipRenderer && typeof _ipRenderer.setImportantPlaces === 'function') {
+        _ipRenderer.setImportantPlaces(arr);
+      }
+    }
+
     var field = document.getElementById('ldna-important-places-field');
     if (field) field.value = arr.length ? JSON.stringify(arr) : '';
   };
@@ -725,6 +789,26 @@
     var addrEl  = row.querySelector('.ldna-ip-address');
     var address = addrEl ? addrEl.value.trim() : '';
     if (!address) return;
+@if ($ldnaUseMaplibre)
+    /* No geocoder on this surface, by design — see window.ldnaAddRadiusSearch below for the
+       same reasoning. Crucially this must not fall through to the Google branch, whose
+       `if (!ldnaMap)` line retries every 600ms FOREVER when there is no Google map, which
+       is the same unbounded-poll defect the init path used to have.
+
+       The row is still saved. Address, type, distance and travel mode all persist; only the
+       PIN needs a coordinate, and a row without one simply has no pin — which the renderer
+       already handles rather than guessing a location. */
+    var _ipHint = row.querySelector('.ldna-ip-geocode-hint');
+    if (!_ipHint) {
+      _ipHint = document.createElement('div');
+      _ipHint.className = 'ldna-hint ldna-ip-geocode-hint';
+      _ipHint.style.color = '#92400e';
+      row.appendChild(_ipHint);
+    }
+    _ipHint.textContent = 'Address lookup is not available on this map, so this place will '
+      + 'not show a pin. It is still saved with the listing.';
+    return;
+@endif
     if (!ldnaMap) { ldnaRequestInit(); setTimeout(function () { window.ldnaIpGeocodeRow(el); }, 600); return; }
     var geocoder = new google.maps.Geocoder();
     geocoder.geocode({ address: address, componentRestrictions: { country: 'us' } }, function (results, status) {
@@ -1069,6 +1153,18 @@
 
   /* ── Render a GeoJSON Feature as a styled boundary overlay ─────────────── */
   function ldnaRenderBoundaryFeature(key, feature) {
+@if ($ldnaUseMaplibre)
+    /* MapLibre: hand the renderer GeoJSON the HOST already fetched. The fetch stays here,
+       in the queue above, exactly where it has always been — `setBoundary` never issues a
+       request, which is what keeps the inherited browser-direct Nominatim/TIGER traffic out
+       of the new renderer instead of porting it forward. */
+    var _blRenderer = ldnaMlRenderer();
+    if (_blRenderer) {
+      _blRenderer.setBoundary(key, feature);
+      _blRenderer.fitToBoundary(key);
+    }
+    return;
+@endif
     if (!ldnaMap) return;
     ldnaClearBoundaryOverlay(key);
 
@@ -1109,6 +1205,11 @@
   }
 
   function ldnaClearBoundaryOverlay(key) {
+@if ($ldnaUseMaplibre)
+    var _clRenderer = ldnaMlRenderer();
+    if (_clRenderer) _clRenderer.clearBoundary(key);
+    return;
+@endif
     if (!ldnaBoundaryOverlays[key] || !ldnaMap) return;
     ldnaBoundaryOverlays[key].forEach(function (f) {
       try { ldnaMap.data.remove(f); } catch (e) {}
@@ -1586,11 +1687,57 @@
   }
 
   /* ── Visibility-aware init (for tabs/hidden panels) ──────────────────────── */
+
+  /* THE POLL IS BOUNDED, AND IT DID NOT USE TO BE.
+     `ldnaTryInit` re-armed itself every 200ms forever whenever `google` was undefined —
+     no ceiling, no error, no console line, no change on screen. With the Maps SDK absent
+     (blank credential, rejected key, referrer refusal, blocked script) ldnaInitMap() was
+     never reached, so the absolutely-positioned placeholder was never hidden, and the
+     panel stayed a grey 420px box reading "Loading map…" for the life of the page. Every
+     control built inside ldnaInitMap() — both draw tools, all three autocompletes, every
+     boundary overlay, the Important Places pins, the saved-geometry fitBounds — was gone
+     with it, and nothing said so.
+
+     A ceiling turns a silent permanent blank into a stated fact. It changes nothing on a
+     page where the SDK does arrive: 60 attempts at 200ms is twelve seconds, well beyond
+     any normal load, and the counter is abandoned the moment initialisation succeeds. */
+  var LDNA_GOOGLE_MAX_ATTEMPTS = 60;   /* ~12s */
+  var ldnaGoogleAttempts       = 0;
+  var ldnaGoogleGaveUp         = false;
+
+  function ldnaGoogleDegrade() {
+    if (ldnaGoogleGaveUp) return;
+    ldnaGoogleGaveUp = true;
+
+    var ph = document.getElementById('{{ $mapPanelId }}-placeholder');
+    if (!ph) return;
+
+    ph.style.background   = '#fffbeb';
+    ph.style.border       = '1px solid #fcd34d';
+    ph.style.color        = '#92400e';
+    ph.style.pointerEvents = 'auto';
+    ph.setAttribute('role', 'status');
+    /* textContent, never innerHTML — this partial renders user-controlled labels
+       elsewhere and the XSS rule for this file is uniform. */
+    ph.textContent = '\u26A0 The map could not load, so drawing and boundary display are '
+      + 'unavailable right now. Your saved search areas are safe and are listed below — '
+      + 'cities, ZIP codes, counties and notes can still be edited and saved.';
+
+    if (window.console && console.warn) {
+      console.warn('[Location DNA] Google Maps SDK did not become available; map controls disabled. '
+        + 'Saved geometry is preserved and will not be overwritten.');
+    }
+  }
+
   function ldnaTryInit() {
-    if (ldnaMapInitialized) return;
+    if (ldnaMapInitialized || ldnaGoogleGaveUp) return;
     /* Only need google.maps.Map — no DrawingManager dependency */
     if (typeof google === 'undefined' || !google.maps ||
         typeof google.maps.Map !== 'function') {
+      if (++ldnaGoogleAttempts >= LDNA_GOOGLE_MAX_ATTEMPTS) {
+        ldnaGoogleDegrade();
+        return;
+      }
       setTimeout(ldnaTryInit, 200);
       return;
     }
@@ -1625,6 +1772,14 @@
   }
 
   window.ldnaRequestInit = function () {
+    /* MapLibre owns its own reveal handling (IntersectionObserver + resize), so the only
+       thing a tab-shown event needs to do is nudge the canvas: a map measured while its
+       container was display:none keeps that size until told otherwise. */
+    if (ldnaUseMaplibre) {
+      var _r = ldnaMlRenderer();
+      if (_r) _r.resize();
+      return;
+    }
     if (!ldnaMapInitialized) {
       ldnaTryInit();
     } else {
@@ -1660,9 +1815,196 @@
     });
   });
 
+@if ($ldnaUseMaplibre)
+  /* ═══════════════════════════════════════════════════════════════════════════
+     MAPLIBRE TOOLBAR BINDING
+
+     The toolbar, the drawing HUD and the overlay list are shared chrome: the same
+     buttons, the same markup, the same labels, whichever renderer is underneath. Only
+     the five PUBLIC entry points they call are re-pointed here, at the very end of the
+     IIFE, so the Google implementations above are not edited at all and remain the
+     default for every surface not named in LOCATION_DNA_MAPLIBRE_SURFACES.
+
+     Re-pointing rather than branching inside each function is deliberate: the Google
+     versions close over ldnaOverlays, ldnaMap and a dozen google.maps objects, and
+     threading a second renderer through them is how both paths end up half-implemented.
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Rebuild the overlay list from the renderer's own state.
+     Indexes are the renderer's live array positions, so the list is regenerated after
+     every change rather than patched — a delete renumbers everything after it, and a
+     patched list would send the next delete to the wrong shape. */
+  function ldnaMlRefreshOverlayList() {
+    var ol = document.getElementById('ldna-overlay-list');
+    var r  = ldnaMlRenderer();
+    if (!ol || !r) return;
+
+    ol.innerHTML = '';
+    var st = r.getState();
+
+    function row(kind, idx, label, iconClass) {
+      var li = document.createElement('li');
+      li.className = 'ldna-overlay-item';
+      var icon = document.createElement('i');
+      icon.className = 'fa-solid ' + iconClass;
+      var span = document.createElement('span');
+      span.className = 'flex-fill';
+      /* textContent, never innerHTML: a polygon label and a radius address are both
+         user-supplied, and this list renders on an editing surface. */
+      span.textContent = label;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ldna-del';
+      btn.title = 'Remove';
+      btn.innerHTML = '<i class="fa-solid fa-times-circle"></i>';
+      btn.addEventListener('click', function () {
+        if (kind === 'polygon') { r.deletePolygon(idx); } else { r.deleteCircle(idx); }
+        ldnaMlRefreshOverlayList();
+      });
+      li.appendChild(icon); li.appendChild(span); li.appendChild(btn);
+      ol.appendChild(li);
+    }
+
+    (st.polygons || []).forEach(function (p, i) {
+      row('polygon', i, p.label || ('Polygon ' + (i + 1)), 'fa-draw-polygon text-primary');
+    });
+    (st.radius_searches || []).forEach(function (c, i) {
+      var miles = c.radius_miles != null ? c.radius_miles : 5;
+      row('circle', i, (c.address || c.label || 'Radius search') + ' — ' + miles + ' mi',
+          'fa-circle-dot text-secondary');
+    });
+  }
+
+  window.ldnaSetDrawMode = function (mode) {
+    var r = ldnaMlRenderer();
+    if (!r) return;
+    if (mode === 'polygon') {
+      r.startDrawPolygon();
+      ldnaShowDrawingHUD('Click the map to add points, then press Finish Polygon.', true);
+      ldnaUpdateDrawButtons('polygon');
+    } else if (mode === 'circle') {
+      r.startDrawCircle();
+      ldnaShowDrawingHUD('Click the centre, then click again to set the radius.', false);
+      ldnaUpdateDrawButtons('circle');
+    } else {
+      r.cancelDrawing();
+      ldnaHideDrawingHUD();
+      ldnaUpdateDrawButtons(null);
+    }
+  };
+
+  window.ldnaFinishDrawing = function () {
+    var r = ldnaMlRenderer();
+    if (!r) return;
+    /* finishPolygon returns null for fewer than three vertices — not an area, so it is
+       discarded rather than stored as a degenerate shape. Say so instead of failing mute. */
+    var made = r.finishPolygon('Polygon ' + ((r.getState().polygons || []).length + 1));
+    if (!made) {
+      var hudStatus = document.getElementById('ldna-hud-status');
+      if (hudStatus) hudStatus.textContent = 'Need at least 3 points to close the polygon.';
+      return;
+    }
+    ldnaHideDrawingHUD();
+    ldnaUpdateDrawButtons(null);
+    ldnaMlRefreshOverlayList();
+  };
+
+  window.ldnaCancelDrawing = function () {
+    var r = ldnaMlRenderer();
+    if (r) r.cancelDrawing();
+    ldnaHideDrawingHUD();
+    ldnaUpdateDrawButtons(null);
+  };
+
+  window.ldnaClearAllOverlays = function () {
+    var r = ldnaMlRenderer();
+    if (!r) return;
+    r.cancelDrawing();
+    /* Backwards: deleting by index from the front renumbers the rest under the loop. */
+    var st = r.getState();
+    for (var i = (st.polygons || []).length - 1; i >= 0; i--) { r.deletePolygon(i); }
+    for (var j = (st.radius_searches || []).length - 1; j >= 0; j--) { r.deleteCircle(j); }
+    ldnaHideDrawingHUD();
+    ldnaUpdateDrawButtons(null);
+    ldnaMlRefreshOverlayList();
+  };
+
+  /* Address-based radius needs a GEOCODER, and this renderer deliberately has none —
+     "no address becomes a coordinate in this file" is the renderer's stated contract, and
+     the Google geocoder is exactly the dependency this surface exists to stop needing.
+     So say what the user can do instead of failing silently: the Circle tool produces the
+     same stored radius_searches entry from two map clicks, with no third party involved.
+     A radius already saved with an address keeps it — nothing here rewrites stored rows. */
+  window.ldnaAddRadiusSearch = function () {
+    var warn = document.getElementById('ldna-radius-warning');
+    if (!warn) {
+      warn = document.createElement('div');
+      warn.id = 'ldna-radius-warning';
+      warn.className = 'ldna-hint';
+      warn.style.color = '#92400e';
+      var form = document.querySelector('.ldna-radius-form');
+      if (form && form.parentNode) form.parentNode.insertBefore(warn, form.nextSibling);
+    }
+    warn.textContent = 'Address lookup is not available on this map. Use the Circle tool '
+      + 'above: click the centre, then click again to set the radius.';
+  };
+
+  /* The renderer reports edits through onChange -> window.ldnaSerialize (wrapped by the
+     Livewire bridge). The list has to follow the same edits, including the ones made on
+     the map rather than through this toolbar — a dragged vertex, a circle drawn by click. */
+  var _ldnaMlPrevSerialize = window.ldnaSerialize;
+  var _ldnaMlLastCount     = null;
+  window.ldnaSerialize = function () {
+    if (typeof _ldnaMlPrevSerialize === 'function') _ldnaMlPrevSerialize();
+    ldnaMlRefreshOverlayList();
+
+    /* Close the drawing HUD when a shape actually LANDS, not merely when something
+       serialises. ldnaSerialize is also called by the notes box, the flexible-location
+       checkbox and every tag handler; resetting the toolbar on those would cancel the
+       user's drawing prompt mid-polygon while the renderer was still in polygon mode.
+       Comparing the shape count distinguishes "a shape was committed" from "an unrelated
+       field changed", which is the only signal that matters here. */
+    var r = ldnaMlRenderer();
+    if (!r) return;
+    var st    = r.getState();
+    var count = (st.polygons || []).length + (st.radius_searches || []).length;
+    if (_ldnaMlLastCount !== null && count !== _ldnaMlLastCount) {
+      ldnaHideDrawingHUD();
+      ldnaUpdateDrawButtons(null);
+    }
+    _ldnaMlLastCount = count;
+  };
+
+  /* First paint of the list, once the renderer has adopted stored geometry. */
+  (function ldnaMlAwaitHydration(attempts) {
+    var r = ldnaMlRenderer();
+    if (r && r.isHydrated()) {
+      ldnaMlRefreshOverlayList();
+
+      /* Boundary overlays for the tags already on the listing. Under Google this happens
+         inside ldnaInitMap(), which never runs on a MapLibre surface — without it a
+         reopened listing shows its polygons but not the outline of the city it named. */
+      ldnaState.cities.forEach(function (c) {
+        ldnaEnqueueBoundary('city__' + c, ldnaCityBoundaryUrl(c, null, null));
+      });
+      ldnaState.zip_codes.forEach(function (z) { ldnaFetchZipBoundary(z, 'zip__' + z); });
+      ldnaState.counties.forEach(function (co) {
+        ldnaEnqueueBoundary('county__' + co, ldnaCountyBoundaryUrl(co));
+      });
+      ldnaBoundaryProcess();
+      return;
+    }
+    if ((attempts || 0) > 60) return;   /* ~12s, same ceiling as the Google poll */
+    setTimeout(function () { ldnaMlAwaitHydration((attempts || 0) + 1); }, 200);
+  })(0);
+@endif
+
   /* ── Boot ────────────────────────────────────────────────────────────────── */
   function ldnaBoot() {
-    ldnaTryInit();
+    /* MapLibre mounts itself from its own bundle. Starting the Google poll as well would
+       spend twelve seconds waiting for an SDK this surface has deliberately stopped using,
+       and would end by painting the degraded panel over a working map. */
+    if (!ldnaUseMaplibre) ldnaTryInit();
     /* 9C rows build immediately (no map dependency); pins render on map init. */
     if (typeof window.ldnaIpInit === 'function') window.ldnaIpInit();
   }

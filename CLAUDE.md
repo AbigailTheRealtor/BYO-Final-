@@ -59,6 +59,64 @@ Bid forms are multi-tab Livewire components located in `app/Http/Livewire/` subd
 
 `LocationDnaPipelineRunner` (in `app/Services/LocationDna/`) orchestrates async enrichment for a property: POI lookup (Google Places via `GooglePlacesPoiAdapter`), flood zone (FEMA API), school districts (Census TIGER), and commute times. Results are cached via `LocationDnaPoiTileCache`. The pipeline runs as a queued job (`app/Jobs/ComputeLocationDna.php`). FEMA bounding-box size limits are configured in `config/location_dna.php`.
 
+### Location DNA map rendering — Google today, MapLibre behind two gates
+
+**There are two renderers and exactly one is live per surface.** The incumbent is Google
+Maps, in `partials/location-dna/map-input.blade.php` (the eight Buyer/Tenant Search Areas
+create/edit surfaces) and `components/location-dna-map.blade.php` (the read-only detail
+surface for all four roles). The replacement is the MapLibre + PMTiles renderer in
+`resources/js/spatial/`, which Phase 1 merged **wired to nothing** — `config/spatial_basemap.php`
+had no PHP reader at all, so its two flags governed nothing and no Blade template emitted it.
+
+`App\Support\Spatial\LdnaBasemapSurface` is that reader, and it is the **only** one — a test
+asserts it. `enabledFor($surface)` is the only gate; `enabled()` answers the master switch
+alone and nothing may render from it. It fails closed three ways: an absent config reads as
+off, an unrecognised surface key can never be enabled however it is spelled in the
+environment, and **both** `LOCATION_DNA_MAPLIBRE_ENABLED` and `LOCATION_DNA_MAPLIBRE_SURFACES`
+must agree. Recognised surfaces are `hire_buyer`, `hire_tenant`, `create_buyer`,
+`create_tenant`, `buyer_criteria`, `tenant_criteria`, `display`.
+
+**The markup and the serialiser read one variable, and that is a data-safety property, not
+tidiness.** `map-input` computes `$ldnaUseMaplibre` once; the panel branches on it and so does
+`ldnaSerialize()`. A panel rendering MapLibre while the serialiser still rebuilt geometry from
+Google's `ldnaOverlays` would write `"polygons":[]` over stored shapes on the next save. Under
+MapLibre the authority flag is the renderer's own `isHydrated()` — the exact counterpart of
+`ldnaOverlaysAuthoritative`, and a missing or unhydrated renderer lands in the same safe branch,
+leaving the server-seeded values untouched.
+
+**The Google poll is bounded now, and it was not.** `ldnaTryInit` re-armed itself every 200 ms
+forever whenever `google` was undefined. With the SDK absent — blank credential, rejected key,
+referrer refusal — `ldnaInitMap()` was never reached, the absolutely-positioned placeholder was
+never hidden, and the panel stayed a grey 420 px box reading "Loading map…" for the life of the
+page, taking both draw tools, all three autocompletes, every boundary overlay, the Important
+Places pins and the saved-geometry `fitBounds` with it, silently. Twelve seconds is now the
+ceiling, after which the panel says what happened and says the stored geometry is safe.
+
+**Geometry paints even when the basemap does not, and the renderer binds to `style.load`
+because of it.** `load` waits for every declared source to resolve; when the PMTiles archive
+cannot be read that never happens, so a handler on `load` never runs and the user's polygons
+are invisible on a map that is otherwise alive. On the first source error the style is swapped
+for the blank one — once, latched — and the geometry is repainted onto it. **This is the live
+condition, not a hypothetical: the R2 bucket serving the archive returns no
+`Access-Control-Allow-Origin` header and its OPTIONS preflight is 403**, so browsers currently
+refuse every tile. See `docs/spatial/r2-cors-requirement.md`.
+
+**Seller and Landlord get a pin and no search geometry, deliberately.** A listing is one
+property, not a search area; they are already structurally excluded from the geography cascade.
+The display panel is handed an empty geometry set alongside the pin, and nothing synthesises a
+circle or a bounding shape around it. Buyer and Tenant carry the real polygons, radii,
+boundaries and Important Places.
+
+**Important Places are now read on the detail pages.** They have been stored in
+`important_places_json` since 9C and were read by nothing on the listing page — the wizard wrote
+them and the listing never showed them. Both Buyer and Tenant controllers normalise them through
+`ImportantPlacesService` so the page cannot develop its own idea of the row shape.
+
+**Flood-zone and school-district overlays remain Google-only.** They are styled per FEMA
+designation, which needs a styled multi-layer source the renderer does not have yet; their
+legends are suppressed under MapLibre rather than drawn in the wrong colours. Deferred, not
+dropped.
+
 ### Location DNA attribution, and the Overture pre-activation gate
 
 **Nothing here activates the corpus.** `OVERTURE_CORPUS_POI_ENABLED` and the registry's

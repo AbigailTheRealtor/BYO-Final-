@@ -165,6 +165,7 @@
     'enableImportantPlaces'   => true,
     'existingImportantPlaces' => $existingImportantPlaces ?? [],
     'ldnaGeographyCascade'    => $geoCascadeEnabled ?? false,
+    'ldnaSurface'             => \App\Support\Spatial\LdnaBasemapSurface::HIRE_BUYER,
 ])
 @include('partials.location-dna.search-areas-bridge')
 

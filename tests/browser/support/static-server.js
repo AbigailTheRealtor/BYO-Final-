@@ -36,6 +36,18 @@ const ROOT = path.resolve(__dirname, '../../..');
 
 const MOUNTS = [
     { prefix: '/js/spatial/', dir: path.join(ROOT, 'resources/js/spatial') },
+    /*
+     | The BUILT bundle, as `npm run production` publishes it.
+     |
+     | Mounted under a different prefix from the source above, deliberately: they are two
+     | different artefacts and a spec must be able to say which one it is exercising. Every
+     | other spec drives the source modules, which is what lets them run with no build — but
+     | that means none of them can see a BUNDLING defect, and webpack.mix.js carries a
+     | standing UNVERIFIED warning about exactly that (a webpack rewrite of MapLibre's
+     | minified class expressions, worked around by an alias nobody has re-tested against
+     | the pinned version). bundle.spec.js is the only thing that looks at the real output.
+     */
+    { prefix: '/dist/', dir: path.join(ROOT, 'public/js/spatial') },
     { prefix: '/vendor/', dir: path.join(ROOT, 'node_modules') },
     { prefix: '/', dir: path.join(__dirname, '../fixtures') },
 ];

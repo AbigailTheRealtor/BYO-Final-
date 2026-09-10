@@ -424,7 +424,7 @@
                 </tbody>
               </table>
             </div>
-            @include('partials.location-dna.map-input', ['existingLocationDna' => []])
+            @include('partials.location-dna.map-input', ['existingLocationDna' => [], 'ldnaSurface' => \App\Support\Spatial\LdnaBasemapSurface::TENANT_CRITERIA])
           </div>
           <div class="wizard-step" data-step="2">
             <div class="form-group">
