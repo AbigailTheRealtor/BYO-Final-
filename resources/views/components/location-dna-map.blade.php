@@ -152,6 +152,56 @@
   $componentId = 'ldna-display-' . uniqid();
   $mapsKey     = config('services.google.places_key', '');
 
+  /* ── Phase 2: renderer selection for the read-only display surface ──────────
+   * One gate, asked once. `display` is a single surface key for all four roles on
+   * purpose — what differs between them is the CONTENT (Buyer/Tenant carry search
+   * geometry, Seller/Landlord carry one property pin), not whether the renderer is
+   * available. See App\Support\Spatial\LdnaBasemapSurface::DISPLAY. */
+  $ldnaMlOn = \App\Support\Spatial\LdnaBasemapSurface::enabledFor(
+      \App\Support\Spatial\LdnaBasemapSurface::DISPLAY
+  );
+
+  /* Boundary rings → GeoJSON, for the renderer's setBoundary(). $geoPolygons is
+   * [boundary][piece][ring][coord] with coords as [lng, lat] — which IS a GeoJSON
+   * MultiPolygon coordinate array, so the conversion is a wrap, not a reprojection.
+   * Built here rather than in JS so there is one reading of that shape on this page. */
+  $ldnaMlBoundaries = null;
+  if ($ldnaMlOn && $useBoundaryMap) {
+      $ldnaMlFeatures = [];
+      foreach ($geoPolygons as $ldnaMlMulti) {
+          if (!empty($ldnaMlMulti)) {
+              $ldnaMlFeatures[] = [
+                  'type'       => 'Feature',
+                  'geometry'   => ['type' => 'MultiPolygon', 'coordinates' => $ldnaMlMulti],
+                  'properties' => [],
+              ];
+          }
+      }
+      if ($ldnaMlFeatures) {
+          $ldnaMlBoundaries = ['type' => 'FeatureCollection', 'features' => $ldnaMlFeatures];
+      }
+  }
+
+  /* Flood-zone and school-district overlays are GOOGLE-ONLY in this phase, and their
+   * legends go with them.
+   *
+   * Both are styled per FEMA designation / district, which needs a styled multi-layer
+   * source the MapLibre renderer does not have yet. Drawing them in the single boundary
+   * style would put an orange "AE" zone on the map in the boundary colour, and KEEPING the
+   * legend while drawing nothing is worse still: a colour key for shapes that are not
+   * there reads as data the listing does not have. Suppressed rather than approximated —
+   * deferred work, not dropped, and the tier chain is unaffected either way because
+   * neither overlay has ever influenced fitBounds. */
+  if ($ldnaMlOn) {
+      $hasFloodZones      = false;
+      $hasSchoolDistricts = false;
+  }
+
+  /* Important Places pins. Optional prop: a caller that does not pass them gets none,
+   * which is the correct behaviour for Seller/Landlord — those listings have no
+   * Important Places, and inventing an empty array changes nothing either way. */
+  $ldnaMlPlaces = (isset($importantPlaces) && is_array($importantPlaces)) ? $importantPlaces : [];
+
   /* ── Property pin (Seller / Landlord offer-listing view pages) ──────────────
    * When $propertyPin is provided (array with lat/lng/label) we render a
    * dedicated single-pin map regardless of the DNA preference tier chain.
@@ -216,7 +266,21 @@
        Renders a single Google Maps marker for the exact property location.
        This runs independently of the DNA tier chain; only shown when $propertyPin
        is passed by the calling view.                                              --}}
-  @if($mapsKey)
+  @if($ldnaMlOn)
+  {{-- MapLibre pin. Geometry is deliberately EMPTY: a Seller or Landlord listing is one
+       property, not a search area, and it has no polygons or radii to draw. Passing an
+       empty set is the honest representation of that — nothing here synthesises a circle
+       or a bounding shape around the pin to make the map look busier. --}}
+  <div class="ldna-hero mb-3">
+    @include('partials.location-dna._maplibre-panel', [
+        'ldnaMaplibreSurface'     => \App\Support\Spatial\LdnaBasemapSurface::DISPLAY,
+        'ldnaMaplibrePanelId'     => $componentId . '-pin',
+        'ldnaMaplibreMode'        => 'display',
+        'ldnaMaplibreState'       => ['polygons' => [], 'radius_searches' => [], 'important_places' => []],
+        'ldnaMaplibrePropertyPin' => $propertyPin,
+    ])
+  </div>
+  @elseif($mapsKey)
   <div class="ldna-hero mb-3">
     <div id="{{ $componentId }}-pin" class="ldna-hero-map"></div>
   </div>
@@ -303,7 +367,26 @@
         <i class="fa-solid fa-arrows-left-right"></i> Location Flexible
       </span>
     @endif
+    @if($ldnaMlOn)
+    {{-- MapLibre display panel. Same slot, same saved geometry, same chips and notes
+         around it (the flood and school legends are suppressed above — see the @php block).
+         Passes the boundary GeoJSON straight through: the renderer never fetches a
+         boundary, it only draws one it is handed, which is what keeps the inherited
+         browser-direct Nominatim/TIGER calls out of the new renderer. --}}
+    @include('partials.location-dna._maplibre-panel', [
+        'ldnaMaplibreSurface'    => \App\Support\Spatial\LdnaBasemapSurface::DISPLAY,
+        'ldnaMaplibrePanelId'    => $componentId,
+        'ldnaMaplibreMode'       => 'display',
+        'ldnaMaplibreState'      => [
+            'polygons'         => $polygons,
+            'radius_searches'  => $radii,
+            'important_places' => $ldnaMlPlaces,
+        ],
+        'ldnaMaplibreBoundaries' => $ldnaMlBoundaries,
+    ])
+    @else
     <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+    @endif
 
     @if($hasFloodZones)
       @include('components.location-dna-flood-legend', ['floodZoneLegend' => $floodZoneLegend])
@@ -330,6 +413,11 @@
     @endif
   </div>
 
+  @if(! $ldnaMlOn)
+  {{-- Google renderer for this tier. Skipped entirely under MapLibre: it resolves
+       #{{ $componentId }}, which the MapLibre branch above replaces with its own
+       container, and `new google.maps.Map(null)` throws on any page that does have a
+       Maps credential. Untouched otherwise — this is still the default renderer. --}}
   <script>
   (function () {
     var polygons        = @json($polygons);
@@ -484,6 +572,7 @@
     }
   })();
   </script>
+  @endif
 
 @elseif($useBoundaryMap)
   {{-- ─── Tiers 3-5: GeoJSON boundary polygon map (Phase 2) ───────────────────────
@@ -498,7 +587,26 @@
         <i class="fa-solid fa-arrows-left-right"></i> Location Flexible
       </span>
     @endif
+    @if($ldnaMlOn)
+    {{-- MapLibre display panel. Same slot, same saved geometry, same chips and notes
+         around it (the flood and school legends are suppressed above — see the @php block).
+         Passes the boundary GeoJSON straight through: the renderer never fetches a
+         boundary, it only draws one it is handed, which is what keeps the inherited
+         browser-direct Nominatim/TIGER calls out of the new renderer. --}}
+    @include('partials.location-dna._maplibre-panel', [
+        'ldnaMaplibreSurface'    => \App\Support\Spatial\LdnaBasemapSurface::DISPLAY,
+        'ldnaMaplibrePanelId'    => $componentId,
+        'ldnaMaplibreMode'       => 'display',
+        'ldnaMaplibreState'      => [
+            'polygons'         => $polygons,
+            'radius_searches'  => $radii,
+            'important_places' => $ldnaMlPlaces,
+        ],
+        'ldnaMaplibreBoundaries' => $ldnaMlBoundaries,
+    ])
+    @else
     <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+    @endif
 
     @if($hasFloodZones)
       @include('components.location-dna-flood-legend', ['floodZoneLegend' => $floodZoneLegend])
@@ -526,6 +634,11 @@
     @endif
   </div>
 
+  @if(! $ldnaMlOn)
+  {{-- Google renderer for this tier. Skipped entirely under MapLibre: it resolves
+       #{{ $componentId }}, which the MapLibre branch above replaces with its own
+       container, and `new google.maps.Map(null)` throws on any page that does have a
+       Maps credential. Untouched otherwise — this is still the default renderer. --}}
   <script>
   (function () {
     /*
@@ -675,6 +788,7 @@
     }
   })();
   </script>
+  @endif
 
 @else
   {{-- ─── Tiers 3-7: Chip-based display ─────────────────────────────────────────
@@ -786,7 +900,7 @@
      multiple location-dna-map components appear on the same view.
      The runtime guard (typeof google check + existing-script check) provides a
      second layer of defence against duplicate network requests.                   --}}
-@if($hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap) && $mapsKey !== '')
+@if(! $ldnaMlOn && $hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap) && $mapsKey !== '')
 @once
 @push('scripts')
 {{-- Phase 0 / Batch 5: the gm_authFailure callback must exist before this injector can

@@ -117,6 +117,16 @@ class BuyerOfferListingController extends Controller
             'states'    => $meta['state'] ?? '' ? [$meta['state']] : [],
             'zip_codes' => [],
         ];
+        /* Important Places pins for the detail map.
+         *
+         * Stored since 9C in the additive `important_places_json` meta and, until now, read
+         * by NOTHING on this page — the create/edit wizard wrote them and the listing never
+         * showed them. Normalised through the same service the wizard validates with, so the
+         * page cannot develop its own idea of the row shape. Rows without coordinates simply
+         * produce no pin; nothing here geocodes. */
+        $importantPlaces = app(\App\Services\Offers\ImportantPlacesService::class)
+            ->normalize($auction->info('important_places_json'));
+
         $boundaryData = $boundaryLookupService->resolve($locationDnaPreferences, $legacyLocation);
         $floodZoneData = $floodZoneLookupService->resolve($boundaryData, $locationDnaPreferences ?? []);
         $schoolDistrictData = $schoolDistrictLookupService->resolve($boundaryData, $locationDnaPreferences ?? []);
@@ -137,7 +147,7 @@ class BuyerOfferListingController extends Controller
 
         return view('offer-listing.buyer.view', compact(
             'auction', 'meta', 'askAiChipContext', 'biddingWindow',
-            'locationDnaPreferences', 'legacyLocation',
+            'locationDnaPreferences', 'legacyLocation', 'importantPlaces',
             'boundaryData', 'floodZoneData', 'schoolDistrictData',
             'locationIntelligenceSummary',
             'agentAiV2', 'agentAiAgentId', 'agentAiScope'

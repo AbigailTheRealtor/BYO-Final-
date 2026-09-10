@@ -698,6 +698,7 @@
     <x-location-dna-map
         :preferences="$locationDnaPreferences ?? null"
         :legacyLocation="$legacyLocation ?? []"
+        :importantPlaces="$importantPlaces ?? []"
         :boundaryData="$boundaryData ?? null"
         :floodZoneData="$floodZoneData ?? null"
         :schoolDistrictData="$schoolDistrictData ?? null"

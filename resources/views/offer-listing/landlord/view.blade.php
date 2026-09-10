@@ -203,6 +203,10 @@
 .lol-view-page .lol-hero-photo-placeholder { min-height: 280px; background: linear-gradient(135deg, #0f4c3a, #0f172a); display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 3rem; }
 .lol-view-page .lol-hero-summary { background: #fff; padding: 1.6rem 1.4rem; display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 280px; gap: 0.1rem; }
 .lol-view-page .lol-hero-price { font-size: 1.85rem; font-weight: 800; color: #1e293b; letter-spacing: -0.03em; line-height: 1.15; }
+/* Says WHOSE rent the number beside it is. Only rendered where two rents
+   coexist, so a manual listing's single figure is never labelled. */
+.lol-view-page .lol-price-label { font-size: 0.68rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.3; }
+.lol-view-page .lol-price-secondary { margin-top: 0.25rem; font-size: 0.86rem; color: #475569; display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
 .lol-view-page .lol-hero-address { color: #475569; font-size: 0.9rem; margin-top: 0.3rem; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; }
 .lol-view-page .lol-hero-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; margin-top: 0.65rem; font-size: 0.84rem; color: #334155; }
 .lol-view-page .lol-hero-meta-item i { color: #0f766e; margin-right: 4px; }
@@ -436,15 +440,24 @@
             ? ((($str('listing_title') ?: $auction->title) ?: ($fullAddress ?: 'Rental Property Listing')))
             : (($str('listing_title') ?: null) ?: 'Rental Property Listing');
 
-        /* ── Hero price ── */
-        $heroPrice = null;
-        foreach (['desired_rental_amount','starting_rent','reserve_rent','lease_now_price'] as $_pk) {
-            $_pv = $meta[$_pk] ?? '';
-            if ($_pv !== '' && $_pv !== null) {
-                $heroPrice = '$' . number_format((float)preg_replace('/[^0-9.]/', '', (string)$_pv), 0);
-                break;
-            }
-        }
+        /* ── Hero price ──
+         *
+         * Two rents, never one unlabelled number. `$priceDisplay` separates the
+         * MLS's own asking rent from the landlord's BidYourOffer term, and
+         * refuses the MLS figure outright unless the source record is a LEASE —
+         * it asks MlsSyncFieldPolicy::allowsPriceSync(), the same method that
+         * decides whether sync may write the price at all, so the page cannot
+         * advertise a sale price as a monthly rent. See
+         * App\Support\Listing\ListingPriceDisplay.
+         *
+         * $heroPrice keeps its old meaning on every non-MLS listing: the
+         * landlord's own figure, formatted exactly as before.
+         */
+        $priceDisplay    = \App\Support\Listing\ListingPriceDisplay::forLandlord($meta);
+        $mlsListPrice    = $priceDisplay::money($priceDisplay->mlsListPrice());
+        $yourTermsPrice  = $priceDisplay::money($priceDisplay->yourTermsPrice());
+        $showsBothPrices = $priceDisplay->showsSeparateTerms();
+        $heroPrice       = $priceDisplay::money($priceDisplay->askingPrice());
 
         /* ── Photos ──
          *
@@ -551,7 +564,16 @@
             </div>
             <div class="col-lg-4">
                 <div class="lol-hero-summary">
-                    @if($heroPrice)
+                    @if($mlsListPrice)
+                        <div class="lol-price-label">MLS Asking Rent</div>
+                        <div class="lol-hero-price">{{ $mlsListPrice }}<span style="font-size:1rem;font-weight:500;color:#64748b;margin-left:4px;">/ mo</span></div>
+                        @if($showsBothPrices)
+                            <div class="lol-price-secondary">
+                                <span class="lol-price-label">Your Terms</span>
+                                <strong>{{ $yourTermsPrice }} / mo</strong>
+                            </div>
+                        @endif
+                    @elseif($heroPrice)
                         <div class="lol-hero-price">{{ $heroPrice }}<span style="font-size:1rem;font-weight:500;color:#64748b;margin-left:4px;">/ mo</span></div>
                     @endif
                     @if($fullAddress)
@@ -821,7 +843,12 @@
                 <div style="margin-top:.1rem;">
                     @if($_hubRent)
                     <div class="lol-interaction-activity-row">
-                        <span>Rent</span><span class="lol-interaction-activity-val" style="color:#0f766e;font-size:.76rem;">{{ $_hubRent }}/mo</span>
+                        <span>{{ $mlsListPrice ? 'MLS Rent' : 'Rent' }}</span><span class="lol-interaction-activity-val" style="color:#0f766e;font-size:.76rem;">{{ $_hubRent }}/mo</span>
+                    </div>
+                    @endif
+                    @if($showsBothPrices)
+                    <div class="lol-interaction-activity-row">
+                        <span>Your Terms</span><span class="lol-interaction-activity-val" style="color:#475569;font-size:.76rem;">{{ $yourTermsPrice }}/mo</span>
                     </div>
                     @endif
                     @if($_hubLease)
@@ -2118,9 +2145,15 @@
             </a>
             @if($heroPrice)
             <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;text-align:center;">
-                <div style="font-size:.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Monthly Rent</div>
+                <div style="font-size:.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">{{ $mlsListPrice ? 'MLS Asking Rent' : 'Monthly Rent' }}</div>
                 <div style="font-size:1.4rem;font-weight:800;color:#1e293b;letter-spacing:-.02em;">{{ $heroPrice }}</div>
                 <div style="font-size:.72rem;color:#94a3b8;">per month</div>
+                @if($showsBothPrices)
+                <div style="margin-top:.35rem;font-size:.78rem;color:#64748b;">
+                    <span style="font-size:.68rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Your Terms</span>
+                    <strong style="color:#475569;">{{ $yourTermsPrice }} / mo</strong>
+                </div>
+                @endif
             </div>
             @endif
 

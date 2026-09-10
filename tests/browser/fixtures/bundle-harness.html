@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Location DNA built-bundle harness</title>
+<!--
+    The BUILT bundle against the panel contract, rather than the renderer source.
+
+    Every other fixture imports resources/js/spatial as ES modules, which is what lets the
+    suite run with no build step — and is also why none of them can see a bundling defect.
+    This page loads exactly what Mix publishes, so it exercises the webpack output, the
+    named-import contract against maplibre-gl's ESM distribution, and the alias in
+    webpack.mix.js that is flagged UNVERIFIED there.
+
+    The container's attributes mirror what
+    resources/views/partials/location-dna/_maplibre-panel.blade.php emits. Kept in sync by
+    bundle.spec.js, which asserts the attribute names it depends on.
+-->
+<style>
+  #ldna-built { width: 640px; height: 360px; background: #eceff2; }
+  .ldna-property-pin { width: 18px; height: 18px; border-radius: 50%; background: #0e7361; }
+</style>
+</head>
+<body>
+
+<div class="ldna-maplibre-wrap">
+  <div
+    id="ldna-built"
+    data-ldna-maplibre
+    data-ldna-surface="display"
+    data-ldna-mode="display"
+    data-ldna-state='{"polygons":[{"label":"Downtown","path":[{"lat":27.77,"lng":-82.64},{"lat":27.79,"lng":-82.64},{"lat":27.79,"lng":-82.61}]}],"radius_searches":[{"lat":27.7676,"lng":-82.6403,"radius_miles":5,"address":"100 Central Ave"}],"important_places":[]}'
+    data-ldna-fit="1"
+    data-attribution="© OpenStreetMap contributors · Protomaps"
+    data-longitude="-82.7"
+    data-latitude="27.85"
+    data-zoom="9"
+    data-max-zoom="15"
+  ></div>
+  <p data-ldna-map-status hidden></p>
+</div>
+
+<script defer src="/dist/ldna-maplibre.js"></script>
+</body>
+</html>
