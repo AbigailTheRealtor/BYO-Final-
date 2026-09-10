@@ -139,6 +139,7 @@
     'enableImportantPlaces'  => true,
     'existingImportantPlaces'=> $existingImportantPlaces ?? [],
     'ldnaGeographyCascade'   => $geoCascadeEnabled ?? false,
+    'ldnaSurface'            => \App\Support\Spatial\LdnaBasemapSurface::CREATE_TENANT,
 ])
 @include('partials.location-dna.search-areas-bridge')
 

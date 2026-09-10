@@ -737,6 +737,76 @@ run_checker "$r" 2 "e04 missing mode fails loudly with exit 2" "one of --staged 
 run_checker "$r" 2 "e05 missing profile fails loudly with exit 2" "--profile is required" \
     -- --staged
 
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo "── VENDORED THIRD-PARTY EXCEPTIONS ──────────────────────────"
+
+# The one case diff-awareness does not cover: a file the change ADDS. Every line
+# of a new file is an added line, so a vendored artefact committed for the first
+# time would otherwise be judged on its upstream author's console.log calls.
+#
+# v01 pins that the two MapLibre chunks are skipped ON ADDITION — the exact
+# situation, not a proxy for it.
+r="$TMP/v01"; repo_new "$r"
+write_file "$r" "README.md" <<'EOF'
+base
+EOF
+commit_all "$r" base
+v01_base="$(git -C "$r" rev-parse HEAD)"
+write_file "$r" "public/js/spatial/maplibre-gl-shared.mjs" <<'EOF'
+export function q(e){console.log("upstream trace",e);}
+EOF
+write_file "$r" "public/js/spatial/maplibre-gl-worker.mjs" <<'EOF'
+import {q} from "./maplibre-gl-shared.mjs";console.log("worker boot");q(1);
+EOF
+git -C "$r" add -A
+run_checker "$r" 0 "v01 newly ADDED vendored maplibre chunks are skipped (staged)" "Skipping vendored" \
+    -- --profile no-debug-statements --staged
+commit_all "$r" "add vendored chunks"
+run_checker "$r" 0 "v01b same addition, judged as a range" "Skipping vendored" \
+    -- --profile no-debug-statements --range "$v01_base" HEAD
+
+# v02 is the half that makes v01 meaningful: OUR files in the SAME directory are
+# still scanned. An exception that quietly covered its neighbours would pass v01
+# and leave the gate blind to our own bundle.
+r="$TMP/v02"; repo_new "$r"
+write_file "$r" "README.md" <<'EOF'
+base
+EOF
+commit_all "$r" base
+write_file "$r" "public/js/spatial/ldna-maplibre.js" <<'EOF'
+const r = 1;console.log("ours, in the bundle");
+EOF
+git -C "$r" add -A
+run_checker "$r" 1 "v02 our generated bundle beside them is still scanned" "ldna-maplibre.js" \
+    -- --profile no-debug-statements --staged
+
+r="$TMP/v03"; repo_new "$r"
+write_file "$r" "README.md" <<'EOF'
+base
+EOF
+commit_all "$r" base
+write_file "$r" "resources/js/spatial/ldna-basemap.js" <<'EOF'
+export const a = 1;
+console.log('ours, in source');
+EOF
+git -C "$r" add -A
+run_checker "$r" 1 "v03 our authored spatial source is still scanned" "ldna-basemap.js" \
+    -- --profile no-debug-statements --staged
+
+# v04 — the exception is by EXACT path, so a lookalike name does not inherit it.
+r="$TMP/v04"; repo_new "$r"
+write_file "$r" "README.md" <<'EOF'
+base
+EOF
+commit_all "$r" base
+write_file "$r" "public/js/spatial/maplibre-gl-shared.min.mjs" <<'EOF'
+console.log("not the vendored path");
+EOF
+git -C "$r" add -A
+run_checker "$r" 1 "v04 a lookalike path does not inherit the exception" "maplibre-gl-shared.min.mjs" \
+    -- --profile no-debug-statements --staged
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

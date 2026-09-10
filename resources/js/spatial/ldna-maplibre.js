@@ -1,6 +1,6 @@
 /*
  |-----------------------------------------------------------------------------
- | Location DNA MapLibre entry point (Phase 1)
+ | Location DNA MapLibre entry point (Phase 1 renderer, Phase 2 host wiring)
  |-----------------------------------------------------------------------------
  |
  | The production bundle's entry. A SEPARATE Mix entry from app.js on purpose:
@@ -36,11 +36,30 @@ import { createLdnaRenderer } from './ldna-maplibre-renderer.js';
 const maplibregl = { Map: MaplibreMap, Marker, NavigationControl, ScaleControl, addProtocol, setWorkerUrl };
 const pmtiles = { Protocol };
 
+/** Parse a data attribute that carries JSON, treating anything malformed as absent. */
+function readJson(container, key, fallback) {
+    const raw = container.dataset[key];
+
+    if (!raw) {
+        return fallback;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+        return parsed === null || parsed === undefined ? fallback : parsed;
+    } catch (error) {
+        // A malformed blob must not take the map down with it. The renderer still
+        // initialises and the user can still draw; what it must never do is guess.
+        return fallback;
+    }
+}
+
 /**
  * Mount the renderer on a container carrying `data-ldna-maplibre`.
  *
  * Configuration arrives through data attributes written by Blade, so every value
- * originates in config/spatial_basemap.php and none is written literally here.
+ * originates in config/spatial_basemap.php (via App\Support\Spatial\LdnaBasemapSurface)
+ * and none is written literally here.
  *
  * LAZY BY DEFAULT. The widget lives inside inactive tab panes on all eight host
  * surfaces, and a map measured while its container is hidden gets a zero-sized
@@ -49,11 +68,22 @@ const pmtiles = { Protocol };
  */
 export function mountLdnaMaplibre(container) {
     if (!container || container.dataset.ldnaMaplibreMounted === '1') {
-        return null;
+        return container ? container._ldnaRenderer || null : null;
     }
     container.dataset.ldnaMaplibreMounted = '1';
 
-    const statusEl = document.querySelector('[data-ldna-map-status]');
+    // SCOPED, not page-global. Two panels can share a page — a Buyer detail view
+    // renders the display surface while nothing else does today, but a page that
+    // grew a second map would otherwise have both renderers writing their status
+    // into whichever box the document happened to list first.
+    const statusEl = (container.closest('.ldna-maplibre-wrap') || document)
+        .querySelector('[data-ldna-map-status]');
+
+    const mode = container.dataset.ldnaMode === 'edit' ? 'edit' : 'display';
+    const state = readJson(container, 'ldnaState', {});
+    const propertyPin = readJson(container, 'ldnaPropertyPin', null);
+    const boundaries = readJson(container, 'ldnaBoundaries', null);
+    const shouldFit = container.dataset.ldnaFit === '1';
 
     const renderer = createLdnaRenderer({
         maplibregl,
@@ -67,13 +97,65 @@ export function mountLdnaMaplibre(container) {
             zoom: container.dataset.zoom,
             maxZoom: container.dataset.maxZoom,
         },
-        onStatus: (state, message) => {
-            container.setAttribute('data-ldna-map-state', state);
+        onStatus: (state_, message) => {
+            container.setAttribute('data-ldna-map-state', state_);
             if (statusEl) {
                 statusEl.textContent = message || '';
-                statusEl.hidden = state === 'ready';
+                statusEl.hidden = state_ === 'ready';
             }
         },
+        /*
+         * Report every geometry edit to the host's own serialiser.
+         *
+         * The host owns storage; this only tells it something changed. `ldnaSerialize`
+         * reads the renderer back through `getState()` rather than taking this payload,
+         * so there is exactly one path from renderer to stored blob and no chance of the
+         * two disagreeing. Display-mode panels never edit, so they never wire this.
+         */
+        onChange: mode === 'edit'
+            ? () => {
+                if (typeof window.ldnaSerialize === 'function') {
+                    window.ldnaSerialize();
+                }
+            }
+            : undefined,
+        /*
+         * Fires once the geometry layers are on the map, whether or not the backdrop
+         * loaded. Fitting here rather than on 'ready' is deliberate: with the basemap
+         * archive unreachable the renderer reports 'degraded' and never 'ready', and a
+         * listing's saved polygons must still be framed on the screen.
+         */
+        onReady: () => {
+            if (boundaries) {
+                renderer.setBoundary('display', boundaries);
+            }
+            if (propertyPin) {
+                renderer.setPropertyPin(propertyPin);
+            }
+
+            /* Fit to the user's OWN geometry when there is any, and only fall back to the
+               boundary extent when there is not. A listing whose tier is a city outline has
+               nothing else to frame; one that carries polygons wants those framed, not the
+               county they happen to sit in. */
+            if (shouldFit) {
+                renderer.fitToGeometry();
+            } else if (boundaries) {
+                renderer.fitToBoundary('display');
+            }
+        },
+    });
+
+    // HYDRATE BEFORE INIT, ALWAYS.
+    //
+    // hydrate() adopts stored geometry into the working set and only then unlocks
+    // change reporting; every refresh it triggers is a no-op until a map exists, and
+    // the style-load paint draws the adopted geometry. Doing it the other way round
+    // opens exactly the window the PR #124 contract exists to close: a map that is
+    // alive and empty, whose first serialise writes `"polygons":[]` over stored shapes.
+    renderer.hydrate({
+        polygons: state.polygons || [],
+        radius_searches: state.radius_searches || [],
+        important_places: state.important_places || [],
     });
 
     const boot = () => {
@@ -100,14 +182,46 @@ export function mountLdnaMaplibre(container) {
     }
 
     // Exposed so the host widget — still the incumbent Blade partial in this
-    // phase — can hydrate and read back without importing anything.
+    // phase — can hydrate and read back without importing anything. Also kept on
+    // the element, because `window.ldnaMaplibreRenderer` names only the last one
+    // mounted and a second panel would otherwise silently steal the reference.
+    container._ldnaRenderer = renderer;
     window.ldnaMaplibreRenderer = renderer;
 
     return renderer;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-ldna-maplibre]').forEach(mountLdnaMaplibre);
-});
+/**
+ * Mount every unmounted panel on the page. Idempotent.
+ *
+ * Exposed as `window.ldnaMaplibreMount` so a host can re-scan after a Livewire
+ * morphdom update introduces a panel that was not in the initial document.
+ */
+export function mountAllLdnaMaplibre() {
+    const mounted = [];
+    document.querySelectorAll('[data-ldna-maplibre]').forEach((el) => {
+        const renderer = mountLdnaMaplibre(el);
+        if (renderer) {
+            mounted.push(renderer);
+        }
+    });
+    return mounted;
+}
+
+/*
+ * READY-STATE AWARE, NOT `DOMContentLoaded`-ONLY.
+ *
+ * A bundle appended to the document after DOMContentLoaded has already fired — a
+ * dynamic injector, a `defer` script racing a cached parse, a Livewire-driven
+ * insertion — would never see that event, and the failure is indistinguishable
+ * from a dead map. Checking readyState first costs nothing and removes the class.
+ */
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountAllLdnaMaplibre);
+} else {
+    mountAllLdnaMaplibre();
+}
+
+window.ldnaMaplibreMount = mountAllLdnaMaplibre;
 
 export { createLdnaRenderer };
