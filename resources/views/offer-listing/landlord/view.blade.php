@@ -478,7 +478,34 @@
         $heroBaths     = $orOther($str('bathrooms'), $str('other_bathrooms'));
         $heroSqft      = $str('minimum_heated_square');
         $heroPropType  = $str('property_type');
+        /* ── Listing status ──
+         *
+         * TWO READERS, ONE QUESTION, AND WHY THEY ARE NOT THE SAME EXPRESSION.
+         *
+         * The hero pill asks the model. `getStatusAttribute()` is the platform's
+         * total answer: is_sold, then the MLS market status via
+         * MlsLinkedListingStatus, then the stored value, then `expiration_date`,
+         * then 'Active'. It was already correct for an MLS-linked listing and is
+         * left exactly as found — including its derivation of 'Expired' from the
+         * landlord's own expiration date, which is this platform's lifecycle and
+         * not something this change reaches.
+         *
+         * The "Listing Status" row in Listing Overview asked the EAV blob:
+         * `$str('listing_status')`, the value the landlord typed into the Create
+         * Listing form. On an MLS-linked listing that is not the market status
+         * Stellar currently reports, so the page contradicted itself on one
+         * screen — 'Pending' in the hero pill, 'Active' in the row below it. It
+         * now consumes the merged seller display contract, which resolves the
+         * feed's status through the model and leaves every other listing with
+         * byte-for-byte the value it printed before.
+         *
+         * See App\Support\Listing\ListingStatusDisplay for why the row is not
+         * simply `$auction->status`: the accessor is total where a display is
+         * not, and a listing that has never had a status must keep rendering no
+         * row rather than being told it is 'Active'.
+         */
         $heroStatus    = $auction->status ?? null;
+        $listingStatus = \App\Support\Listing\ListingStatusDisplay::for($auction);
         $heroListDate  = $fmtDate($str('listing_date'));
         $heroUpdDate   = $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('F j, Y') : null;
 
@@ -1156,7 +1183,7 @@
                          calls it — the Create Listing tab and the MLS quick-import
                          step alike. --}}
                     {!! $row('Listing Method', $str('auction_type')) !!}
-                    {!! $row('Listing Status', $str('listing_status')) !!}
+                    {!! $row('Listing Status', $listingStatus) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
