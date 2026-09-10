@@ -94,6 +94,15 @@ class LandlordAgentAuction extends Model
         if ($isSold) {
             return 'Hired Agent';
         }
+        // An MLS-linked listing's market status is Stellar's, not ours. See the
+        // matching block in SellerAgentAuction — the rule lives in one place so
+        // the two roles cannot come to disagree about whether a listing has
+        // expired.
+        $mlsStatus = \App\Support\Listing\MlsLinkedListingStatus::marketStatus($this->get->toArray());
+        if ($mlsStatus !== null) {
+            return $mlsStatus;
+        }
+
         $metaStatus = $this->info('listing_status');
         if ($metaStatus === 'Hired Agent') {
             return 'Hired Agent';

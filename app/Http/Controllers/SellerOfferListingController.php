@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ListingImport\Sync\MlsStaleAccessRefresher;
 
 class SellerOfferListingController extends Controller
 {
@@ -100,6 +101,10 @@ class SellerOfferListingController extends Controller
             abort(404);
         }
 
+        // Stale-on-access. Before $meta is built, so the page renders what the
+        // refresh found rather than what was stored before it.
+        $this->refreshMlsDataOnView($auction, 'seller');
+
         $meta = [];
         foreach ($auction->meta as $row) {
             $decoded = json_decode($row->meta_value, true);
@@ -180,9 +185,29 @@ class SellerOfferListingController extends Controller
     private function buildCalcData(array $meta): array
     {
         // --- Price ---
+        //
+        // The authoritative MLS list price comes FIRST for an MLS-linked
+        // listing, and it is the reason this calculator used to open at $0.
+        //
+        // Every key in the fallback chain below is one the Seller Offer Listing
+        // wizard never writes: it stores the asking price under
+        // `maximum_budget`, and the MLS quick import writes the same key. So on
+        // an imported listing all five lookups missed, `$price` stayed null, and
+        // the Estimated Monthly Payment calculator opened at zero on a property
+        // whose price the MLS had supplied all along.
+        //
+        // `mls_list_price` is written by MlsListingSyncService from Stellar's
+        // own ListPrice and refreshed whenever it changes, so the calculator now
+        // opens at the current MLS price rather than at a figure that has to be
+        // re-entered by hand. It leads the chain because for an MLS-linked
+        // listing Stellar is authoritative for price.
+        //
+        // A user's temporary what-if inside the calculator is browser-side only
+        // and writes nothing back — the stored MLS price is unaffected by
+        // anybody moving a slider.
         $price       = null;
         $priceSource = 'estimated';
-        foreach (['desired_sale_price', 'purchase_price', 'buy_now_price', 'starting_price', 'reserve_price'] as $pk) {
+        foreach (['mls_list_price', 'desired_sale_price', 'purchase_price', 'buy_now_price', 'starting_price', 'reserve_price'] as $pk) {
             $pv = $meta[$pk] ?? null;
             if ($pv !== null && $pv !== '' && (float) $pv > 0) {
                 $price       = (float) $pv;
@@ -560,4 +585,46 @@ class SellerOfferListingController extends Controller
         return $windows;
     }
 
+
+    /**
+     * Bring this listing's MLS data up to date, if it is stale and if the viewer
+     * is the person entitled to have that cost one request.
+     *
+     * WHAT THIS COSTS A PUBLIC PAGE RENDER: nothing measurable, and in
+     * particular no outbound request. {@see MlsStaleAccessRefresher} sends only
+     * on the OWNER branch; every other viewer of a stale listing leaves a cache
+     * hint for the scheduled sweep and is served the stored data immediately.
+     * That division is the whole reason a page render is allowed to ask at all.
+     *
+     * A manual listing, a fresh listing, and a disabled gate all return before
+     * anything is read beyond this listing's own meta.
+     *
+     * The relation is reloaded only when a sync actually wrote, because `$meta`
+     * below is built from the eager-loaded rows and would otherwise render the
+     * values from before the refresh — a page that fetched a new price and then
+     * displayed the old one.
+     *
+     * Every failure is swallowed: a listing page must render from last-known-good
+     * data when the provider is unreachable, never fail.
+     */
+    private function refreshMlsDataOnView(object $auction, string $role): void
+    {
+        try {
+            $outcome = app(MlsStaleAccessRefresher::class)->onAccess(
+                $auction,
+                $role,
+                auth()->check() && (int) $auction->user_id === (int) auth()->id(),
+            );
+
+            if ($outcome->isSynced()) {
+                $auction->load('meta');
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[MLS SYNC] on-view refresh failed; page served from stored data', [
+                'listing_id' => $auction->id ?? null,
+                'role'       => $role,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+    }
 }

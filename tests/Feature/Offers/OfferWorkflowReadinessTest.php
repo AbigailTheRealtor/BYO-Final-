@@ -1361,6 +1361,81 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Support/OfferListing/ConditionalTerms.php',
             'resources/views/offer-listing/partials/_mls_facts_cards.blade.php',
             'resources/views/offer-listing/partials/_mls_facts_rows.blade.php',
+
+            // ── MLS live sync — keeping an imported listing current ──────────
+            //
+            // Import copied the feed once and the copy then aged in place: a
+            // property Stellar had marked Pending, repriced or photographed
+            // again went on reading as it did on the day it was imported, and
+            // the only way to correct it was a manual re-import. This is the
+            // sync that closes that, and it ships with all three of its gates
+            // (`MLS_SYNC_ENABLED`, `MLS_SYNC_SCHEDULE_ENABLED`,
+            // `MLS_SYNC_LAZY_REFRESH_ENABLED`) defaulting false, so every file
+            // below is inert until an activation decision is taken separately.
+            //
+            //   Sync/  (new namespace)
+            //     MlsListingSyncService — the one write path. Per-listing-key
+            //     lock, idempotent, and a provider fault or a NOT_FOUND deletes
+            //     nothing and does not advance the success stamp.
+            //     MlsSyncFieldPolicy — what may be written, guarded from both
+            //     ends (NEVER_SYNC on canonical facts, PROTECTED_META_KEYS on
+            //     the resulting meta keys) so Your Terms cannot be reached by a
+            //     future MlsFieldMap entry arriving under an unexamined key.
+            //     MlsFactProjection — the SAME mapping the import already uses,
+            //     differing only in precedence (MODE_IMPORT / MODE_SYNC); a
+            //     second lookalike mapping is the drift this avoids.
+            //     MlsSyncFreshness, MlsSyncOutcome — when to ask, and what came
+            //     back. MlsStaleAccessRefresher / MlsSyncDemandQueue — an owner
+            //     viewing their own listing may refresh synchronously; an
+            //     anonymous visitor records demand and sends nothing.
+            //
+            //   MlsSourceStatus / MlsLinkedListingStatus
+            //     StandardStatus is the authoritative market status for an
+            //     MLS-linked listing and MlsStatus is kept beside it as source
+            //     context, never mapped onto it. The shared status class is what
+            //     stops a typed `expiration_date` reading 'Expired' over a feed
+            //     that still says Active — and is one class, not a copy per
+            //     model, because seller and landlord disagreeing about the same
+            //     feed listing is not a cosmetic difference.
+            //
+            //   SellerAgentAuction / LandlordAgentAuction
+            //     Route their status accessor through that shared class. Manual
+            //     non-MLS listings keep their existing lifecycle untouched, and
+            //     `is_sold` still wins ahead of both.
+            //
+            //   SyncMlsListings / ProbeBridgeLifecycle
+            //     The backstop command (dry-run capable, skips manual listings)
+            //     and the read-only lifecycle probe whose 2026-09-10 run
+            //     established which status strings this dataset actually emits.
+            //
+            //   BridgeListingLookupService
+            //     Refresh lookup for an already-linked record. No $select is
+            //     added — the payload stays complete.
+            //
+            //   config/mls_sync.php
+            //     The three gates and the operating parameters. Deliberately NOT
+            //     added to config/required_production_flags.php: the deploy
+            //     contract may never name a safety switch.
+            //
+            // Console/Kernel.php and the two Offer Listing controllers are
+            // already permitted by earlier task blocks above and are not
+            // re-listed; the controllers' change here is the payment
+            // calculator reading `mls_list_price`, which leaves Your Terms alone.
+            'app/Console/Commands/ProbeBridgeLifecycle.php',
+            'app/Console/Commands/SyncMlsListings.php',
+            'app/Models/LandlordAgentAuction.php',
+            'app/Models/SellerAgentAuction.php',
+            'app/Services/Bridge/BridgeListingLookupService.php',
+            'app/Services/ListingImport/Sync/MlsFactProjection.php',
+            'app/Services/ListingImport/Sync/MlsListingSyncService.php',
+            'app/Services/ListingImport/Sync/MlsStaleAccessRefresher.php',
+            'app/Services/ListingImport/Sync/MlsSyncDemandQueue.php',
+            'app/Services/ListingImport/Sync/MlsSyncFieldPolicy.php',
+            'app/Services/ListingImport/Sync/MlsSyncFreshness.php',
+            'app/Services/ListingImport/Sync/MlsSyncOutcome.php',
+            'app/Support/Listing/MlsLinkedListingStatus.php',
+            'app/Support/Listing/MlsSourceStatus.php',
+            'config/mls_sync.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
