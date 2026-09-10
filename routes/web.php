@@ -272,6 +272,22 @@ Route::post('/ask-ai/ask', [\App\Http\Controllers\AskAi\AskAiApiController::clas
     ->middleware('throttle:ask-ai-api')
     ->name('ask-ai.ask');
 
+// Location DNA — free-text address lookup (Radius Search, Important Places).
+//
+// The only server-side geocoding entry point the browser has, and the reason the
+// MapLibre Search Areas surfaces no longer need Google to turn a typed address
+// into a pin. Resolution runs through the free-text coordinate ladder
+// (address-point corpus, then the US Census geocoder); no credential exists on
+// that path and none reaches the browser.
+//
+// `auth` because this fronts a shared, free, ceiling-limited provider — an
+// unauthenticated lookup box is a geocoding proxy anyone can point a script at.
+// `throttle:address-lookup` is per-identity and does NOT replace the provider's
+// own application-wide caps in config/census_geocoder.php.
+Route::post('/location/address-lookup', \App\Http\Controllers\Location\AddressLookupController::class)
+    ->middleware(['auth', 'throttle:address-lookup'])
+    ->name('location.address-lookup');
+
 
 // Agent AI V2 — feature-flagged routes. Hidden behind CheckAgentAiV2Enabled middleware.
 // When AGENT_AI_ASSISTANT_V2=false (default), both routes return 404.

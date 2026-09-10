@@ -478,6 +478,40 @@
     return (el && el._ldnaRenderer) ? el._ldnaRenderer : null;
   }
 
+@if ($ldnaUseMaplibre)
+  /* ── Server-side address lookup (MapLibre surfaces only) ──────────────────
+     One wrapper around the bundle's `window.ldnaAddressLookup`, so the Radius
+     Search box and every Important Places row take the same path and get the
+     same failure behaviour.
+
+     WHY A WRAPPER RATHER THAN CALLING THE GLOBAL DIRECTLY. The bundle is a
+     deferred script and this is inline: on a slow load, or on a page where the
+     bundle 404s after a bad deploy, the global is simply absent. Calling it
+     unguarded would throw a TypeError inside a click handler, which reaches the
+     user as a button that does nothing at all. This answers the way a failed
+     lookup answers, so every caller has one shape to handle. */
+  function ldnaLookupAddress(address) {
+    if (typeof window.ldnaAddressLookup !== 'function') {
+      return Promise.resolve({
+        ok: false,
+        message: 'Address lookup is still loading. Wait a moment and try again.',
+      });
+    }
+    return window.ldnaAddressLookup(address);
+  }
+
+  /* The inline message line for one Important Places row, created on first use. */
+  function ldnaIpHint(row) {
+    var hint = row.querySelector('.ldna-ip-geocode-hint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.className = 'ldna-hint ldna-ip-geocode-hint';
+      row.appendChild(hint);
+    }
+    return hint;
+  }
+@endif
+
   /* ── State ───────────────────────────────────────────────────────────────── */
   var ldnaState = {
     cities:            @json($ldnaCities),
@@ -747,6 +781,12 @@
         prefill.lng !== undefined && prefill.lng !== null) {
       row.dataset.lat = prefill.lat;
       row.dataset.lng = prefill.lng;
+      /* A stored row is ALREADY resolved, for the address it was stored with. Recording
+         that here is what stops a reopened listing re-resolving every place the moment the
+         user tabs through the form: a blur on an untouched field would otherwise look
+         exactly like a new address. Editing the field changes the value and the guard
+         stops matching, which is when a lookup is wanted. */
+      row.dataset.ldnaResolvedFor = prefill.address || '';
     }
 
     container.appendChild(frag);
@@ -790,23 +830,57 @@
     var address = addrEl ? addrEl.value.trim() : '';
     if (!address) return;
 @if ($ldnaUseMaplibre)
-    /* No geocoder on this surface, by design — see window.ldnaAddRadiusSearch below for the
-       same reasoning. Crucially this must not fall through to the Google branch, whose
-       `if (!ldnaMap)` line retries every 600ms FOREVER when there is no Google map, which
-       is the same unbounded-poll defect the init path used to have.
+    /* Server-side lookup. The address goes to this application's own endpoint, which
+       resolves it through the coordinate ladder; nothing here talks to a geocoder and no
+       credential exists in this page to talk to one with.
 
-       The row is still saved. Address, type, distance and travel mode all persist; only the
-       PIN needs a coordinate, and a row without one simply has no pin — which the renderer
-       already handles rather than guessing a location. */
-    var _ipHint = row.querySelector('.ldna-ip-geocode-hint');
-    if (!_ipHint) {
-      _ipHint = document.createElement('div');
-      _ipHint.className = 'ldna-hint ldna-ip-geocode-hint';
-      _ipHint.style.color = '#92400e';
-      row.appendChild(_ipHint);
+       IT MUST NOT FALL THROUGH TO THE GOOGLE BRANCH BELOW. That branch's `if (!ldnaMap)`
+       line retries every 600ms FOREVER when there is no Google map — the unbounded-poll
+       defect the init path used to have — and on a MapLibre surface there is never going
+       to be a Google map for it to find. The `return` at the end of this block is what
+       keeps that unreachable, so it stays whatever else changes here. */
+    var _ipHint = ldnaIpHint(row);
+
+    if (row.dataset.ldnaLookupBusy === '1') return;   /* blur + click, or a double click */
+
+    /* Nothing to do when this row already holds the coordinate for this exact address:
+       reopening a saved listing fires blur on every row, and re-resolving addresses
+       nobody edited is how a free provider stops answering us. */
+    if (row.dataset.lat && row.dataset.lng && row.dataset.ldnaResolvedFor === address) {
+      _ipHint.textContent = '';
+      return;
     }
-    _ipHint.textContent = 'Address lookup is not available on this map, so this place will '
-      + 'not show a pin. It is still saved with the listing.';
+
+    row.dataset.ldnaLookupBusy = '1';
+    _ipHint.style.color = '#475569';
+    _ipHint.textContent = 'Locating address…';
+
+    ldnaLookupAddress(address).then(function (result) {
+      delete row.dataset.ldnaLookupBusy;
+
+      if (!result || !result.ok) {
+        /* FAILURE LEAVES EVERYTHING ALONE. A previously located place keeps its pin and
+           its coordinate; the row is saved either way, with its type, distance and travel
+           mode intact. What it must never do is move the pin somewhere plausible. */
+        _ipHint.style.color = '#92400e';
+        _ipHint.textContent = result && result.message
+          ? result.message
+          : 'Address could not be located. Try adding the city, state, or ZIP code.';
+        return;
+      }
+
+      if (result.address) {
+        addrEl.value = result.address;   /* what was matched, not what was typed */
+      }
+      row.dataset.lat = result.lat;
+      row.dataset.lng = result.lng;
+      row.dataset.ldnaResolvedFor = result.address || address;
+
+      _ipHint.style.color = '#475569';
+      _ipHint.textContent = '';
+
+      ldnaIpSerialize();   /* pins and the miles ring follow from the stored rows */
+    });
     return;
 @endif
     if (!ldnaMap) { ldnaRequestInit(); setTimeout(function () { window.ldnaIpGeocodeRow(el); }, 600); return; }
@@ -1929,24 +2003,95 @@
     ldnaMlRefreshOverlayList();
   };
 
-  /* Address-based radius needs a GEOCODER, and this renderer deliberately has none —
-     "no address becomes a coordinate in this file" is the renderer's stated contract, and
-     the Google geocoder is exactly the dependency this surface exists to stop needing.
-     So say what the user can do instead of failing silently: the Circle tool produces the
-     same stored radius_searches entry from two map clicks, with no third party involved.
-     A radius already saved with an address keeps it — nothing here rewrites stored rows. */
-  window.ldnaAddRadiusSearch = function () {
+  /* Address-based radius, resolved by the SERVER.
+     The renderer's own contract is unchanged — "no address becomes a coordinate in that
+     file" — because the coordinate arrives here already resolved and is handed to
+     `addRadiusSearch()`, which has always taken a point. What changed is that this widget
+     now has somewhere to get a point from that is not Google.
+
+     The Circle tool still exists and still produces the same stored entry from two map
+     clicks. It is the answer when an address cannot be resolved at all, and it needs no
+     network. */
+  function ldnaRadiusMessage(text, tone) {
     var warn = document.getElementById('ldna-radius-warning');
     if (!warn) {
       warn = document.createElement('div');
       warn.id = 'ldna-radius-warning';
       warn.className = 'ldna-hint';
-      warn.style.color = '#92400e';
       var form = document.querySelector('.ldna-radius-form');
       if (form && form.parentNode) form.parentNode.insertBefore(warn, form.nextSibling);
     }
-    warn.textContent = 'Address lookup is not available on this map. Use the Circle tool '
-      + 'above: click the centre, then click again to set the radius.';
+    warn.style.color = tone === 'error' ? '#92400e' : '#475569';
+    warn.textContent = text;
+    return warn;
+  }
+
+  window.ldnaAddRadiusSearch = function () {
+    var addrEl  = document.getElementById('ldna-radius-address');
+    var milesEl = document.getElementById('ldna-radius-miles');
+    if (!addrEl || !milesEl) return;
+
+    var address = addrEl.value.trim();
+    var miles   = parseFloat(milesEl.value) || 5;
+
+    if (!address) {
+      ldnaRadiusMessage('Enter an address or place for the centre of the radius.', 'error');
+      return;
+    }
+
+    var r = ldnaMlRenderer();
+    if (!r) {
+      /* No renderer yet — say so and stop. The Google branch's answer to this is a 600ms
+         retry loop with no ceiling, which on a surface that will never have a Google map
+         runs for the life of the page. */
+      ldnaRadiusMessage('The map is still loading. Try again in a moment.', 'error');
+      return;
+    }
+
+    var button = document.querySelector('[onclick="ldnaAddRadiusSearch()"]');
+    ldnaRadiusMessage('Locating address…', 'info');
+
+    var lookup = (button && typeof window.ldnaAddressLookupWithButton === 'function')
+      ? window.ldnaAddressLookupWithButton(button, address)
+      : ldnaLookupAddress(address);
+
+    lookup.then(function (result) {
+      if (!result || !result.ok) {
+        /* NOTHING IS ADDED AND NOTHING STORED IS TOUCHED. No circle at 0,0, none at the
+           centre of the state, none at the middle of the current view — a circle the user
+           did not place is indistinguishable from one they did once it is saved. */
+        if (result && result.message === '') return;   /* a suppressed double-click */
+        ldnaRadiusMessage(
+          (result && result.message) || 'Address could not be located. Try adding the city, state, or ZIP code.',
+          'error'
+        );
+        return;
+      }
+
+      /* The EXISTING creation path and the EXISTING stored shape:
+         { address, lat, lng, radius_miles }. Nothing new is invented, and
+         `ldnaSerialize` still rebuilds the blob from the renderer's own state. */
+      var entry = r.addRadiusSearch({
+        lat: result.lat,
+        lng: result.lng,
+        radius_miles: miles,
+        address: result.address || address,
+      });
+
+      if (!entry) {
+        ldnaRadiusMessage('That location could not be placed on the map.', 'error');
+        return;
+      }
+
+      /* The overlay list refreshes itself: addRadiusSearch emits a change, the renderer
+         calls window.ldnaSerialize, and the MapLibre wrapper on that function is what
+         redraws the list. Calling it again here would be a second path to the same
+         update, free to disagree with the first. */
+      r.fitToGeometry();
+
+      addrEl.value = '';
+      ldnaRadiusMessage('Added ' + (result.address || address) + ' (' + miles + ' mi).', 'info');
+    });
   };
 
   /* The renderer reports edits through onChange -> window.ldnaSerialize (wrapped by the

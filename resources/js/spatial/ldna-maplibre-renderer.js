@@ -11,13 +11,15 @@
  |   * boundary GeoJSON overlays (city / county / ZIP / any renderer-neutral source)
  |   * stored polygons: render, draw, edit vertices, delete
  |   * stored circles and radius searches: render, draw, delete
- |   * Important Places that ALREADY carry coordinates: pins only
+ |   * Important Places that ALREADY carry coordinates: a pin each, plus a ring
+ |     for a "within N miles" row (never for "within N minutes")
  |
  | WHAT THIS DOES NOT OWN, AND MUST NOT ACQUIRE
- |   * geocoding of any kind. No address becomes a coordinate in this file. The
- |     radius-search box and the Important Places address field are fed by a
- |     resolver injected from outside, and in this phase the only implementation
- |     is a deterministic stub used by tests.
+ |   * geocoding of any kind. No address becomes a coordinate in this file, and
+ |     that is unchanged now that typed addresses resolve: the radius-search box
+ |     and the Important Places field call the application's own lookup endpoint
+ |     (see ldna-address-lookup.js) and hand this renderer the COORDINATE. It
+ |     still has no idea an address exists.
  |   * boundary RETRIEVAL. Callers hand this renderer GeoJSON they already have;
  |     it never issues the request itself. That keeps the inherited browser-direct
  |     Nominatim problem out of the new renderer instead of porting it forward.
@@ -36,6 +38,7 @@
 import {
     overlaysToFeatureCollection,
     importantPlacesToFeatureCollection,
+    importantPlaceCirclesToFeatureCollection,
     polygonToFeature,
     circleToFeature,
     featureToPolygon,
@@ -52,6 +55,15 @@ const SRC_OVERLAYS = 'ldna-overlays';
 const SRC_BOUNDARIES = 'ldna-boundaries';
 const SRC_DRAFT = 'ldna-draft';
 const SRC_VERTICES = 'ldna-vertices';
+/*
+ * Important-place rings live in their OWN source, and that is a storage-safety
+ * decision rather than a styling one. SRC_OVERLAYS is fed from `circles`, which
+ * is the working set `emitChange()` reports and the host serialises into
+ * `radius_searches`. A ring drawn from `important_places_json` that shared that
+ * source would only need one careless read-back to become a search area the
+ * user never drew.
+ */
+const SRC_PLACE_RINGS = 'ldna-place-rings';
 
 const LYR_OVERLAY_FILL = 'ldna-overlay-fill';
 const LYR_OVERLAY_LINE = 'ldna-overlay-line';
@@ -60,6 +72,8 @@ const LYR_BOUNDARY_LINE = 'ldna-boundary-line';
 const LYR_DRAFT_LINE = 'ldna-draft-line';
 const LYR_DRAFT_FILL = 'ldna-draft-fill';
 const LYR_VERTICES = 'ldna-vertices-circles';
+const LYR_PLACE_RING_FILL = 'ldna-place-ring-fill';
+const LYR_PLACE_RING_LINE = 'ldna-place-ring-line';
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
 
@@ -241,13 +255,19 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
     /**
      * Important Places pins.
      *
-     * DOM markers rather than a symbol layer, because the style carries no glyph
-     * source (see ldna-basemap) and a symbol layer therefore cannot render text.
-     * These pins are few — a handful per listing — so the DOM cost is irrelevant.
+     * DOM markers rather than a symbol layer. The style does now carry glyphs, so
+     * this is no longer a limitation but a choice: a marker is an element the
+     * widget owns and can attach behaviour to, where a symbol layer is a picture
+     * of one. These pins are few — a handful per listing — so the DOM cost is
+     * irrelevant.
      */
     const refreshPlaces = () => {
         if (!map) return;
         clearPlaceMarkers();
+
+        // Miles rows contribute a ring; minutes rows contribute nothing here and
+        // get their pin below like every other located place.
+        setData(SRC_PLACE_RINGS, importantPlaceCirclesToFeatureCollection(places));
 
         const collection = importantPlacesToFeatureCollection(places);
 
@@ -271,6 +291,7 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
 
     const addSourcesAndLayers = () => {
         map.addSource(SRC_BOUNDARIES, { type: 'geojson', data: EMPTY });
+        map.addSource(SRC_PLACE_RINGS, { type: 'geojson', data: EMPTY });
         map.addSource(SRC_OVERLAYS, { type: 'geojson', data: EMPTY });
         map.addSource(SRC_DRAFT, { type: 'geojson', data: EMPTY });
         map.addSource(SRC_VERTICES, { type: 'geojson', data: EMPTY });
@@ -288,6 +309,30 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
             type: 'line',
             source: SRC_BOUNDARIES,
             paint: { 'line-color': '#0e7361', 'line-width': 1.5, 'line-dasharray': [2, 1] },
+        });
+
+        /*
+         * Important-place rings: above the boundaries, below the user's own
+         * geometry, and dashed. They are context — "this is the mile around the
+         * school" — not something the user drew or can edit, and the drawn
+         * radius searches they sit beside are solid, so the two must not be
+         * mistakable for each other at a glance.
+         */
+        map.addLayer({
+            id: LYR_PLACE_RING_FILL,
+            type: 'fill',
+            source: SRC_PLACE_RINGS,
+            paint: { 'fill-color': '#7c3aed', 'fill-opacity': 0.07 },
+        });
+        map.addLayer({
+            id: LYR_PLACE_RING_LINE,
+            type: 'line',
+            source: SRC_PLACE_RINGS,
+            paint: {
+                'line-color': '#7c3aed',
+                'line-width': 1.5,
+                'line-dasharray': [3, 2],
+            },
         });
 
         map.addLayer({
@@ -646,6 +691,10 @@ export function createLdnaRenderer({ maplibregl, pmtiles, container, config = {}
             const features = [
                 ...overlaysToFeatureCollection({ polygons, radius_searches: circles }).features,
                 ...importantPlacesToFeatureCollection(places).features,
+                // A one-mile ring around a place is part of what the listing is
+                // saying; framing the pin and cropping its ring shows less than
+                // the user asked for.
+                ...importantPlaceCirclesToFeatureCollection(places).features,
             ];
 
             const pin = propertyMarker ? propertyMarker.getLngLat() : null;
