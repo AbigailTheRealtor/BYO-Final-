@@ -963,7 +963,22 @@
         $heroHSqft = $str('minimum_heated_square') ?: null;
         $heroTSqft = $str('total_square_feet') ?: null;
         $heroPropType = $str('property_type') ?: null;
-        $heroStatus   = $str('listing_status') ?: null;
+        /* Hero: listing status.
+         *
+         * Resolved ONCE here and reused by the pill, the hero badge and the
+         * "Listing Status" row in Listing Details, so the three cannot drift.
+         * They previously each read the stored `listing_status` meta value,
+         * which on an MLS-linked listing is the seller's typed answer and not
+         * the market status Stellar currently reports — the page printed
+         * 'Active' in the pill while MLS Details printed 'Pending' below it.
+         *
+         * See App\Support\Listing\ListingStatusDisplay, including why this is
+         * not simply `$auction->status`: a manual listing keeps exactly the
+         * value it printed before, and a listing with no status still renders
+         * no status.
+         */
+        $listingStatus = \App\Support\Listing\ListingStatusDisplay::for($auction);
+        $heroStatus   = $listingStatus;
         $heroListDate = $fmtDate($str('listing_date'));
         $heroUpdDate  = $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('F j, Y') : null;
 
@@ -1584,7 +1599,7 @@
                          seller made, and on a Traditional listing it announced an
                          auction that is not happening. --}}
                     {!! $row('Listing Method', $str('auction_type')) !!}
-                    {!! $row('Listing Status', $str('listing_status')) !!}
+                    {!! $row('Listing Status', $listingStatus) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
