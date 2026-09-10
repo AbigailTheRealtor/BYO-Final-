@@ -12,61 +12,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          # Required: the gate computes merge-base(base, head) itself, so both
+          # commits and their common ancestor must be present.  A shallow
+          # checkout makes the gate refuse to run rather than pass by default.
           fetch-depth: 0
 
-      - name: Detect debug statements in changed files
+      - name: Detect debug statements added by this pull request
         run: |
-          # Patterns mirror .githooks/pre-commit exactly.
-          PHP_DEBUG_PATTERN='\bdd\(|\bvar_dump\('
-          JS_DEBUG_PATTERN='console\.log\(|debugger;'
-          TWIG_DEBUG_PATTERN='dump\('
-
-          # Get the list of files changed in this PR (added, copied, modified, renamed).
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-
-          mapfile -t changed_files < <(
-            git diff --name-only --diff-filter=ACMR "$BASE" "$HEAD" 2>/dev/null || true
-          )
-
-          debug_hits=()
-
-          for file in "${changed_files[@]}"; do
-            # Skip files that no longer exist (e.g. renamed source side).
-            [[ -f "$file" ]] || continue
-
-            if [[ "$file" =~ \.(php)$ ]]; then
-              while IFS= read -r match; do
-                debug_hits+=("$match")
-              done < <(grep -nE "$PHP_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
-
-            elif [[ "$file" =~ \.(js|mjs|jsx|ts|tsx|vue|svelte)$ ]]; then
-              while IFS= read -r match; do
-                debug_hits+=("$match")
-              done < <(grep -nE "$JS_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
-
-            elif [[ "$file" =~ \.(twig)$ ]]; then
-              while IFS= read -r match; do
-                debug_hits+=("$match")
-              done < <(grep -nE "$TWIG_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
-            fi
-          done
-
-          if [ ${#debug_hits[@]} -gt 0 ]; then
-            echo ""
-            echo "ERROR: Debug statements detected in changed files:"
-            echo ""
-            for hit in "${debug_hits[@]}"; do
-              echo "$hit"
-            done
-            echo ""
-            echo "Please remove these debug statements before merging."
-            echo "Patterns checked:"
-            echo "  PHP (*.php)                  : dd(, var_dump("
-            echo "  JS/TS (*.js *.mjs *.jsx etc) : console.log(, debugger;"
-            echo "  Twig (*.twig)                : dump("
-            echo ""
-            exit 1
-          fi
-
-          echo "No debug statements found in changed files."
+          # Patterns and extensions still mirror .githooks/pre-commit; they now
+          # live in the shared checker's "no-debug-statements" profile.
+          bash scripts/ci/check-added-debug-statements.sh \
+            --profile no-debug-statements \
+            --range "${{ github.event.pull_request.base.sha }}" \
+                    "${{ github.event.pull_request.head.sha }}"
