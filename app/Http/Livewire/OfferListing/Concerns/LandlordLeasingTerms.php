@@ -390,4 +390,103 @@ trait LandlordLeasingTerms
     public $custom_lease_term = '';
     public $other_lease_term = '';
     public $other_rent_include = '';
+
+    // ─── Conditional visibility, server side ─────────────────────────────────
+    //
+    // The canonical Leasing Terms tab paints two follow-up wrappers from these
+    // flags rather than from the parent value:
+    //
+    //     #other_owner_pays_wrapper          ← $is_other_owner_pays_visible
+    //     #other_desired_lease_length_wrapper ← $is_update_lease_term_option_visible
+    //
+    // They were declared on the manual components and nowhere else, so on MLS
+    // Quick Import the Blade read an undefined variable, evaluated it as null and
+    // emitted display:none permanently. $is_update_lease_term_option_visible was
+    // not on LandlordOfferListing either — only on the Tenant components — so the
+    // manual landlord screens were also painting that one closed on first render
+    // and relying entirely on their page JS to open it afterwards.
+    //
+    // Declared here so every consumer of the tab renders the same initial state.
+    // LandlordOfferListing and LandlordOfferListingEdit declare
+    // $is_other_owner_pays_visible themselves with this same default, which PHP
+    // permits and which leaves their behaviour untouched.
+
+    public $is_other_owner_pays_visible = false;
+    public $is_update_lease_term_option_visible = false;
+
+    /**
+     * Recompute both flags from the parent answers they describe.
+     *
+     * Idempotent and derived — never a second source of truth. Call it after
+     * hydrating a draft so a reopened listing renders its follow-ups open, which
+     * is what stops a saved answer looking blank until the user touches the
+     * parent again.
+     */
+    protected function syncLandlordLeaseVisibilityFlags(): void
+    {
+        $this->is_other_owner_pays_visible =
+            in_array('Other', $this->ensureArray($this->owner_pays), true);
+
+        $this->is_update_lease_term_option_visible =
+            in_array('Other', $this->ensureArray($this->desired_lease_length), true);
+    }
+
+    /**
+     * The landlord CHANGED the Owner Pays selection in the browser.
+     *
+     * Separate from the updated() hook below, and the separation is the point.
+     * Dropping "Other" also drops the free text that described it — carried over
+     * from LandlordOfferListing::updateOwnerPays(), which the manual pages' JS
+     * used to invoke — but that clearing may only ever follow a GESTURE.
+     *
+     * An updated() hook cannot tell a gesture from any other write to the
+     * property: a draft rehydrate, an import, a programmatic set. Clearing there
+     * deleted other_owner_pays on a save that merely restated the answers, which
+     * LandlordLeasingTermsPersistenceTest pins against and which is a data loss,
+     * not a visibility fix.
+     *
+     * Named for what it does rather than updateOwnerPays(): that method already
+     * exists on the two manual components, does not exist on
+     * LandlordMlsQuickImport, and calling it from shared code would raise
+     * "method not found" on the one surface this fix is for.
+     *
+     * Deliberately NOT mirrored for other_lease_term: nothing has ever cleared it,
+     * and inventing that here would be a product change smuggled into a bug fix.
+     *
+     * @param  mixed  $values
+     */
+    public function syncOwnerPaysSelection($values): void
+    {
+        $this->owner_pays = $this->ensureArray($values);
+
+        $this->syncLandlordLeaseVisibilityFlags();
+
+        if (! $this->is_other_owner_pays_visible) {
+            $this->other_owner_pays = '';
+        }
+    }
+
+    /**
+     * Livewire fires these when the shared behaviour partial's @this.set() lands,
+     * so the next server render already knows the branch is open. Without them the
+     * wrapper would be reopened by JS on every round trip and would close again
+     * for a moment each time the component re-rendered.
+     *
+     * They only ever RECOMPUTE the two derived flags. Nothing here may delete a
+     * stored answer — see syncOwnerPaysSelection() for why that has to sit behind
+     * an explicit call.
+     *
+     * Deliberately NOT named updateOwnerPays(): that is a different, existing
+     * method on the two manual components, and a class that declares its own
+     * updatedOwnerPays() would override these, exactly as with stripCommas().
+     */
+    public function updatedOwnerPays(): void
+    {
+        $this->syncLandlordLeaseVisibilityFlags();
+    }
+
+    public function updatedDesiredLeaseLength(): void
+    {
+        $this->syncLandlordLeaseVisibilityFlags();
+    }
 }

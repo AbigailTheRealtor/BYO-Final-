@@ -2222,18 +2222,7 @@
                     if (_preTOL.length > 0) {
                         $('#terms_of_lease').val(_preTOL).trigger('change');
                     }
-                    $('#terms_of_lease').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('terms_of_lease', selectedValues, true);
-                        var container = document.getElementById('otherLeaseContainer');
-                        if (container) {
-                            if (selectedValues.includes('Other')) {
-                                container.classList.remove('d-none');
-                            } else {
-                                container.classList.add('d-none');
-                            }
-                        }
-                    });
+                    {{-- change binding removed: the canonical lease-terms partial now carries it (_lease-terms-behaviour.blade.php) --}}
                 }
                 if ($('#terms_of_lease').length) {
                     var _tolVals = $('#terms_of_lease').val() || [];
@@ -2258,13 +2247,7 @@
                     if (_preOP.length > 0) {
                         $('#owner_pays').val(_preOP).trigger('change');
                     }
-                    $('#owner_pays').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('owner_pays', selectedValues, true);
-                        @this.call('updateOwnerPays', selectedValues);
-                        var $w = $('#other_owner_pays_wrapper');
-                        if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
-                    });
+                    {{-- change binding removed: the canonical lease-terms partial now carries it (_lease-terms-behaviour.blade.php) --}}
                 }
                 if ($('#owner_pays').length) {
                     var _opVals = $('#owner_pays').val() || [];
@@ -2289,14 +2272,7 @@
                     width: '100%',
                     closeOnSelect: false,
                 });
-                $dlt.off('change.ltsSync').on('change.ltsSync', function() {
-                    var selectedValues = $(this).val() || [];
-                    @this.set('desired_lease_length', selectedValues, true);
-                    var otherWrapper = document.querySelector('.other_lease_term_wrapper');
-                    if (otherWrapper) {
-                        otherWrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';
-                    }
-                });
+                {{-- change binding removed: see _lease-terms-behaviour.blade.php --}}
             }
 
             initLeaseTermSelect2();

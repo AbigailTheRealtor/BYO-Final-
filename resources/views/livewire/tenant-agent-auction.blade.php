@@ -1,3 +1,32 @@
+{{--
+    Opt-out from the shared Seller Sale Terms conditional behaviour.
+
+    This page is the Hire Agent twin of offer-tenant-listing.blade.php and carries
+    the same defect surface: when $user_type is 'seller' it includes the Hire Seller
+    Agent Sale Terms tab, which now includes the shared behaviour partial, while this
+    file already binds #sale_provision / #offered_financing itself further down
+    (applySellerProvisionVisibility / applySellerFinancingVisibility, plus the Buyer
+    Alpine CustomEvents). Without this flag the page would carry two delegated
+    handlers on the same two selects, and a @this.set() round trip it has never made.
+
+    Claiming the flag leaves this page's behaviour byte-identical. It is the whole
+    change made here: TenantAgentAuction is frozen legacy (see CLAUDE.md) and none of
+    its own logic is touched.
+
+    @prepend rather than @push because the tab is included at line ~1777, before this
+    file's own @push('scripts') at ~1949, so a plain push would arrive too late to be
+    seen by the shared partial's guard.
+
+    tenant-agent-auction-edit.blade.php is deliberately NOT opted out: it includes the
+    same tab and has no seller conditional handlers of its own, so it had the same
+    defect as MLS Quick Import and the shared behaviour repairs it.
+--}}
+@if (($user_type ?? null) === 'seller')
+@prepend('scripts')
+<script>window.__sellerTermsConditionalsBound = true;</script>
+@endprepend
+@endif
+
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 <style>

@@ -2341,3 +2341,12 @@
     @endif
 </div>{{-- .card --}}
 
+
+{{--
+    The conditional behaviour for the two parent questions above, which every
+    surface that renders this tab now receives automatically. It used to live in
+    each page's own @push('scripts'), which is why MLS Quick Import — the one
+    consumer with no such block — rendered the sections and could never open them.
+    Keep it here: a new consumer of this tab must not have to remember to copy JS.
+--}}
+@include('livewire.offer-listing.offer-seller-tabs.commission-based._seller-terms-behaviour')

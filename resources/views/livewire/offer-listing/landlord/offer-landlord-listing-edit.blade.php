@@ -1967,14 +1967,7 @@ $tenantPays = [
                     closeOnSelect: false,
                     width: '100%',
                 });
-                $('#terms_of_lease').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('terms_of_lease', selectedValues, true);
-                    var _tolContainer = document.getElementById('otherLeaseContainer');
-                    if (_tolContainer) {
-                        selectedValues.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
-                    }
-                });
+                {{-- change binding removed: the canonical lease-terms partial now carries it (_lease-terms-behaviour.blade.php) --}}
                 var _tolSaved = @json($this->terms_of_lease ?? []);
                 if (!Array.isArray(_tolSaved)) _tolSaved = [];
                 if (_tolSaved.length) { $('#terms_of_lease').val(_tolSaved).trigger('change'); }
@@ -1987,13 +1980,7 @@ $tenantPays = [
                     closeOnSelect: false,
                     width: '100%',
                 });
-                $('#owner_pays').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('owner_pays', selectedValues, true);
-                    @this.call('updateOwnerPays', selectedValues);
-                    var $w = $('#other_owner_pays_wrapper');
-                    if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
-                });
+                {{-- change binding removed: the canonical lease-terms partial now carries it (_lease-terms-behaviour.blade.php) --}}
                 var _opSaved = @json($this->owner_pays ?? []);
                 if (!Array.isArray(_opSaved)) _opSaved = [];
                 if (_opSaved.length) { $('#owner_pays').val(_opSaved).trigger('change'); }
@@ -2032,14 +2019,7 @@ $tenantPays = [
                     var current = $dlt.val() || [];
                     otherWrapper.style.display = current.includes('Other') ? 'block' : 'none';
                 }
-                $dlt.off('change.ltsSync').on('change.ltsSync', function() {
-                    var selectedValues = $(this).val() || [];
-                    @this.set('desired_lease_length', selectedValues, true);
-                    var wrapper = document.querySelector('.other_lease_term_wrapper');
-                    if (wrapper) {
-                        wrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';
-                    }
-                });
+                {{-- change binding removed: the canonical lease-terms partial now carries it (_lease-terms-behaviour.blade.php) --}}
             }
 
             initEditLeaseTermSelect2();
