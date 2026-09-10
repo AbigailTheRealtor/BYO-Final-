@@ -165,17 +165,105 @@ therefore **weaker** than `MlsDisplayPermissions`. Explore uses the stricter one
    needs its own browser key (`EXPLORE_GOOGLE_MAPS_BROWSER_KEY`). Without it the
    page renders a stated unavailable panel and issues **zero** Google requests.
    The live visual pass is blocked on that credential.
-2. **Explore's inventory is whatever the existing lazy import has cached.**
-   `bridge_properties` is filled by criteria-driven imports; Explore reads it and
-   triggers no fetch of its own, because a second sync system is explicitly out
-   of scope. A viewport over an area nobody has searched will be sparse.
+2. **Explore's inventory is current only while `EXPLORE_DISCOVERY_ENABLED` is on.**
+   With discovery off it falls back to whatever the criteria-driven imports have
+   cached, and labels the response `discovery.status = "disabled"` so a thin
+   answer is not read as a thin market. See §6.
 3. **Eligibility requires decoding `raw_json` per row** — display permissions and
    lease frequency exist only there. Bounded by overfetch-then-filter with a hard
    read ceiling rather than by inventing a projection column.
 
 ---
 
-## 6. Follow-ups
+## 6. Viewport discovery — reusing the one MLS ingestion architecture
+
+The first cut of Explore read `bridge_properties` and nothing else, so a neighbourhood nobody
+had previously searched looked empty. That is a statement about our cache presented as a
+statement about the market, and it is corrected here.
+
+### The live-sync audit (2026-09-10)
+
+| Question | Answer |
+|---|---|
+| Live-sync implementation | `SyncMlsListings` · `app/Services/ListingImport/Sync/` · `config/mls_sync.php` · scheduled in `app/Console/Kernel.php` |
+| Refreshes known/imported listings | **YES** |
+| Discovers new Stellar inventory | **NO** — its candidate set is a query over `seller_agent_auctions` / `landlord_agent_auctions` with MLS meta, so a listing nobody imported can never be a candidate. It also does not refresh `bridge_properties` generally. |
+| Geographic Stellar query available | **YES** — `BuyerCriteriaODataFilterBuilder::buildGeoClause()` + `PolygonBoundingBox::fromPayload()` already emit the lat/lng box |
+| Sale / rent discovery | **YES / YES** — the builder is generic over `PropertyType` |
+| Existing upsert pipeline reusable | **YES** — `LazyBridgeImportService::importForCriteria()` -> `BridgePropertyNormalizer::upsert()` |
+| Stale-on-demand refresh available | **YES**, at two grains: the criteria fetch cache per viewport, and `BridgeListingLookupService::refreshByListingKey()` per record |
+| Scheduled refresh available | **YES**, but scoped to MLS-linked BidYourOffer listings — freshness, never coverage |
+| Sync flags | `MLS_SYNC_ENABLED`, `MLS_SYNC_SCHEDULE_ENABLED`, `MLS_SYNC_LAZY_REFRESH_ENABLED` — all absent from `.env`, all defaulting false: **implemented and wired, not activated** |
+
+**Freshness and coverage are different problems.** A synchroniser keeping 500 previously
+imported listings current does not make Explore complete when Stellar has inventory this
+application has never encountered; and a large local cache is worth nothing if it is stale.
+Explore needed both, and they are solved by different mechanisms — discovery for coverage, the
+confirmation window for currency.
+
+### What was built
+
+```
+Explore viewport
+  -> ExploreInventoryService       translator: bbox -> BuyerCriteriaPayload
+  -> LazyBridgeImportService       THE EXISTING IMPORTER — lock, fetch cache,
+                                   pagination, normalizer, DNA dispatch
+  -> bridge_properties
+  -> ExploreEligibilityPolicy      existing MlsDisplayPermissions
+  -> ExploreListingProjection      the allow-list DTO
+  -> browser
+```
+
+The only change to shared code is additive: two role strings in
+`LazyBridgeImportService::SUPPORTED_ROLES`, and optional pagination caps the importer clamps
+**downwards** so a call site can lower a spend limit and never raise one.
+`ExploreInventoryService` writes no OData — it builds the payload the existing buyer builder
+already turns into `StandardStatus eq 'Active' and (PropertyType eq ...) and (bbox)`. A test
+scans `app/Services/Explore/` and fails if any class there holds a provider client, reaches the
+network, or writes an MLS row.
+
+Both Explore roles use the **buyer** builder. Its name is historical — it knows nothing about
+purchasing — so the rental PropertyTypes produce the rental filter. The tenant builder is not
+used: its documented rental vocabulary includes `Residential`, which in this dataset is a sale
+type. That defect belongs to the tenant-search work and is neither inherited nor fixed here.
+
+### Three decisions worth knowing
+
+**The tile grid is load-bearing.** The fetch cache is keyed on a payload hash. Unsnapped, a
+viewport mints a new key on every pixel of pan and "reuse the existing cache" becomes a request
+per camera nudge. The discovery box is snapped **outwards** to a 0.05 degree grid: neighbouring
+viewports share one entry, and the box always contains the viewport it came from — a property at
+the screen edge must never be rendered from an area discovery did not ask about.
+
+**Presence is not currency.** After a pass that completely covered the viewport, every eligible
+listing in it was just upserted, so a row the pass did not touch is one the provider no longer
+returns. Those are withheld — via `ExploreFreshness`, which borrows `bridge.lazy_ttl_minutes`
+(the value `mls_sync.freshness_minutes` already borrows) against the `imported_at` stamp every
+upsert writes. **Nothing is deleted.** The rule is suppressed after a *partial* pass, because
+absence then means "we stopped asking"; it is also suppressed when discovery is off or the
+provider was unreachable, and the response says which via `discovery.complete` /
+`discovery.degraded`.
+
+**An outage is not an empty market.** A failed pass serves last-known rows and marks the
+response degraded. Emptying the map would assert a neighbourhood has nothing for sale — a claim
+about the world rather than about our connectivity; serving stale rows silently would be the
+same lie inverted.
+
+### To activate freshness in a deployed environment
+
+| Variable | Effect | Ships |
+|---|---|---|
+| `EXPLORE_DISCOVERY_ENABLED` | viewport discovery + panel record refresh | `false` |
+| `MLS_SYNC_ENABLED` | keeps MLS-**linked BidYourOffer listings** current (a separate concern; Explore does not depend on it) | `false` |
+| `MLS_SYNC_SCHEDULE_ENABLED` | the unattended sweep + daily reconcile | `false` |
+| `MLS_SYNC_LAZY_REFRESH_ENABLED` | owner stale-on-access refresh | `false` |
+
+Bridge credentials (`BRIDGE_DATASET`, `BRIDGE_SERVER_TOKEN`) are already present and are
+required. **Nothing was activated by this work.**
+
+---
+
+## 7. Follow-ups
 
 - **Google browser credential + live visual verification** (blocks §51 entirely).
 - **Saved properties.** No favourites system exists. Saving a property that has
