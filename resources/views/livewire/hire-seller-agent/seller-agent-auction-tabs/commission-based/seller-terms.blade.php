@@ -1661,3 +1661,14 @@
         </div>
     </div>
 </div>
+
+{{--
+    The shared Seller Sale Terms conditional behaviour.
+
+    This tab is the Hire Seller Agent copy of the Sale Terms markup — a different
+    file from the Create Offer one, but with the same parent select ids and the
+    same conditional section ids, so the one behaviour partial drives both. It is
+    included here rather than left in hire-seller-agent.blade.php's own
+    @push('scripts'), where it used to be duplicated.
+--}}
+@include('livewire.offer-listing.offer-seller-tabs.commission-based._seller-terms-behaviour')

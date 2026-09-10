@@ -1141,60 +1141,10 @@
             }
         });
 
-        // Seller Sale Terms visibility logic must remain identical between the dedicated Seller path and the shared TenantAgentAuction seller path.
-        // If changes are made to one path, they must also be applied to the other to keep both Seller flows consistent.
-        function applyFinancingVisibility() {
-            var data = ($('#offered_financing').val() || []);
-            var financingMap = {
-                'Assumable': '#seller-financing-assumable-section',
-                'Cryptocurrency': '#seller-financing-crypto-section',
-                'Exchange/Trade': '#seller-financing-exchange-section',
-                'Lease Option': '#seller-financing-leaseoption-section',
-                'Lease Purchase': '#seller-financing-leasepurchase-section',
-                'Non-Fungible Token (NFT)': '#seller-financing-nft-section',
-                'Seller Financing': '#seller-financing-sellerfinancing-section',
-                'Other': '#seller-financing-other-section',
-            };
-            Object.keys(financingMap).forEach(function(option) {
-                if (data.includes(option)) {
-                    $(financingMap[option]).show();
-                } else {
-                    $(financingMap[option]).hide();
-                }
-            });
-        }
-
-        function applyProvisionVisibility() {
-            var data = ($('#sale_provision').val() || []);
-            var provisionMap = {
-                'Assignment Contract': '#seller-provision-assignment-section',
-                'Other': '#seller-provision-other-section',
-            };
-            Object.keys(provisionMap).forEach(function(option) {
-                if (data.includes(option)) {
-                    $(provisionMap[option]).show();
-                } else {
-                    $(provisionMap[option]).hide();
-                }
-            });
-        }
-
-        // Document-level event delegation for sale provision and financing visibility.
-        // Using $(document).on() means these handlers survive any DOM replacement,
-        // morphdom patching, or Select2 re-initialization — they are bound once and
-        // never need to be re-registered.
-        // @this.set() syncs the value into the Livewire component so that every
-        // subsequent server-side re-render keeps sections visible (mirrors Appliances pattern).
-        $(document).on('change', '#sale_provision', function() {
-            var selectedValues = $(this).val() || [];
-            @this.set('sale_provision', selectedValues, false);
-            applyProvisionVisibility();
-        });
-        $(document).on('change', '#offered_financing', function() {
-            var selectedValues = $(this).val() || [];
-            @this.set('offered_financing', selectedValues, false);
-            applyFinancingVisibility();
-        });
+        {{-- Seller Sale Terms conditional visibility now lives with the markup it
+             operates, in offer-seller-tabs/commission-based/_seller-terms-behaviour.blade.php,
+             which the canonical seller-terms partial includes. The calls below still resolve
+             to the window functions that partial defines. --}}
 
         // Re-initialize tooltips after Livewire updates
         document.addEventListener('livewire:load', function() {

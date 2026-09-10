@@ -1,3 +1,25 @@
+{{--
+    This page binds #sale_provision / #offered_financing itself, further down, and
+    its handlers are NOT the canonical Seller ones: they drive the Seller sections
+    AND dispatch the Alpine CustomEvents the Buyer purchasing-terms sections listen
+    for, and they deliberately do not call @this.set(). Because this page also
+    includes the canonical seller-terms partial, which now carries the shared Seller
+    conditional behaviour, it would otherwise end up with two delegated handlers on
+    the same two selects and a @this.set() round trip it has never made.
+
+    Claiming the flag here opts this page out and leaves its behaviour byte-identical.
+    @prepend rather than @push because the shared partial is included at line ~1709,
+    before this file's own @push('scripts') block, so a plain push would arrive too
+    late to be seen.
+
+    offer-tenant-listing-edit.blade.php is deliberately NOT opted out: it includes the
+    same partial and has no seller conditional handlers of its own, so it had the same
+    defect as MLS Quick Import and the shared behaviour repairs it.
+--}}
+@prepend('scripts')
+<script>window.__sellerTermsConditionalsBound = true;</script>
+@endprepend
+
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 <style>

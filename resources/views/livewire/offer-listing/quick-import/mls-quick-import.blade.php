@@ -40,6 +40,24 @@
     Outline buttons are deliberately left alone: their background is meant to be
     transparent, so Preflight changes nothing about how they look.
 --}}
+{{--
+    The canonical Seller / Landlord terms behaviour, included unconditionally.
+
+    NOT quick-import-specific JavaScript — it is the same shared partial the
+    canonical terms tabs include, with no logic of its own added here, and @once
+    inside it makes the second include on the terms step a no-op.
+
+    It has to be included at initial page load rather than left to the terms step,
+    because Livewire 2.12 does not execute <script> nodes added during a morph and
+    @push contributes nothing on an AJAX round trip. "Your Terms" is step 4 of this
+    wizard, reached long after the page was delivered, so behaviour that arrived
+    only with that step would never run. The handlers are delegated on document, so
+    binding early and matching a select that appears three steps later is exactly
+    what makes this work.
+--}}
+@includeWhen($role === 'seller', 'livewire.offer-listing.offer-seller-tabs.commission-based._seller-terms-behaviour')
+@includeWhen($role === 'landlord', 'livewire.offer-listing.offer-landlord-tabs.commission-based._lease-terms-behaviour')
+
 <div class="container py-4" style="max-width: 960px;">
 
     {{-- ── Progress ─────────────────────────────────────────────────────── --}}

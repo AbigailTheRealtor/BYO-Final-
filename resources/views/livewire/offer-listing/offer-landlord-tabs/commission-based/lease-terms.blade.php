@@ -1642,3 +1642,12 @@
         </div>
     </div>
 @endif
+
+{{--
+    The conditional behaviour for the three parent questions on this tab whose
+    reveal is not self-contained — Desired Lease Term, Owner Pays and Terms of
+    Lease. Every surface that renders this tab now receives it automatically; it
+    used to live only in the manual landlord pages' own @push('scripts'), which is
+    why MLS Quick Import rendered those wrappers and could never open them.
+--}}
+@include('livewire.offer-listing.offer-landlord-tabs.commission-based._lease-terms-behaviour')
