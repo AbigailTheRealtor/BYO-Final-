@@ -209,6 +209,60 @@ test.describe('the renderer survives labels being unavailable', () => {
     });
 });
 
+test.describe('the style is valid MapLibre, with no GL context needed', () => {
+    /*
+     * THE VALIDATION THE GL TEST BELOW CANNOT ALWAYS RUN.
+     *
+     * MapLibre validates a style when it accepts one: an unknown layer type, a
+     * malformed filter, or an expression that cannot be parsed is an error at
+     * load. Catching that normally means constructing a Map, which needs WebGL2
+     * — and this container has none, so the GL spec below skips and the check
+     * silently does not happen.
+     *
+     * `validateStyleMin` is the SAME validator, exported by MapLibre's own style
+     * spec package as pure JavaScript. It needs no canvas, no GL and no network,
+     * so it runs everywhere and this style is checked on every run rather than
+     * only on machines that happen to have a GPU.
+     *
+     * That matters most for the label layers: `place-label-locality` sizes text
+     * with a data expression nested inside a zoom expression, and a mistake
+     * there does not throw — MapLibre reports the layer and skips it, so the map
+     * looks fine and simply has no city names.
+     */
+    async function validate(page, opts = {}) {
+        await page.goto('/renderer-harness.html');
+
+        return page.evaluate(async (o) => {
+            const { validateStyleMin } = await import('/vendor/@maplibre/maplibre-gl-style-spec/dist/index.mjs');
+            const mod = await import('/js/spatial/ldna-basemap.js');
+            const style = mod.buildBasemapStyle('https://example.invalid/x.pmtiles', '© OpenStreetMap contributors', 15, o);
+
+            return validateStyleMin(style).map((e) => `${e.message}`);
+        }, opts);
+    }
+
+    test('the labelled style validates against the MapLibre style spec', async ({ page }) => {
+        expect(await validate(page)).toEqual([]);
+    });
+
+    test('the label-free style validates too', async ({ page }) => {
+        expect(await validate(page, { labels: false })).toEqual([]);
+    });
+
+    test('the blank fallback style validates', async ({ page }) => {
+        await page.goto('/renderer-harness.html');
+
+        const errors = await page.evaluate(async () => {
+            const { validateStyleMin } = await import('/vendor/@maplibre/maplibre-gl-style-spec/dist/index.mjs');
+            const mod = await import('/js/spatial/ldna-basemap.js');
+
+            return validateStyleMin(mod.buildBlankStyle()).map((e) => `${e.message}`);
+        });
+
+        expect(errors).toEqual([]);
+    });
+});
+
 test.describe('labels on a real GL map', () => {
     test('the style loads into real MapLibre without being rejected', async ({ page }) => {
         await page.goto('/renderer-harness.html');
