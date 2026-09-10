@@ -378,6 +378,60 @@ class MlsQuickImportPropertyTypeMatrixTest extends TestCase
         $this->assertSame(['Residential Property'], $landlord['carport']);
     }
 
+    /**
+     * @dataProvider landlordTypeExpectations
+     * @test
+     *
+     * The Landlord half of the same claim. Only two categories exist and no
+     * others may be created, so the assertion is that a lease record lands in
+     * one of them and receives exactly the features that category's form
+     * renders — Residential Property gets all three, Commercial Property none.
+     *
+     * @param  list<string>  $applicable
+     * @param  list<string>  $inapplicable
+     */
+    public function every_landlord_category_gets_its_own_features(
+        string $sourceType,
+        string $expectedType,
+        array $applicable,
+        array $inapplicable
+    ): void {
+        $mls = 'QI-LE-' . substr(md5($sourceType), 0, 8);
+        $this->seedRecord($mls, $sourceType);
+
+        $component = $this->driveTo('landlord', $mls);
+        $listing   = $this->listing('landlord', $component->get('listingId'));
+
+        $this->assertSame($expectedType, (string) $listing->info('property_type'));
+
+        $this->assertContains(
+            $expectedType,
+            PropertyTypeVocabulary::categoriesForRole('landlord'),
+            'Landlord has exactly two categories and this fix creates no others'
+        );
+
+        foreach ($applicable as $key) {
+            $this->assertNotFalse($listing->info($key), "{$key} applicable to Landlord {$expectedType}");
+        }
+
+        foreach ($inapplicable as $key) {
+            $this->assertFalse(
+                $listing->info($key),
+                "{$key} renders no input on a Landlord {$expectedType} listing"
+            );
+        }
+    }
+
+    public function landlordTypeExpectations(): array
+    {
+        $all = ['pool_needed', 'garage_needed', 'carport_needed'];
+
+        return [
+            'residential lease' => ['Residential Lease', 'Residential Property', $all, []],
+            'commercial lease'  => ['Commercial Lease',  'Commercial Property',  [], $all],
+        ];
+    }
+
     // =====================================================================
     // C. YOUR TERMS — the third layer, rendered not inferred
     // =====================================================================
