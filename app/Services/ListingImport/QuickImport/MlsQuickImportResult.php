@@ -49,6 +49,31 @@ class MlsQuickImportResult
         public readonly ?string $listingKey = null,
         public readonly ?string $mlsNumber = null,
         public readonly ?string $mlsStatus = null,
+
+        // ── Source lifecycle, added for live sync ────────────────────────────
+        //
+        // Carried alongside the facts rather than re-read from `$raw` by the
+        // sync service, so the compliance boundary this class documents still
+        // holds: everything on this object has already passed an allow-list, and
+        // a consumer holding one still cannot reach past it.
+        //
+        // `standardStatus` is kept SEPARATE from `mlsStatus` because the feed
+        // genuinely disagrees with itself across the two fields — the
+        // 2026-09-10 probe found StandardStatus 'Closed' against MlsStatus
+        // 'Sold', and 'Active Under Contract' against 'Pending'. Collapsing them
+        // would silently pick a winner. See {@see \App\Support\Listing\MlsSourceStatus}.
+        //
+        // The four timestamps are the feed's own change markers, confirmed
+        // populated by that probe. There is deliberately no expiration field:
+        // `ExpirationDate` was absent from every sampled record and from every
+        // status probe, so this application has nothing to carry.
+        public readonly ?string $standardStatus = null,
+        public readonly ?float $listPrice = null,
+        public readonly ?string $sourcePropertyType = null,
+        public readonly ?string $modificationTimestamp = null,
+        public readonly ?string $statusChangeTimestamp = null,
+        public readonly ?string $priceChangeTimestamp = null,
+        public readonly ?string $photosChangeTimestamp = null,
     ) {}
 
     public static function found(
@@ -59,16 +84,30 @@ class MlsQuickImportResult
         ?string $listingKey,
         ?string $mlsNumber,
         ?string $mlsStatus,
+        ?string $standardStatus = null,
+        ?float $listPrice = null,
+        ?string $sourcePropertyType = null,
+        ?string $modificationTimestamp = null,
+        ?string $statusChangeTimestamp = null,
+        ?string $priceChangeTimestamp = null,
+        ?string $photosChangeTimestamp = null,
     ): self {
         return new self(
-            status:     self::STATUS_FOUND,
-            facts:      $facts,
-            media:      $media,
-            headline:   $headline,
-            details:    $details,
-            listingKey: $listingKey,
-            mlsNumber:  $mlsNumber,
-            mlsStatus:  $mlsStatus,
+            status:                self::STATUS_FOUND,
+            facts:                 $facts,
+            media:                 $media,
+            headline:              $headline,
+            details:               $details,
+            listingKey:            $listingKey,
+            mlsNumber:             $mlsNumber,
+            mlsStatus:             $mlsStatus,
+            standardStatus:        $standardStatus,
+            listPrice:             $listPrice,
+            sourcePropertyType:    $sourcePropertyType,
+            modificationTimestamp: $modificationTimestamp,
+            statusChangeTimestamp: $statusChangeTimestamp,
+            priceChangeTimestamp:  $priceChangeTimestamp,
+            photosChangeTimestamp: $photosChangeTimestamp,
         );
     }
 

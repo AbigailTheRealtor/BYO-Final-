@@ -367,6 +367,113 @@ pair and `space_features` / `neighboring_tenants`. `value_determination` and
 a **second** time. `Association Fee` no longer publishes the literal row `/ monthly` when a frequency
 arrives with no amount.
 
+### MLS live sync — keeping an imported listing current
+
+Import copies the feed once; **sync keeps the copy true**. `MlsListingSyncService`
+(`app/Services/ListingImport/Sync/`) refreshes an MLS-linked listing from Bridge without a manual
+re-import. **It ships inert** — see the activation gates below.
+
+**Linkage identity is the listing key, never the address.** `mls_listing_key` (Stellar's
+`ListingKey`) is the preferred stable identity; `mls_number` (`ListingId`) is the fallback used only
+when the key is absent, and it is also what the per-listing lock is keyed on. A listing carrying
+neither is not MLS-linked and is never synced. **Address is not a synchronization identity** — it
+changes, it is normalized in two different ways for two different purposes, and matching on it is
+how one property's data lands on another's record.
+
+**Status: `StandardStatus` is authoritative, `MlsStatus` is context.** They are different fields
+with different values on the same record — the 2026-09-10 `mls:probe-lifecycle` run caught
+`Closed`↔`Sold` and `Active Under Contract`↔`Pending` directly. `StandardStatus` is the
+RESO-normalised field, so it is the market status for an MLS-linked listing; `MlsStatus` is retained
+verbatim alongside it as Stellar's own local wording, **never mapped onto the other and never used
+as a fallback** — a listing with no `StandardStatus` is one whose status we do not know, and
+inferring it from `Sold` would re-perform the normalisation RESO already did. `MlsSourceStatus`
+records which strings the live dataset actually returned (`Active`, `Pending`, `Closed`,
+`Active Under Contract`, `Coming Soon` confirmed; the off-market vocabulary unconfirmed, which is
+not the same as non-existent — an IDX feed commonly withholds those).
+
+**For an MLS-linked listing, BidYourOffer timers do not override Stellar.** `expiration_date`, a
+manually selected `listing_status`, a bidding timer and an auction timer are all reached only by
+listings that own their own lifecycle. `expiration_date` is a date a user types into a form; on an
+imported listing it silently computed `Expired` for a property Stellar still lists as Active, with
+nothing on the page explaining why. `MlsLinkedListingStatus` is one shared class rather than a copy
+per model, because seller and landlord disagreeing about whether the same feed listing has expired
+is not a cosmetic difference. **`is_sold` still wins** and is checked before this class is
+consulted — a closed BidYourOffer transaction is not something an MLS status string may reopen.
+**Manual non-MLS listings keep their existing lifecycle behaviour, unchanged.**
+
+**Price: `mls_list_price` is separate from Your Terms, and that separation is the feature.** Stellar's
+`ListPrice` is persisted under its own key and refreshed whenever it changes. The user's Desired Sale
+Price, landlord rent terms, starting/reserve/buy-now prices and the rest of Your Terms stay
+**BYO-owned and are never overwritten by a price move in the feed**. The payment calculator *may
+consume* `mls_list_price` — it leads the Seller controller's fallback chain, which is why an imported
+listing no longer opens the Estimated Monthly Payment panel at $0 — and a what-if inside that
+calculator is browser-side only and writes nothing back.
+
+**Fact sync shares one mapping with import, and differs only in precedence.** `MlsFactProjection` is
+the single place a canonical MLS fact becomes a listing meta value, used by both the owner-scoped
+quick import and the unattended sync, so there is no second lookalike mapping to drift.
+`MODE_IMPORT` leaves a populated field alone (the user may have corrected the feed; re-importing must
+not revert them). `MODE_SYNC` lets Stellar win for the facts it owns — beds, baths, square footage,
+year built, property type, features, HOA, taxes. **Which** facts those are is `MlsSyncFieldPolicy`'s
+decision, not the projection's, and it guards from both ends: `NEVER_SYNC` filters canonical facts
+before projection and `PROTECTED_META_KEYS` filters the resulting meta keys, so a future `MlsFieldMap`
+entry cannot reach a BYO term by arriving under a canonical key nobody thought to exclude. **Every
+never-synced field states its reason in the policy, and a test asserts that.**
+
+**Change detection.** `ModificationTimestamp` is the primary source change marker;
+`StatusChangeTimestamp`, `PriceChangeTimestamp` and `PhotosChangeTimestamp` are retained and used for
+what they each describe. Media goes through the existing `MlsListingGallerySync`, unchanged —
+**user-uploaded photos, the user's cover choice and their ordering are preserved**, and MLS media
+identity is by media key.
+
+**Failure preserves last-known-good.** An unavailable provider is never read as a deletion, and a
+record absent from the feed leaves the listing standing rather than blanking it; `NOT_FOUND` records
+the fact and deletes nothing. The success stamp advances **only** on an actual success — not on a
+fault and not on a not-found. Sync is **idempotent** (running it twice against the same source
+changes nothing the second time) and **lock-protected** per listing key. A sync never dispatches the
+Location DNA pipeline.
+
+**Activation is fail-closed, in three independent gates** (`config/mls_sync.php`, whose header states
+*absence is OFF*):
+
+| Flag | Default | Governs |
+|-----|---------|---------|
+| `MLS_SYNC_ENABLED` | `false` | the master gate — off stops every sync by any route |
+| `MLS_SYNC_SCHEDULE_ENABLED` | `false` | the unattended sweep and the daily reconcile |
+| `MLS_SYNC_LAZY_REFRESH_ENABLED` | `false` | the stale-on-access refresh |
+
+None of the three is in `config/required_production_flags.php`, and must not be added — **the deploy
+contract may never name a safety switch.**
+
+**When explicitly enabled**, the operating parameters are: normal sweep every **15 minutes**, live
+freshness window **60 minutes**, daily reconcile at **03:20**, terminal/non-live freshness **1440
+minutes**, normal sweep ceiling **100**, reconcile ceiling **500**, failure backoff **30 minutes**.
+
+**Stale-on-access has two viewers and two answers, and the difference is the design.** The
+authenticated **owner or their agent**, opening their own listing, gets one synchronous refresh —
+a known user acting deliberately on their own record, bounded by how fast a person loads a page, and
+the one person who needs the answer current *now*. **Everybody else, including every anonymous
+visitor, triggers no outbound request**: the view is recorded as demand in `MlsSyncDemandQueue` and
+influences ordering for the next sweep. Twenty visitors on one stale listing produce twenty cache
+writes and zero Bridge requests; twenty simultaneous owner views produce one request, because the
+losers re-read inside the lock and find the work done. **A repeated visitor cannot create a request
+storm** — not because a counter rations it, but because the expensive work is not on that path.
+"Queue it for the public path" would be a lie on this deployment: `QUEUE_CONNECTION` is `sync` and
+nothing runs `queue:work`, so a dispatched job executes inline in the dispatching request.
+
+**Deliberately deferred — do not document or treat any of these as done:**
+
+* **Address and coordinate live sync.** An address *is* an MLS fact, but a change cascades into
+  `coordinateLookupLine()`, the coordinate ladder and Location DNA; a listing whose address moved
+  while its coordinate stayed is worse than one whose address did not move. Writing a latitude
+  straight from the feed also bypasses `CoordinatePrecision` entirely.
+* **`PublicRemarks` / marketing prose sync** — a test pins that prose never reaches the listing
+  through a sync.
+* **Off-market MLS media retention / delete policy.** `detachAll()` is deliberately *not* called for
+  off-market statuses — an unreviewed status string must not be what silently deletes a gallery.
+* **Hero / listing display of both the MLS List Price and the user's Your Terms** side by side.
+* **Production activation.** All three flags ship `false`.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.

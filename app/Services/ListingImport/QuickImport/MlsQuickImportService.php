@@ -125,8 +125,81 @@ class MlsQuickImportService
             return MlsQuickImportResult::notFound();
         }
 
-        $candidate = $result->candidate;
+        return $this->assembleFromCandidate($result->candidate, $role);
+    }
 
+    /**
+     * Re-read this listing's CURRENT source record, bypassing the local cache.
+     *
+     * The live-sync entry point. Identical to lookup() in everything but which
+     * lookup method it calls: same allow-lists, same media policy, same
+     * supplemental assembly, same result shape. The only difference is that this
+     * one always asks Bridge, because "has the source changed?" cannot be
+     * answered from the row that would be compared against.
+     *
+     * Addressed by ListingKey where the listing has one — globally unique,
+     * whereas a ListingId is unique only within its originating system.
+     */
+    public function refresh(?string $listingKey, ?string $mlsNumber, string $role): MlsQuickImportResult
+    {
+        if (! $this->availableForRole($role)) {
+            return MlsQuickImportResult::disabled();
+        }
+
+        if (trim((string) $listingKey) === '' && trim((string) $mlsNumber) === '') {
+            return MlsQuickImportResult::invalid();
+        }
+
+        // `dispatchDna: false` — and this is load-bearing, not tidiness.
+        //
+        // The lookup layer's default is to dispatch ComputeLocationDna whenever
+        // the upsert reports a new or address-changed record. On the IMPORT
+        // path that is right: a person is creating a listing and the geospatial
+        // enrichment belongs to it.
+        //
+        // On THIS path it is wrong three times over. `QUEUE_CONNECTION` is
+        // `sync` on this deployment and no process runs `queue:work`, so
+        // `dispatch()` executes INLINE — meaning the full Location DNA pipeline
+        // (Google Places POI lookup, FEMA, Census TIGER, commute times) would
+        // run inside a scheduled sweep, per listing, blowing its time budget.
+        // It would also start paid Google Places traffic from an unattended
+        // background job, which is precisely the "spend-incurring feature
+        // enabled by a mechanism nobody reads during a rollout" hazard the
+        // required-flags contract exists to prevent. And Location DNA dispatch
+        // is separately gated by design; a sync must not be the thing that
+        // quietly re-runs it.
+        //
+        // Reconciling MLS facts and re-running geospatial enrichment are
+        // different jobs with different owners. This one does the first.
+        $result = $this->lookup->refreshResult($listingKey, $mlsNumber, dispatchDna: false);
+
+        if ($result->isUnavailable()) {
+            Log::warning('[MLS SYNC] Bridge refresh unavailable', [
+                'reason' => $result->failureReason,
+                'role'   => $role,
+            ]);
+
+            return MlsQuickImportResult::unavailable();
+        }
+
+        if (! $result->isFound()) {
+            return MlsQuickImportResult::notFound();
+        }
+
+        return $this->assembleFromCandidate($result->candidate, $role);
+    }
+
+    /**
+     * Everything the confirmation screen — and now the sync writer — needs, from
+     * one already-resolved candidate.
+     *
+     * Extracted from lookup() so the import path and the sync path assemble the
+     * SAME object through the SAME allow-lists. A sync that built its own view
+     * of a record would be a second import pipeline wearing a different name,
+     * and the two would drift the first time either allow-list changed.
+     */
+    public function assembleFromCandidate(PropertyCandidate $candidate, string $role): MlsQuickImportResult
+    {
         $prefilled = $this->prefill->fromCandidate($candidate);
 
         if (! $prefilled['success']) {
@@ -149,7 +222,47 @@ class MlsQuickImportService
             listingKey: $candidate->listingKey,
             mlsNumber:  $candidate->mlsNumber,
             mlsStatus:  $candidate->mlsStatus ?? $candidate->standardStatus,
+
+            // Lifecycle. `standardStatus` is passed through as its own value and
+            // NOT coalesced with mlsStatus above — the feed disagrees with itself
+            // across the two fields on real records, and picking one silently is
+            // what this separation exists to prevent.
+            standardStatus:        $candidate->standardStatus,
+            listPrice:             $candidate->listPrice,
+            sourcePropertyType:    $candidate->propertyType,
+            modificationTimestamp: $candidate->modificationTimestamp,
+
+            // These three live only in the raw record — bridge_properties has no
+            // native column for them. Read by name through a fixed local
+            // allow-list, never by iterating `$raw`.
+            statusChangeTimestamp: $this->rawTimestamp($candidate, 'StatusChangeTimestamp'),
+            priceChangeTimestamp:  $this->rawTimestamp($candidate, 'PriceChangeTimestamp'),
+            photosChangeTimestamp: $this->rawTimestamp($candidate, 'PhotosChangeTimestamp'),
         );
+    }
+
+    /**
+     * One named change marker off the raw record.
+     *
+     * The allow-list is the three constants at the call site. These are
+     * lifecycle metadata — when the price last moved, when the photographs last
+     * changed — carrying no prose, no imagery and nobody's contact details, so
+     * reading them by name does not widen the compliance boundary this class
+     * documents. Confirmed populated by `mls:probe-lifecycle` on 2026-09-10:
+     * StatusChangeTimestamp 25/25, PhotosChangeTimestamp 25/25,
+     * PriceChangeTimestamp 22/25.
+     */
+    private function rawTimestamp(PropertyCandidate $candidate, string $field): ?string
+    {
+        $value = $candidate->raw[$field] ?? null;
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     /**

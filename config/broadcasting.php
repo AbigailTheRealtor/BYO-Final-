@@ -19,6 +19,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Browser Client
+    |--------------------------------------------------------------------------
+    |
+    | Whether the compiled front-end bundle may construct Laravel Echo and open a
+    | Pusher WebSocket. This is a SEPARATE, EXPLICIT decision from 'default' above,
+    | and it is read in exactly one place: App\Support\Realtime\RealtimeClientConfig.
+    |
+    | It is its own switch because the browser and the server used to be configured
+    | from different sources — the client key was baked into the bundle at BUILD time
+    | from MIX_PUSHER_APP_KEY, while the server read PUSHER_APP_KEY at RUN time — so
+    | the two could disagree with nothing anywhere to notice it. The credentials
+    | below are therefore the very same env keys the 'pusher' connection uses; there
+    | is no second source left for them to drift from.
+    |
+    | Default false. An unconfigured install must not open a socket.
+    |
+    */
+
+    'client' => [
+        'enabled' => env('BROADCAST_CLIENT_ENABLED', false),
+
+        // Deliberately the same env keys as the 'pusher' connection below. The app
+        // key is public by design — it is handed to every browser — and the secret
+        // is not here and must never be.
+        'key' => env('PUSHER_APP_KEY'),
+        'cluster' => env('PUSHER_APP_CLUSTER'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Broadcast Connections
     |--------------------------------------------------------------------------
     |

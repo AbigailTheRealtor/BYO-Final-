@@ -124,6 +124,103 @@ class BridgeListingLookupService
     }
 
     /**
+     * Fetch this listing's CURRENT source record, bypassing the local cache.
+     *
+     * WHY A SEPARATE METHOD RATHER THAN A FLAG ON findByListingKey()
+     * -------------------------------------------------------------
+     * Every other lookup on this class is local-first by design: a cache hit
+     * returns immediately and the API is never asked. That is right for the
+     * paths it was built for — prefill and Match Check both want an answer
+     * cheaply, and a record imported an hour ago is a fine answer.
+     *
+     * It is exactly wrong for live sync, whose entire question is "has the
+     * source changed since we stored it?". Asked through the local-first path
+     * that question is unanswerable: the row we would compare against is the row
+     * we would be handed back. Before this method existed, a sync built on this
+     * seam would have re-read its own cache forever and reported the listing
+     * current every time.
+     *
+     * A boolean argument on the existing method would have put a code path that
+     * ALWAYS spends a request behind a parameter every existing caller passes by
+     * default, one flip away from turning prefill into a per-render fetch. A
+     * separate, explicitly-named method cannot be reached by accident.
+     *
+     * The upsert, the DNA dispatch rules and the normalizer are the shared ones;
+     * only the cache-consultation order differs. Returns null when the API had
+     * nothing OR could not be reached — callers must consult
+     * {@see BridgeApiService::lastFailure()} to tell those apart, exactly as
+     * lookupByMlsNumber() does.
+     */
+    public function refreshByListingKey(string $listingKey, bool $dispatchDna = true): ?PropertyCandidate
+    {
+        $listingKey = trim($listingKey);
+
+        if ($listingKey === '') {
+            return null;
+        }
+
+        $model = $this->fetchOneAndCache(
+            "ListingKey eq '" . $this->escape($listingKey) . "'",
+            $dispatchDna
+        );
+
+        return $model !== null ? $this->adapter->fromModel($model) : null;
+    }
+
+    /**
+     * As refreshByListingKey(), addressed by the human-facing MLS number.
+     *
+     * The fallback for a listing imported before ListingKey was persisted, and
+     * for the console backstop's `--mls` argument. ListingKey is preferred
+     * wherever it is available: it is globally unique, while a ListingId is only
+     * unique within an originating system.
+     */
+    public function refreshByMlsNumber(string $mlsNumber, bool $dispatchDna = true): ?PropertyCandidate
+    {
+        $mlsNumber = trim($mlsNumber);
+
+        if ($mlsNumber === '') {
+            return null;
+        }
+
+        $model = $this->fetchOneAndCache(
+            "ListingId eq '" . $this->escape($mlsNumber) . "'",
+            $dispatchDna
+        );
+
+        return $model !== null ? $this->adapter->fromModel($model) : null;
+    }
+
+    /**
+     * refreshByListingKey()/refreshByMlsNumber(), with "not found" and "could
+     * not ask" told apart — the same classification lookupByMlsNumber() applies,
+     * over the refresh path instead of the local-first one.
+     */
+    public function refreshResult(?string $listingKey, ?string $mlsNumber, bool $dispatchDna = true): BridgeLookupResult
+    {
+        $listingKey = trim((string) $listingKey);
+        $mlsNumber  = trim((string) $mlsNumber);
+
+        if ($listingKey === '' && $mlsNumber === '') {
+            return BridgeLookupResult::invalidInput();
+        }
+
+        $candidate = $listingKey !== ''
+            ? $this->refreshByListingKey($listingKey, $dispatchDna)
+            : $this->refreshByMlsNumber($mlsNumber, $dispatchDna);
+
+        if ($candidate !== null) {
+            return BridgeLookupResult::found($candidate);
+        }
+
+        $failure = $this->api->lastFailure();
+
+        return $failure !== null
+            ? BridgeLookupResult::unavailable($failure)
+            : BridgeLookupResult::notFound();
+    }
+
+    /**
      * Search by address parts. Returns 0..N candidates — the multi-result case
      * (condos/units at one address) is what drives the "choose the right one"
      * UI in a later phase.

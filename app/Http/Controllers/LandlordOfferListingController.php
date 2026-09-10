@@ -13,6 +13,8 @@ use App\Services\Offers\ListingOfferAuctionLinker;
 use App\Services\Offers\PublicOfferFeedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ListingImport\Sync\MlsStaleAccessRefresher;
+use Illuminate\Support\Facades\Log;
 
 class LandlordOfferListingController extends Controller
 {
@@ -141,6 +143,10 @@ class LandlordOfferListingController extends Controller
             && (int) $auction->user_id !== (int) auth()->id()) {
             abort(404);
         }
+
+        // Stale-on-access. Before $meta is built, so the page renders what the
+        // refresh found rather than what was stored before it.
+        $this->refreshMlsDataOnView($auction, 'landlord');
 
         $meta = [];
         foreach ($auction->meta as $row) {
@@ -408,4 +414,46 @@ class LandlordOfferListingController extends Controller
         return $windows;
     }
 
+
+    /**
+     * Bring this listing's MLS data up to date, if it is stale and if the viewer
+     * is the person entitled to have that cost one request.
+     *
+     * WHAT THIS COSTS A PUBLIC PAGE RENDER: nothing measurable, and in
+     * particular no outbound request. {@see MlsStaleAccessRefresher} sends only
+     * on the OWNER branch; every other viewer of a stale listing leaves a cache
+     * hint for the scheduled sweep and is served the stored data immediately.
+     * That division is the whole reason a page render is allowed to ask at all.
+     *
+     * A manual listing, a fresh listing, and a disabled gate all return before
+     * anything is read beyond this listing's own meta.
+     *
+     * The relation is reloaded only when a sync actually wrote, because `$meta`
+     * below is built from the eager-loaded rows and would otherwise render the
+     * values from before the refresh — a page that fetched a new price and then
+     * displayed the old one.
+     *
+     * Every failure is swallowed: a listing page must render from last-known-good
+     * data when the provider is unreachable, never fail.
+     */
+    private function refreshMlsDataOnView(object $auction, string $role): void
+    {
+        try {
+            $outcome = app(MlsStaleAccessRefresher::class)->onAccess(
+                $auction,
+                $role,
+                auth()->check() && (int) $auction->user_id === (int) auth()->id(),
+            );
+
+            if ($outcome->isSynced()) {
+                $auction->load('meta');
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[MLS SYNC] on-view refresh failed; page served from stored data', [
+                'listing_id' => $auction->id ?? null,
+                'role'       => $role,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+    }
 }

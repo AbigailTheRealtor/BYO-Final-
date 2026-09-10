@@ -10,8 +10,7 @@ use App\Services\ListingImport\MlsFieldMap;
 use App\Services\Listing\ListingWorkflowResolver;
 use App\Support\Listing\ListingPhotoEntry;
 use App\Support\Listing\ListingWorkflow;
-use App\Support\Listing\MlsFactVocabulary;
-use App\Support\Listing\PropertyTypeVocabulary;
+use App\Services\ListingImport\Sync\MlsFactProjection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -71,6 +70,52 @@ class MlsQuickImportDraftWriter
     public const META_ORDER_CUSTOM  = 'property_photos_order_customized';
     public const META_QUICK_IMPORT  = 'mls_quick_import';
     public const META_SOURCE_PTYPE  = 'mls_source_property_type';
+
+    // ── Live-sync metadata ───────────────────────────────────────────────────
+    //
+    // Written by {@see \App\Services\ListingImport\Sync\MlsListingSyncService},
+    // declared here so every MLS meta key this application writes has one home
+    // and a second, drifting set of key-name literals cannot appear.
+    //
+    // ALL OF THESE ARE EAV META. No migration was required or created: both
+    // `seller_agent_auction_metas` and `landlord_agent_auction_metas` are
+    // arbitrary key/value stores, so sync metadata is rows, not columns.
+
+    /** The MLS's own list price — authoritative, and NOT the seller's asking-price term. */
+    public const META_LIST_PRICE = 'mls_list_price';
+
+    /** RESO StandardStatus, verbatim. The authoritative market status of an MLS-linked listing. */
+    public const META_STANDARD_STATUS = 'mls_standard_status';
+
+    /** '1' when the stored status is one MlsSourceStatus does not recognise. Never blocks the write. */
+    public const META_STATUS_UNRECOGNISED = 'mls_status_unrecognised';
+
+    /** The feed's own change markers, as stored at the last successful sync. */
+    public const META_SOURCE_MODIFIED_AT = 'mls_source_modified_at';
+    public const META_SOURCE_STATUS_CHANGED_AT = 'mls_source_status_changed_at';
+    public const META_SOURCE_PRICE_CHANGED_AT  = 'mls_source_price_changed_at';
+    public const META_SOURCE_PHOTOS_CHANGED_AT = 'mls_source_photos_changed_at';
+
+    /** Sync bookkeeping: last attempt, last success, last failure code. */
+    public const META_SYNC_ATTEMPTED_AT = 'mls_sync_attempted_at';
+    public const META_SYNCED_AT         = 'mls_synced_at';
+    public const META_SYNC_ERROR        = 'mls_sync_error';
+
+    /**
+     * The rollback journal: every value a sync has overwritten, with the value
+     * that was there before it.
+     *
+     * Sync is authoritative for MLS facts by owner decision, which means it can
+     * overwrite a figure somebody typed. That is the intended behaviour, but it
+     * must not be an unrecoverable one, so the previous value is written into
+     * this blob in the same pass. Same posture as the Fair Housing remediation's
+     * backup rows: the undo lives in the database, not in `storage/app`, which
+     * a container rebuild discards.
+     *
+     * Nothing at runtime resolves this key — every meta consumer reads a named
+     * key or an explicit whitelist — so it is inert to the application.
+     */
+    public const META_SYNC_JOURNAL = 'mls_sync_overwritten';
 
     /**
      * The supplemental MLS payload — every legitimate fact the feed supplied
@@ -247,78 +292,22 @@ class MlsQuickImportDraftWriter
      */
     private function writeFacts(object $auction, string $role, MlsQuickImportResult $result): void
     {
-        $map      = MlsFieldMap::forRole($role);
-        $existing = $auction->get;
+        // The mapping — which field, which vocabulary, which array convention —
+        // lives in MlsFactProjection and is shared with the live-sync writer.
+        // MODE_IMPORT is what carries the "user wins" precedence documented
+        // above: the projector declines to write over a populated field. Sync
+        // passes MODE_SYNC to the same projector and gets Stellar's precedence.
+        // One mapper, two precedences; there is no second field map.
+        $writes = (new MlsFactProjection())->project(
+            role:               $role,
+            facts:              $result->facts,
+            existing:           $auction->get->toArray(),
+            mode:               MlsFactProjection::MODE_IMPORT,
+            sourcePropertyType: $result->sourcePropertyType,
+        );
 
-        foreach ($result->facts as $canonicalKey => $value) {
-            // ── Furnished is a MERGE, not a copy, and only on Seller ─────────
-            //
-            // It does not land in a "furnished" field: it contributes at most one
-            // label to building_features, a list the user also edits. So it is
-            // handled before the overwrite guard below, because the guard would
-            // skip an already-populated array and merging into one is the whole
-            // point. Landlord has no entry for this key in its map, so a landlord
-            // import never reaches here.
-            if ($canonicalKey === 'furnished') {
-                $this->mergeFurnished($auction, $map, $existing, (string) $value);
-
-                continue;
-            }
-
-            $target = $map[$canonicalKey] ?? null;
-
-            if ($target === null) {
-                continue;
-            }
-
-            // A leading '*' marks a target the wizard stores as an array.
-            $isArray  = str_starts_with($target, '*');
-            $metaKey  = ltrim($target, '*');
-
-            $current = $existing->{$metaKey} ?? null;
-            $hasValue = is_array($current) ? $current !== [] : ($current !== null && $current !== '');
-
-            if ($hasValue) {
-                continue;
-            }
-
-            $stored = $isArray
-                ? array_values(array_filter(array_map('trim', explode(',', (string) $value))))
-                : $value;
-
-            // Stored in BYO vocabulary, exactly as the manual flow stores it, so
-            // a quick-imported listing drives the same conditionals everywhere
-            // downstream — the terms step, the Edit tabs and the published page.
-            // The feed's own wording is preserved separately as provenance.
-            if ($canonicalKey === 'property_type') {
-                $stored = PropertyTypeVocabulary::forRole((string) $stored, $role);
-            }
-
-            // Flooring lands in a fixed 26-option multi-select. A feed value
-            // outside that list would store fine and then never render as
-            // chosen, so it is dropped rather than written.
-            if ($canonicalKey === 'flooring') {
-                $stored = MlsFactVocabulary::filterFloorCoverings((array) $stored);
-
-                if ($stored === []) {
-                    continue;
-                }
-            }
-
-            // Every other destination whose control speaks its own vocabulary —
-            // an acreage band, a square-footage source, a fee frequency, a
-            // business type. The rule lives in MlsFactVocabulary because the
-            // wizard's own apply path needs the identical answer; null means the
-            // feed's value has no option on this form, so the field is left for
-            // the user rather than filled with something that would never render
-            // as chosen. The fact is still shown under MLS Details.
-            $stored = MlsFactVocabulary::toFormValue($canonicalKey, $stored);
-
-            if ($stored === null || $stored === '' || $stored === []) {
-                continue;
-            }
-
-            $auction->saveMeta($metaKey, $stored);
+        foreach ($writes as $metaKey => $value) {
+            $auction->saveMeta($metaKey, $value);
         }
 
         // Carried as meta rather than as a form field: there is no input for
@@ -330,48 +319,6 @@ class MlsQuickImportDraftWriter
         if ($result->mlsNumber !== null) {
             $auction->saveMeta(self::META_MLS_NUMBER, $result->mlsNumber);
         }
-    }
-
-    /**
-     * Add the furnishing label to building_features without disturbing the rest.
-     *
-     * The one import on this path that merges rather than replaces. Existing
-     * selections are preserved, at most one entry is added, nothing is removed,
-     * and a second import of the same record changes nothing — the rule lives in
-     * {@see MlsFactVocabulary} so this writer and the URL/text importer apply the
-     * identical behaviour instead of two lookalike copies.
-     *
-     * "Unfurnished" contributes nothing: absence of a furnishing label already
-     * means unfurnished, and listing it as a building FEATURE would read as the
-     * opposite of what it says.
-     *
-     * @param  array<string,string>  $map
-     */
-    private function mergeFurnished(object $auction, array $map, object $existing, string $value): void
-    {
-        $metaKey = ltrim((string) ($map['furnished'] ?? ''), '*');
-
-        // ONLY building_features, which is Seller's target.
-        //
-        // The landlord map also carries a `furnished` entry, pointing at
-        // `tenant_require` — a SINGLE-SELECT "Furnishings" control, not a feature
-        // list. Merging a label into it is meaningless, and its blade currently
-        // binds the same variable it iterates for its options, so a written value
-        // would not render as chosen anyway. The landlord map entry is left alone
-        // because the URL/text importer has always used it; this WRITE path
-        // simply declines to act on it.
-        if ($metaKey !== 'building_features') {
-            return;
-        }
-        $merged  = MlsFactVocabulary::mergeFurnishedFeature($existing->{$metaKey} ?? null, $value);
-
-        // Nothing to add and nothing already there — leave the key unwritten
-        // rather than storing an empty array over an absent one.
-        if ($merged === []) {
-            return;
-        }
-
-        $auction->saveMeta($metaKey, $merged);
     }
 
     /**
