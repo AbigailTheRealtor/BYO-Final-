@@ -10,12 +10,31 @@ use Illuminate\Support\Collection;
  *
  * NO SECOND SYNC SYSTEM
  * ---------------------
- * This reads `bridge_properties` and nothing else. It issues no Bridge API
- * request, opens no import, writes no row and schedules no job. The cache is
- * populated by the existing criteria-driven lazy import
- * ({@see \App\Services\Bridge\LazyBridgeImportService}) and Explore is a reader
- * of it. That means Explore's inventory is whatever that cache holds — a real
- * limitation, reported rather than solved by building a competing importer.
+ * This reads `bridge_properties` and nothing else — it issues no provider
+ * request, opens no import, writes no row and schedules no job. Making that
+ * table CURRENT is somebody else's job, and that somebody is the application's
+ * one existing MLS ingestion pipeline: {@see ExploreInventoryService} hands a
+ * viewport to {@see \App\Services\Bridge\LazyBridgeImportService}, which is
+ * the same lock, fetch cache, pagination, normalizer and Location DNA dispatch
+ * the criteria searches use. Explore contributes no client, no importer and no
+ * storage.
+ *
+ * CONFIRMATION, NOT JUST PRESENCE
+ * -------------------------------
+ * A row existing locally is not evidence that the listing is still on the
+ * market. When a discovery pass has COMPLETELY covered this viewport, every
+ * currently-eligible listing in it was just upserted — so a row the pass did not
+ * touch is one the provider no longer returns: sold, withdrawn, gone from IDX
+ * participation, or removed from the feed. Those rows are withheld, via
+ * {@see ExploreFreshness} and the `imported_at` stamp every upsert already
+ * writes. Nothing is deleted; deleting MLS data on the strength of an absence is
+ * a much larger decision than declining to render it.
+ *
+ * The rule is applied ONLY on a complete pass. After a partial one — a
+ * pagination ceiling reached — an absent listing means "we stopped asking", and
+ * withholding on that reading would hide real, current inventory. With discovery
+ * disabled or the provider unreachable, it is not applied either, and the
+ * response says which.
  *
  * OVERFETCH, THEN FILTER, THEN SLICE — AND WHY IT IS NOT A BARE SQL LIMIT
  * ----------------------------------------------------------------------
@@ -53,6 +72,7 @@ class ExploreListingRepository
 {
     public function __construct(
         private readonly ExploreEligibilityPolicy $policy,
+        private readonly ExploreFreshness $freshness,
     ) {}
 
     /**
@@ -65,7 +85,12 @@ class ExploreListingRepository
         ExploreAccessTier $tier,
         ?ExploreTransactionType $filter = null,
         ?int $limit = null,
+        ?ExploreDiscoveryOutcome $discovery = null,
     ): Collection {
+        // Only a pass that saw the whole viewport licenses the inference that an
+        // untouched row is no longer current.
+        $requireConfirmation = $discovery !== null && $discovery->complete;
+
         $limit = $this->limit($limit);
 
         $propertyTypes = $filter !== null
@@ -101,6 +126,10 @@ class ExploreListingRepository
         $eligible = collect();
 
         foreach ($rows as $row) {
+            if ($requireConfirmation && ! $this->freshness->isConfirmedCurrent($row)) {
+                continue;
+            }
+
             $raw = $this->policy->decodeRaw($row);
 
             $decision = $this->policy->decide($row, $tier, $viewport, $raw);

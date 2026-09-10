@@ -116,6 +116,68 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Viewport discovery — CURRENT Stellar inventory
+    |--------------------------------------------------------------------------
+    |
+    | Without this, Explore can only render Stellar records some earlier
+    | workflow happened to import, so a neighbourhood nobody had searched looked
+    | empty. That is a statement about our cache presented as a statement about
+    | the market.
+    |
+    | With it, a viewport request asks the application's ONE existing MLS
+    | ingestion pipeline — LazyBridgeImportService, the same advisory lock, fetch
+    | cache, pagination, normalizer and Location DNA dispatch that the criteria
+    | searches use — for the current eligible listings in that area. Explore adds
+    | no client, no importer and no storage of its own.
+    |
+    | SHIPS FALSE, AND FAILS CLOSED, for the same reason `mls_sync.enabled` does:
+    | deploying this code must not by itself begin unattended traffic to a
+    | third-party provider. Merging and activating are two decisions.
+    |
+    | With it off, Explore serves the shared MLS cache and SAYS SO in the
+    | response (`discovery.status = "disabled"`), because a cache-only answer
+    | must not be mistaken for a complete one.
+    |
+    */
+
+    'discovery' => [
+
+        'enabled' => (bool) env('EXPLORE_DISCOVERY_ENABLED', false),
+
+        /*
+        | Tile size, in degrees, that a discovery bounding box is snapped
+        | OUTWARDS to before it is hashed into a fetch-cache key.
+        |
+        | THIS IS WHAT MAKES CACHE REUSE REAL. The fetch cache is keyed on the
+        | payload, so an unsnapped viewport mints a new key on every pixel of
+        | pan and every camera nudge becomes a provider request. Snapped,
+        | neighbouring viewports share one entry and a pan within a tile costs
+        | nothing.
+        |
+        | 0.05° is roughly 5.5 km of latitude — comfortably larger than a
+        | street-level viewport, comfortably smaller than the 1.0° span ceiling.
+        | Larger tiles mean fewer, bigger passes; smaller tiles mean more,
+        | cheaper ones that are likelier to hit a pagination ceiling.
+        */
+        'tile_degrees' => (float) env('EXPLORE_DISCOVERY_TILE_DEGREES', 0.05),
+
+        /*
+        | Per-pass pagination ceilings, CLAMPED DOWNWARDS against the global
+        | BRIDGE_LAZY_* envelope by the importer — a call site can lower a spend
+        | limit, never raise one.
+        |
+        | Lower than the criteria-search defaults on purpose: that pipeline runs
+        | on a results page somebody is waiting for, while this runs inside a
+        | request made as somebody moves a camera. 5 pages × 200 records is
+        | 1,000 listings per tile, well beyond any 0.05° tile in this market.
+        */
+        'max_pages'   => (int) env('EXPLORE_DISCOVERY_MAX_PAGES', 5),
+        'max_records' => (int) env('EXPLORE_DISCOVERY_MAX_RECORDS', 500),
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Statuses eligible for the public surface
     |--------------------------------------------------------------------------
     |

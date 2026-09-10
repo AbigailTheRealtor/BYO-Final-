@@ -70,6 +70,7 @@
         selected: null,
         map3d: null,
         fetchTimer: null,
+        discovery: null,
     };
 
     const els = {
@@ -168,6 +169,7 @@
                     }
 
                     state.listings = result.body.listings || [];
+                    state.discovery = result.body.discovery || null;
                     renderResults(result.body);
                     renderMarkers();
                 })
@@ -197,12 +199,7 @@
     function renderResults(payload) {
         if (els.attribution) els.attribution.textContent = payload.attribution || '';
 
-        const count = state.listings.length;
-        setStatus(
-            count === 0
-                ? 'No listings in this view.'
-                : count + (payload.truncated ? '+ listings in view' : ' listings in view')
-        );
+        setStatus(inventoryStatusLine(payload));
 
         if (!els.results) return;
 
@@ -232,6 +229,37 @@
 
             els.results.appendChild(card);
         });
+    }
+
+    /*
+     | What the count actually means.
+     |
+     | "No listings in this view" is a claim about a neighbourhood. It is only
+     | true when the server confirmed the whole viewport against the provider.
+     | When discovery is off, truncated, or the provider was unreachable, an
+     | empty or thin result is a fact about our data and must not be worded as a
+     | fact about the market — the server sends `discovery.complete` and
+     | `discovery.degraded` precisely so this distinction survives to the screen.
+     */
+    function inventoryStatusLine(payload) {
+        const count = state.listings.length;
+        const discovery = payload.discovery || {};
+
+        if (discovery.degraded) {
+            return count === 0
+                ? 'Listings are temporarily unavailable. Please try again shortly.'
+                : 'Showing last known listings — live MLS data is temporarily unavailable.';
+        }
+
+        if (count === 0) {
+            return discovery.complete
+                ? 'No listings in this view.'
+                : 'No listings loaded for this view yet.';
+        }
+
+        const suffix = payload.truncated ? '+ listings in view' : ' listings in view';
+
+        return count + suffix + (discovery.complete ? '' : ' (partial)');
     }
 
     function metaLine(listing) {

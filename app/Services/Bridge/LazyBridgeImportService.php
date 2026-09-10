@@ -14,7 +14,18 @@ use Illuminate\Support\Facades\Log;
 
 class LazyBridgeImportService
 {
-    private const SUPPORTED_ROLES = ['buyer', 'tenant'];
+    /**
+     * Roles this importer will run for.
+     *
+     * 'buyer' and 'tenant' are the criteria-driven searches this class was built
+     * for. 'explore_sale' and 'explore_rent' are BidYourOffer Explore's viewport
+     * discovery, added here rather than in a second importer: Explore needs the
+     * same pagination, the same advisory lock, the same fetch cache, the same
+     * normalizer and the same DNA dispatch rules, and a parallel implementation
+     * of all five is exactly the second MLS ingestion system that must not exist.
+     * The role string only selects a filter builder and namespaces the cache key.
+     */
+    private const SUPPORTED_ROLES = ['buyer', 'tenant', 'explore_sale', 'explore_rent'];
 
     /**
      * @param  array<string, CriteriaODataFilterBuilderInterface>  $builders  Role → builder map.
@@ -56,6 +67,8 @@ class LazyBridgeImportService
     public function importForCriteria(
         BuyerCriteriaPayload $payload,
         string $role,
+        ?int $maxPagesOverride = null,
+        ?int $maxRecordsOverride = null,
     ): LazyImportResult {
         $role = strtolower(trim($role));
 
@@ -102,8 +115,24 @@ class LazyBridgeImportService
             }
 
             $filter     = $filterBuilder->build($payload);
+            // The caller may lower — never raise — the pagination ceilings.
+            //
+            // A criteria search runs from a results page the user is waiting on
+            // and can afford the full envelope. An Explore viewport request runs
+            // while somebody is moving a camera, so it bounds itself tighter. A
+            // caller that asked for MORE than the configured ceiling would be
+            // raising a global spend limit from a call site, so the override is
+            // clamped downwards and a non-positive value is ignored entirely.
             $maxPages   = (int) config('bridge.lazy_max_pages', 20);
             $maxRecords = (int) config('bridge.lazy_max_records', 500);
+
+            if ($maxPagesOverride !== null && $maxPagesOverride > 0) {
+                $maxPages = min($maxPages, $maxPagesOverride);
+            }
+
+            if ($maxRecordsOverride !== null && $maxRecordsOverride > 0) {
+                $maxRecords = min($maxRecords, $maxRecordsOverride);
+            }
             $pageSize   = (int) config('bridge.lazy_page_size', 200);
 
             $skip          = 0;
@@ -312,6 +341,21 @@ class LazyBridgeImportService
         return match ($role) {
             'buyer'  => new BuyerCriteriaODataFilterBuilder(),
             'tenant' => new TenantCriteriaODataFilterBuilder(),
+
+            // BOTH Explore roles use the BUYER builder, and that is deliberate.
+            //
+            // Its name is historical: it emits `StandardStatus eq 'Active'`, a
+            // PropertyType disjunction and a lat/lng bounding box, and knows
+            // nothing about purchasing. Explore supplies the rental PropertyType
+            // strings for explore_rent, so the same builder produces the rental
+            // filter correctly.
+            //
+            // The tenant builder is NOT used, and not because either would do.
+            // Its documented rental PropertyType vocabulary includes
+            // 'Residential', which in this dataset is a SALE type — a defect
+            // reported separately and owned by the tenant-search work. Explore
+            // must not inherit it, and must not fix it here either.
+            'explore_sale', 'explore_rent' => new BuyerCriteriaODataFilterBuilder(),
         };
     }
 }

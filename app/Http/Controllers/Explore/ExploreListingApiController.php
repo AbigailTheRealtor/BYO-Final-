@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Explore;
 
 use App\Http\Controllers\Controller;
+use App\Models\BridgeProperty;
 use App\Services\Explore\ExploreCanonicalListingResolver;
+use App\Services\Explore\ExploreInventoryService;
 use App\Services\Explore\ExploreListingProjector;
 use App\Services\Explore\ExploreListingRepository;
 use App\Services\Explore\ExploreTransactionType;
@@ -54,6 +56,7 @@ class ExploreListingApiController extends Controller
         private readonly ExploreListingRepository $repository,
         private readonly ExploreListingProjector $projector,
         private readonly ExploreCanonicalListingResolver $canonical,
+        private readonly ExploreInventoryService $inventory,
         private readonly VowAvailability $vow,
     ) {}
 
@@ -92,7 +95,16 @@ class ExploreListingApiController extends Controller
         $limit = $request->query('limit');
         $limit = is_numeric($limit) ? (int) $limit : null;
 
-        $rows = $this->repository->inViewport($viewport, $tier, $filter, $limit);
+        // Make the shared MLS cache CURRENT for this viewport before reading it.
+        //
+        // This is the difference between "listings somebody once imported" and
+        // "listings that are on the market here now". It runs at most one
+        // provider pass per transaction type per request — never one per marker
+        // — through the application's one existing ingestion pipeline, and is
+        // free while the tile's fetch cache is warm.
+        $discovery = $this->inventory->ensureCurrentFor($viewport, $filter);
+
+        $rows = $this->repository->inViewport($viewport, $tier, $filter, $limit, $discovery);
 
         $typeByListingKey = [];
 
@@ -130,6 +142,12 @@ class ExploreListingApiController extends Controller
             'limit'            => $this->repository->limit($limit),
             'truncated'        => count($listings) >= $this->repository->limit($limit),
             'attribution'      => ExploreListingProjector::ATTRIBUTION,
+            // Says how current this answer is, rather than leaving the surface
+            // to assume. `complete` false means an absent listing proves
+            // nothing; `degraded` true means these are last-known rows because
+            // the provider could not be reached. An empty map for either reason
+            // must not read as an empty market.
+            'discovery'        => $discovery->toArray(),
             'listings'         => $listings,
         ]);
     }
@@ -144,7 +162,20 @@ class ExploreListingApiController extends Controller
     public function show(Request $request, string $listingKey): JsonResponse
     {
         $tier = $this->vow->decideTier($request->user());
-        $row  = $this->repository->findEligible($listingKey, $tier);
+
+        // The panel is where a consumer reads the price, believes the status and
+        // clicks through, so it pays for one provider request when the stored
+        // record is outside the shared freshness window. Eligibility is then
+        // re-decided on whatever came back: a listing that has gone Pending, or
+        // lost IDX participation since the marker was drawn, 404s here rather
+        // than being presented as available.
+        $stored = BridgeProperty::query()->where('listing_key', trim($listingKey))->first();
+
+        if ($stored !== null) {
+            $this->inventory->refreshRecord($stored);
+        }
+
+        $row = $this->repository->findEligible($listingKey, $tier);
 
         if ($row === null) {
             return response()->json(['error' => 'Listing not found.'], 404);
