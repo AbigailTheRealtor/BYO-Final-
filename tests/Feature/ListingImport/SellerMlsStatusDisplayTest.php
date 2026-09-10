@@ -11,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * WHAT THE SELLER LISTING PAGE SAYS THE LISTING'S STATUS IS.
+ * WHAT A SELLER OR LANDLORD LISTING PAGE SAYS THE LISTING'S STATUS IS.
  *
  * The model already answered this: SellerAgentAuction::getStatusAttribute()
  * resolves is_sold, then the MLS market status, then the stored value. The
@@ -29,6 +29,12 @@ use Tests\TestCase;
  * NO SYNC IS ACTIVATED HERE. `mls_sync.enabled` stays false throughout; a
  * "refreshed" status is simulated by writing the meta key a sync would have
  * written, which is exactly the input the display layer under test consumes.
+ *
+ * LANDLORD LIVES HERE TOO, AND ON PURPOSE. It had half the same defect — its
+ * hero already asked the model, its "Listing Status" row did not — and it is
+ * fixed by the same helper. Splitting the two roles into two files is how the
+ * assertion that they agree stops being written at all; section F is the
+ * landlord half and section D/E the seller's.
  */
 class SellerMlsStatusDisplayTest extends TestCase
 {
@@ -336,20 +342,105 @@ class SellerMlsStatusDisplayTest extends TestCase
     }
 
     // =====================================================================
-    // F. Landlord is untouched
+    // F. Landlord: the same page, the same contract
     // =====================================================================
+    //
+    // The landlord page had HALF this defect. Its hero already asked the model
+    // ($auction->status) and was the reference the seller fix was written
+    // against; its "Listing Status" row still read the raw `listing_status`
+    // meta value, so an MLS-linked landlord listing printed 'Pending' in the
+    // pill and 'Active' in the row underneath — the seller defect, one role
+    // over. The row now consumes ListingStatusDisplay; the hero is untouched.
 
     /** @test */
     public function the_landlord_hero_still_displays_its_effective_status(): void
     {
         // Landlord's hero already read $auction->status and was the reference
-        // for this fix. Pinned so the seller change cannot disturb it.
+        // for this fix. Pinned so neither change can disturb it.
         $html = $this->landlordPage($this->landlordListing($this->linked([
             'listing_status'           => 'Active',
             Meta::META_STANDARD_STATUS => 'Pending',
         ])));
 
         $this->assertSame('Pending', $this->heroStatus($html, 'lol-hero-status'));
+    }
+
+    /** @test */
+    public function an_mls_linked_landlord_detail_row_displays_the_effective_status_not_the_stored_one(): void
+    {
+        // The defect, stated as the owner stated it: stored 'Active', effective
+        // 'Pending', and the row must say Pending.
+        $html = $this->landlordPage($this->landlordListing($this->linked([
+            'listing_status'           => 'Active',
+            Meta::META_STANDARD_STATUS => 'Pending',
+        ])));
+
+        $this->assertSame('Pending', $this->listingStatusRow($html));
+        $this->assertNotSame('Active', $this->listingStatusRow($html), 'The stale stored status must not be presented as current.');
+    }
+
+    /** @test */
+    public function the_landlord_hero_and_detail_row_never_disagree(): void
+    {
+        // Both surfaces resolve through the model for an MLS-linked listing —
+        // the hero via the accessor, the row via ListingStatusDisplay, which
+        // delegates to that same accessor once the feed owns the answer. One
+        // value, two pixels; they cannot drift.
+        foreach (['Pending', 'Closed', 'Expired', 'Active Under Contract', 'Temporarily Off Market'] as $standard) {
+            $html = $this->landlordPage($this->landlordListing($this->linked([
+                'listing_status'           => 'Active',
+                Meta::META_STANDARD_STATUS => $standard,
+            ])));
+
+            $this->assertSame($standard, $this->heroStatus($html, 'lol-hero-status'), "Hero for {$standard}");
+            $this->assertSame($standard, $this->listingStatusRow($html), "Detail row for {$standard}");
+            $this->assertSame(
+                $this->heroStatus($html, 'lol-hero-status'),
+                $this->listingStatusRow($html),
+                "Hero and detail row disagreed on {$standard}",
+            );
+        }
+    }
+
+    /** @test */
+    public function a_refreshed_mls_status_reaches_a_fresh_landlord_render(): void
+    {
+        $listing = $this->landlordListing($this->linked([
+            'listing_status'           => 'Active',
+            Meta::META_STANDARD_STATUS => 'Pending',
+        ]));
+
+        $first = $this->landlordPage($listing);
+        $this->assertSame('Pending', $this->heroStatus($first, 'lol-hero-status'));
+        $this->assertSame('Pending', $this->listingStatusRow($first));
+
+        // What a sync would have written. No sync runs; the stored source
+        // status is simply now a different string.
+        $listing->saveMeta(Meta::META_STANDARD_STATUS, 'Closed');
+
+        $refreshed = $this->landlordPage($listing->fresh());
+
+        $this->assertSame('Closed', $this->heroStatus($refreshed, 'lol-hero-status'));
+        $this->assertSame('Closed', $this->listingStatusRow($refreshed));
+
+        // And the stale metadata was never rewritten to make that true.
+        $this->assertSame('Active', $listing->fresh()->info('listing_status'));
+    }
+
+    /** @test */
+    public function a_completed_landlord_transaction_still_outranks_the_feed(): void
+    {
+        $listing = $this->landlordListing($this->linked([
+            'listing_status'           => 'Active',
+            Meta::META_STANDARD_STATUS => 'Pending',
+        ]));
+        $listing->is_sold = true;
+        $listing->save();
+
+        $html = $this->landlordPage($listing->fresh());
+
+        $this->assertSame('Hired Agent', $this->heroStatus($html, 'lol-hero-status'));
+        $this->assertSame('Hired Agent', $this->listingStatusRow($html));
     }
 
     /** @test */
@@ -363,25 +454,103 @@ class SellerMlsStatusDisplayTest extends TestCase
     }
 
     /** @test */
-    public function the_landlord_listing_status_detail_row_is_left_exactly_as_found(): void
+    public function a_manual_landlord_listing_detail_row_still_displays_its_stored_status(): void
     {
-        // CHARACTERISATION, NOT ENDORSEMENT.
-        //
-        // The landlord detail row still reads the stored `listing_status` and
-        // therefore still shows 'Active' where its own hero shows 'Pending' —
-        // the identical defect this change fixes for seller. It is recorded
-        // here rather than fixed because landlord was explicitly read-only for
-        // this piece of work, and because a silent drift in either direction
-        // should fail a build rather than go unnoticed.
-        //
-        // When landlord is fixed, this assertion becomes 'Pending' and this
-        // comment goes away.
+        $html = $this->landlordPage($this->landlordListing([
+            'listing_status' => 'Active',
+        ]));
+
+        $this->assertSame('Active', $this->heroStatus($html, 'lol-hero-status'));
+        $this->assertSame('Active', $this->listingStatusRow($html));
+    }
+
+    /** @test */
+    public function an_mls_linked_landlord_listing_with_no_stored_feed_status_keeps_its_stored_status(): void
+    {
         $html = $this->landlordPage($this->landlordListing($this->linked([
-            'listing_status'           => 'Active',
-            Meta::META_STANDARD_STATUS => 'Pending',
+            'listing_status' => 'Active',
         ])));
 
+        $this->assertSame('Active', $this->heroStatus($html, 'lol-hero-status'));
         $this->assertSame('Active', $this->listingStatusRow($html));
+    }
+
+    /** @test */
+    public function a_landlord_listing_with_no_status_at_all_renders_no_detail_row(): void
+    {
+        // The row must not fabricate one. The hero is a separate question and
+        // is pinned as-found in the characterisation test below.
+        $html = $this->landlordPage($this->landlordListing([]));
+
+        $this->assertNull($this->listingStatusRow($html), 'No Listing Status row may be rendered.');
+    }
+
+    /** @test */
+    public function a_blank_stored_landlord_status_does_not_become_a_detail_row(): void
+    {
+        $html = $this->landlordPage($this->landlordListing($this->linked([
+            'listing_status'           => '   ',
+            Meta::META_STANDARD_STATUS => '   ',
+        ])));
+
+        $this->assertNull($this->listingStatusRow($html));
+    }
+
+    /** @test */
+    public function the_landlord_hero_still_derives_its_own_lifecycle_where_the_feed_is_silent(): void
+    {
+        // CHARACTERISATION, NOT ENDORSEMENT — and the exact bound of this fix.
+        //
+        // The hero asks a TOTAL accessor and the row asks a display contract
+        // that deliberately is not total. Where the feed has said nothing, the
+        // two therefore still differ, in two ways that predate this change and
+        // are left exactly as found:
+        //
+        //   · a past `expiration_date` makes the accessor say 'Expired' while
+        //     the row prints the stored value. That derivation is BidYourOffer's
+        //     own lifecycle for a listing that owns it, and removing it from the
+        //     hero would lose real information, not stale information;
+        //   · a listing with no status at all makes the accessor fall through to
+        //     its final `return 'Active'` while the row renders nothing. The row
+        //     must not invent a status; whether the hero should stop doing so is
+        //     a separate decision about the accessor, not about this display.
+        //
+        // Neither case involves an MLS status, which is what this change is
+        // about. Recorded so a future move in either direction is a red build
+        // rather than a silent one.
+        $expired = $this->landlordPage($this->landlordListing([
+            'listing_status'  => 'Active',
+            'expiration_date' => now()->subYear()->toDateString(),
+        ]));
+
+        $this->assertSame('Expired', $this->heroStatus($expired, 'lol-hero-status'));
+        $this->assertSame('Active', $this->listingStatusRow($expired));
+
+        $none = $this->landlordPage($this->landlordListing([]));
+
+        $this->assertSame('Active', $this->heroStatus($none, 'lol-hero-status'));
+        $this->assertNull($this->listingStatusRow($none));
+    }
+
+    /** @test */
+    public function rendering_the_landlord_page_does_not_mutate_any_stored_status(): void
+    {
+        $listing = $this->landlordListing($this->linked([
+            'listing_status'           => 'Active',
+            Meta::META_SOURCE_STATUS   => 'Sold',
+            Meta::META_STANDARD_STATUS => 'Closed',
+        ]));
+
+        $before = $listing->fresh()->meta->pluck('meta_value', 'meta_key')->toArray();
+
+        $this->landlordPage($listing);
+
+        $after = $listing->fresh()->meta->pluck('meta_value', 'meta_key')->toArray();
+
+        $this->assertSame($before, $after, 'The listing page must not write meta while rendering.');
+        $this->assertSame('Active', $after['listing_status']);
+        $this->assertSame('Closed', $after[Meta::META_STANDARD_STATUS]);
+        $this->assertSame('Sold', $after[Meta::META_SOURCE_STATUS]);
     }
 
     // =====================================================================
