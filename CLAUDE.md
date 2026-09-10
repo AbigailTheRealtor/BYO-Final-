@@ -595,6 +595,26 @@ does: deploying code must not by itself begin unattended traffic to a third-part
 With it off Explore is cache-only **and says so** in the response, because a cache-only answer
 must not be mistaken for a complete one.
 
+**Explore being current is only half of what a consumer experiences, and the other half is
+somebody else's flag.** The canonical Seller/Landlord pages do NOT read `bridge_properties` —
+`ListingStatusDisplay` and `ListingPriceDisplay` read `mls_standard_status` / `mls_list_price`
+**meta on the auction**, and the only writer of those is `MlsListingSyncService`. Explore's
+discovery writes no listing meta, deliberately: which facts may move onto a listing is
+`MlsSyncFieldPolicy`'s decision from both ends, and a public map endpoint reaching into that
+store would be the parallel ingestion path that must not exist. So with the sync gates closed a
+consumer can see **Pending / $525,000** on the map and **Active / $535,000** on the listing they
+click through to. `ExploreCanonicalCurrentnessTest` pins that gap AND pins that the existing
+sync closes it. **A coherent launch therefore needs `MLS_SYNC_ENABLED` + `MLS_SYNC_SCHEDULE_ENABLED`
+alongside the Explore flags** — the schedule specifically, because a non-owner view sends nothing
+and only records demand, so a public visitor's page is current only if a sweep already made it so.
+
+**The throttle bounds requests, not provider fetches.** Both data routes carry `throttle:120,1`
+per user-or-IP, but a caller inside that could supply 120 far-apart bounding boxes — 120 distinct
+cold tiles — and multiply them by the per-pass page cap. Nothing bounds Explore's aggregate
+outbound Bridge volume today. The remedy is the existing provider-neutral
+`ProviderRequestBudget` guard rather than a new one; it is **reported and not wired**, because
+enabling a spend guard belongs with the decision to enable `EXPLORE_DISCOVERY_ENABLED`.
+
 Eligibility still needs `raw_json` decoded per row (permissions and lease frequency exist only
 there), so the repository overfetches, filters, then slices under a hard read ceiling — a bare
 SQL `LIMIT` would silently shrink a page and look like a thinner neighbourhood.

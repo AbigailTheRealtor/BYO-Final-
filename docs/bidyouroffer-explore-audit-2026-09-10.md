@@ -263,7 +263,96 @@ required. **Nothing was activated by this work.**
 
 ---
 
-## 7. Follow-ups
+## 7. End-to-end currentness — Explore vs the canonical listing pages
+
+Explore being current is only half of what a consumer experiences. They click a marker and
+land on the canonical Seller or Landlord page, and that page must not be stale.
+
+**It currently is, and that is the finding.** The two surfaces have two independent freshness
+paths onto two different stores:
+
+```
+Stellar --[Explore discovery]--> bridge_properties            CURRENT
+Stellar --[MlsListingSyncService]--> listing EAV meta         requires MLS_SYNC_ENABLED
+                                        ^
+              canonical Seller / Landlord page reads HERE
+```
+
+`ListingStatusDisplay::for()` (merged from main, PRs #141/#142) resolves status through
+`MlsLinkedListingStatus::marketStatus()`, which reads the `mls_standard_status` / `mls_source_status`
+**meta on the auction**. `ListingPriceDisplay` reads `mls_list_price`, likewise meta. The only
+writer of either is `MlsListingSyncService`. Explore's discovery upserts `bridge_properties` and
+writes no listing meta — deliberately, because which facts may move onto a listing is
+`MlsSyncFieldPolicy`'s decision from both ends, and a public map endpoint reaching into that store
+would be the parallel ingestion path that must not exist.
+
+So in the shipped configuration a consumer can see **Pending / $525,000** on the map and
+**Active / $535,000** on the listing they click through to.
+`tests/Feature/Explore/ExploreCanonicalCurrentnessTest.php` pins that gap, and pins that the
+existing sync closes it — no replacement mechanism was built.
+
+### Which flag is required for what
+
+| Surface | Requires | Why |
+|---|---|---|
+| Explore viewport + panel | `EXPLORE_DISCOVERY_ENABLED` only | reads `bridge_properties`, which its own pass refreshes |
+| Seller canonical page | `MLS_SYNC_ENABLED` | `ListingStatusDisplay` / `ListingPriceDisplay` read listing meta |
+| Landlord canonical page | `MLS_SYNC_ENABLED` | same chain |
+| Freshness for a **public visitor** | `MLS_SYNC_SCHEDULE_ENABLED` | a non-owner view sends nothing — it records demand for the next sweep, so the page is current only because a sweep already made it so |
+| Owner opening their own stale listing | `MLS_SYNC_LAZY_REFRESH_ENABLED` (with the master gate) | `MlsStaleAccessRefresher` requires both, and grants the synchronous refresh only to the owner |
+
+**Launch set for a coherent consumer experience: `EXPLORE_ENABLED`,
+`EXPLORE_DISCOVERY_ENABLED`, `MLS_SYNC_ENABLED`, `MLS_SYNC_SCHEDULE_ENABLED`** — the first two for
+Explore, the last two so the page behind the marker agrees with it.
+`MLS_SYNC_LAZY_REFRESH_ENABLED` is optional and improves only the owner's own view.
+**None was enabled by this work.**
+
+### A follow-up worth taking, not taken here
+
+`MlsListingSyncService` refreshes through `BridgeListingLookupService::refreshByListingKey()`,
+which is provider-first by design. It therefore spends its own Bridge request even when Explore
+upserted that exact `ListingKey` seconds earlier. Teaching sync to accept a sufficiently fresh
+`bridge_properties` row would remove duplicated provider traffic — but it is a change to the sync
+subsystem's freshness contract, owned by that work, and is reported rather than made here.
+
+---
+
+## 8. Public-endpoint operational safety
+
+A cold Explore tile can now cause a real provider fetch on an unauthenticated route, so the
+protections were audited rather than assumed.
+
+| Control | State |
+|---|---|
+| bbox validation (shape, range, ordering, finiteness) | `ExploreViewport::fromString()` |
+| maximum bbox span | 1.0 degree, **refused with 422, never clamped** |
+| tile snapping | 0.05 degree, outwards |
+| result cap | 150 default / 250 ceiling |
+| page + record caps per pass | 5 x 500, clamped downwards against `BRIDGE_LAZY_*` |
+| client debounce | 450 ms; no fetch per frame, heading or tilt change |
+| fetch cache | the existing `bridge_criteria_fetch_cache`, 60-minute TTL |
+| advisory locking | the existing per-criteria `pg_advisory_lock` |
+| provider failure | degrades to last-known rows; never 500s the map |
+| one fetch per marker | impossible — one pass per transaction type per viewport |
+| Places / Geocoding / Routes / Roads | none, asserted against the shipped renderer |
+| request throttle | `throttle:120,1` per user-or-IP on both data routes |
+
+**One gap, reported and not filled.** The request throttle bounds *requests*, not *provider
+fetches*. A caller inside 120 requests/minute could in principle supply 120 far-apart bounding
+boxes, each a distinct cold tile, and multiply them by the per-pass page cap. Nothing in this
+application currently bounds Explore's outbound Bridge volume in aggregate.
+
+The right remedy is an existing one, not a new one:
+`App\Services\Location\Coordinates\Guards\ProviderRequestBudget` is already hourly/daily,
+already provider-neutral by construction ("constructed with a provider id and two numbers, so
+the commercial adapter that arrives later wraps in exactly the same way"), and already refuses
+*before* a request by raising, which is precisely the shape `ExploreInventoryService` would need.
+**Reported before adding, and not added**, because wiring a spend guard is an operational
+decision that belongs with the decision to enable `EXPLORE_DISCOVERY_ENABLED`.
+
+---
+
+## 9. Follow-ups
 
 - **Google browser credential + live visual verification** (blocks §51 entirely).
 - **Saved properties.** No favourites system exists. Saving a property that has
