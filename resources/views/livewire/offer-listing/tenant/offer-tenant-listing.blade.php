@@ -8,17 +8,27 @@
     the same two selects and a @this.set() round trip it has never made.
 
     Claiming the flag here opts this page out and leaves its behaviour byte-identical.
-    @prepend rather than @push because the shared partial is included at line ~1709,
+    @prepend rather than @push because the shared partial is included at line ~1731,
     before this file's own @push('scripts') block, so a plain push would arrive too
     late to be seen.
 
+    SCOPED TO $user_type === 'seller', because that is the only value for which this
+    file includes the canonical seller-terms partial at all — the tab is chosen by an
+    @elseif on the same variable. A page that never renders the markup must not
+    announce that it has bound the behaviour: the flag would then be a claim about
+    some other page, and the next reader would have no way to tell which.
+
     offer-tenant-listing-edit.blade.php is deliberately NOT opted out: it includes the
     same partial and has no seller conditional handlers of its own, so it had the same
-    defect as MLS Quick Import and the shared behaviour repairs it.
+    defect as MLS Quick Import and the shared behaviour repairs it. The Hire Agent twin
+    of THIS file, tenant-agent-auction.blade.php, does carry the same handlers and is
+    opted out the same way.
 --}}
+@if (($user_type ?? null) === 'seller')
 @prepend('scripts')
 <script>window.__sellerTermsConditionalsBound = true;</script>
 @endprepend
+@endif
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">

@@ -330,6 +330,159 @@ class MlsQuickImportTermsConditionalParityTest extends TestCase
     /**
      * @test
      *
+     * ONE BINDING PER PAGE, PROVED BY ENUMERATION RATHER THAN BY MEMORY.
+     *
+     * Moving the behaviour into the canonical tab gave it consumers nobody was
+     * looking at: every view that includes a Sale Terms tab now receives the
+     * handlers, including four that were never part of the change. Two of them
+     * (hire-seller-agent-edit, tenant-agent-auction-edit) had the same defect as
+     * Quick Import and are simply repaired. Two of them already bind the same two
+     * selects themselves, and would have ended up binding twice —
+     * offer-tenant-listing was opted out; tenant-agent-auction was MISSED, and
+     * this test is what finds the next one.
+     *
+     * The rule: a view that reaches the shared Seller behaviour either declares no
+     * change binding of its own, or claims __sellerTermsConditionalsBound.
+     */
+    public function every_consumer_of_the_shared_seller_behaviour_binds_exactly_once(): void
+    {
+        $consumers = $this->viewsReachingSellerBehaviour();
+
+        $this->assertNotEmpty($consumers, 'Failed to enumerate the consumers.');
+
+        // The four the change set names, plus the four it reached without naming.
+        foreach ([
+            'resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php',
+            'resources/views/livewire/offer-listing/quick-import/mls-quick-import.blade.php',
+            'resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php',
+            'resources/views/livewire/tenant-agent-auction.blade.php',
+            'resources/views/livewire/hire-seller-agent/hire-seller-agent-edit.blade.php',
+            'resources/views/livewire/tenant-agent-auction-edit.blade.php',
+        ] as $expected) {
+            $this->assertContains($expected, $consumers,
+                "Enumeration missed a known consumer: {$expected}");
+        }
+
+        $doubleBound = [];
+
+        foreach ($consumers as $view) {
+            $src = $this->source($view);
+
+            $bindsItself = str_contains($src, "on('change', '#sale_provision'")
+                || str_contains($src, "on('change', '#offered_financing'");
+
+            if ($bindsItself && ! str_contains($src, '__sellerTermsConditionalsBound')) {
+                $doubleBound[] = $view;
+            }
+        }
+
+        $this->assertSame([], $doubleBound,
+            "These views bind the Seller parents themselves AND receive the shared "
+            ."behaviour, so they bind twice. Opt out with __sellerTermsConditionalsBound, "
+            ."or remove the local copy: \n - ".implode("\n - ", $doubleBound));
+    }
+
+    /**
+     * @test
+     *
+     * An opt-out is scoped to the surface that needs it. Both files choose their
+     * terms tab with @elseif($user_type === ...), so a flag claimed on any other
+     * value is a claim about a page that never rendered the markup.
+     */
+    public function the_opt_outs_are_scoped_to_the_seller_surface(): void
+    {
+        foreach ([
+            'resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php',
+            'resources/views/livewire/tenant-agent-auction.blade.php',
+        ] as $view) {
+            $src = $this->source($view);
+
+            $this->assertStringContainsString('__sellerTermsConditionalsBound', $src,
+                "{$view} binds the Seller parents itself and must opt out.");
+
+            $this->assertStringContainsString("@if ((\$user_type ?? null) === 'seller')", $src,
+                "{$view} must claim the flag only where it renders the Seller tab.");
+
+            $this->assertStringContainsString('@prepend(\'scripts\')', $src,
+                "{$view} must prepend: its tab include runs before its own @push.");
+        }
+    }
+
+    /**
+     * @test
+     *
+     * The two surfaces that had the Quick Import defect and no handlers of their
+     * own are repaired by the shared behaviour, and must NOT be opted out.
+     */
+    public function the_undefended_seller_surfaces_are_repaired_not_opted_out(): void
+    {
+        foreach ([
+            'resources/views/livewire/hire-seller-agent/hire-seller-agent-edit.blade.php',
+            'resources/views/livewire/tenant-agent-auction-edit.blade.php',
+            'resources/views/livewire/offer-listing/tenant/offer-tenant-listing-edit.blade.php',
+        ] as $view) {
+            $src = $this->source($view);
+
+            $this->assertStringNotContainsString('__sellerTermsConditionalsBound', $src,
+                "{$view} has no conditional handlers of its own; opting it out would "
+                ."re-create the defect this branch fixes.");
+
+            $this->assertStringNotContainsString("on('change', '#sale_provision'", $src);
+            $this->assertStringNotContainsString("on('change', '#offered_financing'", $src);
+        }
+    }
+
+    /**
+     * Every Blade file that receives the shared Seller behaviour: directly, or by
+     * including a tab that includes it. Two tabs carry it — the Create Offer one
+     * and the Hire Seller Agent one.
+     *
+     * @return list<string>
+     */
+    private function viewsReachingSellerBehaviour(): array
+    {
+        $carriers = [
+            'offer-seller-tabs.commission-based.seller-terms',
+            'seller-agent-auction-tabs.commission-based.seller-terms',
+            '_seller-terms-behaviour',
+        ];
+
+        $root  = base_path('resources/views');
+        $found = [];
+
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root));
+
+        foreach ($files as $file) {
+            if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+
+            $relative = ltrim(str_replace(base_path(), '', $file->getPathname()), '/');
+
+            // The carriers themselves are not consumers.
+            if (str_contains($relative, 'commission-based/seller-terms.blade.php')
+                || str_contains($relative, '_seller-terms-behaviour')) {
+                continue;
+            }
+
+            $src = file_get_contents($file->getPathname());
+
+            foreach ($carriers as $carrier) {
+                if (str_contains($src, $carrier)) {
+                    $found[] = $relative;
+                    break;
+                }
+            }
+        }
+
+        sort($found);
+
+        return array_values(array_unique($found));
+    }
+
+    /**
+     * @test
+     *
      * The behaviour partial's map and the canonical tab's markup describe the same
      * set of sections, compared in both directions so neither can grow alone.
      */
@@ -644,24 +797,81 @@ class MlsQuickImportTermsConditionalParityTest extends TestCase
     /**
      * @test
      *
-     * Dropping "Other" from Owner Pays clears the free text that described it.
+     * Dropping "Other" from Owner Pays clears the free text that described it —
+     * when the landlord DROPS it, which is what the shared partial's handler
+     * reports by calling syncOwnerPaysSelection().
      *
      * The manual pages' JS used to get this by calling updateOwnerPays(); that call
-     * was removed with the duplicate binding, so the trait hook has to carry the
-     * same semantics or a landlord who changes their mind keeps publishing a
-     * sentence about an expense they no longer cover.
+     * was removed with the duplicate binding, so the trait has to carry the same
+     * semantics or a landlord who changes their mind keeps publishing a sentence
+     * about an expense they no longer cover.
      */
     public function dropping_other_from_owner_pays_clears_its_free_text(): void
     {
         $component = $this->landlordToTerms('QI-LL-CLR', 'Commercial Lease')
-            ->set('owner_pays', ['Other'])
+            ->call('syncOwnerPaysSelection', ['Other'])
             ->set('other_owner_pays', 'HOA dues and trash');
 
         $component->assertSet('other_owner_pays', 'HOA dues and trash');
 
-        $component->set('owner_pays', ['Water'])
+        $component->call('syncOwnerPaysSelection', ['Water'])
+            ->assertSet('owner_pays', ['Water'])
             ->assertSet('is_other_owner_pays_visible', false)
             ->assertSet('other_owner_pays', '');
+    }
+
+    /**
+     * @test
+     *
+     * ...and NOTHING ELSE clears it. This is the boundary, and it is the one that
+     * broke: the clearing first lived in updatedOwnerPays(), which Livewire fires
+     * on every write to the property — a draft rehydrate, an import, a save that
+     * merely restates the answers. That deleted stored text nobody had touched,
+     * and LandlordLeasingTermsPersistenceTest caught it.
+     *
+     * A plain set() must recompute the derived flag and delete nothing.
+     */
+    public function a_plain_owner_pays_write_recomputes_the_flag_and_deletes_nothing(): void
+    {
+        $component = $this->landlordToTerms('QI-LL-KEEP', 'Commercial Lease')
+            ->set('other_owner_pays', 'Roof repairs')
+            ->set('owner_pays', ['Taxes', 'Insurance']);
+
+        $component->assertSet('is_other_owner_pays_visible', false)
+            ->assertSet('other_owner_pays', 'Roof repairs');
+    }
+
+    /**
+     * @test
+     *
+     * Only Owner Pays deletes anything, so only Owner Pays is a call(). The other
+     * two controls carry a value and nothing else, and must stay plain set()s —
+     * "making them consistent" would put a delete behind two more handlers.
+     */
+    public function only_owner_pays_is_reported_as_a_gesture(): void
+    {
+        // The file's own comments name @this.call('updateOwnerPays', …) to explain
+        // why it is NOT used, so count against the script rather than the prose.
+        $partial = preg_replace(
+            '/\{\{--.*?--\}\}/s',
+            '',
+            $this->source(self::LANDLORD_BEHAVIOUR_PARTIAL)
+        );
+
+        $this->assertStringContainsString(
+            "@this.call('syncOwnerPaysSelection'",
+            $partial,
+            'Owner Pays must report a gesture, because dropping "Other" deletes text.'
+        );
+
+        $this->assertSame(
+            1,
+            substr_count($partial, '@this.call('),
+            'Exactly one control on this tab may be a call(): the one that deletes.'
+        );
+
+        $this->assertStringContainsString("@this.set('desired_lease_length'", $partial);
+        $this->assertStringContainsString("@this.set('terms_of_lease'", $partial);
     }
 
     /**

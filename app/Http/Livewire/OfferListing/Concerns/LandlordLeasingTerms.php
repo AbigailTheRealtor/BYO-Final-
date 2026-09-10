@@ -432,18 +432,35 @@ trait LandlordLeasingTerms
     }
 
     /**
-     * Dropping "Other" from Owner Pays also drops the free text that described it.
+     * The landlord CHANGED the Owner Pays selection in the browser.
      *
-     * Carried over from LandlordOfferListing::updateOwnerPays(), which the manual
-     * pages' JS used to invoke and which cleared this alongside the flag. Losing
-     * that would leave a landlord who changed their mind publishing a sentence
-     * about an expense they no longer say they cover.
+     * Separate from the updated() hook below, and the separation is the point.
+     * Dropping "Other" also drops the free text that described it — carried over
+     * from LandlordOfferListing::updateOwnerPays(), which the manual pages' JS
+     * used to invoke — but that clearing may only ever follow a GESTURE.
+     *
+     * An updated() hook cannot tell a gesture from any other write to the
+     * property: a draft rehydrate, an import, a programmatic set. Clearing there
+     * deleted other_owner_pays on a save that merely restated the answers, which
+     * LandlordLeasingTermsPersistenceTest pins against and which is a data loss,
+     * not a visibility fix.
+     *
+     * Named for what it does rather than updateOwnerPays(): that method already
+     * exists on the two manual components, does not exist on
+     * LandlordMlsQuickImport, and calling it from shared code would raise
+     * "method not found" on the one surface this fix is for.
      *
      * Deliberately NOT mirrored for other_lease_term: nothing has ever cleared it,
      * and inventing that here would be a product change smuggled into a bug fix.
+     *
+     * @param  mixed  $values
      */
-    protected function clearLandlordOwnerPaysTextWhenNotOther(): void
+    public function syncOwnerPaysSelection($values): void
     {
+        $this->owner_pays = $this->ensureArray($values);
+
+        $this->syncLandlordLeaseVisibilityFlags();
+
         if (! $this->is_other_owner_pays_visible) {
             $this->other_owner_pays = '';
         }
@@ -455,15 +472,17 @@ trait LandlordLeasingTerms
      * wrapper would be reopened by JS on every round trip and would close again
      * for a moment each time the component re-rendered.
      *
+     * They only ever RECOMPUTE the two derived flags. Nothing here may delete a
+     * stored answer — see syncOwnerPaysSelection() for why that has to sit behind
+     * an explicit call.
+     *
      * Deliberately NOT named updateOwnerPays(): that is a different, existing
-     * method on the two manual components which also clears other_owner_pays, and
-     * it does not exist on LandlordMlsQuickImport. A class that declares its own
+     * method on the two manual components, and a class that declares its own
      * updatedOwnerPays() would override these, exactly as with stripCommas().
      */
     public function updatedOwnerPays(): void
     {
         $this->syncLandlordLeaseVisibilityFlags();
-        $this->clearLandlordOwnerPaysTextWhenNotOther();
     }
 
     public function updatedDesiredLeaseLength(): void

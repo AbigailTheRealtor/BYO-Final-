@@ -30,8 +30,17 @@
     The manual pages call it. It exists on LandlordOfferListing and
     LandlordOfferListingEdit and NOT on LandlordMlsQuickImport, so calling it from
     shared code would raise "method not found" on the one surface this fix is for.
-    The trait now recomputes both flags from the parent value in updated() hooks
-    instead, which every consumer inherits — see LandlordLeasingTerms.
+    The trait carries syncOwnerPaysSelection() instead, which every consumer
+    inherits and which reproduces its semantics — see LandlordLeasingTerms.
+
+    WHY OWNER PAYS IS A call() AND THE OTHER TWO ARE set()
+    ------------------------------------------------------
+    Only Owner Pays deletes something. Dropping "Other" clears other_owner_pays,
+    and that may only follow a gesture: an updated() hook fires on every write to
+    the property, so clearing there wiped stored text on a save that merely
+    restated the answers. The other two controls delete nothing, so a plain set()
+    — which still recomputes the derived flags through updated() — is right for
+    them. Do not "make them consistent" by converting all three.
 
     See _seller-terms-behaviour.blade.php for why this is @push('scripts') rather
     than an inline <script>, and why the Quick Import wrapper includes it directly.
@@ -77,8 +86,11 @@
             @this.set('desired_lease_length', $(this).val() || [], false);
             window.applyLandlordLeaseTermVisibility();
         });
+        // A GESTURE, not a plain set(): dropping "Other" must also drop the free
+        // text that described it, and only a real change may do that. See
+        // LandlordLeasingTerms::syncOwnerPaysSelection().
         $(document).on('change', '#owner_pays', function () {
-            @this.set('owner_pays', $(this).val() || [], false);
+            @this.call('syncOwnerPaysSelection', $(this).val() || []);
             window.applyLandlordOwnerPaysVisibility();
         });
         $(document).on('change', '#terms_of_lease', function () {
