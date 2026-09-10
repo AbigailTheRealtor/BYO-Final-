@@ -94,6 +94,22 @@ public function deleteMeta($key)
         if ($isSold) {
             return 'Hired Agent';
         }
+        // An MLS-linked listing's market status is Stellar's, not ours.
+        //
+        // Checked before `listing_status` and before `expiration_date` because
+        // those are precisely the two BidYourOffer mechanisms the live-sync
+        // contract forbids from overriding the feed. A property Stellar still
+        // lists as Active must not read 'Expired' here because of a date the
+        // seller typed into a form weeks ago.
+        //
+        // Returns null for a manual listing, and for an MLS listing whose source
+        // status has never been stored — both then fall through to the platform
+        // logic below, unchanged.
+        $mlsStatus = \App\Support\Listing\MlsLinkedListingStatus::marketStatus($this->get->toArray());
+        if ($mlsStatus !== null) {
+            return $mlsStatus;
+        }
+
         $metaStatus = $this->info('listing_status');
         if ($metaStatus === 'Hired Agent') {
             return 'Hired Agent';
