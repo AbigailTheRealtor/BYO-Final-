@@ -20,6 +20,7 @@
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa-solid fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa-solid fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa-solid fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
+                    @bidyouroffer
                     @can('offer-playoff')
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header">Offer Listings</h6></li>
@@ -27,8 +28,10 @@
                     <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'rental']) }}"><i class="fa-solid fa-home me-2 text-muted"></i>Rental Offer</a></li>
                     <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'lease']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Lease Offer</a></li>
                     @endcan
+                    @endbidyouroffer
                 </ul>
             </div>
+            @bidyouroffer
             <div class="dropdown mt-2">
                 <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff !important;border:1px solid #049399 !important;color:#049399 !important;">+ Create Regular Listing</button>
                 <ul class="dropdown-menu w-100">
@@ -38,6 +41,7 @@
                     <li><a class="dropdown-item" href="{{ route('offer.listing.tenant', ['user_type' => 'tenant']) }}">Create Tenant Listing</a></li>
                 </ul>
             </div>
+            @endbidyouroffer
         @endif
     </div>
     @endif
@@ -61,6 +65,7 @@
     {{-- ===== MY LISTINGS ===== --}}
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Listings</div>
 
+    @bidyouroffer
     @if (in_array(auth()->user()->user_type, ['seller']))
     <a href="{{ route('myAuctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
@@ -77,6 +82,7 @@
         </div>
     </a>
     @endif
+    @endbidyouroffer
 
 
     @if (in_array(auth()->user()->user_type, ['agent']))
@@ -98,6 +104,7 @@
             </div>
         </div>
     </a>
+    @bidyouroffer
     @can('offer-playoff')
     <a href="{{ route('agent.offer-listings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
@@ -114,6 +121,7 @@
         </div>
     </a>
     @endcan
+    @endbidyouroffer
     <a href="{{ route('agent.hire-leads.index') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa-solid fa-user-tie" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -167,6 +175,7 @@
             </div>
         </div>
     </a>
+    @bidyouroffer
     <a href="{{ route('stellar.buyer.results') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa-solid fa-magnifying-glass-chart" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -176,6 +185,7 @@
             </div>
         </div>
     </a>
+    @endbidyouroffer
     @endif
 
 
@@ -215,6 +225,7 @@
             </div>
         </div>
     </a>
+    @bidyouroffer
     <a href="{{ route('stellar.buyer.results') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa-solid fa-magnifying-glass-chart" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -224,6 +235,7 @@
             </div>
         </div>
     </a>
+    @endbidyouroffer
     @endif
 
     @if (in_array(auth()->user()->user_type, ['landlord']))
@@ -313,6 +325,7 @@
     @endif
 
     {{-- ===== SHOWING REQUESTS (seller and landlord only) ===== --}}
+    @bidyouroffer
     @if (in_array(auth()->user()->user_type, ['seller', 'landlord']))
     <a href="{{ route('showings.manage') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
@@ -331,6 +344,7 @@
         </div>
     </a>
     @endif
+    @endbidyouroffer
 
     {{-- ===== MY BIDS (agents only — non-agents access bids via their listing pages) ===== --}}
     @if (auth()->user()->user_type === 'agent')

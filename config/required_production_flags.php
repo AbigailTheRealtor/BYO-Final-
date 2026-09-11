@@ -87,14 +87,26 @@ return [
             'why'    => 'The detail pilot is complete; a partial list serves a visibly mixed platform.',
         ],
 
+        // 'products' scopes an entry to the deployments that actually serve the
+        // surface. Absent means every product — which is what every entry above
+        // means, since the Hire Agent hero and detail page are BidYourAgent's own
+        // and the combined platform renders them too.
+        //
+        // Both MLS direct-import entries are Seller/Landlord CREATE OFFER LISTING
+        // surfaces. On a BidYourAgent deployment they are refused by the product
+        // gate, so requiring them true there would block a start over a flag that
+        // governs nothing that deployment can reach.
+
         'mls_direct_import.prefill_enabled' => [
-            'expect' => true,
-            'why'    => 'Import by MLS # is a shipped Seller/Landlord entry point; off removes it with no error.',
+            'expect'   => true,
+            'products' => ['combined'],
+            'why'      => 'Import by MLS # is a shipped Seller/Landlord entry point; off removes it with no error.',
         ],
 
         'mls_direct_import.quick_import_enabled' => [
-            'expect' => true,
-            'why'    => 'The Seller/Landlord MLS quick-import flow is shipped; off 404s a path we link to.',
+            'expect'   => true,
+            'products' => ['combined'],
+            'why'      => 'The Seller/Landlord MLS quick-import flow is shipped; off 404s a path we link to.',
         ],
 
     ],

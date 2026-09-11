@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\Product\ProductContext;
 use Illuminate\Console\Command;
 
 /**
@@ -75,7 +76,24 @@ class DeployRequireProductionFlags extends Command
 
         $failures = [];
 
+        $product = ProductContext::current();
+
+        $this->line('  product: ' . $product);
+
         foreach ($contract as $key => $spec) {
+            // An entry may name the products it applies to. Absent means every
+            // product, which is what every entry meant before products existed.
+            // This is how a BidYourAgent deployment stops being required to enable
+            // a BidYourOffer surface it refuses to serve — it does not weaken the
+            // gate for the product that DOES serve it.
+            $appliesTo = is_array($spec) ? ($spec['products'] ?? null) : null;
+
+            if (is_array($appliesTo) && ! in_array($product, $appliesTo, true)) {
+                $this->line(sprintf('  %-6s %-42s %s', '[ n/a]', $key, 'not a ' . $product . ' surface'));
+
+                continue;
+            }
+
             $expected = is_array($spec) ? ($spec['expect'] ?? null) : null;
             $actual   = config($key);
 

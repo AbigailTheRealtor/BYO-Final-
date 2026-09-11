@@ -92,7 +92,16 @@
     @php $ofv::row('Currently Working With Agent', $fmt($d['working_with_agent'])); @endphp
     @php $ofv::row('Meeting Preference', $fmt($d['meeting_preference'])); @endphp
     @php $ofv::row('Agent Bid Visibility', $fmt($d['agent_bid_visibility'])); @endphp
-    @php $ofv::row('Listing Status', $fmt($d['listing_status'])); @endphp
+    {{--
+        The role-correct value, prepared by AgentController::agentListingStatusDisplay().
+        This row read the raw `listing_status` meta, which on an MLS-linked Seller or
+        Landlord listing is the value the owner typed rather than the market status
+        Stellar reports — so this page contradicted the seller's and landlord's own
+        detail pages about the same listing. The Blade renders what it is given: the
+        Seller / Landlord / Buyer / Tenant decision belongs in one place, and it is
+        not here.
+    --}}
+    @php $ofv::row('Listing Status', $fmt($d['listing_status_display'])); @endphp
     @php $ofv::sectionEnd(); @endphp
     {{-- 2. PROPERTY DETAILS                                           --}}
     
