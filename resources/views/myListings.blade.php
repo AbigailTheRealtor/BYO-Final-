@@ -154,6 +154,22 @@ if (! function_exists('mlStatus')) {
     }
 }
 
+// The Hire Agent tables also hold the Landlord, Buyer and Tenant Offer Listings
+// (workflow_type = offer_listing). The controller splits the seller's out; these three
+// arrive mixed into their Hire Agent buckets. A BidYourAgent deployment drops the rows
+// the workflow resolver POSITIVELY identifies as Offer Listings — a row with no
+// evidence either way stays, the route gate's rule. Hidden, never deleted.
+if (! \App\Support\Product\ProductContext::servesBidYourOffer()) {
+    $mlWorkflow = app(\App\Services\Listing\ListingWorkflowResolver::class);
+    $mlHireOnly = fn ($rows) => $rows->reject(
+        fn ($listing) => $mlWorkflow->matches($listing, \App\Support\Listing\ListingWorkflow::OFFER_LISTING)
+    )->values();
+
+    $tenantListings   = $mlHireOnly($tenantListings);
+    $landlordListings = $mlHireOnly($landlordListings);
+    $buyerListings    = $mlHireOnly($buyerListings);
+}
+
 $roles = [
     [
         'key'       => 'tenant',
