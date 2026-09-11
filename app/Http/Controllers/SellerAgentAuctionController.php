@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingFlag;
 use App\Support\Listing\ListingWorkflow;
 
 use Carbon\Carbon;
@@ -291,18 +292,27 @@ class SellerAgentAuctionController extends Controller
     {
         $page_data['title'] = 'Hire Seller\'s Agent Auctions';
         $page_data['type'] = $type = $request->type ?? "2";
-        $pendingApprovalAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => 'false', 'is_draft' => false])
+        $pendingApprovalAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_draft' => false])
             ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
             ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
             ->with(['bids.user', 'bids.meta']);
-        $liveAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'false', 'is_draft' => false])
+        $liveAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_draft' => false])
             ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
             ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
             ->with(['bids.user', 'bids.meta']);
-        $soldAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'true', 'is_draft' => false])
+        $soldAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_draft' => false])
             ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
             ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
             ->with(['bids.user', 'bids.meta']);
+
+        // is_approved / is_sold are varchar and hold '1'/'0' as well as 'true'/'false';
+        // ListingFlag reads both, as the model does.
+        ListingFlag::whereNotTrue($pendingApprovalAuctions, 'is_approved');
+        ListingFlag::whereNotTrue($pendingApprovalAuctions, 'is_sold');
+        ListingFlag::whereTrue($liveAuctions, 'is_approved');
+        ListingFlag::whereNotTrue($liveAuctions, 'is_sold');
+        ListingFlag::whereTrue($soldAuctions, 'is_approved');
+        ListingFlag::whereTrue($soldAuctions, 'is_sold');
 
         if ($type == "1") {
             $auctions = $pendingApprovalAuctions->get();
@@ -778,13 +788,17 @@ class SellerAgentAuctionController extends Controller
         $page_data['title'] = "Hire Seller's Agent";
         $page_data['type'] = $type = $request->type ?? 0;
 
+        // is_approved / is_sold are varchar and hold '1'/'0' as well as 'true'/'false';
+        // ListingFlag reads both. A 'false' row belongs in Pending, where it can be approved.
+        $auctions = SellerAgentAuction::query();
         if ($type == 1) {
-            $page_data['auctions'] = SellerAgentAuction::where('is_approved', true)->get();
+            ListingFlag::whereTrue($auctions, 'is_approved');
         } elseif ($type == 2) {
-            $page_data['auctions'] = SellerAgentAuction::where('is_sold', 'true')->get();
+            ListingFlag::whereTrue($auctions, 'is_sold');
         } else {
-            $page_data['auctions'] = SellerAgentAuction::where('is_approved', false)->get();
+            ListingFlag::whereNotTrue($auctions, 'is_approved');
         }
+        $page_data['auctions'] = $auctions->get();
         return view('admin.sellerAgentAuctions', $page_data);
     }
 
