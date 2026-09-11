@@ -39,6 +39,10 @@ use Illuminate\Support\Facades\Log;
  * (`dispatchDna: false`), through options the importer and the lookup service
  * expose for exactly this. Every other caller keeps the dispatch it had.
  *
+ * Explore DEFERS that work; it does not suppress it. A later normal import still
+ * schedules DNA for a row Explore imported first, because it finds no DNA record
+ * for the row's current address ({@see \App\Services\Bridge\BridgeLocationDnaState}).
+ *
  * WHY A BuyerCriteriaPayload AND NOT A NEW FILTER BUILDER
  * ------------------------------------------------------
  * `BuyerCriteriaODataFilterBuilder` already emits exactly the filter Explore

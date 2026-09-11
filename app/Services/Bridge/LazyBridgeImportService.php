@@ -217,14 +217,18 @@ class LazyBridgeImportService
                             continue;
                         }
 
-                        // Dispatch DNA only for new records or address/coordinate
-                        // changes — and only for a caller that has not opted out.
-                        if ($dispatchDna && $upsertResult->shouldDispatchDna()) {
+                        // Dispatch DNA for a new record, an address/coordinate
+                        // change, or a row that has never had DNA requested for
+                        // its current address (one Explore imported first, say) —
+                        // and only for a caller that has not opted out.
+                        if ($dispatchDna && BridgeLocationDnaState::shouldDispatch($upsertResult)) {
                             ComputeLocationDna::dispatch('bridge', $upsertResult->model->id);
                             Log::info('LazyBridgeImportService: dispatched ComputeLocationDna', [
                                 'bridge_property_id' => $upsertResult->model->id,
                                 'listing_key'        => $upsertResult->model->listing_key,
-                                'reason'             => $upsertResult->isNew ? 'new_record' : 'address_changed',
+                                'reason'             => $upsertResult->isNew
+                                    ? 'new_record'
+                                    : ($upsertResult->addressChanged ? 'address_changed' : 'location_dna_missing'),
                                 'hash'               => $hash,
                                 'role'               => $role,
                             ]);

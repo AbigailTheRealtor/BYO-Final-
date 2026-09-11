@@ -670,9 +670,20 @@ and read by no code, so `GOOGLE_PLACES_ENABLED` is the only gate on it. A discov
 500 rows, inline, because the queue runs `sync`. Explore renders no Location DNA, so both entry
 points opt out: discovery passes `dispatchDna: false` to `importForCriteria()` (a
 backward-compatible option, default `true`) and the panel passes it to `refreshByListingKey()` (an
-option that already existed). Every other caller keeps its dispatch. Worth knowing: a later lazy
-import of a row Explore first imported will not dispatch either, because the normalizer dispatches
-only for a NEW or re-addressed row.
+option that already existed). Every other caller keeps its dispatch.
+
+**Deferring is not suppressing.** A row Explore imported first is no longer NEW when a normal
+import reaches it, so on the normalizer's rule alone it would never get DNA. The importer and the
+lookup service's API writes therefore also dispatch when `BridgeLocationDnaState` finds no
+`property_location_dna` row for the row's CURRENT address — the pipeline writes that row, with the
+address, at the start of every run, before any provider call. No schema and no marker: existing
+state answers it. Once per row and address; EVERY dispatch it decides — the normalizer's own
+included — takes an atomic 15-minute claim on the row that the backfill honours, so a queued job
+that has not yet written its row, or two racing imports, cannot double-dispatch; never for a row
+missing a field the geocoder requires (that run writes no row, so it would repeat forever); never
+for a price or status change. A local-first lookup HIT
+still dispatches nothing, and the `ImportBridgeProperties` console command keeps the plain
+new-or-re-addressed rule, so a bulk import cannot become a backfill.
 
 **Google 3D is browser-side, so a server budget cannot protect it — the renderer's structure
 does.** `loadGoogleMaps()` is latched by a memoized promise: a second caller receives the same

@@ -288,12 +288,15 @@ class BridgeListingLookupService
 
     /**
      * Upsert one raw API record into bridge_properties. Dispatches
-     * ComputeLocationDna for new/address-changed rows, matching
-     * ImportBridgeProperties and LazyBridgeImportService.
+     * ComputeLocationDna for new/address-changed rows — and for an existing row
+     * that has never had DNA requested for its current address, such as one
+     * Explore imported first — matching LazyBridgeImportService
+     * ({@see BridgeLocationDnaState}).
      *
      * @param  bool  $dispatchDna  When false, the caller has opted to route enrichment elsewhere
-     *                             (Match Check via LocationDnaEnrichmentGuard), so this seam does not
-     *                             dispatch. Default true is the original, unchanged behavior.
+     *                             (Match Check via LocationDnaEnrichmentGuard; Explore, which
+     *                             renders no DNA), so this seam does not dispatch. Default true is
+     *                             the original behavior plus that backfill.
      */
     private function cacheRecord(array $record, bool $dispatchDna = true): ?BridgeProperty
     {
@@ -302,7 +305,7 @@ class BridgeListingLookupService
             return null;
         }
 
-        if ($dispatchDna && $result->shouldDispatchDna()) {
+        if ($dispatchDna && BridgeLocationDnaState::shouldDispatch($result)) {
             ComputeLocationDna::dispatch('bridge', $result->model->id);
         }
 
