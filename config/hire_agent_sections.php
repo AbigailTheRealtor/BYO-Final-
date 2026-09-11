@@ -171,6 +171,33 @@ return [
         ],
 
         /*
+         | Location DNA — the same data the Offer Listing page for the role renders, through the
+         | same shared component. A buyer and a tenant show what they are SEARCHING (areas, radius
+         | searches, Important Places); a seller and a landlord show the property they OFFER (its
+         | pin and its Location DNA panel). Directly after Property, because it is the location half
+         | of that same description.
+         |
+         | Public, and still withheld from a viewer who may not see the exact location: the guard
+         | for a seller or landlord is false for them, so the card and its nav entry both disappear.
+         | A buyer's or tenant's Important Places are public only as type + miles; where they are
+         | is the owner's (ListingLocationDnaViewData::forSearch()).
+         |
+         | Buyer/Tenant are labelled for what they are — the client's search areas and location
+         | preferences — not "Location DNA", which is calculated data about a property.
+         */
+        [
+            'id'       => 'location-dna',
+            'audience' => 'public',
+            'icon'     => 'fa-solid fa-map-location-dot',
+            'labels'   => [
+                'seller'   => 'Property Location',
+                'buyer'    => 'Search Areas & Location Preferences',
+                'landlord' => 'Property Location',
+                'tenant'   => 'Search Areas & Location Preferences',
+            ],
+        ],
+
+        /*
          | The terms of the transaction. ONE section with four labels rather than
          | four sections: they occupy the same position, hold the same kind of
          | content and differ only in what the transaction is called.

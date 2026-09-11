@@ -598,6 +598,17 @@ class LandlordAgentAuctionController extends Controller
         // Gates the owner-only empty state — a bid count is itself a disclosure.
         $page_data['canReviewAllProposals'] = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
 
+        // Location DNA — the property pin and Location DNA panel, from the coordinate and pipeline
+        // row this listing already has. Shown to the owner, and to everyone once the page already
+        // publishes the street address: the shared hero titles a landlord listing with its `address`
+        // meta (HireAgentHeroData), so the pin reveals nothing the heading has not.
+        $page_data['hireLocationDna'] = app(\App\Services\LocationDna\ListingLocationDnaViewData::class)
+            ->forProperty(
+                $auction,
+                'landlord_agent',
+                (bool) $page_data['hlaViewerIsOwner'] || trim((string) ($auction->info('address') ?: '')) !== ''
+            );
+
         return view('hire_landlord_agent.view', $page_data);
     }
 

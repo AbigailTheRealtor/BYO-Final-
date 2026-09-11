@@ -17,15 +17,22 @@ namespace App\Services\Offers;
  *     "address":        "123 Main St, ...",// Exact Address (geocoded client-side)
  *     "lat":            27.95,             // geocode result (nullable; map convenience only)
  *     "lng":            -82.45,
- *     "distance_pref":  "miles",           // "miles" (radius circle) | "minutes" (travel time)
+ *     "distance_pref":  "miles",           // "miles" (radius circle) | "minutes" (legacy travel time)
  *     "distance_value": 5,                 // > 0 — miles OR minutes depending on distance_pref
- *     "travel_mode":    "driving"          // driving | walking | bicycling | transit
+ *     "travel_mode":    "driving"          // driving | walking | bicycling | transit (legacy)
  *   }
  *
  * The map deliberately draws a real geocoded PIN for every located place and a radius
  * CIRCLE only for the "miles" preference. "minutes" (travel-time) rows get a pin but NO
  * circle — an accurate isochrone cannot be drawn, and a plain radius would be a fake
  * travel-time circle, which the audit forbids.
+ *
+ * MILES ONLY IN THE FORM. The widget no longer offers "minutes" or a travel mode: no
+ * routing engine exists here, so both implied a commute measurement nothing performs.
+ * Both remain VALID STORED VALUES and this class keeps accepting them — a row saved
+ * with minutes is preserved exactly (never converted: ten minutes is not a number of
+ * miles) until its owner explicitly switches it to miles. `travel_mode` stays in the
+ * canonical eight-key shape for the same reason.
  */
 class ImportantPlacesService
 {
@@ -48,6 +55,19 @@ class ImportantPlacesService
 
     /** Google Distance-Matrix travel modes (stored lowercase). */
     public const TRAVEL_MODES = ['driving', 'walking', 'bicycling', 'transit'];
+
+    /**
+     * The keys of a row that may reach someone who is NOT the listing's owner.
+     *
+     * An Important Place is where the client works, their child's school, a relative's home:
+     * its address and its coordinate are the client's, not the listing's. Everyone else learns
+     * what KIND of place matters and how far from it the search reaches — "Work · Within 3
+     * miles" — never where it is. The coordinate goes with the address because a pin is the
+     * address drawn, and a ring centred on it points at the same spot.
+     *
+     * An allowlist: a key survives by being named here, never by escaping a deny-list.
+     */
+    public const PUBLIC_KEYS = ['type', 'type_other', 'distance_pref', 'distance_value'];
 
     /** Decode a raw JSON string (or pass an array through) into a list of row arrays. */
     public function decode($raw): array
@@ -142,6 +162,25 @@ class ImportantPlacesService
         }
 
         return $errors;
+    }
+
+    /**
+     * Rows reduced to PUBLIC_KEYS, for a viewer who does not own the listing.
+     *
+     * Shapes what a PAGE receives, and nothing else: the stored rows, every save path and
+     * every matcher keep the exact address and coordinate. Static and pure so the display
+     * component can call it without the container.
+     */
+    public static function publicRows(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $out[] = array_intersect_key($row, array_flip(self::PUBLIC_KEYS));
+            }
+        }
+
+        return $out;
     }
 
     /** Normalized rows re-encoded to a compact JSON string for meta storage. */
