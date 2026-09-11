@@ -283,7 +283,8 @@
                     :floodZoneData="$floodZoneData ?? null"
                     :schoolDistrictData="$schoolDistrictData ?? null"
                 />
-                <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
+                {{-- Calculated lines only: restating the client's own criteria is not intelligence. --}}
+                <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['calculated_lines'] ?? []" />
                 <!-- Description Box  -->
                 <div class="card description">
                     {{-- {{dd(@$auction)}} --}}
