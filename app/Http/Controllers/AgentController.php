@@ -18,6 +18,7 @@ use App\Models\SellerAgentAuction;
 use App\Models\OfferAuction as OfferAuctionModel;
 use App\Services\Offers\ListingOfferAuctionLinker;
 use App\Support\Listing\AgentListingIdentity;
+use App\Support\Listing\ListingFlag;
 use App\Support\Listing\ListingStatusDisplay;
 use Carbon\Carbon;
 
@@ -588,7 +589,10 @@ class AgentController extends Controller
 
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = (bool) $auction->is_approved;
-        $isSold     = (bool) $auction->is_sold;
+        // Not `(bool)`: `(bool) 'false'` is true, and 'false' is exactly what the
+        // Buyer wizards store in a varchar column. The hub and the models read it
+        // as not sold; this page announced it as Accepted. One reading, ListingFlag.
+        $isSold     = ListingFlag::isTrue($auction->is_sold);
         $expiryRaw  = $meta['listing_expiration'] ?? null;
         $isExpired  = $expiryRaw && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryRaw));
 
@@ -1514,10 +1518,9 @@ class AgentController extends Controller
      * listing's own status is agentListingStatusDisplay()'s answer, printed
      * beside this one rather than instead of it.
      *
-     * It takes flags already read rather than a record, because the two callers
-     * read `is_sold` differently today — a plain cast on the shared page, the
-     * models' strict list in the hub. Unifying that is a separate change; this
-     * one must not move either surface's answer.
+     * It takes flags already read rather than a record. Which stored values count
+     * as sold — `'1'`, `'true'`, and not `'false'` — is {@see ListingFlag}'s
+     * decision, made once for both callers and the four role models.
      *
      * @return array{0: ?string, 1: ?string}
      */
@@ -1650,7 +1653,7 @@ class AgentController extends Controller
 
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = in_array($auction->is_approved ?? false, [true, 1, '1', 'true'], true);
-        $isSold     = in_array($auction->is_sold     ?? false, [true, 1, '1', 'true'], true);
+        $isSold     = ListingFlag::isTrue($auction->is_sold);
 
         $expiryRaw = $meta['listing_expiration'] ?? null;
         $isExpired = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
@@ -1721,7 +1724,7 @@ class AgentController extends Controller
     {
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = in_array($auction->is_approved, [true, 1, '1', 'true'], true);
-        $isSold     = in_array($auction->is_sold,     [true, 1, '1', 'true'], true);
+        $isSold     = ListingFlag::isTrue($auction->is_sold);
 
         $expiryRaw  = $auction->get->expiration_date ?? null;
         $isExpired  = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));

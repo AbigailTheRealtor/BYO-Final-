@@ -1483,6 +1483,26 @@ class OfferWorkflowReadinessTest extends TestCase
             // status from agentListingStatusDisplay(). Flags, filters, counts, the
             // typed View links and every write path are unchanged.
             'resources/views/agent/offer-listings.blade.php',
+
+            // ── Agent shared is_sold semantics (2026-09-11) ──────────────────
+            //
+            // The shared Agent listing page read `is_sold` with a plain `(bool)`
+            // cast while the hub and all four role models used a strict list, so
+            // the string 'false' — which BuyerOfferListing and the Hire Buyer
+            // wizard write into a varchar column — made the page announce an
+            // accepted transaction the hub beside it said had not happened.
+            //
+            //   app/Support/Listing/ListingFlag.php
+            //     The one reading of a stored listing flag. Reads only; no stored
+            //     value is rewritten, no column is cast.
+            //
+            //   app/Models/BuyerAgentAuction.php
+            //     Its status accessor asks ListingFlag instead of carrying its own
+            //     copy of the same list. The Seller, Landlord and Tenant models are
+            //     permitted above and receive the identical one-line change;
+            //     AgentController is permitted above too.
+            'app/Support/Listing/ListingFlag.php',
+            'app/Models/BuyerAgentAuction.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
