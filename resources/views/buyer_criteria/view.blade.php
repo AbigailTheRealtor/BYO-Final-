@@ -272,11 +272,13 @@
                     :share-token="$auction->ai_share_token"
                     :property-type="$auction->get->property_type ?? ''"
                 />
-                <!-- Location DNA Map Hero -->
+                <!-- Search Areas & Location Preferences -->
                 <x-location-dna-map
                     :preferences="$locationDnaPreferences ?? null"
                     :legacyLocation="$legacyLocation ?? []"
                     :importantPlaces="$importantPlaces ?? []"
+                    :importantPlacesExact="$importantPlacesExact ?? false"
+                    :showHeading="true"
                     :boundaryData="$boundaryData ?? null"
                     :floodZoneData="$floodZoneData ?? null"
                     :schoolDistrictData="$schoolDistrictData ?? null"

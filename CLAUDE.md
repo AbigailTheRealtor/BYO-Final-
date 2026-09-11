@@ -132,6 +132,29 @@ reading for Buyer and Tenant, never coordinates or JSON. It is display only: not
 matcher. Seller and Landlord carry a property pin, never reach it, and their pin is withheld wherever
 `$mlsAddressVisible` withholds the address line — a rooftop point is the address, drawn.
 
+**Important Places are private to the listing's owner.** A place is the client's workplace, their
+child's school, a relative's home — and all six Buyer/Tenant detail pages (Offer Listing, Criteria,
+Hire) are public. Everyone else sees the type and the miles ("Work · Within 3 miles") and nothing
+that locates it: no address, no coordinate, so no pin, no ring centred on it, no tooltip, and nothing
+in the map's JSON payload. `x-location-dna-map` reduces the rows through
+`ImportantPlacesService::publicRows()` (an allowlist, `PUBLIC_KEYS`) **before** the tier chain, the
+summary and both renderers read them, unless the caller passes `importantPlacesExact` = true — and
+**that is the default in every direction**: absent, false or truthy-but-not-`true` is private, and
+`LocationDnaCriteriaDisplay::from()` defaults private too. The controllers set the flag from
+ownership (`auth()->check()` first — a guest's null id and a null `user_id` both cast to 0); Hire
+passes `$hlaViewerIsOwner` into `forSearch()`, which also drops the private keys before the view.
+The owner is the only account that can edit these listings, so "owner" and "authorized editor" are
+the same set today. Stored rows, save paths and matchers keep the exact address and coordinate.
+
+**Buyer/Tenant criteria are LOCATION PREFERENCES, and are labelled so.** Radius searches, Important
+Places, named areas, custom areas, flexibility and notes are what the client asked for, not calculated
+Location DNA about a property. The Buyer/Tenant detail pages carry a "Search Areas & Location
+Preferences" heading (opt-in `showHeading`, because Seller/Landlord render the same component), and
+the Hire section is titled the same for Buyer/Tenant. `LocationPreferenceAnalyzer` no longer emits
+"Searching within a defined radius from a preferred location." or rule (b)'s "within commuting
+distance": both sat under "Location Intelligence" reading as findings, and neither was true as
+written. The criteria summary states each radius exactly.
+
 **Important Places are miles only; the "Commute Preferences" block is retired.** Neither "within
 minutes", Travel Mode, nor the Buyer/Tenant commute ZIP/minutes/mode fields had a consumer — no
 routing engine exists, and no scorer reads them. Stored values are preserved: a historical minutes

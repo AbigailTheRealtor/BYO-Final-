@@ -281,9 +281,11 @@ class LdnaMapRendererSurfaceTest extends TestCase
     {
         $this->enable([LdnaBasemapSurface::DISPLAY]);
 
+        // The owner's view: the only one handed where each Important Place is.
         $html = $this->renderDisplay([
-            'preferences'     => self::STORED,
-            'importantPlaces' => self::PLACES,
+            'preferences'          => self::STORED,
+            'importantPlaces'      => self::PLACES,
+            'importantPlacesExact' => true,
         ]);
 
         $payload = $this->hydrationPayload($html);
@@ -292,6 +294,27 @@ class LdnaMapRendererSurfaceTest extends TestCase
         $this->assertEquals(self::STORED['radius_searches'], $payload['radius_searches']);
         $this->assertEquals(self::PLACES, $payload['important_places']);
         $this->assertStringContainsString('data-ldna-mode="display"', $html);
+    }
+
+    public function test_without_the_owner_flag_the_payload_carries_no_place_location(): void
+    {
+        $this->enable([LdnaBasemapSurface::DISPLAY]);
+
+        // No flag — the default every caller gets unless it has established ownership.
+        $html = $this->renderDisplay([
+            'preferences'     => self::STORED,
+            'importantPlaces' => self::PLACES,
+        ]);
+
+        $payload = $this->hydrationPayload($html);
+
+        // The search geometry is untouched; only the places lose what locates them.
+        $this->assertEquals(self::STORED['polygons'], $payload['polygons']);
+        $this->assertEquals([[
+            'type' => 'Work', 'distance_pref' => 'miles', 'distance_value' => 5,
+        ]], $payload['important_places']);
+        $this->assertStringNotContainsString('200 Central Ave', $html);
+        $this->assertStringNotContainsString('27.7712', $html);
     }
 
     public function test_boundary_geojson_is_passed_through_rather_than_fetched(): void

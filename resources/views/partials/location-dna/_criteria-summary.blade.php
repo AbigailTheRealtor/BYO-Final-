@@ -13,6 +13,10 @@
   Everything printed is escaped text. No coordinate, JSON or provider value reaches this
   file: the display object only ever holds addresses, labels, types and distances.
 
+  An Important Place is PRIVATE unless the viewer owns the listing: its row then carries the
+  type and the miles only ("Work · Within 3 miles"), with no address and no map note — a
+  private place is never drawn, so "not located" would be untrue.
+
   Flexible location and location notes are rendered by the component itself in every
   tier, so they are deliberately not repeated here.
 --}}
@@ -50,19 +54,26 @@
 
   @if ($ldnaCriteria->importantPlaces)
     <h6><i class="fa-solid fa-location-dot me-1"></i>Important {{ count($ldnaCriteria->importantPlaces) === 1 ? 'Place' : 'Places' }}</h6>
+    @if ($ldnaCriteria->hasPrivatePlaces())
+      <div class="ldna-crit-sub" data-ldna-criteria-places-private>Exact locations are private — only the type of place and the distance are shown.</div>
+    @endif
     <ul>
       @foreach ($ldnaCriteria->importantPlaces as $ldnaCritPlace)
         <li data-ldna-criteria-place>
           <strong>{{ $ldnaCritPlace['type'] }}</strong>
-          <span class="ldna-crit-sub">&middot; {{ $ldnaCritPlace['address'] !== '' ? $ldnaCritPlace['address'] : 'No address provided' }}</span>
+          @unless ($ldnaCritPlace['private'])
+            <span class="ldna-crit-sub">&middot; {{ $ldnaCritPlace['address'] !== '' ? $ldnaCritPlace['address'] : 'No address provided' }}</span>
+          @endunless
           @if ($ldnaCritPlace['distance'])
             <span class="ldna-crit-sub">&middot; {{ $ldnaCritPlace['distance'] }}</span>
           @endif
-          @if ($ldnaCritPlace['on_map'] === 'none')
-            <div class="ldna-crit-sub">Not shown on the map — this address has not been located.</div>
-          @elseif ($ldnaCritPlace['legacy_minutes'])
-            <div class="ldna-crit-sub">Saved as a travel-time preference, which is no longer offered. Shown on the map as a pin, without a radius.</div>
-          @endif
+          @unless ($ldnaCritPlace['private'])
+            @if ($ldnaCritPlace['on_map'] === 'none')
+              <div class="ldna-crit-sub">Not shown on the map — this address has not been located.</div>
+            @elseif ($ldnaCritPlace['legacy_minutes'])
+              <div class="ldna-crit-sub">Saved as a travel-time preference, which is no longer offered. Shown on the map as a pin, without a radius.</div>
+            @endif
+          @endunless
         </li>
       @endforeach
     </ul>

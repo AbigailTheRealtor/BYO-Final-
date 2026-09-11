@@ -56,6 +56,19 @@ class ImportantPlacesService
     /** Google Distance-Matrix travel modes (stored lowercase). */
     public const TRAVEL_MODES = ['driving', 'walking', 'bicycling', 'transit'];
 
+    /**
+     * The keys of a row that may reach someone who is NOT the listing's owner.
+     *
+     * An Important Place is where the client works, their child's school, a relative's home:
+     * its address and its coordinate are the client's, not the listing's. Everyone else learns
+     * what KIND of place matters and how far from it the search reaches — "Work · Within 3
+     * miles" — never where it is. The coordinate goes with the address because a pin is the
+     * address drawn, and a ring centred on it points at the same spot.
+     *
+     * An allowlist: a key survives by being named here, never by escaping a deny-list.
+     */
+    public const PUBLIC_KEYS = ['type', 'type_other', 'distance_pref', 'distance_value'];
+
     /** Decode a raw JSON string (or pass an array through) into a list of row arrays. */
     public function decode($raw): array
     {
@@ -149,6 +162,25 @@ class ImportantPlacesService
         }
 
         return $errors;
+    }
+
+    /**
+     * Rows reduced to PUBLIC_KEYS, for a viewer who does not own the listing.
+     *
+     * Shapes what a PAGE receives, and nothing else: the stored rows, every save path and
+     * every matcher keep the exact address and coordinate. Static and pure so the display
+     * component can call it without the container.
+     */
+    public static function publicRows(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $out[] = array_intersect_key($row, array_flip(self::PUBLIC_KEYS));
+            }
+        }
+
+        return $out;
     }
 
     /** Normalized rows re-encoded to a compact JSON string for meta storage. */

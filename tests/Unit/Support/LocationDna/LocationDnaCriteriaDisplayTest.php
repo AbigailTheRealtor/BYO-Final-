@@ -48,9 +48,9 @@ class LocationDnaCriteriaDisplayTest extends TestCase
         ], $display->radiusSearches);
     }
 
-    public function test_it_describes_each_important_place_by_type_address_and_miles(): void
+    public function test_for_the_owner_it_describes_each_important_place_by_type_address_and_miles(): void
     {
-        $display = LocationDnaCriteriaDisplay::from($this->preferences(), $this->places());
+        $display = LocationDnaCriteriaDisplay::from($this->preferences(), $this->places(), [], true);
 
         $this->assertSame([[
             'type'           => 'Work',
@@ -58,7 +58,36 @@ class LocationDnaCriteriaDisplayTest extends TestCase
             'distance'       => 'Within 5 miles',
             'on_map'         => 'pin_and_ring',
             'legacy_minutes' => false,
+            'private'        => false,
         ]], $display->importantPlaces);
+        $this->assertFalse($display->hasPrivatePlaces());
+    }
+
+    public function test_by_default_an_important_place_is_its_type_and_miles_and_never_its_address(): void
+    {
+        // The address is passed in on purpose: a row that arrives unredacted still must not print it.
+        $display = LocationDnaCriteriaDisplay::from($this->preferences(), $this->places());
+
+        $this->assertSame([[
+            'type'           => 'Work',
+            'address'        => '',
+            'distance'       => 'Within 5 miles',
+            'on_map'         => 'none',
+            'legacy_minutes' => false,
+            'private'        => true,
+        ]], $display->importantPlaces);
+        $this->assertTrue($display->hasPrivatePlaces());
+        $this->assertTrue($display->hasMappedCriteria(), 'A private place is still a saved preference');
+    }
+
+    public function test_a_private_historical_minutes_place_keeps_its_minutes(): void
+    {
+        $display = LocationDnaCriteriaDisplay::from([], [[
+            'type' => 'School', 'type_other' => '', 'distance_pref' => 'minutes', 'distance_value' => 25,
+        ]]);
+
+        $this->assertSame('Within 25 minutes (travel time)', $display->importantPlaces[0]['distance']);
+        $this->assertTrue($display->importantPlaces[0]['private']);
     }
 
     public function test_custom_areas_flexibility_notes_and_named_areas_are_carried(): void
@@ -99,7 +128,7 @@ class LocationDnaCriteriaDisplayTest extends TestCase
         $display = LocationDnaCriteriaDisplay::from([], [[
             'type' => 'School', 'type_other' => '', 'address' => '1 School Rd', 'lat' => 27.9, 'lng' => -82.4,
             'distance_pref' => 'minutes', 'distance_value' => 25, 'travel_mode' => 'transit',
-        ]]);
+        ]], [], true);
 
         $place = $display->importantPlaces[0];
         $this->assertSame('Within 25 minutes (travel time)', $place['distance']);
@@ -113,7 +142,7 @@ class LocationDnaCriteriaDisplayTest extends TestCase
         $display = LocationDnaCriteriaDisplay::from([], [
             ['type' => 'Other', 'type_other' => 'Sailing club', 'address' => '5 Harbor Rd', 'lat' => null, 'lng' => null, 'distance_pref' => 'miles', 'distance_value' => 3],
             ['type' => 'Gym/Fitness', 'type_other' => '', 'address' => '', 'lat' => 27.9, 'lng' => -82.4, 'distance_pref' => 'miles', 'distance_value' => null],
-        ]);
+        ], [], true);
 
         $this->assertSame('Sailing club', $display->importantPlaces[0]['type']);
         $this->assertSame('none', $display->importantPlaces[0]['on_map']);

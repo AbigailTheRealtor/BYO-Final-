@@ -144,7 +144,8 @@ class HireAgentLocationDnaSectionTest extends TestCase
             'property_type'            => $role === 'tenant' ? 'Commercial Property' : 'Commercial',
         ]));
 
-        $this->assertSection($html, $redesign, 'Location DNA');
+        // A client's search is their preferences, not calculated Location DNA — the section says so.
+        $this->assertSection($html, $redesign, 'Search Areas &amp; Location Preferences');
 
         $summary = $this->summary($html);
         $this->assertStringContainsString('315 E Madison St, Tampa, FL 33602', $summary);

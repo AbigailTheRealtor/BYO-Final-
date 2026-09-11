@@ -156,4 +156,36 @@ class ImportantPlacesServiceTest extends TestCase
         $this->assertCount(1, $decoded);
         $this->assertSame('Work', $decoded[0]['type']);
     }
+
+    public function test_public_rows_keep_the_type_and_distance_and_nothing_that_locates_the_place(): void
+    {
+        $rows = $this->svc->normalize([
+            $this->completeRow(),
+            $this->completeRow(['type' => 'Other', 'type_other' => 'Sailing club']),
+        ]);
+
+        $public = ImportantPlacesService::publicRows($rows);
+
+        $this->assertSame([
+            ['type' => 'Work',  'type_other' => '',             'distance_pref' => 'miles', 'distance_value' => $rows[0]['distance_value']],
+            ['type' => 'Other', 'type_other' => 'Sailing club', 'distance_pref' => 'miles', 'distance_value' => $rows[1]['distance_value']],
+        ], $public);
+
+        foreach ($public as $row) {
+            foreach (['address', 'lat', 'lng', 'travel_mode'] as $private) {
+                $this->assertArrayNotHasKey($private, $row);
+            }
+        }
+    }
+
+    public function test_public_rows_leave_the_stored_rows_untouched(): void
+    {
+        $rows = $this->svc->normalize([$this->completeRow()]);
+
+        ImportantPlacesService::publicRows($rows);
+
+        $this->assertSame('123 Main St, Tampa, FL', $rows[0]['address']);
+        $this->assertSame(27.95, $rows[0]['lat']);
+        $this->assertSame(-82.45, $rows[0]['lng']);
+    }
 }

@@ -37,13 +37,17 @@ class ListingLocationDnaViewData
     /**
      * Buyer / Tenant — what the client is searching for.
      *
-     * @param  string[]  $legacyZipKeys  meta keys holding a legacy ZIP list for this role (Tenant
-     *                                   Hire mirrors `zipCodes`; Buyer never wrote one)
+     * @param  string[]  $legacyZipKeys       meta keys holding a legacy ZIP list for this role (Tenant
+     *                                        Hire mirrors `zipCodes`; Buyer never wrote one)
+     * @param  bool      $exactPlacesVisible  may THIS viewer see where each Important Place is? Only
+     *                                        the listing's owner may; everyone else gets the type and
+     *                                        the miles (ImportantPlacesService::publicRows()), so the
+     *                                        address and coordinate never reach the view at all.
      * @return array{kind: string, hasContent: bool, locationDnaPreferences: ?array,
-     *               legacyLocation: array, importantPlaces: array, boundaryData: mixed,
-     *               floodZoneData: mixed, schoolDistrictData: mixed}
+     *               legacyLocation: array, importantPlaces: array, importantPlacesExact: bool,
+     *               boundaryData: mixed, floodZoneData: mixed, schoolDistrictData: mixed}
      */
-    public function forSearch(Model $auction, array $legacyZipKeys = []): array
+    public function forSearch(Model $auction, array $legacyZipKeys = [], bool $exactPlacesVisible = false): array
     {
         $raw         = $auction->info('location_dna_preferences');
         $decoded     = is_string($raw) && $raw !== '' ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
@@ -62,6 +66,9 @@ class ListingLocationDnaViewData
         ];
 
         $importantPlaces = $this->importantPlaces->normalize($auction->info('important_places_json') ?: '');
+        if (!$exactPlacesVisible) {
+            $importantPlaces = ImportantPlacesService::publicRows($importantPlaces);
+        }
 
         $boundaryData       = $this->boundaryLookup->resolve($preferences, $legacyLocation);
         $floodZoneData      = $this->floodZoneLookup->resolve($boundaryData, $preferences ?? []);
@@ -75,6 +82,7 @@ class ListingLocationDnaViewData
             'locationDnaPreferences' => $preferences,
             'legacyLocation'         => $legacyLocation,
             'importantPlaces'        => $importantPlaces,
+            'importantPlacesExact'   => $exactPlacesVisible,
             'boundaryData'           => $boundaryData,
             'floodZoneData'          => $floodZoneData,
             'schoolDistrictData'     => $schoolDistrictData,

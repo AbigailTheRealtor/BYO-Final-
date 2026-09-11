@@ -89,6 +89,7 @@ tests/Feature/LocationDna/HireBuyerGeographyCascadeWiringTest.php
 tests/Feature/LocationDna/HireBuyerGeographySearchTest.php
 tests/Feature/LocationDna/HireTenantGeographySurfaceTest.php
 tests/Feature/LocationDna/ImportantPlaceAddressResolutionTest.php
+tests/Feature/LocationDna/ImportantPlacePrivacyTest.php
 tests/Feature/LocationDna/LdnaBenchmarkTilePrecisionCommandTest.php
 tests/Feature/LocationDna/LdnaLabelStyleTest.php
 tests/Feature/LocationDna/LdnaMapRendererSurfaceTest.php

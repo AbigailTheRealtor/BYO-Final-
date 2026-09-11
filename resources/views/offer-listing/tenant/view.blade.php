@@ -716,11 +716,14 @@
         </div>
     </div>
 
-    {{-- Location DNA Map — directly below the hero/snapshot so it is always visible --}}
+    {{-- Search Areas & Location Preferences — directly below the hero/snapshot so it is always
+         visible. Important Places are located only for the owner (controller decides). --}}
     <x-location-dna-map
         :preferences="$locationDnaPreferences ?? null"
         :legacyLocation="$legacyLocation ?? []"
         :importantPlaces="$importantPlaces ?? []"
+        :importantPlacesExact="$importantPlacesExact ?? false"
+        :showHeading="true"
         :boundaryData="$boundaryData ?? null"
         :floodZoneData="$floodZoneData ?? null"
         :schoolDistrictData="$schoolDistrictData ?? null"

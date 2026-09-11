@@ -30,10 +30,13 @@
     ])
   @endif
 @else
+  {{-- No heading: the section card's own title already names it. Important Places arrive
+       already reduced for a non-owner, and the flag keeps the component private by default. --}}
   <x-location-dna-map
       :preferences="$hireLocationDna['locationDnaPreferences'] ?? null"
       :legacyLocation="$hireLocationDna['legacyLocation'] ?? []"
       :importantPlaces="$hireLocationDna['importantPlaces'] ?? []"
+      :importantPlacesExact="$hireLocationDna['importantPlacesExact'] ?? false"
       :boundaryData="$hireLocationDna['boundaryData'] ?? null"
       :floodZoneData="$hireLocationDna['floodZoneData'] ?? null"
       :schoolDistrictData="$hireLocationDna['schoolDistrictData'] ?? null"

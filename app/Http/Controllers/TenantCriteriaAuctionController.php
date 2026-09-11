@@ -650,6 +650,8 @@ class TenantCriteriaAuctionController extends Controller
         // every other surface, so this page cannot develop its own idea of the row shape.
         $page_data['importantPlaces'] = app(\App\Services\Offers\ImportantPlacesService::class)
             ->normalize($auction->info('important_places_json') ?: '');
+        // Exact for the owner — the only account edit() admits — and type + miles for everyone else.
+        $page_data['importantPlacesExact'] = auth()->check() && (int) $auction->user_id === (int) auth()->id();
         $page_data['boundaryData'] = $boundaryLookupService->resolve(
             $page_data['locationDnaPreferences'],
             $page_data['legacyLocation']

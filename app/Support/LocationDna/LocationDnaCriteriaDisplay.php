@@ -25,6 +25,9 @@ use App\Services\Offers\ImportantPlacesService;
  *     words rather than falling back to the numbers
  *   - convert minutes to miles; a historical travel-time place is described as minutes,
  *     and as a pin without a ring, which is exactly what the map draws for it
+ *   - name an Important Place's address unless told the viewer owns the listing. Private is
+ *     the default: a private row carries the type and the miles, and `address` is empty
+ *     because the caller never had it (see ImportantPlacesService::publicRows())
  *
  * Seller and Landlord listings do not use this: they carry one property pin, not search
  * criteria, and there is nothing for it to describe.
@@ -34,7 +37,7 @@ final class LocationDnaCriteriaDisplay
     /** @var array<int, array{title: string, drawn: bool, distance: ?string}> */
     public array $radiusSearches = [];
 
-    /** @var array<int, array{type: string, address: string, distance: ?string, on_map: string, legacy_minutes: bool}> */
+    /** @var array<int, array{type: string, address: string, distance: ?string, on_map: string, legacy_minutes: bool, private: bool}> */
     public array $importantPlaces = [];
 
     public int $customAreaCount = 0;
@@ -50,8 +53,9 @@ final class LocationDnaCriteriaDisplay
      * @param  array|null  $preferences      decoded `location_dna_preferences`
      * @param  array       $importantPlaces  rows from ImportantPlacesService::normalize()
      * @param  array       $legacyLocation   the detail controllers' legacy cities/counties/states/zip_codes
+     * @param  bool        $exactPlaces      true only when the viewer owns the listing — see the class note
      */
-    public static function from(?array $preferences, array $importantPlaces = [], array $legacyLocation = []): self
+    public static function from(?array $preferences, array $importantPlaces = [], array $legacyLocation = [], bool $exactPlaces = false): self
     {
         $prefs   = is_array($preferences) ? $preferences : [];
         $display = new self();
@@ -77,7 +81,7 @@ final class LocationDnaCriteriaDisplay
 
         foreach ($importantPlaces as $place) {
             if (is_array($place)) {
-                $display->importantPlaces[] = self::place($place);
+                $display->importantPlaces[] = self::place($place, $exactPlaces);
             }
         }
 
@@ -112,7 +116,19 @@ final class LocationDnaCriteriaDisplay
         return !$this->hasMappedCriteria() && $this->areas === [] && !$this->flexible && $this->notes === '';
     }
 
-    private static function place(array $place): array
+    /** True when any Important Place is described without its location. */
+    public function hasPrivatePlaces(): bool
+    {
+        foreach ($this->importantPlaces as $place) {
+            if ($place['private']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function place(array $place, bool $exact): array
     {
         $type = trim((string) ($place['type'] ?? ''));
         if ($type === 'Other') {
@@ -131,7 +147,12 @@ final class LocationDnaCriteriaDisplay
                 : 'Within ' . self::miles($value);
         }
 
-        if (!$located) {
+        /* A private row is never on the map: the display component hands the renderers the same
+         * public rows, which carry no coordinate. Its address stays empty even if the caller
+         * passed one, so a row cannot publish an address by arriving unredacted. */
+        if (!$exact) {
+            $onMap = 'none';
+        } elseif (!$located) {
             $onMap = 'none';
         } elseif (!$minutes && $distance !== null) {
             $onMap = 'pin_and_ring';
@@ -141,10 +162,11 @@ final class LocationDnaCriteriaDisplay
 
         return [
             'type'           => $type !== '' ? $type : 'Important place',
-            'address'        => trim((string) ($place['address'] ?? '')),
+            'address'        => $exact ? trim((string) ($place['address'] ?? '')) : '',
             'distance'       => $distance,
             'on_map'         => $onMap,
             'legacy_minutes' => $minutes,
+            'private'        => !$exact,
         ];
     }
 

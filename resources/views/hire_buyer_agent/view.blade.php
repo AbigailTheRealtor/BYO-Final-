@@ -1445,10 +1445,11 @@
 @endif
 @if (! ($byaDetailRedesign ?? false))                        <hr>
 @endif
-{{-- Location DNA — the search areas, radius searches and Important Places this listing stores,
-     with the words for each, through the same shared component as the Buyer Offer Listing page. --}}
+{{-- Search Areas & Location Preferences — the search areas, radius searches and Important Places
+     this listing stores, with the words for each, through the same shared component as the Buyer
+     Offer Listing page. The client's preferences, not calculated Location DNA — hence the title. --}}
 @if (($hireLocationDna['hasContent'] ?? false) && (! ($byaDetailRedesign ?? false) || $byaShows('location-dna')))
-<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" id="hla-section-location-dna" title="Location DNA" icon="fa-solid fa-map-location-dot">
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" id="hla-section-location-dna" title="Search Areas & Location Preferences" icon="fa-solid fa-map-location-dot">
     @include('partials.location-dna._hire-agent-section', ['hireLocationDna' => $hireLocationDna])
 </x-hire-agent.detail-section>
 @if (! ($byaDetailRedesign ?? false))<hr>@endif

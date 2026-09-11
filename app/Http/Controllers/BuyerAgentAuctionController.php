@@ -500,7 +500,9 @@ class BuyerAgentAuctionController extends Controller
 
         // Location DNA — the search areas, radius searches and Important Places this listing already
         // stores, in the inputs of the same shared map component the Buyer Offer Listing page uses.
-        $hireLocationDna = app(\App\Services\LocationDna\ListingLocationDnaViewData::class)->forSearch($auction);
+        // Important Places are located only for the owner; everyone else gets type + miles.
+        $hireLocationDna = app(\App\Services\LocationDna\ListingLocationDnaViewData::class)
+            ->forSearch($auction, [], $hlaViewerIsOwner);
 
         return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals', 'hlaAudience', 'hlaViewerIsOwner', 'hireLocationDna'));
     }
