@@ -29,15 +29,20 @@ use Throwable;
  * reaches this client, so it costs nothing. A request that is admitted and then fails still
  * cost a unit: it was sent.
  *
- * WHAT IS BUDGETED TODAY: PLACES NEARBY SEARCH ONLY
- * -------------------------------------------------
- * The shipped `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` (25 / 100) were
- * written for Nearby Search, the call behind the 2026-07-05 incident. Applying them to Places
- * Autocomplete — one request per keystroke on every listing form — would break address entry
- * within minutes, and Geocoding has no agreed limit at all. So those families are identified
- * and pass through unbudgeted (telemetry still records every one of them). Budgeting another
- * family later is one entry in {@see BUDGETED} plus its config keys — never a second counter
- * system.
+ * WHAT IS BUDGETED TODAY: NEARBY SEARCH AND GEOCODING, EACH ON ITS OWN ALLOWANCE
+ * -------------------------------------------------------------------------------
+ * Places Nearby Search — the call behind the 2026-07-05 incident — is admitted against
+ * `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` (25 / 100) under
+ * `GOOGLE_PLACES_ENABLED`. Geocoding is admitted against its own
+ * `GOOGLE_GEOCODING_HOURLY_LIMIT` / `GOOGLE_GEOCODING_DAILY_LIMIT` (25 / 100) under its own
+ * `GOOGLE_GEOCODING_ENABLED`. Each family is a separate {@see ProviderRequestBudget}
+ * (`google_places_nearby`, `google_geocoding`), so spending one never spends the other; they
+ * share only the admission lock, which serialises decisions and counts nothing.
+ *
+ * Places Autocomplete is identified and passes through unbudgeted (telemetry still records
+ * it): one request per keystroke on every listing form, so a ceiling sized for either family
+ * above would break address entry within minutes. Budgeting another family later is one entry
+ * in {@see BUDGETED} plus its config keys — never a second counter system.
  *
  * Browser-side Google (Maps JavaScript, `google.maps.places.Autocomplete` in the Blade
  * templates) never touches this server, so no server budget can govern it; that is Google
@@ -85,6 +90,11 @@ final class GoogleProviderAdmissionMiddleware
             'enabled' => 'google_places.enabled',
             'hourly'  => 'google_places.hourly_limit',
             'daily'   => 'google_places.daily_limit',
+        ],
+        self::FAMILY_GEOCODING => [
+            'enabled' => 'google_geocoding.enabled',
+            'hourly'  => 'google_geocoding.hourly_limit',
+            'daily'   => 'google_geocoding.daily_limit',
         ],
     ];
 
@@ -173,8 +183,9 @@ final class GoogleProviderAdmissionMiddleware
         try {
             $keys = self::BUDGETED[$family];
 
-            // Only a real boolean true enables. config/google_places.php parses the
-            // environment strictly; this holds for a value set any other way too.
+            // Only a real boolean true enables. config/google_places.php and
+            // config/google_geocoding.php parse the environment strictly; this holds for
+            // a value set any other way too.
             if (config($keys['enabled'], false) !== true) {
                 return self::REASON_SWITCHED_OFF;
             }

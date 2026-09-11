@@ -56,6 +56,10 @@
         <server name="GOOGLE_PLACES_ENABLED" value="false" force="true"/>
         <server name="GOOGLE_PLACES_DAILY_LIMIT" value="100" force="true"/>
         <server name="GOOGLE_PLACES_HOURLY_LIMIT" value="25" force="true"/>
+        <!-- Google Geocoding has its own switch and ceilings; forced OFF for the same reason. -->
+        <server name="GOOGLE_GEOCODING_ENABLED" value="false" force="true"/>
+        <server name="GOOGLE_GEOCODING_DAILY_LIMIT" value="100" force="true"/>
+        <server name="GOOGLE_GEOCODING_HOURLY_LIMIT" value="25" force="true"/>
 
         <!-- Bridge/Stellar safeguards. SAME FAILURE MODE, SAME FIX.
 

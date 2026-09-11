@@ -264,26 +264,39 @@ class GooglePlacesNearbyBudgetTest extends TestCase
     }
 
     /**
-     * Autocomplete and Geocoding are identified but NOT budgeted yet — the 25 / 100 limits
-     * were written for Nearby Search. Pinned so the gap stays a deliberate, visible one.
+     * Autocomplete is identified but NOT budgeted — one request per keystroke on the listing
+     * forms, so the Nearby numbers would break address entry. Geocoding IS budgeted now, on its
+     * OWN allowance: an exhausted Nearby budget neither refuses it nor is charged for it
+     * ({@see GoogleGeocodingBudgetTest} proves the Geocoding ceilings themselves). Pinned so
+     * the Autocomplete gap stays a deliberate, visible one.
      *
      * @test
      */
-    public function autocomplete_and_geocoding_are_not_budgeted_yet(): void
+    public function autocomplete_is_not_budgeted_and_geocoding_has_its_own_budget(): void
     {
-        config(['google_places.hourly_limit' => 1]);
+        config([
+            'google_places.hourly_limit'    => 1,
+            'google_geocoding.enabled'      => true,
+            'google_geocoding.hourly_limit' => 25,
+            'google_geocoding.daily_limit'  => 100,
+        ]);
         $this->preSpend(1); // the Nearby budget is exhausted
 
         $client = app(ClientInterface::class);
         $client->request('GET', self::AUTOCOMPLETE, ['query' => ['input' => '123 Main', 'key' => 'fake-test-key']]);
         $client->request('GET', self::GEOCODE, ['query' => ['address' => '123 Main St', 'key' => 'fake-test-key']]);
 
-        $this->assertCount(2, $this->sent, 'unbudgeted families pass through');
-        $this->assertSame(1, $this->spent()['hourly'], 'and cost the Nearby budget nothing');
+        $this->assertCount(2, $this->sent, 'an exhausted Nearby budget refuses neither');
+        $this->assertSame(1, $this->spent()['hourly'], 'and neither costs the Nearby budget anything');
+        $this->assertSame(
+            ['hourly' => 1, 'daily' => 1],
+            Admission::budgetFor(Admission::FAMILY_GEOCODING)->spent(),
+            'the geocode was charged to its own budget'
+        );
 
         $this->assertTrue(Admission::isBudgeted(Admission::FAMILY_PLACES_NEARBY));
+        $this->assertTrue(Admission::isBudgeted(Admission::FAMILY_GEOCODING));
         $this->assertFalse(Admission::isBudgeted(Admission::FAMILY_PLACES_AUTOCOMPLETE));
-        $this->assertFalse(Admission::isBudgeted(Admission::FAMILY_GEOCODING));
     }
 
     /** A refused request is not an outbound request, so telemetry never counts one. @test */

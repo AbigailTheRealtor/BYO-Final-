@@ -4,6 +4,8 @@ namespace App\Services\LocationDna;
 
 use App\Models\PropertyLocationDna;
 use App\Services\Schema\ProvenanceSchemaReadiness;
+use App\Support\Google\GoogleProviderFailure;
+use App\Support\Google\GoogleProviderRequestRefused;
 use GuzzleHttp\ClientInterface;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -20,6 +22,11 @@ use Throwable;
  * This service MUST NEVER:
  *   - Make an outbound Google request while GOOGLE_PLACES_ENABLED is false. The kill
  *     switch outranks the credential; a present API key is not permission to geocode.
+ *   - Make an outbound Google request while GOOGLE_GEOCODING_ENABLED is false, or once
+ *     the shared Geocoding ceiling (config/google_geocoding.php) is spent. A refusal is
+ *     recorded as 'skipped' — nothing was asked — never as a lookup that found nothing.
+ *   - Store, audit or return an exception message unredacted: Guzzle puts the request
+ *     URL, API key included, into it.
  *   - Connect to the AI marketing report or Property DNA persistence pipelines.
  *   - Perform AI or OpenAI calls of any kind.
  *   - Introduce routes, controllers, Blade views, Livewire components, or JavaScript.
@@ -65,9 +72,13 @@ class LocationDnaGeocodeService
      *       are unchanged, return the cached result.
      *   (d) If any address field changed, clear prior lat/lng and reset status to 'pending'.
      *   (e) Fail closed unless Google is explicitly enabled. GOOGLE_PLACES_ENABLED=false
-     *       returns status='skipped', error='non_google_geocoder_unavailable' and makes
-     *       ZERO outbound requests, regardless of whether an API key is present.
+     *       OR GOOGLE_GEOCODING_ENABLED off returns status='skipped',
+     *       error='non_google_geocoder_unavailable' and makes ZERO outbound requests,
+     *       regardless of whether an API key is present.
      *   (e-bis) Call Google Maps Geocoding API via Guzzle.
+     *   (e-ter) A request refused by the shared Geocoding ceiling (or any other admission
+     *       refusal) returns status='skipped', error='google_geocoding_refused: <reason>'.
+     *       Nothing reached Google, so it is not a failed lookup and is not cached.
      *   (f) On success: set status 'geocoded', store lat/lng, geocode_source='google', geocoded_at.
      *   (g) On API failure or empty result: persist status 'failed' with error detail.
      *   (h) Entire method is wrapped in try/catch(Throwable). On exception, if a record
@@ -233,7 +244,18 @@ class LocationDnaGeocodeService
             // Only reachable when the coordinate could not be obtained any other way:
             // pre-supplied property_lat/property_lng (a-bis) and an unchanged cached
             // geocode (c) both return above without consulting this guard.
-            if (! config('google_places.enabled', false)) {
+            //
+            // GOOGLE_GEOCODING_ENABLED is the Geocoding API's own switch, checked IN
+            // ADDITION to GOOGLE_PLACES_ENABLED: this path has always required the Places
+            // switch, and a second gate must never widen it. Either one off gives the same
+            // answer — nothing attempted, the coordinate unknown. The admission middleware
+            // enforces the Geocoding switch again at the HTTP client, together with the
+            // hourly and daily ceilings; checking it here too means an injected client
+            // that is not the production stack cannot reach Google with the switch off.
+            if (
+                ! config('google_places.enabled', false)
+                || config('google_geocoding.enabled', false) !== true
+            ) {
                 $record->geocode_status = 'skipped';
                 $record->geocode_error  = 'non_google_geocoder_unavailable';
                 $record->save();
@@ -306,20 +328,46 @@ class LocationDnaGeocodeService
             $this->audit($listingType, $listingId, $output, $addressData);
             return $output;
 
-        } catch (Throwable $e) {
-            // (h) Catch-all — persist failed status when the record was already initialised,
-            //     then return failed output without re-throwing.
+        } catch (GoogleProviderRequestRefused $refused) {
+            // (h-refused) Refused BEFORE it was sent — the Geocoding switch is off, a
+            //     request ceiling is reached, or admission could not be decided. Google was
+            //     never asked, so this is NOT "the address has no coordinates": it is
+            //     'skipped', like the switch above, nothing is cached as an answer, and the
+            //     next run asks again (and is admitted again, or not).
+            $error = 'google_geocoding_refused: ' . $refused->reason;
+
             if ($record !== null) {
                 try {
-                    $record->geocode_status = 'failed';
-                    $record->geocode_error  = $e->getMessage();
+                    $record->geocode_status = 'skipped';
+                    $record->geocode_error  = $error;
                     $record->save();
                 } catch (Throwable) {
                     // Swallow secondary DB failure to ensure output is always returned.
                 }
             }
 
-            $output = $this->failedOutput($listingType, $listingId, $e->getMessage());
+            $output = $this->skippedOutput($listingType, $listingId, $error);
+            $this->audit($listingType, $listingId, $output, $addressData);
+            return $output;
+
+        } catch (Throwable $e) {
+            // (h) Catch-all — persist failed status when the record was already initialised,
+            //     then return failed output without re-throwing. The message is REDACTED
+            //     before it is stored, audited or returned: Guzzle writes the request URL —
+            //     whose query string carries the API key — into its exception messages.
+            $error = GoogleProviderFailure::redact($e->getMessage());
+
+            if ($record !== null) {
+                try {
+                    $record->geocode_status = 'failed';
+                    $record->geocode_error  = $error;
+                    $record->save();
+                } catch (Throwable) {
+                    // Swallow secondary DB failure to ensure output is always returned.
+                }
+            }
+
+            $output = $this->failedOutput($listingType, $listingId, $error);
             $this->audit($listingType, $listingId, $output, $addressData);
             return $output;
         }

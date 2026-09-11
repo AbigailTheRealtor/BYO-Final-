@@ -98,11 +98,43 @@ boolean `true`. It was `(bool) env(...)`, under which `off` and `no` switched th
 (authorised by the product owner) — so the network guard, telemetry and admission see them.
 `TenantGoogleClientRoutingTest` checks the source before invoking anything.
 
+**Geocoding is budgeted too, on its OWN allowance, behind its OWN switch.** It is the second entry
+in the middleware's `BUDGETED` map — `google_geocoding.enabled` / `.hourly_limit` / `.daily_limit`
+(`config/google_geocoding.php`) — so it is a separate `ProviderRequestBudget` (`google_geocoding`)
+from Nearby's (`google_places_nearby`): spending one never spends the other, and they share only
+the admission lock, which counts nothing. `GOOGLE_GEOCODING_ENABLED` defaults **off** and parses
+exactly like the Places switch; a present key is not permission. Ceilings 25 / hour and 100 / day,
+hard, one unit per outbound Geocoding request. It is **separate from `GOOGLE_PLACES_ENABLED` on
+purpose**: sharing one switch would mean turning Location DNA's POIs on also turned tenant
+geocoding on. The Location DNA geocode step and `app:geocode-seller-landlord-listings` require
+**both** switches — the Geocoding one is an additional gate there, never a replacement.
+
+Every server-side Geocoding caller resolves the container client, so admission cannot be skipped:
+`LocationDnaGeocodeService`, the backfill command, and the four Tenant address pickers
+(`TenantOfferListing`/`Edit`, `TenantAgentAuction`/`Edit`). What each does with a refusal:
+`LocationDnaGeocodeService` records **`skipped`** (`google_geocoding_refused: <reason>`) — never
+`failed`, never "no coordinates", never cached as an answer — so the next run asks again; the
+command **stops** at the first refusal, prints how many rows it never processed, and exits non-zero
+rather than looping through refusals; the Tenant pickers leave city / state / ZIP / county empty for
+the user to fill in, keep the address as picked, and never raise a validation error for it. That
+last change is the only edit to the frozen `TenantAgentAuction` / `TenantAgentAuctionEdit` beyond the
+client routing, and was separately authorised: their catch caught only `RequestException`, so a
+refusal or a timeout crashed the Livewire request.
+
+**No Google exception message is ever logged, stored raw, or shown.** Guzzle writes the request URI
+into its exception messages and redacts only user-info, never the query string — which is where
+every server-side Google key travels. `Log::error('…' . $e->getMessage())` was in every Tenant
+geocode and autocomplete catch and two Buyer ones, and wrote the key into the log on the first
+4xx/5xx or timeout. `GoogleProviderFailure::log()` records provider, family, operation, a safe
+category, the HTTP status, the exception class and a refusal's reason, and nothing from the request;
+`GoogleProviderFailure::redact()` strips every URL's query string where a message must be kept (the
+`geocode_error` on a Location DNA row). `GoogleCredentialLogRedactionTest` fails with a fake key.
+
 **Deliberately NOT budgeted yet — do not treat as done:** Places **Autocomplete** (one request per
-keystroke on the listing forms; the Nearby numbers would break address entry) and Google
-**Geocoding** (no agreed limit). The middleware identifies and passes both through (telemetry still
-records them); budgeting a family later is one entry in its `BUDGETED` map plus config keys, never a
-second counter system. **Browser-side** Google — `google.maps.places.Autocomplete` in ~44 Blade files
+keystroke on the listing forms; the Nearby numbers would break address entry). The middleware
+identifies and passes it through (telemetry still records it); budgeting a family later is one entry
+in its `BUDGETED` map plus config keys, never a second counter system. **Browser-side** Google —
+`google.maps.places.Autocomplete` in ~44 Blade files
 and the Maps JavaScript API — never touches this server, so no server budget can govern it; it needs
 Google Cloud controls (a dedicated, referrer- and API-restricted browser key, quotas, billing alerts,
 a rehearsed key/API disable).
@@ -1061,8 +1093,10 @@ Beyond standard Laravel keys, this app requires:
 | `BRIDGE_DATASET` | Bridge Data Output dataset ID |
 | `BRIDGE_SERVER_TOKEN` | Bridge API access token |
 | `GOOGLE_PLACES_API_KEY` | Address validation + POI lookup |
-| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete or Geocoding. |
-| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Autocomplete and Geocoding are not budgeted yet, and browser-side Google is not governed by the server. See *Google Places request budget*. |
+| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete. Also required — together with `GOOGLE_GEOCODING_ENABLED` — by the Location DNA geocode step and the geocode backfill command, as it always was. |
+| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Geocoding has its own ceilings below, Autocomplete is not budgeted, and browser-side Google is not governed by the server. See *Google Places request budget*. |
+| `GOOGLE_GEOCODING_ENABLED` | Master switch for **every server-side Google Geocoding request** — Location DNA's geocode step, the backfill command, the four Tenant address pickers. Default `false`, parsed fail-closed exactly like `GOOGLE_PLACES_ENABLED`; a present key is not permission. **Separate from `GOOGLE_PLACES_ENABLED` on purpose**, and an additional gate — never a replacement — where that switch already applied. Off means zero Geocoding requests: Tenant pickers leave city / state / ZIP / county for the user, Location DNA records the coordinate as `skipped`. |
+| `GOOGLE_GEOCODING_HOURLY_LIMIT` / `GOOGLE_GEOCODING_DAILY_LIMIT` | **HARD** Geocoding ceilings (25 / 100) on their **own** `ProviderRequestBudget` — independent of the Nearby ceilings; spending one never spends the other. One unit per outbound Geocoding request, admitted before it is sent; a stored or cached coordinate is free; a retry pays again. Zero or malformed blocks Geocoding entirely. See *Google Places request budget*. |
 | `OPENAI_API_KEY` | DNA profile generation |
 | `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked) |
 | `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`) |
