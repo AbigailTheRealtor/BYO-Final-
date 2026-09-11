@@ -410,21 +410,19 @@ class AgentController extends Controller
             ->whereDoesntHave('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
             ->whereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS));
 
-        // Create status-specific queries (is_approved and is_sold are varchar columns storing 'true'/'false')
-        $pendingQuery = (clone $baseQuery)
-            ->where('is_approved', 'false')
-            ->where('is_sold', 'false')
-            ->where('is_draft', false);
+        // Status-specific queries. is_approved / is_sold are varchar and hold
+        // '1'/'0' as well as 'true'/'false'; ListingFlag reads both, as the model does.
+        $pendingQuery = (clone $baseQuery)->where('is_draft', false);
+        ListingFlag::whereNotTrue($pendingQuery, 'is_approved');
+        ListingFlag::whereNotTrue($pendingQuery, 'is_sold');
 
-        $liveQuery = (clone $baseQuery)
-            ->where('is_approved', 'true')
-            ->where('is_sold', 'false')
-            ->where('is_draft', false);
+        $liveQuery = (clone $baseQuery)->where('is_draft', false);
+        ListingFlag::whereTrue($liveQuery, 'is_approved');
+        ListingFlag::whereNotTrue($liveQuery, 'is_sold');
 
-        $soldQuery = (clone $baseQuery)
-            ->where('is_approved', 'true')
-            ->where('is_sold', 'true')
-            ->where('is_draft', false);
+        $soldQuery = (clone $baseQuery)->where('is_draft', false);
+        ListingFlag::whereTrue($soldQuery, 'is_approved');
+        ListingFlag::whereTrue($soldQuery, 'is_sold');
 
         // Get data based on type
         if ($type == "1") {

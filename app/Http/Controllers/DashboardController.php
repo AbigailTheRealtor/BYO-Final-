@@ -29,6 +29,7 @@ use App\Models\TenantAgentAuctionBid;
 use App\Models\TenantCriteriaAuctionBid;
 use App\Models\User;
 use App\Services\ReferralLinkService;
+use App\Support\Listing\ListingFlag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,15 +66,18 @@ class DashboardController extends Controller
         // ── Listing counts per role — filtered to match each role's default page view ──
         // Tenant/Landlord/Seller/Buyer pages all default to type 2 (Live).
         // Buyer uses whereIn because its is_approved/is_sold columns store mixed values ('true'/'false'/'1'/'0').
-        // Seller stores is_sold as the string 'false' (not boolean), matching its controller's own live filter.
+        // Seller's is_approved / is_sold are varchar and hold '1'/'0' as well as 'true'/'false';
+        // ListingFlag reads both, as the model does.
+        $sellerLive = SellerAgentAuction::where('user_id', $uid)->where('is_draft', false)
+            ->whereDoesntHave('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
+            ->whereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS));
+        ListingFlag::whereTrue($sellerLive, 'is_approved');
+        ListingFlag::whereNotTrue($sellerLive, 'is_sold');
         $page_data['listingCounts'] = [
             'tenant'   => TenantAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
             'landlord' => LandlordAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
             'buyer'    => BuyerAgentAuction::where('user_id', $uid)->whereIn('is_approved', ['true', '1', true])->whereIn('is_sold', ['false', '0', false])->where('is_draft', false)->count(),
-            'seller'   => SellerAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)
-                            ->whereDoesntHave('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
-                            ->whereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS))
-                            ->count(),
+            'seller'   => $sellerLive->count(),
         ];
 
         // ── Pending bids on user's listings (awaiting owner decision) ──────────
