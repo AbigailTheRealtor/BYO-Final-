@@ -1,8 +1,27 @@
 /*
  * Google Street View provider — Maps JavaScript API, documented API only.
  *
- * INTERNAL, DEVELOPMENT ONLY. Loaded only by the Google proof page, and only
- * when VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY is configured.
+ * INTERNAL, DEVELOPMENT ONLY. Loaded only by the Google proof page, and it
+ * does nothing at all until the shell's launch() calls load() — which happens
+ * only after a deliberate press of "Drive with Google".
+ *
+ * ONE PANORAMA PER PAGE — A CEILING, NOT A HABIT
+ * ----------------------------------------------
+ * Dynamic Street View bills per panorama OBJECT instantiated
+ * (StreetViewPanorama() or Map.getStreetView()). This file creates at most
+ * MAX_PANORAMAS_PER_PAGE (1) for the life of the page, lazily, on the first
+ * home that has coverage, and moves it with setPano() from then on: rotating,
+ * walking, changing homes, clicking markers and every card or photo action all
+ * reuse it. constructPanorama() is the only construction site and it REFUSES a
+ * second construction — stopping the page and saying so — rather than
+ * performing it. The counters in window.VirtualDriveDiagnostics.google are how
+ * a live session and the browser specs see that it held.
+ *
+ * No hidden panorama, no preload, no prefetch, no retry: the library is
+ * requested once (a failed load stays failed), and a rejected key
+ * (gm_authFailure) stops the page. No google.maps.Map is created, so there is
+ * no Dynamic Maps load either. Libraries requested: streetView, marker,
+ * geometry, core. No Places.
  *
  * WHY THIS PROVIDER CAN PIN A SIGN TO A HOUSE
  * -------------------------------------------
@@ -17,20 +36,26 @@
  * The legacy google.maps.Marker is used because it is the class the Street
  * View guide names. It is deprecated (February 2024) but Google states it "is
  * not scheduled to be discontinued" and promises at least 12 months' notice;
- * AdvancedMarkerElement is not listed as a Street View overlay. A production
- * build must re-check both before depending on them.
- *
- * COST SHAPE
- * ----------
- * Dynamic Street View bills per panorama OBJECT instantiated
- * (StreetViewPanorama() or Map.getStreetView()). This file creates exactly one
- * per page — lazily, on the first home that has coverage — and moves it with
- * setPano() afterwards; walking the street inside it creates no new object.
- * No google.maps.Map is created, so there is no Dynamic Maps load either.
- * Libraries requested: streetView, marker, geometry, core. No Places.
+ * AdvancedMarkerElement is not listed as a Street View overlay.
  */
 (function () {
     'use strict';
+
+    var MAX_PANORAMAS_PER_PAGE = 1;
+
+    var diagnostics = window.VirtualDriveDiagnostics = window.VirtualDriveDiagnostics || {};
+    var diag = diagnostics.google = {
+        libraryRequested: 0,          // <script> tags added for the Maps JavaScript API
+        adoptedExistingApi: false,    // an API already on the page was used instead
+        importLibraryCalls: 0,
+        streetViewInitializing: false,
+        streetViewInitialized: false,
+        panoramaConstructions: 0,     // StreetViewPanorama constructor calls made by this file
+        refusedConstructions: 0,      // constructions the ceiling stopped
+        getPanoramaRequests: 0,       // StreetViewService lookups (metadata, not a panorama load)
+        setPanoCalls: 0,              // moves of the ONE panorama to another home
+        authFailed: false
+    };
 
     var loadPromise = null;
     var hooks = null;
@@ -42,8 +67,19 @@
     var listings = {};   // listing id -> listing
     var selectedId = null;
     var generation = 0;
+    var pendingTiming = null;
 
-    // Latched: one script tag per page, and a failed load stays failed — no retry
+    function now() {
+        return window.performance && performance.now ? performance.now() : Date.now();
+    }
+
+    function importLibrary(name) {
+        diag.importLibraryCalls++;
+
+        return google.maps.importLibrary(name);
+    }
+
+    // Latched: one request per page, and a failed load stays failed — no retry
     // against a billed API.
     function loadLibrary(cfg) {
         if (loadPromise) {
@@ -51,12 +87,22 @@
         }
 
         loadPromise = new Promise(function (resolve, reject) {
-            window.__virtualDriveGoogleReady = function () { resolve(); };
-
             // Documented hook for a rejected key (referrer or API restriction).
             window.gm_authFailure = function () {
-                hooks.log('gm_authFailure', 'Google rejected the browser key (referrer or API restriction)');
+                diag.authFailed = true;
+                hooks.fatal('Google rejected the browser key (referrer or API restriction). Nothing will be retried.');
             };
+
+            // An API already on the page is adopted, never loaded a second time —
+            // the same rule as the Explore loader.
+            if (window.google && window.google.maps && typeof window.google.maps.importLibrary === 'function') {
+                diag.adoptedExistingApi = true;
+                resolve();
+
+                return;
+            }
+
+            window.__virtualDriveGoogleReady = function () { resolve(); };
 
             var script = document.createElement('script');
 
@@ -66,13 +112,14 @@
                 + '&loading=async&callback=__virtualDriveGoogleReady';
             script.async = true;
             script.onerror = function () { reject(new Error('the Maps JavaScript API script could not be loaded')); };
+            diag.libraryRequested++;
             document.head.appendChild(script);
         }).then(function () {
             return Promise.all([
-                google.maps.importLibrary('streetView'),
-                google.maps.importLibrary('marker'),
-                google.maps.importLibrary('geometry'),
-                google.maps.importLibrary('core')
+                importLibrary('streetView'),
+                importLibrary('marker'),
+                importLibrary('geometry'),
+                importLibrary('core')
             ]);
         }).then(function (libraries) {
             lib = { sv: libraries[0], marker: libraries[1], geometry: libraries[2], core: libraries[3] };
@@ -185,6 +232,11 @@
     function bind() {
         panorama.addListener('pano_changed', function () {
             hooks.count('pano_changed (moved to another panorama)');
+
+            if (pendingTiming) {
+                hooks.fact(pendingTiming.id, 'Google time to imagery', Math.round(now() - pendingTiming.startedAt) + ' ms');
+                pendingTiming = null;
+            }
         });
 
         panorama.addListener('position_changed', function () {
@@ -212,10 +264,58 @@
         });
     }
 
+    // THE ONLY CONSTRUCTION SITE.
+    function constructPanorama(pano, heading) {
+        if (panorama) {
+            return panorama;
+        }
+
+        if (diag.panoramaConstructions >= MAX_PANORAMAS_PER_PAGE) {
+            diag.refusedConstructions++;
+            hooks.fatal('STOP: a second StreetViewPanorama construction was refused on this page. '
+                + 'Stop the live test and report it.');
+
+            throw new Error('a second Street View panorama was refused');
+        }
+
+        diag.streetViewInitializing = true;
+        diag.panoramaConstructions++;
+        hooks.setCounter('StreetViewPanorama constructions', diag.panoramaConstructions);
+
+        try {
+            panorama = new lib.sv.StreetViewPanorama(element, {
+                pano: pano,
+                pov: { heading: heading, pitch: 0 },
+                zoom: 0,
+                addressControl: false,
+                fullscreenControl: false,
+                motionTracking: false,
+                motionTrackingControl: false,
+                enableCloseButton: false,
+                linksControl: true,
+                panControl: true,
+                zoomControl: true,
+                clickToGo: true,
+                showRoadLabels: true
+            });
+        } finally {
+            diag.streetViewInitializing = false;
+        }
+
+        diag.streetViewInitialized = true;
+        hooks.log('StreetViewPanorama constructed', 'billable Dynamic Street View load '
+            + diag.panoramaConstructions + ' of ' + MAX_PANORAMAS_PER_PAGE + ' allowed on this page');
+        bind();
+        syncMarkers();
+
+        return panorama;
+    }
+
     // Outdoor Google imagery only — not user-contributed or indoor panoramas.
     function nearestPanorama(target, radius) {
         return new Promise(function (resolve) {
-            hooks.count('StreetViewService.getPanorama requests');
+            diag.getPanoramaRequests++;
+            hooks.count('StreetViewService.getPanorama lookups');
 
             service.getPanorama({
                 location: target,
@@ -267,8 +367,13 @@
         },
 
         show: function (listing) {
+            if (diag.authFailed) {
+                return Promise.reject(new Error('Google rejected the browser key.'));
+            }
+
             var target = latLng(listing);
             var mine = ++generation;
+            var startedAt = now();
 
             provider.select(listing);
 
@@ -280,7 +385,13 @@
                     return { superseded: true, coverage: false, note: '' };
                 }
 
+                if (diag.authFailed) {
+                    throw new Error('Google rejected the browser key.');
+                }
+
                 if (!data) {
+                    hooks.fact(listing.id, 'Google coverage', 'none within 150 m');
+
                     return { coverage: false, note: 'No outdoor Google panorama within 150 m of the MLS coordinate.' };
                 }
 
@@ -288,26 +399,15 @@
                 var heading = lib.geometry.spherical.computeHeading(from, target);
                 var gap = lib.geometry.spherical.computeDistanceBetween(from, target);
 
+                hooks.fact(listing.id, 'Google coverage', 'yes');
+                hooks.fact(listing.id, 'Google panorama distance from MLS coordinate', Math.round(gap) + ' m');
+                hooks.fact(listing.id, 'Google imagery date', data.imageDate || 'not provided');
+                pendingTiming = { id: listing.id, startedAt: startedAt };
+
                 if (!panorama) {
-                    panorama = new lib.sv.StreetViewPanorama(element, {
-                        pano: data.location.pano,
-                        pov: { heading: heading, pitch: 0 },
-                        zoom: 0,
-                        addressControl: false,
-                        fullscreenControl: false,
-                        motionTracking: false,
-                        motionTrackingControl: false,
-                        enableCloseButton: false,
-                        linksControl: true,
-                        panControl: true,
-                        zoomControl: true,
-                        clickToGo: true,
-                        showRoadLabels: true
-                    });
-                    hooks.count('StreetViewPanorama instantiated (billable: Dynamic Street View)');
-                    bind();
-                    syncMarkers();
+                    constructPanorama(data.location.pano, heading);
                 } else {
+                    diag.setPanoCalls++;
                     panorama.setPano(data.location.pano);
                     panorama.setPov({ heading: heading, pitch: 0 });
                 }
@@ -318,6 +418,7 @@
                     coverage: true,
                     note: 'Nearest outdoor panorama is ' + Math.round(gap) + ' m from the MLS coordinate; camera turned to heading '
                         + Math.round((heading + 360) % 360) + '° to face the home.'
+                        + (data.imageDate ? ' Imagery captured ' + data.imageDate + '.' : '')
                 };
             });
         }

@@ -8,10 +8,29 @@
  * -------------
  * The shell owns everything that is ours: the listing data (from our own
  * endpoint, never from Apple or Google), the listing card, Previous / Next, the
- * action buttons, the fallback and the instrumentation. A provider owns only
- * the street-level pixels and whatever camera information it chooses to expose.
- * The shell never branches on WHICH provider is loaded — only on the
+ * action buttons, the launch button and the instrumentation. A provider owns
+ * only the street-level pixels and whatever camera information it chooses to
+ * expose. The shell never branches on WHICH provider is loaded — only on the
  * capabilities it declares — so both halves of the comparison get the same UI.
+ *
+ * NOTHING STREET-LEVEL LOADS UNTIL THE LAUNCH BUTTON IS PRESSED
+ * -------------------------------------------------------------
+ * Opening the page, choosing a home, opening its card, its photos or its tour
+ * never touches the provider: there is no provider to touch until launch() has
+ * run. launch() is the ONLY caller of provider.load(), it runs only from the
+ * launch button, and it is locked from the first click:
+ *
+ *     loading → idle ──click──▶ opening ──▶ open
+ *                                  │
+ *                                  └──▶ retry (no imagery here; press again)
+ *                                  └──▶ locked (library failed, key rejected,
+ *                                               or a STOP from the provider)
+ *
+ * A click while `opening` or `open` does nothing. Nothing retries by itself: a
+ * library that failed to load is never requested again from this page, and a
+ * home with no imagery waits for another deliberate press. The URL carries the
+ * selected home (`?listing=`) and never a launch, so reloading the page can
+ * never start a session.
  *
  * PROVIDER CONTRACT (both provider files implement exactly this)
  * -------------------------------------------------------------
@@ -22,7 +41,7 @@
  *   mount(element)                   take ownership of the imagery element
  *   setListings(list)                every listing known so far
  *   select(listing)                  mark a listing selected without moving the camera
- *   show(listing)      -> Promise<{coverage: boolean, note: string}>
+ *   show(listing)      -> Promise<{coverage: boolean, note: string, superseded?: boolean}>
  *
  * MOVEMENT NEVER REACHES BRIDGE
  * -----------------------------
@@ -44,14 +63,22 @@
     }
 
     var cfg = {
-        provider:       shell.getAttribute('data-provider'),
-        credential:     shell.getAttribute('data-credential') || '',
-        credentialName: shell.getAttribute('data-credential-name') || '',
-        libraryUrl:     shell.getAttribute('data-library-url') || '',
-        apiVersion:     shell.getAttribute('data-api-version') || '',
-        endpoint:       shell.getAttribute('data-listings-endpoint'),
-        nearbyRadius:   parseInt(shell.getAttribute('data-nearby-radius'), 10) || 400
+        provider:        shell.getAttribute('data-provider'),
+        credential:      shell.getAttribute('data-credential') || '',
+        credentialName:  shell.getAttribute('data-credential-name') || '',
+        libraryUrl:      shell.getAttribute('data-library-url') || '',
+        apiVersion:      shell.getAttribute('data-api-version') || '',
+        endpoint:        shell.getAttribute('data-listings-endpoint'),
+        nearbyRadius:    parseInt(shell.getAttribute('data-nearby-radius'), 10) || 400,
+        selectedListing: shell.getAttribute('data-selected-listing') || '',
+        launchLabel:     shell.getAttribute('data-launch-label') || 'Start'
     };
+
+    // Read-only counters for the browser specs and for a live session. Nothing
+    // reads them back to make a decision.
+    var diagnostics = window.VirtualDriveDiagnostics = window.VirtualDriveDiagnostics || {};
+
+    diagnostics.shell = { launchClicks: 0, launchesStarted: 0, launchState: 'loading', providerLoaded: false };
 
     var state = {
         registered: null,
@@ -64,11 +91,28 @@
         lastQueryCenter: null,
         queryInFlight: false,
         counters: {},
-        lightbox: null
+        lightbox: null,
+        launch: 'loading',   // loading | idle | opening | open | retry | locked
+        loadFailed: false,
+        fatal: null,
+        launchStartedAt: null,
+        firstImageryLogged: false
     };
 
     function $(id) {
         return document.getElementById(id);
+    }
+
+    function now() {
+        return window.performance && performance.now ? performance.now() : Date.now();
+    }
+
+    function emit(name, detail) {
+        try {
+            document.dispatchEvent(new CustomEvent(name, { detail: detail }));
+        } catch (e) {
+            // An observer failing must never take the shell with it.
+        }
     }
 
     // ------------------------------------------------------------ instrumentation
@@ -108,6 +152,12 @@
         if (window.console && console.info) {
             console.info('[virtual-drive] ' + line);
         }
+    }
+
+    // A measured fact about one home on this provider, for the observation sheet.
+    function fact(listingId, label, value) {
+        log('Measured', label + ': ' + value + ' (' + listingId + ')');
+        emit('virtual-drive:fact', { provider: cfg.provider, listingId: listingId, label: label, value: String(value) });
     }
 
     // ------------------------------------------------------------ helpers
@@ -170,6 +220,24 @@
         }
 
         return -1;
+    }
+
+    function describe(listing) {
+        return listing.sign_label + ' · ' + (listing.display_price || 'price not published') + ' · '
+            + (listing.address || listing.city || 'address withheld');
+    }
+
+    // The selected home is part of the URL so a link or a reload lands on it.
+    // A LAUNCH never is: nothing in the URL can start a session.
+    function rememberSelectionInUrl(id) {
+        try {
+            var url = new URL(window.location.href);
+
+            url.searchParams.set('listing', id);
+            window.history.replaceState(null, '', url.href);
+        } catch (e) {
+            // A sandboxed frame without history access loses the convenience, nothing else.
+        }
     }
 
     // ------------------------------------------------------------ data
@@ -358,7 +426,7 @@
         var sign = $('vd-sign');
         var anchored = state.provider && state.provider.capabilities.geoAnchoredMarkers;
 
-        if (!listing || !state.provider || anchored || state.coverage[listing.id] === false) {
+        if (!listing || !state.provider || anchored || state.fatal || state.coverage[listing.id] !== true) {
             sign.hidden = true;
 
             return;
@@ -388,9 +456,7 @@
 
         rows.slice(0, 12).forEach(function (row) {
             var item = node('li', row.listing.id === state.selectedId ? 'is-selected' : null);
-            var button = node('button', 'vd-nearby-item', row.listing.sign_label + ' · '
-                + (row.listing.display_price || 'price not published') + ' · '
-                + (row.listing.address || row.listing.city || 'address withheld')
+            var button = node('button', 'vd-nearby-item', describe(row.listing)
                 + (row.distance !== null ? ' · ' + Math.round(row.distance) + ' m' : ''));
 
             button.type = 'button';
@@ -415,19 +481,25 @@
         }
 
         state.selectedId = id;
+        rememberSelectionInUrl(id);
         log('Selected ' + listing.sign_label, id + ' via ' + via);
+        emit('virtual-drive:selected', { provider: cfg.provider, listing: listing });
 
         renderCard(listing);
         renderSign(listing);
         renderNearby();
+        renderLaunch();
         maybeQueryNearby(point(listing), 'selected home');
 
-        if (!state.provider) {
+        // Before launch there is no provider to talk to — and that is the point.
+        if (!state.provider || state.fatal) {
             return;
         }
 
         if (move) {
-            showInProvider(listing);
+            showInProvider(listing).catch(function () {
+                // Already reported by showInProvider.
+            });
         } else {
             state.provider.select(listing);
         }
@@ -454,16 +526,21 @@
     function showInProvider(listing) {
         setImageryStatus('loading', 'Loading street-level imagery at the MLS coordinate…');
 
-        state.provider.show(listing).then(function (result) {
+        return state.provider.show(listing).then(function (result) {
             // A newer selection overtook this one; its answer is not about coverage.
             if (result.superseded) {
-                return;
+                return result;
             }
 
             state.coverage[listing.id] = result.coverage;
             setCounter('Listings with coverage', Object.keys(state.coverage).filter(function (k) { return state.coverage[k]; }).length);
             setCounter('Listings without coverage', Object.keys(state.coverage).filter(function (k) { return !state.coverage[k]; }).length);
             log(result.coverage ? 'Coverage YES' : 'Coverage NO', listing.id + (result.note ? ' — ' + result.note : ''));
+
+            if (result.coverage && !state.firstImageryLogged && state.launchStartedAt !== null) {
+                state.firstImageryLogged = true;
+                setCounter('Launch press → provider ready (ms)', Math.round(now() - state.launchStartedAt));
+            }
 
             setImageryStatus(result.coverage ? 'ok' : 'none', result.coverage
                 ? result.note
@@ -473,30 +550,119 @@
                 renderCard(listing);
                 renderSign(listing);
             }
+
+            return result;
         }, function (err) {
             log('Provider show failed', err.message);
             setImageryStatus('none', 'Street-level imagery failed: ' + err.message + ' The listing stays fully available.');
+
+            throw err;
         });
     }
 
-    // ------------------------------------------------------------ fallback
+    // ------------------------------------------------------------ launch (the billing boundary)
 
-    function showFallback(message) {
-        var street = $('vd-street');
-        var box = node('div', 'vd-fallback');
+    function renderLaunch() {
+        var button = $('vd-launch');
+        var listing = selected();
 
-        street.textContent = '';
-        street.classList.add('is-fallback');
+        diagnostics.shell.launchState = state.launch;
+        $('vd-launch-panel').hidden = state.launch === 'open';
+        $('vd-launch-home').textContent = listing ? describe(listing) : '';
 
-        box.appendChild(node('h2', null, 'Virtual Drive unavailable'));
-        box.appendChild(node('p', null, message));
-        box.appendChild(node('p', 'vd-muted', 'Listings stay fully usable: pick a home and open it normally. '
-            + 'In production this state hands over to the ordinary MapLibre map — on its own screen, '
-            + 'never beside Street View imagery.'));
-        street.appendChild(box);
+        if (state.launch === 'idle') {
+            button.disabled = false;
+            button.textContent = cfg.launchLabel;
+        } else if (state.launch === 'retry') {
+            button.disabled = false;
+            button.textContent = 'Try again';
+        } else if (state.launch === 'opening') {
+            button.disabled = true;
+            button.textContent = 'Opening Virtual Drive…';
+        } else if (state.launch === 'locked') {
+            button.disabled = true;
+            button.textContent = 'Unavailable';
+        } else {
+            button.disabled = true;
+            button.textContent = 'Loading listings…';
+        }
+    }
 
-        $('vd-sign').hidden = true;
-        setImageryStatus('none', '');
+    function lock(message) {
+        state.launch = 'locked';
+        $('vd-launch-note').textContent = message;
+        renderLaunch();
+    }
+
+    function launch() {
+        diagnostics.shell.launchClicks++;
+
+        // THE LOCK. Only an idle page, or one waiting on a deliberate retry, may start.
+        if (state.launch !== 'idle' && state.launch !== 'retry') {
+            count('Launch presses ignored (already opening, open or locked)');
+
+            return;
+        }
+
+        var provider = state.registered;
+        var listing = selected();
+
+        if (!provider || !listing || !cfg.credential || state.fatal) {
+            return;
+        }
+
+        state.launch = 'opening';
+        renderLaunch();
+
+        diagnostics.shell.launchesStarted++;
+        count('Deliberate launches');
+        state.launchStartedAt = now();
+        log('Launch pressed', provider.id + ' · listing ' + listing.id);
+
+        var ready = state.provider
+            ? Promise.resolve()
+            : provider.load(cfg, hooks).then(function () {
+                if (state.fatal) {
+                    throw new Error(state.fatal);
+                }
+
+                provider.mount($('vd-street'));
+                state.provider = provider;
+                diagnostics.shell.providerLoaded = true;
+                provider.setListings(knownList());
+            }, function (err) {
+                state.loadFailed = true;
+
+                throw err;
+            });
+
+        ready.then(function () {
+            return showInProvider(listing);
+        }).then(function (result) {
+            if (state.fatal) {
+                return;
+            }
+
+            state.launch = result && result.coverage ? 'open' : 'retry';
+            renderLaunch();
+            renderSign(selected());
+        }, function (err) {
+            log('Launch failed', err.message);
+
+            if (state.fatal) {
+                return;
+            }
+
+            if (state.loadFailed) {
+                // Never requested again from this page — a reload is the deliberate retry.
+                lock('The ' + provider.id + ' library could not be loaded (' + err.message + '). Nothing will be retried; reload the page to try again.');
+
+                return;
+            }
+
+            state.launch = 'retry';
+            renderLaunch();
+        });
     }
 
     // ------------------------------------------------------------ photos
@@ -559,14 +725,30 @@
         log: log,
         count: count,
         setCounter: setCounter,
+        fact: fact,
         selectedListing: selected,
+        sinceLaunch: function () {
+            return state.launchStartedAt === null ? null : Math.round(now() - state.launchStartedAt);
+        },
         addControl: function (el) { $('vd-provider-controls').appendChild(el); },
         reshow: function () {
             var listing = selected();
 
-            if (listing && state.provider) {
-                showInProvider(listing);
+            if (listing && state.provider && !state.fatal) {
+                showInProvider(listing).catch(function () {});
             }
+        },
+        // The provider says stop: a rejected credential, or a refused second session.
+        fatal: function (reason) {
+            if (state.fatal) {
+                return;
+            }
+
+            state.fatal = reason;
+            log('STOPPED', reason);
+            setImageryStatus('none', reason);
+            lock(reason);
+            renderSign(selected());
         },
         onSelect: function (id, via) {
             selectById(id, via, { move: false });
@@ -613,48 +795,18 @@
             }
 
             state.registered = provider;
-        }
+        },
+        // The launch button's handler, exposed so the browser specs can prove the
+        // lock holds even when the button's disabled state is bypassed.
+        launch: launch
     };
 
     // ------------------------------------------------------------ start
 
-    function startProvider() {
-        var provider = state.registered;
-        var first = state.walk[0].id;
-
-        if (!provider) {
-            showFallback('No street-level provider registered on this page.');
-            selectById(first, 'initial', { move: false });
-
-            return;
-        }
-
-        setCounter('Provider', provider.id);
-
-        if (!cfg.credential) {
-            log('Provider not loaded', cfg.credentialName + ' is not configured — no request sent to ' + provider.id);
-            showFallback('Street-level imagery is unavailable because ' + cfg.credentialName
-                + ' is not configured. No request was sent to the provider.');
-            selectById(first, 'initial', { move: false });
-
-            return;
-        }
-
-        provider.load(cfg, hooks).then(function () {
-            provider.mount($('vd-street'));
-            state.provider = provider;
-            provider.setListings(knownList());
-            selectById(first, 'initial');
-        }, function (err) {
-            log('Provider failed to load', err.message);
-            showFallback('The ' + provider.id + ' street-level provider failed to load: ' + err.message);
-            selectById(first, 'initial', { move: false });
-        });
-    }
-
     function start() {
         $('vd-prev').addEventListener('click', function () { step(-1); });
         $('vd-next').addEventListener('click', function () { step(1); });
+        $('vd-launch').addEventListener('click', launch);
         $('vd-sign-cta').addEventListener('click', function () {
             var listing = selected();
 
@@ -665,6 +817,7 @@
             $('vd-card').scrollIntoView({ behavior: 'smooth' });
         });
         wireLightbox();
+        renderLaunch();
 
         fetchListings({ set: 'test' }).then(function (data) {
             state.walk = data.listings;
@@ -676,16 +829,42 @@
             }
 
             if (!state.walk.length) {
-                showFallback('No eligible test listings exist in the stored MLS data here.');
                 $('vd-card-body').textContent = 'No eligible listings.';
+                lock('No eligible test listings exist in the stored MLS data here.');
 
                 return;
             }
 
             remember(state.walk);
-            startProvider();
+
+            var requested = cfg.selectedListing && state.known[cfg.selectedListing] ? cfg.selectedListing : null;
+
+            if (cfg.selectedListing && !requested) {
+                log('Requested listing is not in the test set', cfg.selectedListing);
+            }
+
+            selectById(requested || state.walk[0].id, requested ? 'link' : 'initial');
+
+            if (!state.registered) {
+                lock('No street-level provider is registered on this page.');
+
+                return;
+            }
+
+            setCounter('Provider', state.registered.id);
+
+            if (!cfg.credential) {
+                log('Provider not loaded', cfg.credentialName + ' is not configured — no request sent to ' + state.registered.id);
+                lock('Street-level imagery is unavailable because ' + cfg.credentialName
+                    + ' is not configured. No request was sent to the provider.');
+
+                return;
+            }
+
+            state.launch = 'idle';
+            renderLaunch();
         }).catch(function (err) {
-            showFallback('Listing data could not be loaded (' + err.message + ').');
+            lock('Listing data could not be loaded (' + err.message + ').');
         });
     }
 

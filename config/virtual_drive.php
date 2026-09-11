@@ -62,6 +62,8 @@ return [
     |   2. FOR RENT  condominium, same complex, 145 m from (1)
     |   3. FOR RENT  single-family house, Manasota Key Road, Englewood
     |   4. FOR RENT  single-family house next door to (3), 33 m apart
+    |   5. FOR RENT  condominium, Siesta Bayside Drive, Sarasota — the
+    |                shared-coordinate test (see below)
     |
     | (3) and (4) are the "which house?" test: two adjacent homes whose signs
     | must not be confused. A key that is missing or ineligible where the proof
@@ -69,8 +71,19 @@ return [
     */
     'test_listing_keys' => array_values(array_filter(array_map('trim', explode(',', (string) env(
         'VIRTUAL_DRIVE_TEST_LISTING_KEYS',
-        'b138f872adb144eb49ba30da22d19829,f238599a97693d7d73868369bcd1d9d9,c1382a833198014114a52e2e737905ad,2f2ae217f92b0696f73f0e68e51bbb87'
+        'b138f872adb144eb49ba30da22d19829,f238599a97693d7d73868369bcd1d9d9,c1382a833198014114a52e2e737905ad,2f2ae217f92b0696f73f0e68e51bbb87,bfba16667d0ef3b5323c5d5269b82f9e'
     ))))),
+
+    /*
+    | The shared-coordinate (condo) test. None of the four homes above shares a
+    | coordinate with another listing, so none of them can show what happens
+    | when several units sit on one point. This unit can: in stored data 31
+    | active Siesta Bayside Drive rentals share one identical coordinate and 5
+    | more sit about a metre away. The nearby query around it brings them in.
+    | Identified here so the comparison page can label it; it is still a real,
+    | eligible stored listing like the other four.
+    */
+    'shared_coordinate_listing_key' => env('VIRTUAL_DRIVE_SHARED_COORDINATE_LISTING_KEY', 'bfba16667d0ef3b5323c5d5269b82f9e'),
 
     /*
     | The nearby query a camera move may trigger — against OUR stored rows only.

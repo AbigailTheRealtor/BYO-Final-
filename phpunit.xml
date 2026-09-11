@@ -57,6 +57,16 @@
         <server name="GOOGLE_PLACES_DAILY_LIMIT" value="100" force="true"/>
         <server name="GOOGLE_PLACES_HOURLY_LIMIT" value="25" force="true"/>
 
+        <!-- Virtual Drive proof credentials (dev-only proof; see
+             docs/virtual-drive-provider-audit-2026-09-11.md). A Street View browser
+             key can start a billable session, so it is blanked — and the proof
+             switched off — in every test run, force="true" for the same reason as
+             above. The browser specs use a fake Maps API and never need a key.
+             Asserted by tests/Feature/VirtualDrive/VirtualDriveCredentialTestEnvGuardTest.php. -->
+        <server name="VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY" value="" force="true"/>
+        <server name="VIRTUAL_DRIVE_MAPKIT_JS_TOKEN" value="" force="true"/>
+        <server name="VIRTUAL_DRIVE_PROOF_ENABLED" value="false" force="true"/>
+
         <!-- Bridge/Stellar safeguards. SAME FAILURE MODE, SAME FIX.
 
              Replit injects BRIDGE_DATASET and BRIDGE_SERVER_TOKEN as system

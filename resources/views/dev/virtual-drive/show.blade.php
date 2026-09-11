@@ -7,14 +7,17 @@
     (§3.2.3(e)) forbid Street View imagery and a non-Google map on the same
     screen, so the providers are two pages and neither includes MapLibre.
 
+    NOTHING STREET-LEVEL LOADS UNTIL THE LAUNCH BUTTON IS PRESSED. The page,
+    the listing card, the photos and the nearby list all work before that; the
+    provider library is requested only by the shell's launch(), from one
+    deliberate click, and the button locks on that click.
+
     NO LISTING DATA IS RENDERED HERE. Everything about a property arrives from
     dev.virtual-drive.api.listings, which reads stored MLS rows through
     Explore's eligibility policy and projection allow-list.
 
     The provider credential is written into the page only when it is
-    configured, and this route only answers when VirtualDriveProofGate allows
-    it. With no credential the provider library is never loaded and no request
-    reaches Apple or Google.
+    configured, and this route only answers when VirtualDriveProofGate allows it.
 --}}
 <!DOCTYPE html>
 <html lang="en">
@@ -33,7 +36,9 @@
      data-library-url="{{ $libraryUrl ?? '' }}"
      data-api-version="{{ $apiVersion ?? '' }}"
      data-listings-endpoint="{{ route('dev.virtual-drive.api.listings') }}"
-     data-nearby-radius="{{ $nearbyRadius }}">
+     data-nearby-radius="{{ $nearbyRadius }}"
+     data-selected-listing="{{ $selectedListing }}"
+     data-launch-label="{{ $launchLabel }}">
 
     <header class="vd-topbar">
         <div class="vd-topbar-title">
@@ -41,6 +46,7 @@
             <strong>{{ $providerLabel }}</strong>
         </div>
         <nav class="vd-provider-nav" aria-label="Street-level provider">
+            <a href="{{ route('dev.virtual-drive.compare') }}">Comparison</a>
             <a href="{{ route('dev.virtual-drive.apple') }}" class="{{ $provider === 'apple' ? 'is-active' : '' }}">Apple Look Around</a>
             <a href="{{ route('dev.virtual-drive.google') }}" class="{{ $provider === 'google' ? 'is-active' : '' }}">Google Street View</a>
         </nav>
@@ -48,6 +54,14 @@
 
     <main class="vd-stage">
         <div class="vd-street" id="vd-street" aria-label="Street-level imagery"></div>
+
+        {{-- The billing boundary. Nothing street-level exists until this is pressed. --}}
+        <div class="vd-launch-panel" id="vd-launch-panel">
+            <p class="vd-launch-home" id="vd-launch-home"></p>
+            <button type="button" class="vd-launch" id="vd-launch" disabled>Loading listings…</button>
+            <p class="vd-launch-note" id="vd-launch-note">{{ $launchNote }}</p>
+            <p class="vd-launch-fallback">Listings stay fully usable without street-level imagery: pick a home and open it normally.</p>
+        </div>
 
         {{-- Screen-fixed sign. Shown only for a provider that cannot pin a marker
              to a coordinate, and captioned so nobody mistakes it for one that can. --}}
@@ -79,6 +93,7 @@
             <ol id="vd-nearby"></ol>
         </div>
         <p class="vd-attribution" id="vd-attribution"></p>
+        <section class="vd-observations" id="vd-observations" data-mode="sheet" aria-label="Observation sheet"></section>
     </section>
 
     <aside class="vd-log" aria-label="Instrumentation">
@@ -99,6 +114,7 @@
 </div>
 
 <script src="{{ asset('js/virtual-drive/virtual-drive-shell.js') }}"></script>
+<script src="{{ asset('js/virtual-drive/virtual-drive-observations.js') }}"></script>
 <script src="{{ asset('js/virtual-drive/' . $providerScript) }}"></script>
 </body>
 </html>

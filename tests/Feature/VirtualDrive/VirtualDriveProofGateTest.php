@@ -16,6 +16,7 @@ class VirtualDriveProofGateTest extends TestCase
     use MakesExploreListings;
 
     private const ROUTES = [
+        '/dev/virtual-drive',
         '/dev/virtual-drive/apple',
         '/dev/virtual-drive/google',
         '/dev/virtual-drive/api/listings?set=test',
@@ -41,6 +42,7 @@ class VirtualDriveProofGateTest extends TestCase
     {
         config(['virtual_drive.proof_enabled' => true]);
 
+        $this->get('/dev/virtual-drive')->assertOk();
         $this->get('/dev/virtual-drive/apple')->assertOk();
         $this->get('/dev/virtual-drive/google')->assertOk();
         $this->getJson('/dev/virtual-drive/api/listings?set=test')->assertOk();
@@ -89,8 +91,40 @@ class VirtualDriveProofGateTest extends TestCase
         }
     }
 
+    /**
+     * The comparison page is where someone chooses a provider, so it must be
+     * incapable of starting either one.
+     *
+     * @test
+     */
+    public function the_comparison_page_loads_neither_provider_and_emits_no_credential(): void
+    {
+        config([
+            'virtual_drive.proof_enabled'      => true,
+            'virtual_drive.apple.mapkit_token' => 'APPLE-TOKEN-SENTINEL',
+            'virtual_drive.google.browser_key' => 'GOOGLE-KEY-SENTINEL',
+        ]);
+
+        $page = $this->get('/dev/virtual-drive')->assertOk()->getContent();
+
+        foreach ([
+            'apple-lookaround-provider.js',
+            'google-streetview-provider.js',
+            'virtual-drive-shell.js',
+            'maps.googleapis.com',
+            'apple-mapkit',
+            'APPLE-TOKEN-SENTINEL',
+            'GOOGLE-KEY-SENTINEL',
+            'data-credential',
+        ] as $absent) {
+            $this->assertStringNotContainsString($absent, $page);
+        }
+
+        $this->assertStringContainsString('js/virtual-drive/virtual-drive-compare.js', $page);
+    }
+
     /** @test */
-    public function each_page_loads_exactly_one_provider_and_never_the_other(): void
+    public function each_provider_page_loads_exactly_one_provider_and_never_the_other(): void
     {
         config(['virtual_drive.proof_enabled' => true]);
 
@@ -110,6 +144,39 @@ class VirtualDriveProofGateTest extends TestCase
             $this->assertStringNotContainsString('maplibre', strtolower($page));
             $this->assertStringNotContainsString('js/app.js', $page);
         }
+    }
+
+    /**
+     * The launch button is the billing boundary, and it ships disabled: the
+     * shell enables it only once the listings have loaded and a credential exists.
+     *
+     * @test
+     */
+    public function each_provider_page_renders_its_launch_button_disabled(): void
+    {
+        config(['virtual_drive.proof_enabled' => true]);
+
+        $this->get('/dev/virtual-drive/google')
+            ->assertSee('id="vd-launch" disabled', false)
+            ->assertSee('data-launch-label="Drive with Google"', false)
+            ->assertSee('Google bills');
+
+        $this->get('/dev/virtual-drive/apple')
+            ->assertSee('id="vd-launch" disabled', false)
+            ->assertSee('data-launch-label="Open Look Around"', false);
+    }
+
+    /** @test */
+    public function a_listing_link_preselects_a_home_and_anything_else_is_dropped(): void
+    {
+        config(['virtual_drive.proof_enabled' => true]);
+
+        $this->get('/dev/virtual-drive/google?listing=b138f872adb144eb49ba30da22d19829')
+            ->assertSee('data-selected-listing="b138f872adb144eb49ba30da22d19829"', false);
+
+        $this->get('/dev/virtual-drive/google?listing=' . urlencode('"><script>alert(1)</script>'))
+            ->assertSee('data-selected-listing=""', false)
+            ->assertDontSee('<script>alert(1)</script>', false);
     }
 
     /** @test */

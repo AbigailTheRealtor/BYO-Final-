@@ -1,8 +1,9 @@
 /*
  * Apple Look Around provider — MapKit JS, documented API only.
  *
- * INTERNAL, DEVELOPMENT ONLY. Loaded only by the Apple proof page, and only
- * when VIRTUAL_DRIVE_MAPKIT_JS_TOKEN is configured.
+ * INTERNAL, DEVELOPMENT ONLY. Loaded only by the Apple proof page, and it does
+ * nothing at all until the shell's launch() calls load() — which happens only
+ * after a deliberate press of "Open Look Around".
  *
  * THE DOCUMENTED SURFACE THIS FILE USES — AND NOTHING ELSE
  * --------------------------------------------------------
@@ -45,6 +46,17 @@
     'use strict';
 
     var CALLBACK = '__virtualDriveMapkitReady';
+
+    var diagnostics = window.VirtualDriveDiagnostics = window.VirtualDriveDiagnostics || {};
+    var diag = diagnostics.apple = {
+        libraryRequested: 0,          // <script> tags added for MapKit JS
+        adoptedExistingApi: false,    // a MapKit JS already on the page was used instead
+        inits: 0,
+        lookAroundConstructions: 0,
+        destroys: 0,
+        serviceCalls: 0
+    };
+
     var loadPromise = null;
     var hooks = null;
     var element = null;
@@ -53,13 +65,25 @@
     var generation = 0;
     var mode = 'coordinate';
 
-    // Latched: one script tag per page, and a failed load stays failed.
+    function now() {
+        return window.performance && performance.now ? performance.now() : Date.now();
+    }
+
+    // Latched: one request per page, and a failed load stays failed.
     function loadLibrary(cfg) {
         if (loadPromise) {
             return loadPromise;
         }
 
         loadPromise = new Promise(function (resolve, reject) {
+            // A MapKit JS already on the page is adopted, never loaded a second time.
+            if (window.mapkit && typeof window.mapkit.LookAround === 'function') {
+                diag.adoptedExistingApi = true;
+                resolve();
+
+                return;
+            }
+
             // Called when the libraries finish loading, or with an error when they fail.
             window[CALLBACK] = function (error) {
                 if (error) {
@@ -79,13 +103,21 @@
             script.setAttribute('data-callback', CALLBACK);
             script.setAttribute('data-libraries', 'look-around,services');
             script.onerror = function () { reject(new Error('the MapKit JS script could not be loaded')); };
+            diag.libraryRequested++;
             document.head.appendChild(script);
         }).then(function () {
             mapkit.addEventListener('error', function (event) {
-                hooks.log('MapKit error', String((event && event.status) || 'unknown'));
+                var status = String((event && event.status) || 'unknown');
+
+                hooks.log('MapKit error', status);
+
+                if (status === 'Unauthorized') {
+                    hooks.fatal('Apple rejected the MapKit JS token (Unauthorized). Nothing will be retried.');
+                }
             });
 
             mapkit.init({ authorizationCallback: function (done) { done(cfg.credential); } });
+            diag.inits++;
             hooks.count('mapkit.init');
         });
 
@@ -102,7 +134,7 @@
     // `scene` is documented as the Look Around scene the framework is
     // displaying. A change of identity is the only documented signal that the
     // view moved — it says THAT it moved, never WHERE to. Whether it changes on
-    // every step is unverified until a credentialed run; the log records it.
+    // every step is for the credentialed run to show; the log records it.
     function watchScene() {
         var baseline = lookAround ? lookAround.scene : null;
 
@@ -130,6 +162,7 @@
         if (lookAround) {
             lookAround.destroy();
             lookAround = null;
+            diag.destroys++;
             hooks.count('LookAround destroyed');
         }
     }
@@ -137,15 +170,14 @@
     function placeFor(listing) {
         var geocoder = new mapkit.Geocoder();
 
+        diag.serviceCalls++;
         hooks.count('Apple service calls (Geocoder.reverseLookup)');
 
         return geocoder.reverseLookup(new mapkit.Coordinate(listing.latitude, listing.longitude)).then(function (response) {
             var place = response && response.results && response.results.length ? response.results[0] : null;
+            var resolved = place ? (place.formattedAddress || place.name || 'an unnamed place') : 'no Place returned';
 
-            hooks.log('Apple reverse lookup', place
-                ? 'Apple resolved "' + (place.formattedAddress || place.name || 'an unnamed place') + '" for MLS "'
-                    + (listing.address || 'address withheld') + '"'
-                : 'no Place returned — using the MLS coordinate');
+            hooks.fact(listing.id, 'Apple Place resolved for the MLS coordinate', resolved);
 
             return place;
         }, function (error) {
@@ -186,7 +218,9 @@
             var label = document.createElement('label');
             var select = document.createElement('select');
 
+            select.id = 'vd-apple-start-mode';
             label.className = 'vd-control';
+            label.htmlFor = select.id;
             label.appendChild(document.createTextNode('Open Look Around from '));
 
             [['coordinate', 'the MLS coordinate (no service call)'], ['place', 'an Apple Place (1 reverse-lookup call)']]
@@ -220,6 +254,7 @@
 
         show: function (listing) {
             var mine = ++generation;
+            var startedAt = now();
 
             destroyCurrent();
 
@@ -227,6 +262,8 @@
                 if (mine !== generation) {
                     return { superseded: true, coverage: false, note: '' };
                 }
+
+                hooks.fact(listing.id, 'Apple start mode', location.label);
 
                 return new Promise(function (resolve) {
                     var settled = false;
@@ -248,6 +285,7 @@
                         showsPointsOfInterest: false,
                         showsRoadLabels: true
                     });
+                    diag.lookAroundConstructions++;
                     hooks.count('LookAround objects constructed');
 
                     lookAround.addEventListener('readystatechange', function () {
@@ -259,6 +297,8 @@
                     lookAround.addEventListener('load', function () {
                         if (mine === generation) {
                             watchScene();
+                            hooks.fact(listing.id, 'Apple coverage', 'yes');
+                            hooks.fact(listing.id, 'Apple time to imagery', Math.round(now() - startedAt) + ' ms');
                         }
 
                         settle({
@@ -268,6 +308,10 @@
                     });
 
                     lookAround.addEventListener('error', function (event) {
+                        if (mine === generation) {
+                            hooks.fact(listing.id, 'Apple coverage', 'no (' + ((event && event.type) || 'error') + ')');
+                        }
+
                         settle({
                             coverage: false,
                             note: 'Look Around could not open from ' + location.label

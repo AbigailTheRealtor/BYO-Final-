@@ -456,6 +456,115 @@ Before building it for users:
 4. **Afterwards, check the Google Cloud billing report** to confirm the per-instantiation
    charging.
 
+## 14. Phase 2 — guarded comparison harness (live run blocked on credentials)
+
+**Status:**
+
+- The comparison harness and its Google billing guard are built and proven against fakes.
+- **The live, credentialed session has not run.** Neither `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY`
+  nor `VIRTUAL_DRIVE_MAPKIT_JS_TOKEN` exists in this environment, and creating them needs a
+  Google Cloud project and an Apple Developer account.
+- **This audit has made no request to Google or Apple.** The only exception is the one-time,
+  credential-free download of Apple's public MapKit JS library for §5 (no `init`, no map view).
+
+### What changed
+
+- **Comparison page — `/dev/virtual-drive`:**
+  - Lists the same stored homes with **Test Apple** / **Test Google** links.
+  - Includes no provider script and emits no credential (a test asserts both).
+  - A link only preselects a home (`?listing=`); it never launches anything.
+- **A launch button on each provider page is the billing boundary:**
+  - Before the press: the listing card, photos, tour, nearby list and Previous / Next all work,
+    and the provider library is not even requested.
+  - `launch()` is the only caller of `provider.load()`, and nothing calls `launch()` except that
+    button (a source test pins it).
+  - The button locks on the first press: `loading → idle → opening → open`, with branches to
+    `retry` (no imagery; press again) or `locked`.
+  - Nothing retries by itself. A library that failed to load is never requested again, and a
+    rejected key (`gm_authFailure`, or MapKit `Unauthorized`) locks the page.
+  - The URL carries the selected home but never a launch, so a reload cannot start a session.
+- **Google has a hard ceiling of one panorama:** `MAX_PANORAMAS_PER_PAGE = 1`.
+  - `constructPanorama()` is the single construction site. It **refuses** a second construction
+    and stops the page with a STOP message; it never performs one.
+  - Every home change, rotation, walk, marker click and card action reuses the one panorama
+    through `setPano()` / `setPov()`.
+  - `window.VirtualDriveDiagnostics.google` exposes the counts: library requests,
+    `importLibrary` calls, constructions, refusals, lookups and `setPano` moves.
+- **Providers adopt an API already on the page instead of loading a second one.** Explore's
+  loader has the same rule, and it is what lets the specs substitute fakes without a test-only
+  switch in the code under test.
+- **A fifth real test home for the condo problem:** 1226 Siesta Bayside Dr #1226-C, FOR RENT,
+  $9,300/mo.
+  - In stored data, 31 active units share one identical coordinate and 5 more sit about 1 m away.
+  - LIVE: the nearby query around it returns **12 listings on only 2 distinct points** (7 + 5),
+    at the proof's 12-result cap. None of the original four shares a coordinate.
+- **Observation sheet on each provider page:**
+  - The same checklist on both providers, per home.
+  - Measured values fill in automatically: coverage, panorama distance from the MLS coordinate,
+    Google `imageDate`, time to imagery, and the Apple Place resolved in Place mode.
+  - Stored in the browser only. **Copy results** produces one Markdown export covering both
+    providers.
+- **Credentials can't reach tests:** both are blanked, and the proof switched off, in `phpunit.xml`
+  (`force="true"`) and in `tests/bootstrap.php` across `getenv()`, `$_SERVER` and `$_ENV`.
+  `VirtualDriveCredentialTestEnvGuardTest` asserts it.
+- **CI:** `browser-tests.yml` now also runs on changes to `public/js/virtual-drive/**`.
+
+### Guard verification — real shell and provider scripts, fake APIs, network aborted
+
+The fakes count their own constructor calls and the provider keeps separate counters; every spec
+checks both. `installNetworkGuard` aborts off-origin requests, and every spec asserts that no
+Google or Apple request was attempted.
+
+| Scenario | Required | Observed |
+|---|---|---|
+| Open the page, browse homes, open cards, photos and tours, hover the button | 0 panoramas, 0 library requests | 0 / 0 ✓ |
+| Double-click plus 10 direct `launch()` calls while opening and after | 1 panorama, 1 launch | 1 / 1 ✓ |
+| Rotate 90°+90°+180°, walk forward and back, travel ~200 m, 6 home changes, marker clicks, photos, tour, "Face the home", a URL change | still 1 | 1, with ≥ 5 `setPano` moves ✓ |
+| Each marker sits at its listing's MLS coordinate and opens only that listing | all | all 7 ✓ — the 33 m neighbours are 2 points; the 3 condo units stack on 1 |
+| No coverage | no automatic retry | 2 lookups, then nothing for 1.5 s; a deliberate press → 2 more, 0 panoramas ✓ |
+| Rejected key | page locks, no retry | locked, 0 panoramas ✓ |
+| First construction throws, then a deliberate retry | second construction refused | refused, STOP logged, constructor called once ✓ |
+| Reload after a session | no launch | 0 ✓ |
+| Apple: before the press, on launch, on the next home | 0, then 1 `init` + 1 Look Around, then destroy + 1 new | as required; sign captioned "Screen-fixed" ✓ |
+
+### Google APIs the proof actually requires
+
+- **Maps JavaScript API — the only API to enable, and the only one the key should allow.**
+  - The proof uses its `streetView`, `marker`, `geometry` and `core` libraries, all part of that
+    API.
+  - Expected billable SKU: **Dynamic Street View**, one per panorama object.
+  - `StreetViewService.getPanorama` lookups are metadata. They are not listed as a separate
+    Maps JavaScript API SKU in the table I retrieved; confirm this in the billing report.
+- **Not used:** Places, Geocoding, Map Tiles, Street View Static, Routes, and Dynamic Maps (no
+  `google.maps.Map` is created).
+
+### Running the one live session
+
+1. **Credentials (you):**
+   - A **new** Google browser key, restricted to the dev origin that serves the proof (HTTP
+     referrer) and to the **Maps JavaScript API** only, with a low daily quota on that API.
+   - A MapKit JS token restricted to the same origin.
+   - Add both as Replit Secrets named `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY` and
+     `VIRTUAL_DRIVE_MAPKIT_JS_TOKEN`. Don't change any production key.
+   - Test runs blank both automatically.
+2. **Billing baseline:** before launching, note the Maps JavaScript API request count and the
+   Billing report for SKU *Dynamic Street View* (Cloud console), with the time.
+3. **Serve:** from the worktree, run `bash scripts/dev/virtual-drive-proof-serve.sh`.
+   - It uses a read-only database session and never prints the credentials.
+   - Open `/dev/virtual-drive` on that dev origin.
+4. **Google — press "Drive with Google" once:**
+   - Do the whole checklist inside that one session: all five homes via Next / Previous,
+     markers, rotation, walking, ~200 m of travel, the condo stack.
+   - **The Instrumentation panel must read "StreetViewPanorama constructions: 1" throughout.**
+   - If it reads 2, or the log shows STOP, stop and report.
+   - Don't reload and press again. A reload doesn't launch, but pressing launch on the reloaded
+     page starts a new, separately billed session — the ceiling is per page load.
+5. **Apple:** the same checklist, in both start modes (MLS coordinate, then Apple Place).
+6. **Wrap up:**
+   - Press **Copy results**, paste the export back, and stop the server.
+   - Re-check the billing report once it has caught up; that can take hours. Expected: 1 Dynamic
+     Street View load for the one launch.
+
 ## Files
 
 - **Created:**

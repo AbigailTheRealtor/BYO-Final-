@@ -33,6 +33,14 @@ $byoBlankedCredentials = [
     'GOOGLE_PLACES_API_KEY' => '',
     'GOOGLE_PLACES_ENABLED' => 'false',
 
+    // Virtual Drive proof: a Street View browser key can start a billable session
+    // and a MapKit JS token spends Apple quota, so both are blanked — and the proof
+    // switched off — across all three lookup surfaces in every test run. The
+    // browser specs use fakes; nothing in the suite may hold either credential.
+    'VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY' => '',
+    'VIRTUAL_DRIVE_MAPKIT_JS_TOKEN'         => '',
+    'VIRTUAL_DRIVE_PROOF_ENABLED'           => 'false',
+
     // ── TEST DATABASE IDENTITY ───────────────────────────────────────────────
     //
     // `DATABASE_URL` is the whole ballgame, and it is why every previous attempt

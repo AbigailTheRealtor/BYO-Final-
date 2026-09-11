@@ -1379,7 +1379,8 @@ Route::middleware(['auth', 'offerPlayoffAccess'])->group(function () {
 // MLS rows only and sends no Bridge request; see config/virtual_drive.php.
 // ===========================================================================
 Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev.virtual-drive.')->group(function () {
-    Route::get('/apple', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'apple'])->name('apple');
+    Route::get('/', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'compare'])->name('compare');
+    Route::get('/apple',[\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'apple'])->name('apple');
     Route::get('/google', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'google'])->name('google');
     Route::get('/api/listings', [\App\Http\Controllers\Dev\VirtualDriveListingController::class, 'index'])
         ->middleware('throttle:60,1')
