@@ -66,7 +66,7 @@
     };
     $row = function($label, $value) {
         if ($value === null || $value === '' || $value === false) return '';
-        return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7" style="overflow-wrap:break-word;word-break:break-word;">' . e($value) . '</div></div>';
+        return '<div class="tcl-field"><i class="fa-regular fa-square-check" aria-hidden="true"></i> <strong>' . e($label) . ':</strong> <span class="tcl-field-value">' . e($value) . '</span></div>';
     };
     $ifFilled = fn($v) => ($v !== null && $v !== '' && $v !== false && !(is_array($v) && count($v) === 0));
     $joinParts = function($parts) {
@@ -98,6 +98,7 @@
 @endphp
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
 <style>
 /* ============================================================
    Design tokens — shared across all offer-listing view pages
@@ -415,11 +416,78 @@
     border-color: #1d4ed8 !important;
     color: #ffffff !important;
 }
+/* ============================================================
+   Criteria page family — this page uses the Buyer/Tenant Criteria frame:
+   `container listingDescription`, an 8/4 two-column row, the Search Areas
+   component and one description card on the left, title + actions on the right.
+   ============================================================ */
+.tcl-view-page .tcl-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem;
+}
+.tcl-view-page .tcl-toolbar-meta { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; font-size: .85rem; color: #64748b; }
+.tcl-view-page .tcl-crit-section + .tcl-crit-section { border-top: 1px solid #e5e7eb; margin-top: 1rem; }
+.tcl-view-page .tcl-crit-title {
+    color: #0f172a !important; font-weight: 700 !important; font-size: 1.15rem;
+    margin: .9rem 0 .35rem;
+}
+.tcl-view-page .tcl-crit-section:first-child .tcl-crit-title { margin-top: .25rem; }
+.tcl-view-page .tcl-field {
+    border-bottom: 1px solid #e5e7eb; padding: .45rem 0;
+    color: #111827; font-weight: 600; font-size: .95rem; line-height: 1.6;
+    overflow-wrap: break-word; word-break: break-word;
+}
+.tcl-view-page .tcl-field strong { color: #64748b; font-weight: 500; }
+.tcl-view-page .tcl-field .fa-square-check { color: #049399; margin-right: .15rem; }
+.tcl-view-page .tcl-crit-body .field-label { color: #64748b; font-weight: 500; font-size: .95rem; }
+.tcl-view-page .tcl-crit-body .field-value { color: #111827; font-weight: 600; font-size: .95rem; }
+.tcl-view-page .tcl-crit-body h6 { margin-top: .9rem; }
+.tcl-view-page .tcl-crit-body hr { margin: .75rem 0; }
+
+.tcl-view-page .tcl-photos { height: 340px; border-radius: .5rem; overflow: hidden; margin-bottom: 1.25rem; }
+.tcl-view-page .tcl-photos .tcl-hero-carousel-wrap { height: 100%; min-height: 0; }
+
+.tcl-view-page .rightCol h1 {
+    font-size: 1.6rem; font-weight: 700; color: #0f172a; line-height: 1.25;
+    word-break: break-word; margin-bottom: .35rem;
+}
+.tcl-view-page .tcl-right-sub { color: #64748b; font-size: .9rem; margin-bottom: 0; }
+.tcl-view-page .tcl-timer { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; font-size: .85rem; color: #64748b; margin-bottom: .75rem; }
+.tcl-view-page .tcl-price { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .75rem; }
+.tcl-view-page .tcl-price-label { font-size: .78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.tcl-view-page .tcl-price-value { font-size: 1.5rem; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
+.tcl-view-page .rightCol .tcl-actions { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.5rem; }
+.tcl-view-page .rightCol .tcl-actions form { margin: 0; }
+.tcl-view-page .rightCol .tcl-actions .btn {
+    width: 100% !important; margin: 0 !important; padding: .55rem .75rem !important;
+    font-weight: 600; display: flex; align-items: center; justify-content: center; gap: .45rem; border-radius: 5px;
+}
+.tcl-view-page .rightCol .tcl-actions .tcl-act-primary { background: #049399 !important; border: 1px solid #049399 !important; color: #fff !important; }
+.tcl-view-page .rightCol .tcl-actions .tcl-act-primary:hover { background: #037c81 !important; }
+.tcl-view-page .rightCol .tcl-actions .tcl-act-outline { background: #fff !important; border: 1px solid #cbd5e1 !important; color: #334155 !important; }
+.tcl-view-page .rightCol .tcl-actions .tcl-act-outline:hover { background: #f8fafc !important; }
+/* The compiled Tailwind preflight clears [type='button'] backgrounds, which leaves a bare
+   .btn-success white-on-white; the Criteria "Send Message" green is restated here. */
+.tcl-view-page .rightCol .tcl-actions .btn-success { background: #198754 !important; border: 1px solid #198754 !important; color: #fff !important; }
+.tcl-view-page .rightCol .tcl-actions .btn-success:hover { background: #157347 !important; }
+.tcl-view-page .rightCol .tcl-summary ul { padding: 0; margin: 0; }
+.tcl-view-page .rightCol .tcl-summary li { gap: .75rem; font-size: .9rem; }
+.tcl-view-page .rightCol .tcl-summary li span:last-child { text-align: right; color: #334155; word-break: break-word; }
+.tcl-view-page .rightCol .tcl-summary-badges { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .25rem; }
+.tcl-view-page .rightCol .tcl-standout {
+    margin-top: .75rem; padding: .6rem .8rem; border-radius: 6px;
+    background: #f0fdfa; border: 1px solid #99f6e4; color: #134e4a; font-size: .85rem;
+}
+.tcl-view-page .rightCol .tcl-standout-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #0f766e; }
+.tcl-view-page .rightCol .tcl-share .qr-code { text-align: center; }
+.tcl-view-page .rightCol .tcl-share .qr-code svg { width: 180px !important; height: 180px !important; }
+.tcl-view-page .rightCol .tcl-share .field button { margin: 0 !important; padding: 4px 10px !important; min-width: 60px; width: auto !important; white-space: nowrap; }
+.tcl-view-page .rightCol .tcl-share .tcl-native-share { margin: .75rem 0 0 !important; padding: .4rem .75rem !important; }
 </style>
 @endpush
 
 @section('content')
-<div class="container py-4 tcl-view-page">
+<div class="container listingDescription tcl-view-page">
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -429,6 +497,8 @@
     @endif
 
     @php
+        /* Owner = the listing's own account; a guest's null id never matches. */
+        $tclViewerIsOwner = auth()->check() && (int) auth()->id() === (int) $ownerId;
         $listingTitle = $str('listing_title') ?: ($auction->title ?: 'Tenant Criteria Listing #' . $auction->id);
         $heroStatus   = $str('listing_status') ?: $auction->status ?: null;
         $heroListDate = $fmtDate($str('listing_date'));
@@ -468,32 +538,13 @@
             ['show' => in_array('Lease Purchase', $ofFin),              'label' => 'Lease Purchase',    'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
             ['show' => in_array('Cryptocurrency', $ofFin),              'label' => 'Crypto OK',         'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber',  'strong' => false],
             ['show' => (bool)$heroPropType,                             'label' => $heroPropType,        'icon' => 'fa-solid fa-tag',                 'color' => 'blue',   'strong' => false],
-            ['show' => $str('prior_eviction') === 'No',                 'label' => 'No Evictions',      'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
-            ['show' => $str('prior_felony') === 'No',                   'label' => 'No Prior Felony',   'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
+            ['show' => $tclViewerIsOwner && $str('prior_eviction') === 'No',                 'label' => 'No Evictions',      'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
+            ['show' => $tclViewerIsOwner && $str('prior_felony') === 'No',                   'label' => 'No Prior Felony',   'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => true],
             ['show' => (bool)$heroStatus,                               'label' => $heroStatus,          'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => false],
         ], fn($b) => $b['show']));
         $heroBadgesDisplay = array_slice($heroBadges, 0, 5);
     @endphp
 
-    {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-        <div>
-            <h2 class="mb-1 fw-bold" style="color:#1e293b;">{{ $listingTitle }}</h2>
-            @if($heroLocation)
-                <p class="text-muted mb-0"><i class="fa-solid fa-location-dot me-1"></i>{{ $heroLocation }}</p>
-            @endif
-        </div>
-        @if(auth()->id() == $ownerId)
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}"
-               class="btn btn-outline-primary">
-                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
-            </a>
-        </div>
-        @endif
-    </div>
-
-    {{-- ===== HERO SECTION ===== --}}
     @php
         /* Hero photos: decode property_photos JSON array, fallback to photo meta */
         $tclPropertyPhotos = $meta['property_photos'] ?? [];
@@ -533,11 +584,48 @@
         $bpClosed              = $bw->isClosed();
         $_timerEnd             = $bpEndsAtDisplay;
     @endphp
-    <div class="tcl-hero mb-4">
-        <div class="row g-0" style="min-height:280px;">
-            <div class="col-lg-8">
-                <div class="tcl-hero-carousel-wrap">
+    @php
+                        $tclStandoutParts = array_values(array_map(
+                            fn($b) => $b['label'],
+                            array_filter($heroBadgesDisplay, fn($b) => !empty($b['strong']))
+                        ));
+    @endphp
+
+    <div class="row">
+        <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
+            {{-- Status and owner tools, in the same place as on the Criteria pages. --}}
+            <div class="tcl-toolbar">
+                <div class="tcl-toolbar-meta">
+                    @if($heroStatus)<span class="badge bg-primary">{{ $heroStatus }}</span>@endif
+                    <span><i class="fa-solid fa-magnifying-glass-location me-1"></i>Tenant Criteria Listing @if($heroPropType) &bull; {{ $heroPropType }} @endif</span>
+                </div>
+                @if($tclViewerIsOwner)
+                    <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}" class="btn btn-success btn-sm px-3">
+                        <i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing
+                    </a>
+                @endif
+            </div>
+
+            {{-- Search Areas & Location Preferences — inside the left column, as on the Criteria pages.
+                 Important Places are located only for the owner (controller decides). --}}
+            <x-location-dna-map
+                :preferences="$locationDnaPreferences ?? null"
+                :legacyLocation="$legacyLocation ?? []"
+                :importantPlaces="$importantPlaces ?? []"
+                :importantPlacesExact="$importantPlacesExact ?? false"
+                :showHeading="true"
+                :boundaryData="$boundaryData ?? null"
+                :floodZoneData="$floodZoneData ?? null"
+                :schoolDistrictData="$schoolDistrictData ?? null"
+            />
+            {{-- Calculated lines only: restating the client's own criteria is not intelligence. --}}
+            <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['calculated_lines'] ?? []" />
+
+            <div class="card description tcl-description">
+                <div class="card-body">
                     @if(count($tclHeroPhotoUrls))
+                    <div class="tcl-photos">
+                        <div class="tcl-hero-carousel-wrap">
                         <img id="tclHeroCarouselImg"
                              src="{{ $tclHeroPhotoUrls[$tclCoverPhotoIdx] }}"
                              alt="Tenant listing photo"
@@ -552,471 +640,33 @@
                         <button class="tcl-hero-arrow tcl-hero-arrow-next" id="tclHeroCarouselNext" aria-label="Next photo">&#8250;</button>
                         <div class="tcl-hero-carousel-counter" id="tclHeroCarouselCounter">{{ $tclCoverPhotoIdx + 1 }} / {{ count($tclHeroPhotoUrls) }}</div>
                         @endif
-                    @else
-                    @php
-                        $_tSnapRows = [];
-                        if ($heroPrice) $_tSnapRows[] = ['icon'=>'fa-solid fa-dollar-sign','label'=>'Rent Budget','val'=>$heroPrice.'/mo'];
-                        if ($heroLocation) $_tSnapRows[] = ['icon'=>'fa-solid fa-location-dot','label'=>'Location','val'=>$heroLocation];
-                        if ($heroPropType) $_tSnapRows[] = ['icon'=>'fa-solid fa-tag','label'=>'Property Type','val'=>$heroPropType];
-                        if ($heroBeds) $_tSnapRows[] = ['icon'=>'fa-solid fa-bed','label'=>'Min. Beds','val'=>$heroBeds];
-                        if ($heroBaths) $_tSnapRows[] = ['icon'=>'fa-solid fa-bath','label'=>'Min. Baths','val'=>$heroBaths];
-                        if ($heroHSqft) $_tSnapRows[] = ['icon'=>'fa-solid fa-ruler-combined','label'=>'Min. Sq Ft','val'=>number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)).' sq ft'];
-                        $_tMoveIn = $fmtDate($str('move_in_date_earliest'));
-                        if ($_tMoveIn) $_tSnapRows[] = ['icon'=>'fa-solid fa-calendar-days','label'=>'Move-In','val'=>$_tMoveIn];
-                        /*
-                         * Fair Housing P0-D — the hero snapshot is a SECOND render of the
-                         * same credit disclosure, and gating only the Pre-Screening card
-                         * below would have left this one public. Same owner-only rule.
-                         */
-                        $_tCredit = (auth()->check() && (int) auth()->id() === (int) $ownerId)
-                            ? $str('credit_score_range')
-                            : '';
-                        if ($_tCredit) $_tSnapRows[] = ['icon'=>'fa-solid fa-chart-line','label'=>'Credit Range','val'=>$_tCredit];
-                        $_tIncomeRaw = $str('monthly_income');
-                        if ($_tIncomeRaw) $_tSnapRows[] = ['icon'=>'fa-solid fa-wallet','label'=>'Mo. Income','val'=>$fmtMoney($_tIncomeRaw)];
-                        $_tLeaseArr = $arr('desired_lease_length');
-                        $_tLease = count($_tLeaseArr) ? implode(', ', array_slice($_tLeaseArr, 0, 2)) : ($str('tenant_desired_lease_length') ?: null);
-                        if ($_tLease) $_tSnapRows[] = ['icon'=>'fa-solid fa-file-signature','label'=>'Lease Pref.','val'=>$_tLease];
-                        if ($heroStatus) $_tSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
-                    @endphp
-                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:#ffffff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
-                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2563EB;font-weight:700;margin-bottom:.5rem;">Tenant Criteria Snapshot</div>
-                        @foreach($_tSnapRows as $_tsr)
-                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid #f1f5f9;">
-                            <i class="{{ $_tsr['icon'] }}" style="font-size:.68rem;color:#2563eb;min-width:13px;text-align:center;"></i>
-                            <span style="font-size:.7rem;color:#64748b;white-space:nowrap;">{{ $_tsr['label'] }}</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#0f172a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_tsr['val'] }}">{{ $_tsr['val'] }}</span>
                         </div>
-                        @endforeach
                     </div>
+                    <script>var _tclHeroPhotos={!! json_encode($tclHeroPhotoUrls) !!};var _tclHeroStartIdx={{ $tclCoverPhotoIdx }};</script>
                     @endif
-                </div>
-                <script>var _tclHeroPhotos={!! json_encode($tclHeroPhotoUrls) !!};var _tclHeroStartIdx={{ $tclCoverPhotoIdx }};</script>
-            </div>
-            <div class="col-lg-4">
-                <div class="tcl-hero-summary">
-                    @if($heroPrice)
-                        <div class="tcl-hero-price">{{ $heroPrice }}</div>
-                    @endif
-                    @if($heroLocation)
-                        <div class="tcl-hero-address"><i class="fa-solid fa-location-dot me-1" style="color:#0d9488;"></i>{{ $heroLocation }}</div>
-                    @endif
-
-                    <div class="tcl-hero-meta">
-                        @if($heroBeds)
-                            <span class="tcl-hero-meta-item"><i class="fa-solid fa-bed"></i>{{ $heroBeds }} Bed{{ $heroBeds != '1' ? 's' : '' }}</span>
-                        @endif
-                        @if($heroBaths)
-                            <span class="tcl-hero-meta-item"><i class="fa-solid fa-bath"></i>{{ $heroBaths }} Bath{{ $heroBaths != '1' ? 's' : '' }}</span>
-                        @endif
-                        @if($heroHSqft)
-                            <span class="tcl-hero-meta-item"><i class="fa-solid fa-ruler-combined"></i>{{ number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)) }} Sq Ft (min)</span>
-                        @endif
-                        @if($heroPropType)
-                            <span class="tcl-hero-meta-item"><i class="fa-solid fa-tag"></i>{{ $heroPropType }}</span>
-                        @endif
-                    </div>
-
-                    @if($heroStatus)
-                        <div>
-                            <span class="tcl-hero-status">
-                                <i class="fa-solid fa-circle-check"></i>{{ $heroStatus }}
-                            </span>
-                        </div>
-                    @endif
-
-                    @if($heroListDate || $heroUpdDate)
-                        <div class="tcl-hero-dates">
-                            @if($heroListDate)<span>Listed: {{ $heroListDate }}</span>@endif
-                            @if($heroListDate && $heroUpdDate)<span class="mx-1">·</span>@endif
-                            @if($heroUpdDate)<span>Updated: {{ $heroUpdDate }}</span>@endif
-                        </div>
-                    @endif
-
-                    <div class="tcl-hero-badges">
-                        @foreach ($heroBadgesDisplay as $b)
-                            <span class="tcl-badge tcl-badge-{{ $b['color'] }}"><i class="{{ $b['icon'] }}"></i> {{ $b['label'] }}</span>
-                        @endforeach
-                    </div>
-
-                    @php
-                        $tclStandoutParts = array_values(array_map(
-                            fn($b) => $b['label'],
-                            array_filter($heroBadgesDisplay, fn($b) => !empty($b['strong']))
-                        ));
-                    @endphp
-                    @if(count($tclStandoutParts) >= 2)
-                    <div style="margin-top:10px;padding:10px 14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;">
-                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#0d9488;margin-bottom:3px;">Why This Tenant Stands Out</div>
-                        @php
-                            $tSlice = array_slice($tclStandoutParts, 0, -1);
-                            $tLast  = end($tclStandoutParts);
-                        @endphp
-                        <div style="font-size:0.88rem;color:#134e4a;">{{ count($tclStandoutParts) > 1 ? implode(', ', $tSlice) . ' and ' . $tLast : $tLast }}.</div>
-                    </div>
-                    @endif
-
-                    @if($hasBPTimer)
-                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-muted fw-semibold" style="font-size:.8rem;"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
-                        @if($timerRemainingSeconds <= 0)
-                            <span class="badge bg-secondary" style="font-size:.8rem;">Expired</span>
-                        @else
-                            <span class="badge bg-info text-dark tcl-bp-timer"
-                                  data-seconds="{{ $timerRemainingSeconds }}"
-                                  style="font-size:.8rem;font-variant-numeric:tabular-nums;">
-                                @php
-                                    $_ts = $timerRemainingSeconds;
-                                    if ($_ts < 60) { echo $_ts . 's Remaining'; }
-                                    else {
-                                        $_td = intdiv($_ts, 86400); $_ts %= 86400;
-                                        $_th = intdiv($_ts, 3600);  $_ts %= 3600;
-                                        $_ti = intdiv($_ts, 60);
-                                        $_tp = [];
-                                        if ($_td) $_tp[] = $_td . 'd';
-                                        if ($_th) $_tp[] = $_th . 'h';
-                                        if ($_ti) $_tp[] = $_ti . 'm';
-                                        echo implode(' ', $_tp) . ' Remaining';
-                                    }
-                                @endphp
-                            </span>
-                        @endif
-                    </div>
-                    @endif
-
-                    <div class="tcl-hero-ctas">
-                        <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
-                            @csrf
-                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
-                            <input type="hidden" name="role" value="tenant">
-                            <input type="hidden" name="listing_type" value="tenant_criteria">
-                            <button type="submit" class="btn btn-primary respond-criteria-btn" aria-label="Respond to this Tenant Criteria listing">
-                                <i class="fa-solid fa-reply me-1"></i>Respond to Tenant Criteria
-                            </button>
-                        </form>
-                        @if(auth()->id() != $ownerId)
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tclQuestionModal" aria-label="Ask a question about this listing">
-                            <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
-                        </button>
-                        @endif
-                        <a href="{{ route('offer.listing.tenant.searchListing') }}" class="btn btn-outline-secondary">
-                            <i class="fa-solid fa-arrow-left me-1"></i>Back to Search
-                        </a>
-                        <button type="button" class="btn btn-outline-secondary" id="tclShareBtn">
-                            <i class="fa-solid fa-share-nodes me-1"></i>Share
-                        </button>
-                        @if(auth()->id() == $ownerId)
-                            <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}" class="btn btn-primary">
-                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
-                            </a>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Search Areas & Location Preferences — directly below the hero/snapshot so it is always
-         visible. Important Places are located only for the owner (controller decides). --}}
-    <x-location-dna-map
-        :preferences="$locationDnaPreferences ?? null"
-        :legacyLocation="$legacyLocation ?? []"
-        :importantPlaces="$importantPlaces ?? []"
-        :importantPlacesExact="$importantPlacesExact ?? false"
-        :showHeading="true"
-        :boundaryData="$boundaryData ?? null"
-        :floodZoneData="$floodZoneData ?? null"
-        :schoolDistrictData="$schoolDistrictData ?? null"
-    />
-    <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
-
-    {{-- ===== INTERACTION HUB ===== --}}
-    <div class="tcl-interaction-hub" id="tcl-interaction-hub">
-        <div class="tcl-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
-        <div class="tcl-interaction-grid">
-
-            {{-- 1. Respond to Tenant Criteria --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-reply"></i></div>
-                <div class="tcl-interaction-card-label">Respond to Tenant Criteria</div>
-                <div class="tcl-interaction-card-helper">Submit a rental property that matches this tenant's criteria.</div>
-                <form method="POST" action="{{ route('offers.store') }}">
-                    @csrf
-                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
-                    <input type="hidden" name="role" value="tenant">
-                    <input type="hidden" name="listing_type" value="tenant_criteria">
-                    <button type="submit" class="tcl-interaction-cta tcl-interaction-cta-primary"
-                            aria-label="Respond to this Tenant Criteria listing">
-                        <i class="fa-solid fa-reply"></i>Respond
-                    </button>
-                </form>
-            </div>
-
-            {{-- 2. Contact Tenant --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-envelope"></i></div>
-                <div class="tcl-interaction-card-label">Contact Tenant</div>
-                <div class="tcl-interaction-card-helper">Send a direct message or reach out to this tenant.</div>
-                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-primary"
-                        data-bs-toggle="modal" data-bs-target="#tclQuestionModal"
-                        aria-label="Contact this tenant">
-                    <i class="fa-solid fa-paper-plane"></i>Contact Tenant
-                </button>
-            </div>
-
-            {{-- 3. Schedule Showing --}}
-            {{-- Route offer.listing.tenant.showing does not exist. Wiring pending. --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
-                <div class="tcl-interaction-card-label">Schedule Showing</div>
-                <div class="tcl-interaction-card-helper">Arrange a property showing for this tenant.</div>
-                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#tclShowingModal"
-                        aria-label="Schedule a showing">
-                    <i class="fa-solid fa-calendar-plus"></i>Request Showing
-                </button>
-            </div>
-
-            {{-- 3. Ask AI --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
-                <div class="tcl-interaction-card-label">Ask AI</div>
-                <div class="tcl-interaction-ai-chips">
-                    <span class="tcl-interaction-ai-chip">What lease length does this tenant prefer?</span>
-                    <span class="tcl-interaction-ai-chip">Does this tenant have pets?</span>
-                    <span class="tcl-interaction-ai-chip">What is the tenant's budget?</span>
-                    <span class="tcl-interaction-ai-chip">What amenities are required?</span>
-                    <span class="tcl-interaction-ai-chip">What is the tenant's move-in timeline?</span>
-                </div>
-                <input type="text" class="form-control form-control-sm"
-                       placeholder="Ask a question about this tenant…"
-                       aria-label="AI question input" disabled
-                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
-                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#tclAiModal"
-                        aria-label="Ask AI a question about this tenant listing">
-                    <i class="fa-solid fa-robot"></i>Ask AI
-                </button>
-            </div>
-
-            {{-- 4. Ask a Question --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
-                <div class="tcl-interaction-card-label">Ask a Question</div>
-                <div class="tcl-interaction-card-helper">Send a direct question to the listing contact.</div>
-                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#tclQuestionModal"
-                        aria-label="Ask a question about this listing">
-                    <i class="fa-solid fa-paper-plane"></i>Send Question
-                </button>
-            </div>
-
-            {{-- 5. Share Listing --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-share-nodes"></i></div>
-                <div class="tcl-interaction-card-label">Share Listing</div>
-                <div class="tcl-interaction-card-helper">Share this listing with landlords or your network.</div>
-                <div class="tcl-interaction-share-row">
-                    <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline" id="tclHubCopyBtn"
-                            aria-label="Copy listing link to clipboard">
-                        <i class="fa-solid fa-link"></i>Copy Link
-                    </button>
-                    <button type="button" class="tcl-interaction-cta tcl-interaction-cta-outline" id="tclHubNativeShareBtn"
-                            style="display:none;" aria-label="Share this listing via your device's share sheet">
-                        <i class="fa-solid fa-share-nodes"></i>Share
-                    </button>
-                </div>
-                <div class="tcl-interaction-share-row" style="margin-top:.15rem;">
-                    <span class="tcl-interaction-cta tcl-interaction-cta-muted" aria-label="QR Code — coming soon">
-                        <i class="fa-solid fa-qrcode"></i>QR Code
-                    </span>
-                    <span class="tcl-interaction-cta tcl-interaction-cta-muted" aria-label="Embed widget — coming soon">
-                        <i class="fa-solid fa-code"></i>Embed
-                    </span>
-                </div>
-            </div>
-
-            {{-- 6. Hire an Agent --}}
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
-                <div class="tcl-interaction-card-label">Hire an Agent</div>
-                <div class="tcl-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
-                <button type="button" class="tcl-interaction-cta tcl-interaction-cta-hire"
-                        data-bs-toggle="modal" data-bs-target="#tclHireAgentModal"
-                        aria-label="Find and hire a real estate agent">
-                    <i class="fa-solid fa-user-tie"></i>Find an Agent
-                </button>
-            </div>
-
-            {{-- Activity — hidden until live data is available --}}
-            @if(false)
-            <div class="tcl-interaction-card">
-                <div class="tcl-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
-                <div class="tcl-interaction-card-label">Activity</div>
-                <div style="margin-top:.1rem;">
-                    <div class="tcl-interaction-activity-row">
-                        <span>Views</span><span class="tcl-interaction-activity-val">Coming Soon</span>
-                    </div>
-                    <div class="tcl-interaction-activity-row">
-                        <span>Saves</span><span class="tcl-interaction-activity-val">Coming Soon</span>
-                    </div>
-                    <div class="tcl-interaction-activity-row">
-                        <span>Questions</span><span class="tcl-interaction-activity-val">Coming Soon</span>
-                    </div>
-                    <div class="tcl-interaction-activity-row">
-                        <span>Offers/Bids</span><span class="tcl-interaction-activity-val">Coming Soon</span>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-        </div>{{-- /tcl-interaction-grid --}}
-    </div>{{-- /tcl-interaction-hub --}}
-
-    {{-- ===== TWO-COLUMN LAYOUT ===== --}}
-    <div class="row g-4 align-items-start">
-
-        {{-- Main content column --}}
-        <div class="col-lg-9 tcl-main-content-wrap">
-
-    {{-- ===== NAV SECTION VISIBILITY PRECOMPUTATION ===== --}}
-    {{-- Computed once here so nav links only render for sections that will display. --}}
-    @php
-        $navHasRentalSection = $ifFilled($str('budget')) || $ifFilled($str('desired_rental_amount'))
-            || $ifFilled($str('maximum_budget')) || $ifFilled($str('lease_length'))
-            || $ifFilled($str('move_in_budget_upfront')) || $ifFilled($str('move_in_funds_available'))
-            || $ifFilled($str('security_deposit_budget')) || count($dedupe($arr('desired_lease_length')))
-            || $ifFilled($str('tenant_desired_lease_length'))
-            || $ifFilled($str('move_in_date_earliest')) || $ifFilled($str('move_in_date_latest'))
-            || count($subOther($arr('terms_of_lease'), $str('custom_lease_term')))
-            || count($subOther($arr('tenant_pays'), $str('other_tenant_pays')))
-            || count($subOther($arr('owner_pays'), $str('other_owner_pays')))
-            || count($subOther($arr('rent_includes'), $str('other_rent_include')))
-            || $ifFilled($str('interest_rate')) || $ifFilled($str('loan_duration'));
-
-        $navHasLocation = ($str('state') || $str('property_state'))
-            || count($dedupe($arr('cities'))) || count($dedupe($arr('counties')))
-            || ($str('zip_codes') || $str('property_zip')) || $str('address');
-
-        $navHasPropertySection =
-            count($subOther($arr('property_type') ?: ($str('property_type') ? [$str('property_type')] : []), ''))
-            || count($subOther($arr('property_items'), $str('other_property_items')))
-            || count($subOther($arr('condition_prop_buyer'), $str('other_property_condition')))
-            || count($dedupe($arr('leasing_spaces_tenant') ?: ($str('leasing_spaces') ? [$str('leasing_spaces')] : [])))
-            || $ifFilled($str('bedrooms')) || $ifFilled($str('bathrooms'))
-            || $ifFilled($str('minimum_heated_square')) || $ifFilled($str('total_square_feet'))
-            || count($subOther($arr('non_negotiable_amenities'), $str('other_non_negotiable_amenities')))
-            || count($subOther($arr('view_preference'), $str('other_preferences')))
-            || count($subOther($arr('appliances'), $str('other_appliances')))
-            || $ifFilled($str('pool_needed')) || count($dedupe($arr('pool_type')))
-            || $ifFilled($str('leasing_55_plus')) || $ifFilled($str('minimum_leaseable'))
-            || $ifFilled($str('min_acreage'));
-
-        $navRawPets = $arr('pets') ?: ($str('pets') !== '' ? [$str('pets')] : []);
-        $navHasPetsSection = count(array_filter(is_array($navRawPets) ? $navRawPets : []))
-            || $ifFilled($str('number_of_pets')) || $ifFilled($str('number_of_occupants'))
-            || $ifFilled($str('number_occupant')) || $ifFilled($str('breed_of_pets'))
-            || $ifFilled($str('weight_of_pets')) || $ifFilled($str('service_animal'))
-            || $ifFilled($str('support_animal')) || $ifFilled($str('pet_information'))
-            || $ifFilled($str('parking_needed')) || $ifFilled($str('garage_needed'))
-            || $ifFilled($str('has_breed_restrictions')) || $ifFilled($str('breed_restrictions'));
-
-        $navHasParking = $ifFilled($str('garage_parking_spaces'))
-            || count($dedupe($arr('garage_parking_spaces_option') ?: $arr('garage_parking_spaces_option_buyer')))
-            || $ifFilled($str('other_parking_space_wrapper')) || $ifFilled($str('carport_spaces'))
-            || $ifFilled($str('garage_spaces'));
-
-        $navHasPrescreening = $ifFilled($str('prior_eviction')) || $ifFilled($str('prior_felony'))
-            || $ifFilled($str('monthly_income')) || $ifFilled($str('screening_concerns'))
-            || $ifFilled($str('current_status')) || $ifFilled($str('credit_score_range'))
-            || $ifFilled($str('commute_destination_zip')) || $ifFilled($str('max_commute_minutes'))
-            || $ifFilled($str('commute_mode')) || $ifFilled($str('rental_purpose'))
-            || $ifFilled($str('smoking_preference')) || $ifFilled($str('accessibility_requirements'));
-
-        $navHasLeasePrefs = count($subOther($arr('lease_for'), $str('other_lease_for')))
-            || $ifFilled($str('utility_preference')) || $ifFilled($str('maintenance_preference'))
-            || $ifFilled($str('renewal_option_requested')) || $ifFilled($str('renewal_option_details'))
-            || $ifFilled($str('tenant_conditions')) || $ifFilled($str('additional_tenant_lease_terms'))
-            || $ifFilled($str('occupied_until')) || $ifFilled($str('occupancy_status'))
-            || count($dedupe($arr('tenant_require')))
-            || $ifFilled($str('commercial_lease_type_preference')) || $ifFilled($str('cam_nnn_preference'))
-            || $ifFilled($str('rent_escalation_preference')) || $ifFilled($str('intended_business_use'))
-            || $ifFilled($str('buildout_tenant_improvement_request'))
-            || $ifFilled($str('signage_request')) || $ifFilled($str('commercial_parking_access_needs'))
-            || $ifFilled($str('personal_guarantee_preference')) || $ifFilled($str('commercial_approval_conditions'));
-
-        $navHasContact = $ifFilled($str('first_name')) || $ifFilled($str('last_name'))
-            || $ifFilled($str('email')) || $ifFilled($str('phone_number'))
-            || $ifFilled($str('video_link')) || $ifFilled($str('video'));
-
-    @endphp
-
-    {{-- ===== SMOOTH-SCROLL NAV TABS ===== --}}
-    <div class="tcl-nav-tabs-wrap">
-        <ul class="tcl-nav-tabs" id="tclNavTabs">
-            <li><a href="#section-overview">Overview</a></li>
-            @if($navHasRentalSection)<li><a href="#section-rental">Rental Criteria</a></li>@endif
-            @if($navHasLocation)<li><a href="#section-location">Location</a></li>@endif
-            @if($navHasPropertySection)<li><a href="#section-property">Property Features</a></li>@endif
-            @if($navHasPetsSection)<li><a href="#section-pets">Pets &amp; Occupancy</a></li>@endif
-            @if($navHasParking)<li><a href="#section-parking">Parking</a></li>@endif
-            @if($navHasPrescreening)<li><a href="#section-prescreening">Pre-Screening</a></li>@endif
-            @if($navHasLeasePrefs)<li><a href="#section-lease-prefs">Lease Preferences</a></li>@endif
-            @if($navHasContact)<li><a href="#section-contact">Contact</a></li>@endif
-        </ul>
-    </div>
 
     {{-- ===== LISTING OVERVIEW ===== --}}
-    <div class="card section-card" id="section-overview">
-        <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Overview</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Listing Title', $listingTitle) !!}
                     {!! $row('Listing Type', $str('auction_type')) !!}
                     {!! $row('Listing Status', $heroStatus) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
                     {!! $row('Expiration Date', $fmtDate($str('expiration_date'))) !!}
                     {!! $row('Auction Time', $str('auction_time') ?: (trim((string)($auction->auction_time ?? $auction->auction_length ?? '')))) !!}
                 </div>
             </div>
-            {{-- Bidding Period countdown timer (source: created_at + auction_time) --}}
-            @if($hasBPTimer)
-            <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="text-muted fw-semibold" style="font-size:.85rem;">
-                        <i class="fa-regular fa-clock me-1"></i>Bidding Period Time Remaining:
-                    </span>
-                    @if($timerRemainingSeconds <= 0)
-                        <span class="badge bg-secondary" style="font-size:.85rem;">Expired</span>
-                    @else
-                        <span class="badge bg-info text-dark tcl-bp-timer"
-                              data-seconds="{{ $timerRemainingSeconds }}"
-                              style="font-size:.85rem;font-variant-numeric:tabular-nums;">
-                            {{-- Initial PHP render — replaced by JS immediately --}}
-                            @php
-                                $_s = $timerRemainingSeconds;
-                                if ($_s < 60) { echo $_s . 's Remaining'; }
-                                else {
-                                    $_d = intdiv($_s, 86400); $_s %= 86400;
-                                    $_h = intdiv($_s, 3600);  $_s %= 3600;
-                                    $_i = intdiv($_s, 60);
-                                    $_p = [];
-                                    if ($_d) $_p[] = $_d . 'd';
-                                    if ($_h) $_p[] = $_h . 'h';
-                                    if ($_i) $_p[] = $_i . 'm';
-                                    echo implode(' ', $_p) . ' Remaining';
-                                }
-                            @endphp
-                        </span>
-                    @endif
-                </div>
-            </div>
-            @endif
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-overview">
+        <h4 class="tcl-crit-title">Listing Overview:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
 
     {{-- ===== RENTAL CRITERIA ===== --}}
     @php
@@ -1038,11 +688,9 @@
             || $ifFilled($str('interest_rate')) || $ifFilled($str('loan_duration'));
     @endphp
     @if($hasRentalSection)
-    <div class="card section-card" id="section-rental">
-        <div class="card-header"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Rental Criteria</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Rent Budget', $fmtMoney($str('budget') ?: $str('desired_rental_amount') ?: $str('maximum_budget'))) !!}
                     {!! $row('Desired Lease Length', count($desiredLeaseLen) ? implode(', ', $desiredLeaseLen) : ($str('tenant_desired_lease_length') ?: $str('lease_length'))) !!}
                     {!! $row('Move-In Funds Available', $fmtMoney($str('move_in_funds_available') ?: $str('move_in_budget_upfront'))) !!}
@@ -1052,7 +700,7 @@
                     {!! $row('Earliest Move-In Date', $fmtDate($str('move_in_date_earliest'))) !!}
                     {!! $row('Latest Move-In Date', $fmtDate($str('move_in_date_latest'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @if(count($termsOfLease)) {!! $row('Terms of Lease', implode(', ', $termsOfLease)) !!} @endif
                     @if(count($tenantPays)) {!! $row('Tenant Pays', implode(', ', $tenantPays)) !!} @endif
                     @if(count($ownerPays)) {!! $row('Owner Pays', implode(', ', $ownerPays)) !!} @endif
@@ -1071,20 +719,26 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2" id="section-leasing">Leasing / Financing Terms</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Lease Option Price', $fmtMoney($str('lease_option_price'))) !!}
                     {!! $row('Lease Purchase Price', $fmtMoney($str('lease_purchase_price'))) !!}
                     {!! $row('Down Payment Amount', $fmtMoney($str('down_payment_amount'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Interest Rate', $str('interest_rate') ? $fmtPercent($str('interest_rate')) : null) !!}
                     {!! $row('Loan Duration (Years)', $str('loan_duration')) !!}
                     {!! $row('Cryptocurrency Type', $str('cryptocurrency_type')) !!}
                 </div>
             </div>
             @endif
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-rental">
+        <h4 class="tcl-crit-title">Rental Criteria:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== LOCATION PREFERENCES ===== --}}
@@ -1097,23 +751,27 @@
         $hasLocation = $stateVal || count($cities) || count($counties) || $zipCodes || $address;
     @endphp
     @if($hasLocation)
-    <div class="card section-card" id="section-location">
-        <div class="card-header"><i class="fa-solid fa-map-location-dot me-2"></i>Location Preferences</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('State', $stateVal) !!}
                     {!! $row('Cities', count($cities) ? implode(', ', $cities) : null) !!}
                     {!! $row('Counties', count($counties) ? implode(', ', $counties) : null) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('ZIP Codes', $zipCodes) !!}
                     {!! $row('Address', $address) !!}
                     {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                 </div>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-location">
+        <h4 class="tcl-crit-title">Location Preferences:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
 
@@ -1138,11 +796,9 @@
             || $ifFilled($str('min_acreage'));
     @endphp
     @if($hasPropertySection)
-    <div class="card section-card" id="section-property">
-        <div class="card-header"><i class="fa-solid fa-house me-2"></i>Desired Property Features</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @if(count($propTypes)) {!! $row('Property Type', implode(', ', $propTypes)) !!} @endif
                     @if(count($conditionList)) {!! $row('Condition', implode(', ', $conditionList)) !!} @endif
                     @if(count($leasingSpaces)) {!! $row('Leasing Spaces', implode(', ', $leasingSpaces)) !!} @endif
@@ -1154,7 +810,7 @@
                     {!! $row('Total Sq Ft', $str('total_square_feet')) !!}
                     {!! $row('Sq Ft Source', $str('sqft_heated_source')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Age-Restricted (55+)', $yesNo($str('leasing_55_plus'))) !!}
                     {!! $row('Pool Needed', $yesNo($str('pool_needed'))) !!}
                     @if(count($poolTypes)) {!! $row('Pool Type', implode(', ', $poolTypes)) !!} @endif
@@ -1168,8 +824,14 @@
             <div class="mb-1"><span class="field-label">Property Items / Features</span></div>
             <p class="field-value mb-0">{{ implode(', ', $propItems) }}</p>
             @endif
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-property">
+        <h4 class="tcl-crit-title">Desired Property Features:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== PETS & OCCUPANCY ===== --}}
@@ -1200,18 +862,16 @@
             || $ifFilled($str('breed_restrictions'));
     @endphp
     @if($hasPetsSection)
-    <div class="card section-card" id="section-pets">
-        <div class="card-header"><i class="fa-solid fa-paw me-2"></i>Pets &amp; Occupancy</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Pets', count($petsDisplay) ? implode(', ', array_filter($petsDisplay)) : null) !!}
                     {!! $row('Number of Pets', $str('number_of_pets')) !!}
                     {!! $row('Breed of Pets', $str('breed_of_pets')) !!}
                     {!! $row('Weight of Pets (lbs)', $str('weight_of_pets')) !!}
                     {!! $row('Pet Information', $str('pet_information')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {{-- Number of Occupants hidden from public view --}}
                     {!! $row('Service Animal', $yesNo($str('service_animal'))) !!}
                     {!! $row('Support Animal', $yesNo($str('support_animal') ?: $str('emotional_support_animal'))) !!}
@@ -1220,8 +880,14 @@
                     {!! $row('Parking Needed', $resolveOtherField($str('carport_needed') ?: $str('garage_needed') ?: $str('parking_needed'), $str('other_carport_needed') ?: $str('other_garage_needed'))) !!}
                 </div>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-pets">
+        <h4 class="tcl-crit-title">Pets &amp; Occupancy:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== PARKING & AMENITIES ===== --}}
@@ -1232,22 +898,26 @@
             || $ifFilled($str('garage_spaces'));
     @endphp
     @if($hasParking)
-    <div class="card section-card" id="section-parking">
-        <div class="card-header"><i class="fa-solid fa-car me-2"></i>Parking &amp; Amenities</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Parking Type / Details', $str('garage_parking_spaces')) !!}
                     {!! $row('Carport Spaces', $str('carport_spaces')) !!}
                     {!! $row('Garage Spaces', $str('garage_spaces')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @if(count($parkingOptions)) {!! $row('Parking Features', implode(', ', $parkingOptions)) !!} @endif
                     {!! $row('Other Parking Details', $str('other_parking_space_wrapper')) !!}
                 </div>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-parking">
+        <h4 class="tcl-crit-title">Parking &amp; Amenities:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== PRE-SCREENING / TENANT DETAILS ===== --}}
@@ -1296,11 +966,9 @@
         $hasPrescreening = $hasPublicPrescreening || ($viewerOwnsListing && $hasOwnerOnlyPrescreening);
     @endphp
     @if($hasPrescreening)
-    <div class="card section-card" id="section-prescreening">
-        <div class="card-header"><i class="fa-solid fa-shield-check me-2"></i>Pre-Screening / Tenant Details</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @if($viewerOwnsListing)
                         {!! $row('Prior Eviction', $yesNo($str('prior_eviction'))) !!}
                         {!! $row('Prior Felony', $yesNo($str('prior_felony'))) !!}
@@ -1312,7 +980,7 @@
                         {!! $row('Rental History Disclosure', $str('screening_concerns')) !!}
                     @endif
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Current Status', $str('current_status')) !!}
                     {!! $row('Rental Purpose', $str('rental_purpose')) !!}
                     {!! $row('Smoking Preference', $str('smoking_preference')) !!}
@@ -1322,8 +990,14 @@
                     {!! $row('Commute Mode', $yesNo($str('commute_mode'))) !!}
                 </div>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-prescreening">
+        <h4 class="tcl-crit-title">Pre-Screening / Tenant Details:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== LEASE PREFERENCES & CONDITIONS ===== --}}
@@ -1342,11 +1016,9 @@
             || $ifFilled($str('commercial_approval_conditions'));
     @endphp
     @if($hasLeasePrefs)
-    <div class="card section-card" id="section-lease-prefs">
-        <div class="card-header"><i class="fa-solid fa-file-signature me-2"></i>Lease Preferences &amp; Conditions</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @if(count($leaseFor)) {!! $row('Leasing For', implode(', ', $leaseFor)) !!} @endif
                     {!! $row('Utility Preference', $str('utility_preference')) !!}
                     {!! $row('Maintenance Preference', $str('maintenance_preference')) !!}
@@ -1356,7 +1028,7 @@
                     {!! $row('Occupied Until', $str('occupied_until')) !!}
                     @if(count($tenantRequire)) {!! $row('Tenant Requirements', implode(', ', $tenantRequire)) !!} @endif
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Tenant Conditions', $str('tenant_conditions')) !!}
                     {!! $row('Additional Lease Terms', $str('additional_tenant_lease_terms')) !!}
                     {{-- Commercial-specific --}}
@@ -1371,8 +1043,14 @@
                     {!! $row('Commercial Approval Conditions', $str('commercial_approval_conditions')) !!}
                 </div>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-lease-prefs">
+        <h4 class="tcl-crit-title">Lease Preferences &amp; Conditions:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== CONTACT INFORMATION ===== --}}
@@ -1382,11 +1060,9 @@
             || $ifFilled($str('video_link')) || $ifFilled($str('video'));
     @endphp
     @if($hasContact)
-    <div class="card section-card" id="section-contact">
-        <div class="card-header"><i class="fa-solid fa-id-card me-2"></i>Contact Information</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Name', trim($str('first_name') . ' ' . $str('last_name'))) !!}
                     {!! $row('Email', $str('email')) !!}
                     @php
@@ -1401,7 +1077,7 @@
                     {!! $row('License Number', $str('agent_license_number')) !!}
                     {!! $row('NAR Member ID', $str('agent_nar_member_id')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {{-- Uploaded video file --}}
                     @if($ifFilled($str('video')))
                         <div class="mb-3">
@@ -1427,7 +1103,7 @@
                                 <iframe src="{{ $vEmbed }}" title="Video Walkthrough" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
                             </div>
                         @else
-                            <div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">Video Link</div><div class="col-md-7"><a href="{{ $vLink }}" target="_blank" rel="noopener noreferrer">{{ $vLink }}</a></div></div>
+                            <div class="tcl-field"><i class="fa-regular fa-square-check" aria-hidden="true"></i> <strong>Video Link:</strong> <a href="{{ $vLink }}" target="_blank" rel="noopener noreferrer">{{ $vLink }}</a></div>
                         @endif
                     @endif
                 </div>
@@ -1442,18 +1118,28 @@
                     <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                 </button>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-contact">
+        <h4 class="tcl-crit-title">Contact Information:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== ADDITIONAL DETAILS ===== --}}
     @if($ifFilled($str('additional_details')))
-    <div class="card section-card" id="section-additional">
-        <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Additional Details</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <p class="field-value mb-0">{!! nl2br(e($str('additional_details'))) !!}</p>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-additional">
+        <h4 class="tcl-crit-title">Additional Details:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif
 
     {{-- ===== ADDITIONAL INFORMATION (remaining meta keys not covered by named sections) ===== --}}
@@ -1610,187 +1296,168 @@
         }
     @endphp
     @if(count($remainingFields))
-    <div class="card section-card" id="section-remaining">
-        <div class="card-header"><i class="fa-solid fa-ellipsis me-2"></i>Additional Information</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
                 @foreach($remainingFields as $rmKey => $rmVal)
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row($labelizeKey($rmKey), $rmVal) !!}
                 </div>
                 @endforeach
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="tcl-crit-section" id="section-remaining">
+        <h4 class="tcl-crit-title">Additional Information:</h4>
+        <div class="tcl-crit-body">{!! $__olSectionBody !!}</div>
     </div>
     @endif
-
-    {{-- Edit Button (bottom, owner only) --}}
-    @if(auth()->id() == $ownerId)
-    <div class="text-end mt-2 mb-4">
-        <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}"
-           class="btn btn-primary">
-            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
-        </a>
-    </div>
     @endif
+                </div>
+            </div>
+        </div>{{-- /leftCol --}}
 
-        </div>{{-- /col-lg-9 --}}
+        {{-- Right column — title, bidding period, actions and a compact summary, as on the Criteria pages. --}}
+        <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
+            <h1>{{ $listingTitle }}</h1>
+            @if($heroLocation)
+                <p class="tcl-right-sub"><i class="fa-solid fa-location-dot me-1"></i>{{ $heroLocation }}</p>
+            @endif
+            <hr>
+            @if($hasBPTimer)
+            <div class="tcl-timer">
+                <span class="fw-semibold"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
+                @if($timerRemainingSeconds <= 0)
+                    <span class="badge bg-secondary">Expired</span>
+                @else
+                    <span class="badge bg-info text-dark tcl-bp-timer"
+                          data-seconds="{{ $timerRemainingSeconds }}"
+                          style="font-variant-numeric:tabular-nums;">
+                        @php
+                            $_rs = $timerRemainingSeconds;
+                            if ($_rs < 60) { echo $_rs . 's Remaining'; }
+                            else {
+                                $_rd = intdiv($_rs, 86400); $_rs %= 86400;
+                                $_rh = intdiv($_rs, 3600);  $_rs %= 3600;
+                                $_ri = intdiv($_rs, 60);
+                                $_rp = [];
+                                if ($_rd) $_rp[] = $_rd . 'd';
+                                if ($_rh) $_rp[] = $_rh . 'h';
+                                if ($_ri) $_rp[] = $_ri . 'm';
+                                echo implode(' ', $_rp) . ' Remaining';
+                            }
+                        @endphp
+                    </span>
+                @endif
+            </div>
+            @endif
+            @if($heroPrice)
+            <div class="tcl-price">
+                <span class="tcl-price-label">Rent Budget</span>
+                <span class="tcl-price-value">{{ $heroPrice }}</span>
+            </div>
+            @endif
 
-        {{-- ===== STICKY DESKTOP ACTION CARD ===== --}}
-        <div class="col-lg-3 d-none d-lg-block">
-            <div class="tcl-sticky-card">
-                <div class="tcl-sticky-title">Quick Actions</div>
-
+            <div class="tcl-actions">
                 <form method="POST" action="{{ route('offers.store') }}">
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                     <input type="hidden" name="role" value="tenant">
                     <input type="hidden" name="listing_type" value="tenant_criteria">
-                    <button type="submit" class="tcl-action-btn tcl-action-primary">
+                    <button type="submit" class="btn tcl-act-primary respond-criteria-btn" aria-label="Respond to this Tenant Criteria listing">
                         <i class="fa-solid fa-reply"></i>Respond to Tenant Criteria
                     </button>
                 </form>
-                @if($ifFilled($str('email')))
-                <a href="mailto:{{ $str('email') }}" class="tcl-action-btn tcl-action-primary">
-                    <i class="fa-solid fa-envelope"></i>Contact Tenant
-                </a>
-                @endif
-                <button class="tcl-action-btn tcl-action-outline" data-bs-toggle="modal" data-bs-target="#tclQuestionModal">
-                    <i class="fa-solid fa-circle-question"></i>Ask a Question
+                @unless($tclViewerIsOwner)
+                    @if($ifFilled($str('email')))
+                    <a href="mailto:{{ $str('email') }}" class="btn btn-success">
+                        <i class="fa-solid fa-envelope"></i>Contact Tenant
+                    </a>
+                    @endif
+                    <button type="button" class="btn @if($ifFilled($str('email'))) tcl-act-outline @else btn-success @endif" data-bs-toggle="modal" data-bs-target="#tclQuestionModal" aria-label="Ask a question about this listing">
+                        <i class="fa-solid fa-circle-question"></i>Ask a Question
+                    </button>
+                @endunless
+                <button type="button" class="btn tcl-act-outline" data-bs-toggle="modal" data-bs-target="#tclShowingModal" aria-label="Schedule a showing">
+                    <i class="fa-solid fa-calendar-days"></i>Schedule Showing
                 </button>
-                {{-- Option A: Ask AI added to sidebar to match Seller view --}}
-                <button class="tcl-action-btn tcl-action-outline" data-bs-toggle="modal" data-bs-target="#tclAiModal">
+                <button type="button" class="btn tcl-act-outline" data-bs-toggle="modal" data-bs-target="#tclAiModal" aria-label="Ask AI a question about this tenant listing">
                     <i class="fa-solid fa-robot"></i>Ask AI About Tenant
                 </button>
-                <button class="tcl-action-btn tcl-action-outline" id="tclShareBtnSidebar">
-                    <i class="fa-solid fa-share-nodes"></i>Share Listing
-                </button>
-                <button type="button" class="tcl-action-btn tcl-action-outline tcl-action-hire"
-                        data-bs-toggle="modal" data-bs-target="#tclHireAgentModal">
+                <button type="button" class="btn tcl-act-outline" data-bs-toggle="modal" data-bs-target="#tclHireAgentModal" aria-label="Find and hire a real estate agent">
                     <i class="fa-solid fa-user-tie"></i>Hire an Agent
                 </button>
-                <button class="tcl-action-btn tcl-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
-                    <i class="fa-regular fa-bookmark"></i>Save Listing
-                </button>
-                <a href="{{ route('offer.listing.tenant.searchListing') }}" class="tcl-action-btn tcl-action-outline">
+                <a href="{{ route('offer.listing.tenant.searchListing') }}" class="btn tcl-act-outline">
                     <i class="fa-solid fa-arrow-left"></i>Back to Search
                 </a>
+            </div>
 
-                @if(auth()->id() == $ownerId)
-                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
-                    <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}"
-                       class="tcl-action-btn tcl-action-outline">
-                        <i class="fa-solid fa-pen-to-square"></i>Edit Listing
-                    </a>
-                </div>
-                @endif
-
-                @if($heroPrice)
-                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;text-align:center;">
-                    <div style="font-size:0.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Rent Budget</div>
-                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;letter-spacing:-.02em;">{{ $heroPrice }}</div>
-                </div>
-                @endif
-
-                @if($heroBeds || $heroBaths || $heroHSqft || $heroPropType || $heroLocation)
-                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
-                    @if($heroBeds)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bedrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBeds }}</span></div>@endif
-                    @if($heroBaths)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bathrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBaths }}</span></div>@endif
-                    @if($heroHSqft)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Sq Ft</span><span style="font-size:.82rem;font-weight:700;">{{ number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)) }}</span></div>@endif
-                    @if($heroPropType)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Type</span><span style="font-size:.82rem;font-weight:700;text-align:right;max-width:55%;">{{ $heroPropType }}</span></div>@endif
-                    @if($heroLocation)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Location</span><span style="font-size:.82rem;font-weight:700;text-align:right;max-width:55%;">{{ $heroLocation }}</span></div>@endif
-                </div>
-                @endif
-
-                @if($hasBPTimer && $bpEndsAtDisplay)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
-                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
-                        <span style="font-weight:700;color:#475569;">{{ $bpEndsAtDisplay->format('M j, Y g:i A') }} {{ $bpTimezone }}</span>
+            @php
+                $_sumRows = array_values(array_filter([
+                    ['Property Type', $heroPropType],
+                    ['Bedrooms', $heroBeds],
+                    ['Bathrooms', $heroBaths],
+                    ['Min. Sq Ft', $heroHSqft ? number_format((int) preg_replace('/[^0-9]/', '', $heroHSqft)) . '+' : null],
+                    ['Listed', $heroListDate],
+                    ['Updated', $heroUpdDate],
+                    ['Bidding Ends', ($hasBPTimer && $bpEndsAtDisplay) ? $bpEndsAtDisplay->format('M j, Y g:i A') . ' ' . $bpTimezone : null],
+                ], fn ($r) => $r[1] !== null && $r[1] !== ''));
+                // The property type already has its own row.
+                $_sumBadges = array_values(array_filter($heroBadgesDisplay, fn ($b) => $b['label'] !== $heroPropType));
+            @endphp
+            @if(count($_sumRows) || count($_sumBadges))
+            <div class="card tcl-summary">
+                <div class="card-body">
+                    @if(count($_sumRows))
+                    <ul>
+                        @foreach($_sumRows as $_sumRow)
+                            <li><span>{{ $_sumRow[0] }}</span><span>{{ $_sumRow[1] }}</span></li>
+                        @endforeach
+                    </ul>
+                    @endif
+                    @if(count($_sumBadges))
+                    <div class="tcl-summary-badges">
+                        @foreach($_sumBadges as $b)
+                            <span class="tcl-badge tcl-badge-{{ $b['color'] }}"><i class="{{ $b['icon'] }}"></i> {{ $b['label'] }}</span>
+                        @endforeach
                     </div>
-                </div>
-                @endif
-
-                {{-- Activity section hidden until live data is available --}}
-                @if(false)
-                <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #f1f5f9;">
-                    <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
-                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
-                        <span>Views</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
-                        <span>Saves</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
-                        <span>Questions</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
-                    </div>
-                    @if($heroUpdDate)
-                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f1f5f9;">
-                        <span>Updated</span><span style="font-weight:700;color:#475569;">{{ $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('M j, Y') : '' }}</span>
+                    @endif
+                    @if(count($tclStandoutParts) >= 2)
+                    <div class="tcl-standout">
+                        <div class="tcl-standout-label">Why This Tenant Stands Out</div>
+                        @php
+                            $_soSlice = array_slice($tclStandoutParts, 0, -1);
+                            $_soLast  = end($tclStandoutParts);
+                        @endphp
+                        {{ count($tclStandoutParts) > 1 ? implode(', ', $_soSlice) . ' and ' . $_soLast : $_soLast }}.
                     </div>
                     @endif
                 </div>
-                @endif
             </div>
-        </div>
+            @endif
 
+            {{-- Share card, as on the Criteria pages: QR code and a copyable link. --}}
+            @php $_shareUrl = route('offer.listing.tenant.view', $auction->id); @endphp
+            <div class="p-4 card tcl-share">
+                <p class="text-600 mb-2">Share this link via</p>
+                <div class="qr-code">{{ qr_code($_shareUrl, 180) }}</div>
+                <div class="card-social">
+                    <p class="small opacity-8 mb-1 mt-3">Or copy link</p>
+                    <div class="field">
+                        <i class="fa-solid fa-link"></i>
+                        <input type="text" readonly id="tclShareLink" value="{{ $_shareUrl }}" aria-label="Listing link">
+                        <button type="button" class="btn-primary btn-sm text-600 border-0" id="tclHubCopyBtn" aria-label="Copy listing link to clipboard">Copy</button>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 tcl-native-share" id="tclHubNativeShareBtn"
+                            style="display:none;" aria-label="Share this listing via your device's share sheet">
+                        <i class="fa-solid fa-share-nodes me-1"></i>Share
+                    </button>
+                </div>
+            </div>
+        </div>{{-- /rightCol --}}
     </div>{{-- /row --}}
 
 </div>{{-- /container --}}
-
-{{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
-<div class="tcl-mobile-bar d-lg-none">
-    <a href="{{ route('offer.listing.tenant.searchListing') }}" class="tcl-mobile-bar-btn">
-        <i class="fa-solid fa-arrow-left"></i>
-        <span>Search</span>
-    </a>
-    <button class="tcl-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#tclQuestionModal"
-        @if(auth()->id() == $ownerId) style="display:none;" @endif>
-        <i class="fa-solid fa-circle-question"></i>
-        <span>Ask</span>
-    </button>
-    <button class="tcl-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#tclAiModal"
-        @if(auth()->id() == $ownerId) style="display:none;" @endif>
-        <i class="fa-solid fa-robot"></i>
-        <span>Ask AI</span>
-    </button>
-    <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
-        @csrf
-        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
-        <input type="hidden" name="role" value="tenant">
-        <input type="hidden" name="listing_type" value="tenant_criteria">
-        <button type="submit" class="tcl-mobile-bar-btn tcl-mobile-primary">
-            <i class="fa-solid fa-reply"></i>
-            <span>Respond</span>
-        </button>
-    </form>
-    @if($ifFilled($str('email')) && auth()->id() != $ownerId)
-    <a href="mailto:{{ $str('email') }}" class="tcl-mobile-bar-btn tcl-mobile-primary">
-        <i class="fa-solid fa-envelope"></i>
-        <span>Contact</span>
-    </a>
-    @endif
-    {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
-    <button class="tcl-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#tclAiModal">
-        <i class="fa-solid fa-robot"></i>
-        <span>Ask AI</span>
-    </button>
-    <button class="tcl-mobile-bar-btn" id="tclShareBtnMobile">
-        <i class="fa-solid fa-share-nodes"></i>
-        <span>Share</span>
-    </button>
-    <button type="button" class="tcl-mobile-bar-btn"
-            data-bs-toggle="modal" data-bs-target="#tclHireAgentModal">
-        <i class="fa-solid fa-user-tie"></i>
-        <span>Agent</span>
-    </button>
-    @if(auth()->id() == $ownerId)
-    <a href="{{ route('offer.listing.tenant.edit', ['auctionId' => $auction->id]) }}" class="tcl-mobile-bar-btn tcl-mobile-primary">
-        <i class="fa-solid fa-pen-to-square"></i>
-        <span>Edit</span>
-    </a>
-    @endif
-</div>
 
 {{-- Photo lightbox modal --}}
 <div class="modal fade" id="tclPhotoModal" tabindex="-1" aria-label="Tenant listing photo" aria-modal="true" role="dialog">
@@ -2058,35 +1725,6 @@
         }, 1000);
     });
 
-    /* ---- Smooth-scroll sticky nav with active-section highlighting ---- */
-    var HEADER_OFFSET = 80;
-    var navLinks = Array.from(document.querySelectorAll('#tclNavTabs a[href^="#"]'));
-    var sections  = navLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
-
-    navLinks.forEach(function (a) {
-        a.addEventListener('click', function (e) {
-            e.preventDefault();
-            var target = document.querySelector(a.getAttribute('href'));
-            if (!target) return;
-            var top = target.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
-            window.scrollTo({ top: top, behavior: 'smooth' });
-        });
-    });
-
-    function onScroll() {
-        var scrollY = window.scrollY + HEADER_OFFSET + 10;
-        var active = null;
-        sections.forEach(function (s) {
-            if (s && s.offsetTop <= scrollY) active = s;
-        });
-        navLinks.forEach(function (a) { a.classList.remove('tcl-nav-active'); });
-        if (active) {
-            var link = document.querySelector('#tclNavTabs a[href="#' + active.id + '"]');
-            if (link) link.classList.add('tcl-nav-active');
-        }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
 
     /* ---- Share button ---- */
     function doShare() {
@@ -2524,13 +2162,5 @@
 }());
 
 </script>
-@endpush
-@push('scripts')
-<script>
-window.byoTenantViewMapsReady = function() {
-    document.dispatchEvent(new Event('google-maps-loaded'));
-};
-</script>
-<x-google-maps-script :libraries="'places'" :callback="'byoTenantViewMapsReady'" />
 @endpush
 @endsection
