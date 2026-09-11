@@ -105,7 +105,25 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge bg-{{ $listing['status_class'] }}">{{ $listing['status_label'] }}</span>
+                            {{--
+                                The same two badges the shared page's hero shows, from the same
+                                controller values — see AgentController::normalizeRoleOfferListing().
+                                Workflow (Draft, Pending Review, Accepted, an expired offer period)
+                                only when one applies; the listing's own status only when there is
+                                one. Neither is invented to fill the cell.
+                            --}}
+                            @if($listing['workflow_status_label'] || $listing['listing_status_display'])
+                            <div class="d-flex flex-wrap gap-1">
+                                @if($listing['workflow_status_label'])
+                                <span class="badge bg-{{ $listing['workflow_status_class'] }}" data-hub-status="workflow">{{ $listing['workflow_status_label'] }}</span>
+                                @endif
+                                @if($listing['listing_status_display'])
+                                <span class="badge bg-primary" data-hub-status="listing">Listing Status: {{ $listing['listing_status_display'] }}</span>
+                                @endif
+                            </div>
+                            @else
+                            <span class="text-muted">—</span>
+                            @endif
                         </td>
                         <td class="text-end pe-3">
                             <div class="btn-group btn-group-sm">
