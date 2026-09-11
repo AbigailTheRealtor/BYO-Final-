@@ -804,7 +804,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/hire/agent/auction/edit/{auctionId}/{user_type}', TenantAgentAuctionEdit::class)->name('hire.agent.auction.edit');
 
     // Offer Listing routes (Workflow Engine — Offer mode)
-    Route::get('/offer/listing/view/{id}', [AgentController::class, 'offerListingView'])->name('offer.listing.view')->middleware('offerPlayoffAccess');
+    // {id} is an App\Support\Listing\AgentListingIdentity token, not a bare row id:
+    // `seller-7` names seller_agent_auctions row 7, a plain `7` names offer_auctions
+    // row 7. The constraint documents the accepted identity domain at the route and
+    // turns a malformed token into a 404 before the controller; the controller parses
+    // it again regardless, because refusing to guess is the guarantee and this is only
+    // the convenience.
+    Route::get('/offer/listing/view/{id}', [AgentController::class, 'offerListingView'])
+        ->where('id', \App\Support\Listing\AgentListingIdentity::ROUTE_PATTERN)
+        ->name('offer.listing.view')->middleware('offerPlayoffAccess');
     Route::get('/offer/listing/draft/{listingId}', liverOfferAuction::class)->name('offer.listing.draft')->middleware('offerPlayoffAccess');
     Route::get('/offer/listing/{offer_type?}', liverOfferAuction::class)->name('offer.listing.create')->middleware('offerPlayoffAccess');
     // Only Tenants can access these routes

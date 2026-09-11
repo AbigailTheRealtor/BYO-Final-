@@ -38,6 +38,10 @@
     {{-- <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('tenant.criteria.auctions.search') }}">Tenant's Criteria Auctions</a>
     </li> --}}
+    {{-- Offer Listing marketplace tabs. This same menu is rendered on the four Hire
+         Agent search pages, so in BidYourAgent mode it must offer the Hire Agent tabs
+         below without the Offer Listing ones beside them. --}}
+    @bidyouroffer
     <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('offer.listing.seller.searchListing') }}">Seller Listings</a>
     </li>
@@ -50,6 +54,7 @@
     <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('offer.listing.tenant.searchListing') }}">Tenant Criteria Listings</a>
     </li>
+    @endbidyouroffer
     <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('seller.agent.searchListing') }}">Hiring Seller's Agent</a>
     </li>

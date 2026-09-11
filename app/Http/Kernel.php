@@ -37,6 +37,10 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // Product boundary. Last in the group so it runs after routing and
+            // sees the matched route; a no-op unless this deployment serves a
+            // single product. It can only refuse — never grant.
+            \App\Http\Middleware\EnsureProductSurface::class,
         ],
 
         'api' => [
@@ -44,6 +48,39 @@ class Kernel extends HttpKernel
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+    ];
+
+    /**
+     * Middleware execution order, where it must not be left to chance.
+     *
+     * This is the framework's own default list with ONE addition:
+     * EnsureProductSurface, placed after the session is available and BEFORE
+     * authentication.
+     *
+     * WHY THE POSITION MATTERS. Laravel sorts a route's gathered middleware by this
+     * list, and `Authenticate` implements AuthenticatesRequests, so without an entry
+     * here the product gate ran AFTER auth: a signed-out visitor asking a
+     * BidYourAgent deployment for an Offer Listing URL was redirected to log in —
+     * confirming the surface exists, and handing them a 404 only after they had
+     * signed in. It must answer the same way to everyone: this surface is not here.
+     *
+     * Nothing else in this list is reordered. The gate needs the session no more
+     * than it needs auth, but it sits after StartSession so that the 404 it raises
+     * is rendered by the ordinary error page rather than in a half-booted request.
+     *
+     * @var array<int, class-string>
+     */
+    protected $middlewarePriority = [
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\EnsureProductSurface::class,
+        \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+        \Illuminate\Session\Middleware\AuthenticateSession::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \Illuminate\Auth\Middleware\Authorize::class,
     ];
 
     /**
