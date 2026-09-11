@@ -649,7 +649,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route::get('/messages/{token?}', [AuctionChatController::class, 'messages'])->name('messages');
         // Old route commented by waqas on 26 may 2023
         Route::get('/messages', [AuctionChatController::class, 'messages'])->name('messages');
-        Route::get('/chat_bot_reply/{token}', [AuctionChatController::class, 'chat_bot_reply'])->name('chat_bot_reply');
+        // POST: it writes a row (the bot's reply). No client calls it; a GET would bypass CSRF.
+        Route::post('/chat_bot_reply/{token}', [AuctionChatController::class, 'chat_bot_reply'])->name('chat_bot_reply');
         Route::get('/load_chat_messages/{token}', [AuctionChatController::class, 'load_chat_messages'])->name('load_chat_messages');
         Route::get('/my-friends', [DashboardController::class, 'myFriends'])->name('myFriends');
     });
