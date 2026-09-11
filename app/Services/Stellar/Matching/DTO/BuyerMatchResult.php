@@ -22,6 +22,13 @@ class BuyerMatchResult
     public ?array $confidence = null;
     public ?array $recommendations = null;
 
+    /**
+     * ImportantPlaceMatcher::evaluate() rows for this listing, set by BuyerMatchScorer: one per
+     * miles requirement, with the category, the straight-line distance and the verdict. Never the
+     * place's address or coordinate. toArray() is left unchanged, like the slots above.
+     */
+    public array $importantPlaceMatches = [];
+
     public function __construct(
         string $listingKey,
         int $totalScore,

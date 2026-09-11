@@ -326,6 +326,10 @@ class TenantOfferListingCriteriaLoader
             'wants_energy_efficient'      => null,
 
             'preferred_lease_terms'       => $preferredLeaseTerms,
+
+            // Private: address + coordinate, consumed only by ImportantPlaceMatcher.
+            'important_places'            => (new \App\Services\Offers\ImportantPlacesService())
+                ->normalize($get('important_places_json') ?? ''),
         ];
     }
 
