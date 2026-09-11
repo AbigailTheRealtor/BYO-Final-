@@ -1957,7 +1957,7 @@ class TenantAgentAuctionEdit extends Component
 
     private function getAddressDetailsFromApi($address)
     {
-        $client = new \GuzzleHttp\Client();
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'address' => $address,
@@ -2108,7 +2108,7 @@ class TenantAgentAuctionEdit extends Component
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
     {
-        $client = new \GuzzleHttp\Client();
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'input' => $input,

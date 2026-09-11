@@ -1276,6 +1276,17 @@ class LocationDnaPoiDistanceService
             return [$persistedRows, $rawCandidates];
 
         } catch (Throwable $e) {
+            // A refusal from the shared admission middleware — a request ceiling reached,
+            // the switch off, no credential — stops the WHOLE run here: before an error
+            // row is written, and before the next category is asked. Recorded per
+            // category, it would leave rows the next run's cache check reads as current,
+            // presenting a half-fetched listing as complete. Aborted, the run fails
+            // honestly (the pipeline stops before summarising) and the categories it
+            // never reached have no rows, so a later run fetches them.
+            if ($e instanceof \App\Support\Google\GoogleProviderRequestRefused) {
+                throw $e;
+            }
+
             try {
                 PropertyLocationPoi::where('listing_type', $listingType)
                     ->where('listing_id', $listingId)

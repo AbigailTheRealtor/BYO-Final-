@@ -17,18 +17,39 @@ return [
     | must opt in; local and testing stay off unless deliberately enabled for a
     | provider-mocked test.
     |
+    | PARSED STRICTLY, FAILING CLOSED. ON: `true`, `1`, `on`, `yes` (any case).
+    | OFF: unset, empty, `false`, `0`, `off`, `no` — and anything else. A plain
+    | (bool) cast reads `off` and `no` as ON, which is the wrong answer for the
+    | switch an operator reaches for mid-incident.
+    |
     */
-    'enabled' => (bool) env('GOOGLE_PLACES_ENABLED', false),
+    'enabled' => filter_var(env('GOOGLE_PLACES_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
 
     /*
     |--------------------------------------------------------------------------
-    | Application-level Circuit Breaker (request caps)
+    | Nearby Search request ceilings — HARD, enforced before each request
     |--------------------------------------------------------------------------
     |
-    | Hard ceilings on the number of Google Places Nearby Search requests this
-    | application will attempt, regardless of caller. Counters are kept in the
-    | cache store keyed by calendar day and clock hour. When a cap is reached the
-    | gate stops calling Google, logs/alerts, and returns empty results.
+    | Hard ceilings on the number of Google Places NEARBY SEARCH requests this
+    | application will send, regardless of caller: one unit per outbound HTTP
+    | request, admitted immediately BEFORE it is sent by
+    | App\Support\Google\GoogleProviderAdmissionMiddleware on the shared server
+    | HTTP client, through the shared ProviderRequestBudget. Request 26 in an hour
+    | and request 101 in a day are refused without reaching Google. A cache hit
+    | sends nothing and costs nothing; a retry is a new request and is admitted
+    | again; a request that was sent and failed still counted.
+    |
+    | A refusal is NOT an empty result: Location DNA records a failed POI run
+    | (the missing categories are fetched on a later run) and the search-area
+    | lookup reports the provider as unavailable without caching the answer.
+    |
+    | NEARBY SEARCH ONLY. Places Autocomplete and Geocoding are not governed by
+    | these numbers and are not yet budgeted server-side. Browser-side Places
+    | (the Maps JavaScript API) never reaches this server and needs Google Cloud
+    | controls instead.
+    |
+    | A zero, negative or malformed value is a ceiling of zero: it blocks Nearby
+    | Search entirely rather than unleashing it.
     |
     | These are a code-level backstop; they do NOT replace the Google Cloud
     | console quota + budget caps, which must also be configured before the API

@@ -298,25 +298,29 @@ class GooglePlacesKillSwitchTest extends TestCase
     }
 
     /**
-     * The five Google call sites frozen under INV-8 and SIA-D34. They still construct
-     * bare Guzzle clients and are therefore uninstrumentable. Closing them is Q12.
+     * The single sanctioned place the outbound Guzzle client is constructed:
+     * GoogleHttpClientFactory, which the container binding calls and which wraps the
+     * client in the handler stack carrying GoogleProviderAdmissionMiddleware and
+     * GoogleOutboundTelemetryMiddleware. Everything else must resolve ClientInterface
+     * from the container.
      *
-     * This list is an *upper bound*, not a requirement: if a future, explicitly
-     * approved exception clears one of these files, `only_frozen_files_still_construct…`
-     * keeps passing. What it will never allow is a bare client appearing anywhere else.
+     * There are no frozen exceptions any more. The five call sites once frozen under
+     * INV-8 / SIA-D34 in TenantAgentAuction and TenantAgentAuctionEdit were routed through
+     * the container by the Google Places cost-guard work — product-owner authorised, the
+     * client construction and nothing else. `no_file_constructs_a_bare_google_client`
+     * now allows none, anywhere.
      */
-    private const FROZEN_FILES = [
-        'app/Http/Livewire/TenantAgentAuction.php',
-        'app/Http/Livewire/TenantAgentAuctionEdit.php',
+    private const ALLOWED_CLIENT_FACTORY = [
+        'app/Support/Google/GoogleHttpClientFactory.php',
     ];
 
     /**
-     * The single sanctioned place a Guzzle client may be constructed: the container
-     * binding itself, which wraps it in the handler stack carrying
-     * GoogleOutboundTelemetryMiddleware. Everything else must resolve from it.
+     * Files that were bare Google callers and must now be seen — and pass — by the census.
+     * Their presence in the scan is what proves the census is not vacuous.
      */
-    private const ALLOWED_CLIENT_FACTORY = [
-        'app/Providers/AppServiceProvider.php',
+    private const FORMER_BARE_CALLERS = [
+        'app/Http/Livewire/TenantAgentAuction.php',
+        'app/Http/Livewire/TenantAgentAuctionEdit.php',
     ];
 
     /**
@@ -429,11 +433,17 @@ class GooglePlacesKillSwitchTest extends TestCase
     }
 
     /** @test */
-    public function only_frozen_files_still_construct_a_bare_google_client(): void
+    public function no_file_constructs_a_bare_google_client(): void
     {
-        // The census, enforced. Any NEW bare Guzzle client anywhere in app/ that calls a
-        // Google host fails this test, whatever role or file it is added to.
+        // The census, enforced, with no exceptions left: NO bare Guzzle client anywhere in
+        // app/ may call a Google host, whatever role or file it is added to.
+        //
+        // TenantAgentAuction / TenantAgentAuctionEdit are deliberately NOT in CLEARED_FILES:
+        // their authorised change was the client construction only, and they still call
+        // `$client->get()`, which works on the concrete Client the binding returns.
+        // TenantGoogleClientRoutingTest proves those paths reach the shared stack.
         $offenders = [];
+        $scanned   = [];
 
         foreach ($this->allPhpFilesUnderApp() as $absolute) {
             $relative = ltrim(str_replace(base_path(), '', $absolute), '/');
@@ -443,32 +453,34 @@ class GooglePlacesKillSwitchTest extends TestCase
                 continue;
             }
 
+            $scanned[] = $relative;
+
             if (preg_match(self::BARE_CLIENT_PATTERN, self::stripComments($source))) {
                 $offenders[] = $relative;
             }
         }
 
-        // Guard against a vacuous pass. The five frozen call sites are known to exist, so
-        // a scan that finds nothing means the scan itself is broken — which is exactly
-        // what a bad comment-stripper did to the original version of this assertion.
-        $this->assertNotEmpty(
-            $offenders,
-            'The census scan found no bare Google clients at all. The five frozen call '
-            . 'sites in ' . implode(' and ', self::FROZEN_FILES) . ' should have matched. '
-            . 'The scan is broken; it is not proving anything.',
+        // Guard against a vacuous pass. It used to assert that the five frozen sites still
+        // matched; with none left, it proves instead that the scan reached the files that
+        // WERE bare Google callers (and the Nearby adapter), and that the pattern still
+        // recognises a bare client once comments are stripped. A scan that saw nothing, or
+        // a pattern that matches nothing, would pass this census while proving nothing.
+        foreach ([...self::FORMER_BARE_CALLERS, 'app/Services/LocationDna/GooglePlacesPoiAdapter.php'] as $expected) {
+            $this->assertContains($expected, $scanned, "The census never scanned {$expected}. The scan is broken.");
+        }
+
+        $this->assertMatchesRegularExpression(
+            self::BARE_CLIENT_PATTERN,
+            self::stripComments('<?php $client = new \GuzzleHttp\Client();'),
+            'The bare-client pattern no longer recognises a bare client. The census would pass vacuously.',
         );
 
-        $unexpected = array_values(array_diff(
-            $offenders,
-            self::FROZEN_FILES,
-            self::ALLOWED_CLIENT_FACTORY,
-        ));
+        $unexpected = array_values(array_diff($offenders, self::ALLOWED_CLIENT_FACTORY));
 
         $this->assertSame(
             [],
             $unexpected,
-            "These files construct a bare Guzzle client and call Google, but are neither "
-            . "frozen nor the sanctioned container binding:\n  "
+            "These files construct a bare Guzzle client and call Google:\n  "
             . implode("\n  ", $unexpected)
             . "\nRoute them through app(ClientInterface::class). See erratum E-38.",
         );

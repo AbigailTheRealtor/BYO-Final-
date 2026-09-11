@@ -2383,7 +2383,7 @@ class TenantAgentAuction extends Component
 
     private function getAddressDetailsFromApi($address)
     {
-        $client = new \GuzzleHttp\Client();
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'address' => $address,
@@ -2499,7 +2499,7 @@ class TenantAgentAuction extends Component
     private function extractStateFromCountyUsingAPI($county)
     {
         try {
-            $client = new Client();
+            $client = app(\GuzzleHttp\ClientInterface::class);
 
             $response = $client->get('https://maps.googleapis.com/maps/api/geocode/json', [
                 'query' => [
@@ -2609,7 +2609,7 @@ class TenantAgentAuction extends Component
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
     {
-        $client = new Client();
+        $client = app(\GuzzleHttp\ClientInterface::class);
 
         $query = [
             'input' => $input,
