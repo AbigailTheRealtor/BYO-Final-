@@ -1,0 +1,132 @@
+/* Virtual Drive provider proof — INTERNAL, DEVELOPMENT ONLY. Styling is not the point of the proof. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.vd-body {
+    margin: 0;
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #111827;
+    background: #f3f4f6;
+}
+
+.vd-shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: "top" "stage" "card" "log";
+    min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+    .vd-shell {
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas: "top top" "stage card" "log card";
+        height: 100vh;
+    }
+}
+
+.vd-topbar {
+    grid-area: top;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #111827;
+    color: #f9fafb;
+}
+
+.vd-topbar-title { display: flex; flex-direction: column; }
+.vd-internal { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #fbbf24; }
+.vd-provider-nav { display: flex; gap: 8px; }
+.vd-provider-nav a { color: #d1d5db; text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid #374151; }
+.vd-provider-nav a.is-active { background: #f9fafb; color: #111827; }
+
+.vd-stage { grid-area: stage; position: relative; min-height: 58vh; background: #1f2937; }
+.vd-street { position: absolute; inset: 0; }
+.vd-street.is-fallback { display: flex; align-items: center; justify-content: center; padding: 24px; }
+
+.vd-fallback { max-width: 520px; background: #fff; border-radius: 10px; padding: 20px; }
+.vd-fallback h2 { margin: 0 0 8px; font-size: 18px; }
+
+.vd-sign {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+}
+.vd-sign-board {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 3px solid #fff;
+    background: #b91c1c;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    pointer-events: auto;
+}
+.vd-sign-rent .vd-sign-board { background: #1d4ed8; }
+.vd-sign-label { font-weight: 800; font-size: 18px; letter-spacing: .04em; }
+.vd-sign-price { font-size: 16px; }
+.vd-sign-cta { margin-top: 4px; border: 0; border-radius: 6px; padding: 3px 10px; background: #fff; color: #111827; font-weight: 600; cursor: pointer; }
+.vd-sign-caveat { max-width: 340px; margin: 6px auto 0; padding: 4px 8px; border-radius: 6px; background: rgba(17, 24, 39, .8); color: #fde68a; font-size: 12px; }
+.vd-sign.is-stale .vd-sign-board { opacity: .45; }
+
+/* Everything we draw over the imagery stays OFF the bottom edge. Both providers
+   put their logo and legal links there, and obscuring them breaches both sets
+   of terms — so the controls sit top-left and our status and HUD top-right. */
+.vd-provider-controls { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; max-width: calc(50% - 18px); }
+.vd-control { display: inline-block; padding: 6px 10px; border-radius: 6px; border: 0; background: rgba(255, 255, 255, .95); color: #111827; font: inherit; }
+.vd-control-note { margin: 0; font-size: 12px; background: rgba(254, 243, 199, .95); }
+button.vd-control { cursor: pointer; font-weight: 600; }
+.vd-hud { position: absolute; right: 12px; top: 12px; max-width: calc(50% - 18px); padding: 6px 10px; border-radius: 6px; background: rgba(17, 24, 39, .85); color: #fff; }
+.vd-imagery-status { position: absolute; right: 12px; top: 52px; max-width: calc(50% - 18px); padding: 4px 8px; border-radius: 6px; background: rgba(17, 24, 39, .8); color: #e5e7eb; font-size: 12px; }
+.vd-imagery-status:empty { display: none; }
+.vd-imagery-status.is-none { color: #fecaca; }
+
+.vd-card { grid-area: card; overflow-y: auto; padding: 12px 16px 16px; background: #fff; border-left: 1px solid #e5e7eb; }
+.vd-card-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.vd-card-nav button { border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.vd-card-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.vd-badge { font-weight: 800; font-size: 12px; letter-spacing: .06em; padding: 3px 8px; border-radius: 4px; color: #fff; background: #b91c1c; }
+.vd-badge-rent { background: #1d4ed8; }
+.vd-price { font-size: 22px; font-weight: 700; }
+.vd-facts, .vd-address, .vd-status { margin: 4px 0; }
+.vd-verify { margin: 6px 0; font-size: 11px; color: #6b7280; word-break: break-all; }
+.vd-muted { color: #6b7280; }
+
+.vd-photo-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 8px 0; }
+.vd-thumb { padding: 0; border: 0; background: #e5e7eb; aspect-ratio: 4 / 3; cursor: pointer; overflow: hidden; border-radius: 4px; }
+.vd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.vd-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+.vd-action { border: 1px solid #111827; background: #111827; color: #fff; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-weight: 600; }
+.vd-action:disabled { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; cursor: not-allowed; }
+.vd-unavailable-actions { margin: 0 0 8px; padding-left: 18px; font-size: 12px; color: #6b7280; }
+
+.vd-nearby h3 { margin: 12px 0 4px; font-size: 14px; }
+.vd-nearby small { font-weight: 400; color: #6b7280; }
+.vd-nearby ol { margin: 0; padding-left: 20px; }
+.vd-nearby-item { border: 0; background: none; padding: 2px 0; text-align: left; cursor: pointer; color: #1d4ed8; font: inherit; }
+.vd-nearby li.is-selected .vd-nearby-item { font-weight: 700; color: #111827; }
+.vd-attribution { margin-top: 12px; font-size: 11px; color: #6b7280; }
+
+.vd-log { grid-area: log; padding: 8px 16px; background: #111827; color: #e5e7eb; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; max-height: 32vh; overflow-y: auto; }
+.vd-log summary { cursor: pointer; font-weight: 700; }
+.vd-log dl { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin: 6px 0; }
+.vd-log dt { color: #9ca3af; }
+.vd-log dd { margin: 0; color: #fde68a; }
+.vd-events { margin: 0; padding-left: 18px; }
+
+.vd-lightbox { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(0, 0, 0, .9); padding: 16px; }
+.vd-lightbox[hidden] { display: none; }
+.vd-lightbox img { max-width: calc(100% - 96px); max-height: 80vh; }
+.vd-lightbox-close { position: absolute; top: 8px; right: 12px; font-size: 32px; color: #fff; background: none; border: 0; cursor: pointer; }
+.vd-lightbox-step { font-size: 40px; color: #fff; background: none; border: 0; cursor: pointer; }
+.vd-lightbox-caption { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; color: #e5e7eb; }

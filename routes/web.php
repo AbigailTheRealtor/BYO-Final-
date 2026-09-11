@@ -1371,6 +1371,22 @@ Route::middleware(['auth', 'offerPlayoffAccess'])->group(function () {
 // ===========================================================================
 
 // ===========================================================================
+// Virtual Drive provider proof — Apple Look Around vs Google Street View.
+// INTERNAL, DEVELOPMENT ONLY. Registered unconditionally so the gate itself is
+// testable; every route 404s wherever VirtualDriveProofGate refuses — any
+// environment outside local/development/testing (production first), and
+// anywhere the fail-closed VIRTUAL_DRIVE_PROOF_ENABLED is not on. Reads stored
+// MLS rows only and sends no Bridge request; see config/virtual_drive.php.
+// ===========================================================================
+Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev.virtual-drive.')->group(function () {
+    Route::get('/apple', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'apple'])->name('apple');
+    Route::get('/google', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'google'])->name('google');
+    Route::get('/api/listings', [\App\Http\Controllers\Dev\VirtualDriveListingController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.listings');
+});
+
+// ===========================================================================
 // LAYER 2 DEV-ONLY — OfferListing duplication test routes
 // These routes are DEVELOPMENT-ONLY. Do NOT use in production.
 // Purpose: smoke-test the duplicated OfferListing Livewire components.
