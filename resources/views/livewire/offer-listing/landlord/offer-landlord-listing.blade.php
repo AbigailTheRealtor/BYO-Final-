@@ -1332,7 +1332,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             currentServiceType = 'full_service';
             initializeFullService();
-            addIconsToInputs();
+            // Page-load icon passes are the shared renderer's
+            // (shared/_field-icons.blade.php); its rAF and timed passes run after
+            // this listener, so they land after initializeFullService().
         });
         
         // Sync select element values from Livewire component data
@@ -2831,7 +2833,9 @@
         Livewire.hook('message.processed', () => {
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
-            addIconsToInputs();
+            // The immediate post-update icon pass is the shared renderer's own
+            // hook (shared/_field-icons.blade.php). This page's 200 ms settle pass
+            // is its own and stays.
             setTimeout(addIconsToInputs, 200);
 
             let newServiceType = 'full_service';

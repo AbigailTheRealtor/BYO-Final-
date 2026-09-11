@@ -58,15 +58,29 @@ class BatchDSharedComponentTest extends TestCase
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * Create Seller no longer carries its own exchange_item block: it initialises
+     * and binds the control through the canonical Sale Terms initializer, which
+     * Seller Edit and MLS Quick Import share. The #8 guarantee moved with the
+     * handler, so it is asserted where the handler now lives — and Create is
+     * asserted to reach it.
+     */
     public function create_seller_exchange_handler_refreshes_data_selected(): void
     {
-        $src = $this->viewSource('offer-listing/seller/offer-seller-listing.blade.php');
+        $initializer = $this->viewSource('offer-listing/offer-seller-tabs/commission-based/_seller-terms-behaviour.blade.php');
 
         $this->assertStringContainsString(
-            "\$exEl.attr('data-selected', JSON.stringify(selectedValues));",
-            $src,
-            '#8: Create Seller exchange_item change handler must refresh data-selected after commit.'
+            "\$ex.attr('data-selected', JSON.stringify(selectedValues));",
+            $initializer,
+            '#8: the canonical exchange_item change handler must refresh data-selected after commit.'
+        );
+
+        $this->assertStringContainsString(
+            'window.initSellerTermsSelect2({ ownsBinding: true })',
+            $this->viewSource('offer-listing/seller/offer-seller-listing.blade.php'),
+            '#8: Create Seller must bind exchange_item through the canonical initializer.'
         );
     }
 

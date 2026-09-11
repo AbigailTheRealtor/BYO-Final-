@@ -5,202 +5,226 @@ namespace App\Support\OfferListing;
 /**
  * The Your Terms summary on the MLS Quick Import review step.
  *
- * THE DEFECT THIS CLOSES
- * ----------------------
+ * THE DEFECTS THIS CLOSES
+ * -----------------------
  * The review list was built by looping every canonical terms field and printing
- * any non-empty value. That is wrong for one specific shape of field: the `$` /
- * `%` selector that sits BESIDE an amount. Those controls are never blank — they
- * default to `$` or `%` — so they printed as their own rows, with the toggle's
- * symbol as the "answer", whether or not their branch was ever chosen:
+ * any non-empty value. That published three kinds of thing that are not answers:
  *
- *     Additional deposit type    $
- *     Assumable fee type         $
- *     Down payment type          %
- *     Gap payment type           $
- *     Initial deposit type       $
- *     Seller financing type      $
+ *   1. `$` / `%` selectors. They default to a symbol and are never blank, so a
+ *      seller reviewing a cash sale was shown "Assumable fee type  $",
+ *      "Down payment type  %", "Seller financing type  $" and four more.
  *
- * A seller reviewing a cash sale was shown six rows about assumable mortgages
- * and seller financing they had not selected.
+ *   2. Follow-ups whose parent is no longer chosen. A seller who picked
+ *      Assumable, typed a fee, then deselected Assumable still saw
+ *      "Assumable fee amount 2500" — a branch the finished listing hides.
  *
- * WHAT A `*_type` FIELD ACTUALLY IS — AND WHY THE LIST BELOW IS NOT A NEW MAP
- * ---------------------------------------------------------------------------
- * Not every `*_type` field is a toggle. The canonical partial has ten of them and
- * they are two different kinds of thing:
+ *   3. Storage keys and raw numbers: "Maximum budget  385000" on the screen
+ *      where the seller confirms the price the form called "Desired Sale Price".
  *
- *   MODIFIERS — the select offers exactly `$` and `%`. It is not an answer, it is
- *   the unit of the amount next to it. The finished listing page already treats
- *   them this way and never gives one a row of its own; it passes them as the
- *   second argument to {@see ConditionalTerms::amount()}:
+ * HOW EACH IS DECIDED — AND WHY NOTHING IS DECIDED HERE
+ * -----------------------------------------------------
+ * {@see ConditionalTerms} is the one place that knows how a Your Terms value is
+ * published: applies() for whether a follow-up's parent currently opens it,
+ * answered() / toList() / withOther() for what counts as an answer and how
+ * "Other" reads, amount() for money and percentages. This class selects which
+ * fields to consider and which formatter each takes; every judgement is
+ * ConditionalTerms'. The lists below are the only knowledge kept here, and each
+ * is read off the canonical markup and asserted against it by
+ * {@see \Tests\Feature\ListingImport\MlsQuickImportReviewPresentationTest}:
  *
- *       $row('Assumption Fee', $terms::amount($str('assumable_fee_amount'),
- *                                             $str('assumable_fee_type')))
+ *   UNITS    a `*_type` select whose only options are `$` and `%` (or
+ *            flat / percent), and the amount input beside it that it formats.
+ *            Never a row of its own.
+ *   MONEY    inputs the tab prefixes with a fixed `$`.
+ *   PERCENT  inputs the tab suffixes with a fixed `%`.
  *
- *   ANSWERS — `assumable_loan_type` offers FHA/VA/…, `seller_amortization_type`
- *   offers "Fully Amortizing", `cryptocurrency_type` is free text ("Bitcoin").
- *   These are real answers and keep their rows.
- *
- * So MODIFIERS below is not an invented classification. It is read off the
- * canonical markup — a `*_type` control whose only options are `$` and `%` — and
- * {@see \Tests\Feature\ListingImport\MlsQuickImportReviewPresentationTest}
- * asserts exactly that against the partial, so a control that changes shape
- * breaks the build instead of silently reappearing as a bare `$`.
- *
- * `seller_financing_type` is a modifier with no amount beside it in the canonical
- * field set, so it has nothing to format and is simply suppressed. That is the
- * honest answer: printing "$" on its own says nothing.
- *
- * WHY THIS DEFERS EVERY DECISION TO ConditionalTerms
- * --------------------------------------------------
- * `ConditionalTerms` is already the one place that knows how a Your Terms value
- * is published — `answered()` for whether a value counts, `amount()` for the
- * money/percentage pairing, `valueWithOther()` for an "Other" free-text
- * companion. The review screen and the finished listing must not be able to
- * disagree about any of that, so this class decides nothing itself: it selects
- * which fields to consider and hands every actual judgement to ConditionalTerms.
+ * Landlord Leasing Terms has NO unit selectors. `pet_fee_type` looks like one
+ * by name and is not: it offers "One Time Fee Refundable", "Monthly Pet Fee" and
+ * so on, which is an answer, and it is the PARENT of the pet fee amount and
+ * details. Suppressing it would have hidden the landlord's answer.
  */
 final class QuickImportTermsReview
 {
     /**
-     * `$` / `%` selectors, mapped to the amount field they format.
+     * `$` / `%` selector => the amount it formats.
      *
-     * A null partner means the modifier has no amount in the canonical set and
-     * is dropped outright.
+     * `seller_financing_type` sits beside `seller_down_payment_amount` (the tab's
+     * "Seller Financing" amount) — it is not an orphan and is not dropped.
      *
-     * @var array<string, string|null>
+     * @var array<string, string>
      */
-    private const SELLER_MODIFIERS = [
-        'additional_deposit_type' => 'additional_deposit_requested',
+    private const SELLER_UNITS = [
         'assignment_fee_type'     => 'assignment_fee_amount',
         'assumable_fee_type'      => 'assumable_fee_amount',
-        'down_payment_type'       => 'down_payment_amount',
         'gap_payment_type'        => 'gap_payment_amount',
+        'down_payment_type'       => 'down_payment_amount',
+        'seller_financing_type'   => 'seller_down_payment_amount',
         'initial_deposit_type'    => 'initial_deposit_requested',
-        'seller_financing_type'   => null,
+        'additional_deposit_type' => 'additional_deposit_requested',
     ];
 
-    /** @var array<string, string|null> */
-    private const LANDLORD_MODIFIERS = [
-        'pet_fee_type' => 'pet_fee_amount',
+    /** @var array<string, string> */
+    private const LANDLORD_UNITS = [];
+
+    /** Inputs the Sale Terms tab prefixes with a fixed `$`. */
+    private const SELLER_MONEY = [
+        'starting_price', 'reserve_price', 'buy_now_price', 'maximum_budget',
+        'max_monthly_payment', 'assumable_monthly_escrow', 'outstanding_balance',
+        'exchange_item_value', 'additional_cash',
+        'lease_option_price', 'lease_option_payment', 'option_fee_amount',
+        'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_rent_credit_amount', 'lease_purchase_deposit',
+        'purchase_price', 'prepayment_penalty_amount', 'balloon_payment_amount',
+        'payment_annual_property_taxes', 'payment_monthly_insurance', 'payment_hoa_fee_amount',
     ];
+
+    /** Inputs the Sale Terms tab suffixes with a fixed `%`. */
+    private const SELLER_PERCENT = [
+        'max_assumable_rate', 'crypto_percentage', 'cash_percentage_crypto',
+        'lease_option_fee_credit_percentage', 'nft_percentage', 'cash_percentage_nft',
+        'interest_rate', 'payment_down_payment_pct', 'payment_interest_rate', 'payment_pmi_rate',
+    ];
+
+    /** Inputs the Leasing Terms tab prefixes with a fixed `$`. */
+    private const LANDLORD_MONEY = [
+        'starting_rent', 'reserve_rent', 'lease_now_price', 'desired_rental_amount',
+        'security_deposit_amount', 'total_move_in_funds_required', 'pet_fee_amount',
+    ];
+
+    private const LANDLORD_PERCENT = [];
 
     /**
-     * Field name → the label the person answering it actually saw.
+     * Field name => the label the person answering it actually saw.
      *
-     * Only fields whose storage key reads as something else to a human. The
-     * derived label is otherwise kept, because inventing a second label list that
+     * Only fields whose storage key reads as something else to a human; the
+     * derived label is otherwise kept, because a second full label list that
      * could disagree with the tab is worse than a plainly-derived one.
      *
      * `maximum_budget` is the headline case: it is the meta key behind the
-     * Seller's "Desired Sale Price" input, and showing a seller "Maximum budget
-     * 385000" on the screen where they confirm their own asking price is the
-     * review contradicting the form.
+     * Seller's "Desired Sale Price" input. `desired_rental_amount` is the key
+     * behind the Landlord's "Desired Lease Price", the label both the tab and the
+     * published listing use.
      *
      * @var array<string, string>
      */
     private const LABELS = [
-        'maximum_budget'              => 'Desired Sale Price',
-        'desired_rental_amount'       => 'Desired Rental Amount',
-        'starting_price'              => 'Starting Price',
-        'reserve_price'               => 'Reserve Price',
-        'buy_now_price'               => 'Buy Now Price',
-        'starting_rent'               => 'Starting Rent',
-        'reserve_rent'                => 'Reserve Rent',
-        'lease_now_price'             => 'Lease Now Price',
-        'assignment_fee_amount'       => 'Assignment Fee',
-        'assumable_fee_amount'        => 'Assumption Fee',
+        'maximum_budget'               => 'Desired Sale Price',
+        'desired_rental_amount'        => 'Desired Lease Price',
+        'starting_price'               => 'Starting Price',
+        'reserve_price'                => 'Reserve Price',
+        'buy_now_price'                => 'Buy Now Price',
+        'starting_rent'                => 'Starting Rent',
+        'reserve_rent'                 => 'Reserve Rent',
+        'lease_now_price'              => 'Lease Now Price',
+        'assignment_fee_amount'        => 'Assignment Fee',
+        'assumable_fee_amount'         => 'Assumption Fee',
         'additional_deposit_requested' => 'Additional Deposit',
-        'initial_deposit_requested'   => 'Initial Deposit',
-        'down_payment_amount'         => 'Down Payment',
-        'gap_payment_amount'          => 'Gap Payment',
-        'security_deposit_amount'     => 'Security Deposit',
+        'initial_deposit_requested'    => 'Initial Deposit',
+        'down_payment_amount'          => 'Down Payment',
+        'seller_down_payment_amount'   => 'Seller Financing Amount',
+        'gap_payment_amount'           => 'Gap Payment',
+        'security_deposit_amount'      => 'Security Deposit',
         'total_move_in_funds_required' => 'Total Move-In Funds',
-        'pet_fee_amount'              => 'Pet Fee',
+        'pet_fee_amount'               => 'Pet Fee',
+        'pet_fee_other'                => 'Pet Fee Details',
     ];
 
-    /** Money fields with no `$`/`%` control beside them — always currency. */
-    private const PLAIN_MONEY = [
-        'maximum_budget', 'starting_price', 'reserve_price', 'buy_now_price',
-        'desired_rental_amount', 'starting_rent', 'reserve_rent', 'lease_now_price',
-        'security_deposit_amount', 'total_move_in_funds_required',
-    ];
-
-    /** @return array<string, string|null> */
-    public static function modifiersFor(string $role): array
+    /** @return array<string, string> selector => amount */
+    public static function unitsFor(string $role): array
     {
-        return $role === 'landlord' ? self::LANDLORD_MODIFIERS : self::SELLER_MODIFIERS;
+        return $role === 'landlord' ? self::LANDLORD_UNITS : self::SELLER_UNITS;
+    }
+
+    /** @return list<string> */
+    public static function moneyFor(string $role): array
+    {
+        return $role === 'landlord' ? self::LANDLORD_MONEY : self::SELLER_MONEY;
+    }
+
+    /** @return list<string> */
+    public static function percentFor(string $role): array
+    {
+        return $role === 'landlord' ? self::LANDLORD_PERCENT : self::SELLER_PERCENT;
     }
 
     /**
      * Build the review rows for one role.
      *
-     * @param  list<string>          $fields  the canonical field list for this role
-     * @param  callable(string):mixed $read   field name → the component's value
-     * @return array<string, string>          label => published value
+     * @param  list<string>           $fields  the canonical field list for this role
+     * @param  callable(string):mixed $read    field name → the component's value
+     * @return array<string, string>           label => published value
      */
     public static function rows(string $role, array $fields, callable $read): array
     {
-        $modifiers = self::modifiersFor($role);
-
-        // Every amount that a modifier formats. Their rows are produced by the
-        // modifier pass so the unit travels with the figure; emitting them again
-        // from the plain pass would print the number twice, once unformatted.
-        $pairedAmounts = array_values(array_filter($modifiers));
+        $units     = self::unitsFor($role);
+        $unitOf    = array_flip($units);                    // amount => its selector
+        $writeIns  = ConditionalTerms::writeIns($role);     // write-in => parent
+        $writeInOf = array_flip($writeIns);                 // parent => its write-in
+        $money     = self::moneyFor($role);
+        $percent   = self::percentFor($role);
 
         $rows = [];
 
         foreach ($fields as $field) {
-            if ($field === 'showPaymentAssumptions') {
-                continue; // a disclosure toggle, not an answer
-            }
-
-            // A `$` / `%` selector. Never its own row — it is the unit of the
-            // amount beside it, and ConditionalTerms::amount() applies it.
-            if (array_key_exists($field, $modifiers)) {
-                $partner = $modifiers[$field];
-
-                if ($partner === null) {
-                    continue;
-                }
-
-                $formatted = ConditionalTerms::amount(
-                    $read($partner),
-                    self::normaliseUnit($read($field)),
-                );
-
-                if ($formatted !== null) {
-                    $rows[self::label($partner)] = $formatted;
-                }
-
+            // Not answers: a panel toggle, a unit (it formats its amount), and the
+            // "Other" text (it is published inside its parent's answer).
+            if (in_array($field, ConditionalTerms::DISCLOSURE_TOGGLES, true)
+                || isset($units[$field])
+                || isset($writeIns[$field])) {
                 continue;
             }
 
-            if (in_array($field, $pairedAmounts, true)) {
-                continue; // emitted above, with its unit
+            // The parent decides. A value behind a closed branch is kept and is
+            // not published — the same rule the finished listing follows.
+            if (! ConditionalTerms::applies($role, $field, $read)) {
+                continue;
             }
 
             $value = $read($field);
 
-            if (! ConditionalTerms::answered($value)) {
+            if (isset($unitOf[$field])) {
+                $shown = ConditionalTerms::amount($value, self::normaliseUnit($read($unitOf[$field])));
+            } elseif (in_array($field, $money, true)) {
+                $shown = ConditionalTerms::amount($value);
+            } elseif (in_array($field, $percent, true)) {
+                $shown = ConditionalTerms::amount($value, '%');
+            } else {
+                $shown = self::answer($role, $field, $value, $writeInOf, $read);
+            }
+
+            if ($shown === null || $shown === '') {
                 continue;
             }
 
-            if (in_array($field, self::PLAIN_MONEY, true)) {
-                $formatted = ConditionalTerms::amount($value);
-
-                if ($formatted === null) {
-                    continue;
-                }
-
-                $rows[self::label($field)] = $formatted;
-
-                continue;
-            }
-
-            $rows[self::label($field)] = self::flatten($value);
+            $rows[self::label($field)] = $shown;
         }
 
         return $rows;
+    }
+
+    /**
+     * An ordinary answer as one printable string, or null for no answer.
+     *
+     * A parent with an "Other" write-in reads through withOther(), so "Other"
+     * becomes what was typed for it — and only while that write-in is itself
+     * open.
+     *
+     * @param array<string, string> $writeInOf
+     */
+    private static function answer(string $role, string $field, mixed $value, array $writeInOf, callable $read): ?string
+    {
+        if (is_bool($value)) {
+            return $value ? 'Yes' : null;
+        }
+
+        if (isset($writeInOf[$field])) {
+            $writeIn = $writeInOf[$field];
+            $typed   = ConditionalTerms::applies($role, $writeIn, $read) ? $read($writeIn) : null;
+            $list    = ConditionalTerms::withOther($value, $typed);
+        } else {
+            $list = ConditionalTerms::toList($value);
+        }
+
+        return $list === [] ? null : implode(', ', $list);
     }
 
     /**
@@ -208,22 +232,16 @@ final class QuickImportTermsReview
      *
      * Six of the seven seller toggles store the symbol itself (`$` / `%`). ONE
      * does not: `gap_payment_type` stores `flat` / `percent`, and
-     * ConditionalTerms::amount() tests for the literal `'%'`. Passing `percent`
-     * through unchanged would fall to the dollar branch and publish a 3% gap
-     * payment as "$3" — the exact defect amount() was written to fix, reaching it
-     * through a vocabulary it does not speak.
+     * ConditionalTerms::amount() tests for the literal `'%'`. Passed through
+     * unchanged, a 3% gap payment would publish as "$3".
      *
      * Normalised here rather than in ConditionalTerms because that class is
      * consumed by the live listing pages, and widening what it accepts is a
-     * change to published listings. This is the narrow adapter for the one
-     * control that spells the unit as a word; the markup binding in
-     * MlsQuickImportReviewPresentationTest pins which controls those are.
+     * change to published listings.
      */
     private static function normaliseUnit(mixed $type): mixed
     {
-        $token = strtolower(trim((string) $type));
-
-        return match ($token) {
+        return match (strtolower(trim((string) $type))) {
             'percent' => '%',
             'flat'    => '$',
             default   => $type,
@@ -242,26 +260,12 @@ final class QuickImportTermsReview
         $label = preg_replace('/\bnft\b/i', 'NFT', $label) ?? $label;
         $label = preg_replace('/\bpmi\b/i', 'PMI', $label) ?? $label;
         $label = preg_replace('/\bpct\b/i', '%', $label) ?? $label;
+        $label = preg_replace('/\bcam nnn\b/i', 'CAM/NNN', $label) ?? $label;
+        $label = preg_replace('/\bcom\b/i', 'commercial', $label) ?? $label;
+        $label = preg_replace('/\bres\b/i', 'residential', $label) ?? $label;
+        $label = preg_replace('/\bll\b/i', 'Landlord', $label) ?? $label;
+        $label = preg_replace('/\baccess 24 7\b/i', '24/7 access', $label) ?? $label;
 
         return ucfirst($label);
-    }
-
-    /**
-     * A stored value as one printable string.
-     *
-     * Routed through ConditionalTerms::toList() so the three shapes a
-     * multi-select reaches a view in — array, JSON string, empty string — all
-     * flatten the same way, which is the same normalisation the listing page
-     * applies.
-     */
-    private static function flatten(mixed $value): string
-    {
-        if (is_bool($value)) {
-            return $value ? 'Yes' : 'No';
-        }
-
-        $list = ConditionalTerms::toList($value);
-
-        return $list === [] ? trim((string) $value) : implode(', ', $list);
     }
 }

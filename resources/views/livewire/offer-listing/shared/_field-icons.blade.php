@@ -27,14 +27,20 @@
     _lease-terms-behaviour; presentation ships by being inside the container;
     icons ship here.
 
-    WHY THE FUNCTION IS GLOBAL AND THE CALL SITES ARE NOT MOVED
-    ----------------------------------------------------------
-    The four Offer Listing wrappers call `addIconsToInputs()` from a dozen
-    page-specific places — after `initializeFullService()`, after a draft loads,
-    on tab switches, inside their own Livewire hooks. Those calls are page
-    orchestration and are deliberately left where they are. Only the DEFINITION
-    is shared, published on `window` so every existing call site keeps working
-    unchanged. This partial must therefore be included BEFORE those scripts run.
+    WHO OWNS WHICH PASS
+    -------------------
+    This partial owns the icon LIFECYCLE that every consumer needs identically:
+    the page-load passes (immediate, rAF, then 100 / 300 / 700 / 1500 / 2500 ms)
+    and the immediate + 0 ms passes after every Livewire update. The four
+    Seller/Landlord Create/Edit wrappers used to repeat those exact passes; their
+    copies are removed.
+
+    What the wrappers still call is page orchestration this partial cannot see:
+    a tab switch (`shown.bs.tab`), a draft load, an MLS apply, the end of their
+    own Select2 re-initialisation, Seller Create's post-`initializeFullService()`
+    schedule and the Landlord 200 ms settle pass. Those stay where they are, and
+    the function is published on `window` so every one of them keeps working.
+    This partial must therefore be included BEFORE those scripts run.
 
     THE GUARD IS THE LANDLORD'S, AND THAT CHOICE IS LOAD-BEARING
     ------------------------------------------------------------

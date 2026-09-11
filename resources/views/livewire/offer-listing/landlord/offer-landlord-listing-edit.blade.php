@@ -1220,8 +1220,9 @@ $tenantPays = [
         document.addEventListener('DOMContentLoaded', () => {
             currentServiceType = 'full_service';
             initializeFullService();
-            addIconsToInputs();
-            setTimeout(function() { addIconsToInputs(); }, 0);
+            // Page-load icon passes are the shared renderer's
+            // (shared/_field-icons.blade.php); its rAF and timed passes run after
+            // this listener, so they land after initializeFullService().
             checkRepresentationStatus();
         });
 
@@ -2560,18 +2561,16 @@ $tenantPays = [
             }
         }
 
-        document.addEventListener('livewire:load', function() {
-            addIconsToInputs();
-            setTimeout(addIconsToInputs, 150);
-            setTimeout(addIconsToInputs, 400);
-            setTimeout(addIconsToInputs, 800);
-        });
+        // The page-load icon retries (0 / 150 / 400 / 800 ms) that used to run on
+        // livewire:load are covered by the shared renderer's own page-load passes
+        // (shared/_field-icons.blade.php: immediate, rAF, 100 … 2500 ms).
 
         if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
-            addIconsToInputs();
+            // The immediate post-update icon pass is the shared renderer's own
+            // hook. This page's 200 ms settle pass is its own and stays.
             setTimeout(addIconsToInputs, 200);
 
             // Bypass throttle when #non_negotiable_amenities was freshly recreated by wire:key

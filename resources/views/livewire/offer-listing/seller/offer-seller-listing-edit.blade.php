@@ -1139,8 +1139,9 @@
             currentServiceType = 'full_service';
             initializeFullService();
 
-            addIconsToInputs();
-            setTimeout(function() { addIconsToInputs(); }, 0);
+            // Page-load icon passes are the shared renderer's
+            // (shared/_field-icons.blade.php); its rAF and timed passes run after
+            // this listener, so they land after initializeFullService().
             checkRepresentationStatus();
 
             // Polling safety net: re-apply provision/financing section visibility
@@ -1231,30 +1232,8 @@
                 $('#other_appliances').toggle(($('#appliances').val() || []).includes('Other'));
             }
 
-            if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
-                $('#exchange_item').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                    width: '100%',
-                    closeOnSelect: false,
-                });
-                var savedExchangeItems = @this.get('exchange_item') || [];
-                if (savedExchangeItems.length > 0) {
-                    $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
-                }
-                $('#other_exchange_item_wrapper').toggle((savedExchangeItems || []).includes('Other'));
-                $('#exchange_item').on('change', function(e) {
-                    var selectedValues = $(this).val() || [];
-                    @this.set('exchange_item', selectedValues, false);
-                    $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
-                });
-            } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
-                var savedExchangeItems = @this.get('exchange_item') || [];
-                var currentVal = $('#exchange_item').val() || [];
-                if (savedExchangeItems.length > 0 && currentVal.length === 0) {
-                    $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
-                }
-            }
+            // Exchange Item is initialised, restored and bound by the
+            // initSellerTermsSelect2() call further down this function.
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
                 $('#included_assets').select2({
@@ -1281,21 +1260,22 @@
 
             initializeMlsPropertyMultiSelects();
 
-            if ($('#offered_financing').length) {
-                if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    $('#offered_financing').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
-                }
-                applyFinancingVisibility();
+            // Special Sale Provision, Offered Financing/Currency and Exchange Item:
+            // initialised by the canonical Sale Terms initializer
+            // (_seller-terms-behaviour), the same one Seller Create and MLS Quick
+            // Import use. This page used to spell the Select2 options out inline
+            // (identical to the shared definition) and keep its own Exchange Item
+            // block. The Special Sale Provision restore below is this page's own
+            // and is kept as it was: on a freshly initialised widget it re-applies
+            // the stored answer.
+            var _spNewInit = $('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible');
+            if (typeof window.initSellerTermsSelect2 === 'function') {
+                window.initSellerTermsSelect2({ ownsBinding: true });
             }
-
-            if ($('#sale_provision').length) {
-                var _spNewInit = !$('#sale_provision').hasClass('select2-hidden-accessible');
-                if (_spNewInit) {
-                    $('#sale_provision').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
-                    var _savedProvision = @json($sale_provision ?? []);
-                    if (_savedProvision && _savedProvision.length > 0) {
-                        $('#sale_provision').val(_savedProvision).trigger('change.select2');
-                    }
+            if (_spNewInit) {
+                var _savedProvision = @json($sale_provision ?? []);
+                if (_savedProvision && _savedProvision.length > 0) {
+                    $('#sale_provision').val(_savedProvision).trigger('change.select2');
                 }
                 applyProvisionVisibility();
             }
@@ -2017,12 +1997,9 @@
             }
         }
 
-        document.addEventListener('livewire:load', function() {
-            addIconsToInputs();
-            setTimeout(addIconsToInputs, 150);
-            setTimeout(addIconsToInputs, 400);
-            setTimeout(addIconsToInputs, 800);
-        });
+        // The page-load icon retries (0 / 150 / 400 / 800 ms) that used to run on
+        // livewire:load are covered by the shared renderer's own page-load passes
+        // (shared/_field-icons.blade.php: immediate, rAF, 100 … 2500 ms).
 
         // Re-inject icons and re-bind wizard handlers after draft data loads.
         // The delegated listener on `document` is already bound once and survives
@@ -2064,7 +2041,8 @@
 
         if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
-            addIconsToInputs();
+            // The immediate post-update icon pass is the shared renderer's own
+            // hook (shared/_field-icons.blade.php).
             checkRepresentationStatus();
             // Reformat all money inputs that are not currently focused
             document.querySelectorAll('input[onblur="reformatNumber(this)"]').forEach(function(inp) {
