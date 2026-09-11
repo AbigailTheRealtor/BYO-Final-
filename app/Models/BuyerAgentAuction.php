@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasApprovalFlag;
 use App\Models\Concerns\ScopesListingWorkflow;
 use App\Traits\HasListingId;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,13 +17,16 @@ class BuyerAgentAuction extends Model
     // shares this table. See ScopesListingWorkflow — it is a PRE-filter, not the
     // whole rule; ListingWorkflowResolver decides.
     use ScopesListingWorkflow;
+
+    // `is_approved` is read from its raw stored value through ListingFlag, not
+    // cast — `(bool) 'false'` is true. See HasApprovalFlag.
+    use HasApprovalFlag;
     protected $guarded = [];
     protected $appends = ["get", "status"];
     protected $with = ['meta'];
-    
+
     protected $casts = [
         'is_draft' => 'boolean',
-        'is_approved' => 'boolean',
     ];
     
     protected $attributes = [
