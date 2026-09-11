@@ -3,6 +3,7 @@
 namespace App\Services\Stellar;
 
 use App\Models\BuyerAgentAuction;
+use App\Support\Listing\ListingFlag;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -87,9 +88,13 @@ class BuyerOfferListingCriteriaLoader
         }
 
         $query = BuyerAgentAuction::whereIn('id', $offerListingIds)
-            ->whereIn('user_id', $allowedUserIds)
-            ->where('is_approved', true)
-            ->where('is_sold', false);
+            ->whereIn('user_id', $allowedUserIds);
+
+        // The Buyer Offer Listing wizard publishes is_approved = 'true' and
+        // is_sold = 'false' into varchar columns; where(true) / where(false) find only
+        // '1' / '0'. ListingFlag reads every stored form, as the model does.
+        ListingFlag::whereTrue($query, 'is_approved');
+        ListingFlag::whereNotTrue($query, 'is_sold');
 
         if ($recordId !== null) {
             $query->where('id', $recordId);

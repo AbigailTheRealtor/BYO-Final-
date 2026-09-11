@@ -58,4 +58,50 @@ final class ListingFlag
     {
         return in_array($value, self::TRUE_VALUES, true);
     }
+
+    /**
+     * TRUE_VALUES as a varchar column stores them: PHP true and 1 are written as '1'.
+     *
+     * @return list<string>
+     */
+    public static function storedTrueValues(): array
+    {
+        $stored = array_map(
+            static fn ($value): string => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
+            self::TRUE_VALUES
+        );
+
+        return array_values(array_unique($stored));
+    }
+
+    /**
+     * Constrain a query to rows whose $column is set — the query side of isTrue().
+     *
+     * A query never passes through the model, so the model's reading does not reach it.
+     * `where($column, true)` binds the integer 1 and matches '1' alone, while both Buyer
+     * publish paths store the string 'true': a row isTrue() calls set, and that where()
+     * never finds. An exact list of the stored forms matches both, coerces nothing, and
+     * reads the same on SQLite and PostgreSQL.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     */
+    public static function whereTrue($query, string $column)
+    {
+        return $query->whereIn($column, self::storedTrueValues());
+    }
+
+    /**
+     * Constrain a query to rows whose $column is NOT set: every other value, NULL
+     * included — a bare NOT IN would drop NULL rows silently.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     */
+    public static function whereNotTrue($query, string $column)
+    {
+        return $query->where(function ($q) use ($column) {
+            $q->whereNotIn($column, self::storedTrueValues())->orWhereNull($column);
+        });
+    }
 }
