@@ -175,4 +175,20 @@ class ProductRouteGateTest extends TestCase
         $this->actingAs($agent)->get('/search/seller-listings')->assertNotFound();
         $this->actingAs($agent)->get('/offer-listing/seller')->assertNotFound();
     }
+
+    /** @test */
+    public function explore_is_refused_in_bidyouragent_mode_even_with_its_own_flag_on(): void
+    {
+        // Explore's own flag defaulting off is what hid that it was never classified.
+        // Its 404 has to come from the product gate, not from the rollout switch.
+        config(['explore.enabled' => true, 'products.active' => 'bidyouragent']);
+
+        $this->get('/explore')->assertNotFound();
+        $this->get('/api/explore/listings')->assertNotFound();
+        $this->get('/api/explore/listings/ABC123')->assertNotFound();
+
+        config(['products.active' => null, 'products.hosts' => []]);
+
+        $this->assertNotSame(404, $this->get('/explore')->getStatusCode());
+    }
 }

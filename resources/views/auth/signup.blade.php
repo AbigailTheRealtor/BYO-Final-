@@ -360,23 +360,21 @@
         <div class="col-12">
             <ul class="d-flex align-items-center justify-content-between ps-0">
                 <li>
-                    <a href="sellerWork.html"> <i class="fa-solid fa-home"></i> <span>Seller</span></a>
+                    <a href="{{ route('sellerWorks') }}"> <i class="fa-solid fa-home"></i> <span>Seller</span></a>
                 </li>
 
                 <li>
-                    <a href="sellerWorkAgent.html"> <i class="fa-solid fa-home"></i><span> Seller’s Agent</span></a>
+                    <a href="{{ route('sellerWorksAgent') }}"> <i class="fa-solid fa-home"></i><span> Seller’s Agent</span></a>
+                </li>
+
+                @include('layouts.partials.mobile_primary_action')
+
+                <li>
+                    <a href="{{ route('buyerWorks') }}"> <i class="fa-solid fa-home"></i><span>Buyer</span></a>
                 </li>
 
                 <li>
-                    <a href="addListing.html" class="add-listing"><i class="fa-solid fa-plus text-white"></i> </a>
-                </li>
-
-                <li>
-                    <a href="buyerWork.html"> <i class="fa-solid fa-home"></i><span>Buyer</span></a>
-                </li>
-
-                <li>
-                    <a href="buyerWorkAgent.html"> <i class="fa-solid fa-home"></i><span>Buyer’s Agent</span></a>
+                    <a href="{{ route('buyerWorksAgent') }}"> <i class="fa-solid fa-home"></i><span>Buyer’s Agent</span></a>
                 </li>
             </ul>
         </div>

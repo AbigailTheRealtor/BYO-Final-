@@ -103,6 +103,9 @@ class ProductSurfaceContractTest extends TestCase
             ['GET',  'stellar/buyer/results'],
             ['GET',  'add-listing'],
             ['GET',  'offer/listing/{offer_type?}'],
+            ['GET',  'explore'],
+            ['GET',  'api/explore/listings'],
+            ['GET',  'api/explore/listings/{listingKey}'],
         ];
 
         foreach ($mustBeRefused as [$method, $uri]) {

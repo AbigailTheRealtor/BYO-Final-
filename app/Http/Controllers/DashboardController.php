@@ -393,8 +393,34 @@ class DashboardController extends Controller
         return redirect('/')->with('success', 'Your account has been deactivated.');
     }
 
-    public function myBids($type = "seller-property")
+    /**
+     * My Bids lists of bids placed on BidYourOffer surfaces: legacy property
+     * auctions, buyer/tenant criteria listings and service auctions. Every link inside
+     * them leads to a route the product gate refuses in BidYourAgent mode.
+     */
+    public const BIDYOUROFFER_BID_TYPES = [
+        'seller-property',
+        'landlord-property',
+        'buyer-criteria',
+        'tenant-criteria',
+        'agent-service',
+    ];
+
+    public function myBids($type = null)
     {
+        // `my-bids/{type?}` is one shared route over both products, so the product
+        // gate cannot tell these lists apart. A BidYourAgent deployment opens on the
+        // first Hire Agent list instead of on property-auction bids, and refuses the
+        // BidYourOffer lists the same way the gate refuses their routes. The combined
+        // platform keeps its original default.
+        if (\App\Support\Product\ProductContext::servesBidYourOffer()) {
+            $type = $type ?? 'seller-property';
+        } else {
+            $type = $type ?? 'seller-agent';
+
+            abort_if(in_array($type, self::BIDYOUROFFER_BID_TYPES, true), 404);
+        }
+
         $page_data['title'] = 'My Bids';
         $page_data['type'] = $type;
         $page_data['user'] = $user = auth()->user();
