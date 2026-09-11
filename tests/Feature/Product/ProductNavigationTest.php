@@ -180,6 +180,43 @@ class ProductNavigationTest extends TestCase
         $response->assertSee(route('seller.agent.searchListing'), false);
     }
 
+    /** @test */
+    public function the_sign_in_and_registration_bottom_bar_has_no_dead_links_and_offers_hire_agent(): void
+    {
+        // /register is where the guest "Hire Agent" call to action lands. On a phone,
+        // both auth pages drew their own bottom bar of relative `*.html` hrefs to files
+        // that do not exist — the global "+" among them — so every tap was a 404. They
+        // now render the same bar, and the same product-aware "+", as the other layouts.
+        $this->bidYourAgent();
+
+        foreach (['/login', '/register'] as $uri) {
+            $response = $this->get($uri);
+
+            $response->assertOk();
+
+            foreach (['addListing.html', 'sellerWork.html', 'sellerWorkAgent.html', 'buyerWork.html', 'buyerWorkAgent.html'] as $dead) {
+                $response->assertDontSee('href="' . $dead . '"', false);
+            }
+
+            $response->assertSee('href="' . route('register') . '" class="add-listing"', false);
+            $response->assertDontSee(route('add-listing'), false);
+            $response->assertSee(route('sellerWorks'), false);
+            $response->assertSee(route('buyerWorksAgent'), false);
+        }
+    }
+
+    /** @test */
+    public function the_sign_in_and_registration_plus_follows_the_combined_platform(): void
+    {
+        $this->combined();
+
+        foreach (['/login', '/register'] as $uri) {
+            $this->get($uri)
+                ->assertOk()
+                ->assertSee('href="' . route('add-listing') . '" class="add-listing"', false);
+        }
+    }
+
     /**
      * @return array<string, array{0: string, 1: string}>
      */

@@ -592,17 +592,41 @@ class AgentController extends Controller
         $expiryRaw  = $meta['listing_expiration'] ?? null;
         $isExpired  = $expiryRaw && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryRaw));
 
+        // THE HERO SAYS TWO THINGS, AND THEY ARE KEPT APART ON PURPOSE.
+        //
+        // The WORKFLOW state is where the listing stands on BidYourOffer: a draft,
+        // awaiting review, an accepted transaction, or an offer period that has run
+        // out. It is null when none of those applies — an approved, open listing has
+        // nothing exceptional to report, and a label invented to fill the space would
+        // assert something nobody decided.
+        //
+        // The LISTING status is the listing itself — for an MLS-linked Seller or
+        // Landlord listing, what Stellar reports. It is not computed here: it is
+        // `listing_status_display`, the one role-correct value the "Listing Status"
+        // row also prints, so the hero and the row cannot disagree.
+        //
+        // One badge used to carry both. Its last rung printed the raw stored
+        // `listing_status` (or an invented 'Active'), so a listing Stellar reports as
+        // Pending read 'Active' at the top of the page; and a lapsed
+        // `listing_expiration` — a BidYourOffer date that says nothing about the
+        // market — replaced the market status with 'Expired'. Both can be true at
+        // once: the offer period ended, and the property is still Active on the MLS.
+        //
+        // The flags and the date are read exactly as before. Only the surface each
+        // answer is printed on has changed.
         if ($isDraft) {
-            $statusLabel = 'Draft';        $statusClass = 'secondary';
+            $workflowLabel = 'Draft';          $workflowClass = 'secondary';
         } elseif ($isSold) {
-            $statusLabel = 'Accepted';     $statusClass = 'success';
+            $workflowLabel = 'Accepted';       $workflowClass = 'success';
         } elseif (!$isApproved) {
-            $statusLabel = 'Pending Review'; $statusClass = 'warning';
+            $workflowLabel = 'Pending Review'; $workflowClass = 'warning';
         } elseif ($isExpired) {
-            $statusLabel = 'Expired';      $statusClass = 'danger';
+            $workflowLabel = 'Expired';        $workflowClass = 'danger';
         } else {
-            $statusLabel = $meta['listing_status'] ?? 'Active'; $statusClass = 'primary';
+            $workflowLabel = null;             $workflowClass = null;
         }
+
+        $listingStatusDisplay = $this->agentListingStatusDisplay($roleListing, $listingRole, $meta);
 
         $editRoute = match ($role) {
             'seller'   => route('offer.listing.seller.edit', ['auctionId' => $auction->id]),
@@ -666,8 +690,8 @@ class AgentController extends Controller
             'id'           => $auction->id,
             'role'         => $role,
             'listing_id'   => $auction->listing_id ?? ('OFA-' . $auction->id),
-            'status_label' => $statusLabel,
-            'status_class' => $statusClass,
+            'workflow_status_label' => $workflowLabel,
+            'workflow_status_class' => $workflowClass,
             'edit_route'   => $editRoute,
             'hub_route'    => route('agent.offer-listings'),
 
@@ -678,7 +702,7 @@ class AgentController extends Controller
             'auction_type'          => $meta['auction_type']           ?? '',
             'offer_type'            => $meta['offer_type']             ?? '',
             'listing_status'        => $meta['listing_status']         ?? '',
-            'listing_status_display' => $this->agentListingStatusDisplay($roleListing, $listingRole, $meta),
+            'listing_status_display' => $listingStatusDisplay,
             'listing_date'          => $meta['listing_date']           ?? '',
             'desired_agent_hire_date' => $meta['desired_agent_hire_date'] ?? '',
             'expiration_date'       => $meta['expiration_date']        ?? $expiryRaw,

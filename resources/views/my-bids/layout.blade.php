@@ -29,6 +29,10 @@
                                         $id = auth()->id();
                                     @endphp
                                     @if(auth()->check())
+                                    {{-- Bids on BidYourOffer surfaces (property auctions, criteria
+                                         listings, service auctions). DashboardController::myBids
+                                         refuses the same five types in BidYourAgent mode. --}}
+                                    @bidyouroffer
                                     <li class="nav-item" role="presentation">
                                       <a href="{{route('myBids', 'seller-property')}}" class="nav-link {{ ($type=='seller-property')?"active":"" }}">Property Listing (Sale)</a>
                                     </li>
@@ -44,6 +48,7 @@
                                     <li class="nav-item" role="presentation">
                                         <a href="{{route('myBids', 'agent-service')}}" class="nav-link {{ ($type=='agent-service')?"active":"" }}">Agent Service Needed</a>
                                     </li>
+                                    @endbidyouroffer
                                     <li class="nav-item" role="presentation">
                                         <a href="{{route('myBids', 'buyer-agent')}}" class="nav-link {{ ($type=='buyer-agent')?"active":"" }}">Hiring Buyer's Agent</a>
                                     </li>
