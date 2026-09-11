@@ -140,6 +140,7 @@ tests/Feature/Stellar/GeographicMatchingCurrentContractTest.php
 tests/Feature/Stellar/StellarBuyerResultsCriteriaLinkerTest.php
 tests/Feature/Stellar/StellarBuyerResultsPageTest.php
 tests/Feature/Stellar/TenantCommercialLeaseMatchingTest.php
+tests/Feature/Stellar/TenantCriteriaLocationPrecedenceTest.php
 tests/Feature/Stellar/TenantCriteriaZipMatchingTest.php
 tests/Feature/Stellar/TenantOfferListingZipResolutionTest.php
 tests/Unit/Http/Livewire/OfferListing/SearchAreasHydrationCharacterisationTest.php

@@ -3,6 +3,7 @@
 namespace App\Services\Stellar;
 
 use App\Models\TenantCriteriaAuction;
+use App\Services\Stellar\Matching\CriteriaLocationValues;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -16,8 +17,9 @@ use Illuminate\Support\Facades\Schema;
  *
  * Tenant-to-buyer field mapping:
  *  monthly_price              → max_price
- *  cities                     → preferred_cities
- *  counties                   → preferred_counties
+ *  cities                     → preferred_cities   (else the Location DNA blob's `cities`)
+ *  counties                   → preferred_counties (else the Location DNA blob's `counties`)
+ *                                 explicit field first, map as fallback — see mapRecord()
  *  location_dna_preferences   → radius_searches + polygons (parsed from JSON)
  *  bedrooms                   → min_bedrooms  (handles 'custom' + custom_bedrooms fallback)
  *  bathrooms                  → min_bathrooms (handles 'custom' + custom_bathrooms fallback)
@@ -96,10 +98,11 @@ class TenantCriteriaLoader
         }
 
         // -----------------------------------------------------------------------
-        // Location — tenant form stores 'cities' and 'counties' (JSON arrays)
+        // Location — the tenant form's own explicit 'cities' and 'counties' fields (JSON arrays).
+        // Resolved against the Location DNA widget's lists once the blob is decoded, below.
         // -----------------------------------------------------------------------
-        $preferredCities   = $this->decodeJsonMeta($infoGet('cities'));
-        $preferredCounties = $this->decodeJsonMeta($infoGet('counties'));
+        $explicitCities   = $this->decodeJsonMeta($infoGet('cities'));
+        $explicitCounties = $this->decodeJsonMeta($infoGet('counties'));
 
         // -----------------------------------------------------------------------
         // Location DNA — radius searches and polygons drawn by the user are stored
@@ -136,6 +139,23 @@ class TenantCriteriaLoader
         $preferredZipCodes = array_key_exists('zip_codes', $ldnaDecoded)
             ? array_values(array_unique($this->decodeJsonMeta($ldnaDecoded['zip_codes'])))
             : [];
+
+        // Preferred cities and counties: the EXPLICIT form field when it holds anything, otherwise
+        // the Location DNA widget's list. A fallback — never a union (two representations of the
+        // same preference must not widen the search) and never an override (a map value must not
+        // silently replace what was typed into the field the form labels as the answer). This used
+        // to read the explicit fields only, so a tenant who named places solely on the map had
+        // none of them reach matching. Both sides get BuyerCriteriaLoader's name normalisation,
+        // because the matcher compares against Bridge's spelling exactly ("Tampa, FL" never
+        // equals "Tampa").
+        $preferredCities = CriteriaLocationValues::explicitElseMap(
+            CriteriaLocationValues::cities($explicitCities),
+            CriteriaLocationValues::cities($this->decodeJsonMeta($ldnaDecoded['cities'] ?? []))
+        );
+        $preferredCounties = CriteriaLocationValues::explicitElseMap(
+            CriteriaLocationValues::counties($explicitCounties),
+            CriteriaLocationValues::counties($this->decodeJsonMeta($ldnaDecoded['counties'] ?? []))
+        );
 
         // Preferred State — a single value the Search Areas widget writes into the
         // blob and {@see \App\Http\Livewire\Concerns\HasSearchAreas::saveSearchAreas()}

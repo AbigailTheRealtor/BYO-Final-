@@ -157,14 +157,22 @@ a new listing), and the update methods checked no owner — Tenant's even reassi
 poster. Edit and update are owner-only now; the Buyer check sits before the `try`, whose `catch`
 turns any exception into a 200.
 
-**`TenantCriteriaLoader` sends ZIPs.** It hard-coded `preferred_zip_codes => []` while the tenant
-form's only ZIP input (the Location DNA widget) stores them in the blob; it reads `zip_codes` now,
-with the Buyer loader's key-presence semantics.
+**`TenantCriteriaLoader` sends ZIPs, and map cities/counties as a fallback.** It hard-coded
+`preferred_zip_codes => []` while the tenant form's only ZIP input (the Location DNA widget) stores
+them in the blob; it reads `zip_codes` now, with the Buyer loader's key-presence semantics. Cities
+and counties follow a different, deliberate rule: the form's EXPLICIT `cities` / `counties` field
+when it holds anything, otherwise the blob's list (`CriteriaLocationValues::explicitElseMap()`).
+Never a union — two representations must not widen matching — and never an override. Both sides
+get Buyer's name normalisation (`CriteriaLocationValues`), because the matcher compares against
+Bridge's spelling exactly. **Buyer Criteria is not the same contract**: its cities are map-first
+(blob wins whenever it has a `cities` key) and its counties read only `preferred_counties`.
 
-**A manual Seller/Landlord listing only gets a pin from a live coordinate rung.** The autocomplete's
-browser point is deliberately not persisted, and an unprovenanced geocode reads as coarse. With
-Census and the address-point corpus both off, the ladder resolves nothing and there is no pin —
-by design, not a lost write. Enabling a rung in production is an owner decision.
+**A manual Seller/Landlord listing only gets a pin from a live coordinate rung.** The pin code works
+whenever a trusted coordinate exists. The autocomplete's browser point is deliberately not
+persisted, and an unprovenanced geocode reads as coarse, so with Census and the address-point corpus
+both off the ladder resolves nothing and there is NO EXACT PIN — by design, not a lost write, and
+out of scope for PR #146. Enabling a trusted rung in production is a separate operations / product
+decision. MLS-imported listings are unaffected.
 
 ### Location DNA attribution, and the Overture pre-activation gate
 
