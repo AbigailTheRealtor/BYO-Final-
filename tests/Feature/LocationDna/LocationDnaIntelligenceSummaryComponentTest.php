@@ -282,7 +282,8 @@ class LocationDnaIntelligenceSummaryComponentTest extends TestCase
 
     /**
      * (j) Buyer view: response HTML contains the "Location Intelligence" card
-     *     heading when the composer returns non-empty summary_lines.
+     *     heading when the composer returns calculated lines — and shows ONLY those, never
+     *     the analyzer's restatement of the client's own criteria.
      */
     public function test_buyer_view_html_shows_intelligence_card_when_summary_lines_present(): void
     {
@@ -295,7 +296,10 @@ class LocationDnaIntelligenceSummaryComponentTest extends TestCase
         $this->mock(LocationIntelligenceComposer::class, function ($mock) use ($summaryLines) {
             $mock->shouldReceive('compose')
                  ->once()
-                 ->andReturn(['summary' => ['summary_lines' => $summaryLines]]);
+                 ->andReturn(['summary' => [
+                     'summary_lines'    => array_merge(['Highly targeted location preferences.'], $summaryLines),
+                     'calculated_lines' => $summaryLines,
+                 ]]);
         });
 
         $user = User::factory()->create();
@@ -315,7 +319,8 @@ class LocationDnaIntelligenceSummaryComponentTest extends TestCase
              ->assertStatus(200)
              ->assertSee('Location Intelligence')
              ->assertSee('Low flood risk area')
-             ->assertSee('Top-rated schools nearby');
+             ->assertSee('Top-rated schools nearby')
+             ->assertDontSee('Highly targeted location preferences.');
     }
 
     /**
@@ -367,7 +372,10 @@ class LocationDnaIntelligenceSummaryComponentTest extends TestCase
         $this->mock(LocationIntelligenceComposer::class, function ($mock) use ($summaryLines) {
             $mock->shouldReceive('compose')
                  ->once()
-                 ->andReturn(['summary' => ['summary_lines' => $summaryLines]]);
+                 ->andReturn(['summary' => [
+                     'summary_lines'    => array_merge(['Preferences defined by city or municipality.'], $summaryLines),
+                     'calculated_lines' => $summaryLines,
+                 ]]);
         });
 
         $user = User::factory()->create();
@@ -384,7 +392,8 @@ class LocationDnaIntelligenceSummaryComponentTest extends TestCase
              ->assertStatus(200)
              ->assertSee('Location Intelligence')
              ->assertSee('Close to transit hubs')
-             ->assertSee('Low crime area');
+             ->assertSee('Low crime area')
+             ->assertDontSee('Preferences defined by city or municipality.');
     }
 
     /**
