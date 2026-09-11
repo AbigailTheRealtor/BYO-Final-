@@ -31,14 +31,23 @@ use Illuminate\Support\Facades\Cache;
  * the same way — which is the point of writing it now, while the only consumer
  * is a provider whose caps do not really matter.
  *
- * WHAT THIS IS NOT
- * ----------------
- * Not a billing system, not a quota ledger, not distributed-consistent. Two
- * concurrent workers can each read a count of 999 against a cap of 1000 and
- * both proceed. That is understood and accepted: this is a backstop against
- * runaway loops, where the overshoot is one request per worker, not the
- * difference between 1,000 and 100,000. A design that needed locks to be
- * correct here would be a worse design.
+ * TWO WAYS TO USE IT, AND ONLY ONE IS A HARD CEILING
+ * --------------------------------------------------
+ * `blockedReason()` followed by `recordRequest()` is check-then-charge. Two
+ * concurrent workers can each read 999 against a cap of 1,000 and both
+ * proceed, and on the file cache driver `increment()` is itself a
+ * read-modify-write. For the Census rung that is accepted: it is a backstop
+ * against runaway loops, where the overshoot is one request per worker.
+ *
+ * {@see admit()} is for a caller whose ceiling must be exact. It checks and
+ * charges one request against every budget it is given as a single step under
+ * one cache lock, so a configured 60 admits 60 and never 61, however many PHP
+ * processes are racing for the last unit. The lock is the cache store's own
+ * atomic primitive — on the file driver this deployment uses, an exclusive
+ * `flock` — so the guarantee does not depend on the server happening to run
+ * one process.
+ *
+ * Not a billing system and not a quota ledger, either way.
  */
 final class ProviderRequestBudget
 {
@@ -47,6 +56,21 @@ final class ProviderRequestBudget
     /** Slightly over an hour/day so a bucket cannot expire mid-window. */
     private const HOUR_TTL = 3900;
     private const DAY_TTL  = 90_000;
+
+    /** One lock serialises every admit() decision, across every budget. */
+    public const ADMISSION_LOCK = self::PREFIX . 'admission';
+
+    /** A holder that dies mid-decision cannot wedge admission for longer. */
+    private const ADMISSION_LOCK_SECONDS = 10;
+
+    /** How long a caller waits for its turn before it is refused. */
+    private const ADMISSION_WAIT_SECONDS = 3;
+
+    /** The critical section is a handful of cache reads; poll accordingly. */
+    private const ADMISSION_POLL_MILLISECONDS = 20;
+
+    /** Admission could not be decided — which is always a refusal. */
+    public const REASON_ADMISSION_UNAVAILABLE = 'provider_budget_admission_unavailable';
 
     /**
      * @param int|null $hourlyCap maximum requests per clock hour; null = no
@@ -103,6 +127,64 @@ final class ProviderRequestBudget
             'hourly' => $this->used($this->hourKey()),
             'daily'  => $this->used($this->dayKey()),
         ];
+    }
+
+    /**
+     * Admit ONE outbound request against every given budget, or refuse it and
+     * charge nothing.
+     *
+     * The check and the charge happen together, under one lock, across all the
+     * budgets at once. So no two callers can both be granted the last unit, and
+     * a request one ceiling refuses is not half-charged against the others.
+     * That is what makes the configured number a hard maximum rather than a
+     * target.
+     *
+     * FAILS CLOSED. If the lock cannot be taken within the wait — contention, a
+     * store without lock support, a cache outage — or the decision itself
+     * throws, the request is refused. Admission that cannot be decided is not
+     * admission.
+     *
+     * Call it immediately before each request is sent, once per request. A
+     * refused request must not be sent.
+     *
+     * @param array<string, self> $budgets label => budget. The label prefixes a
+     *        refusal reason, so the caller can say WHICH ceiling refused.
+     * @return string|null null when admitted (and already charged), else why not.
+     */
+    public static function admit(array $budgets, int $waitSeconds = self::ADMISSION_WAIT_SECONDS): ?string
+    {
+        try {
+            $lock = Cache::lock(self::ADMISSION_LOCK, self::ADMISSION_LOCK_SECONDS);
+            $lock->betweenBlockedAttemptsSleepFor(self::ADMISSION_POLL_MILLISECONDS);
+            $lock->block(max(0, $waitSeconds));
+        } catch (\Throwable) {
+            return self::REASON_ADMISSION_UNAVAILABLE;
+        }
+
+        try {
+            foreach ($budgets as $label => $budget) {
+                $reason = $budget->blockedReason();
+
+                if ($reason !== null) {
+                    return $label . '_' . $reason;
+                }
+            }
+
+            foreach ($budgets as $budget) {
+                $budget->recordRequest();
+            }
+
+            return null;
+        } catch (\Throwable) {
+            return self::REASON_ADMISSION_UNAVAILABLE;
+        } finally {
+            try {
+                $lock->release();
+            } catch (\Throwable) {
+                // The lock expires on its own; a failed release must not turn
+                // an admission decision into an exception.
+            }
+        }
     }
 
     private function used(string $key): int

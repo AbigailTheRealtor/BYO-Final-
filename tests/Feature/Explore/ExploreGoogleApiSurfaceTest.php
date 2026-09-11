@@ -151,7 +151,8 @@ class ExploreGoogleApiSurfaceTest extends TestCase
         $this->assertFalse($config->isReady());
         $this->assertStringContainsString('EXPLORE_GOOGLE_MAPS_BROWSER_KEY', (string) $config->unavailableReason());
 
-        config(['explore.google.browser_key' => 'a-real-looking-key']);
+        // Ready needs the key AND the renderer explicitly switched on.
+        config(['explore.google.enabled' => true, 'explore.google.browser_key' => 'a-real-looking-key']);
         $config = new ExploreGoogleConfig();
 
         $this->assertTrue($config->isReady());

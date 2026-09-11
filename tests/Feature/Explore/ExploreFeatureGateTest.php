@@ -100,9 +100,11 @@ class ExploreFeatureGateTest extends TestCase
     }
 
     /**
-     * With a credential present the shell hands the renderer everything it
-     * needs and nothing it does not — no listing data, and the library list
-     * from server config rather than a string in a bundle.
+     * With a credential present AND the renderer explicitly switched on, the
+     * shell hands the renderer everything it needs and nothing it does not —
+     * no listing data, and the library list from server config rather than a
+     * string in a bundle. (A credential alone does not: see
+     * ExploreGoogleLoaderSafetyTest.)
      *
      * @test
      */
@@ -110,6 +112,7 @@ class ExploreFeatureGateTest extends TestCase
     {
         config([
             'explore.enabled'            => true,
+            'explore.google.enabled'     => true,
             'explore.google.browser_key' => 'browser-key-for-this-environment',
             'explore.google.map_id'      => 'map-id-for-this-environment',
         ]);

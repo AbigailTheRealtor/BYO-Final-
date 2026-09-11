@@ -66,7 +66,21 @@
             </h4>
             <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
                 <code class="small" style="color:#049399;">{{ $d['listing_id'] }}</code>
-                <span class="badge bg-{{ $d['status_class'] }}">{{ $d['status_label'] }}</span>
+                {{--
+                    Two badges, two questions — see AgentController::offerListingView().
+                    The first is where the listing stands on BidYourOffer (Draft, Pending
+                    Review, Accepted, an expired offer period) and renders only when one of
+                    those applies. The second is the listing's own status: the SAME value
+                    the "Listing Status" row prints, so the two cannot disagree. It carries
+                    its label because "Expired" beside a bare "Active" reads as a
+                    contradiction rather than as two different facts.
+                --}}
+                @if($d['workflow_status_label'])
+                <span class="badge bg-{{ $d['workflow_status_class'] }}" data-hero-status="workflow">{{ $d['workflow_status_label'] }}</span>
+                @endif
+                @if($d['listing_status_display'])
+                <span class="badge bg-primary" data-hero-status="listing">Listing Status: {{ $d['listing_status_display'] }}</span>
+                @endif
                 @if($ot)
                 <span class="badge bg-info text-dark">{{ $otLabels[$ot] ?? ucfirst($ot) }}</span>
                 @endif

@@ -362,6 +362,18 @@ class AppServiceProvider extends ServiceProvider
             return '<?php endif; ?>';
         });
 
+        // The product gate on the generic Livewire endpoint. Every component update
+        // is a POST to `livewire/message/{name}`, which the route gate sees as
+        // infrastructure and passes — so a snapshot minted where BidYourOffer IS
+        // served (same APP_KEY) would otherwise replay into a BidYourAgent
+        // deployment and run Offer Listing actions. Persistent middleware is
+        // re-run against the route the component was RENDERED on, which the signed
+        // fingerprint records: each update is refused exactly when its page would
+        // be. Refuses only; auth and ownership still run as before.
+        \Livewire\Livewire::addPersistentMiddleware([
+            \App\Http\Middleware\EnsureProductSurface::class,
+        ]);
+
         // Force HTTPS for all generated URLs in production/Replit environment
         if (config('app.env') !== 'local' || str_contains(config('app.url'), 'replit')) {
             URL::forceScheme('https');

@@ -1464,6 +1464,25 @@ class OfferWorkflowReadinessTest extends TestCase
             // `listing_status_display`; the Blade renders it. No new status
             // mapping, no OfferAuction MLS-awareness, no writes.
             'app/Support/Listing/AgentListingIdentity.php',
+
+            // ── Agent hub card status (2026-09-11) ───────────────────────────
+            //
+            // The Offer Listings hub's Status column still used the single mixed
+            // badge PR #150 removed from the shared page's hero: Draft → Accepted
+            // → Pending Review → Expired → raw `listing_status` ?? 'Active'. An
+            // MLS-linked Seller or Landlord listing Stellar reports as Pending read
+            // 'Active' in the hub while the page it links to read 'Pending'.
+            //
+            //   resources/views/agent/offer-listings.blade.php
+            //     The Status cell renders the hero's two badges — workflow when one
+            //     applies, the listing's own status when there is one — from values
+            //     the controller prepares. No status logic in the Blade.
+            //
+            // AgentController is already permitted above. Its hub rows now take the
+            // workflow ladder from the one helper the hero uses and the listing
+            // status from agentListingStatusDisplay(). Flags, filters, counts, the
+            // typed View links and every write path are unchanged.
+            'resources/views/agent/offer-listings.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

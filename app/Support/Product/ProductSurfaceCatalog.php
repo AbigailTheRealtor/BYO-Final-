@@ -121,6 +121,13 @@ final class ProductSurfaceCatalog
         'match-check',
         'match-check/*',
         'stellar/*',
+
+        // --- Explore: the public IDX discovery map of Stellar for-sale and
+        //     for-rent listings, and its data endpoints. Its own flag
+        //     (config/explore.php) defaults off; that is a rollout switch, not a
+        //     product decision, and an unclassified route is SERVED here.
+        'explore',
+        'api/explore/*',
     ];
 
     /**
