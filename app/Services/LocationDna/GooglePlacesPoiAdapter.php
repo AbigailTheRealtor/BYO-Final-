@@ -4,6 +4,7 @@ namespace App\Services\LocationDna;
 
 use App\Contracts\NearbyPoiFetcherInterface;
 use App\Contracts\PoiLookupAdapterInterface;
+use App\Support\Google\GoogleProviderRequestRefused;
 use GuzzleHttp\ClientInterface;
 use Throwable;
 
@@ -61,7 +62,10 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
      * {@inheritDoc}
      *
      * Queries the Google Places Nearby Search API for the given category.
-     * Catches all Guzzle/HTTP errors and returns [] so callers degrade gracefully.
+     * Catches Guzzle/HTTP errors and returns [] so callers degrade gracefully —
+     * EXCEPT a {@see GoogleProviderRequestRefused}, which propagates: a request that
+     * was refused before it was sent is not "no POIs here", and swallowing it into
+     * [] would publish exactly that claim.
      */
     public function search(float $lat, float $lng, string $category, int $radiusMiles, int $limit): array
     {
@@ -145,6 +149,8 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
 
             return $results;
 
+        } catch (GoogleProviderRequestRefused $refused) {
+            throw $refused;
         } catch (Throwable) {
             return [];
         }
@@ -163,9 +169,11 @@ class GooglePlacesPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetc
      *
      * Unlike {@see search()}, this method does NOT catch exceptions: per
      * {@see \App\Contracts\NearbyPoiFetcherInterface} they must propagate so the caller can
-     * persist `status = 'error'` rather than `status = 'not_found'`. The kill-switch and
-     * blank-key guards below are defence-in-depth for standalone/registry use; in the
-     * production flow the service's whole-run guards short-circuit before this is reached.
+     * persist `status = 'error'` rather than `status = 'not_found'` — and so a
+     * {@see GoogleProviderRequestRefused} can stop the run before anything else is sent.
+     * The kill-switch and blank-key guards below are defence-in-depth for standalone/registry
+     * use; in the production flow the service's whole-run guards short-circuit before this is
+     * reached.
      */
     public function fetchNearby(float $lat, float $lng, array $meta): array
     {

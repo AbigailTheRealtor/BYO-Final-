@@ -239,11 +239,14 @@ class AppServiceProvider extends ServiceProvider
         // request to maps.googleapis.com. Google answers an invalid or revoked key with
         // HTTP 200 + {"status":"REQUEST_DENIED"}, so the body — not the HTTP status — is
         // what reveals the credential's true state (SIA-D32: telemetry, never a probe).
+        //
+        // The stack is built by GoogleHttpClientFactory — the one construction the tests
+        // share — and also carries GoogleProviderAdmissionMiddleware, OUTSIDE telemetry:
+        // budgeted Google families (Places Nearby Search today) are admitted against the
+        // shared ProviderRequestBudget immediately before each request is sent, and a
+        // refused request never reaches telemetry, because it never went out.
         $this->app->bind(ClientInterface::class, function () {
-            $stack = HandlerStack::create();
-            $stack->push(GoogleOutboundTelemetryMiddleware::make(), 'byo_google_outbound_telemetry');
-
-            return new Client(['handler' => $stack]);
+            return \App\Support\Google\GoogleHttpClientFactory::make();
         });
 
         // POI Distance Lookup — Buyer/Tenant search-area geometry (Phase 3C)

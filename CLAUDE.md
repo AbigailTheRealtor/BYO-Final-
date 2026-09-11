@@ -59,6 +59,59 @@ Bid forms are multi-tab Livewire components located in `app/Http/Livewire/` subd
 
 `LocationDnaPipelineRunner` (in `app/Services/LocationDna/`) orchestrates async enrichment for a property: POI lookup (Google Places via `GooglePlacesPoiAdapter`), flood zone (FEMA API), school districts (Census TIGER), and commute times. Results are cached via `LocationDnaPoiTileCache`. The pipeline runs as a queued job (`app/Jobs/ComputeLocationDna.php`). FEMA bounding-box size limits are configured in `config/location_dna.php`.
 
+### Google Places request budget (server-side Nearby Search)
+
+**Nearby Search is capped by a HARD request ceiling, enforced where every server-side Google
+request passes: the container's HTTP client.** `GoogleHttpClientFactory` (`app/Support/Google/`) is
+the one construction of that client — `AppServiceProvider` binds `ClientInterface` to it and the
+tests build the same stack over a fake transport. Its stack carries
+`GoogleProviderAdmissionMiddleware` **outside** `GoogleOutboundTelemetryMiddleware`: each request of
+a budgeted Google family is admitted through the shared `ProviderRequestBudget::admit()` (the same
+atomic, lock-serialised admission Explore uses) immediately before it is sent. A refused request is
+never handed to the transport and never reaches telemetry, because it never went out.
+
+**One unit = one outbound Nearby Search HTTP request.** `GOOGLE_PLACES_HOURLY_LIMIT` /
+`GOOGLE_PLACES_DAILY_LIMIT` (25 / 100, unchanged) are those ceilings: request 26 in a UTC clock hour
+and 101 in a UTC day are refused. A cache hit sends nothing and costs nothing; a retry is a new
+request and is admitted again; a request that was sent and failed still cost its unit. A zero,
+negative or malformed limit is a ceiling of zero — it blocks rather than unleashes. The middleware
+also refuses a budgeted family whose switch is off, whose credential is missing, or whose admission
+cannot be decided (lock timeout, cache fault): **fail closed**.
+
+**A refusal is `GoogleProviderRequestRefused`, never an empty result.** Nothing reached Google, so
+nothing may read it as "no POIs here". `GooglePlacesPoiAdapter::search()` still swallows provider
+errors into `[]` but lets a refusal through; `PoiDistanceLookupService` reports it as the provider
+being unavailable and **does not cache it** (the old catch-all cached errors for the full TTL, which
+would keep answering "unavailable" long after the window reopened). In Location DNA a refusal
+**aborts the whole POI run** instead of being recorded per category: an error row would pass the
+next run's cache check and leave a half-fetched listing presented as complete. Aborted, the run
+reports failure, the pipeline stops before summarising, the categories it never reached have no rows
+and are fetched on a later run, and `ComputeLocationDna` does not retry (the pipeline catches, so
+the job returns normally) — no retry storm.
+
+**`GOOGLE_PLACES_ENABLED` parses fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty,
+`false`/`0`/`off`/`no` and any malformed value are OFF, and the middleware admits only a real
+boolean `true`. It was `(bool) env(...)`, under which `off` and `no` switched the billable API ON.
+
+**The five bare `new \GuzzleHttp\Client()` constructions in the frozen `TenantAgentAuction` /
+`TenantAgentAuctionEdit` now resolve the container client** — the only change to either component
+(authorised by the product owner) — so the network guard, telemetry and admission see them.
+`TenantGoogleClientRoutingTest` checks the source before invoking anything.
+
+**Deliberately NOT budgeted yet — do not treat as done:** Places **Autocomplete** (one request per
+keystroke on the listing forms; the Nearby numbers would break address entry) and Google
+**Geocoding** (no agreed limit). The middleware identifies and passes both through (telemetry still
+records them); budgeting a family later is one entry in its `BUDGETED` map plus config keys, never a
+second counter system. **Browser-side** Google — `google.maps.places.Autocomplete` in ~44 Blade files
+and the Maps JavaScript API — never touches this server, so no server budget can govern it; it needs
+Google Cloud controls (a dedicated, referrer- and API-restricted browser key, quotas, billing alerts,
+a rehearsed key/API disable).
+
+**The same single-host boundary as Explore.** The counters and the admission lock live in the
+configured cache — the file cache on one host here, where the lock is exclusive across every PHP
+process (`GooglePlacesNearbyBudgetTest` races real processes against it). A multi-host deployment
+needs them in shared atomic storage (Redis or the database) before that guarantee holds across hosts.
+
 ### Location DNA map rendering — Google today, MapLibre behind two gates
 
 **There are two renderers and exactly one is live per surface.** The incumbent is Google
@@ -665,8 +718,8 @@ about somebody's neighbourhood would be a false claim.
 
 **Explore never starts Location DNA, and therefore never reaches Google Places through it.** The
 importer dispatches `ComputeLocationDna` for every new or re-addressed row, and that job's POI step
-can call Google Places — whose `GOOGLE_PLACES_DAILY_LIMIT` / `_HOURLY_LIMIT` are declared in config
-and read by no code, so `GOOGLE_PLACES_ENABLED` is the only gate on it. A discovery pass can upsert
+can call Google Places. Nearby Search is capped app-wide (see *Google Places request budget*), but
+Explore renders no Location DNA and has no business spending that budget either. A discovery pass can upsert
 500 rows, inline, because the queue runs `sync`. Explore renders no Location DNA, so both entry
 points opt out: discovery passes `dispatchDna: false` to `importForCriteria()` (a
 backward-compatible option, default `true`) and the panel passes it to `refreshByListingKey()` (an
@@ -1008,6 +1061,8 @@ Beyond standard Laravel keys, this app requires:
 | `BRIDGE_DATASET` | Bridge Data Output dataset ID |
 | `BRIDGE_SERVER_TOKEN` | Bridge API access token |
 | `GOOGLE_PLACES_API_KEY` | Address validation + POI lookup |
+| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete or Geocoding. |
+| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Autocomplete and Geocoding are not budgeted yet, and browser-side Google is not governed by the server. See *Google Places request budget*. |
 | `OPENAI_API_KEY` | DNA profile generation |
 | `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked) |
 | `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`) |

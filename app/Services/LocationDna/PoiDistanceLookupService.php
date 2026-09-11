@@ -94,6 +94,19 @@ class PoiDistanceLookupService
                 foreach ($items as $item) {
                     $allResults[] = $item;
                 }
+            } catch (\App\Support\Google\GoogleProviderRequestRefused $refused) {
+                // Refused BEFORE anything was sent — a request ceiling, the switch, or a
+                // missing credential. Not a Google answer, so it is reported as the
+                // provider being unavailable, never as "no POIs here", and it is NOT
+                // cached: caching it would keep answering "unavailable" for the full TTL
+                // after the budget window has reopened. Not caching costs nothing while
+                // it lasts — every repeat is refused again before any request is sent.
+                return [
+                    'results'    => [],
+                    'error'      => 'Provider unavailable: ' . $refused->reason,
+                    'source_lat' => $sourceLat,
+                    'source_lng' => $sourceLng,
+                ];
             } catch (Throwable $e) {
                 $result = [
                     'results'    => [],
