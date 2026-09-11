@@ -608,12 +608,74 @@ sync closes it. **A coherent launch therefore needs `MLS_SYNC_ENABLED` + `MLS_SY
 alongside the Explore flags** — the schedule specifically, because a non-owner view sends nothing
 and only records demand, so a public visitor's page is current only if a sweep already made it so.
 
-**The throttle bounds requests, not provider fetches.** Both data routes carry `throttle:120,1`
-per user-or-IP, but a caller inside that could supply 120 far-apart bounding boxes — 120 distinct
-cold tiles — and multiply them by the per-pass page cap. Nothing bounds Explore's aggregate
-outbound Bridge volume today. The remedy is the existing provider-neutral
-`ProviderRequestBudget` guard rather than a new one; it is **reported and not wired**, because
-enabling a spend guard belongs with the decision to enable `EXPLORE_DISCOVERY_ENABLED`.
+**Provider spend is bounded, and the throttle was never what bounded it.** `throttle:120,1`
+limits REQUESTS; one unfiltered viewport request costs up to five provider pages per transaction
+type, so a caller inside that throttle could reach ~72,000 Bridge requests an hour by traversing
+distinct cold tiles. Tile snapping and the fetch cache make REPEAT visits free; nothing made
+DISTINCT ones bounded. `ExploreProviderBudget` (`app/Services/Explore/Guards/`) closes it, and it
+is a **composer, not an implementation** — every counter, key, window and TTL belongs to the
+existing `ProviderRequestBudget`, asked at two scopes. A test asserts the guard contains no
+`Cache::`, no `increment(`, no `gmdate(`: two mechanisms counting "a request" would eventually
+disagree about what one is, and the disagreement would arrive as a bill.
+
+**The two scopes fail in opposite directions.** The ACTOR ceiling (`user id, else IP` — the
+identity every throttled route already uses, hashed before it becomes a cache key; nothing new is
+fingerprinted) stops one browser traversing unlimited tiles. The GLOBAL ceiling stops what the
+actor ceiling cannot see — many actors, or one rotating addresses — and is the one that would
+have caught the ~16,000-request incident this work exists because of. **There is no way to
+configure "unlimited"**: a zero, negative or non-numeric cap falls back to the shipped default,
+because a config value that restores an unbudgeted path to a paid provider is that failure with
+an extra step. Switching the guard OFF does not unleash traffic either — a disabled guard reads
+as "do not call the provider".
+
+**Charge for what was SENT, not for what succeeded.** `LazyImportResult::pagesAttempted` counts
+pages dispatched, incremented before each call, so a page that failed is still charged: it
+consumed the provider's capacity whatever came back, and counting successes only is how a failing
+integration retries its way through a ceiling that looks like it is holding. A retry cannot bypass
+anything, because the next attempt re-enters the gate. A cache hit reports zero pages and is
+charged nothing — rationing our own memory would defeat the cache the ceiling relies on. The
+panel's single-record refresh spends from the SAME ceilings; a separate allowance for "cheap"
+calls would be a second budget, and the sum of two ceilings is not a ceiling.
+
+**Exhaustion degrades, it never empties.** `ExploreDiscoveryOutcome::budgetLimited()` reports
+`complete = false` (so the withhold-unconfirmed-rows rule is suppressed and last-known inventory
+stays on the map) and `degraded = true` (so the surface says "temporarily unavailable" rather than
+"no listings in this view"). A ceiling we chose to impose is a fact about US; stating it as a fact
+about somebody's neighbourhood would be a false claim.
+
+**Google 3D is browser-side, so a server budget cannot protect it — the renderer's structure
+does.** `loadGoogleMaps()` is latched by a memoized promise: a second caller receives the same
+promise, a caller arriving after it settles receives the settled one, and a pre-existing script
+tag is adopted rather than duplicated. **A failed load stays failed** — the promise is never
+cleared, so there is no accidental retry against a billed script, and the file contains no
+`setInterval`, no `location.reload`, and exactly one `setTimeout` (the viewport debounce).
+`buildMap()` is latched on `state.worldBuilt`, so there is one Map3DElement per page lifecycle:
+driving moves that camera, and `renderMarkers()` updates the marker layer against it without ever
+touching the world. Drive listeners bind to `document` and the map container — which outlive any
+single world — so they are latched too, or every keystroke would double.
+
+**`EXPLORE_GOOGLE_3D_ENABLED` is the kill switch that did not exist.** Before it, the only way to
+stop Google was to delete the browser key, which is a credential change rather than an operational
+one. Off means the loader **never runs** and the credential is **not emitted into the HTML at
+all** — `ExploreController` withholds it unless `isReady()`, because printing a live billable key
+into a page that is deliberately not using it leaves it there for anyone to lift. Not "load Google
+and then hide the map": the expensive provider stays untouched, or the switch protects nothing.
+
+**Superseded viewport fetches are aborted, not merely discarded.** The `seq` guard stopped a stale
+response repainting the map; it did not stop the server answering it, and on a cold tile answering
+it costs provider requests. An `AbortController` turns a rapid pan into one useful request instead
+of a queue of them; the seq guard stays as the half that cannot be raced.
+
+Telemetry is one `explore_provider` log line per decision (`ExploreProviderTelemetry`, shaped
+after `CoordinateProviderTelemetry`): fetched / cache_hit / budget_blocked / provider_failure /
+partial / disabled, with pages, records, the hashed actor and the spend. No MLS record, no
+address, no credential, no raw IP.
+
+**Before any public activation**, `docs/explore-google-cloud-launch-checklist.md` is the manual
+Google Cloud work this repository cannot do: a dedicated browser key, referrer restrictions, API
+restriction to Maps JavaScript alone, per-API quotas as the actual brake, and a billing budget
+understood as an **alarm rather than a cap** — Google keeps serving past a budget unless a quota
+stops it.
 
 Eligibility still needs `raw_json` decoded per row (permissions and lease frequency exist only
 there), so the repository overfetches, filters, then slices under a hard read ceiling — a bare
@@ -928,6 +990,11 @@ Beyond standard Laravel keys, this app requires:
 | `EXPLORE_DISCOVERY_ENABLED` | Whether an Explore viewport may ask the provider for the CURRENT eligible listings in that area, through `LazyBridgeImportService` — the one existing MLS ingestion pipeline. Default `false`, the same posture as `MLS_SYNC_ENABLED` and for the same reason: merging and activating are two decisions. **Off is not merely quieter, it is less complete** — Explore then renders only what some earlier workflow happened to import, which is a statement about our cache, so the response labels itself `discovery.status = "disabled"` rather than letting a thin result read as a thin market. On, a request costs at most one provider pass per transaction type per viewport, free while the tile's fetch cache is warm. |
 | `EXPLORE_DISCOVERY_TILE_DEGREES` | Grid (default `0.05°`, ~5.5 km) the discovery bbox is snapped **outwards** to before it is hashed into a fetch-cache key. **This is what makes cache reuse real**: unsnapped, the key changes with every pixel of pan and every camera nudge becomes a provider request. Outwards, never nearest, so the box always contains the viewport — otherwise a property at the screen edge would be rendered from an area discovery never asked about. |
 | `EXPLORE_DISCOVERY_MAX_PAGES` / `EXPLORE_DISCOVERY_MAX_RECORDS` | Per-pass pagination ceilings (default 5 × 500), **clamped downwards** against the global `BRIDGE_LAZY_*` envelope by the importer — a call site may lower a spend limit, never raise one. Lower than the criteria-search defaults because this runs while somebody is moving a camera rather than on a results page they are waiting for. Hitting a ceiling makes the pass *partial*, which suppresses the withhold-unconfirmed-rows rule: absence would then mean "we stopped asking", not "it is gone". |
+| `EXPLORE_PROVIDER_BUDGET_ENABLED` | The provider-spend guard. Default `true`. **Switching it off does not unleash traffic** — `ExploreProviderBudget` reads a disabled guard as "do not call the provider", so it is a second way to stop spending and never a way to start it. All accounting is the existing `ProviderRequestBudget`; no second budget system exists, and a test asserts the guard contains no counters of its own. |
+| `EXPLORE_PROVIDER_KILL_SWITCH` | Emergency stop for Explore's outbound Stellar/Bridge traffic, leaving Explore and the rest of the application serving. Default `false`. Distinct from `EXPLORE_DISCOVERY_ENABLED` only in intent: that is the feature gate, this is the thing you set at 2am. Exhaustion degrades — last-known rows stay on the map and the response is marked `degraded` — it never reports an empty market. |
+| `EXPLORE_PROVIDER_GLOBAL_HOURLY` / `_GLOBAL_DAILY` | Ceiling across every caller (600 / 5,000). The bill's backstop, and the ceiling that catches what no per-caller limit can see — many actors, or one rotating addresses. |
+| `EXPLORE_PROVIDER_ACTOR_HOURLY` / `_ACTOR_DAILY` | Ceiling per actor (60 / 300), where the actor is `user id, else IP` — the identity every throttled route here already uses, hashed before it becomes a cache key. Nothing new is fingerprinted. Bounds one browser traversing unlimited distinct cold tiles, which `throttle:120,1` cannot: that limits requests, not provider spend. **No value means "unlimited"** — zero, negative or non-numeric falls back to the shipped default. |
+| `EXPLORE_GOOGLE_3D_ENABLED` | Independent kill switch for the 3D renderer. Default `true` — an emergency stop, not a rollout dial, since the feature is already gated by `EXPLORE_ENABLED` and by the credential's absence. **Off means the loader never runs**: no `<script>`, no contact with `maps.googleapis.com`, and the browser credential is not emitted into the HTML at all. Before this existed the only way to stop Google was to delete the key — a credential change rather than an operational one. |
 | `EXPLORE_MAX_RESULTS` / `EXPLORE_MAX_SPAN_DEGREES` | Page size (default 150, hard ceiling 250) and the bounding-box span ceiling (default 1.0°). An over-large bbox is **refused with a 422, never clamped** — a clamped box returns markers for somewhere the consumer is not looking, and the thinner result reads as "nothing for sale here", which is a false statement about a real market. |
 
 `.env` is not tracked in git — back it up separately.

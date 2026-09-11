@@ -14,6 +14,20 @@ class LazyImportResult
         public readonly bool    $fromCache,
         public readonly bool    $wasPartial,
         public readonly ?string $criteriaHash = null,
+
+        /**
+         * Provider pages this cycle actually SENT.
+         *
+         * Attempts, not successes: a page that was dispatched and came back a
+         * failure consumed exactly as much of the provider's capacity — and of
+         * any bill — as one that worked, so a caller rationing provider traffic
+         * must count it. Counting only successes is how a failing integration
+         * retries its way through a ceiling that looks like it is holding.
+         *
+         * Zero on a cache hit, which is the whole reason the cache is worth
+         * having: a warm tile spends nothing and must be charged nothing.
+         */
+        public readonly int $pagesAttempted = 0,
     ) {}
 
     /**
@@ -28,6 +42,7 @@ class LazyImportResult
             fromCache: true,
             wasPartial: false,
             criteriaHash: $hash,
+            pagesAttempted: 0,
         );
     }
 
@@ -39,14 +54,19 @@ class LazyImportResult
      *                                 reached before the feed was fully consumed.
      * @param  string|null $hash       SHA-256 criteria hash used for this import.
      */
-    public static function fetched(int $count, bool $wasPartial = false, ?string $hash = null): self
-    {
+    public static function fetched(
+        int $count,
+        bool $wasPartial = false,
+        ?string $hash = null,
+        int $pagesAttempted = 0,
+    ): self {
         return new self(
             status: self::STATUS_FETCHED,
             recordCount: $count,
             fromCache: false,
             wasPartial: $wasPartial,
             criteriaHash: $hash,
+            pagesAttempted: $pagesAttempted,
         );
     }
 
@@ -56,7 +76,7 @@ class LazyImportResult
      *
      * @param  string|null $hash  SHA-256 criteria hash that was attempted (for logging).
      */
-    public static function failed(?string $hash = null): self
+    public static function failed(?string $hash = null, int $pagesAttempted = 0): self
     {
         return new self(
             status: self::STATUS_FAILED,
@@ -64,6 +84,10 @@ class LazyImportResult
             fromCache: false,
             wasPartial: false,
             criteriaHash: $hash,
+            // A failed cycle still SENT the pages it got through before the
+            // fault. They are reported so a budget-aware caller charges for
+            // provider capacity that was genuinely consumed.
+            pagesAttempted: $pagesAttempted,
         );
     }
 

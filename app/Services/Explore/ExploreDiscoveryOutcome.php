@@ -33,6 +33,7 @@ final class ExploreDiscoveryOutcome
     public const STATUS_CACHED      = 'cached';
     public const STATUS_PARTIAL     = 'partial';
     public const STATUS_UNAVAILABLE = 'unavailable';
+    public const STATUS_BUDGET_LIMITED = 'budget_limited';
 
     private function __construct(
         public readonly string $status,
@@ -40,6 +41,7 @@ final class ExploreDiscoveryOutcome
         public readonly bool $degraded,
         public readonly int $recordCount,
         public readonly int $providerRequests,
+        public readonly ?string $reason = null,
     ) {}
 
     /**
@@ -76,6 +78,38 @@ final class ExploreDiscoveryOutcome
     public static function partial(int $recordCount): self
     {
         return new self(self::STATUS_PARTIAL, complete: false, degraded: false, recordCount: $recordCount, providerRequests: 1);
+    }
+
+    /**
+     * A ceiling refused the call before anything was sent.
+     *
+     * DEGRADED, NEVER EMPTY. This is the state the whole guard exists to make
+     * safe: budget exhaustion must look like "we cannot refresh this area right
+     * now", never like "there are no homes here". So it reports `complete =
+     * false`, which suppresses the withhold-unconfirmed-rows rule and leaves
+     * last-known inventory on the map, and `degraded = true`, so the surface
+     * says so out loud rather than presenting a thin answer as a full one.
+     *
+     * `providerRequests` is zero and that is the point: a blocked call is one
+     * that was never sent, which is what distinguishes this from
+     * {@see unavailable()} — there the provider was contacted and did not
+     * answer, and the attempt was charged.
+     *
+     * The reason travels for telemetry only. It names which ceiling stopped the
+     * call — global or actor, hourly or daily, or the kill switch — because
+     * "we stopped calling Bridge today" and "one visitor hit their hourly
+     * ceiling" are entirely different operational problems.
+     */
+    public static function budgetLimited(string $reason): self
+    {
+        return new self(
+            self::STATUS_BUDGET_LIMITED,
+            complete: false,
+            degraded: true,
+            recordCount: 0,
+            providerRequests: 0,
+            reason: $reason,
+        );
     }
 
     /** The provider could not be reached. Serve last-known, and say so. */

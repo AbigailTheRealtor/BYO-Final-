@@ -34,10 +34,36 @@ namespace App\Services\Explore;
  */
 class ExploreGoogleConfig
 {
-    /** Is there enough configuration to attempt the 3D renderer? */
+    /**
+     * May the 3D renderer be started at all?
+     *
+     * TWO INDEPENDENT REASONS FOR NO, and the page says which. An operator who
+     * has switched the renderer off is in a different situation from an
+     * environment that was never given a credential, and collapsing them would
+     * send somebody looking for a missing key that is not missing.
+     *
+     * When this is false the loader NEVER RUNS — no <script> is inserted and
+     * maps.googleapis.com is never contacted. Not "load it and hide the map":
+     * an expensive provider must be untouched when it is switched off, or the
+     * switch protects nothing.
+     */
     public function isReady(): bool
     {
-        return $this->browserKey() !== null;
+        return $this->enabled() && $this->browserKey() !== null;
+    }
+
+    /**
+     * The independent kill switch, separate from EXPLORE_ENABLED.
+     *
+     * Explore may need to keep serving listings while Google is stopped —
+     * during a billing incident, a quota exhaustion, or an unexplained usage
+     * spike. Before this existed the only way to stop Google was to delete the
+     * browser credential, which is a secret change rather than an operational
+     * one and leaves no record of the decision.
+     */
+    public function enabled(): bool
+    {
+        return (bool) config('explore.google.enabled', true);
     }
 
     /**
@@ -93,9 +119,16 @@ class ExploreGoogleConfig
      */
     public function unavailableReason(): ?string
     {
-        return $this->isReady()
-            ? null
-            : 'The 3D map is unavailable because EXPLORE_GOOGLE_MAPS_BROWSER_KEY is not configured '
-                . 'for this environment. Listings below are unaffected.';
+        if ($this->isReady()) {
+            return null;
+        }
+
+        if (! $this->enabled()) {
+            return 'The 3D map is currently switched off for this environment. '
+                . 'Listings below are unaffected.';
+        }
+
+        return 'The 3D map is unavailable because EXPLORE_GOOGLE_MAPS_BROWSER_KEY is not configured '
+            . 'for this environment. Listings below are unaffected.';
     }
 }

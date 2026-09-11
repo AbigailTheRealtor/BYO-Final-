@@ -140,6 +140,13 @@ class LazyBridgeImportService
             $totalImported = 0;
             $capReached    = false;
 
+            // Provider pages actually dispatched this cycle. Incremented BEFORE
+            // each call, so a page that throws is still counted: it reached the
+            // provider and consumed its capacity whatever came back. Reported
+            // on the result so a budget-aware caller (Explore) charges for real
+            // outbound traffic rather than for successful outbound traffic.
+            $pagesAttempted = 0;
+
             try {
                 while (true) {
                     $page++;
@@ -152,6 +159,8 @@ class LazyBridgeImportService
                         $capReached = true;
                         break;
                     }
+
+                    $pagesAttempted++;
 
                     $records = $this->api->fetchPropertiesPaginated($pageSize, $skip, $filter);
 
@@ -200,7 +209,7 @@ class LazyBridgeImportService
                     'LazyBridgeImportService: API call failed — ' . $e->getMessage(),
                     ['hash' => $hash, 'role' => $role, 'page' => $page]
                 );
-                return LazyImportResult::failed(hash: $hash);
+                return LazyImportResult::failed(hash: $hash, pagesAttempted: $pagesAttempted);
             }
 
             if ($capReached) {
@@ -245,7 +254,12 @@ class LazyBridgeImportService
                 );
             }
 
-            return LazyImportResult::fetched($totalImported, wasPartial: $capReached, hash: $hash);
+            return LazyImportResult::fetched(
+                $totalImported,
+                wasPartial: $capReached,
+                hash: $hash,
+                pagesAttempted: $pagesAttempted,
+            );
 
         } finally {
             if ($lockAcquired) {

@@ -5,6 +5,8 @@ namespace App\Services\Explore;
 use App\Models\BridgeProperty;
 use App\Services\Bridge\BridgeListingLookupService;
 use App\Services\Bridge\LazyBridgeImportService;
+use App\Services\Explore\Guards\ExploreProviderBudget;
+use App\Services\Explore\Guards\ExploreProviderTelemetry;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use Illuminate\Support\Facades\Log;
 
@@ -61,6 +63,7 @@ class ExploreInventoryService
         private readonly LazyBridgeImportService $importer,
         private readonly BridgeListingLookupService $lookup,
         private readonly ExploreFreshness $freshness,
+        private readonly ExploreProviderBudget $budget,
     ) {}
 
     public function isEnabled(): bool
@@ -79,9 +82,31 @@ class ExploreInventoryService
     public function ensureCurrentFor(
         ExploreViewport $viewport,
         ?ExploreTransactionType $filter = null,
+        ?string $actorKey = null,
     ): ExploreDiscoveryOutcome {
         if (! $this->isEnabled()) {
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_DISABLED);
+
             return ExploreDiscoveryOutcome::disabled();
+        }
+
+        // ONE budget decision for the whole request, taken before any pass.
+        //
+        // Asked once rather than per transaction type on purpose: an unfiltered
+        // viewport runs two passes, and checking between them could let the
+        // sale pass consume the last of a ceiling and the rent pass be refused,
+        // producing half a map with no way for the response to describe it.
+        // Either the request may spend or it may not.
+        $blocked = $this->budget->blockedReason($actorKey);
+
+        if ($blocked !== null) {
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_BUDGET_BLOCKED, [
+                'reason' => $blocked,
+                'actor'  => $actorKey,
+                'spent'  => $this->budget->spent($actorKey),
+            ]);
+
+            return ExploreDiscoveryOutcome::budgetLimited($blocked);
         }
 
         $types = $filter !== null ? [$filter] : ExploreTransactionType::cases();
@@ -89,7 +114,7 @@ class ExploreInventoryService
         $outcomes = [];
 
         foreach ($types as $type) {
-            $outcomes[] = $this->discover($viewport, $type);
+            $outcomes[] = $this->discover($viewport, $type, $actorKey);
         }
 
         return $this->combine($outcomes);
@@ -120,7 +145,7 @@ class ExploreInventoryService
      * Returns true when a refresh was actually attempted, so the caller knows to
      * re-read the row and re-run eligibility on it.
      */
-    public function refreshRecord(BridgeProperty $listing): bool
+    public function refreshRecord(BridgeProperty $listing, ?string $actorKey = null): bool
     {
         if (! $this->isEnabled()) {
             return false;
@@ -136,6 +161,39 @@ class ExploreInventoryService
             return false;
         }
 
+        // The panel spends from the SAME ceilings as discovery, deliberately.
+        //
+        // It is one request rather than a paginated pass, but it is reachable
+        // by opening properties one after another — which is exactly the shape
+        // of traversal the actor ceiling exists to bound. A separate allowance
+        // for "cheap" calls would be a second budget with its own idea of what
+        // a request costs, and the sum of two ceilings is not a ceiling.
+        //
+        // Refused means the panel serves the stored record and the surface says
+        // nothing is wrong with the property — because nothing is. The listing
+        // is simply not being re-confirmed right now.
+        $blocked = $this->budget->blockedReason($actorKey);
+
+        if ($blocked !== null) {
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_BUDGET_BLOCKED, [
+                'reason'      => $blocked,
+                'scope'       => 'panel_record_refresh',
+                'listing_key' => $listingKey,
+                'actor'       => $actorKey,
+            ]);
+
+            return false;
+        }
+
+        // Charged BEFORE the call, not after.
+        //
+        // `refreshByListingKey()` returns null both for "the provider had
+        // nothing" and for "the provider could not be reached", and swallows
+        // the difference. Charging afterwards would therefore mean either
+        // guessing whether a request went out, or not charging for one that
+        // did. One request is about to be dispatched; it is charged now.
+        $this->budget->record($actorKey, 1);
+
         try {
             // The return value is deliberately ignored. Null means "the provider
             // had nothing" OR "the provider could not be reached", and neither
@@ -144,10 +202,23 @@ class ExploreInventoryService
             // empty. Treating an unreachable provider as a delisting would make
             // our connectivity look like a change in the market.
             $this->lookup->refreshByListingKey($listingKey);
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_FETCHED, [
+                'scope'       => 'panel_record_refresh',
+                'pages'       => 1,
+                'listing_key' => $listingKey,
+                'actor'       => $actorKey,
+            ]);
         } catch (\Throwable $e) {
             Log::warning('ExploreInventoryService: record refresh failed', [
                 'listing_key' => $listingKey,
                 'error'       => $e->getMessage(),
+            ]);
+
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_PROVIDER_FAILURE, [
+                'scope'       => 'panel_record_refresh',
+                'pages'       => 1,
+                'listing_key' => $listingKey,
+                'actor'       => $actorKey,
             ]);
         }
 
@@ -155,8 +226,11 @@ class ExploreInventoryService
     }
 
     /** One pass, for one transaction type. */
-    private function discover(ExploreViewport $viewport, ExploreTransactionType $type): ExploreDiscoveryOutcome
-    {
+    private function discover(
+        ExploreViewport $viewport,
+        ExploreTransactionType $type,
+        ?string $actorKey = null,
+    ): ExploreDiscoveryOutcome {
         $propertyTypes = $type->propertyTypes();
 
         if ($propertyTypes === []) {
@@ -176,21 +250,73 @@ class ExploreInventoryService
         } catch (\Throwable $e) {
             // Discovery must never take the surface down with it. A provider
             // fault degrades Explore to last-known rows; it does not 500 a map.
+            //
+            // Nothing is charged here. The importer swallows its own transport
+            // faults and reports them through `isFailed()` with the pages it
+            // actually sent; a throw that escapes it means the pass did not get
+            // as far as dispatching, so there is no provider capacity to
+            // account for.
             Log::warning('ExploreInventoryService: discovery failed', [
                 'transaction_type' => $type->value,
                 'error'            => $e->getMessage(),
             ]);
 
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_PROVIDER_FAILURE, [
+                'transaction_type' => $type->value,
+                'pages'            => 0,
+                'actor'            => $actorKey,
+            ]);
+
             return ExploreDiscoveryOutcome::unavailable();
         }
 
+        // CHARGE FOR WHAT WAS SENT, NOT FOR WHAT SUCCEEDED.
+        //
+        // `pagesAttempted` counts pages dispatched to the provider, incremented
+        // before each call, so a page that failed is still charged: it consumed
+        // the provider's capacity and any per-request cost whatever came back.
+        // Counting successes only is how a failing integration retries its way
+        // through a ceiling that appears to be holding — and a retry cannot
+        // bypass the ceiling here, because the next attempt re-enters
+        // `ensureCurrentFor()` and is refused before it is sent.
+        //
+        // A cache hit reports zero pages and is charged nothing, which is the
+        // entire reason the tile cache is worth having.
+        $this->budget->record($actorKey, $result->pagesAttempted);
+
         if ($result->isFailed()) {
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_PROVIDER_FAILURE, [
+                'transaction_type' => $type->value,
+                'pages'            => $result->pagesAttempted,
+                'actor'            => $actorKey,
+            ]);
+
             return ExploreDiscoveryOutcome::unavailable();
         }
 
         if ($result->isCached()) {
+            ExploreProviderTelemetry::record(ExploreProviderTelemetry::OUTCOME_CACHE_HIT, [
+                'transaction_type' => $type->value,
+                'pages'            => 0,
+                'records'          => $result->recordCount,
+                'actor'            => $actorKey,
+            ]);
+
             return ExploreDiscoveryOutcome::cached($result->recordCount);
         }
+
+        ExploreProviderTelemetry::record(
+            $result->isPartial()
+                ? ExploreProviderTelemetry::OUTCOME_PARTIAL
+                : ExploreProviderTelemetry::OUTCOME_FETCHED,
+            [
+                'transaction_type' => $type->value,
+                'pages'            => $result->pagesAttempted,
+                'records'          => $result->recordCount,
+                'actor'            => $actorKey,
+                'spent'            => $this->budget->spent($actorKey),
+            ]
+        );
 
         return $result->isPartial()
             ? ExploreDiscoveryOutcome::partial($result->recordCount)

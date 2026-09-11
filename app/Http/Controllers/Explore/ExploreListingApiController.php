@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
 use App\Services\Explore\ExploreCanonicalListingResolver;
 use App\Services\Explore\ExploreInventoryService;
+use App\Services\Explore\Guards\ExploreProviderBudget;
 use App\Services\Explore\ExploreListingProjector;
 use App\Services\Explore\ExploreListingRepository;
 use App\Services\Explore\ExploreTransactionType;
@@ -102,7 +103,7 @@ class ExploreListingApiController extends Controller
         // provider pass per transaction type per request — never one per marker
         // — through the application's one existing ingestion pipeline, and is
         // free while the tile's fetch cache is warm.
-        $discovery = $this->inventory->ensureCurrentFor($viewport, $filter);
+        $discovery = $this->inventory->ensureCurrentFor($viewport, $filter, $this->actorKey($request));
 
         $rows = $this->repository->inViewport($viewport, $tier, $filter, $limit, $discovery);
 
@@ -172,7 +173,7 @@ class ExploreListingApiController extends Controller
         $stored = BridgeProperty::query()->where('listing_key', trim($listingKey))->first();
 
         if ($stored !== null) {
-            $this->inventory->refreshRecord($stored);
+            $this->inventory->refreshRecord($stored, $this->actorKey($request));
         }
 
         $row = $this->repository->findEligible($listingKey, $tier);
@@ -217,6 +218,25 @@ class ExploreListingApiController extends Controller
         }
 
         return route('stellar.property.show', ['listingKey' => $listingKey]);
+    }
+
+    /**
+     * Who to charge this request's provider spend to.
+     *
+     * `user id, else IP` — byte for byte the identity
+     * `RouteServiceProvider::configureRateLimiting()` already uses for every
+     * throttled route here, hashed by the budget before it becomes a cache key
+     * so a raw address never lands in the cache store or a log line.
+     *
+     * Nothing new is fingerprinted, and nothing about a visitor is persisted.
+     * That is a deliberate limit rather than an oversight: an actor ceiling
+     * built on a browser signature would be both more invasive and easy to
+     * evade, and the GLOBAL ceiling is what actually stops a determined caller
+     * rotating addresses.
+     */
+    private function actorKey(Request $request): ?string
+    {
+        return ExploreProviderBudget::actorKey($request->user()?->id, $request->ip());
     }
 
     /** The client's request stamp, echoed verbatim and never interpreted. */

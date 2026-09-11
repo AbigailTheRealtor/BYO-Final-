@@ -61,6 +61,29 @@ return [
     */
 
     'google' => [
+
+        /*
+        | Independent kill switch for the 3D renderer.
+        |
+        | THE ONE EMERGENCY STOP THAT DID NOT EXIST. `EXPLORE_ENABLED` takes the
+        | whole surface down and `EXPLORE_DISCOVERY_ENABLED` stops Stellar
+        | traffic, but until this flag the only way to stop Google was to delete
+        | the browser key — which is a credential change, not an operational one,
+        | and it takes the map down for everyone with no record of why.
+        |
+        | Off means the loader NEVER RUNS: no <script> is inserted and
+        | maps.googleapis.com is never contacted. It deliberately does not mean
+        | "load Google and then hide the map" — the expensive provider must be
+        | untouched when it is switched off, or the switch protects nothing.
+        |
+        | Defaults TRUE because it is an emergency stop rather than a rollout
+        | dial: the feature is already gated by EXPLORE_ENABLED and by the
+        | credential's own absence, and a kill switch that ships killed is a
+        | third thing to remember rather than a lever to pull. Same posture as
+        | REQUIRED_PRODUCTION_FLAGS_ENFORCED.
+        */
+        'enabled' => (bool) env('EXPLORE_GOOGLE_3D_ENABLED', true),
+
         'browser_key' => env('EXPLORE_GOOGLE_MAPS_BROWSER_KEY'),
         'map_id'      => env('EXPLORE_GOOGLE_MAPS_MAP_ID'),
         'api_version' => env('EXPLORE_GOOGLE_MAPS_VERSION', 'alpha'),
@@ -173,6 +196,73 @@ return [
         */
         'max_pages'   => (int) env('EXPLORE_DISCOVERY_MAX_PAGES', 5),
         'max_records' => (int) env('EXPLORE_DISCOVERY_MAX_RECORDS', 500),
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Provider request budget — the ceiling on what Explore can spend
+    |--------------------------------------------------------------------------
+    |
+    | `throttle:120,1` on the data routes bounds REQUESTS, not PROVIDER SPEND.
+    | One unfiltered viewport request can cost up to five provider pages per
+    | transaction type, so a caller staying comfortably inside that throttle
+    | could reach roughly 72,000 Bridge requests an hour by traversing distinct
+    | cold tiles. Tile snapping and the fetch cache make REPEAT visits free;
+    | nothing made DISTINCT tiles bounded. These ceilings do.
+    |
+    | The accounting is entirely
+    | App\Services\Location\Coordinates\Guards\ProviderRequestBudget — the
+    | existing provider-neutral component, asked at two scopes. No second budget
+    | system was written, and none should be: two mechanisms counting "a
+    | request" would eventually disagree about what one is.
+    |
+    | THE TWO SCOPES FAIL IN OPPOSITE DIRECTIONS. The actor ceiling stops one
+    | browser traversing unlimited tiles. The global ceiling stops what the
+    | actor ceiling cannot see — many actors, or one actor arriving from many
+    | addresses — and is the ceiling that would actually have caught the
+    | ~16,000-request incident this work exists because of.
+    |
+    | Deliberately conservative, and deliberately not a capacity plan. 600
+    | requests an hour is far more than a real user browsing a map generates
+    | through a 60-minute tile cache, and far less than an unbudgeted actor can
+    | reach. Raise them from telemetry (`explore_provider` log lines), not from
+    | optimism.
+    |
+    | There is NO WAY TO CONFIGURE "unlimited". A zero, negative, missing or
+    | non-numeric value falls back to the shipped default rather than to no
+    | ceiling: an unbudgeted public path to a paid provider is the failure being
+    | fixed, and a config value that restores it is that failure with an extra
+    | step.
+    |
+    */
+
+    'provider_budget' => [
+
+        /*
+        | The guard itself. Defaults TRUE, and switching it OFF does not
+        | unleash traffic — ExploreProviderBudget treats a disabled guard as
+        | "do not call the provider", so this is a second way to stop spending
+        | and never a way to start it.
+        */
+        'enabled' => (bool) env('EXPLORE_PROVIDER_BUDGET_ENABLED', true),
+
+        /*
+        | Emergency stop for outbound Stellar/Bridge traffic caused by Explore,
+        | leaving the rest of Explore and the whole of the application serving.
+        | Distinct from EXPLORE_DISCOVERY_ENABLED only in intent: that one is
+        | the feature gate, this one is the thing you set at 2am.
+        */
+        'kill_switch' => (bool) env('EXPLORE_PROVIDER_KILL_SWITCH', false),
+
+        // Ceiling across every caller. The bill's backstop.
+        'global_hourly' => (int) env('EXPLORE_PROVIDER_GLOBAL_HOURLY', 600),
+        'global_daily'  => (int) env('EXPLORE_PROVIDER_GLOBAL_DAILY', 5000),
+
+        // Ceiling per actor — `user id, else IP`, the identity every throttled
+        // route in this application already uses. Nothing new is fingerprinted.
+        'actor_hourly' => (int) env('EXPLORE_PROVIDER_ACTOR_HOURLY', 60),
+        'actor_daily'  => (int) env('EXPLORE_PROVIDER_ACTOR_DAILY', 300),
 
     ],
 
