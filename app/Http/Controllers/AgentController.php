@@ -342,28 +342,24 @@ class AgentController extends Controller
             return view('agent_biding_listing.buyer', $page_data);
         }
 
-        // Manually build the query
-        $baseQuery = \App\Models\BuyerAgentAuction::where('id', $auctionIds[0]);
+        // One IN, not where(id = first)->orWhere(id = next)…: with the OR chain the
+        // status filters below bound only to the last id, so the first listing the
+        // agent bid on appeared in every tab.
+        $baseQuery = \App\Models\BuyerAgentAuction::whereIn('id', $auctionIds);
 
-        for ($i = 1; $i < count($auctionIds); $i++) {
-            $baseQuery->orWhere('id', $auctionIds[$i]);
-        }
+        // Status-specific queries. is_approved / is_sold are varchar and hold
+        // 'true'/'false' as well as '1'/'0'; ListingFlag reads both, as the model does.
+        $pendingQuery = (clone $baseQuery)->where('is_draft', 0);
+        ListingFlag::whereNotTrue($pendingQuery, 'is_approved');
+        ListingFlag::whereNotTrue($pendingQuery, 'is_sold');
 
-        // Create status-specific queries
-        $pendingQuery = (clone $baseQuery)
-            ->where('is_approved', 0)
-            ->where('is_sold', 0)
-            ->where('is_draft', 0);
+        $liveQuery = (clone $baseQuery)->where('is_draft', 0);
+        ListingFlag::whereTrue($liveQuery, 'is_approved');
+        ListingFlag::whereNotTrue($liveQuery, 'is_sold');
 
-        $liveQuery = (clone $baseQuery)
-            ->where('is_approved', 1)
-            ->where('is_sold', 0)
-            ->where('is_draft', 0);
-
-        $soldQuery = (clone $baseQuery)
-            ->where('is_approved', 1)
-            ->where('is_sold', 1)
-            ->where('is_draft', 0);
+        $soldQuery = (clone $baseQuery)->where('is_draft', 0);
+        ListingFlag::whereTrue($soldQuery, 'is_approved');
+        ListingFlag::whereTrue($soldQuery, 'is_sold');
 
         // Get data based on type
         if ($type == "1") {

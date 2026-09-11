@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingFlag;
 use App\Support\Listing\ListingWorkflow;
 
 use Carbon\Carbon;
@@ -512,13 +513,17 @@ class BuyerAgentAuctionController extends Controller
         $page_data['title'] = "Hire Buyer's Agent";
         $page_data['type'] = $type = $request->type ?? 0;
 
+        // is_approved / is_sold are varchar and hold 'true'/'false' as well as '1'/'0';
+        // ListingFlag reads both. A 'false' row belongs in Pending, where it can be approved.
+        $auctions = BuyerAgentAuction::where('is_draft', false);
         if ($type == 1) {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_approved', true)->where('is_draft', false)->get();
+            ListingFlag::whereTrue($auctions, 'is_approved');
         } elseif ($type == 2) {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_sold', true)->where('is_draft', false)->get();
+            ListingFlag::whereTrue($auctions, 'is_sold');
         } else {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_approved', false)->where('is_draft', false)->get();
+            ListingFlag::whereNotTrue($auctions, 'is_approved');
         }
+        $page_data['auctions'] = $auctions->get();
         return view('admin.buyerAgentAuctions', $page_data);
     }
 

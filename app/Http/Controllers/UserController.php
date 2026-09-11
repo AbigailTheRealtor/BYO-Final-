@@ -14,6 +14,7 @@ use App\Models\TenantAgentAuction;
 use App\Models\TenantCriteriaAuction;
 use App\Models\Financing;
 use App\Models\User;
+use App\Support\Listing\ListingFlag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,12 @@ class UserController extends Controller
                 return view('author_inc.agent_service_auctions', $page_data);
             }
         } else if ($user->user_type == 'buyer') {
-            $page_data['pAuctions'] = BuyerAgentAuction::where('is_sold', false)->where('is_approved', 1)->where('is_archived', 0)->paginate(12);
+            // is_approved / is_sold are varchar and hold 'true'/'false' as well as
+            // '1'/'0'. is_draft is filtered too: matching 'true' must not publish a draft.
+            $pAuctions = BuyerAgentAuction::where('is_archived', 0)->where('is_draft', false);
+            ListingFlag::whereTrue($pAuctions, 'is_approved');
+            ListingFlag::whereNotTrue($pAuctions, 'is_sold');
+            $page_data['pAuctions'] = $pAuctions->paginate(12);
             return view('author_inc.buyer_agent_auctions', $page_data);
         } else if ($user->user_type == 'seller') {
             $page_data['pAuctions'] = SellerAgentAuction::where('is_sold', 'false')->where('is_approved', 'true')->where('is_archived', 0)
@@ -104,11 +110,12 @@ class UserController extends Controller
                 
                 return view('author_inc.seller_agent_auctions', $page_data);
             } else if ($type == 2) {
-                $query = BuyerAgentAuction::where('user_id', $user->id)
-                    ->where('is_sold', false);
+                // is_approved / is_sold are varchar and hold 'true'/'false' as well as '1'/'0'.
+                $query = BuyerAgentAuction::where('user_id', $user->id);
+                ListingFlag::whereNotTrue($query, 'is_sold');
                 if (!$isOwner) {
                     $query->where('is_draft', false);
-                    $query->where('is_approved', 1);
+                    ListingFlag::whereTrue($query, 'is_approved');
                     $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
