@@ -1515,6 +1515,16 @@ class OfferWorkflowReadinessTest extends TestCase
             //     an assignment is a change by the same contract. No stored value
             //     is rewritten. The four models and ListingFlag are permitted above.
             'app/Models/Concerns/HasApprovalFlag.php',
+
+            // ── Messaging schema (2026-09-11) ────────────────────────────────
+            //
+            // No migration created the five tables the listing messaging system
+            // reads and writes; they existed only in the pre-migration byo2.sql.
+            //
+            //   database/migrations/2026_09_11_000001_create_messaging_tables.php
+            //     Creates each table only when it is absent. Alters, backfills and
+            //     drops nothing, and its down() deliberately leaves the tables.
+            'database/migrations/2026_09_11_000001_create_messaging_tables.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
