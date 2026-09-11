@@ -614,17 +614,8 @@ class AgentController extends Controller
         //
         // The flags and the date are read exactly as before. Only the surface each
         // answer is printed on has changed.
-        if ($isDraft) {
-            $workflowLabel = 'Draft';          $workflowClass = 'secondary';
-        } elseif ($isSold) {
-            $workflowLabel = 'Accepted';       $workflowClass = 'success';
-        } elseif (!$isApproved) {
-            $workflowLabel = 'Pending Review'; $workflowClass = 'warning';
-        } elseif ($isExpired) {
-            $workflowLabel = 'Expired';        $workflowClass = 'danger';
-        } else {
-            $workflowLabel = null;             $workflowClass = null;
-        }
+        // The ladder itself is agentWorkflowStatus(), shared with the hub's rows.
+        [$workflowLabel, $workflowClass] = $this->agentWorkflowStatus($isDraft, $isSold, $isApproved, $isExpired);
 
         $listingStatusDisplay = $this->agentListingStatusDisplay($roleListing, $listingRole, $meta);
 
@@ -1513,6 +1504,45 @@ class AgentController extends Controller
     }
 
     /**
+     * Where a listing stands on BidYourOffer, as a badge label and colour, or
+     * [null, null] when nothing exceptional applies.
+     *
+     * One ladder for the two surfaces that show it — the shared page's hero and
+     * the hub's rows — so they cannot come to disagree about what a draft or an
+     * accepted transaction is called. It is deliberately NOT a listing status:
+     * an approved, open listing has no workflow state to report, and the
+     * listing's own status is agentListingStatusDisplay()'s answer, printed
+     * beside this one rather than instead of it.
+     *
+     * It takes flags already read rather than a record, because the two callers
+     * read `is_sold` differently today — a plain cast on the shared page, the
+     * models' strict list in the hub. Unifying that is a separate change; this
+     * one must not move either surface's answer.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function agentWorkflowStatus(bool $isDraft, bool $isSold, bool $isApproved, bool $isExpired): array
+    {
+        if ($isDraft) {
+            return ['Draft', 'secondary'];
+        }
+
+        if ($isSold) {
+            return ['Accepted', 'success'];
+        }
+
+        if (! $isApproved) {
+            return ['Pending Review', 'warning'];
+        }
+
+        if ($isExpired) {
+            return ['Expired', 'danger'];
+        }
+
+        return [null, null];
+    }
+
+    /**
      * What the shared Agent page prints in its "Listing Status" row.
      *
      * SELLER AND LANDLORD ASK THE CONTRACT THEIR OWN DETAIL PAGES ASK.
@@ -1538,6 +1568,10 @@ class AgentController extends Controller
      * listing behind it: nothing has been established about a feed, so nothing
      * is asserted. Blank stays blank and renders no row, which is this page's
      * existing rule for every other field.
+     *
+     * The Offer Listings hub asks it too, once per row, with the row's own
+     * record: a hub row IS a role listing, so the card and the page it links to
+     * print the same status.
      *
      * READ-ONLY, like everything else in this action.
      *
@@ -1621,22 +1655,17 @@ class AgentController extends Controller
         $expiryRaw = $meta['listing_expiration'] ?? null;
         $isExpired = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
 
-        if ($isDraft) {
-            $statusLabel = 'Draft';
-            $statusClass = 'secondary';
-        } elseif ($isSold) {
-            $statusLabel = 'Accepted';
-            $statusClass = 'success';
-        } elseif (!$isApproved) {
-            $statusLabel = 'Pending Review';
-            $statusClass = 'warning';
-        } elseif ($isExpired) {
-            $statusLabel = 'Expired';
-            $statusClass = 'danger';
-        } else {
-            $statusLabel = $meta['listing_status'] ?? 'Active';
-            $statusClass = 'primary';
-        }
+        // The same two facts the shared page's hero shows, from the same two
+        // sources — see offerListingView(). The card used to carry one badge whose
+        // last rung printed the raw stored `listing_status` (or an invented
+        // 'Active'), so an MLS listing Stellar reports as Pending read 'Active' in
+        // the hub, and a lapsed `listing_expiration` replaced the market status
+        // with 'Expired'. The flags are read exactly as before, and offerListings()
+        // still filters and counts by them.
+        [$workflowLabel, $workflowClass] = $this->agentWorkflowStatus($isDraft, $isSold, $isApproved, $isExpired);
+
+        // The row IS the role listing, so it is its own underlying listing.
+        $listingStatusDisplay = $this->agentListingStatusDisplay($auction, $role, $meta);
 
         $address = $auction->address ?? $meta['property_address'] ?? $meta['address'] ?? '';
         $state   = $meta['property_state'] ?? $meta['state'] ?? '';
@@ -1674,8 +1703,9 @@ class AgentController extends Controller
             'closing_date' => $meta['closing_date'] ?? null,
             'expiry'       => $expiryRaw,
             'created_at'   => $auction->created_at,
-            'status_label' => $statusLabel,
-            'status_class' => $statusClass,
+            'workflow_status_label'  => $workflowLabel,
+            'workflow_status_class'  => $workflowClass,
+            'listing_status_display' => $listingStatusDisplay,
             '_draft'       => $isDraft,
             '_approved'    => $isApproved,
             '_sold'        => $isSold,
