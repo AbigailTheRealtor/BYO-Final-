@@ -3,6 +3,7 @@
 namespace App\Services\ListingImport\Sync;
 
 use App\Services\ListingImport\MlsFieldMap;
+use App\Support\Listing\PropertyTypeVocabulary;
 
 /**
  * The source-of-truth boundary: which listing values Stellar owns, and which
@@ -215,24 +216,64 @@ final class MlsSyncFieldPolicy
      * May the asking price be synced into this role's price field from a record
      * of this property type?
      *
-     * Seller: yes. A sale record's ListPrice is a sale price and the seller's
-     * price field is an asking price.
+     * ONE RULE, BOTH ROLES: the record's transaction kind must match the role's.
      *
-     * Landlord: ONLY from a lease record. `price` maps to `desired_rental_amount`
-     * — the key the published landlord page actually reads — and a sale
-     * ListPrice written there is how a $100,000 sale price once became a
-     * $100,000 monthly rent on a live page. LandlordMlsQuickImport::seededPrice()
-     * refuses the same case on the import side; this is that rule, applied to
-     * the path that runs unattended.
+     * Landlord: only from a LEASE record. `price` maps to
+     * `desired_rental_amount` — the key the published landlord page actually
+     * reads — and a sale ListPrice written there is how a $100,000 sale price
+     * once became a $100,000 monthly rent on a live page.
+     *
+     * Seller: only from a SALE record, and this half is new. `if ($role !==
+     * 'landlord') return true;` exempted every other role unconditionally, so a
+     * lease record's ListPrice — which IS the monthly rent — was written into
+     * `maximum_budget`, the meta key behind "Desired Sale Price". The same
+     * defect as the landlord one, pointing the other way, and it had no guard at
+     * all. `SellerMlsQuickImport::seededPrice()` refuses the same case on the
+     * import side; this is that rule applied to the path that runs unattended.
+     *
+     * THE TWO ROLES ARE DELIBERATELY NOT SYMMETRICAL ON AN *UNKNOWN* TYPE.
+     *
+     *   Landlord — must be POSITIVELY a lease. Unknown refuses. Unchanged.
+     *   Seller   — refuses only when the record is positively a LEASE. Unknown
+     *              is allowed.
+     *
+     * That asymmetry is the honest one, not an oversight. A non-lease ListPrice
+     * IS a sale price, so for a seller the only value that can be wrong is a
+     * lease rent, and that is exactly what this now refuses. For a landlord the
+     * failing direction is the common one — most records are sales — and the
+     * rent is a required field, so refusing costs one number typed.
+     *
+     * It also matters because this method has a THIRD caller that neither
+     * docblock mentioned: {@see \App\Support\Listing\ListingPriceDisplay} asks it
+     * before rendering an already-stored MLS price. Rows written before
+     * `mls_source_property_type` existed carry no source type at all, so a
+     * blanket fail-closed here does not protect a write — it blanks the MLS
+     * price block on existing seller listings that are displaying a perfectly
+     * correct sale price. Refusing to WRITE an unclassifiable value and refusing
+     * to SHOW one already written are different decisions, and the unknown case
+     * is where they come apart.
+     *
+     * Nothing depends on unknown-permits for a NEW import: MlsQuickImportEligibility
+     * refuses an unrecognised property type before any of this is reached.
+     *
+     * Asked through {@see PropertyTypeVocabulary::transactionFor()} rather than
+     * by matching on the substring 'lease' so that one table decides what a
+     * lease is, everywhere.
      */
     public static function allowsPriceSync(string $role, ?string $sourcePropertyType): bool
     {
-        if ($role !== 'landlord') {
-            return true;
-        }
+        $transaction = PropertyTypeVocabulary::transactionFor($sourcePropertyType);
 
-        $type = strtolower(trim((string) $sourcePropertyType));
+        return match ($role) {
+            'landlord' => $transaction === PropertyTypeVocabulary::TRANSACTION_LEASE,
+            'seller'   => $transaction !== PropertyTypeVocabulary::TRANSACTION_LEASE,
 
-        return $type !== '' && str_contains($type, 'lease');
+            // Buyer and Tenant listings describe search criteria across many
+            // areas rather than one property, so they are not quick-import or
+            // sync targets and never reach this method with a Bridge record.
+            // Left permissive so this change cannot alter a path it was not
+            // written for.
+            default    => true,
+        };
     }
 }

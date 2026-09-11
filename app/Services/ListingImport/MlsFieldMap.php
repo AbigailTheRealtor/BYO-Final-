@@ -361,6 +361,20 @@ class MlsFieldMap
      * than a reinterpretation of the existing importer. Only list a key once you
      * have read the blade and know which conditional wraps its input.
      *
+     * `carport` was missing and has been added on both roles. Its input sits
+     * inside the same `Residential` / `Residential Property` conditional as
+     * `garage` on both blades — they are adjacent controls in the same section —
+     * and it was simply not carried over when this map was written. Line numbers
+     * for all six conditionals are quoted below so the next reader can re-check
+     * them rather than trust this sentence.
+     *
+     * TWO CONSUMERS NOW, NOT ONE. This map was only ever read by
+     * HasMlsImport::buildImportPreview() — the URL/text and prefill-modal path.
+     * MlsFactProjection, which is how MLS Quick Import and the unattended sync
+     * write, knew nothing about it, so those two paths wrote type-gated fields
+     * into every listing regardless of type. Both now read this map, which is
+     * why it had to be right rather than merely present.
+     *
      * The two role vocabularies are genuinely different and must not be merged:
      * Seller uses `Residential` / `Income` / `Commercial` / `Business` /
      * `Vacant Land`, while Landlord uses `Residential Property` /
@@ -372,19 +386,25 @@ class MlsFieldMap
     public static function propertyTypeApplicability(string $role): array
     {
         return match ($role) {
-            // property-preferences.blade.php:
-            //   pool_needed    inside @if ($property_type === 'Residential' or $property_type === 'Income')
-            //   garage_needed  inside @if ($property_type === 'Residential')
+            // offer-seller-tabs/commission-based/property-preferences.blade.php:
+            //   carport_needed inside @if ($property_type === 'Residential')                    :1012
+            //   garage_needed  inside @if ($property_type === 'Residential')                    :1049
+            //   pool_needed    inside @if ($property_type === 'Residential' or ... 'Income')    :1274
             //   waterfront     no conditional — every type
             'seller' => [
-                'pool'   => ['Residential', 'Income'],
-                'garage' => ['Residential'],
+                'pool'    => ['Residential', 'Income'],
+                'garage'  => ['Residential'],
+                'carport' => ['Residential'],
             ],
-            // property-preferences.blade.php:
-            //   pool_needed / garage_needed inside @if ($property_type === 'Residential Property')
+            // offer-landlord-tabs/commission-based/property-preferences.blade.php:
+            //   carport_needed inside @if ($property_type === 'Residential Property')  :615
+            //   garage_needed  inside @if ($property_type === 'Residential Property')  :650
+            //   pool_needed    inside @if ($property_type === 'Residential Property')  :853
+            //   waterfront     no conditional — every type
             'landlord' => [
-                'pool'   => ['Residential Property'],
-                'garage' => ['Residential Property'],
+                'pool'    => ['Residential Property'],
+                'garage'  => ['Residential Property'],
+                'carport' => ['Residential Property'],
             ],
             default => [],
         };

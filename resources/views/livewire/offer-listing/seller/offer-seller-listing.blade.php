@@ -1,3 +1,6 @@
+{{-- Canonical shared field environment: one renderer/style definition for
+     Create, Edit and MLS Quick Import. See each partial's header. --}}
+@include('livewire.offer-listing.shared._field-icons')
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 
@@ -1456,16 +1459,11 @@
             currentServiceType = 'full_service';
             try { initializeFullService(); } catch(e) { console.warn('[Seller] initializeFullService DOMContentLoaded error:', e); }
 
-            // Multi-pass icon injection AFTER initializeFullService()/Select2 have run.
-            // Inline calls ensure icons fire even if runSellerInitialIconPasses is not yet
-            // in scope at this point in the script execution order.
-            addIconsToInputs();
-            requestAnimationFrame(function() { addIconsToInputs(); });
-            setTimeout(function() { addIconsToInputs(); }, 100);
-            setTimeout(function() { addIconsToInputs(); }, 300);
-            setTimeout(function() { addIconsToInputs(); }, 700);
-            setTimeout(function() { addIconsToInputs(); }, 1500);
-            setTimeout(function() { addIconsToInputs(); }, 2500);
+            // Page-load icon passes are the shared renderer's
+            // (shared/_field-icons.blade.php): the same immediate / rAF / 100 / 300 /
+            // 700 / 1500 / 2500 ms schedule this block used to repeat. Its rAF and
+            // timed passes run after this listener, so they land after
+            // initializeFullService() has wrapped the selects.
 
             // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
             // regardless of whether jQuery event binding caught the change event.
@@ -1673,34 +1671,15 @@
                     if (_tgt && e.target.closest('#myTab')) sessionStorage.setItem('seller_create_active_tab', _tgt);
                 });
             }
-            if ($('#offered_financing').length) {
-                if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    window.initFullServiceSelect2Multiple($('#offered_financing'));
-                }
-                if (!$('#offered_financing').data('of-change-bound')) {
-                    $('#offered_financing').on('change', function() {
-                        var selectedValues = $(this).val() || [];
-                        @this.set('offered_financing', selectedValues, false);
-                        applyFinancingVisibility();
-                    });
-                    $('#offered_financing').data('of-change-bound', true);
-                }
-                applyFinancingVisibility();
-            }
-
-            if ($('#sale_provision').length) {
-                if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    window.initFullServiceSelect2Multiple($('#sale_provision'));
-                }
-                if (!$('#sale_provision').data('sp-change-bound')) {
-                    $('#sale_provision').on('change', function() {
-                        var selectedValues = $(this).val() || [];
-                        @this.set('sale_provision', selectedValues, false);
-                        applyProvisionVisibility();
-                    });
-                    $('#sale_provision').data('sp-change-bound', true);
-                }
-                applyProvisionVisibility();
+            // Special Sale Provision, Offered Financing/Currency and Exchange Item:
+            // initialised by the canonical Sale Terms initializer
+            // (_seller-terms-behaviour), the same one Seller Edit and MLS Quick
+            // Import use. Their change handling is that partial's delegated pair.
+            // This page also bound its own element-level handler to both parents
+            // here, so one change sent two @this.set() round trips; that copy is
+            // gone, and so is this page's separate Exchange Item block.
+            if (typeof window.initSellerTermsSelect2 === 'function') {
+                window.initSellerTermsSelect2({ ownsBinding: true });
             }
 
             if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
@@ -1736,37 +1715,8 @@
                 });
             }
 
-            if ($('#exchange_item').length) {
-                var $exEl = $('#exchange_item');
-                if (!$exEl.hasClass('select2-hidden-accessible')) {
-                    $exEl.select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                        width: '100%',
-                        closeOnSelect: false,
-                    });
-                }
-                var savedExchangeItems = [];
-                try { savedExchangeItems = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                if (!savedExchangeItems.length) {
-                    savedExchangeItems = @this.get('exchange_item') || [];
-                }
-                if (savedExchangeItems.length > 0) {
-                    $exEl.val(savedExchangeItems).trigger('change.select2');
-                }
-                if (!$exEl.data('exchange-change-bound')) {
-                    $exEl.on('change', function(e) {
-                        var selectedValues = $(this).val() || [];
-                        @this.set('exchange_item', selectedValues, false);
-                        // Keep data-selected in sync so the re-init pass on the next
-                        // message.processed reads the fresh selection, never a stale value (#8).
-                        $exEl.attr('data-selected', JSON.stringify(selectedValues));
-                        $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
-                    });
-                    $exEl.data('exchange-change-bound', true);
-                }
-                $('#other_exchange_item_wrapper').toggle((savedExchangeItems || []).includes('Other'));
-            }
+            // Exchange Item is initialised, restored and bound by the
+            // initSellerTermsSelect2() call at the top of this function.
 
             initializeMlsPropertyMultiSelects();
 
@@ -2204,32 +2154,10 @@
                 window.__innerHooksBound = true;
                 Livewire.hook('message.processed', () => {
                     attachAuctionDropdownListener();
-                    if ($('#exchange_item').length) {
-                        var $exEl = $('#exchange_item');
-                        if (!$exEl.hasClass('select2-hidden-accessible')) {
-                            $exEl.select2({
-                                placeholder: "Select",
-                                allowClear: true,
-                                width: '100%',
-                                closeOnSelect: false,
-                            });
-                        }
-                        var saved = [];
-                        try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                        if (!saved.length) { saved = @this.get('exchange_item') || []; }
-                        var current = $exEl.val() || [];
-                        if (saved.length > 0 && current.length === 0) {
-                            $exEl.val(saved).trigger('change.select2');
-                        }
-                        if (!$exEl.data('exchange-change-bound')) {
-                            $exEl.on('change', function(e) {
-                                var selectedValues = $(this).val() || [];
-                                @this.set('exchange_item', selectedValues, false);
-                                $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
-                            });
-                            $exEl.data('exchange-change-bound', true);
-                        }
-                        $('#other_exchange_item_wrapper').toggle(($exEl.val() || []).includes('Other'));
+                    // Exchange Item: the canonical Sale Terms initializer, which
+                    // initialises, restores and binds exactly as this block did.
+                    if (typeof window.initSellerTermsSelect2 === 'function') {
+                        window.initSellerTermsSelect2({ ownsBinding: true });
                     }
                     toggleGarageOptions();
                     toggleSpaceInput('carport-needed', 'other-carport-needed');
@@ -2586,19 +2514,12 @@
             }, true);
         }
 
-        function addIconsToInputs() {
-            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
-                const iconClass = input.getAttribute('data-icon');
-                if (!iconClass) return;
-                const wrapper = input.closest('.input-cover');
-                if (!wrapper) return;
-                if (input.type === 'file') return;
-                if (wrapper.querySelector('.data-icon-rendered')) return;
-                const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass} data-icon-rendered`;
-                wrapper.insertBefore(icon, wrapper.firstChild);
-            });
-        }
+        // addIconsToInputs() is no longer defined here. It is published on
+        // `window` by the canonical partial
+        // livewire/offer-listing/shared/_field-icons.blade.php, included at the
+        // top of this file, so every call site below keeps working unchanged and
+        // Create, Edit and MLS Quick Import share one renderer instead of the
+        // nineteen page-local copies this was one of.
 
         // Seller-only: multi-pass icon injection called AFTER initializeFullService()
         // so Select2 has already wrapped selects before icons are injected.
@@ -2616,8 +2537,9 @@
 
         if (window.Livewire && typeof window.Livewire.hook === 'function') {
         Livewire.hook('message.processed', () => {
-            addIconsToInputs(); // synchronous — runs immediately after morphdom, like Buyer
-            setTimeout(function() { addIconsToInputs(); }, 0); // deferred safety net
+            // The immediate and 0 ms icon passes after a morph are the shared
+            // renderer's own hook (shared/_field-icons.blade.php). The passes this
+            // hook still runs follow initializeFullService() below.
 
             // Re-evaluate garage/parking "Other" companion visibility after every Livewire
             // re-render. Select2 preserves its selected state across morphdom but the companion

@@ -45,6 +45,27 @@ class MlsQuickImportActionVisibilityTest extends TestCase
         $this->user = User::factory()->create(['user_type' => 'seller']);
     }
 
+    /**
+     * A draft this user owns, for tests that jump straight to a later step.
+     *
+     * continueToTerms() now refuses when no listing has been materialised — a
+     * refused import must not be able to walk forward through the wizard — so a
+     * test that sets `step` directly has to supply the draft that step implies.
+     * Created through the model rather than through a Bridge lookup because this
+     * file is about which ACTIONS are visible and callable, not about importing.
+     */
+    private function ownedDraftId(string $component): int
+    {
+        $modelClass = $component === SellerMlsQuickImport::class
+            ? \App\Models\SellerAgentAuction::class
+            : \App\Models\LandlordAgentAuction::class;
+
+        return $modelClass::create([
+            'user_id' => $this->user->id,
+            'title'   => 'Visibility fixture',
+        ])->id;
+    }
+
     /** @return array<string, array{0: class-string}> */
     public function roleProvider(): array
     {
@@ -212,6 +233,7 @@ class MlsQuickImportActionVisibilityTest extends TestCase
     {
         Livewire::actingAs($this->user)
             ->test($component)
+            ->set('listingId', $this->ownedDraftId($component))
             ->set('step', 'method')
             ->call('chooseMethod', 'Bidding Period')
             ->set('auction_time', '')
@@ -221,6 +243,7 @@ class MlsQuickImportActionVisibilityTest extends TestCase
 
         Livewire::actingAs($this->user)
             ->test($component)
+            ->set('listingId', $this->ownedDraftId($component))
             ->set('step', 'method')
             ->call('chooseMethod', 'Bidding Period')
             ->set('auction_time', '7 Days')
