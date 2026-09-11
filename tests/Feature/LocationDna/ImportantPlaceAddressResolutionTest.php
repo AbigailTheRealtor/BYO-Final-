@@ -188,9 +188,10 @@ class ImportantPlaceAddressResolutionTest extends TestCase
         $this->assertStringContainsString('ldnaLookupAddress(address)', $html);
         $this->assertStringNotContainsString('this place will not show a pin', $html);
 
-        // The on-screen promise about travel time is still made, and is still
-        // true — the renderer draws no ring for a minutes row.
-        $this->assertStringContainsString('travel-time areas are never drawn as fake circles', $html);
+        // The on-screen promise is miles only, and it is true — every miles row gets a
+        // ring. No "within minutes" is offered, because nothing here can measure one.
+        $this->assertStringContainsString('with a ring at the number of miles you choose', $html);
+        $this->assertStringNotContainsString('Within minutes', $html);
     }
 
     public function test_a_stored_row_is_marked_resolved_so_a_reload_looks_nothing_up(): void

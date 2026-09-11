@@ -86,7 +86,6 @@
   $ldnaSurface     = $ldnaSurface ?? null;
   $ldnaUseMaplibre = \App\Support\Spatial\LdnaBasemapSurface::enabledFor($ldnaSurface);
   $ldnaIpTypes           = \App\Services\Offers\ImportantPlacesService::TYPES;
-  $ldnaIpModes           = \App\Services\Offers\ImportantPlacesService::TRAVEL_MODES;
 @endphp
 
 <style>
@@ -332,12 +331,11 @@
   {{-- ── Important Places (9C — repeatable rows; own additive `important_places_json` key) ── --}}
   <div class="ldna-ip-section mt-4" id="ldna-ip-section">
     <label class="fw-bold" style="font-size:.88rem;">Important Places
-      <small class="text-muted">(work, school, family &amp; more — with a distance or travel-time preference)</small>
+      <small class="text-muted">(work, school, family &amp; more — each within a distance in miles)</small>
     </label>
     <div class="ldna-hint">
       <i class="fa-solid fa-location-dot"></i>
-      Each located place drops a pin on the map. A "within miles" preference also draws a radius circle;
-      "within minutes" shows only a pin — travel-time areas are never drawn as fake circles.
+      Each located place drops a pin on the map, with a ring at the number of miles you choose.
     </div>
 
     {{-- ── Submit guard errors ──────────────────────────────────────────────────────────
@@ -395,26 +393,25 @@
               onblur="ldnaIpGeocodeRow(this)" oninput="ldnaIpSerialize()">
           </div>
         </div>
+        {{-- Distance is MILES ONLY. The travel-time ("within minutes") preference and its
+             Travel Mode were retired: no routing engine exists here, so a minutes row could
+             only ever be a pin with nothing around it, while the form implied a commute was
+             being measured. A row saved earlier with minutes is not converted — ten minutes
+             is not a number of miles — and is written back exactly as stored unless the
+             user explicitly switches it to miles (`ldnaIpUseMiles`). The preference and
+             travel mode live on the row's dataset, not in a control, so an untouched row
+             round-trips byte-for-byte. --}}
         <div class="row g-2 align-items-end mt-1">
-          <div class="col-md-3">
-            <label class="text-muted mb-1" style="font-size:.75rem;">Distance Preference</label>
-            <select class="form-select form-select-sm ldna-ip-distpref" onchange="ldnaIpOnDistPrefChange(this)">
-              <option value="miles">Within miles</option>
-              <option value="minutes">Within minutes</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="text-muted mb-1 ldna-ip-distval-label" style="font-size:.75rem;">Miles</label>
+          <div class="col-md-3 ldna-ip-distval-wrap">
+            <label class="text-muted mb-1 ldna-ip-distval-label" style="font-size:.75rem;">Within (miles)</label>
             <input type="number" min="0.1" step="0.1" class="form-control form-control-sm ldna-ip-distval"
               placeholder="e.g. 5" oninput="ldnaIpSerialize()">
           </div>
-          <div class="col-md-3">
-            <label class="text-muted mb-1" style="font-size:.75rem;">Travel Mode</label>
-            <select class="form-select form-select-sm ldna-ip-mode" onchange="ldnaIpSerialize()">
-              @foreach($ldnaIpModes as $m)
-                <option value="{{ $m }}">{{ ucfirst($m) }}</option>
-              @endforeach
-            </select>
+          <div class="col-md-6 ldna-ip-legacy-wrap" style="display:none;">
+            <div class="ldna-hint ldna-ip-legacy" style="color:#92400e;">
+              <span class="ldna-ip-legacy-text"></span>
+              <button type="button" class="btn btn-link btn-sm p-0 align-baseline" onclick="ldnaIpUseMiles(this)">Use miles instead</button>
+            </div>
           </div>
           <div class="col-md-3 d-flex gap-2">
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="ldnaIpGeocodeRow(this)" title="Show on map">
@@ -654,9 +651,22 @@
     if (typeSel && otherWrap) {
       otherWrap.style.display = (typeSel.value === 'Other') ? '' : 'none';
     }
-    var pref = row.querySelector('.ldna-ip-distpref');
-    var lbl  = row.querySelector('.ldna-ip-distval-label');
-    if (pref && lbl) lbl.textContent = (pref.value === 'minutes') ? 'Minutes' : 'Miles';
+    /* A historical travel-time row hides the miles input — its number is MINUTES, and a
+       field labelled miles holding it would invite exactly the conversion that must not
+       happen — and says what it is instead. */
+    var legacy  = row.dataset.distPref === 'minutes';
+    var valWrap = row.querySelector('.ldna-ip-distval-wrap');
+    var legWrap = row.querySelector('.ldna-ip-legacy-wrap');
+    var legText = row.querySelector('.ldna-ip-legacy-text');
+    var valEl   = row.querySelector('.ldna-ip-distval');
+    if (valWrap) valWrap.style.display = legacy ? 'none' : '';
+    if (legWrap) legWrap.style.display = legacy ? '' : 'none';
+    if (legText) {
+      legText.textContent = legacy
+        ? 'Saved earlier as a travel-time preference' + (valEl && valEl.value ? ' (' + valEl.value + ' minutes)' : '')
+          + '. Travel time is no longer offered, so this place shows as a pin without a radius. It is kept exactly as saved.'
+        : '';
+    }
   }
 
   window.ldnaIpSerialize = function () {
@@ -673,9 +683,11 @@
         address:        val('.ldna-ip-address'),
         lat:            (lat !== '' && lat != null) ? parseFloat(lat) : null,
         lng:            (lng !== '' && lng != null) ? parseFloat(lng) : null,
-        distance_pref:  val('.ldna-ip-distpref') || 'miles',
+        /* From the row's dataset, not a control — see the row template. A new row is miles;
+           a stored minutes row stays minutes until the user explicitly switches it. */
+        distance_pref:  row.dataset.distPref === 'minutes' ? 'minutes' : 'miles',
         distance_value: distVal !== '' ? parseFloat(distVal) : null,
-        travel_mode:    val('.ldna-ip-mode') || 'driving'
+        travel_mode:    row.dataset.travelMode || 'driving'
       };
       /* Drop fully-empty rows from the serialized payload (mirrors the server normalizer). */
       var empty = !entry.type && !entry.type_other && !entry.address &&
@@ -727,10 +739,9 @@
     var overlay = { marker: marker, circle: null };
 
     /* Radius circle ONLY for the "miles" preference — never for travel-time minutes. */
-    var pref    = row.querySelector('.ldna-ip-distpref');
     var distEl  = row.querySelector('.ldna-ip-distval');
     var miles   = distEl ? parseFloat(distEl.value) : NaN;
-    if (pref && pref.value === 'miles' && !isNaN(miles) && miles > 0) {
+    if (row.dataset.distPref !== 'minutes' && !isNaN(miles) && miles > 0) {
       overlay.circle = new google.maps.Circle({
         center: { lat: lat, lng: lng }, radius: miles * 1609.34,
         fillColor: '#dc2626', fillOpacity: 0.07,
@@ -773,10 +784,12 @@
     if (prefill.type)          row.querySelector('.ldna-ip-type').value       = prefill.type;
     if (prefill.type_other)    row.querySelector('.ldna-ip-type-other').value = prefill.type_other;
     if (prefill.address)       row.querySelector('.ldna-ip-address').value    = prefill.address;
-    if (prefill.distance_pref) row.querySelector('.ldna-ip-distpref').value   = prefill.distance_pref;
     if (prefill.distance_value !== undefined && prefill.distance_value !== null)
       row.querySelector('.ldna-ip-distval').value = prefill.distance_value;
-    if (prefill.travel_mode)   row.querySelector('.ldna-ip-mode').value       = prefill.travel_mode;
+    /* Carried, not shown: a stored minutes row keeps `minutes` and its travel mode, so
+       reopening and re-saving a listing changes nothing the user did not change. */
+    row.dataset.distPref   = prefill.distance_pref === 'minutes' ? 'minutes' : 'miles';
+    row.dataset.travelMode = prefill.travel_mode || 'driving';
     if (prefill.lat !== undefined && prefill.lat !== null &&
         prefill.lng !== undefined && prefill.lng !== null) {
       row.dataset.lat = prefill.lat;
@@ -816,11 +829,19 @@
     ldnaIpSerialize();
   };
 
-  window.ldnaIpOnDistPrefChange = function (sel) {
-    var row = sel.closest('.ldna-ip-row');
+  /* The ONLY way a historical travel-time row becomes a miles row: the user asks for it.
+     The minutes figure is cleared rather than carried over — it was never a distance —
+     and the miles input is revealed empty for the user to fill in. */
+  window.ldnaIpUseMiles = function (el) {
+    var row = el.closest('.ldna-ip-row');
+    if (!row) return;
+    row.dataset.distPref = 'miles';
+    var valEl = row.querySelector('.ldna-ip-distval');
+    if (valEl) valEl.value = '';
     ldnaIpSyncRowConditionals(row);
-    ldnaIpDrawOverlay(row);   /* redraw: circle only when miles */
+    ldnaIpDrawOverlay(row);   /* redraw: a miles ring appears once a value is entered */
     ldnaIpSerialize();
+    if (valEl) valEl.focus();
   };
 
   window.ldnaIpGeocodeRow = function (el) {

@@ -117,6 +117,29 @@ designation, which needs a styled multi-layer source the renderer does not have 
 legends are suppressed under MapLibre rather than drawn in the wrong colours. Deferred, not
 dropped.
 
+**A radius row has two stored shapes, and `RadiusSearchRow` is the one reading of both.** The
+widget writes flat `{address|label, lat, lng, radius_miles}`; older rows are nested
+`{center: {lat, lng}, radius_miles}`. The matchers always read both, but the Google detail map,
+`FloodZoneLookupService`, `SchoolDistrictLookupService` and `LocationDnaEnrichmentRunner` read only
+`center` — so every radius saved by the current UI drew no Google circle and derived no flood,
+school or POI geometry. All four now go through `App\Support\LocationDna\RadiusSearchRow` (flat
+first, then `center`, the matchers' order). It is read-only: no row is ever rewritten.
+
+**The detail map says in words what it draws.** `LocationDnaCriteriaDisplay` turns the same stored
+rows into radius addresses and miles, Important Place type/address/miles, and a custom-area count,
+rendered by `partials/location-dna/_criteria-summary` inside the shared `x-location-dna-map` — one
+reading for Buyer and Tenant, never coordinates or JSON. It is display only: not a serializer, not a
+matcher. Seller and Landlord carry a property pin, never reach it, and their pin is withheld wherever
+`$mlsAddressVisible` withholds the address line — a rooftop point is the address, drawn.
+
+**Important Places are miles only; the "Commute Preferences" block is retired.** Neither "within
+minutes", Travel Mode, nor the Buyer/Tenant commute ZIP/minutes/mode fields had a consumer — no
+routing engine exists, and no scorer reads them. Stored values are preserved: a historical minutes
+row keeps `minutes` (never converted to miles) and renders as a pin without a ring until its owner
+explicitly switches it, and the commute meta is still loaded, re-saved unchanged, and shown on the
+listing page. Important Place miles are **map-only** — no matcher reads them; adding them as radii
+to the Stellar engine would widen matches (it ORs areas), not require proximity.
+
 ### Location DNA attribution, and the Overture pre-activation gate
 
 **Nothing here activates the corpus.** `OVERTURE_CORPUS_POI_ENABLED` and the registry's

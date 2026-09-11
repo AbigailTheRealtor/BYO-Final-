@@ -17,15 +17,22 @@ namespace App\Services\Offers;
  *     "address":        "123 Main St, ...",// Exact Address (geocoded client-side)
  *     "lat":            27.95,             // geocode result (nullable; map convenience only)
  *     "lng":            -82.45,
- *     "distance_pref":  "miles",           // "miles" (radius circle) | "minutes" (travel time)
+ *     "distance_pref":  "miles",           // "miles" (radius circle) | "minutes" (legacy travel time)
  *     "distance_value": 5,                 // > 0 — miles OR minutes depending on distance_pref
- *     "travel_mode":    "driving"          // driving | walking | bicycling | transit
+ *     "travel_mode":    "driving"          // driving | walking | bicycling | transit (legacy)
  *   }
  *
  * The map deliberately draws a real geocoded PIN for every located place and a radius
  * CIRCLE only for the "miles" preference. "minutes" (travel-time) rows get a pin but NO
  * circle — an accurate isochrone cannot be drawn, and a plain radius would be a fake
  * travel-time circle, which the audit forbids.
+ *
+ * MILES ONLY IN THE FORM. The widget no longer offers "minutes" or a travel mode: no
+ * routing engine exists here, so both implied a commute measurement nothing performs.
+ * Both remain VALID STORED VALUES and this class keeps accepting them — a row saved
+ * with minutes is preserved exactly (never converted: ten minutes is not a number of
+ * miles) until its owner explicitly switches it to miles. `travel_mode` stays in the
+ * canonical eight-key shape for the same reason.
  */
 class ImportantPlacesService
 {

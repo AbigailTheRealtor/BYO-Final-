@@ -460,7 +460,10 @@
         /* Badges */
         $ofFin = $arr('offered_financing');
         $heroBadges = array_values(array_filter([
-            ['show' => count($heroCities) > 0,                          'label' => 'Location Flexible', 'icon' => 'fa-solid fa-location-dot',       'color' => 'teal',   'strong' => false],
+            /* The tenant's own "flexible location" answer — not "has at least one city", which
+               is what this used to test, announcing flexibility for every tenant who named a town. */
+            ['show' => filter_var(is_array($locationDnaPreferences ?? null) ? ($locationDnaPreferences['flexible_location'] ?? false) : false, FILTER_VALIDATE_BOOLEAN),
+                                                                          'label' => 'Location Flexible', 'icon' => 'fa-solid fa-location-dot',       'color' => 'teal',   'strong' => false],
             ['show' => in_array('Lease Option', $ofFin),                'label' => 'Lease Option',      'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
             ['show' => in_array('Lease Purchase', $ofFin),              'label' => 'Lease Purchase',    'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
             ['show' => in_array('Cryptocurrency', $ofFin),              'label' => 'Crypto OK',         'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber',  'strong' => false],
