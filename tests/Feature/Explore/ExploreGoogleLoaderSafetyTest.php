@@ -162,6 +162,26 @@ class ExploreGoogleLoaderSafetyTest extends TestCase
         $this->assertTrue((new ExploreGoogleConfig())->isReady());
     }
 
+    /**
+     * Google 3D is OFF until somebody switches it on. A browser key on its own
+     * turns nothing on, so a credential can be provisioned and checked before a
+     * launch with nothing loading — and the key is not written into the page.
+     *
+     * @test
+     */
+    public function a_browser_key_alone_does_not_turn_google_on(): void
+    {
+        config(['explore.google.browser_key' => 'a-provisioned-but-unreleased-key']);
+
+        $response = $this->get('/explore');
+
+        $response->assertOk();
+        $response->assertSee('data-google-ready="0"', false);
+        $response->assertDontSee('maps.googleapis.com');
+        $response->assertDontSee('a-provisioned-but-unreleased-key');
+        $this->assertFalse((new ExploreGoogleConfig())->isReady());
+    }
+
     /* ── C / D — one load, ever ─────────────────────────────────────────── */
 
     /**

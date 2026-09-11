@@ -62,6 +62,22 @@ class LazyBridgeImportService
      * ComputeLocationDna is dispatched only for new records or records whose
      * unparsed_address or postal_code changed since the last import.
      *
+     * Two optional controls, both inert at their defaults, so every existing
+     * caller behaves exactly as before:
+     *
+     * - $beforeProviderRequest is asked immediately before EACH page is sent,
+     *   and returns null to allow it or a reason to refuse it. A refusal stops
+     *   pagination before that page goes out: the rows already upserted stay,
+     *   no fetch-cache row is written (a truncated pass must not later be served
+     *   as a warm, complete tile), and the result is LazyImportResult::refused().
+     *   This is how a budgeted caller makes its ceiling hard at the request
+     *   boundary rather than checking once and charging afterwards.
+     * - $dispatchDna = false upserts without dispatching ComputeLocationDna,
+     *   mirroring the option BridgeListingLookupService already has. For a
+     *   caller that does not use Location DNA and must not start its provider
+     *   work (Google Places, through the POI step) as a side effect.
+     *
+     * @param  (callable(): ?string)|null  $beforeProviderRequest
      * @throws \InvalidArgumentException  For unsupported role values.
      */
     public function importForCriteria(
@@ -69,6 +85,8 @@ class LazyBridgeImportService
         string $role,
         ?int $maxPagesOverride = null,
         ?int $maxRecordsOverride = null,
+        ?callable $beforeProviderRequest = null,
+        bool $dispatchDna = true,
     ): LazyImportResult {
         $role = strtolower(trim($role));
 
@@ -147,6 +165,10 @@ class LazyBridgeImportService
             // outbound traffic rather than for successful outbound traffic.
             $pagesAttempted = 0;
 
+            // Set when the caller's admission check refuses a page. That page is
+            // then NOT sent, and the cycle ends as refused rather than fetched.
+            $refusedReason = null;
+
             try {
                 while (true) {
                     $page++;
@@ -158,6 +180,18 @@ class LazyBridgeImportService
                         );
                         $capReached = true;
                         break;
+                    }
+
+                    // Admission, per request: asked immediately before the page
+                    // is sent, so a refused page is never sent — the difference
+                    // between a ceiling and a report that one was exceeded.
+                    if ($beforeProviderRequest !== null) {
+                        $refusal = $beforeProviderRequest();
+
+                        if ($refusal !== null) {
+                            $refusedReason = (string) $refusal;
+                            break;
+                        }
                     }
 
                     $pagesAttempted++;
@@ -183,8 +217,9 @@ class LazyBridgeImportService
                             continue;
                         }
 
-                        // Dispatch DNA only for new records or address/coordinate changes.
-                        if ($upsertResult->shouldDispatchDna()) {
+                        // Dispatch DNA only for new records or address/coordinate
+                        // changes — and only for a caller that has not opted out.
+                        if ($dispatchDna && $upsertResult->shouldDispatchDna()) {
                             ComputeLocationDna::dispatch('bridge', $upsertResult->model->id);
                             Log::info('LazyBridgeImportService: dispatched ComputeLocationDna', [
                                 'bridge_property_id' => $upsertResult->model->id,
@@ -210,6 +245,23 @@ class LazyBridgeImportService
                     ['hash' => $hash, 'role' => $role, 'page' => $page]
                 );
                 return LazyImportResult::failed(hash: $hash, pagesAttempted: $pagesAttempted);
+            }
+
+            if ($refusedReason !== null) {
+                // No fetch-cache row. A pass its caller stopped part-way saw only
+                // part of the tile, and a cache row would serve that part as a
+                // warm, complete answer until it expired.
+                Log::info(
+                    "LazyBridgeImportService: provider request refused by caller ({$refusedReason}) after "
+                    . "{$pagesAttempted} page(s) for hash {$hash}; {$totalImported} record(s) upserted, no cache written."
+                );
+
+                return LazyImportResult::refused(
+                    count: $totalImported,
+                    hash: $hash,
+                    pagesAttempted: $pagesAttempted,
+                    reason: $refusedReason,
+                );
             }
 
             if ($capReached) {

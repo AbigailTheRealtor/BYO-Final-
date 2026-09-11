@@ -9,12 +9,12 @@ use App\Services\Location\Coordinates\Guards\ProviderRequestBudget;
  *
  * THIS IS NOT A BUDGET IMPLEMENTATION. IT COMPOSES THE EXISTING ONE.
  * ------------------------------------------------------------------
- * Every counter, key, window and TTL here belongs to
+ * Every counter, key, window, TTL and lock here belongs to
  * {@see ProviderRequestBudget}. This class holds no storage, does no counting
  * and defines no time window; it decides WHICH budgets apply to an Explore
- * provider call and asks them in order. Building a second accounting mechanism
- * would mean two things that must agree forever about what "a request" is, and
- * they would not.
+ * provider call and asks them. Building a second accounting mechanism would
+ * mean two things that must agree forever about what "a request" is, and they
+ * would not.
  *
  * The shared budget already supports both scopes without modification, because
  * its provider id is an arbitrary string rather than an enum: a global ceiling
@@ -38,6 +38,20 @@ use App\Services\Location\Coordinates\Guards\ProviderRequestBudget;
  *     Google integration elsewhere produced roughly 16,000 unexpected requests,
  *     and no per-caller limit would have caught it.
  *
+ * A HARD CEILING, ADMITTED ONE REQUEST AT A TIME
+ * ----------------------------------------------
+ * The unit is one outbound Bridge HTTP request: one OData page of a discovery
+ * pass, or the property panel's single-record lookup. Each is admitted by
+ * {@see acquire()} immediately before it is sent, through
+ * {@see ProviderRequestBudget::admit()} — the global and actor ceilings checked
+ * and charged together, under one lock. A pass that runs out of budget between
+ * page 3 and page 4 does not send page 4.
+ *
+ * The earlier shape — one check before a pass, its pages charged afterwards —
+ * let a pass admitted at 59 of 60 finish at 69, and let two racing workers both
+ * take the last unit. A configured 60 now admits exactly 60, with any number of
+ * PHP processes.
+ *
  * ACTOR IDENTITY IS BORROWED, NOT INVENTED
  * ----------------------------------------
  * The actor is `user id, else IP` — byte for byte the identity
@@ -55,17 +69,6 @@ use App\Services\Location\Coordinates\Guards\ProviderRequestBudget;
  * produce a degraded response that still shows last-known inventory, never an
  * empty map, so the decision is returned and {@see \App\Services\Explore\ExploreInventoryService}
  * acts on it.
- *
- * NOT ATOMIC, AND THAT IS INHERITED AND ACCEPTED
- * ----------------------------------------------
- * The shared budget counts through the cache, which is atomic on Redis and
- * read-modify-write on the file driver this environment currently uses. Two
- * racing requests can each read 999 against a cap of 1,000 and both proceed.
- * The overshoot is one request per racing worker — bounded by concurrency, not
- * by the size of the runaway — and the same-tile advisory lock already
- * serialises the case that would race hardest. This is a backstop against a
- * runaway loop, not a billing ledger, and a design that needed locks to be
- * correct here would be a worse design.
  */
 class ExploreProviderBudget
 {
@@ -76,8 +79,13 @@ class ExploreProviderBudget
     public const REASON_KILL_SWITCH    = 'explore_provider_kill_switch';
 
     /**
-     * The structured reason Explore may not call the provider right now, or
-     * null when it may.
+     * Whether a new provider request would be refused right now — a read-only
+     * fast path, NOT the ceiling.
+     *
+     * It charges nothing and reserves nothing. It lets a request whose ceiling
+     * is already spent skip the importer entirely; {@see acquire()} is asked
+     * again before every request that is actually sent, and that is where the
+     * ceiling is enforced.
      *
      * @param string|null $actorKey the already-hashed actor identity, or null
      *        to check the global ceiling alone (a scheduled or console caller
@@ -115,16 +123,45 @@ class ExploreProviderBudget
     }
 
     /**
-     * Count outbound requests that were ACTUALLY SENT against both scopes.
+     * Admit ONE outbound provider request — charging it to the global and the
+     * actor ceiling together — or refuse it and charge nothing.
      *
-     * Counts attempts, not successes: a request that reached the provider and
-     * came back a failure consumed exactly as much of the provider's patience
-     * and of our bill as one that worked. Counting only successes is how a
-     * failing integration retries its way through a ceiling that appears to be
-     * holding.
+     * Call immediately before the request is sent, once per request: never
+     * after, and never for a cache hit, which sends nothing. A non-null return
+     * means the request must not be sent.
      *
-     * A cache hit sends nothing and must never reach this method — rationing
-     * our own memory would defeat the cache the ceiling depends on.
+     * Attempts are charged, not successes. A request that reached the provider
+     * and came back a failure consumed exactly as much of its capacity as one
+     * that worked, and admission happens before anybody knows which it will be.
+     *
+     * The kill switch and a disabled guard refuse here too, so no path reaches
+     * the provider by skipping the fast-path check.
+     */
+    public function acquire(?string $actorKey): ?string
+    {
+        if ($this->killed()) {
+            return self::REASON_KILL_SWITCH;
+        }
+
+        if (! $this->enabled()) {
+            return self::REASON_DISABLED_GUARD;
+        }
+
+        $budgets = ['global' => $this->global()];
+
+        if ($actorKey !== null) {
+            $budgets['actor'] = $this->actor($actorKey);
+        }
+
+        return ProviderRequestBudget::admit($budgets);
+    }
+
+    /**
+     * Charge requests WITHOUT admission.
+     *
+     * No request path uses this — they go through {@see acquire()}, which is
+     * what makes the ceiling hard. It exists so a known spend can be seeded;
+     * the tests pre-spend a ceiling this way.
      */
     public function record(?string $actorKey, int $requests = 1): void
     {
@@ -182,9 +219,17 @@ class ExploreProviderBudget
         return (bool) config('explore.provider_budget.enabled', true);
     }
 
+    /**
+     * Is the provider kill switch tripped?
+     *
+     * Anything but an explicit `false` reads as TRIPPED. config/explore.php
+     * already parses the environment fail-safe; this re-asserts it for a value
+     * set any other way, because a kill switch that a malformed value quietly
+     * disarms is not a kill switch.
+     */
     public function killed(): bool
     {
-        return (bool) config('explore.provider_budget.kill_switch', false);
+        return config('explore.provider_budget.kill_switch', false) !== false;
     }
 
     private function global(): ProviderRequestBudget
@@ -226,9 +271,14 @@ class ExploreProviderBudget
         return $value > 0 ? $value : self::DEFAULTS[$key];
     }
 
+    /**
+     * Conservative on purpose — application-side ceilings for a controlled
+     * launch, NOT a statement of Stellar's allowance, which is unknown here.
+     * Raise from `explore_provider` telemetry, never from optimism.
+     */
     private const DEFAULTS = [
-        'global_hourly' => 600,
-        'global_daily'  => 5_000,
+        'global_hourly' => 300,
+        'global_daily'  => 2_000,
         'actor_hourly'  => 60,
         'actor_daily'   => 300,
     ];

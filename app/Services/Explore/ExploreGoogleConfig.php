@@ -6,15 +6,15 @@ namespace App\Services\Explore;
  * Whether the Google Photorealistic 3D renderer can actually start, and the
  * minimum it needs to do so.
  *
- * THREE STATES, NOT TWO
- * ---------------------
- * "Explore is off" and "Explore is on but has no map credential" are different
+ * THE STATES MUST LOOK DIFFERENT
+ * ------------------------------
+ * "Explore is off" and "Explore is on but the map cannot start" are different
  * situations and must look different. The first 404s — the feature does not
  * exist. The second renders the shell with a stated unavailable panel: the
  * route is live, the viewport API answers, and the map area says why it is
- * empty. A missing credential producing a blank grey rectangle is the outcome
- * this class exists to prevent, because a dead map is indistinguishable from a
- * broken one and PHP tests cannot see either.
+ * empty — switched off, or no credential, or both. A blank grey rectangle is
+ * the outcome this class exists to prevent, because a dead map is
+ * indistinguishable from a broken one and PHP tests cannot see either.
  *
  * A SEPARATE CREDENTIAL FROM GOOGLE_PLACES_API_KEY, PERMANENTLY
  * ------------------------------------------------------------
@@ -37,10 +37,11 @@ class ExploreGoogleConfig
     /**
      * May the 3D renderer be started at all?
      *
-     * TWO INDEPENDENT REASONS FOR NO, and the page says which. An operator who
-     * has switched the renderer off is in a different situation from an
-     * environment that was never given a credential, and collapsing them would
-     * send somebody looking for a missing key that is not missing.
+     * TWO INDEPENDENT REQUIREMENTS, on top of EXPLORE_ENABLED (which the route
+     * middleware enforces before this is ever asked): the switch must be
+     * explicitly ON, and a browser key must be configured. A key alone is not
+     * enough — it can be provisioned and verified ahead of a launch without
+     * anything loading.
      *
      * When this is false the loader NEVER RUNS — no <script> is inserted and
      * maps.googleapis.com is never contacted. Not "load it and hide the map":
@@ -53,17 +54,22 @@ class ExploreGoogleConfig
     }
 
     /**
-     * The independent kill switch, separate from EXPLORE_ENABLED.
+     * Is the 3D renderer explicitly switched on?
      *
-     * Explore may need to keep serving listings while Google is stopped —
-     * during a billing incident, a quota exhaustion, or an unexplained usage
-     * spike. Before this existed the only way to stop Google was to delete the
-     * browser credential, which is a secret change rather than an operational
-     * one and leaves no record of the decision.
+     * DEFAULT OFF, AND ONLY AN EXPLICIT ON COUNTS. config/explore.php parses
+     * EXPLORE_GOOGLE_3D_ENABLED strictly — `true`, `1`, `on` or `yes`, nothing
+     * else — and this re-asserts it for a value set any other way: only a real
+     * boolean true enables.
+     *
+     * Separate from EXPLORE_ENABLED so Explore can keep serving listings while
+     * Google is stopped — a billing incident, a quota exhaustion, an
+     * unexplained usage spike — without deleting the browser key, which is a
+     * secret change rather than an operational one and leaves no record of the
+     * decision.
      */
     public function enabled(): bool
     {
-        return (bool) config('explore.google.enabled', true);
+        return config('explore.google.enabled', false) === true;
     }
 
     /**
@@ -114,8 +120,10 @@ class ExploreGoogleConfig
     /**
      * An operator-facing reason the map is unavailable, or null when it is not.
      *
-     * States the missing variable's NAME, never any value. A configuration
-     * report says PRESENT or MISSING and nothing else.
+     * States the missing variables' NAMES, never any value. A configuration
+     * report says PRESENT or MISSING and nothing else. When both requirements
+     * are unmet it names both, so switching the renderer on does not reveal a
+     * second, previously unmentioned blocker.
      */
     public function unavailableReason(): ?string
     {
@@ -123,9 +131,12 @@ class ExploreGoogleConfig
             return null;
         }
 
+        $missingKey = $this->browserKey() === null;
+
         if (! $this->enabled()) {
-            return 'The 3D map is currently switched off for this environment. '
-                . 'Listings below are unaffected.';
+            return 'The 3D map is currently switched off for this environment (EXPLORE_GOOGLE_3D_ENABLED)'
+                . ($missingKey ? ' and EXPLORE_GOOGLE_MAPS_BROWSER_KEY is not configured' : '')
+                . '. Listings below are unaffected.';
         }
 
         return 'The 3D map is unavailable because EXPLORE_GOOGLE_MAPS_BROWSER_KEY is not configured '

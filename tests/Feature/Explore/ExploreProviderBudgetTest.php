@@ -2,12 +2,16 @@
 
 namespace Tests\Feature\Explore;
 
+use App\Models\BridgeCriteriaFetchCache;
 use App\Models\BridgeProperty;
 use App\Services\Bridge\BridgeApiService;
 use App\Services\Explore\Guards\ExploreProviderBudget;
 use App\Services\Location\Coordinates\Guards\ProviderRequestBudget;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 use Tests\Feature\Explore\Concerns\MakesExploreListings;
 use Tests\Feature\Explore\Support\FakeBridgeApi;
 use Tests\TestCase;
@@ -442,6 +446,264 @@ class ExploreProviderBudgetTest extends TestCase
         $this->getJson('/api/explore/listings/PANEL-BUDGET')->assertOk();
 
         $this->assertSame(1, $this->provider->providerRequestCount(), 'refused, and the panel still served');
+    }
+
+    /* ── hard ceilings — the configured number is the maximum, exactly ─── */
+
+    /** @return array<string, array{0:string, 1:int, 2:bool}> */
+    public function exactCeilings(): array
+    {
+        return [
+            'actor hourly 60'   => ['actor_hourly', 60, true],
+            'actor daily 300'   => ['actor_daily', 300, true],
+            'global hourly 300' => ['global_hourly', 300, false],
+            'global daily 2000' => ['global_daily', 2000, false],
+        ];
+    }
+
+    /**
+     * Each ceiling on its own, at its shipped value: the unit that reaches the
+     * limit is admitted, and the one after it is refused BEFORE anything is
+     * sent. Charged to the limit and not one unit beyond.
+     *
+     * @test
+     * @dataProvider exactCeilings
+     */
+    public function each_configured_ceiling_is_exact(string $ceiling, int $limit, bool $actorScoped): void
+    {
+        // Every other ceiling well out of the way, so only the one under test
+        // can refuse.
+        config([
+            'explore.provider_budget.global_hourly' => 100_000,
+            'explore.provider_budget.global_daily'  => 100_000,
+            'explore.provider_budget.actor_hourly'  => 100_000,
+            'explore.provider_budget.actor_daily'   => 100_000,
+            "explore.provider_budget.{$ceiling}"    => $limit,
+        ]);
+
+        // The actor every request in this test arrives as.
+        $actor = ExploreProviderBudget::actorKey(null, '127.0.0.1');
+        (new ExploreProviderBudget())->record($actorScoped ? $actor : null, $limit - 1);
+
+        $this->provider->records = [$this->providerRecord()];
+
+        $this->listings(['transaction_type' => 'sale', 'bbox' => $this->tileAt(0)]);
+        $this->assertSame(1, $this->provider->providerRequestCount(), "unit {$limit} of {$limit} is admitted and sent");
+
+        $payload = $this->listings(['transaction_type' => 'sale', 'bbox' => $this->tileAt(1)]);
+        $this->assertSame(1, $this->provider->providerRequestCount(), 'unit ' . ($limit + 1) . ' is never sent');
+        $this->assertSame('budget_limited', $payload['discovery']['status']);
+
+        $spent  = (new ExploreProviderBudget())->spent($actor);
+        $scope  = $actorScoped ? $spent['actor'] : $spent['global'];
+        $window = str_ends_with($ceiling, 'hourly') ? 'hourly' : 'daily';
+
+        $this->assertSame($limit, $scope[$window], 'charged to the limit and not one unit beyond');
+    }
+
+    /**
+     * The case check-then-charge got wrong: budget that runs out PART-WAY
+     * through a pass. Three units remain and the provider has more pages than
+     * that — exactly three pages go out, page 4 never does, and the answer is
+     * degraded rather than a false empty market.
+     *
+     * @test
+     */
+    public function budget_running_out_mid_pagination_stops_before_the_next_page(): void
+    {
+        config([
+            'bridge.lazy_page_size'                 => 1,
+            'explore.discovery.max_pages'           => 10,
+            'explore.provider_budget.global_hourly' => 3,
+        ]);
+
+        $known = $this->makeListing(['listing_key' => 'KNOWN-BEFORE']);
+        $known->forceFill(['imported_at' => now()->subDays(30)])->save();
+
+        $this->provider->records = array_map(
+            fn (int $i): array => $this->providerRecord(['listing_key' => "MID-{$i}"]),
+            range(1, 8),
+        );
+
+        $payload = $this->listings(['transaction_type' => 'sale']);
+
+        $this->assertCount(3, $this->provider->paginatedCalls, 'exactly the three admitted pages were sent');
+        $this->assertSame(3, (new ExploreProviderBudget())->spent(null)['global']['hourly']);
+
+        $this->assertSame('budget_limited', $payload['discovery']['status']);
+        $this->assertTrue($payload['discovery']['degraded']);
+        $this->assertFalse($payload['discovery']['complete']);
+
+        // What was fetched is shown, and what was known before is NOT withheld
+        // on the strength of pages the pass never reached.
+        $ids = array_column($payload['listings'], 'id');
+
+        foreach (['MID-1', 'MID-2', 'MID-3', 'KNOWN-BEFORE'] as $expected) {
+            $this->assertContains($expected, $ids);
+        }
+
+        $this->assertNotContains('MID-4', $ids, 'page 4 was never fetched');
+
+        // No warm-tile cache row: a truncated pass must not later be served as
+        // a complete answer.
+        $this->assertSame(0, BridgeCriteriaFetchCache::query()->count());
+    }
+
+    /**
+     * An unfiltered viewport runs a sale pass and then a rent pass. When the
+     * sale pass takes the last unit, the rent pass is refused before its first
+     * page, and the response says the answer is budget-limited — with the sale
+     * rows it did get — rather than presenting half the market as the whole.
+     *
+     * @test
+     */
+    public function running_out_between_the_sale_and_rent_passes_is_degraded_not_half_a_map(): void
+    {
+        config(['explore.provider_budget.global_hourly' => 1]);
+
+        $this->provider->records = [
+            $this->providerRecord(['listing_key' => 'SALE-ONLY']),
+            $this->providerRentalRecord(['listing_key' => 'RENT-NEVER-ASKED']),
+        ];
+
+        $payload = $this->listings();
+
+        $this->assertSame(1, $this->provider->providerRequestCount(), 'the rent pass sent nothing');
+        $this->assertSame('budget_limited', $payload['discovery']['status']);
+        $this->assertTrue($payload['discovery']['degraded']);
+        $this->assertFalse($payload['discovery']['complete']);
+        $this->assertContains('SALE-ONLY', array_column($payload['listings'], 'id'));
+    }
+
+    /**
+     * Two actors, one unit left in the global ceiling. Neither actor ceiling is
+     * anywhere near its limit, so only the global one decides — and it admits
+     * exactly one of them.
+     *
+     * @test
+     */
+    public function two_actors_cannot_both_take_the_last_global_unit(): void
+    {
+        config(['explore.provider_budget.global_hourly' => 1]);
+
+        $this->provider->records = [$this->providerRecord()];
+
+        foreach (['198.51.100.21', '198.51.100.22'] as $i => $ip) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->getJson('/api/explore/listings?' . http_build_query([
+                    'bbox'             => $this->tileAt($i + 60),
+                    'transaction_type' => 'sale',
+                ]));
+        }
+
+        $this->assertSame(1, $this->provider->providerRequestCount());
+        $this->assertSame(1, (new ExploreProviderBudget())->spent(null)['global']['hourly']);
+    }
+
+    /**
+     * Admission that cannot be decided is a refusal. With the admission lock
+     * held elsewhere nothing is admitted and nothing is charged; once the turn
+     * is free, admission resumes.
+     *
+     * @test
+     */
+    public function admission_fails_closed_when_it_cannot_take_its_turn(): void
+    {
+        $budget = new ProviderRequestBudget('explore_lock_held', 100, 100);
+        $held   = Cache::lock(ProviderRequestBudget::ADMISSION_LOCK, 30);
+
+        $this->assertTrue($held->get());
+
+        try {
+            $this->assertSame(
+                ProviderRequestBudget::REASON_ADMISSION_UNAVAILABLE,
+                ProviderRequestBudget::admit(['global' => $budget], 0)
+            );
+            $this->assertSame(0, $budget->spent()['hourly'], 'a refusal charges nothing');
+        } finally {
+            $held->release();
+        }
+
+        $this->assertNull(ProviderRequestBudget::admit(['global' => $budget], 0));
+        $this->assertSame(1, $budget->spent()['hourly']);
+    }
+
+    /**
+     * The final-unit race with REAL concurrency: several PHP processes, the
+     * real file cache store this deployment uses, all admitting against one
+     * ceiling at once. However they interleave, exactly the ceiling is admitted
+     * and exactly the ceiling is charged — not one unit more.
+     *
+     * Check-then-charge could not promise this: two processes can both read 19
+     * of 20 and both proceed, and on the file driver increment() is itself a
+     * read-modify-write that can lose an update.
+     *
+     * @test
+     */
+    public function concurrent_processes_cannot_race_past_the_ceiling(): void
+    {
+        $dir = sys_get_temp_dir() . '/explore-admission-race-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0775, true);
+
+        $script = $dir . '/racer.php';
+        file_put_contents($script, <<<'PHP'
+<?php
+[, $base, $cacheDir, $mode, $cap, $attempts] = $argv;
+require $base . '/vendor/autoload.php';
+
+use App\Services\Location\Coordinates\Guards\ProviderRequestBudget;
+
+$container = new Illuminate\Container\Container();
+$container->instance('cache', new Illuminate\Cache\Repository(
+    new Illuminate\Cache\FileStore(new Illuminate\Filesystem\Filesystem(), $cacheDir)
+));
+Illuminate\Support\Facades\Facade::setFacadeApplication($container);
+
+$budget = new ProviderRequestBudget('explore_race', null, (int) $cap);
+
+if ($mode === 'spent') {
+    echo $budget->spent()['daily'];
+    exit(0);
+}
+
+$admitted = 0;
+for ($i = 0; $i < (int) $attempts; $i++) {
+    if (ProviderRequestBudget::admit(['global' => $budget], 10) === null) {
+        $admitted++;
+    }
+}
+echo $admitted;
+PHP);
+
+        $php    = (new PhpExecutableFinder())->find(false) ?: PHP_BINARY;
+        $cap    = 20;
+        $racers = [];
+
+        try {
+            // Four processes × 15 attempts = 60 attempts against a ceiling of 20.
+            for ($i = 0; $i < 4; $i++) {
+                $process = new Process([$php, $script, base_path(), $dir, 'race', (string) $cap, '15']);
+                $process->setTimeout(120);
+                $process->start();
+                $racers[] = $process;
+            }
+
+            $admitted = 0;
+
+            foreach ($racers as $process) {
+                $process->wait();
+                $this->assertTrue($process->isSuccessful(), $process->getErrorOutput());
+                $admitted += (int) trim($process->getOutput());
+            }
+
+            $spent = new Process([$php, $script, base_path(), $dir, 'spent', (string) $cap, '0']);
+            $spent->mustRun();
+
+            $this->assertSame($cap, $admitted, 'sixty racing attempts admit exactly the ceiling');
+            $this->assertSame($cap, (int) trim($spent->getOutput()), 'and charge exactly the ceiling');
+        } finally {
+            (new Filesystem())->deleteDirectory($dir);
+        }
     }
 
     /* ── no second budget system ────────────────────────────────────────── */

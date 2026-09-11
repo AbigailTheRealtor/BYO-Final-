@@ -64,9 +64,23 @@ application cannot provide for itself.
 ## 6. Controlled rollout
 
 - [ ] Enable for a limited audience first; keep `EXPLORE_ENABLED` off for everyone else.
+- [ ] **Switch the renderer on explicitly**: `EXPLORE_GOOGLE_3D_ENABLED=true`. It ships OFF, and a
+      browser key on its own turns nothing on — so the key can be set and checked first (page
+      source should show `data-google-ready="0"` and no key) before anything loads.
+- [ ] Load `/explore` once with the browser's network panel open and confirm exactly **one**
+      `maps.googleapis.com/maps/api/js` request — and that moving the camera, holding W or an
+      arrow key, dragging on a phone, opening and closing a property panel and resizing the window
+      add **none**. The automated tests read the shipped JavaScript; they do not execute it.
 - [ ] Watch **Google console usage** and the application's own `explore_provider` log lines side
       by side for a full traffic cycle before widening anything.
-- [ ] Only then consider raising quotas — with the observed numbers in hand.
+- [ ] Check that the `actor` values in those log lines are **distinct per visitor**. If every
+      anonymous request resolves to one proxy address, the per-actor ceiling becomes a shared one —
+      safe for cost, bad for availability — and needs addressing before widening.
+- [ ] Only then consider raising quotas or the Explore provider ceilings — with the observed
+      numbers in hand. The Explore ceilings ship at actor 60/hour and 300/day, global 300/hour and
+      2,000/day. They are application-side and conservative on purpose; they are not a statement
+      of Stellar's allowance, which is not known here, and the Bridge token is shared with MLS sync
+      and the criteria searches.
 
 ## 7. Know how to stop it, before you start it
 
@@ -78,6 +92,17 @@ Rehearse these, in this order, and confirm each one works:
 | Stellar/Bridge traffic only | `EXPLORE_PROVIDER_KILL_SWITCH=true` | No provider request. Explore serves last-known inventory and marks the response degraded. |
 | Stellar discovery as a feature | `EXPLORE_DISCOVERY_ENABLED=false` | Cache-only, and the response says so. |
 | Everything | `EXPLORE_ENABLED=false` | Every Explore route 404s, data endpoints included. |
+
+**Exact values the provider switches accept** (case-insensitive; surrounding spaces ignored):
+
+| Variable | ON / tripped | OFF / not tripped | Any other value |
+|---|---|---|---|
+| `EXPLORE_GOOGLE_3D_ENABLED` | `true` `1` `on` `yes` | unset, empty, `false` `0` `off` `no` | **OFF** |
+| `EXPLORE_DISCOVERY_ENABLED` | `true` `1` `on` `yes` | unset, empty, `false` `0` `off` `no` | **OFF** |
+| `EXPLORE_PROVIDER_KILL_SWITCH` | `true` `1` `on` `yes` | unset, empty, `false` `0` `off` `no` | **TRIPPED** |
+
+Every one of them fails toward stopping the provider. `EXPLORE_ENABLED` is not in this table: it
+uses the ordinary cast, under which `off` and `no` read as ON — type exactly `false` to turn it off.
 
 - [ ] Confirm each is an **environment change that takes effect on restart, with no code
       deployment** in the target environment.
@@ -94,6 +119,7 @@ Rehearse these, in this order, and confirm each one works:
 ---
 
 **Until every box above is ticked, the correct state is the shipped one:**
-`EXPLORE_GOOGLE_MAPS_BROWSER_KEY` unset, `EXPLORE_ENABLED=false`,
-`EXPLORE_DISCOVERY_ENABLED=false`. The live Google 3D visual verification remains **BLOCKED** on
-that credential, and that is the expected state before launch rather than a defect.
+`EXPLORE_GOOGLE_MAPS_BROWSER_KEY` unset, `EXPLORE_GOOGLE_3D_ENABLED` unset (off),
+`EXPLORE_ENABLED=false`, `EXPLORE_DISCOVERY_ENABLED=false`. The live Google 3D visual verification
+remains **BLOCKED** on that credential, and that is the expected state before launch rather than a
+defect.
