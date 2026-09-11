@@ -33,6 +33,11 @@ namespace App\Support\Listing;
  * Casting the column would make the models agree with the defect rather than the
  * page agree with the models.
  *
+ * `is_approved` is the same kind of flag and gets the same answer. The four role
+ * models used to cast it `boolean` — which is how the string 'false' in the
+ * Seller / Buyer varchar columns read as approved — and now read the raw value
+ * through this class instead: {@see \App\Models\Concerns\HasApprovalFlag}.
+ *
  * It reads and never rewrites. Normalising historical rows would be a data
  * change, and it is not this class's decision.
  *
