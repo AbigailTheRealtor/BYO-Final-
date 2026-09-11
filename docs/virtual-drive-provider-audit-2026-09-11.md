@@ -216,6 +216,10 @@ point at that listing and never at its neighbour.
 
 ## 6. Google Street View — results
 
+> **Superseded in part by §16.** A credentialed session has since been run: the loads, the
+> geo-anchoring and the marker scaling below are now LIVE, and the condo-stacking limitation is
+> fixed. The NOT RUN labels in this section describe the state before that session.
+
 - **Loads:** NOT RUN, because there is no `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY`.
 - **Coverage:**
   - NOT RUN.
@@ -458,6 +462,10 @@ Before building it for users:
 
 ## 14. Phase 2 — guarded comparison harness (live run blocked on credentials)
 
+> **Superseded in part by §16.** The Google half of this is no longer blocked — a key exists and one
+> session has run. Apple is still blocked on its token. The procedure below still governs any
+> further session.
+
 **Status:**
 
 - The comparison harness and its Google billing guard are built and proven against fakes.
@@ -630,6 +638,93 @@ These gaps are real, but none can turn Apple into a working fit.
 Apple can show a neighbourhood from the MLS coordinate with no service call, next to a
 selected-home card. It cannot tell the page which house is in view.
 
+## 16. The one live Google session, and the customer experience it failed
+
+**This section supersedes every "Google: NOT RUN" in §6, §9 and §14, and closes the condo-stacking
+limitation listed in §6 and §12.2.** Apple is unchanged: `VIRTUAL_DRIVE_MAPKIT_JS_TOKEN` is still
+absent and no Look Around session has run.
+
+**Status:** one credentialed Google Street View session was run on 2026-09-11 against the real
+stored homes. `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY` is present in this workspace as a secret (it
+is not in `.env` and is blanked in every test run — §14). **No further live session has been run
+since, and none may be started without the owner's explicit authorisation.**
+
+### What the session proved — the mechanics
+
+- **The billing ceiling held.** One `StreetViewPanorama` for the whole session, through home
+  changes, rotation, walking and travel. `setPano()` moved it; nothing rebuilt it.
+- **Markers are genuinely geo-anchored.** Google placed each sign at its listing's MLS coordinate
+  and kept it on the house as the camera turned and moved, exactly as §6 predicted from the
+  documentation. Nothing in this proof repositions a sign.
+- **Marker scaling with distance was measured**, and it is the measurement the sign sizing now
+  rests on: a 168 px icon rendered **165 px at 19 m, 91 at 36 m, 67 at 49 m and 25 at 132 m** in a
+  960 px-wide panorama — `width ≈ 168 × 19.4 m ÷ distance`. The 19.4 m constant is **measured, not
+  documented** (`virtual-drive-signs.js`).
+
+### What the session failed — the experience
+
+Five defects, all found live, none of them visible to the fake-API specs as they then stood:
+
+1. **Signs became unreadable dots.** At 132 m a sign rendered 25 px wide. Stones Throw's nearest
+   imagery is 132 m from the home, so the default first view was the worst case.
+2. **Neighbouring homes carried identical wording.** The two Manasota Key houses, 33 m apart, were
+   distinguishable only by a selection outline — nothing on the sign said *which house*.
+3. **Condo units stacked.** Three units sharing one coordinate drew three signs on one point; two
+   were unreachable underneath the third. §12.2 recorded this as a known data fact; it is now
+   handled rather than merely stated.
+4. **A sign click led to a developer panel, not a listing.** There was no shopper-facing card.
+5. **The HUD and "Face the selected home" were invisible and unclickable.** Google's panorama sets
+   large z-indexes on its internal layers, and `#vd-street` created no stacking context, so those
+   layers painted over every later sibling. The fake Maps API draws no DOM, which is why no
+   existing spec could see it.
+
+### What was changed in response
+
+All of it is proven against the fake Maps API with the network aborted — **no further Street View
+session was spent on any of this**.
+
+| Defect | Fix | Proven by |
+|---|---|---|
+| Unreadable dots | `VirtualDriveSigns` re-chooses each sign's documented `icon.scaledSize` as the camera moves, so the size a shopper *sees* stays between 132 px and 200 px. The geographic anchor is untouched — Google still places and moves the sign. Beyond 160 m a sign is **hidden, not shrunk**; inside 6 m it is hidden too. | `virtual-drive-signs.spec.js` — the size model is checked against the four measured live widths (within 12%) |
+| Identical neighbours | Each sign carries its own **house number**, its FOR SALE / FOR RENT label and its price. A withheld address yields no number and none is invented. | same spec: `['6590','FOR RENT','$14,000/mo']` vs `['6580', …]` |
+| Stacked condos | Listings within 8 m become **one building sign** ("FOR RENT · 3 UNITS") that opens a **unit chooser**; picking a unit opens that unit and a back link returns to the building. | same spec, and the launch-guard spec's marker-identity test |
+| Developer panel on click | A **shopper card** over the imagery: photos with paging, price, beds/baths/sq ft, address, and only the actions that exist — Photos, 3D Tour, Details, Ask a Question, Schedule Showing. It is pure DOM: opening it, switching listings, paging photos and choosing a unit **never touch the provider**, so the panorama is never rebuilt. Video and Save remain absent for the reasons in §4. | same spec, asserting `panoramaConstructorCalls === 1` and `setPano === 0` across every card interaction |
+| Overlays painted over | `#vd-street` is given `z-index: 0` so it becomes a stacking context, and our overlays sit at `z-index: 1` above it. | `virtual-drive-overlay-stacking.spec.js`, which injects a full-cover layer at `z-index: 1000000` and hit-tests each overlay |
+
+Three further changes came out of the same session:
+
+- **Coverage is reported honestly.** Imagery more than 60 m from the home now says so on the status
+  line and on the card — *"Street View is available nearby, but not directly at this property… You
+  are not in front of the home."* Microscopic signs at the edge of a distant panorama are no longer
+  presented as a view of the house.
+- **The default home moved to Manasota Key Road** (`VIRTUAL_DRIVE_DEFAULT_LISTING_KEY`). Imagery
+  there is ~35 m from the home with a neighbour 33 m away — a sign-shopping test. Stones Throw's
+  132 m is a coverage limit, correctly reported as one, but a poor first view.
+- **A customer preview** (`?view=customer`) hides the instrumentation, event log, observation sheet
+  and developer card so the imagery, the signs and the shopper card are what a reviewer judges. The
+  counters keep running underneath; the Stellar attribution, the homes walk and the aim control stay
+  visible. It changes **what is shown, never what is loaded or when**.
+
+### Standing prerequisite for the next live session — NORMAL GOOGLE IMAGERY
+
+**The next manual test must not be started until the Google project renders ordinary, unwatermarked
+Street View imagery.** A key whose project has no billing account attached, or whose Maps JavaScript
+API is not enabled or is restricted away, still loads and still constructs a panorama — Google
+serves darkened, *"For development purposes only"* tiles instead of refusing. That state is
+**invisible to the Maps JavaScript API**: it raises no error, fires no event and sets no property,
+so neither this proof nor any code can detect it, work around it or report it. It is a Google Cloud
+configuration matter only.
+
+Judging sign legibility, sign size or the shopper experience against watermarked imagery would
+produce conclusions about a rendering mode no customer will ever see, and would spend a billable
+panorama to do it.
+
+**This has not been cleared from inside this repository, and cannot be.** Confirm in the Cloud
+console before the next session: billing account attached, Maps JavaScript API enabled, and the
+browser key restricted to that API and to the dev origin — then confirm on screen that the first
+panorama is clean. Everything else in §14's live-session procedure still applies, including the
+"constructions: 1" check throughout.
+
 ## Files
 
 - **Created:**
@@ -643,6 +738,7 @@ selected-home card. It cannot tell the page which house is in view.
   - `public/js/virtual-drive/virtual-drive-shell.js`
   - `public/js/virtual-drive/apple-lookaround-provider.js`
   - `public/js/virtual-drive/google-streetview-provider.js`
+  - `public/js/virtual-drive/virtual-drive-signs.js` (§16 — pure sign rules: wording, sizing, grouping)
   - `public/css/virtual-drive/virtual-drive.css`
   - four test files under `tests/Feature/VirtualDrive/` and `tests/Unit/VirtualDrive/`
   - this document

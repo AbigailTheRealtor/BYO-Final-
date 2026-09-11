@@ -35,11 +35,16 @@
         return el;
     }
 
-    function link(base, id, text) {
+    function link(base, id, text, view) {
         var url = new URL(base, window.location.href);
         var a = node('a', 'vd-compare-link', text);
 
         url.searchParams.set('listing', id);
+
+        if (view) {
+            url.searchParams.set('view', view);
+        }
+
         a.href = url.href;
 
         return a;
@@ -94,6 +99,7 @@
 
                 test.appendChild(link(appleUrl, listing.id, 'Test Apple'));
                 test.appendChild(link(googleUrl, listing.id, 'Test Google'));
+                test.appendChild(link(googleUrl, listing.id, 'Customer preview', 'customer'));
 
                 tr.appendChild(home);
                 tr.appendChild(sign);

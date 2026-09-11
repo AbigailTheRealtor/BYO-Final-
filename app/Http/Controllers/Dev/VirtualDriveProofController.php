@@ -37,6 +37,7 @@ class VirtualDriveProofController extends Controller
     {
         return view('dev.virtual-drive.compare', [
             'sharedCoordinateKey' => (string) config('virtual_drive.shared_coordinate_listing_key', ''),
+            'defaultListingKey'   => $this->listingKeyOrEmpty(config('virtual_drive.default_listing_key')),
         ]);
     }
 
@@ -94,9 +95,18 @@ class VirtualDriveProofController extends Controller
             'apiVersion'       => $apiVersion,
             'nearbyRadius'     => (int) config('virtual_drive.nearby.radius_meters', 400),
             'selectedListing'  => $this->selectedListing($request),
+            'defaultListing'   => $this->listingKeyOrEmpty(config('virtual_drive.default_listing_key')),
+            'viewMode'         => $request->query('view') === 'customer' ? 'customer' : 'dev',
+            'nearbyRequery'    => (float) config('virtual_drive.nearby.requery_fraction', 0.4),
+            'signs'            => (array) config('virtual_drive.signs', []),
             'launchLabel'      => $launchLabel,
             'launchNote'       => $launchNote,
         ]);
+    }
+
+    private function listingKeyOrEmpty(mixed $value): string
+    {
+        return is_string($value) && preg_match('/^[A-Za-z0-9\-]{1,64}$/', $value) === 1 ? $value : '';
     }
 
     /** A ListingKey-shaped value, or nothing. The shell checks it against the test set. */

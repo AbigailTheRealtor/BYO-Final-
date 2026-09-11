@@ -91,13 +91,38 @@ return [
     'shared_coordinate_listing_key' => env('VIRTUAL_DRIVE_SHARED_COORDINATE_LISTING_KEY', 'bfba16667d0ef3b5323c5d5269b82f9e'),
 
     /*
+    | Where a page with no ?listing= starts. 6590 Manasota Key Rd: a public road
+    | with Google imagery ~35 m from the MLS coordinate and a neighbour 33 m away,
+    | which is what a sign-shopping test needs. (Stones Throw's nearest imagery is
+    | 132 m away — a coverage limit, reported as such, but a poor first view.)
+    */
+    'default_listing_key' => env('VIRTUAL_DRIVE_DEFAULT_LISTING_KEY', 'c1382a833198014114a52e2e737905ad'),
+
+    /*
     | The nearby query a camera move may trigger — against OUR stored rows only.
-    | Small on purpose: a proof, not an inventory browser.
+    | 400 m around the camera, re-asked every ~160 m travelled, so every listing
+    | a sign could be shown for (within signs.max_distance_meters) is already
+    | known. max_results is wide enough that one condo building cannot crowd out
+    | the houses around it; signs beyond sign range are hidden, not drawn.
     */
     'nearby' => [
         'radius_meters'     => 400,
         'max_radius_meters' => 800,
-        'max_results'       => 12,
+        'max_results'       => 60,
+        'requery_fraction'  => 0.4,
+    ],
+
+    /*
+    | FOR SALE / FOR RENT signs in Street View. See virtual-drive-signs.js for
+    | why the size is compensated. Distances in metres, widths in screen px.
+    */
+    'signs' => [
+        'max_distance_meters'    => 160,
+        'min_distance_meters'    => 6,
+        'near_width_px'          => 200,
+        'far_width_px'           => 132,
+        'group_radius_meters'    => 8,
+        'close_coverage_meters'  => 60,
     ],
 
 ];

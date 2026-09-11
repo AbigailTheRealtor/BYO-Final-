@@ -35,6 +35,10 @@
 
     <main class="vd-compare-main">
         <h1>Same homes, two providers</h1>
+        <p class="vd-compare-lede">
+            <a class="vd-compare-link" href="{{ route('dev.virtual-drive.google', ['view' => 'customer', 'listing' => $defaultListingKey]) }}">Customer preview — start on Manasota Key Road</a>
+            Recommended for judging the experience: imagery there is ~35 m from the home, with a neighbour 33 m away. The preview hides the instrumentation; the counters still run.
+        </p>
         <p class="vd-compare-lede">This page loads neither street-level provider. Pick a home and open it on one provider's page. Imagery starts only when you press that page's launch button. On the Google page that button starts one billable Street View session; reloading the page never starts one.</p>
 
         <div class="vd-table-scroll">

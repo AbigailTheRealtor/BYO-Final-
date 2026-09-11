@@ -36,8 +36,37 @@ class VirtualDriveProviderIsolationTest extends TestCase
         self::GOOGLE,
         'public/js/virtual-drive/virtual-drive-observations.js',
         'public/js/virtual-drive/virtual-drive-compare.js',
+        self::SIGNS,
         'public/css/virtual-drive/virtual-drive.css',
     ];
+
+    private const SIGNS = 'public/js/virtual-drive/virtual-drive-signs.js';
+
+    /**
+     * The sign rules — what a sign says, how big it is, which listings share a
+     * building — are pure. They decide what a shopper sees; they must not be able
+     * to fetch anything, and both providers and the shell depend on them.
+     *
+     * @test
+     */
+    public function the_sign_rules_are_pure(): void
+    {
+        $source = $this->code(self::SIGNS);
+
+        foreach (['fetch(', 'XMLHttpRequest', 'importLibrary', 'createElement', 'innerHTML', 'setTimeout', 'setInterval'] as $forbidden) {
+            $this->assertStringNotContainsString($forbidden, $source, "the sign rules must not use {$forbidden}");
+        }
+
+        foreach (['google', 'mapkit', 'streetview'] as $vendor) {
+            $this->assertStringNotContainsString($vendor, strtolower($source), "the sign rules must not name {$vendor}");
+        }
+
+        // A sign that cannot be read is not a sign: the floor, the ceiling and the
+        // "hide it instead" distance are part of the contract, not a magic number.
+        $this->assertStringContainsString('maxDistance:', $source);
+        $this->assertStringContainsString('farWidth:', $source);
+        $this->assertStringContainsString('nearWidth:', $source);
+    }
 
     private function source(string $path): string
     {

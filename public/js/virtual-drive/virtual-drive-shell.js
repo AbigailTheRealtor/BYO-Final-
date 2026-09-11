@@ -71,8 +71,44 @@
         endpoint:        shell.getAttribute('data-listings-endpoint'),
         nearbyRadius:    parseInt(shell.getAttribute('data-nearby-radius'), 10) || 400,
         selectedListing: shell.getAttribute('data-selected-listing') || '',
-        launchLabel:     shell.getAttribute('data-launch-label') || 'Start'
+        launchLabel:     shell.getAttribute('data-launch-label') || 'Start',
+        defaultListing:  shell.getAttribute('data-default-listing') || '',
+        requeryFraction: positive(shell.getAttribute('data-nearby-requery')) || 0.6,
+        viewMode:        viewMode(),
+        // Sign sizing and grouping. Missing values fall back to VirtualDriveSigns.DEFAULTS.
+        signs: {
+            maxDistance:   positive(shell.getAttribute('data-sign-max-distance')),
+            minDistance:   positive(shell.getAttribute('data-sign-min-distance')),
+            nearWidth:     positive(shell.getAttribute('data-sign-near-width')),
+            farWidth:      positive(shell.getAttribute('data-sign-far-width')),
+            groupRadius:   positive(shell.getAttribute('data-sign-group-radius')),
+            closeCoverage: positive(shell.getAttribute('data-close-coverage'))
+        }
     };
+
+    function positive(value) {
+        var n = parseFloat(value);
+
+        return isFinite(n) && n > 0 ? n : undefined;
+    }
+
+    // The page decides the view. A page that does not (a static fixture) may take
+    // it from ?view=. Either way it only changes what is shown, never what loads.
+    function viewMode() {
+        var attr = shell.getAttribute('data-view-mode');
+
+        if (attr === 'customer' || attr === 'dev') {
+            return attr;
+        }
+
+        try {
+            return new URL(window.location.href).searchParams.get('view') === 'customer' ? 'customer' : 'dev';
+        } catch (e) {
+            return 'dev';
+        }
+    }
+
+    document.body.classList.add('vd-view-' + cfg.viewMode);
 
     // Read-only counters for the browser specs and for a live session. Nothing
     // reads them back to make a decision.
@@ -96,7 +132,10 @@
         loadFailed: false,
         fatal: null,
         launchStartedAt: null,
-        firstImageryLogged: false
+        firstImageryLogged: false,
+        attribution: '',
+        coverageNotes: {},   // listing id -> "imagery is nearby, not at the home"
+        shopper: null        // { listingId, building: [ids] | null, photo, choosing }
     };
 
     function $(id) {
@@ -284,7 +323,7 @@
             return;
         }
 
-        if (state.lastQueryCenter && meters(state.lastQueryCenter, center) < cfg.nearbyRadius * 0.6) {
+        if (state.lastQueryCenter && meters(state.lastQueryCenter, center) < cfg.nearbyRadius * cfg.requeryFraction) {
             return;
         }
 
@@ -490,6 +529,7 @@
         renderNearby();
         renderLaunch();
         maybeQueryNearby(point(listing), 'selected home');
+        openShopper(id, options && options.building ? options.building : null);
 
         // Before launch there is no provider to talk to — and that is the point.
         if (!state.provider || state.fatal) {
@@ -533,6 +573,13 @@
             }
 
             state.coverage[listing.id] = result.coverage;
+
+            // Imagery that exists only some way off is reported as exactly that.
+            if (result.coverage && result.near === false) {
+                state.coverageNotes[listing.id] = result.note;
+            } else {
+                delete state.coverageNotes[listing.id];
+            }
             setCounter('Listings with coverage', Object.keys(state.coverage).filter(function (k) { return state.coverage[k]; }).length);
             setCounter('Listings without coverage', Object.keys(state.coverage).filter(function (k) { return !state.coverage[k]; }).length);
             log(result.coverage ? 'Coverage YES' : 'Coverage NO', listing.id + (result.note ? ' — ' + result.note : ''));
@@ -542,13 +589,14 @@
                 setCounter('Launch press → provider ready (ms)', Math.round(now() - state.launchStartedAt));
             }
 
-            setImageryStatus(result.coverage ? 'ok' : 'none', result.coverage
+            setImageryStatus(result.coverage ? (result.near === false ? 'far' : 'ok') : 'none', result.coverage
                 ? result.note
                 : 'No street-level imagery for this home. ' + (result.note || '') + ' The listing stays fully available.');
 
             if (state.selectedId === listing.id) {
                 renderCard(listing);
                 renderSign(listing);
+                renderShopper();
             }
 
             return result;
@@ -646,6 +694,10 @@
             state.launch = result && result.coverage ? 'open' : 'retry';
             renderLaunch();
             renderSign(selected());
+
+            if (state.launch === 'open' && selected()) {
+                openShopper(selected().id, null);
+            }
         }, function (err) {
             log('Launch failed', err.message);
 
@@ -663,6 +715,209 @@
             state.launch = 'retry';
             renderLaunch();
         });
+    }
+
+    // ------------------------------------------------------------ the shopper card
+    //
+    // What a sign click opens, floating over the imagery. It is ours and pure
+    // DOM: opening it, switching it to another sign's listing, paging photos or
+    // choosing a unit in a building never asks the provider for anything, so the
+    // one panorama is never rebuilt. Only actions that exist are offered.
+
+    function openShopper(listingId, building) {
+        if (!state.provider || state.fatal || !state.known[listingId]) {
+            return;
+        }
+
+        state.shopper = { listingId: listingId, building: building || null, photo: 0, choosing: false };
+        renderShopper();
+    }
+
+    function openChooser(ids) {
+        if (!state.provider || state.fatal) {
+            return;
+        }
+
+        var known = ids.filter(function (id) { return !!state.known[id]; });
+
+        if (!known.length) {
+            return;
+        }
+
+        state.shopper = { listingId: null, building: known, photo: 0, choosing: true };
+        renderShopper();
+    }
+
+    function closeShopper() {
+        state.shopper = null;
+        renderShopper();
+    }
+
+    function shopperButton(className, text, onClick) {
+        var button = node('button', className, text);
+
+        button.type = 'button';
+        button.addEventListener('click', onClick);
+
+        return button;
+    }
+
+    function facts(listing) {
+        var out = [];
+
+        if (listing.beds !== null && listing.beds !== undefined) { out.push(listing.beds + ' bd'); }
+        if (listing.baths !== null && listing.baths !== undefined) { out.push(listing.baths + ' ba'); }
+        if (listing.living_area !== null && listing.living_area !== undefined) { out.push(Number(listing.living_area).toLocaleString() + ' sq ft'); }
+        if (listing.property_subtype) { out.push(listing.property_subtype); }
+
+        return out.join(' · ');
+    }
+
+    function addressLine(listing) {
+        var place = [listing.city, listing.state].filter(Boolean).join(', ');
+
+        return listing.address
+            ? listing.address + (place ? ', ' + place : '')
+            : 'Street address withheld at the listing broker\'s request' + (place ? ' — ' + place : '');
+    }
+
+    function renderShopper() {
+        var box = $('vd-shopper');
+        var s = state.shopper;
+
+        box.textContent = '';
+
+        if (!s) {
+            box.hidden = true;
+
+            return;
+        }
+
+        var close = shopperButton('vd-shopper-close', '×', closeShopper);
+
+        close.setAttribute('aria-label', 'Close listing card');
+        box.appendChild(close);
+
+        if (s.choosing) {
+            renderChooser(box, s.building);
+        } else {
+            renderListingCard(box, s);
+        }
+
+        if (state.attribution) {
+            box.appendChild(node('p', 'vd-shopper-attribution', state.attribution));
+        }
+
+        box.hidden = false;
+    }
+
+    function renderListingCard(box, s) {
+        var listing = state.known[s.listingId];
+
+        if (!listing) {
+            box.hidden = true;
+
+            return;
+        }
+
+        box.setAttribute('data-listing', listing.id);
+
+        if (s.building) {
+            box.appendChild(shopperButton('vd-shopper-back', '‹ All ' + s.building.length + ' units here', function () { openChooser(s.building); }));
+        }
+
+        var photos = (listing.photo_urls || []).map(safeUrl).filter(Boolean);
+
+        if (photos.length) {
+            var index = ((s.photo % photos.length) + photos.length) % photos.length;
+            var figure = node('div', 'vd-shopper-photo');
+            var img = node('img');
+
+            img.src = photos[index];
+            img.alt = 'Photo ' + (index + 1) + ' of ' + photos.length;
+            figure.appendChild(img);
+
+            if (photos.length > 1) {
+                var prev = shopperButton('vd-shopper-photo-step vd-shopper-photo-prev', '‹', function () { s.photo = index - 1; renderShopper(); });
+                var next = shopperButton('vd-shopper-photo-step vd-shopper-photo-next', '›', function () { s.photo = index + 1; renderShopper(); });
+
+                prev.setAttribute('aria-label', 'Previous photo');
+                next.setAttribute('aria-label', 'Next photo');
+                figure.appendChild(prev);
+                figure.appendChild(next);
+            }
+
+            figure.appendChild(node('span', 'vd-shopper-count', (index + 1) + ' / ' + photos.length));
+            box.appendChild(figure);
+        }
+
+        var head = node('div', 'vd-shopper-head');
+
+        head.appendChild(node('span', 'vd-badge vd-badge-' + listing.transaction_type, listing.sign_label));
+        head.appendChild(node('span', 'vd-shopper-price', listing.display_price || 'Price not published'));
+        box.appendChild(head);
+        box.appendChild(node('p', 'vd-shopper-address', addressLine(listing)));
+
+        var line = facts(listing);
+
+        if (line) {
+            box.appendChild(node('p', 'vd-shopper-facts', line));
+        }
+
+        if (state.coverageNotes[listing.id]) {
+            box.appendChild(node('p', 'vd-shopper-coverage', state.coverageNotes[listing.id]));
+        }
+
+        var actions = node('div', 'vd-shopper-actions');
+
+        if (photos.length) {
+            actions.appendChild(shopperButton('vd-shopper-action vd-shopper-action-photos', 'View photos (' + photos.length + ')', function () {
+                openLightbox(listing, ((s.photo % photos.length) + photos.length) % photos.length);
+            }));
+        }
+
+        // Only what exists. The developer panel still lists the rest with reasons.
+        (listing.actions || []).forEach(function (action) {
+            if (!action.available || action.key === 'photos') {
+                return;
+            }
+
+            actions.appendChild(shopperButton('vd-shopper-action vd-shopper-action-' + action.key, action.label, function () {
+                runAction(listing, action);
+            }));
+        });
+
+        box.appendChild(actions);
+    }
+
+    function renderChooser(box, ids) {
+        var list = ids.map(function (id) { return state.known[id]; }).filter(Boolean);
+        var sale = list.some(function (l) { return l.transaction_type === 'sale'; });
+        var rent = list.some(function (l) { return l.transaction_type === 'rent'; });
+
+        box.removeAttribute('data-listing');
+        box.appendChild(node('p', 'vd-shopper-kicker', sale && rent ? 'FOR SALE & RENT' : (sale ? 'FOR SALE' : 'FOR RENT')));
+        box.appendChild(node('h2', 'vd-shopper-title', list.length + ' units in this building'));
+        box.appendChild(node('p', 'vd-shopper-hint', 'Choose a unit to see its listing.'));
+
+        var menu = node('ul', 'vd-shopper-units');
+
+        list.forEach(function (listing) {
+            var unitNo = window.VirtualDriveSigns ? window.VirtualDriveSigns.unit(listing) : null;
+            var item = node('li');
+            var label = (unitNo ? 'Unit ' + unitNo : (listing.address || 'Address withheld'))
+                + ' · ' + (listing.display_price || 'price not published')
+                + (facts(listing) ? ' · ' + facts(listing) : '');
+            var button = shopperButton('vd-shopper-unit', label, function () {
+                selectById(listing.id, 'building chooser', { move: false, building: ids });
+            });
+
+            button.setAttribute('data-listing', listing.id);
+            item.appendChild(button);
+            menu.appendChild(item);
+        });
+
+        box.appendChild(menu);
     }
 
     // ------------------------------------------------------------ photos
@@ -753,6 +1008,12 @@
         onSelect: function (id, via) {
             selectById(id, via, { move: false });
         },
+        // A building sign: several listings share one point. Offer the units;
+        // nothing moves and nothing is loaded.
+        onChooseBuilding: function (ids, via) {
+            log('Building sign', ids.length + ' units via ' + via);
+            openChooser(ids);
+        },
         onMoved: function (position) {
             state.position = position;
             renderNearby();
@@ -821,7 +1082,8 @@
 
         fetchListings({ set: 'test' }).then(function (data) {
             state.walk = data.listings;
-            $('vd-attribution').textContent = data.attribution || '';
+            state.attribution = data.attribution || '';
+            $('vd-attribution').textContent = state.attribution;
 
             if (data.unavailable_keys && data.unavailable_keys.length) {
                 log('Test keys not published', data.unavailable_keys.length
@@ -843,7 +1105,10 @@
                 log('Requested listing is not in the test set', cfg.selectedListing);
             }
 
-            selectById(requested || state.walk[0].id, requested ? 'link' : 'initial');
+            // No ?listing=: start where the imagery is close to the home, if configured.
+            var fallback = !requested && cfg.defaultListing && state.known[cfg.defaultListing] ? cfg.defaultListing : null;
+
+            selectById(requested || fallback || state.walk[0].id, requested ? 'link' : (fallback ? 'default start' : 'initial'));
 
             if (!state.registered) {
                 lock('No street-level provider is registered on this page.');

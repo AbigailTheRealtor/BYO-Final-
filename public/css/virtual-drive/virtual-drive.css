@@ -44,7 +44,11 @@
 .vd-provider-nav a.is-active { background: #f9fafb; color: #111827; }
 
 .vd-stage { grid-area: stage; position: relative; min-height: 58vh; background: #1f2937; }
-.vd-street { position: absolute; inset: 0; }
+/* The provider's own layers (Google's panorama sets large z-indexes on its
+   internal elements) must stay INSIDE this box. z-index: 0 makes it a stacking
+   context, so nothing the provider draws can paint over our overlays below —
+   which is what hid the HUD and "Face the selected home" in the live session. */
+.vd-street { position: absolute; inset: 0; z-index: 0; }
 .vd-street.is-fallback { display: flex; align-items: center; justify-content: center; padding: 24px; }
 
 .vd-fallback { max-width: 520px; background: #fff; border-radius: 10px; padding: 20px; }
@@ -81,6 +85,7 @@
 /* Everything we draw over the imagery stays OFF the bottom edge. Both providers
    put their logo and legal links there, and obscuring them breaches both sets
    of terms — so the controls sit top-left and our status and HUD top-right. */
+.vd-provider-controls, .vd-hud, .vd-imagery-status, .vd-sign { z-index: 1; }
 .vd-provider-controls { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; max-width: calc(50% - 18px); }
 .vd-control { display: inline-block; padding: 6px 10px; border-radius: 6px; border: 0; background: rgba(255, 255, 255, .95); color: #111827; font: inherit; }
 .vd-control-note { margin: 0; font-size: 12px; background: rgba(254, 243, 199, .95); }
@@ -177,3 +182,54 @@ button.vd-control { cursor: pointer; font-weight: 600; }
 .vd-compare-link:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
 .vd-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vd-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+/* ---------- imagery that is only NEAR the home ---------- */
+.vd-imagery-status.is-far { color: #fde68a; background: rgba(120, 53, 15, .92); font-size: 13px; }
+
+/* ---------- shopper card: what a sign click opens ----------
+   Over the imagery, inside the stage's stacking context, and never over the
+   bottom 48px where the provider draws its logo, terms and report links. */
+.vd-shopper { position: absolute; left: 12px; top: 56px; z-index: 1; width: min(360px, calc(100% - 24px)); max-height: calc(100% - 104px); overflow-y: auto; padding: 12px 14px; border-radius: 12px; background: #fff; color: #111827; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+.vd-shopper[hidden] { display: none; }
+.vd-shopper-close { position: absolute; top: 6px; right: 8px; z-index: 1; width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(17, 24, 39, .75); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+.vd-shopper-photo { position: relative; margin: -12px -14px 10px; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 12px 12px 0 0; background: #e5e7eb; }
+.vd-shopper-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.vd-shopper-photo-step { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .92); font-size: 22px; line-height: 1; cursor: pointer; }
+.vd-shopper-photo-prev { left: 8px; }
+.vd-shopper-photo-next { right: 8px; }
+.vd-shopper-count { position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 10px; background: rgba(17, 24, 39, .75); color: #fff; font-size: 12px; }
+.vd-shopper-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vd-shopper-price { font-size: 22px; font-weight: 800; }
+.vd-shopper-address { margin: 4px 0 2px; font-weight: 600; }
+.vd-shopper-facts { margin: 0 0 8px; color: #4b5563; }
+.vd-shopper-coverage { margin: 0 0 8px; padding: 6px 8px; border-radius: 6px; background: #fef3c7; color: #92400e; font-size: 12px; }
+.vd-shopper-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.vd-shopper-action { min-height: 40px; padding: 8px 12px; border: 1px solid #111827; border-radius: 8px; background: #111827; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.vd-shopper-action-photos { background: #fff; color: #111827; }
+.vd-shopper-back { padding: 0 0 6px; border: 0; background: none; color: #1d4ed8; font: inherit; cursor: pointer; }
+.vd-shopper-kicker { margin: 0; color: #1d4ed8; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+.vd-shopper-title { margin: 2px 0; font-size: 18px; }
+.vd-shopper-hint { margin: 0 0 8px; color: #6b7280; font-size: 13px; }
+.vd-shopper-units { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vd-shopper-unit { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font: inherit; text-align: left; cursor: pointer; }
+.vd-shopper-unit:hover, .vd-shopper-unit:focus-visible { border-color: #111827; }
+.vd-shopper-attribution { margin: 10px 0 0; color: #6b7280; font-size: 11px; }
+
+@media (max-width: 640px) {
+    .vd-shopper { left: 8px; right: 8px; top: 52px; width: auto; max-height: calc(62% - 52px); }
+}
+
+/* ---------- customer preview: the experience, not the instrumentation ----------
+   The counters, event log and observation sheet keep running; they are only
+   not shown. The Stellar attribution and Previous / Next stay visible. */
+.vd-view-customer .vd-log,
+.vd-view-customer .vd-observations,
+.vd-view-customer .vd-card-body,
+.vd-view-customer .vd-actions,
+.vd-view-customer .vd-unavailable-actions,
+.vd-view-customer .vd-nearby { display: none; }
+.vd-view-customer .vd-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; grid-template-areas: "top" "stage" "card"; height: 100vh; }
+.vd-view-customer .vd-stage { min-height: 0; }
+.vd-view-customer .vd-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 8px 16px; overflow: visible; border-left: 0; border-top: 1px solid #e5e7eb; }
+.vd-view-customer .vd-card-nav { gap: 12px; margin: 0; }
+.vd-view-customer .vd-attribution { margin: 0; }

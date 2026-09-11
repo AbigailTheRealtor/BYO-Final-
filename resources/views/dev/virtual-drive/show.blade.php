@@ -12,6 +12,11 @@
     provider library is requested only by the shell's launch(), from one
     deliberate click, and the button locks on that click.
 
+    TWO VIEWS OF ONE PAGE. ?view=customer hides the instrumentation and the
+    observation sheet so the street-level experience and the shopper card are
+    what a reviewer sees; the counters still run underneath. The default is the
+    developer view.
+
     NO LISTING DATA IS RENDERED HERE. Everything about a property arrives from
     dev.virtual-drive.api.listings, which reads stored MLS rows through
     Explore's eligibility policy and projection allow-list.
@@ -28,7 +33,7 @@
     <title>Virtual Drive proof · {{ $providerLabel }}</title>
     <link rel="stylesheet" href="{{ asset('css/virtual-drive/virtual-drive.css') }}">
 </head>
-<body class="vd-body">
+<body class="vd-body vd-view-{{ $viewMode }}">
 <div class="vd-shell" id="vd-shell"
      data-provider="{{ $provider }}"
      data-credential="{{ $credential ?? '' }}"
@@ -37,18 +42,32 @@
      data-api-version="{{ $apiVersion ?? '' }}"
      data-listings-endpoint="{{ route('dev.virtual-drive.api.listings') }}"
      data-nearby-radius="{{ $nearbyRadius }}"
+     data-nearby-requery="{{ $nearbyRequery }}"
      data-selected-listing="{{ $selectedListing }}"
+     data-default-listing="{{ $defaultListing }}"
+     data-view-mode="{{ $viewMode }}"
+     data-sign-max-distance="{{ $signs['max_distance_meters'] ?? '' }}"
+     data-sign-min-distance="{{ $signs['min_distance_meters'] ?? '' }}"
+     data-sign-near-width="{{ $signs['near_width_px'] ?? '' }}"
+     data-sign-far-width="{{ $signs['far_width_px'] ?? '' }}"
+     data-sign-group-radius="{{ $signs['group_radius_meters'] ?? '' }}"
+     data-close-coverage="{{ $signs['close_coverage_meters'] ?? '' }}"
      data-launch-label="{{ $launchLabel }}">
 
     <header class="vd-topbar">
         <div class="vd-topbar-title">
-            <span class="vd-internal">Internal proof · not for users</span>
+            <span class="vd-internal">Internal proof · not for users{{ $viewMode === 'customer' ? ' · customer preview' : '' }}</span>
             <strong>{{ $providerLabel }}</strong>
         </div>
         <nav class="vd-provider-nav" aria-label="Street-level provider">
             <a href="{{ route('dev.virtual-drive.compare') }}">Comparison</a>
             <a href="{{ route('dev.virtual-drive.apple') }}" class="{{ $provider === 'apple' ? 'is-active' : '' }}">Apple Look Around</a>
             <a href="{{ route('dev.virtual-drive.google') }}" class="{{ $provider === 'google' ? 'is-active' : '' }}">Google Street View</a>
+            @if ($viewMode === 'customer')
+                <a href="{{ request()->fullUrlWithQuery(['view' => 'dev']) }}">Developer view</a>
+            @else
+                <a href="{{ request()->fullUrlWithQuery(['view' => 'customer']) }}">Customer preview</a>
+            @endif
         </nav>
     </header>
 
@@ -77,6 +96,10 @@
         <div class="vd-hud" id="vd-hud" hidden></div>
         <div class="vd-provider-controls" id="vd-provider-controls"></div>
         <div class="vd-imagery-status" id="vd-imagery-status" role="status" aria-live="polite"></div>
+
+        {{-- The shopper card: what a sign click opens, over the imagery. Pure DOM —
+             opening it, switching it or choosing a unit never touches the provider. --}}
+        <aside class="vd-shopper" id="vd-shopper" hidden aria-label="Selected listing" aria-live="polite"></aside>
     </main>
 
     <section class="vd-card" id="vd-card" aria-label="Selected listing">
@@ -113,6 +136,7 @@
     </div>
 </div>
 
+<script src="{{ asset('js/virtual-drive/virtual-drive-signs.js') }}"></script>
 <script src="{{ asset('js/virtual-drive/virtual-drive-shell.js') }}"></script>
 <script src="{{ asset('js/virtual-drive/virtual-drive-observations.js') }}"></script>
 <script src="{{ asset('js/virtual-drive/' . $providerScript) }}"></script>

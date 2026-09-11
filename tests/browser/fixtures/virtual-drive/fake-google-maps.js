@@ -15,6 +15,7 @@
  | Query parameters:
  |   ?fake=ok (default) | nocoverage | authfail | constructorThrows
  |   ?delay=<ms>        how long StreetViewService.getPanorama takes (default 60)
+ |   ?offset=<m>        how far north of the MLS coordinate the nearest panorama is (default ~13 m)
  */
 (function () {
     'use strict';
@@ -22,6 +23,7 @@
     var params = new URLSearchParams(window.location.search);
     var mode = params.get('fake') || 'ok';
     var delay = Number(params.get('delay') || 60);
+    var offsetMeters = Number(params.get('offset') || 13.36);
     var rad = Math.PI / 180;
 
     var counters = {
@@ -29,6 +31,8 @@
         panoramaConstructorCalls: 0,
         panoramas: 0,
         markers: 0,
+        markersRemoved: 0,
+        iconUpdates: 0,
         getPanorama: 0,
         setPano: 0,
         programmaticPov: 0,
@@ -141,7 +145,7 @@
             }
 
             var target = toLatLng(request.location);
-            var at = new LatLng(target.lat() + 0.00012, target.lng()); // ~13 m away, "on the street"
+            var at = new LatLng(target.lat() + offsetMeters / 111320, target.lng()); // "on the street"
 
             callback({ location: { pano: panoId(at), latLng: at }, imageDate: '2024-03', copyright: '© Fixture' }, 'OK');
         }, delay);
@@ -151,12 +155,23 @@
         counters.markers++;
         listenable(this);
         this._options = options;
+        this._visible = options.visible !== false;
         markers.push(this);
     }
 
-    Marker.prototype.setIcon = function (icon) { this._options.icon = icon; };
+    Marker.prototype.setIcon = function (icon) { counters.iconUpdates++; this._options.icon = icon; };
+    Marker.prototype.setVisible = function (visible) { this._visible = !!visible; };
+    Marker.prototype.getVisible = function () { return this._visible; };
+    Marker.prototype.setMap = function (map) {
+        if (!map && this._options.map) {
+            counters.markersRemoved++;
+        }
+
+        this._options.map = map;
+    };
 
     function Point(x, y) { this.x = x; this.y = y; }
+    function Size(width, height) { this.width = width; this.height = height; }
 
     var spherical = {
         computeDistanceBetween: function (a, b) {
@@ -193,7 +208,7 @@
         },
         marker: { Marker: Marker },
         geometry: { spherical: spherical },
-        core: { Point: Point, LatLng: LatLng }
+        core: { Point: Point, Size: Size, LatLng: LatLng }
     };
 
     window.google = {
@@ -222,7 +237,22 @@
             return markers.map(function (m) {
                 var p = toLatLng(m._options.position);
 
-                return { title: m._options.title, lat: p.lat(), lng: p.lng(), onPanorama: panoramas.indexOf(m._options.map) >= 0 };
+                var icon = m._options.icon || null;
+                var svg = '';
+
+                try { svg = icon ? decodeURIComponent(String(icon.url).split(',')[1] || '') : ''; } catch (e) { svg = ''; }
+
+                return {
+                    title: m._options.title,
+                    lat: p.lat(),
+                    lng: p.lng(),
+                    onPanorama: panoramas.indexOf(m._options.map) >= 0,
+                    visible: m._visible,
+                    iconWidth: icon && icon.scaledSize ? icon.scaledSize.width : null,
+                    iconHeight: icon && icon.scaledSize ? icon.scaledSize.height : null,
+                    text: Array.from(svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)).map(function (x) { return x[1].replace(/&amp;/g, '&'); }),
+                    selectedOutline: /facc15/.test(svg)
+                };
             });
         },
         clickMarker: function (index) { markers[index]._emit('click'); },

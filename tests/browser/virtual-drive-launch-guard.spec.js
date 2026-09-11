@@ -158,7 +158,7 @@ test.describe('Virtual Drive · Google launch guard (fake Maps API, no network)'
         expectNoProviderTraffic(record);
     });
 
-    test('every marker sits at its own MLS coordinate and opens only its own listing', async ({ page }) => {
+    test('every sign sits at its own MLS coordinate and opens only its own listing', async ({ page }) => {
         const record = await openGoogle(page);
 
         await launchGoogle(page);
@@ -166,31 +166,42 @@ test.describe('Virtual Drive · Google launch guard (fake Maps API, no network)'
         const listings = await page.evaluate(() => fetch('/virtual-drive/listings.json').then((r) => r.json()).then((j) => j.listings));
         const markers = await page.evaluate(() => window.__fakeGoogle.markers());
 
-        expect(markers).toHaveLength(listings.length);
+        // One sign per PLACE: a home of its own, or one building for units that
+        // share a coordinate. Four separate homes plus one condo building here.
+        const homes = listings.filter((listing) => !listing.address.includes('Siesta Bayside'));
+
+        expect(markers).toHaveLength(homes.length + 1);
 
         for (let i = 0; i < markers.length; i += 1) {
             const own = listings.find((listing) => markers[i].title.endsWith('— ' + listing.address));
 
-            expect(own, `marker ${i} (${markers[i].title}) matches a listing`).toBeTruthy();
+            expect(own, `sign ${i} (${markers[i].title}) matches a listing`).toBeTruthy();
             expect(markers[i].onPanorama).toBe(true);
-            expect(markers[i].lat).toBeCloseTo(own.latitude, 6);
-            expect(markers[i].lng).toBeCloseTo(own.longitude, 6);
 
-            await page.evaluate((index) => window.__fakeGoogle.clickMarker(index), i);
-            await expect(page.locator('.vd-verify')).toContainText('Listing key ' + own.id + ' ');
+            if (!markers[i].title.includes('units —')) {
+                expect(markers[i].lat).toBeCloseTo(own.latitude, 6);
+                expect(markers[i].lng).toBeCloseTo(own.longitude, 6);
+
+                await page.evaluate((index) => window.__fakeGoogle.clickMarker(index), i);
+                await expect(page.locator('.vd-verify')).toContainText('Listing key ' + own.id + ' ');
+            }
         }
 
-        // The two Manasota Key homes, 33 m apart, are two markers at two points.
+        // The two Manasota Key homes, 33 m apart, are two signs at two points.
         const a = markers.find((m) => m.title.includes('Manasota Key A'));
         const b = markers.find((m) => m.title.includes('Manasota Key B'));
 
         expect(a.lat === b.lat && a.lng === b.lng).toBe(false);
 
-        // The condo problem, stated as a fact: three units, one point, three stacked signs.
-        const stacked = markers.filter((m) => m.title.includes('Siesta Bayside'));
+        // The condo fix: three units on one point are ONE building sign, and it
+        // offers the units instead of hiding two of them under the third.
+        const building = markers.filter((m) => m.title.includes('Siesta Bayside'));
 
-        expect(stacked).toHaveLength(3);
-        expect(new Set(stacked.map((m) => m.lat + ',' + m.lng)).size).toBe(1);
+        expect(building).toHaveLength(1);
+        expect(building[0].title).toContain('3 units');
+
+        await page.evaluate((index) => window.__fakeGoogle.clickMarker(index), markers.indexOf(building[0]));
+        await expect(page.locator('#vd-shopper .vd-shopper-unit')).toHaveCount(3);
 
         expect((await fakeGoogle(page)).panoramaConstructorCalls).toBe(1);
         expectNoProviderTraffic(record);

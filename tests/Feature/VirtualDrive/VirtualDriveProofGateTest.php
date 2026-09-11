@@ -166,6 +166,34 @@ class VirtualDriveProofGateTest extends TestCase
             ->assertSee('data-launch-label="Open Look Around"', false);
     }
 
+    /**
+     * Two views of one page: the customer preview hides the instrumentation, and
+     * a page with no ?listing= starts where imagery is close to the home. Neither
+     * changes what is loaded or when.
+     *
+     * @test
+     */
+    public function the_page_carries_its_view_mode_and_a_default_home(): void
+    {
+        config(['virtual_drive.proof_enabled' => true]);
+
+        $this->get('/dev/virtual-drive/google')
+            ->assertSee('data-view-mode="dev"', false)
+            ->assertSee('class="vd-body vd-view-dev"', false)
+            ->assertSee('data-default-listing="' . config('virtual_drive.default_listing_key') . '"', false)
+            ->assertSee('Customer preview');
+
+        $this->get('/dev/virtual-drive/google?view=customer')
+            ->assertSee('data-view-mode="customer"', false)
+            ->assertSee('class="vd-body vd-view-customer"', false)
+            ->assertSee('Developer view');
+
+        // Anything else is the developer view; the attribute is never echoed raw.
+        $this->get('/dev/virtual-drive/google?view=' . urlencode('"><script>alert(1)</script>'))
+            ->assertSee('data-view-mode="dev"', false)
+            ->assertDontSee('<script>alert(1)</script>', false);
+    }
+
     /** @test */
     public function a_listing_link_preselects_a_home_and_anything_else_is_dropped(): void
     {
