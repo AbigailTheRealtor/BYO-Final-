@@ -265,6 +265,15 @@ class GeocodeSelleryLandlordListings extends Command
         }
     }
 
+    /**
+     * Write the geocoded fields as listing meta.
+     *
+     * The meta tables carry NO timestamp columns — `property_auction_metas` is
+     * `id, property_auction_id, meta_key, meta_value`, and both meta models declare
+     * `$timestamps = false`. This used to write `created_at` / `updated_at` anyway,
+     * so the first SUCCESSFUL geocode threw a QueryException and the command died
+     * after spending a Google request whose answer it could not store.
+     */
     private function saveMeta(string $table, int $listingId, array $coords): void
     {
         $fkCol = $table === 'property_auction_metas' ? 'property_auction_id' : 'landlord_auction_id';
@@ -279,14 +288,12 @@ class GeocodeSelleryLandlordListings extends Command
                 DB::table($table)
                     ->where($fkCol, $listingId)
                     ->where('meta_key', $key)
-                    ->update(['meta_value' => $value, 'updated_at' => now()]);
+                    ->update(['meta_value' => $value]);
             } else {
                 DB::table($table)->insert([
                     $fkCol       => $listingId,
                     'meta_key'   => $key,
                     'meta_value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
         }
