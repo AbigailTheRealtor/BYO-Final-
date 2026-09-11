@@ -62,7 +62,11 @@ class LocationDnaPipelineTriggerTest extends TestCase
         // for; it is not a statement that Google geocoding is the desired product
         // behaviour. The switched-off contract is asserted in
         // tests/Feature/Security/GooglePlacesKillSwitchTest.
-        config(['google_places.enabled' => true]);
+        //
+        // Geocoding has its own switch too (config/google_geocoding.php), required in
+        // addition to the Places switch; same reasoning. Its switched-off and over-budget
+        // contract is asserted in tests/Feature/Security/GoogleGeocodingBudgetTest.
+        config(['google_places.enabled' => true, 'google_geocoding.enabled' => true]);
 
         // The POI step guards on services.google.places_key and fails closed with
         // 'missing_google_api_key' when it is blank — a guard that is generic over

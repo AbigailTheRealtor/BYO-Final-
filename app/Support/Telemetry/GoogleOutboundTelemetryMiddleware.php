@@ -2,6 +2,7 @@
 
 namespace App\Support\Telemetry;
 
+use App\Support\Google\GoogleProviderFailure;
 use GuzzleHttp\Promise\Create;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -107,7 +108,9 @@ class GoogleOutboundTelemetryMiddleware
                 'duration_ms'         => (int) round((microtime(true) - $startedAt) * 1000),
                 'listing_type'        => OutboundCallContext::listingType(),
                 'listing_id'          => OutboundCallContext::listingId(),
-                'transport_error'     => $reason instanceof Throwable ? $reason->getMessage() : null,
+                // Redacted: a transport failure's message is curl's, and curl names the
+                // full URL — query string, API key included.
+                'transport_error'     => $reason instanceof Throwable ? GoogleProviderFailure::redact($reason->getMessage()) : null,
             ];
 
             self::incrementCounter();

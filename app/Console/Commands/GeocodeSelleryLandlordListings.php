@@ -43,6 +43,16 @@ class GeocodeSelleryLandlordListings extends Command
             return Command::FAILURE;
         }
 
+        // The Geocoding API's own switch (config/google_geocoding.php), checked in
+        // addition to the Places switch above — a second gate must never widen this
+        // path — and ahead of the credential for the same reason. The admission
+        // middleware enforces it again, with the shared hourly/daily ceiling, on every
+        // request this command sends.
+        if (config('google_geocoding.enabled', false) !== true) {
+            $this->error('GOOGLE_GEOCODING_ENABLED is false. Refusing to geocode: no Google request will be made.');
+            return Command::FAILURE;
+        }
+
         if (!$apiKey) {
             $this->error('GOOGLE_PLACES_API_KEY is not configured. Cannot geocode.');
             return Command::FAILURE;
@@ -52,7 +62,9 @@ class GeocodeSelleryLandlordListings extends Command
         $skipped = 0;
         $failed  = 0;
 
-        foreach ($this->candidateRows($limit) as $row) {
+        $rows = $this->candidateRows($limit);
+
+        foreach ($rows as $index => $row) {
             $address = trim($row->address ?? '');
             if (!$address) {
                 $skipped++;
@@ -72,6 +84,27 @@ class GeocodeSelleryLandlordListings extends Command
             }
 
             $outcome = $this->geocode($address, $apiKey);
+
+            if ($outcome['status'] === 'provider_refused') {
+                // Refused BEFORE it was sent — normally the shared Geocoding ceiling. Nothing
+                // reached Google: this row is not a failure, and neither are the rows after
+                // it, none of which was attempted. Stop rather than loop: every remaining row
+                // would be refused identically, and the ceiling is the boundary, not an
+                // obstacle to route around.
+                $notProcessed = count($rows) - $index;
+
+                $this->error($outcome['budget_exhausted']
+                    ? "  Google Geocoding request budget reached ({$outcome['reason']}). Stopping: no further Google request will be made."
+                    : "  Google Geocoding request refused ({$outcome['reason']}). Stopping: no further Google request will be made.");
+                $this->info("Stopped — updated: {$updated}, skipped: {$skipped}, failed: {$failed}, not processed: {$notProcessed}");
+
+                if ($outcome['budget_exhausted']) {
+                    $this->line('  The rows not processed were NOT geocoded. Run the command again after the budget window resets.');
+                }
+
+                return Command::FAILURE;
+            }
+
             if ($outcome['status'] !== 'ok') {
                 // Phase 0 item 1: an honest reason, never a silent null. "Address not on
                 // the map" and "Google rejected our credential" are different facts and
@@ -163,8 +196,10 @@ class GeocodeSelleryLandlordListings extends Command
      * error, malformed body, and a rejected credential. The operator saw one FAILED
      * line for all of them, which is precisely how a dead key looks like a bad address.
      *
-     * @return array{status: string, data?: array}
+     * @return array{status: string, data?: array, reason?: string, budget_exhausted?: bool}
      *         status is one of: ok · not_found · credential_rejected · http_error · transport_error
+     *         · provider_refused (refused before sending by the shared admission middleware —
+     *         nothing reached Google)
      */
     private function geocode(string $address, string $apiKey): array
     {
@@ -216,11 +251,29 @@ class GeocodeSelleryLandlordListings extends Command
                     'formatted_address' => $result['formatted_address'] ?? '',
                 ],
             ];
+        } catch (\App\Support\Google\GoogleProviderRequestRefused $refused) {
+            // Refused BEFORE it was sent by the shared admission middleware — normally the
+            // Geocoding request ceiling. Not a transport failure and not an answer: nothing
+            // reached Google, so handle() stops instead of reporting a failed row.
+            return [
+                'status'           => 'provider_refused',
+                'reason'           => $refused->reason,
+                'budget_exhausted' => $refused->isBudgetExhausted(),
+            ];
         } catch (\Throwable $e) {
             return ['status' => 'transport_error'];
         }
     }
 
+    /**
+     * Write the geocoded fields as listing meta.
+     *
+     * The meta tables carry NO timestamp columns — `property_auction_metas` is
+     * `id, property_auction_id, meta_key, meta_value`, and both meta models declare
+     * `$timestamps = false`. This used to write `created_at` / `updated_at` anyway,
+     * so the first SUCCESSFUL geocode threw a QueryException and the command died
+     * after spending a Google request whose answer it could not store.
+     */
     private function saveMeta(string $table, int $listingId, array $coords): void
     {
         $fkCol = $table === 'property_auction_metas' ? 'property_auction_id' : 'landlord_auction_id';
@@ -235,14 +288,12 @@ class GeocodeSelleryLandlordListings extends Command
                 DB::table($table)
                     ->where($fkCol, $listingId)
                     ->where('meta_key', $key)
-                    ->update(['meta_value' => $value, 'updated_at' => now()]);
+                    ->update(['meta_value' => $value]);
             } else {
                 DB::table($table)->insert([
                     $fkCol       => $listingId,
                     'meta_key'   => $key,
                     'meta_value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
         }

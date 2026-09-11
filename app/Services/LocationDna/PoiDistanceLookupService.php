@@ -108,9 +108,11 @@ class PoiDistanceLookupService
                     'source_lng' => $sourceLng,
                 ];
             } catch (Throwable $e) {
+                // Redacted: this answer is cached for the full TTL, and an adapter's
+                // exception message can carry the provider URL — key included.
                 $result = [
                     'results'    => [],
-                    'error'      => 'Adapter error: ' . $e->getMessage(),
+                    'error'      => 'Adapter error: ' . \App\Support\Google\GoogleProviderFailure::redact($e->getMessage()),
                     'source_lat' => $sourceLat,
                     'source_lng' => $sourceLng,
                 ];
