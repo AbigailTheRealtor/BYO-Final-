@@ -695,6 +695,7 @@
                 [
                     'listing-details'    => $byaHasListingDetails,
                     'property'           => $byaHasProperty,
+                    'location-dna'       => $hireLocationDna['hasContent'] ?? false,
                     'terms'              => $byaHasTerms,
                     'financing'          => $hasAnyFinancingDetails || @$auction->get->offered_financing != null,
                     'additional-details' => $byaHasAdditionalDetails,
@@ -1443,6 +1444,14 @@
 </x-hire-agent.detail-section>
 @endif
 @if (! ($byaDetailRedesign ?? false))                        <hr>
+@endif
+{{-- Location DNA — the search areas, radius searches and Important Places this listing stores,
+     with the words for each, through the same shared component as the Buyer Offer Listing page. --}}
+@if (($hireLocationDna['hasContent'] ?? false) && (! ($byaDetailRedesign ?? false) || $byaShows('location-dna')))
+<x-hire-agent.detail-section :redesign="$byaDetailRedesign ?? false" id="hla-section-location-dna" title="Location DNA" icon="fa-solid fa-map-location-dot">
+    @include('partials.location-dna._hire-agent-section', ['hireLocationDna' => $hireLocationDna])
+</x-hire-agent.detail-section>
+@if (! ($byaDetailRedesign ?? false))<hr>@endif
 @endif
 {{-- M7 Phase 6 — Purchasing Terms becomes a card. The header the component emits in the legacy
      branch is byte-identical to the one that stood here. --}}

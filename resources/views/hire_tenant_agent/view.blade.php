@@ -398,6 +398,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             [
                 'listing-details'    => $tnaHasListingDetails,
                 'property'           => $tnaHasProperty,
+                'location-dna'       => $hireLocationDna['hasContent'] ?? false,
                 'terms'              => $tnaHasTerms,
                 'pre-screening'      => $tnaHasPreScreening,
                 'additional-details' => $tnaHasAdditionalDetails,
@@ -890,6 +891,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </x-hire-agent.detail-section>
                 @endif
                 @if (! ($tnaDetailRedesign ?? false))<hr>@endif
+                {{-- Location DNA — the search areas, radius searches and Important Places this
+                     listing stores, with the words for each, through the same shared component as
+                     the Tenant Offer Listing page. --}}
+                @if (($hireLocationDna['hasContent'] ?? false) && (! ($tnaDetailRedesign ?? false) || $tnaShows('location-dna')))
+                <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-location-dna" title="Location DNA" icon="fa-solid fa-map-location-dot">
+                    @include('partials.location-dna._hire-agent-section', ['hireLocationDna' => $hireLocationDna])
+                </x-hire-agent.detail-section>
+                @if (! ($tnaDetailRedesign ?? false))<hr>@endif
+                @endif
                 @if (! ($tnaDetailRedesign ?? false) || $tnaShows('terms'))
                 <x-hire-agent.detail-section :redesign="$tnaDetailRedesign ?? false" id="hla-section-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">
                 {{-- NOTE FOR ANYONE COMPARING WITH LANDLORD: its Leasing Terms rows carry `width`

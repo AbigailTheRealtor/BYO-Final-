@@ -44,6 +44,7 @@ tests/Feature/Census/VerifyCensusGeographyCommandTest.php
 tests/Feature/HireAddressAutocompleteTest.php
 tests/Feature/HireAgent/HireAgentCoordinateIntegrationTest.php
 tests/Feature/HireAgent/HireAgentCoordinateWiringTest.php
+tests/Feature/HireAgent/HireAgentLocationDnaSectionTest.php
 tests/Feature/ListingImport/MlsListingKeyCoordinateActivationTest.php
 tests/Feature/ListingImport/MlsQuickImportCoordinateResolutionTest.php
 tests/Feature/Location/AddressImportCorpusCommandTest.php
@@ -79,6 +80,7 @@ tests/Feature/LocationDna/CreateTenantGeographySurfaceTest.php
 tests/Feature/LocationDna/CreateTenantGeographyWiringTest.php
 tests/Feature/LocationDna/CreateTenantLegacyGeographyBackfillTest.php
 tests/Feature/LocationDna/CriteriaGeographyRulesTest.php
+tests/Feature/LocationDna/CriteriaLocationDnaTest.php
 tests/Feature/LocationDna/EloquentCriteriaGeographyRepositoryTest.php
 tests/Feature/LocationDna/GeographyCascadeStateResolutionTest.php
 tests/Feature/LocationDna/GeographySearchBindingTest.php
@@ -138,6 +140,7 @@ tests/Feature/Stellar/GeographicMatchingCurrentContractTest.php
 tests/Feature/Stellar/StellarBuyerResultsCriteriaLinkerTest.php
 tests/Feature/Stellar/StellarBuyerResultsPageTest.php
 tests/Feature/Stellar/TenantCommercialLeaseMatchingTest.php
+tests/Feature/Stellar/TenantCriteriaZipMatchingTest.php
 tests/Feature/Stellar/TenantOfferListingZipResolutionTest.php
 tests/Unit/Http/Livewire/OfferListing/SearchAreasHydrationCharacterisationTest.php
 tests/Unit/Jobs/ComputeLocationDnaChainTest.php

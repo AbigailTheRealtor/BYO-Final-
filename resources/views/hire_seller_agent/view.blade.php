@@ -521,6 +521,7 @@
                 [
                     'listing-details'    => $hsaHasListingDetails,
                     'property'           => $hsaHasProperty,
+                    'location-dna'       => $hireLocationDna['hasContent'] ?? false,
                     'terms'              => $hsaHasTerms,
                     'financing'          => $hsaHasFinancing,
                     'additional-details' => $hsaHasAdditionalDetails,
@@ -1306,6 +1307,16 @@
             </x-hire-agent.detail-section>
             @endif
             @if (! $hsaDetailRedesign)<hr>@endif
+            {{-- Location DNA — the property's pin and Location DNA panel, through the same shared
+                 component as the Offer Listing page. Rendered only when this viewer has something to
+                 see: the exact location is withheld from a non-owner, because this page does not
+                 publish the street address. --}}
+            @if (($hireLocationDna['hasContent'] ?? false) && (! $hsaDetailRedesign || $hsaShows('location-dna')))
+            <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-location-dna" title="Property Location" icon="fa-solid fa-map-location-dot">
+                @include('partials.location-dna._hire-agent-section', ['hireLocationDna' => $hireLocationDna])
+            </x-hire-agent.detail-section>
+            @if (! $hsaDetailRedesign)<hr>@endif
+            @endif
             @if (! $hsaDetailRedesign || $hsaShows('terms'))
             <x-hire-agent.detail-section :redesign="$hsaDetailRedesign" id="hla-section-terms" title="Sale Terms" icon="fa-solid fa-file-contract">
 

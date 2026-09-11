@@ -140,6 +140,32 @@ explicitly switches it, and the commute meta is still loaded, re-saved unchanged
 listing page. Important Place miles are **map-only** — no matcher reads them; adding them as radii
 to the Stellar engine would widen matches (it ORs areas), not require proximity.
 
+**Hire Agent detail pages render Location DNA through the same component.** A Hire listing shares
+its model and meta with the Offer Listing of its role, and stores the same Location DNA.
+`ListingLocationDnaViewData` builds the component's inputs from that meta (`forSearch()` for
+Buyer/Tenant, `forProperty()` for Seller/Landlord) and `partials/location-dna/_hire-agent-section`
+renders them in the `location-dna` section of `config/hire_agent_sections.php`. The section renders
+only when there is something to show. **Seller Hire's exact location is owner-only** — that page
+never publishes the street address; Landlord Hire's is public because its hero already titles the
+listing with the address.
+
+**Buyer/Tenant Criteria carry Important Places, and their Edit pages edit.** Same miles-only widget,
+same `ImportantPlacesService`, same `important_places_json` meta. Incomplete rows are kept rather
+than rejected: these are plain multi-step POST forms that repopulate nothing from `old()`, so a
+rejection would discard the wizard. Both Edit forms used to post to the ADD route (every save made
+a new listing), and the update methods checked no owner — Tenant's even reassigned `user_id` to the
+poster. Edit and update are owner-only now; the Buyer check sits before the `try`, whose `catch`
+turns any exception into a 200.
+
+**`TenantCriteriaLoader` sends ZIPs.** It hard-coded `preferred_zip_codes => []` while the tenant
+form's only ZIP input (the Location DNA widget) stores them in the blob; it reads `zip_codes` now,
+with the Buyer loader's key-presence semantics.
+
+**A manual Seller/Landlord listing only gets a pin from a live coordinate rung.** The autocomplete's
+browser point is deliberately not persisted, and an unprovenanced geocode reads as coarse. With
+Census and the address-point corpus both off, the ladder resolves nothing and there is no pin —
+by design, not a lost write. Enabling a rung in production is an owner decision.
+
 ### Location DNA attribution, and the Overture pre-activation gate
 
 **Nothing here activates the corpus.** `OVERTURE_CORPUS_POI_ENABLED` and the registry's

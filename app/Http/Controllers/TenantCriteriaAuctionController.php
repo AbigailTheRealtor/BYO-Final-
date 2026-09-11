@@ -148,6 +148,15 @@ class TenantCriteriaAuctionController extends Controller
                 }
             }
 
+            // Important Places — the same rows, shape and service as every other Buyer/Tenant
+            // surface. Saved whenever the form carried the field, empty included, so removing every
+            // place sticks. NOT rejected when a row is incomplete: this multi-step form repopulates
+            // nothing from old(), so a rejection would throw the whole wizard away. The row is kept
+            // as a draft would be, and the listing page describes it honestly.
+            if ($request->has('important_places')) {
+                $auction->saveMeta('important_places_json', app(\App\Services\Offers\ImportantPlacesService::class)->encode($request->input('important_places', '')));
+            }
+
             // AI FAQ / Chatbot Knowledge Base — stored privately, never shown publicly
             if ($request->has('ai_faq')) {
                 $request->validate([
@@ -320,9 +329,13 @@ class TenantCriteriaAuctionController extends Controller
     public function edit($id, Request $request)
     {
         $page_data['auction'] = TenantCriteriaAuction::findOrFail($id);
+        // Owner-only — this page is the editor for the record it loads.
+        abort_unless(auth()->check() && (int) $page_data['auction']->user_id === (int) auth()->id(), 403);
         $page_data['title'] = 'Edit Tenant\'s Criteria';
         $ldnaRaw = $page_data['auction']->info('location_dna_preferences');
         $page_data['existingLocationDna'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+        $page_data['existingImportantPlaces'] = app(\App\Services\Offers\ImportantPlacesService::class)
+            ->normalize($page_data['auction']->info('important_places_json') ?: '');
         return view('tenant_criteria.edit', $page_data);
     }
 
@@ -340,7 +353,11 @@ class TenantCriteriaAuctionController extends Controller
 
         // DB::beginTransaction();
         $auction = TenantCriteriaAuction::findOrFail($id);
-        $auction->user_id = Auth::user()->id;
+        // Owner-only. This line used to ASSIGN the record to whoever posted —
+        // `$auction->user_id = Auth::user()->id;` — so any agent could take over any tenant's
+        // criteria by posting to its edit URL. The owner is checked instead, and ownership is
+        // never changed by an edit.
+        abort_unless(auth()->check() && (int) $auction->user_id === (int) auth()->id(), 403);
         $auction->auction_type = $request->auction_type;
         $auction->auction_length = $auction_length_days;
         $auction->update();
@@ -442,6 +459,11 @@ class TenantCriteriaAuctionController extends Controller
             if (json_last_error() === JSON_ERROR_NONE) {
                 $auction->saveMeta('location_dna_preferences', $ldnaTenantUpdate);
             }
+        }
+
+        // Important Places — see store(); the same rule on update.
+        if ($request->has('important_places')) {
+            $auction->saveMeta('important_places_json', app(\App\Services\Offers\ImportantPlacesService::class)->encode($request->input('important_places', '')));
         }
 
         // AI FAQ / Chatbot Knowledge Base — stored privately, never shown publicly
@@ -624,6 +646,10 @@ class TenantCriteriaAuctionController extends Controller
             'states'   => json_decode($auction->info('state')    ?: '[]', true) ?? [],
             'zip_codes' => [],
         ];
+        // Important Places pins, rings and summary rows — normalised through the same service as
+        // every other surface, so this page cannot develop its own idea of the row shape.
+        $page_data['importantPlaces'] = app(\App\Services\Offers\ImportantPlacesService::class)
+            ->normalize($auction->info('important_places_json') ?: '');
         $page_data['boundaryData'] = $boundaryLookupService->resolve(
             $page_data['locationDnaPreferences'],
             $page_data['legacyLocation']

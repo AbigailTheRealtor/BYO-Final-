@@ -242,6 +242,14 @@ class BuyerCriteriaAuctionController extends Controller
                     $auction->saveMeta('location_dna_preferences', $ldnaValue);
                 }
             }
+            // Important Places — the same rows, shape and service as every other Buyer/Tenant
+            // surface. Saved whenever the form carried the field, empty included, so removing every
+            // place sticks. NOT rejected when a row is incomplete: this multi-step form repopulates
+            // nothing from old(), so a rejection would throw the whole wizard away. The row is kept
+            // as a draft would be, and the listing page describes it honestly.
+            if ($request->has('important_places')) {
+                $auction->saveMeta('important_places_json', app(\App\Services\Offers\ImportantPlacesService::class)->encode($request->input('important_places', '')));
+            }
             $aiFaqKeys = [
                 'buyer_active_now','buyer_timeline','buyer_motivation','buyer_current_situation',
                 'buyer_area_familiarity','buyer_flexibility','buyer_deal_breakers','buyer_lost_deal',
@@ -362,6 +370,10 @@ class BuyerCriteriaAuctionController extends Controller
             'states'   => json_decode($auction->info('states')   ?: '[]', true) ?? [],
             'zip_codes' => [],
         ];
+        // Important Places pins, rings and summary rows — normalised through the same service as
+        // every other surface, so this page cannot develop its own idea of the row shape.
+        $page_data['importantPlaces'] = app(\App\Services\Offers\ImportantPlacesService::class)
+            ->normalize($auction->info('important_places_json') ?: '');
         $page_data['boundaryData'] = $boundaryLookupService->resolve(
             $page_data['locationDnaPreferences'],
             $page_data['legacyLocation']
@@ -407,14 +419,26 @@ class BuyerCriteriaAuctionController extends Controller
         $page_data['title'] = 'Edit Buyer Criteria';
         $page_data['property_types'] = PropertyType::orderBy('sort', 'ASC')->get();
         $page_data['auction'] = BuyerCriteriaAuction::find($id);
+        // Owner-only, the same rule as bidsVisibility() (WF-6). This page is the editor for the
+        // record it loads; nobody but its owner may open it.
+        abort_unless(auth()->check() && $page_data['auction'] && (int) $page_data['auction']->user_id === (int) auth()->id(), 403);
         $page_data['id'] = $id;
         $ldnaRaw = $page_data['auction']->info('location_dna_preferences');
         $page_data['existingLocationDna'] = $ldnaRaw ? (json_decode($ldnaRaw, true) ?? []) : [];
+        $page_data['existingImportantPlaces'] = app(\App\Services\Offers\ImportantPlacesService::class)
+            ->normalize($page_data['auction']->info('important_places_json') ?: '');
         return view('buyer_criteria.edit', $page_data);
     }
 
     public function updateAuction(Request $request)
     {
+        // Owner-only (WF-6). This method loads the record by a POSTED id, so without this any
+        // agent could overwrite any buyer's criteria. It sits BEFORE the try on purpose: the catch
+        // below turns every exception — an HttpException included — into a 200 response carrying
+        // its message, which would make a refused edit read as a successful one.
+        $ownedAuction = BuyerCriteriaAuction::find($request->id);
+        abort_unless(auth()->check() && $ownedAuction && (int) $ownedAuction->user_id === (int) auth()->id(), 403);
+
         try {
 
             if (str_contains(strtolower($request->auction_length), 'day')) {
@@ -605,6 +629,10 @@ class BuyerCriteriaAuctionController extends Controller
                 if (json_last_error() === JSON_ERROR_NONE) {
                     $auction->saveMeta('location_dna_preferences', $ldnaValueUpdate);
                 }
+            }
+            // Important Places — see storeAuction(); the same rule on update.
+            if ($request->has('important_places')) {
+                $auction->saveMeta('important_places_json', app(\App\Services\Offers\ImportantPlacesService::class)->encode($request->input('important_places', '')));
             }
             $aiFaqKeysUpdate = [
                 'buyer_active_now','buyer_timeline','buyer_motivation','buyer_current_situation',
