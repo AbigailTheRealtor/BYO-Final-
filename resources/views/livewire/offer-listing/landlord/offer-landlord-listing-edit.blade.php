@@ -1,3 +1,7 @@
+{{-- Canonical shared field environment: one renderer/style definition for
+     Create, Edit and MLS Quick Import. See each partial's header. --}}
+@include('livewire.offer-listing.shared._field-icons')
+@include('livewire.offer-listing.shared._selection-grid-styles')
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 
@@ -227,54 +231,10 @@
         }
 
         /* Utility checklist cards for tenant_pays and rent_includes */
-        .utility-checklist-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 8px;
-        }
-        .utility-checklist-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 8px;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            cursor: pointer;
-            text-align: center;
-            transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-            background: #fff;
-            min-height: 72px;
-            user-select: none;
-        }
-        .utility-checklist-card:hover {
-            border-color: #adb5bd;
-            background: #f8f9fa;
-        }
-        .utility-checklist-card.utility-selected {
-            border-color: #0d6efd;
-            background: #e8f0fe;
-            box-shadow: 0 0 0 1px #0d6efd;
-        }
-        .utility-checklist-icon {
-            font-size: 1.25rem;
-            margin-bottom: 5px;
-            color: #6c757d;
-            transition: color 0.15s ease;
-        }
-        .utility-checklist-card.utility-selected .utility-checklist-icon {
-            color: #0d6efd;
-        }
-        .utility-checklist-label {
-            font-size: 0.72rem;
-            font-weight: 500;
-            line-height: 1.2;
-            color: #495057;
-        }
-        .utility-checklist-card.utility-selected .utility-checklist-label {
-            color: #0d6efd;
-            font-weight: 600;
-        }
+        /* .utility-checklist-* moved to the canonical partial
+           livewire/offer-listing/shared/_selection-grid-styles.blade.php, included
+           at the top of this file, so Create, Edit and MLS Quick Import share one
+           definition. Nothing else in this <style> block was touched. */
 
         @media (max-width: 768px) {
             .status-text {
@@ -2579,19 +2539,12 @@ $tenantPays = [
             });
         }
 
-        function addIconsToInputs() {
-            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
-                const iconClass = input.getAttribute('data-icon');
-                if (!iconClass) return;
-                const wrapper = input.closest('.input-cover');
-                if (!wrapper) return;
-                if (input.type === 'file') return;
-                if (wrapper.querySelector('.input-icon')) return;
-                const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                wrapper.insertBefore(icon, wrapper.firstChild);
-            });
-        }
+        // addIconsToInputs() is no longer defined here. It is published on
+        // `window` by the canonical partial
+        // livewire/offer-listing/shared/_field-icons.blade.php, included at the
+        // top of this file, so every call site below keeps working unchanged and
+        // Create, Edit and MLS Quick Import share one renderer instead of the
+        // nineteen page-local copies this was one of.
 
         function checkRepresentationStatus() {
             const select = document.getElementById('working_with_agent');

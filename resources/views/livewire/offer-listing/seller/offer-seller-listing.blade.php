@@ -1,3 +1,6 @@
+{{-- Canonical shared field environment: one renderer/style definition for
+     Create, Edit and MLS Quick Import. See each partial's header. --}}
+@include('livewire.offer-listing.shared._field-icons')
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 
@@ -2586,19 +2589,12 @@
             }, true);
         }
 
-        function addIconsToInputs() {
-            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
-                const iconClass = input.getAttribute('data-icon');
-                if (!iconClass) return;
-                const wrapper = input.closest('.input-cover');
-                if (!wrapper) return;
-                if (input.type === 'file') return;
-                if (wrapper.querySelector('.data-icon-rendered')) return;
-                const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass} data-icon-rendered`;
-                wrapper.insertBefore(icon, wrapper.firstChild);
-            });
-        }
+        // addIconsToInputs() is no longer defined here. It is published on
+        // `window` by the canonical partial
+        // livewire/offer-listing/shared/_field-icons.blade.php, included at the
+        // top of this file, so every call site below keeps working unchanged and
+        // Create, Edit and MLS Quick Import share one renderer instead of the
+        // nineteen page-local copies this was one of.
 
         // Seller-only: multi-pass icon injection called AFTER initializeFullService()
         // so Select2 has already wrapped selects before icons are injected.

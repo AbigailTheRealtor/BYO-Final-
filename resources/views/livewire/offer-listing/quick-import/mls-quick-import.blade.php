@@ -59,6 +59,32 @@
 @includeWhen($role === 'landlord', 'livewire.offer-listing.offer-landlord-tabs.commission-based._lease-terms-behaviour')
 
 {{--
+    The rest of the environment the canonical terms partials depend on.
+
+    Included here, at initial page load and unconditionally, for exactly the
+    reason stated above for the behaviour partials: both of these push to a stack,
+    Livewire 2.12 does not execute <script> nodes added during a morph, and
+    @push contributes nothing on an AJAX round trip. "Your Terms" is step 4,
+    reached long after this page was delivered, so an include that fired only
+    when the terms step rendered would arrive too late to do anything.
+
+    _field-icons          — turns each field's own `data-icon` into the visible
+                            <i class="input-icon …>. The canonical partials author
+                            85 (seller) / 81 (landlord) of these attributes and no
+                            <i> element; without this every one of them was
+                            invisible here.
+    _selection-grid-styles — the grid CSS behind Tenant Pays and Rent Includes.
+                            Without it those Alpine checklists rendered as an
+                            unstyled vertical list with no selected state.
+
+    Both are @once-guarded and are the SAME files Seller/Landlord Create and Edit
+    now include, so there is one definition of each and Quick Import cannot drift
+    from Create.
+--}}
+@include('livewire.offer-listing.shared._field-icons')
+@includeWhen($role === 'landlord', 'livewire.offer-listing.shared._selection-grid-styles')
+
+{{--
     id="wizard-form-container" — THIS IS A STYLING CONTRACT, NOT A HOOK.
 
     Every rule in resources/css/app.css is scoped to this ID, and its header

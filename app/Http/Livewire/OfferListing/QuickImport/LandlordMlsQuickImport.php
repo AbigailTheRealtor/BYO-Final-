@@ -4,6 +4,7 @@ namespace App\Http\Livewire\OfferListing\QuickImport;
 
 use App\Http\Livewire\OfferListing\Concerns\HasCanonicalPetFee;
 use App\Http\Livewire\OfferListing\Concerns\LandlordLeasingTerms;
+use App\Support\OfferListing\QuickImportTermsReview;
 
 /**
  * Landlord's shortened MLS creation path.
@@ -230,49 +231,11 @@ class LandlordMlsQuickImport extends MlsQuickImportComponent
      */
     public function canonicalTermsReview(): array
     {
-        $rows = [];
-
-        foreach (static::landlordLeasingTermsFields() as $field) {
-            $value = $this->{$field} ?? '';
-
-            if (is_array($value)) {
-                $value = implode(', ', array_filter(array_map('strval', $value)));
-            }
-
-            if (is_bool($value)) {
-                $value = $value ? 'Yes' : 'No';
-            }
-
-            $value = trim((string) $value);
-
-            if ($value === '') {
-                continue;
-            }
-
-            $rows[$this->humaniseTermField($field)] = $value;
-        }
-
-        return $rows;
+        return QuickImportTermsReview::rows(
+            'landlord',
+            static::landlordLeasingTermsFields(),
+            fn (string $field) => $this->{$field} ?? '',
+        );
     }
 
-    /**
-     * Field name → readable label for the review list.
-     *
-     * The canonical partial's labels live in markup rather than in a data
-     * structure, so deriving the label from the field name keeps the review
-     * honest about which stored key it is showing instead of inventing a second
-     * label list that could disagree with the tab.
-     */
-    private function humaniseTermField(string $field): string
-    {
-        $label = str_replace('_', ' ', $field);
-        $label = preg_replace('/\bcam nnn\b/i', 'CAM/NNN', $label);
-        $label = preg_replace('/\bhoa\b/i', 'HOA', $label);
-        $label = preg_replace('/\bcom\b/i', 'commercial', $label);
-        $label = preg_replace('/\bres\b/i', 'residential', $label);
-        $label = preg_replace('/\bll\b/i', 'Landlord', $label);
-        $label = preg_replace('/\baccess 24 7\b/i', '24/7 access', $label);
-
-        return ucfirst($label);
-    }
 }

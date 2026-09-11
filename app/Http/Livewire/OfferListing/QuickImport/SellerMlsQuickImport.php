@@ -4,6 +4,7 @@ namespace App\Http\Livewire\OfferListing\QuickImport;
 
 use App\Http\Livewire\OfferListing\Concerns\SellerSaleTerms;
 use App\Support\Listing\SellerSaleTermsOptions;
+use App\Support\OfferListing\QuickImportTermsReview;
 
 /**
  * Seller's shortened MLS creation path.
@@ -219,52 +220,10 @@ class SellerMlsQuickImport extends MlsQuickImportComponent
      */
     public function canonicalTermsReview(): array
     {
-        $rows = [];
-
-        foreach (static::sellerSaleTermsFields() as $field) {
-            if ($field === 'showPaymentAssumptions') {
-                continue; // a disclosure toggle, not an answer
-            }
-
-            $value = $this->{$field} ?? '';
-
-            if (is_array($value)) {
-                $value = implode(', ', array_filter(array_map('strval', $value)));
-            }
-
-            if (is_bool($value)) {
-                $value = $value ? 'Yes' : 'No';
-            }
-
-            $value = trim((string) $value);
-
-            if ($value === '') {
-                continue;
-            }
-
-            $rows[$this->humaniseTermField($field)] = $value;
-        }
-
-        return $rows;
-    }
-
-    /**
-     * Field name → readable label for the review list.
-     *
-     * The canonical partial's labels live in markup rather than in a data
-     * structure, so there is nothing to read them from; deriving the label from
-     * the field name keeps the review honest about which stored key it is
-     * showing instead of inventing a second label list that could disagree with
-     * the tab.
-     */
-    private function humaniseTermField(string $field): string
-    {
-        $label = str_replace('_', ' ', $field);
-        $label = preg_replace('/\bhoa\b/i', 'HOA', $label);
-        $label = preg_replace('/\bnft\b/i', 'NFT', $label);
-        $label = preg_replace('/\bpmi\b/i', 'PMI', $label);
-        $label = preg_replace('/\bpct\b/i', '%', $label);
-
-        return ucfirst($label);
+        return QuickImportTermsReview::rows(
+            'seller',
+            static::sellerSaleTermsFields(),
+            fn (string $field) => $this->{$field} ?? '',
+        );
     }
 }
