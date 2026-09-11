@@ -183,6 +183,103 @@ final class MlsFactProjection
     }
 
     /**
+     * Canonical keys whose native destination can never hold the whole feed
+     * value, however the record reads. See completelyWrittenKeys().
+     *
+     * @var array<string,string>
+     */
+    private const LOSSY_BY_DESIGN = [
+        'furnished'      => 'merged into building_features as at most one label',
+        'lot_size_acres' => 'an exact acreage stored as the select\'s acreage band',
+    ];
+
+    /**
+     * Canonical keys whose feed value a fresh import writes into this role's
+     * form COMPLETELY.
+     *
+     * This is the question MLS Property Details asks before it declines to
+     * repeat a fact, and it is not the question "does MlsFieldMap name a
+     * target". A key can have a target and still land nowhere — the control is
+     * not rendered for this property type, or the destination vocabulary cannot
+     * represent the feed's value — or land only in part: a multi-value source
+     * reduced to a single-select, a furnishing merged in as one label, an exact
+     * acreage reduced to a band. Hiding the MLS Details row in any of those cases
+     * is how a fact disappeared from the listing at both layers at once.
+     *
+     * Answered by running THIS projection — MODE_IMPORT, an empty draft, one
+     * fact at a time. So the answer is the mapping's own rather than a lookalike
+     * of it; another fact aimed at the same meta key cannot answer for this one;
+     * and it depends only on the record, so re-importing the same record gives
+     * the same answer whatever the user has since typed into the draft.
+     *
+     * @param  array<string,mixed>  $facts  canonical key => feed value, as the prefill emits it
+     * @return array<string,true>
+     */
+    public function completelyWrittenKeys(string $role, array $facts, ?string $sourcePropertyType = null): array
+    {
+        $map = MlsFieldMap::forRole($role);
+        $out = [];
+
+        foreach ($facts as $canonicalKey => $value) {
+            $target = $map[$canonicalKey] ?? null;
+
+            if ($target === null || $target === '' || isset(self::LOSSY_BY_DESIGN[$canonicalKey])) {
+                continue;
+            }
+
+            // property_type rides along because applicability is judged against it.
+            $single = [$canonicalKey => $value];
+
+            if (array_key_exists('property_type', $facts)) {
+                $single['property_type'] = $facts['property_type'];
+            }
+
+            $writes  = $this->project($role, $single, [], self::MODE_IMPORT, $sourcePropertyType);
+            $metaKey = ltrim($target, '*');
+
+            if (array_key_exists($metaKey, $writes)
+                && $this->holdsEverySourceValue($canonicalKey, $value, $writes[$metaKey])) {
+                $out[$canonicalKey] = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Did the write keep every value the feed sent for this key?
+     *
+     * Only two destinations can take part of a value: the Seller Business Type
+     * single-select holds one entry of the feed's list, and the landlord floor
+     * covering multi-select keeps only the coverings it offers. Every other
+     * write carries the whole value or nothing at all.
+     */
+    private function holdsEverySourceValue(string $canonicalKey, mixed $source, mixed $written): bool
+    {
+        return match ($canonicalKey) {
+            'business_type' => count($this->sourceItems($source)) === 1,
+            'flooring'      => count((array) $written) === count($this->sourceItems($source)),
+            default         => true,
+        };
+    }
+
+    /**
+     * A list fact split back into its items — the prefill emits lists as the
+     * comma-joined string every consumer of that pipeline already expects.
+     *
+     * @return list<string>
+     */
+    private function sourceItems(mixed $value): array
+    {
+        $items = is_array($value) ? $value : explode(',', (string) $value);
+
+        return array_values(array_unique(array_filter(
+            array_map(static fn ($v) => is_scalar($v) ? trim((string) $v) : '', $items),
+            static fn (string $v) => $v !== '',
+        )));
+    }
+
+    /**
      * The furnishing label merged into building_features, or null when there is
      * nothing to write.
      *
