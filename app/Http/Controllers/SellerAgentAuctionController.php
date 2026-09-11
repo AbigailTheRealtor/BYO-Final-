@@ -551,6 +551,13 @@ class SellerAgentAuctionController extends Controller
         // which disclosed a competitor AND mislabelled them (it was the minimum brokerage
         // bid, not the most recent). The views shadowed this value anyway, so nothing read it.
 
+        // Location DNA — the property pin and Location DNA panel, from the coordinate and pipeline
+        // row this listing already has. OWNER ONLY: this page publishes city, county, state and ZIP
+        // but never the street address (the hero and title show the listing title), and a rooftop
+        // pin or a list of distances to named places gives that address away.
+        $page_data['hireLocationDna'] = app(\App\Services\LocationDna\ListingLocationDnaViewData::class)
+            ->forProperty($auction, 'seller_agent', (bool) $page_data['hlaViewerIsOwner']);
+
         return view('hire_seller_agent.view', compact('auction', 'data') + $page_data);
     }
 

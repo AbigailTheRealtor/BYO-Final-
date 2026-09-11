@@ -3,6 +3,7 @@
 namespace Tests\Feature\Product;
 
 use App\Models\User;
+use App\Support\Product\ProductSurfaceCatalog;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -174,6 +175,23 @@ class ProductRouteGateTest extends TestCase
         $this->actingAs($agent)->get('/agent/offer-listings')->assertNotFound();
         $this->actingAs($agent)->get('/search/seller-listings')->assertNotFound();
         $this->actingAs($agent)->get('/offer-listing/seller')->assertNotFound();
+    }
+
+    /** @test */
+    public function the_location_dna_address_lookup_is_served_in_both_products(): void
+    {
+        // Hire Buyer / Hire Tenant (BidYourAgent) and Create Offer / criteria
+        // (BidYourOffer) all reach it through the same map-input partial.
+        $this->assertSame(
+            ProductSurfaceCatalog::SHARED,
+            ProductSurfaceCatalog::dispositionFor('POST', 'location/address-lookup')
+        );
+
+        config(['products.active' => 'bidyouragent']);
+        $this->post('/location/address-lookup', ['address' => '1 Main St'])->assertRedirect(route('login'));
+
+        config(['products.active' => null, 'products.hosts' => []]);
+        $this->post('/location/address-lookup', ['address' => '1 Main St'])->assertRedirect(route('login'));
     }
 
     /** @test */

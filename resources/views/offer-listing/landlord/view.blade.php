@@ -1128,7 +1128,11 @@
     {{-- ===== Property Location Map (after Photos & Tours) ===== --}}
     @php
         $_landlordPropertyPin = null;
-        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+        /* The pin IS the address, drawn: a rooftop point gives away exactly what the
+           address line above is withholding. So it follows the same decision —
+           `$mlsAddressVisible`, resolved by the controller from the feed's
+           InternetAddressDisplayYN, and always true for the listing's owner. */
+        if (($mlsAddressVisible ?? true) && !empty($meta['property_lat']) && !empty($meta['property_lng'])) {
             $_lolBaseAddr  = ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null);
             $_lolUnitPart  = !empty($meta['unit_address']) ? ', ' . $meta['unit_address'] : '';
             $_landlordPropertyPin = [

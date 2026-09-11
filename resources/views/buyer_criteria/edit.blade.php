@@ -360,9 +360,13 @@
                     <div class="steps-progress-percent"></div>
                 </div>
 
-                <form class="p-4 pt-0 mainform" action="{{ route('buyer_agent.auction.add') }}" method="POST"
+                {{-- Posts to UPDATE, carrying the record's id. It posted to the ADD route with no id,
+                     so every save from this page created a new listing and left the edited one as it
+                     was. updateAuction() is owner-only. --}}
+                <form class="p-4 pt-0 mainform" action="{{ route('buyer_agent.auction.update') }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="id" value="{{ $auction->id }}">
                     <div class="wizard-step" data-step="1">
 
                         <h4> Please provide the cities, counties, and state pertaining to the real estate location
@@ -436,7 +440,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'ldnaSurface' => \App\Support\Spatial\LdnaBasemapSurface::BUYER_CRITERIA])
+                        @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'ldnaSurface' => \App\Support\Spatial\LdnaBasemapSurface::BUYER_CRITERIA, 'enableImportantPlaces' => true, 'existingImportantPlaces' => $existingImportantPlaces ?? []])
                     </div>
                     <div class="wizard-step" data-step="2">
                         <div class="form-group">

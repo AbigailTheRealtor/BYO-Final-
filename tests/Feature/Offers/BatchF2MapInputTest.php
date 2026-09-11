@@ -69,10 +69,11 @@ class BatchF2MapInputTest extends TestCase
     {
         $src = $this->source();
 
-        // The three flagged controls — Type / Distance Preference / Travel Mode — are -sm selects.
+        // Type is an -sm select. Distance Preference and Travel Mode were retired when
+        // Important Places became miles only, so neither select exists to size-match.
         $this->assertStringContainsString('class="form-select form-select-sm ldna-ip-type"', $src);
-        $this->assertStringContainsString('class="form-select form-select-sm ldna-ip-distpref"', $src);
-        $this->assertStringContainsString('class="form-select form-select-sm ldna-ip-mode"', $src);
+        $this->assertStringNotContainsString('ldna-ip-distpref', $src);
+        $this->assertStringNotContainsString('ldna-ip-mode', $src);
 
         // The reference controls — Exact Address / Miles (distance value) — are -sm inputs.
         $this->assertStringContainsString('class="form-control form-control-sm ldna-ip-address"', $src);
@@ -80,7 +81,5 @@ class BatchF2MapInputTest extends TestCase
 
         // No Important Places control regressed to a non-"-sm" size.
         $this->assertStringNotContainsString('class="form-select ldna-ip-type"', $src);
-        $this->assertStringNotContainsString('class="form-select ldna-ip-distpref"', $src);
-        $this->assertStringNotContainsString('class="form-select ldna-ip-mode"', $src);
     }
 }

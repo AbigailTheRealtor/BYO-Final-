@@ -352,6 +352,13 @@ class TenantAgentAuctionController extends Controller
         // Gates the owner-only empty state — a bid count is itself a disclosure.
         $page_data['canReviewAllProposals'] = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
 
+        // Location DNA — the search areas, radius searches and Important Places this listing already
+        // stores, through the same shared map component as the Tenant Offer Listing page. Tenant
+        // Hire also mirrors a legacy `zipCodes` list; it joins the area rows. Important Places are
+        // located only for the owner; everyone else gets type + miles.
+        $page_data['hireLocationDna'] = app(\App\Services\LocationDna\ListingLocationDnaViewData::class)
+            ->forSearch($auction, ['zipCodes'], $page_data['hlaViewerIsOwner']);
+
         return view('hire_tenant_agent.view', $page_data);
     }
 

@@ -16,6 +16,14 @@
     $schoolDistrictData – optional; resolved by SchoolDistrictLookupService in the controller:
                        ['school_districts' => [...], 'available' => bool]
                      When absent or available=false, no school district overlay is rendered.
+    $importantPlaces – optional; rows from ImportantPlacesService::normalize().
+    $importantPlacesExact – optional bool, default FALSE. True only when the caller has
+                     established that the viewer owns the listing. Anything else — false,
+                     absent, a truthy string — renders every Important Place as its type and
+                     miles alone: no address, no coordinate, so no pin, ring or popup.
+    $showHeading   – optional bool, default false. Buyer/Tenant detail pages pass true for the
+                     "Search Areas & Location Preferences" heading. Opt-in, because Seller and
+                     Landlord pages render this component too and a property is not a search.
 
   Priority chain — STRICTLY one tier renders; the first non-empty tier wins:
     1. Custom drawn polygons   → Google Maps Polygon overlays
@@ -91,18 +99,72 @@
   $legStates   = array_values(array_filter((array)($legacy['states'] ?? [])));
   $hasStates   = count($legStates) > 0;
 
-  /* hasMapData is true only if at least one chain tier has data */
-  $hasMapData  = $hasPolygons || $hasRadii || $hasNeigh || $hasZips || $hasCities || $hasCounties || $hasStates;
+  /* Important Places pins. Optional prop: a caller that does not pass them gets none,
+   * which is the correct behaviour for Seller/Landlord — those listings have no
+   * Important Places, and inventing an empty array changes nothing either way.
+   *
+   * PRIVATE BY DEFAULT. An Important Place is the client's workplace, their child's school,
+   * a relative's home — and this component renders on public pages. Only a caller that has
+   * established the viewer owns the listing passes `importantPlacesExact` = true; every other
+   * caller, including one that forgets, gets the type and the miles and nothing that locates
+   * the place. Reduced HERE, before the tier chain, the written summary and both renderers
+   * read the rows, so no branch below can reach an address or a coordinate — which is what
+   * keeps the pin, the ring, the pin's tooltip and the page's JSON free of them. The stored
+   * rows are untouched; this shapes what the page receives. */
+  $ldnaPlacesExact = ($importantPlacesExact ?? false) === true;
+  $ldnaPlacesRows  = (isset($importantPlaces) && is_array($importantPlaces)) ? $importantPlaces : [];
+  $ldnaMlPlaces    = $ldnaPlacesExact
+      ? $ldnaPlacesRows
+      : \App\Services\Offers\ImportantPlacesService::publicRows($ldnaPlacesRows);
 
-  /* Determine active tier (strict: only one tier renders) */
+  /* A located place is one with a coordinate; only those can be drawn. */
+  $hasPlaces = count(array_filter($ldnaMlPlaces, function ($p) {
+      return is_array($p) && is_numeric($p['lat'] ?? null) && is_numeric($p['lng'] ?? null);
+  })) > 0;
+
+  /* The words for what this map draws — radius searches, Important Places, custom areas.
+   * One shared reading (LocationDnaCriteriaDisplay) so Buyer and Tenant cannot drift, and
+   * so no anonymous circle or unexplained pin reaches the page. */
+  $ldnaCriteria = \App\Support\LocationDna\LocationDnaCriteriaDisplay::from($prefs, $ldnaMlPlaces, $legacy, $ldnaPlacesExact);
+
+  /* hasMapData is true only if at least one chain tier has data */
+  $hasMapData  = $hasPolygons || $hasRadii || $hasNeigh || $hasZips || $hasCities || $hasCounties || $hasPlaces || $hasStates;
+
+  /* Determine active tier (strict: only one tier renders).
+   * `places` sits below every area tier on purpose: a listing with cities AND Important
+   * Places keeps its city boundaries (the places are drawn on that map too), and only a
+   * listing whose located places are its most specific criterion gets a places-only map.
+   * It sits above `states` because a state is too coarse to be worth a map of its own
+   * when there are real points to show. */
   if ($hasPolygons)       $tier = 'polygons';
   elseif ($hasRadii)      $tier = 'radii';
   elseif ($hasNeigh)      $tier = 'neighborhoods';
   elseif ($hasZips)       $tier = 'zips';
   elseif ($hasCities)     $tier = 'cities';
   elseif ($hasCounties)   $tier = 'counties';
+  elseif ($hasPlaces)     $tier = 'places';
   elseif ($hasStates)     $tier = 'states';
   else                    $tier = 'fallback';
+
+  /* Tiers that render a real map canvas with drawn overlays. */
+  $isDrawnTier = in_array($tier, ['polygons', 'radii', 'places'], true);
+
+  /* Radius rows for the Google renderer, read through the shared RadiusSearchRow so both
+   * stored shapes draw. Its script read only the nested `center` shape, and every row the
+   * current widget saves is flat — so it drew no circle for any of them. Normalised here,
+   * server-side, so the script keeps exactly one shape to handle. The label is the row's
+   * own address (or drawn-circle label): the circle on the map names what the text names. */
+  $ldnaGoogleRadii = [];
+  foreach ($radii as $ldnaRadiusRow) {
+      $ldnaRadiusCircle = \App\Support\LocationDna\RadiusSearchRow::circle($ldnaRadiusRow);
+      if ($ldnaRadiusCircle !== null) {
+          $ldnaGoogleRadii[] = [
+              'center'       => ['lat' => $ldnaRadiusCircle['lat'], 'lng' => $ldnaRadiusCircle['lng']],
+              'radius_miles' => $ldnaRadiusCircle['radius_miles'],
+              'label'        => \App\Support\LocationDna\RadiusSearchRow::description($ldnaRadiusRow),
+          ];
+      }
+  }
 
   /* Boundary polygon data from Phase 2 service (Tiers 3-5 only) */
   $bd = isset($boundaryData) && is_array($boundaryData) ? $boundaryData : null;
@@ -117,6 +179,11 @@
                     : [];
   $hasFloodZones = !empty($floodZones)
                    && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap);
+
+  /* State / county / city / ZIP rows belong in the written summary wherever the map does
+   * not already name them: on a drawn map, and on the boundary map, whose outlines carry
+   * no labels. The chip tier shows them as chips, and the fallback box lists them itself. */
+  $ldnaCriteriaAreas = $isDrawnTier || $useBoundaryMap;
 
   /* Unique zone designations for the legend (stable sorted order) */
   $floodZoneLegend = [];
@@ -197,11 +264,6 @@
       $hasSchoolDistricts = false;
   }
 
-  /* Important Places pins. Optional prop: a caller that does not pass them gets none,
-   * which is the correct behaviour for Seller/Landlord — those listings have no
-   * Important Places, and inventing an empty array changes nothing either way. */
-  $ldnaMlPlaces = (isset($importantPlaces) && is_array($importantPlaces)) ? $importantPlaces : [];
-
   /* ── Property pin (Seller / Landlord offer-listing view pages) ──────────────
    * When $propertyPin is provided (array with lat/lng/label) we render a
    * dedicated single-pin map regardless of the DNA preference tier chain.
@@ -210,10 +272,16 @@
   $propertyPin = isset($propertyPin) && is_array($propertyPin)
                     && !empty($propertyPin['lat']) && !empty($propertyPin['lng'])
                     ? $propertyPin : null;
+
+  /* Radius searches, Important Places, named areas, custom areas, flexibility and notes are
+   * the client's LOCATION PREFERENCES — what they asked for — not calculated Location DNA
+   * about a property. The heading says so. */
+  $ldnaShowHeading = ($showHeading ?? false) === true && ! $propertyPin;
 @endphp
 
 @push('styles')
 <style>
+  .ldna-search-heading { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 .6rem; }
   .ldna-hero { border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
   .ldna-hero-map { width: 100%; height: 360px; border-radius: 8px;
     border: 1px solid #e2e8f0; background: #f8fafc; }
@@ -260,6 +328,12 @@
     background:#dbeafe; color:#1d4ed8; border:1px solid #93c5fd; white-space:nowrap; }
 </style>
 @endpush
+
+@if($ldnaShowHeading)
+  <h5 class="ldna-search-heading" data-ldna-search-heading>
+    <i class="fa-solid fa-map-location-dot me-1"></i> Search Areas &amp; Location Preferences
+  </h5>
+@endif
 
 @if($propertyPin)
   {{-- ─── Property Pin Map (Seller / Landlord offer-listing pages) ─────────────────
@@ -315,7 +389,13 @@
           },
         });
         if (pinData.label) {
-          var iw = new google.maps.InfoWindow({ content: '<span style="font-size:.9rem;font-weight:600;">' + pinData.label + '</span>' });
+          /* A node with textContent, never a concatenated HTML string: the label is the
+             listing's address, which its owner typed, and this page is public. */
+          var iwContent = document.createElement('span');
+          iwContent.style.fontSize = '.9rem';
+          iwContent.style.fontWeight = '600';
+          iwContent.textContent = String(pinData.label);
+          var iw = new google.maps.InfoWindow({ content: iwContent });
           marker.addListener('click', function() { iw.open(map, marker); });
         }
       }
@@ -335,19 +415,23 @@
 
 @elseif(!$hasMapData)
   {{-- ─── Tier 6: Full fallback ────────────────────────────────────────────────── --}}
+  @php
+    $fallbackItems = [];
+    if ($legCities)   $fallbackItems[] = 'Cities: '   . implode(', ', $legCities);
+    if ($legCounties) $fallbackItems[] = 'Counties: ' . implode(', ', $legCounties);
+    $legStates = array_values(array_filter((array)($legacy['states'] ?? [])));
+    if ($legStates)   $fallbackItems[] = 'States: '   . implode(', ', $legStates);
+    if ($dnaNeigh)    $fallbackItems[] = 'Neighborhoods: ' . implode(', ', $dnaNeigh);
+    if ($notes)       $fallbackItems[] = 'Notes: '    . $notes;
+  @endphp
+  {{-- Skipped when its only content would be its own header: the listing's criteria are
+       Important Places that draw nothing (unlocated, or private to this viewer), and the
+       written summary below lists them. --}}
+  @if(count($fallbackItems) || ! $ldnaCriteria->hasMappedCriteria())
   <div class="ldna-fallback-box mb-3">
     <div class="fw-bold mb-2" style="color:#0369a1;">
       <i class="fa-solid fa-map-location-dot me-1"></i> Location Preferences
     </div>
-    @php
-      $fallbackItems = [];
-      if ($legCities)   $fallbackItems[] = 'Cities: '   . implode(', ', $legCities);
-      if ($legCounties) $fallbackItems[] = 'Counties: ' . implode(', ', $legCounties);
-      $legStates = array_values(array_filter((array)($legacy['states'] ?? [])));
-      if ($legStates)   $fallbackItems[] = 'States: '   . implode(', ', $legStates);
-      if ($dnaNeigh)    $fallbackItems[] = 'Neighborhoods: ' . implode(', ', $dnaNeigh);
-      if ($notes)       $fallbackItems[] = 'Notes: '    . $notes;
-    @endphp
     @if(count($fallbackItems))
       <ul style="margin:0;padding-left:1.2rem;">
         @foreach($fallbackItems as $fb)
@@ -355,11 +439,15 @@
         @endforeach
       </ul>
     @else
+      {{-- Only when there is truly nothing: an Important Place is still a saved preference
+           even when it draws nothing, and the summary below lists it — so this sentence
+           would contradict the page. --}}
       <p class="mb-0">No location preferences have been specified for this listing.</p>
     @endif
   </div>
+  @endif
 
-@elseif($tier === 'polygons' || $tier === 'radii')
+@elseif($isDrawnTier)
   {{-- ─── Tiers 1 & 2: Real map with drawn overlays ────────────────────────────── --}}
   <div class="ldna-hero mb-3">
     @if($flex)
@@ -417,11 +505,13 @@
   {{-- Google renderer for this tier. Skipped entirely under MapLibre: it resolves
        #{{ $componentId }}, which the MapLibre branch above replaces with its own
        container, and `new google.maps.Map(null)` throws on any page that does have a
-       Maps credential. Untouched otherwise — this is still the default renderer. --}}
+       Maps credential. Still the default renderer. --}}
+  @include('partials.location-dna._display-google-places')
   <script>
   (function () {
     var polygons        = @json($polygons);
-    var radii           = @json($radii);
+    var radii           = @json($ldnaGoogleRadii);
+    var places          = @json($ldnaMlPlaces);
     var tier            = @json($tier);
     var mapElId         = @json($componentId);
     var floodZones      = @json($floodZones);
@@ -535,7 +625,10 @@
         });
       }
 
-      if (tier === 'radii') {
+      /* Radii draw beside polygons as well as on their own. The MapLibre renderer has always
+         drawn both, and the written summary lists both — a Google map that dropped the
+         circles whenever a polygon existed would disagree with the text beneath it. */
+      if (radii.length) {
         radii.forEach(function (r) {
           if (!r.center) return;
           var gmCircle = new google.maps.Circle({
@@ -556,6 +649,8 @@
           }
         });
       }
+
+      if (window.ldnaDisplayDrawGooglePlaces(gMap, places, bounds)) { hasBounds = true; }
 
       if (hasBounds) { gMap.fitBounds(bounds); }
 
@@ -638,9 +733,11 @@
   {{-- Google renderer for this tier. Skipped entirely under MapLibre: it resolves
        #{{ $componentId }}, which the MapLibre branch above replaces with its own
        container, and `new google.maps.Map(null)` throws on any page that does have a
-       Maps credential. Untouched otherwise — this is still the default renderer. --}}
+       Maps credential. Still the default renderer. --}}
+  @include('partials.location-dna._display-google-places')
   <script>
   (function () {
+    var places = @json($ldnaMlPlaces);
     /*
      * Data structure (matches CensusTigerBoundaryAdapter::extractCoordinates()):
      *
@@ -771,6 +868,10 @@
         });
       });
 
+      /* Important Places draw on the boundary map too — the MapLibre panel for this tier
+         already receives them, and the summary below lists them. */
+      if (window.ldnaDisplayDrawGooglePlaces(gMap, places, bounds)) { hasBounds = true; }
+
       if (hasBounds) {
         gMap.fitBounds(bounds);
       }
@@ -895,12 +996,20 @@
   </div>
 @endif
 
+@if(! $propertyPin)
+  {{-- What the map above draws, in words. Every tier, both renderers. --}}
+  @include('partials.location-dna._criteria-summary', [
+      'ldnaCriteria'      => $ldnaCriteria,
+      'ldnaCriteriaAreas' => $ldnaCriteriaAreas,
+  ])
+@endif
+
 {{-- ── Maps API loader — one instance regardless of which tier rendered ──────────
      @once ensures this script tag is emitted at most once per page, even when
      multiple location-dna-map components appear on the same view.
      The runtime guard (typeof google check + existing-script check) provides a
      second layer of defence against duplicate network requests.                   --}}
-@if(! $ldnaMlOn && $hasMapData && ($tier === 'polygons' || $tier === 'radii' || $useBoundaryMap) && $mapsKey !== '')
+@if(! $ldnaMlOn && $hasMapData && ($isDrawnTier || $useBoundaryMap) && $mapsKey !== '')
 @once
 @push('scripts')
 {{-- Phase 0 / Batch 5: the gm_authFailure callback must exist before this injector can
