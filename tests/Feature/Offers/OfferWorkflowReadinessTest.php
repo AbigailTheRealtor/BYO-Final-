@@ -1503,6 +1503,18 @@ class OfferWorkflowReadinessTest extends TestCase
             //     AgentController is permitted above too.
             'app/Support/Listing/ListingFlag.php',
             'app/Models/BuyerAgentAuction.php',
+
+            // ── Role model is_approved semantics (2026-09-11) ────────────────
+            //
+            // All four role models cast `is_approved` to `boolean` — `(bool)` —
+            // so the string 'false' in the Seller / Buyer varchar columns read as
+            // approved to every consumer of the model.
+            //
+            //   app/Models/Concerns/HasApprovalFlag.php
+            //     Reads the RAW stored value through ListingFlag, and judges whether
+            //     an assignment is a change by the same contract. No stored value
+            //     is rewritten. The four models and ListingFlag are permitted above.
+            'app/Models/Concerns/HasApprovalFlag.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
