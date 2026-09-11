@@ -307,9 +307,14 @@ there must carry a sentence saying why.
 allow-lists fail closed; a field nobody has cleared is rendered nowhere.
 
 **Tier 1 is not repeated in Tier 2** — except where the listing page does not actually render the
-destination. `TIER1_MAPPED_BUT_UNRENDERED` names those (landlord's `air_conditioning`, `sewer`,
-`water`, `floor_covering`, …) and is re-derived from the Blade templates by the parity test, so it
-cannot go stale in either direction.
+destination, or where the import did not actually write the value whole. `TIER1_MAPPED_BUT_UNRENDERED`
+names the first (landlord's `air_conditioning`, `sewer`, `water`, `floor_covering`, …) and is
+re-derived from the Blade templates by the parity test, so it cannot go stale in either direction.
+`MlsNativeFieldCoverage` decides the second by running the real prefill and `MlsFactProjection` on
+the record: a fact the form cannot take for that property type (a garage on Income), a value the
+destination vocabulary cannot represent (`LivingAreaSource = Estimated`) or a multi-value source
+reduced to a single-select (`BusinessType`) stays in MLS Details. **Having a map target is not being
+written.** `BuildingAreaTotal` is shown there for landlord, whose map deliberately has no target.
 
 **Do not map a field whose NAME matches and whose MEANING does not.** `minimum_cap_rate` and
 `minimum_annual_net_income` are the seller's *desired minimum*, not the property's actual figures;
