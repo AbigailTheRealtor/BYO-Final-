@@ -244,9 +244,10 @@ final class MlsFactVocabulary
      *
      * The two vocabularies overlap but are not identical: the feed says
      * "Owner" and "Appraiser" where the form offers "Owner Provided" and
-     * "Appraisal". "Estimated" has no option at all and is dropped rather than
-     * stored as a value that would never render as selected — the fact still
-     * appears verbatim under Property Details.
+     * "Appraisal". "Estimated" has no option at all and is not written rather
+     * than stored as a value that would never render as selected — the fact is
+     * kept verbatim under Property Details as "Living Area Source", because an
+     * unwritten Tier-1 fact is not suppressed there (see MlsNativeFieldCoverage).
      */
     public static function livingAreaSource(?string $value): ?string
     {
@@ -354,8 +355,10 @@ final class MlsFactVocabulary
                 \App\Services\ListingImport\MlsNormalizer::normalizeLeaseFrequency((string) $value)
             ),
             // A single-select destination: the feed sends an array and the form
-            // holds one value, so the first recognised entry wins and the rest
-            // stay visible under Commercial / Business.
+            // holds one value, so the first recognised entry wins. The complete
+            // list stays under Commercial / Business, because
+            // MlsFactProjection::completelyWrittenKeys() reports a multi-value
+            // write as partial and MLS Property Details therefore keeps it.
             'business_type'             => self::filterBusinessTypes($value)[0] ?? null,
             default                     => $value,
         };

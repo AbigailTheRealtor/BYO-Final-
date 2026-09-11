@@ -238,8 +238,14 @@ final class MlsFieldCatalog
             'StructureType'                  => 'Structure Type',
             'PropertyAttachedYN'             => 'Attached Property',
             'CommonWalls'                    => 'Common Walls',
+            // Tier 1, listed here as the FALLBACK: shown only when the import did
+            // not write the value whole into the role's own field — the landlord
+            // map has no building-size target, and "Estimated" is no option of
+            // the square-footage-source select. See MlsNativeFieldCoverage.
+            'BuildingAreaTotal'              => 'Total Building Area',
             'BuildingAreaSource'             => 'Building Area Source',
             'BuildingAreaUnits'              => 'Building Area Units',
+            'LivingAreaSource'               => 'Living Area Source',
             'LivingAreaUnits'                => 'Living Area Units',
             'YearBuiltEffective'             => 'Effective Year Built',
             'YearBuiltSource'                => 'Year Built Source',
@@ -1055,7 +1061,7 @@ final class MlsFieldCatalog
         'BathroomsTotalInteger'  => 'imported to the bathrooms field; shown there',
         'LotSizeSquareFeet'      => 'imported to the lot size field; shown there',
         'LivingArea'             => 'imported to the heated square feet field; shown there',
-        'BuildingAreaTotal'      => 'imported to the building size field; shown there',
+        'BuildingAreaTotal'      => 'imported to the building size field where the role has one (Seller) and shown there; otherwise kept under Property Details',
         'BedroomsTotal'          => 'imported to the bedrooms field; shown there',
         'YearBuilt'              => 'imported to the year built field; shown there',
         'ListPrice'              => 'imported to the price field; shown there',
@@ -1068,7 +1074,7 @@ final class MlsFieldCatalog
         'STELLAR_FloodZonePanel' => 'imported to the flood zone panel field; shown there',
         'STELLAR_FloodZoneDate'  => 'imported to the flood zone date field; shown there',
         'AdditionalParcelsYN'    => 'imported to the additional parcels field; shown there',
-        'LivingAreaSource'       => 'imported to the square-footage source field; shown there',
+        'LivingAreaSource'       => 'imported to the square-footage source field when the form offers the value, and shown there; otherwise (e.g. "Estimated") kept under Property Details',
         'STELLAR_CDDYN'          => 'imported to the CDD field; shown there',
     ];
 
