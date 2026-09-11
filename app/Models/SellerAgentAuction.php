@@ -90,7 +90,7 @@ public function deleteMeta($key)
 
     public function getStatusAttribute()
     {
-        $isSold = in_array($this->is_sold, [true, 'true', 1, '1'], true);
+        $isSold = \App\Support\Listing\ListingFlag::isTrue($this->is_sold);
         if ($isSold) {
             return 'Hired Agent';
         }
