@@ -342,26 +342,25 @@ class AgentController extends Controller
             return view('agent_biding_listing.buyer', $page_data);
         }
 
-        // Manually build the query
-        $baseQuery = \App\Models\BuyerAgentAuction::where('id', $auctionIds[0]);
+        // The agent's bids, as ONE grouped predicate. This was a
+        // where(id = a)->orWhere(id = b)… chain, and SQL's AND-before-OR then
+        // applied each tab's filters to the last bid's row only.
+        $baseQuery = \App\Models\BuyerAgentAuction::whereIn('id', $auctionIds);
 
-        for ($i = 1; $i < count($auctionIds); $i++) {
-            $baseQuery->orWhere('id', $auctionIds[$i]);
-        }
-
-        // Create status-specific queries
+        // Create status-specific queries. Approval is the raw-value contract
+        // (HasApprovalFlag): '1' and 'true' are approved on this varchar column.
         $pendingQuery = (clone $baseQuery)
-            ->where('is_approved', 0)
+            ->notApproved()
             ->where('is_sold', 0)
             ->where('is_draft', 0);
 
         $liveQuery = (clone $baseQuery)
-            ->where('is_approved', 1)
+            ->approved()
             ->where('is_sold', 0)
             ->where('is_draft', 0);
 
         $soldQuery = (clone $baseQuery)
-            ->where('is_approved', 1)
+            ->approved()
             ->where('is_sold', 1)
             ->where('is_draft', 0);
 

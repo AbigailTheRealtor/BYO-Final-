@@ -123,7 +123,7 @@ class CriteriaListingResolver
             if ($offerListingIds->isNotEmpty()) {
                 $buyerOfferRecords = BuyerAgentAuction::whereIn('id', $offerListingIds)
                     ->whereIn('user_id', $allowedUserIds)
-                    ->where('is_approved', true)
+                    ->approved()
                     ->where('is_sold', false)
                     ->orderBy('created_at', 'desc')
                     ->get();

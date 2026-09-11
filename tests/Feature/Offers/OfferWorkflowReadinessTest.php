@@ -1525,6 +1525,25 @@ class OfferWorkflowReadinessTest extends TestCase
             //     Creates each table only when it is absent. Alters, backfills and
             //     drops nothing, and its down() deliberately leaves the tables.
             'database/migrations/2026_09_11_000001_create_messaging_tables.php',
+
+            // ── Buyer is_approved query semantics (2026-09-11) ───────────────
+            //
+            // `where('is_approved', true)` binds as '1' on the Buyer varchar
+            // column, so a row the publish path stored as 'true' — approved to
+            // the model — was dropped by these queries. Each now uses the
+            // approved() / notApproved() scopes HasApprovalFlag (permitted
+            // above) defines from ListingFlag::TRUE_VALUES. AgentController
+            // and BuyerAgentAuctionController are permitted above as well.
+            //
+            //   app/Http/Controllers/UserController.php
+            //     The Buyer author profile and the tenant profile's Buyer tab.
+            //
+            //   app/Services/Stellar/CriteriaListingResolver.php
+            //   app/Services/Stellar/BuyerOfferListingCriteriaLoader.php
+            //     The Stellar criteria picker and the Match Check loader.
+            'app/Http/Controllers/UserController.php',
+            'app/Services/Stellar/CriteriaListingResolver.php',
+            'app/Services/Stellar/BuyerOfferListingCriteriaLoader.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

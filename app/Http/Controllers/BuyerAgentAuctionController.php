@@ -512,12 +512,15 @@ class BuyerAgentAuctionController extends Controller
         $page_data['title'] = "Hire Buyer's Agent";
         $page_data['type'] = $type = $request->type ?? 0;
 
+        // Approval by the raw-value contract (HasApprovalFlag): on this varchar
+        // column where(true) matches '1' only and where(false) '0' only, so a
+        // 'true', 'false' or '' row was in neither tab.
         if ($type == 1) {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_approved', true)->where('is_draft', false)->get();
+            $page_data['auctions'] = BuyerAgentAuction::approved()->where('is_draft', false)->get();
         } elseif ($type == 2) {
             $page_data['auctions'] = BuyerAgentAuction::where('is_sold', true)->where('is_draft', false)->get();
         } else {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_approved', false)->where('is_draft', false)->get();
+            $page_data['auctions'] = BuyerAgentAuction::notApproved()->where('is_draft', false)->get();
         }
         return view('admin.buyerAgentAuctions', $page_data);
     }

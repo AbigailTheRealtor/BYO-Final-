@@ -88,7 +88,7 @@ class BuyerOfferListingCriteriaLoader
 
         $query = BuyerAgentAuction::whereIn('id', $offerListingIds)
             ->whereIn('user_id', $allowedUserIds)
-            ->where('is_approved', true)
+            ->approved()
             ->where('is_sold', false);
 
         if ($recordId !== null) {

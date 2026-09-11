@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Support\Listing\ListingFlag;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 
 /**
@@ -77,5 +78,34 @@ trait HasApprovalFlag
         }
 
         return ListingFlag::isTrue($attribute) === ListingFlag::isTrue($original);
+    }
+
+    /**
+     * Rows whose RAW stored `is_approved` is approved — the query-side reading of
+     * the contract the accessor applies, from the same list.
+     *
+     * `where('is_approved', true)` is not that reading on a varchar column: PHP
+     * true binds as 1 and matches '1' only, so a Buyer row the publish path
+     * stored as 'true' — approved to the accessor — was dropped from queue,
+     * profile and matching queries. ListingFlag::TRUE_VALUES binds as '1' and
+     * 'true'; on a boolean column PostgreSQL reads every one of them as true.
+     */
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->whereIn($query->qualifyColumn('is_approved'), ListingFlag::TRUE_VALUES);
+    }
+
+    /**
+     * The exact complement of approved(): '0', 'false', '' and anything else,
+     * and NULL — which `whereNotIn` alone would drop. `where('is_approved', false)`
+     * matches only '0' on a varchar column.
+     */
+    public function scopeNotApproved(Builder $query): Builder
+    {
+        $column = $query->qualifyColumn('is_approved');
+
+        return $query->where(function (Builder $q) use ($column) {
+            $q->whereNotIn($column, ListingFlag::TRUE_VALUES)->orWhereNull($column);
+        });
     }
 }

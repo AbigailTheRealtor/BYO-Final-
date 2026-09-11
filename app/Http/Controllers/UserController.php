@@ -47,7 +47,7 @@ class UserController extends Controller
                 return view('author_inc.agent_service_auctions', $page_data);
             }
         } else if ($user->user_type == 'buyer') {
-            $page_data['pAuctions'] = BuyerAgentAuction::where('is_sold', false)->where('is_approved', 1)->where('is_archived', 0)->paginate(12);
+            $page_data['pAuctions'] = BuyerAgentAuction::where('is_sold', false)->approved()->where('is_archived', 0)->paginate(12);
             return view('author_inc.buyer_agent_auctions', $page_data);
         } else if ($user->user_type == 'seller') {
             $page_data['pAuctions'] = SellerAgentAuction::where('is_sold', 'false')->where('is_approved', 'true')->where('is_archived', 0)
@@ -108,7 +108,7 @@ class UserController extends Controller
                     ->where('is_sold', false);
                 if (!$isOwner) {
                     $query->where('is_draft', false);
-                    $query->where('is_approved', 1);
+                    $query->approved();
                     $query->where('is_archived', 0); // WF-2: hide owner-archived listings from visitors
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
