@@ -31,7 +31,11 @@ class LocationDnaGeocodeService
 {
     private const GEOCODE_API_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 
-    private const REQUIRED_ADDRESS_FIELDS = ['address', 'city', 'state'];
+    /**
+     * Public because BridgeLocationDnaState must not backfill a row this step
+     * would skip without writing its record — one definition, two readers.
+     */
+    public const REQUIRED_ADDRESS_FIELDS = ['address', 'city', 'state'];
 
     public function __construct(
         private readonly ?ClientInterface $httpClient = null,

@@ -42,10 +42,13 @@ class FakeBridgeApi extends BridgeApiService
             throw new \RuntimeException('provider unavailable (test double)');
         }
 
-        // One page only: the importer stops when a page comes back shorter than
-        // the page size, so returning everything once ends pagination cleanly
-        // and keeps `wasPartial` false.
-        return $skip === 0 ? $this->matching($filter) : [];
+        $matching = $this->matching($filter);
+
+        // Honour the window the caller asked for, so a budget test that needs a
+        // genuinely multi-page pass gets one. The importer stops when a page
+        // comes back shorter than the page size, which a real slice produces
+        // naturally at the end of the set.
+        return array_slice($matching, $skip, $top);
     }
 
     public function fetchProperties(int $limit = 10, ?string $filter = null): array

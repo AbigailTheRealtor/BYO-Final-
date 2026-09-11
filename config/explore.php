@@ -61,6 +61,29 @@ return [
     */
 
     'google' => [
+
+        /*
+        | The 3D renderer's own switch — DEFAULT OFF.
+        |
+        | Google needs ALL THREE of: EXPLORE_ENABLED, this switch, and a browser
+        | key. A key on its own turns nothing on, so a credential can be
+        | provisioned and verified ahead of a launch without anything loading.
+        |
+        | Off means the loader NEVER RUNS: no <script> is inserted,
+        | maps.googleapis.com is never contacted, and the key is not written into
+        | the page. It deliberately does not mean "load Google and then hide the
+        | map" — the expensive provider must be untouched when it is off, or the
+        | switch protects nothing. It is also the emergency stop: switching it
+        | off stops Google while Explore keeps serving listings, without the key
+        | having to be deleted.
+        |
+        | PARSED STRICTLY, FAILING CLOSED. ON: `true`, `1`, `on`, `yes` (any
+        | case). OFF: unset, empty, `false`, `0`, `off`, `no` — and ANYTHING
+        | ELSE. A plain (bool) cast reads `off` and `no` as ON, which is the
+        | wrong answer for the switch somebody reaches for at 2am.
+        */
+        'enabled' => filter_var(env('EXPLORE_GOOGLE_3D_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
         'browser_key' => env('EXPLORE_GOOGLE_MAPS_BROWSER_KEY'),
         'map_id'      => env('EXPLORE_GOOGLE_MAPS_MAP_ID'),
         'api_version' => env('EXPLORE_GOOGLE_MAPS_VERSION', 'alpha'),
@@ -126,9 +149,10 @@ return [
     |
     | With it, a viewport request asks the application's ONE existing MLS
     | ingestion pipeline — LazyBridgeImportService, the same advisory lock, fetch
-    | cache, pagination, normalizer and Location DNA dispatch that the criteria
-    | searches use — for the current eligible listings in that area. Explore adds
-    | no client, no importer and no storage of its own.
+    | cache, pagination and normalizer that the criteria searches use — for the
+    | current eligible listings in that area. Explore adds no client, no importer
+    | and no storage of its own, and it opts OUT of the importer's Location DNA
+    | dispatch, whose POI step can call Google Places.
     |
     | SHIPS FALSE, AND FAILS CLOSED, for the same reason `mls_sync.enabled` does:
     | deploying this code must not by itself begin unattended traffic to a
@@ -142,7 +166,10 @@ return [
 
     'discovery' => [
 
-        'enabled' => (bool) env('EXPLORE_DISCOVERY_ENABLED', false),
+        // Parsed strictly, failing closed: ON only for `true`, `1`, `on`, `yes`.
+        // This gate starts Bridge traffic, and a plain (bool) cast reads `off`
+        // and `no` as ON.
+        'enabled' => filter_var(env('EXPLORE_DISCOVERY_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
 
         /*
         | Tile size, in degrees, that a discovery bounding box is snapped
@@ -173,6 +200,84 @@ return [
         */
         'max_pages'   => (int) env('EXPLORE_DISCOVERY_MAX_PAGES', 5),
         'max_records' => (int) env('EXPLORE_DISCOVERY_MAX_RECORDS', 500),
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Provider request budget — the ceiling on what Explore can spend
+    |--------------------------------------------------------------------------
+    |
+    | `throttle:120,1` on the data routes bounds REQUESTS, not PROVIDER SPEND.
+    | One unfiltered viewport request can cost up to five provider pages per
+    | transaction type, so a caller staying comfortably inside that throttle
+    | could reach roughly 72,000 Bridge requests an hour by traversing distinct
+    | cold tiles. Tile snapping and the fetch cache make REPEAT visits free;
+    | nothing made DISTINCT tiles bounded. These ceilings do.
+    |
+    | The accounting is entirely
+    | App\Services\Location\Coordinates\Guards\ProviderRequestBudget — the
+    | existing provider-neutral component, asked at two scopes. No second budget
+    | system was written, and none should be: two mechanisms counting "a
+    | request" would eventually disagree about what one is.
+    |
+    | THESE ARE HARD CEILINGS. The unit is ONE outbound Bridge HTTP request —
+    | one OData page of a discovery pass, or the panel's single-record lookup —
+    | and each is admitted (checked and charged against both scopes together,
+    | under one lock) immediately BEFORE it is sent. A configured 60 admits
+    | exactly 60, with any number of PHP processes, and a pass that runs out
+    | part-way stops before its next page. A cache hit costs nothing.
+    |
+    | THE TWO SCOPES FAIL IN OPPOSITE DIRECTIONS. The actor ceiling stops one
+    | browser traversing unlimited tiles. The global ceiling stops what the
+    | actor ceiling cannot see — many actors, or one actor arriving from many
+    | addresses — and is the ceiling that would actually have caught the
+    | ~16,000-request incident this work exists because of.
+    |
+    | Deliberately conservative for a controlled launch, and deliberately not a
+    | capacity plan. These are APPLICATION-side Explore ceilings, not a
+    | statement of Stellar's provider allowance, which is not known here — and
+    | the Bridge token is shared with MLS sync and the criteria searches. Raise
+    | them from telemetry (`explore_provider` log lines), not from optimism.
+    |
+    | There is NO WAY TO CONFIGURE "unlimited". A zero, negative, missing or
+    | non-numeric value falls back to the shipped default rather than to no
+    | ceiling: an unbudgeted public path to a paid provider is the failure being
+    | fixed, and a config value that restores it is that failure with an extra
+    | step.
+    |
+    */
+
+    'provider_budget' => [
+
+        /*
+        | The guard itself. Defaults TRUE, and switching it OFF does not
+        | unleash traffic — ExploreProviderBudget treats a disabled guard as
+        | "do not call the provider", so this is a second way to stop spending
+        | and never a way to start it.
+        */
+        'enabled' => (bool) env('EXPLORE_PROVIDER_BUDGET_ENABLED', true),
+
+        /*
+        | Emergency stop for outbound Stellar/Bridge traffic caused by Explore,
+        | leaving the rest of Explore and the whole of the application serving.
+        | Distinct from EXPLORE_DISCOVERY_ENABLED only in intent: that one is
+        | the feature gate, this one is the thing you set at 2am.
+        |
+        | FAILS SAFE. Not tripped: unset, empty, `false`, `0`, `off`, `no`.
+        | Tripped: `true`, `1`, `on`, `yes` — and ANY unrecognised value, since
+        | a kill switch that a typo disarms is not a kill switch.
+        */
+        'kill_switch' => filter_var(env('EXPLORE_PROVIDER_KILL_SWITCH', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== false,
+
+        // Ceiling across every caller. The bill's backstop.
+        'global_hourly' => (int) env('EXPLORE_PROVIDER_GLOBAL_HOURLY', 300),
+        'global_daily'  => (int) env('EXPLORE_PROVIDER_GLOBAL_DAILY', 2000),
+
+        // Ceiling per actor — `user id, else IP`, the identity every throttled
+        // route in this application already uses. Nothing new is fingerprinted.
+        'actor_hourly' => (int) env('EXPLORE_PROVIDER_ACTOR_HOURLY', 60),
+        'actor_daily'  => (int) env('EXPLORE_PROVIDER_ACTOR_DAILY', 300),
 
     ],
 

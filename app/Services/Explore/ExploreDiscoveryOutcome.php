@@ -33,6 +33,7 @@ final class ExploreDiscoveryOutcome
     public const STATUS_CACHED      = 'cached';
     public const STATUS_PARTIAL     = 'partial';
     public const STATUS_UNAVAILABLE = 'unavailable';
+    public const STATUS_BUDGET_LIMITED = 'budget_limited';
 
     private function __construct(
         public readonly string $status,
@@ -40,6 +41,7 @@ final class ExploreDiscoveryOutcome
         public readonly bool $degraded,
         public readonly int $recordCount,
         public readonly int $providerRequests,
+        public readonly ?string $reason = null,
     ) {}
 
     /**
@@ -65,7 +67,8 @@ final class ExploreDiscoveryOutcome
      * the same window the row-confirmation rule uses. A pass that was PARTIAL
      * writes a much shorter TTL (`bridge.lazy_partial_ttl_minutes`, 5 minutes
      * against 60), so a stale-but-warm partial answer self-corrects within
-     * minutes rather than persisting for the full hour.
+     * minutes rather than persisting for the full hour. A pass stopped by the
+     * budget writes no cache entry at all.
      */
     public static function cached(int $recordCount): self
     {
@@ -76,6 +79,40 @@ final class ExploreDiscoveryOutcome
     public static function partial(int $recordCount): self
     {
         return new self(self::STATUS_PARTIAL, complete: false, degraded: false, recordCount: $recordCount, providerRequests: 1);
+    }
+
+    /**
+     * A budget ceiling refused a provider request — before anything was sent,
+     * or part-way through a pass.
+     *
+     * DEGRADED, NEVER EMPTY. This is the state the whole guard exists to make
+     * safe: budget exhaustion must look like "we cannot refresh this area right
+     * now", never like "there are no homes here". So it reports `complete =
+     * false`, which suppresses the withhold-unconfirmed-rows rule and leaves
+     * last-known inventory on the map, and `degraded = true`, so the surface
+     * says so out loud rather than presenting a thin answer as a full one.
+     *
+     * Refused part-way, the pages already admitted were sent and their rows
+     * kept — `$recordCount` and `$providerRequests` report them — and the
+     * refused page was never sent. Refused up front, both are zero, which is
+     * what distinguishes this from {@see unavailable()}: there the provider was
+     * contacted and did not answer.
+     *
+     * The reason travels for telemetry only. It names which ceiling stopped the
+     * call — global or actor, hourly or daily, or the kill switch — because
+     * "we stopped calling Bridge today" and "one visitor hit their hourly
+     * ceiling" are entirely different operational problems.
+     */
+    public static function budgetLimited(string $reason, int $recordCount = 0, int $providerRequests = 0): self
+    {
+        return new self(
+            self::STATUS_BUDGET_LIMITED,
+            complete: false,
+            degraded: true,
+            recordCount: $recordCount,
+            providerRequests: $providerRequests,
+            reason: $reason,
+        );
     }
 
     /** The provider could not be reached. Serve last-known, and say so. */

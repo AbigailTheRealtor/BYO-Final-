@@ -71,6 +71,25 @@
         map3d: null,
         fetchTimer: null,
         discovery: null,
+
+        // Google is loaded at most ONCE per page lifecycle. The promise is the
+        // latch: a second caller receives this same promise rather than
+        // inserting a second <script>, and a caller arriving after it settles
+        // receives the settled one. See loadGoogleMaps().
+        googleLoadPromise: null,
+
+        // The 3D world is created at most ONCE. Driving means moving this
+        // camera; it never means destroying and recreating the world.
+        worldBuilt: false,
+
+        // Drive listeners are bound to document/els.map, which outlive any
+        // single map instance, so binding them twice would double every
+        // keystroke and touch event.
+        driveInstalled: false,
+
+        // The viewport fetch currently in flight, so a newer one can abort it
+        // rather than leaving it to land late and be discarded by the seq guard.
+        inFlight: null,
     };
 
     const els = {
@@ -147,9 +166,27 @@
 
             setStatus('Loading listings…');
 
+            // Abort the previous viewport fetch rather than letting it land.
+            //
+            // The `seq` guard already stops a stale response REPAINTING the
+            // map, but a discarded response has still been served — and on a
+            // cold tile that means the server already spent provider requests
+            // answering a question nobody is asking any more. Aborting turns a
+            // rapid pan into one useful request instead of a queue of them.
+            //
+            // AbortController is native and universally available in every
+            // browser that can render Map3DElement; nothing is added for it.
+            if (state.inFlight) {
+                state.inFlight.abort();
+            }
+
+            const controller = typeof AbortController === 'function' ? new AbortController() : null;
+            state.inFlight = controller;
+
             fetch(endpoints.listings + '?' + params.toString(), {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
+                signal: controller ? controller.signal : undefined,
             })
                 .then(function (response) {
                     return response.json().then(function (body) {
@@ -157,8 +194,12 @@
                     });
                 })
                 .then(function (result) {
-                    // The stale-response guard. An older response that arrives
-                    // after a newer one is dropped rather than painted.
+                    if (state.inFlight === controller) state.inFlight = null;
+
+                    // The stale-response guard, kept even though aborts now
+                    // remove most of what it caught. Abort is best-effort — a
+                    // response already in the socket buffer still arrives — and
+                    // this is the half that cannot be raced.
                     const responseSeq = typeof result.body.seq === 'number' ? result.body.seq : -1;
                     if (responseSeq < state.lastRenderedSeq) return;
                     state.lastRenderedSeq = responseSeq;
@@ -173,7 +214,13 @@
                     renderResults(result.body);
                     renderMarkers();
                 })
-                .catch(function () {
+                .catch(function (error) {
+                    // An abort is this module cancelling its own request, not a
+                    // failure. Reporting it would tell the user something broke
+                    // every time they moved the camera.
+                    if (error && error.name === 'AbortError') return;
+
+                    if (state.inFlight === controller) state.inFlight = null;
                     setStatus('Listings could not be loaded.');
                 });
         };
@@ -246,6 +293,10 @@
         const discovery = payload.discovery || {};
 
         if (discovery.degraded) {
+            // "Temporarily unavailable" and never "no homes here". A ceiling we
+            // chose to impose, and a provider we could not reach, are both
+            // facts about US — stating either as a fact about the market would
+            // be a false claim about somebody's neighbourhood.
             return count === 0
                 ? 'Listings are temporarily unavailable. Please try again shortly.'
                 : 'Showing last known listings — live MLS data is temporarily unavailable.';
@@ -440,30 +491,93 @@
 
     /* ── Google Photorealistic 3D ────────────────────────────────────────── */
 
+    const GOOGLE_SCRIPT_PREFIX = 'https://maps.googleapis.com/maps/api/js';
+
+    /*
+     | Load the Google Maps JavaScript API — AT MOST ONCE, EVER.
+     |
+     | WHY THE LATCH IS THE IMPORTANT PART
+     | -----------------------------------
+     | This is a billed provider reached from a browser, where a server-side
+     | budget cannot see it, let alone stop it. The protection has to be that a
+     | second load is structurally impossible rather than merely unlikely — a
+     | rendering path nobody expected to run twice is exactly how an earlier
+     | integration in this application produced roughly 16,000 unexpected
+     | requests.
+     |
+     | Three callers, three correct answers, no second <script>:
+     |   · first caller            → creates the promise, inserts the script
+     |   · caller while pending    → receives the SAME promise and waits
+     |   · caller after settled    → receives the settled promise immediately,
+     |                               resolved or rejected as it actually went
+     |
+     | A failed load stays failed. The rejected promise is deliberately NOT
+     | cleared, so a retry cannot happen by accident — a caller that re-enters
+     | after a failure gets the rejection back rather than a fresh attempt. That
+     | is the difference between a stated unavailable state and a loop that
+     | reloads a paid script until somebody notices the bill.
+     |
+     | The DOM is checked as well as the promise. The promise alone would be
+     | enough within this module, but a script tag inserted by anything else on
+     | the page — a future partial, a copy of this file loaded twice — is a real
+     | second load, and adopting it costs nothing to check.
+     */
     function loadGoogleMaps() {
-        return new Promise(function (resolve, reject) {
+        if (state.googleLoadPromise) return state.googleLoadPromise;
+
+        state.googleLoadPromise = new Promise(function (resolve, reject) {
             const key = shell.dataset.googleKey;
             if (!key) {
+                // No credential means no request. Not "ask and fail" — a
+                // malformed request to a billed endpoint is still a request.
                 reject(new Error('no browser key'));
+                return;
+            }
+
+            // Already present? Adopt it rather than adding a second.
+            const existing = document.querySelector('script[src^="' + GOOGLE_SCRIPT_PREFIX + '"]');
+            if (existing) {
+                if (window.google && window.google.maps) { resolve(); return; }
+                existing.addEventListener('load', function () { resolve(); });
+                existing.addEventListener('error', function () { reject(new Error('google maps failed to load')); });
                 return;
             }
 
             const params = new URLSearchParams({
                 key: key,
                 v: shell.dataset.googleVersion || 'alpha',
+                // From server config, never written here — see ExploreGoogleConfig.
+                // Only `maps3d`. No Places, no Geocoding, no Routes, no Roads.
                 libraries: shell.dataset.googleLibraries || 'maps3d',
             });
 
             const script = document.createElement('script');
-            script.src = 'https://maps.googleapis.com/maps/api/js?' + params.toString();
+            script.src = GOOGLE_SCRIPT_PREFIX + '?' + params.toString();
             script.async = true;
-            script.onload = resolve;
+            script.dataset.exploreGoogleLoader = '1';
+            script.onload = function () { resolve(); };
             script.onerror = function () { reject(new Error('google maps failed to load')); };
             document.head.appendChild(script);
         });
+
+        return state.googleLoadPromise;
     }
 
+    /*
+     | Create the ONE 3D world for this page lifecycle.
+     |
+     | Driving around means moving this camera. It must never mean destroy-world
+     | / create-world on every movement: each Map3DElement is a live tile
+     | consumer, and a leaked one keeps consuming while an orphan of it sits
+     | detached in memory. The latch is checked before the element is created
+     | rather than after, so a second call cannot even briefly exist.
+     |
+     | Markers are a separate layer with their own lifecycle — renderMarkers()
+     | updates them against this world and never touches the world itself.
+     */
     function buildMap() {
+        if (state.worldBuilt) return;
+
         const Map3D = window.google
             && window.google.maps
             && window.google.maps.maps3d
@@ -485,6 +599,7 @@
         map.style.height = '100%';
         els.map.appendChild(map);
         state.map3d = map;
+        state.worldBuilt = true;
 
         // Camera movement is debounced into one request per gesture, never one
         // per frame. `gmp-centerchange` fires continuously while flying.
@@ -492,8 +607,15 @@
             map.addEventListener(event, function () { requestListings(false); });
         });
 
-        installKeyboardDrive(map);
-        installTouchDrive(map);
+        // Drive listeners bind to `document` and to the map CONTAINER, both of
+        // which outlive any single world, so binding them twice would double
+        // every keystroke and every touch move — and each of those calls
+        // requestListings(). Bound once, for the life of the page.
+        if (! state.driveInstalled) {
+            installKeyboardDrive();
+            installTouchDrive();
+            state.driveInstalled = true;
+        }
     }
 
     /*
@@ -504,11 +626,17 @@
      | and not road-following: snapping to road geometry needs the Roads/Routes
      | APIs, which are out of scope for this phase and documented as Phase 2.
      */
-    function installKeyboardDrive(map) {
+    function installKeyboardDrive() {
         const STEP_M = 45;
         const TURN_DEG = 7;
 
         document.addEventListener('keydown', function (event) {
+            // The live world, read per event rather than captured once. These
+            // listeners outlive any single Map3DElement, and a captured
+            // reference to a detached one would keep it alive and consuming.
+            const map = state.map3d;
+            if (!map) return;
+
             if (event.target && /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) return;
 
             const key = event.key.toLowerCase();
@@ -543,7 +671,7 @@
      | Mobile: a one-finger drag turns and moves. Map3DElement handles pinch and
      | two-finger tilt itself, so only the drive gesture is added.
      */
-    function installTouchDrive(map) {
+    function installTouchDrive() {
         let origin = null;
 
         els.map.addEventListener('touchstart', function (event) {
@@ -553,6 +681,9 @@
         }, { passive: true });
 
         els.map.addEventListener('touchmove', function (event) {
+            const map = state.map3d;
+            if (!map) return;
+
             if (!origin || event.touches.length !== 1) return;
 
             const dx = event.touches[0].clientX - origin.x;
@@ -587,6 +718,20 @@
     // than an empty page.
     requestListings(true);
 
+    /*
+     | Google is touched from HERE AND NOWHERE ELSE.
+     |
+     | One entry point, one time, behind the server's own readiness answer —
+     | which is false when the renderer is switched off AND when no browser
+     | credential exists. Either way no <script> is inserted and
+     | maps.googleapis.com is never contacted: the expensive provider stays
+     | untouched when it is disabled, rather than being loaded and then hidden.
+     |
+     | A failure sets a stated unavailable message and STOPS. There is no timer,
+     | no backoff, no automatic second attempt: an automatic retry against a
+     | billed script is how a broken page becomes a recurring charge, and a
+     | human who reloads is a bounded retry with a person behind it.
+     */
     if (googleReady) {
         loadGoogleMaps()
             .then(function () {

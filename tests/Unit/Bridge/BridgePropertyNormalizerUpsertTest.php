@@ -355,12 +355,27 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     public function test_address_unchanged_does_not_dispatch_compute_location_dna(): void
     {
         // Pre-create the row with the same address as the incoming record.
-        BridgeProperty::create([
+        $row = BridgeProperty::create([
             'listing_key'      => 'DNA-002',
             'standard_status'  => 'Active',
             'unparsed_address' => '100 Oak Ave',
             'postal_code'      => '33601',
             'imported_at'      => now(),
+        ]);
+
+        // ...with its Location DNA already requested for that address — the
+        // state an earlier dispatching import leaves behind. An unchanged
+        // address is then no reason to dispatch again. (Without this record the
+        // row has never had DNA requested, and a normal import now schedules it
+        // once: see the next test and BridgeLocationDnaState.)
+        \App\Models\PropertyLocationDna::create([
+            'listing_type'   => 'bridge',
+            'listing_id'     => $row->id,
+            'source_address' => '100 Oak Ave',
+            'source_city'    => 'Tampa',
+            'source_state'   => 'FL',
+            'source_zip'     => '33601',
+            'geocode_status' => 'geocoded',
         ]);
 
         Queue::fake();
@@ -374,6 +389,32 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
         $service->importForCriteria($this->makePayload(), 'buyer');
 
         Queue::assertNotPushed(ComputeLocationDna::class);
+    }
+
+    public function test_existing_row_that_never_had_dna_requested_dispatches_once(): void
+    {
+        // A row some caller upserted WITHOUT dispatching — Explore does — so no
+        // Location DNA has ever been requested for its address. A normal import
+        // must not leave it that way forever.
+        BridgeProperty::create([
+            'listing_key'      => 'DNA-002B',
+            'standard_status'  => 'Active',
+            'unparsed_address' => '100 Oak Ave',
+            'postal_code'      => '33601',
+            'imported_at'      => now(),
+        ]);
+
+        Queue::fake();
+
+        $service = $this->makeServiceWithRecords([
+            $this->apiRecord('DNA-002B', [
+                'UnparsedAddress' => '100 Oak Ave',
+                'PostalCode'      => '33601',
+            ]),
+        ]);
+        $service->importForCriteria($this->makePayload(), 'buyer');
+
+        Queue::assertPushed(ComputeLocationDna::class, 1);
     }
 
     public function test_address_changed_dispatches_compute_location_dna(): void

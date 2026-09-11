@@ -39,11 +39,21 @@ class ExploreController extends Controller
     {
         $tier = $this->vow->decideTier($request->user());
 
+        // The credential is emitted ONLY when the renderer will actually run.
+        //
+        // `browserKey()` answers "is one configured", which is a different
+        // question from "may Google be loaded" — the kill switch can be closed
+        // over a perfectly valid key. Printing it anyway would put a live
+        // billable credential into the HTML of a page that is deliberately not
+        // using it, where anyone can lift it. A switched-off provider should
+        // leave no trace on the page at all.
+        $googleReady = $this->google->isReady();
+
         return view('explore.index', [
-            'googleReady'        => $this->google->isReady(),
+            'googleReady'        => $googleReady,
             'googleUnavailable'  => $this->google->unavailableReason(),
-            'googleKey'          => $this->google->browserKey(),
-            'googleMapId'        => $this->google->mapId(),
+            'googleKey'          => $googleReady ? $this->google->browserKey() : null,
+            'googleMapId'        => $googleReady ? $this->google->mapId() : null,
             'googleApiVersion'   => $this->google->apiVersion(),
             'googleLibraries'    => $this->google->libraries(),
             'defaultCamera'      => (array) config('explore.default_camera', []),
