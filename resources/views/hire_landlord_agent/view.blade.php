@@ -611,6 +611,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             [
                 'listing-details'    => $hlaHasListingDetails,
                 'property'           => $hlaHasPropertyDetails,
+                'location-dna'       => $hireLocationDna['hasContent'] ?? false,
                 'terms'              => $hlaHasLeasingTerms,
                 'additional-details' => !empty($additionalDetailsStr) && $additionalDetailsStr !== 'null',
                 'representation'     => !empty($repVisibleRows),
@@ -1260,6 +1261,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </x-hire-agent.detail-section>
         @endif
         @if (! $hlaDetailRedesign)<hr>@endif
+        {{-- Location DNA — the property's pin and Location DNA panel, through the same shared
+             component as the Offer Listing page. --}}
+        @if (($hireLocationDna['hasContent'] ?? false) && (! $hlaDetailRedesign || $hlaShows('location-dna')))
+        <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-location-dna" title="Property Location" icon="fa-solid fa-map-location-dot">
+            @include('partials.location-dna._hire-agent-section', ['hireLocationDna' => $hireLocationDna])
+        </x-hire-agent.detail-section>
+        @if (! $hlaDetailRedesign)<hr>@endif
+        @endif
         {{-- M7.4 — one boolean, shared with the nav entry above. --}}
         @if (! $hlaDetailRedesign || $hlaShows('terms'))
         <x-hire-agent.detail-section :redesign="$hlaDetailRedesign" id="hla-section-terms" title="Leasing Terms:" icon="fa-solid fa-file-contract">

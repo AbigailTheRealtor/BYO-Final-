@@ -134,20 +134,26 @@ class SearchAreasPartialTest extends TestCase
         $this->assertStringContainsString('ldnaIpAddRow()', $html);
         $this->assertStringContainsString('ldnaIpRemoveRow(this)', $html);
 
-        // Field controls: type selector (+ "Other"), address, distance pref + value, travel mode
+        // Field controls: type selector (+ "Other"), address, and a distance in MILES
         $this->assertStringContainsString('ldna-ip-type', $html);
         $this->assertStringContainsString('ldna-ip-type-other', $html);
         $this->assertStringContainsString('ldna-ip-address', $html);
-        $this->assertStringContainsString('ldna-ip-distpref', $html);
         $this->assertStringContainsString('ldna-ip-distval', $html);
-        $this->assertStringContainsString('ldna-ip-mode', $html);
+        $this->assertStringContainsString('Within (miles)', $html);
         $this->assertStringContainsString('<option value="Work">', $html);
         $this->assertStringContainsString('<option value="Other">', $html);
-        $this->assertStringContainsString('<option value="driving">', $html);
 
-        // Distance preference offers both miles (circle) and minutes (travel time)
-        $this->assertStringContainsString('Within miles', $html);
-        $this->assertStringContainsString('Within minutes', $html);
+        // Miles only: the travel-time preference and its Travel Mode are retired from the
+        // form — no routing engine exists, so neither can be honoured.
+        $this->assertStringNotContainsString('Within minutes', $html);
+        $this->assertStringNotContainsString('ldna-ip-distpref', $html);
+        $this->assertStringNotContainsString('ldna-ip-mode', $html);
+        $this->assertStringNotContainsString('Travel Mode', $html);
+        $this->assertStringNotContainsString('<option value="driving">', $html);
+
+        // A historical minutes row is CARRIED, not converted, and only the user can switch it.
+        $this->assertStringContainsString('window.ldnaIpUseMiles', $html);
+        $this->assertStringContainsString("row.dataset.distPref === 'minutes' ? 'minutes' : 'miles'", $html);
 
         // Serialization sink + serializer, and the "no fake travel-time circles" contract
         $this->assertStringContainsString('id="ldna-important-places-field"', $html);

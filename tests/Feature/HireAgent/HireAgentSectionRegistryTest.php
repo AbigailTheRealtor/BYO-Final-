@@ -48,6 +48,7 @@ class HireAgentSectionRegistryTest extends TestCase
     private const UNIVERSAL_PUBLIC_SECTIONS = [
         'listing-details',
         'property',
+        'location-dna',
         'terms',
         'additional-details',
         'representation',
@@ -117,10 +118,10 @@ class HireAgentSectionRegistryTest extends TestCase
     public function test_the_public_section_set_is_the_agreed_architecture(): void
     {
         $expected = [
-            'seller'   => ['listing-details', 'property', 'terms', 'financing', 'additional-details', 'representation', 'role-info'],
-            'buyer'    => ['listing-details', 'property', 'terms', 'financing', 'additional-details', 'representation', 'role-info'],
-            'landlord' => ['listing-details', 'property', 'terms', 'additional-details', 'representation', 'role-info'],
-            'tenant'   => ['listing-details', 'property', 'terms', 'pre-screening', 'additional-details', 'representation', 'role-info'],
+            'seller'   => ['listing-details', 'property', 'location-dna', 'terms', 'financing', 'additional-details', 'representation', 'role-info'],
+            'buyer'    => ['listing-details', 'property', 'location-dna', 'terms', 'financing', 'additional-details', 'representation', 'role-info'],
+            'landlord' => ['listing-details', 'property', 'location-dna', 'terms', 'additional-details', 'representation', 'role-info'],
+            'tenant'   => ['listing-details', 'property', 'location-dna', 'terms', 'pre-screening', 'additional-details', 'representation', 'role-info'],
         ];
 
         foreach ($expected as $role => $keys) {
@@ -189,10 +190,10 @@ class HireAgentSectionRegistryTest extends TestCase
     public function test_the_full_document_order_is_the_legacy_order(): void
     {
         $expected = [
-            'seller'   => ['listing-details', 'property', 'terms', 'financing', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
-            'buyer'    => ['listing-details', 'property', 'terms', 'financing', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
-            'landlord' => ['listing-details', 'property', 'terms', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
-            'tenant'   => ['listing-details', 'property', 'terms', 'pre-screening', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'seller'   => ['listing-details', 'property', 'location-dna', 'terms', 'financing', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'buyer'    => ['listing-details', 'property', 'location-dna', 'terms', 'financing', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'landlord' => ['listing-details', 'property', 'location-dna', 'terms', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
+            'tenant'   => ['listing-details', 'property', 'location-dna', 'terms', 'pre-screening', 'additional-details', 'representation', 'referral', 'role-info', 'agent-credentials'],
         ];
 
         foreach ($expected as $role => $keys) {

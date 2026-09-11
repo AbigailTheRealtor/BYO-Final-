@@ -281,9 +281,11 @@ class LdnaMapRendererSurfaceTest extends TestCase
     {
         $this->enable([LdnaBasemapSurface::DISPLAY]);
 
+        // The owner's view: the only one handed where each Important Place is.
         $html = $this->renderDisplay([
-            'preferences'     => self::STORED,
-            'importantPlaces' => self::PLACES,
+            'preferences'          => self::STORED,
+            'importantPlaces'      => self::PLACES,
+            'importantPlacesExact' => true,
         ]);
 
         $payload = $this->hydrationPayload($html);
@@ -292,6 +294,27 @@ class LdnaMapRendererSurfaceTest extends TestCase
         $this->assertEquals(self::STORED['radius_searches'], $payload['radius_searches']);
         $this->assertEquals(self::PLACES, $payload['important_places']);
         $this->assertStringContainsString('data-ldna-mode="display"', $html);
+    }
+
+    public function test_without_the_owner_flag_the_payload_carries_no_place_location(): void
+    {
+        $this->enable([LdnaBasemapSurface::DISPLAY]);
+
+        // No flag — the default every caller gets unless it has established ownership.
+        $html = $this->renderDisplay([
+            'preferences'     => self::STORED,
+            'importantPlaces' => self::PLACES,
+        ]);
+
+        $payload = $this->hydrationPayload($html);
+
+        // The search geometry is untouched; only the places lose what locates them.
+        $this->assertEquals(self::STORED['polygons'], $payload['polygons']);
+        $this->assertEquals([[
+            'type' => 'Work', 'distance_pref' => 'miles', 'distance_value' => 5,
+        ]], $payload['important_places']);
+        $this->assertStringNotContainsString('200 Central Ave', $html);
+        $this->assertStringNotContainsString('27.7712', $html);
     }
 
     public function test_boundary_geojson_is_passed_through_rather_than_fetched(): void
@@ -401,25 +424,78 @@ class LdnaMapRendererSurfaceTest extends TestCase
             $this->assertStringContainsString($needle, $html, "toolbar binding missing: {$needle}");
         }
 
-        // Address-based radius needs a geocoder the renderer deliberately does not have.
-        // It must say so and name the alternative, not fail silently.
-        $this->assertStringContainsString('Address lookup is not available on this map', $html);
-        $this->assertStringContainsString('Use the Circle tool', $html);
+        // Address-based radius now RESOLVES, through the application's own endpoint.
+        // These two assertions replace the pair that pinned the old "Address lookup is
+        // not available on this map" notice; what they must keep proving is the reason
+        // that notice existed, which is directly below.
+        $this->assertStringContainsString('ldnaLookupAddress(', $html);
+        $this->assertStringContainsString('r.addRadiusSearch({', $html);
 
-        // The Important Places "Map" button is the SAME hazard: its Google branch retries
-        // every 600ms forever when there is no Google map, which is the unbounded poll all
-        // over again. It must return with an explanation instead of falling through.
+        // THE HAZARD THE OLD NOTICE GUARDED, STILL GUARDED.
+        //
+        // The Google branch answers "no map yet" with `setTimeout(..., 600)` and no
+        // ceiling, so on a surface that will never have a Google map it retries for the
+        // life of the page. The MapLibre branch must therefore never fall through into
+        // it. Asserted structurally: the MapLibre radius handler contains no 600ms retry
+        // and no Google geocoder, and it returns on a missing renderer instead of
+        // rescheduling itself.
+        $mapLibreRadius = $this->extractFunction($html, 'window.ldnaAddRadiusSearch = function');
+        $this->assertStringNotContainsString('setTimeout', $mapLibreRadius);
+        $this->assertStringNotContainsString('google.maps', $mapLibreRadius);
+        $this->assertStringContainsString('The map is still loading', $mapLibreRadius);
+
+        // A failed lookup must add nothing at all — no circle, and no coordinate from
+        // anywhere other than the server's answer.
+        $this->assertStringContainsString('NOTHING IS ADDED AND NOTHING STORED IS TOUCHED', $mapLibreRadius);
+
+        // The Important Places "Map" button is the SAME hazard, and the same fix: it
+        // resolves server-side and returns, rather than falling through to the Google
+        // branch's unbounded poll.
         $ipHtml = $this->renderMapInput([
             'ldnaSurface'           => LdnaBasemapSurface::CREATE_BUYER,
             'enableImportantPlaces' => true,
         ]);
+        $ipBranch = $this->extractFunction($ipHtml, 'window.ldnaIpGeocodeRow = function');
+
+        $this->assertStringContainsString('ldnaLookupAddress(address)', $ipBranch);
         $this->assertStringContainsString('ldna-ip-geocode-hint', $ipHtml);
-        $this->assertStringContainsString('It is still saved with the listing', $ipHtml);
+        // The `return` before the Google branch is what keeps that branch unreachable.
+        $this->assertMatchesRegularExpression('/return;\s*<\?php|return;\s*$/m', $ipBranch);
+
+        // A row that already holds this address's coordinate is not re-resolved, so
+        // reopening a listing and tabbing through it spends nothing.
+        $this->assertStringContainsString('ldnaResolvedFor', $ipBranch);
 
         // And none of that reaches a surface still on Google.
         $google = $this->renderMapInput();
         $this->assertStringNotContainsString('ldnaMlRefreshOverlayList', $google);
-        $this->assertStringNotContainsString('Address lookup is not available', $google);
+        $this->assertStringNotContainsString('ldnaLookupAddress(', $google);
+    }
+
+    /**
+     * The body of one JS function as it appears in the rendered page.
+     *
+     * Crude on purpose: it takes everything from the declaration to the next
+     * declaration at the same indentation, which is enough to assert that a
+     * particular handler does NOT contain something. Asserting absence across the
+     * whole 2,000-line document would pass simply because the string appears in a
+     * different branch.
+     *
+     * THE LAST DECLARATION, NOT THE FIRST. `window.ldnaAddRadiusSearch` is defined
+     * twice on a MapLibre surface: the Google implementation is emitted
+     * unconditionally and the MapLibre one is emitted after it and wins at
+     * runtime, which is how this widget has always swapped behaviour. Reading the
+     * first would assert against the implementation that is being replaced.
+     */
+    private function extractFunction(string $html, string $declaration): string
+    {
+        $start = strrpos($html, $declaration);
+        $this->assertNotFalse($start, "function not found: {$declaration}");
+
+        $rest = substr($html, $start);
+        $end  = strpos($rest, "\n  };");
+
+        return $end === false ? $rest : substr($rest, 0, $end);
     }
 
     public function test_city_zip_and_county_outlines_are_wired_on_the_edit_surface(): void

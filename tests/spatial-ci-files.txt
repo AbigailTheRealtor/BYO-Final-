@@ -44,9 +44,13 @@ tests/Feature/Census/VerifyCensusGeographyCommandTest.php
 tests/Feature/HireAddressAutocompleteTest.php
 tests/Feature/HireAgent/HireAgentCoordinateIntegrationTest.php
 tests/Feature/HireAgent/HireAgentCoordinateWiringTest.php
+tests/Feature/HireAgent/HireAgentLocationDnaSectionTest.php
 tests/Feature/ListingImport/MlsListingKeyCoordinateActivationTest.php
 tests/Feature/ListingImport/MlsQuickImportCoordinateResolutionTest.php
 tests/Feature/Location/AddressImportCorpusCommandTest.php
+tests/Feature/Location/AddressLookupEndpointTest.php
+tests/Feature/Location/AddressLookupFailurePostureTest.php
+tests/Feature/Location/AddressLookupServiceTest.php
 tests/Feature/Location/AddressPointCoordinateAdapterTest.php
 tests/Feature/Location/AddressPointSuggestionProviderTest.php
 tests/Feature/Location/AddressSuggestionContractInertTest.php
@@ -66,6 +70,7 @@ tests/Feature/Location/PropertyCoordinateResolverInertTest.php
 tests/Feature/Location/ProvenanceSchemaReadinessTest.php
 tests/Feature/Location/SharedAddressAutocompleteAdoptionTest.php
 tests/Feature/Location/ValidStreetAddressRuleTest.php
+tests/Feature/LocationDna/AllRoleLocationDnaSurfacesTest.php
 tests/Feature/LocationDna/BuildLocationPlacesTest.php
 tests/Feature/LocationDna/BuyerTenantPrecedenceParityTest.php
 tests/Feature/LocationDna/CensusCriteriaGeographyRepositoryTest.php
@@ -75,6 +80,7 @@ tests/Feature/LocationDna/CreateTenantGeographySurfaceTest.php
 tests/Feature/LocationDna/CreateTenantGeographyWiringTest.php
 tests/Feature/LocationDna/CreateTenantLegacyGeographyBackfillTest.php
 tests/Feature/LocationDna/CriteriaGeographyRulesTest.php
+tests/Feature/LocationDna/CriteriaLocationDnaTest.php
 tests/Feature/LocationDna/EloquentCriteriaGeographyRepositoryTest.php
 tests/Feature/LocationDna/GeographyCascadeStateResolutionTest.php
 tests/Feature/LocationDna/GeographySearchBindingTest.php
@@ -82,7 +88,11 @@ tests/Feature/LocationDna/GeographySourceBindingTest.php
 tests/Feature/LocationDna/HireBuyerGeographyCascadeWiringTest.php
 tests/Feature/LocationDna/HireBuyerGeographySearchTest.php
 tests/Feature/LocationDna/HireTenantGeographySurfaceTest.php
+tests/Feature/LocationDna/ImportantPlaceAddressResolutionTest.php
+tests/Feature/LocationDna/ImportantPlacePrivacyTest.php
 tests/Feature/LocationDna/LdnaBenchmarkTilePrecisionCommandTest.php
+tests/Feature/LocationDna/LdnaLabelStyleTest.php
+tests/Feature/LocationDna/LdnaMapRendererSurfaceTest.php
 tests/Feature/LocationDna/LdnaPoiCostReportCommandTest.php
 tests/Feature/LocationDna/LegacyZipBackfillTest.php
 tests/Feature/LocationDna/LocationDnaIntelligenceSummaryComponentTest.php
@@ -91,6 +101,7 @@ tests/Feature/LocationDna/LocationPlaceSearchRepositoryTest.php
 tests/Feature/LocationDna/NeighborhoodTierBindingTest.php
 tests/Feature/LocationDna/NeighborhoodTierSurfaceTest.php
 tests/Feature/LocationDna/Phase1CertificationTest.php
+tests/Feature/LocationDna/RadiusSearchAddressResolutionTest.php
 tests/Feature/LocationDna/SellerLandlordCascadeExclusionTest.php
 tests/Feature/LocationDna/StellarNearbyAmenitiesCategoryCoverageTest.php
 tests/Feature/LocationDna/SupplementalLayerIsolationTest.php
@@ -127,9 +138,12 @@ tests/Feature/Spatial/TigerShpToNdjsonConverterTest.php
 tests/Feature/Stellar/BuyerMatchingEngineTest.php
 tests/Feature/Stellar/BuyerTenantStateMatchingTest.php
 tests/Feature/Stellar/GeographicMatchingCurrentContractTest.php
+tests/Feature/Stellar/ImportantPlaceMlsMatchingTest.php
 tests/Feature/Stellar/StellarBuyerResultsCriteriaLinkerTest.php
 tests/Feature/Stellar/StellarBuyerResultsPageTest.php
 tests/Feature/Stellar/TenantCommercialLeaseMatchingTest.php
+tests/Feature/Stellar/TenantCriteriaLocationPrecedenceTest.php
+tests/Feature/Stellar/TenantCriteriaZipMatchingTest.php
 tests/Feature/Stellar/TenantOfferListingZipResolutionTest.php
 tests/Unit/Http/Livewire/OfferListing/SearchAreasHydrationCharacterisationTest.php
 tests/Unit/Jobs/ComputeLocationDnaChainTest.php
@@ -208,6 +222,7 @@ tests/Unit/Services/LocationDna/PoiDistanceLookupServiceRichShapeRegressionTest.
 tests/Unit/Services/LocationDna/PoiDistanceLookupServiceTest.php
 tests/Unit/Services/LocationDna/PoiLookupAdapterInterfaceContractTest.php
 tests/Unit/Services/LocationDna/PropertyLocationPoiVersionColumnsTest.php
+tests/Unit/Services/LocationDna/RadiusSearchShapeConsumersTest.php
 tests/Unit/Services/LocationDna/RankingEnginePersistencePassthroughTest.php
 tests/Unit/Services/LocationDna/RankingGoldenMasterRemediationTest.php
 tests/Unit/Services/LocationDna/RecomputeRankingsFromCacheTest.php
@@ -279,3 +294,7 @@ tests/Unit/Stellar/MatchCheck/MatchReportFactoryTest.php
 tests/Unit/Stellar/MatchCheck/MatchReportTest.php
 tests/Unit/Stellar/Matching/BuyerMatchResultBuilderReportBlocksTest.php
 tests/Unit/Stellar/Matching/BuyerMatchResultOptionalFieldsTest.php
+tests/Unit/Stellar/Matching/ImportantPlaceMatcherTest.php
+tests/Unit/Support/Geo/GreatCircleDistanceTest.php
+tests/Unit/Support/LocationDna/LocationDnaCriteriaDisplayTest.php
+tests/Unit/Support/LocationDna/RadiusSearchRowTest.php

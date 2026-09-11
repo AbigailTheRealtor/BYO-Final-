@@ -1531,7 +1531,11 @@
     {{-- ===== Property Location Map ===== --}}
     @php
         $_sellerPropertyPin = null;
-        if (!empty($meta['property_lat']) && !empty($meta['property_lng'])) {
+        /* The pin IS the address, drawn: a rooftop point gives away exactly what the
+           address line above is withholding. So it follows the same decision —
+           `$mlsAddressVisible`, resolved by the controller from the feed's
+           InternetAddressDisplayYN, and always true for the listing's owner. */
+        if (($mlsAddressVisible ?? true) && !empty($meta['property_lat']) && !empty($meta['property_lng'])) {
             $_solBaseAddr  = ($meta['formatted_address'] ?? null) ?: ($meta['address'] ?? null);
             $_solUnitPart  = !empty($meta['unit_address']) ? ', ' . $meta['unit_address'] : '';
             $_sellerPropertyPin = [

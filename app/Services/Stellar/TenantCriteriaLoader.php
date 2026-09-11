@@ -3,6 +3,7 @@
 namespace App\Services\Stellar;
 
 use App\Models\TenantCriteriaAuction;
+use App\Services\Stellar\Matching\CriteriaLocationValues;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -16,8 +17,9 @@ use Illuminate\Support\Facades\Schema;
  *
  * Tenant-to-buyer field mapping:
  *  monthly_price              → max_price
- *  cities                     → preferred_cities
- *  counties                   → preferred_counties
+ *  cities                     → preferred_cities   (else the Location DNA blob's `cities`)
+ *  counties                   → preferred_counties (else the Location DNA blob's `counties`)
+ *                                 explicit field first, map as fallback — see mapRecord()
  *  location_dna_preferences   → radius_searches + polygons (parsed from JSON)
  *  bedrooms                   → min_bedrooms  (handles 'custom' + custom_bedrooms fallback)
  *  bathrooms                  → min_bathrooms (handles 'custom' + custom_bathrooms fallback)
@@ -28,8 +30,9 @@ use Illuminate\Support\Facades\Schema;
  *  has_water_view             → wants_water_view
  *  property_type              → property_types (normalised to ['Residential'] or ['Commercial'])
  *  is_55_plus_eligible        → always false (no equivalent field in tenant criteria)
- *  preferred_zip_codes        → [] (no standalone ZIP field in tenant criteria form;
- *                                   ZIP-level geometry stored in location_dna_preferences)
+ *  location_dna_preferences   → preferred_zip_codes (the blob's `zip_codes`; the form has no
+ *                                   standalone ZIP field — the Location DNA widget is the only
+ *                                   place a tenant enters ZIPs)
  */
 class TenantCriteriaLoader
 {
@@ -95,10 +98,11 @@ class TenantCriteriaLoader
         }
 
         // -----------------------------------------------------------------------
-        // Location — tenant form stores 'cities' and 'counties' (JSON arrays)
+        // Location — the tenant form's own explicit 'cities' and 'counties' fields (JSON arrays).
+        // Resolved against the Location DNA widget's lists once the blob is decoded, below.
         // -----------------------------------------------------------------------
-        $preferredCities   = $this->decodeJsonMeta($infoGet('cities'));
-        $preferredCounties = $this->decodeJsonMeta($infoGet('counties'));
+        $explicitCities   = $this->decodeJsonMeta($infoGet('cities'));
+        $explicitCounties = $this->decodeJsonMeta($infoGet('counties'));
 
         // -----------------------------------------------------------------------
         // Location DNA — radius searches and polygons drawn by the user are stored
@@ -123,6 +127,35 @@ class TenantCriteriaLoader
         $polygons = (isset($ldnaDecoded['polygons']) && is_array($ldnaDecoded['polygons']))
             ? $ldnaDecoded['polygons']
             : [];
+
+        // Preferred ZIP codes. The tenant criteria form has no standalone ZIP input: its
+        // only ZIP entry point is the Location DNA widget's "Preferred ZIP Codes", which
+        // the controller stores inside this same blob as `zip_codes`. This loader used to
+        // decode the blob for radii, polygons and state and then send `[]` for ZIPs —
+        // every tenant ZIP was stored and never reached matching, while the Buyer loader
+        // read the identical key. Read the same way BuyerCriteriaLoader does (the key's
+        // PRESENCE decides, so a cleared list stays cleared); no legacy ZIP meta was ever
+        // written for tenant criteria, so there is nothing to fall back to.
+        $preferredZipCodes = array_key_exists('zip_codes', $ldnaDecoded)
+            ? array_values(array_unique($this->decodeJsonMeta($ldnaDecoded['zip_codes'])))
+            : [];
+
+        // Preferred cities and counties: the EXPLICIT form field when it holds anything, otherwise
+        // the Location DNA widget's list. A fallback — never a union (two representations of the
+        // same preference must not widen the search) and never an override (a map value must not
+        // silently replace what was typed into the field the form labels as the answer). This used
+        // to read the explicit fields only, so a tenant who named places solely on the map had
+        // none of them reach matching. Both sides get BuyerCriteriaLoader's name normalisation,
+        // because the matcher compares against Bridge's spelling exactly ("Tampa, FL" never
+        // equals "Tampa").
+        $preferredCities = CriteriaLocationValues::explicitElseMap(
+            CriteriaLocationValues::cities($explicitCities),
+            CriteriaLocationValues::cities($this->decodeJsonMeta($ldnaDecoded['cities'] ?? []))
+        );
+        $preferredCounties = CriteriaLocationValues::explicitElseMap(
+            CriteriaLocationValues::counties($explicitCounties),
+            CriteriaLocationValues::counties($this->decodeJsonMeta($ldnaDecoded['counties'] ?? []))
+        );
 
         // Preferred State — a single value the Search Areas widget writes into the
         // blob and {@see \App\Http\Livewire\Concerns\HasSearchAreas::saveSearchAreas()}
@@ -175,7 +208,7 @@ class TenantCriteriaLoader
             'is_55_plus_eligible'         => false,
 
             'preferred_cities'            => $preferredCities,
-            'preferred_zip_codes'         => [],
+            'preferred_zip_codes'         => $preferredZipCodes,
             'preferred_counties'          => $preferredCounties,
             'preferred_state'             => $preferredState,
             'radius_searches'             => $radiusSearches,
@@ -214,6 +247,10 @@ class TenantCriteriaLoader
 
             'community_feature_keywords'  => [],
             'wants_energy_efficient'      => null,
+
+            // Private: address + coordinate, consumed only by ImportantPlaceMatcher.
+            'important_places'            => (new \App\Services\Offers\ImportantPlacesService())
+                ->normalize($infoGet('important_places_json') ?? ''),
         ];
     }
 

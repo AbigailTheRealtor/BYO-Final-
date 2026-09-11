@@ -3276,6 +3276,12 @@ class TenantOfferListingEdit extends Component
                 // save aborts cleanly BEFORE DB::beginTransaction (avoids a no-op rollBack).
                 $ipErrors = $this->importantPlacesService()->validate($this->important_places_json ?? '');
                 if (!empty($ipErrors)) {
+                    // Also on the error bag, under the key the shared map-input partial renders,
+                    // so Tenant Edit shows the same inline Important Places alert as every other
+                    // Buyer/Tenant surface — the browser event alone never reached that block.
+                    foreach ($ipErrors as $ipError) {
+                        $this->addError('important_places_json', $ipError);
+                    }
                     $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $ipErrors]);
                     return;
                 }

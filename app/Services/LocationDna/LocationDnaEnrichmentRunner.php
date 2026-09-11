@@ -2,6 +2,7 @@
 
 namespace App\Services\LocationDna;
 
+use App\Support\LocationDna\RadiusSearchRow;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -173,14 +174,15 @@ class LocationDnaEnrichmentRunner
             }
         }
 
-        // 2. Radius searches from preferences
+        // 2. Radius searches from preferences — either stored shape (see RadiusSearchRow).
         foreach ($preferences['radius_searches'] ?? [] as $r) {
-            if (isset($r['center']['lat'], $r['center']['lng']) && ((float) ($r['radius_miles'] ?? 0)) > 0) {
+            $circle = RadiusSearchRow::circle($r);
+            if ($circle !== null) {
                 return [
                     'type'         => 'radius',
-                    'lat'          => (float) $r['center']['lat'],
-                    'lng'          => (float) $r['center']['lng'],
-                    'radius_miles' => (int) $r['radius_miles'],
+                    'lat'          => $circle['lat'],
+                    'lng'          => $circle['lng'],
+                    'radius_miles' => (int) $circle['radius_miles'],
                 ];
             }
         }
