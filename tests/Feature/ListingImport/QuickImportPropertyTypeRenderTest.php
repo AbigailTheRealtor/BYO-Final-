@@ -188,7 +188,15 @@ class QuickImportPropertyTypeRenderTest extends TestCase
      */
     public function the_raw_reso_property_type_never_reaches_the_component(): void
     {
-        foreach (['Residential Lease', 'Commercial Lease', 'Residential Income'] as $i => $resoType) {
+        // 'Residential Income' was in this list and has been removed, because it is
+        // not a record a landlord may import at all: it is a SALE type, and
+        // MlsQuickImportEligibility now refuses it before the component holds any
+        // property type. It was only ever here because the old mapper collapsed it
+        // into 'Residential Property' on the landlord side, which is the very
+        // conflation this branch separates. The landlord half of that case is now
+        // proved by MlsQuickImportPropertyTypeMatrixTest as a REFUSAL, and the
+        // seller half as 'Residential Income' -> 'Income'.
+        foreach (['Residential Lease', 'Commercial Lease'] as $i => $resoType) {
             $mls = 'QI-RAW-' . $i;
             $this->seedRecord($mls, $resoType);
 
@@ -335,7 +343,15 @@ class QuickImportPropertyTypeRenderTest extends TestCase
             ['Residential',       'seller',   'Residential'],
             ['Commercial Sale',   'seller',   'Commercial'],
             ['Business Opportunity', 'seller', 'Business'],
-            ['Residential Income', 'seller',  'Residential'],
+            // WAS 'Residential'. The mapper tested `residential` before `income`, so
+            // the RESO-standard spelling of a multi-family sale collapsed into the
+            // Residential track — taking Residential-only MLS feature applicability
+            // and the Residential Your Terms branches with it — while BidYourOffer
+            // has a separate, populated `Income` category that went unused. Seller
+            // Residential and Seller Income are not interchangeable, so the exact
+            // value table now decides before any substring test runs.
+            ['Residential Income', 'seller',  'Income'],
+            ['Income',             'seller',  'Income'],
             ['Vacant Land',       'seller',   'Vacant Land'],
         ] as [$in, $role, $expected]) {
             $this->assertSame($expected, PropertyTypeVocabulary::forRole($in, $role), "{$in} / {$role}");

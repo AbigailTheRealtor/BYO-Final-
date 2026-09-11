@@ -72,8 +72,12 @@ class MlsQuickImportOwnershipTest extends TestCase
         $this->seedBridgeProperty();
     }
 
-    private function seedBridgeProperty(int $photoCount = 3, ?string $key = null, ?string $mls = null): void
-    {
+    private function seedBridgeProperty(
+        int $photoCount = 3,
+        ?string $key = null,
+        ?string $mls = null,
+        string $propertyType = 'Residential',
+    ): void {
         $key ??= self::KEY;
         $mls ??= self::MLS;
 
@@ -92,7 +96,7 @@ class MlsQuickImportOwnershipTest extends TestCase
             'listing_id'              => $mls,
             'standard_status'         => 'Active',
             'mls_status'              => 'Active',
-            'property_type'           => 'Residential',
+            'property_type'           => $propertyType,
             'list_price'              => 525000,
             'unparsed_address'        => '123 Main Street, Tampa, FL 33601',
             'city'                    => 'Tampa',
@@ -338,7 +342,12 @@ class MlsQuickImportOwnershipTest extends TestCase
     /** @test */
     public function a_landlord_listing_is_equally_protected(): void
     {
-        $this->seedBridgeProperty(3, 'PHPUNIT-SEC-LL-KEY', 'PHPUNIT-SEC-LL-MLS');
+        // A LEASE record. A landlord may only import one — MlsQuickImportEligibility
+        // refuses a sale record to a landlord before any draft is materialised — and
+        // this test is about OWNERSHIP protection, not about which records are
+        // importable. The seed defaults to Residential for the seller cases above,
+        // which is correct for them and is left alone.
+        $this->seedBridgeProperty(3, 'PHPUNIT-SEC-LL-KEY', 'PHPUNIT-SEC-LL-MLS', 'Residential Lease');
 
         $victim = $this->importAs($this->owner, LandlordMlsQuickImport::class, 'PHPUNIT-SEC-LL-MLS');
 

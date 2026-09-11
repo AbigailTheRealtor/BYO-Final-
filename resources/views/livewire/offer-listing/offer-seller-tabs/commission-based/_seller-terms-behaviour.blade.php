@@ -102,6 +102,81 @@
             });
         };
 
+        // ── Select2 — ONE initializer for the tab's three Select2 controls ──────
+        //
+        // Special Sale Provision, Offered Financing/Currency and Exchange Item are
+        // Select2 multi-selects inside wire:ignore. This is where they are
+        // initialised for every entry path that renders this tab: Seller Create and
+        // Seller Edit call it from initializeFullService(), and MLS Quick Import
+        // receives it through the message.processed hook below — its "Your Terms"
+        // step arrives by AJAX, three steps after the page loaded, and Quick Import
+        // deliberately carries no script of its own.
+        //
+        // It configures nothing itself. window.initFullServiceSelect2Multiple
+        // (public/js/select2-stable.js) is the form's single Select2 definition —
+        // placeholder from data-placeholder, allowClear, width 100%, closeOnSelect
+        // false — and its select2-hidden-accessible guard makes every call after
+        // the first a no-op, so no control is ever initialised twice.
+        //
+        // BINDINGS. The two parents bind nothing here: their change handling is the
+        // delegated pair below, exactly one per page. Exchange Item has no delegated
+        // handler — every other surface binds it itself — so it is bound here only
+        // when BOTH hold: the shared 'exchange-change-bound' flag is unset (the flag
+        // Create, Hire Seller Agent and the tenant screens already use), AND either
+        // this call initialised the control or the caller owns the binding
+        // ({ownsBinding: true}, which Create and Edit pass now that their own copies
+        // are gone). A page that initialised Exchange Item itself therefore never
+        // gains a second handler from here.
+        window.initSellerTermsSelect2 = function (options) {
+            if (typeof window.initFullServiceSelect2Multiple !== 'function') {
+                return;
+            }
+            var ownsBinding = !!(options && options.ownsBinding);
+
+            ['#sale_provision', '#offered_financing'].forEach(function (selector) {
+                var $el = $(selector);
+                if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($el);
+                }
+            });
+
+            var $ex = $('#exchange_item');
+            if ($ex.length) {
+                var initialisedHere = !$ex.hasClass('select2-hidden-accessible');
+                if (initialisedHere) {
+                    window.initFullServiceSelect2Multiple($ex);
+                }
+
+                // The markup renders the stored answer as `selected` options; this
+                // restores it only when a widget comes up empty.
+                if (($ex.val() || []).length === 0) {
+                    var saved = [];
+                    try { saved = JSON.parse($ex.attr('data-selected') || '[]'); } catch (e) {}
+                    if (!saved.length) { saved = @this.get('exchange_item') || []; }
+                    if (saved.length > 0) {
+                        $ex.val(saved).trigger('change.select2');
+                    }
+                }
+
+                if ((initialisedHere || ownsBinding) && !$ex.data('exchange-change-bound')) {
+                    $ex.on('change', function () {
+                        var selectedValues = $(this).val() || [];
+                        @this.set('exchange_item', selectedValues, false);
+                        // Keep data-selected in step so a later re-initialisation
+                        // restores the current answer, never a stale one.
+                        $ex.attr('data-selected', JSON.stringify(selectedValues));
+                        $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
+                    });
+                    $ex.data('exchange-change-bound', true);
+                }
+
+                $('#other_exchange_item_wrapper').toggle(($ex.val() || []).includes('Other'));
+            }
+
+            if ($('#sale_provision').length) { window.applyProvisionVisibility(); }
+            if ($('#offered_financing').length) { window.applyFinancingVisibility(); }
+        };
+
         // Bound once per page. The guard matters because more than one surface can
         // include this file in a single render, and because a second binding would
         // mean two @this.set() round trips for one change.
@@ -142,6 +217,14 @@
             if (window.Livewire && Livewire.hook) {
                 Livewire.hook('message.processed', function () {
                     setTimeout(reapply, 250);
+                    // Initialise whatever this update brought into the page that
+                    // nobody has initialised yet — Quick Import's terms step. 0 ms,
+                    // so it runs after every synchronous page hook for the same
+                    // update: a page that initialises its own controls in its hook
+                    // always goes first and this finds them done. Deliberately NOT
+                    // on livewire:load, which fires before the pages' own
+                    // DOMContentLoaded initialisation and would pre-empt it.
+                    setTimeout(function () { window.initSellerTermsSelect2(); }, 0);
                 });
             }
         });

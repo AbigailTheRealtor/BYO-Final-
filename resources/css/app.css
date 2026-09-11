@@ -6,8 +6,19 @@
  * BidYourOffer — Canonical Form Input Sizing & Icon System
  * ALL rules below are scoped to #wizard-form-container so they
  * apply only inside the Hire Agent and Offer Listing wizard forms
- * (create + edit/draft, all 8 flows) and never to auth, admin,
- * dashboard, messaging, search, or any other platform page.
+ * (create + edit/draft, all 8 flows) PLUS the Seller/Landlord MLS
+ * Quick Import wizard, and never to auth, admin, dashboard,
+ * messaging, search, or any other platform page.
+ *
+ * Quick Import (livewire/offer-listing/quick-import/mls-quick-import.blade.php)
+ * is the 9th consumer and an INTENDED one: it renders the very same
+ * canonical terms partials the Seller and Landlord wizards include, so
+ * it needs the same presentation. It was omitted when this file was
+ * consolidated, which is why its 27 currency/percentage prefixes
+ * stacked above their inputs instead of sitting inline beside them.
+ * A surface that renders a canonical *-terms partial belongs inside
+ * this container; adding one to the list is the fix, never a local copy
+ * of these rules in a blade @push('styles').
  *
  * Rules removed from individual blade @push('styles') blocks and
  * consolidated here. DO NOT re-add these rules to blade files.

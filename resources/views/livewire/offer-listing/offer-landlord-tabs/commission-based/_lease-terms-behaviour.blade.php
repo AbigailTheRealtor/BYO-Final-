@@ -75,6 +75,35 @@
             }
         };
 
+        // ── Select2 — ONE initializer for the tab's three Select2 controls ──────
+        //
+        // Desired Lease Term, Owner Pays and Terms of Lease, through
+        // window.initFullServiceSelect2Multiple (public/js/select2-stable.js) — the
+        // form's single Select2 definition, guarded so a second call is a no-op.
+        // It binds nothing: all three are synchronised by the delegated handlers
+        // below. Landlord Create and Edit initialise these controls in their own
+        // page code before any Livewire update, so there the hook below finds them
+        // done; on MLS Quick Import, whose terms step arrives by AJAX, it is the
+        // initializer. The markup renders each stored answer as `selected` options,
+        // so a step re-rendered after Review → Back comes up with its answers.
+        //
+        // Tenant Pays and Rent Includes are NOT here and must never be: they are
+        // Alpine checklist grids, not Select2.
+        window.initLandlordLeaseTermsSelect2 = function () {
+            if (typeof window.initFullServiceSelect2Multiple !== 'function') {
+                return;
+            }
+            ['.lease_term_options', '#owner_pays', '#terms_of_lease'].forEach(function (selector) {
+                var $el = $(selector);
+                if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($el);
+                }
+            });
+            window.applyLandlordLeaseTermVisibility();
+            window.applyLandlordOwnerPaysVisibility();
+            window.applyLandlordTermsOfLeaseVisibility();
+        };
+
         if (window.__landlordLeaseTermsConditionalsBound) {
             return;
         }
@@ -109,6 +138,9 @@
             if (window.Livewire && Livewire.hook) {
                 Livewire.hook('message.processed', function () {
                     setTimeout(reapply, 250);
+                    // See _seller-terms-behaviour.blade.php: 0 ms after the update,
+                    // after the pages' own synchronous hooks, never on livewire:load.
+                    setTimeout(function () { window.initLandlordLeaseTermsSelect2(); }, 0);
                 });
             }
         });
