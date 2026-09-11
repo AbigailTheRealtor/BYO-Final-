@@ -38,7 +38,12 @@ return [
         | with no token the Apple library is never loaded.
         */
         'mapkit_token' => env('VIRTUAL_DRIVE_MAPKIT_JS_TOKEN'),
-        'library_url'  => 'https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.core.js',
+        /*
+        | MapKit JS 6 — the version Apple's current Look Around sample loads. Its
+        | LookAround constructor accepts a plain CoordinateData object, so the
+        | stored MLS coordinate goes straight in with no service call.
+        */
+        'library_url'  => 'https://cdn.apple-mapkit.com/mk/6/mapkit.core.js',
     ],
 
     'google' => [

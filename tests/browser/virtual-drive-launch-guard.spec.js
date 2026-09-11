@@ -271,7 +271,49 @@ test.describe('Virtual Drive · Google launch guard (fake Maps API, no network)'
     });
 });
 
-test.describe('Virtual Drive · Apple launch guard (fake MapKit JS, no network)', () => {
+test.describe('Virtual Drive · Apple launch guard (fake MapKit JS 6, no network)', () => {
+    test('Look Around opens from the stored MLS coordinate as plain CoordinateData — no PlaceLookup, no Geocoder', async ({ page }) => {
+        const record = await installNetworkGuard(page);
+
+        await page.goto('/virtual-drive/apple.html');
+        await expect(page.locator('#vd-launch')).toHaveText('Open Look Around');
+
+        const listings = await page.evaluate(() => fetch('/virtual-drive/listings.json').then((r) => r.json()).then((j) => j.listings));
+
+        await page.click('#vd-launch');
+        await expect.poll(async () => (await fakeMapkit(page)).lookArounds).toBe(1);
+
+        expect(await page.evaluate(() => window.__fakeMapkit.lastLocation())).toEqual({
+            plainObject: true,
+            keys: ['latitude', 'longitude'],
+            latitude: listings[0].latitude,
+            longitude: listings[0].longitude,
+        });
+
+        await page.click('#vd-next');
+        await expect.poll(async () => (await fakeMapkit(page)).lookArounds).toBe(2);
+
+        expect((await page.evaluate(() => window.__fakeMapkit.lastLocation())).latitude).toBe(listings[1].latitude);
+        expect(await fakeMapkit(page)).toMatchObject({ reverseLookups: 0, placeLookups: 0 });
+        expect((await diagnostics(page)).apple.serviceCalls).toBe(0);
+        expectNoProviderTraffic(record);
+    });
+
+    test('no Look Around imagery: reported from the documented error event, and nothing retries by itself', async ({ page }) => {
+        const record = await installNetworkGuard(page);
+
+        await page.goto('/virtual-drive/apple.html?fake=unavailable');
+        await page.click('#vd-launch');
+
+        await expect(page.locator('#vd-launch')).toHaveText('Try again');
+        await expect(page.locator('#vd-imagery-status')).toContainText('availability-error');
+        await expect(page.locator('#vd-sign')).toBeHidden();
+        await page.waitForTimeout(1000);
+
+        expect((await fakeMapkit(page)).lookArounds).toBe(1);
+        expectNoProviderTraffic(record);
+    });
+
     test('nothing loads before the press; the sign is screen-fixed; each home is a new Look Around', async ({ page }) => {
         const record = await installNetworkGuard(page);
 

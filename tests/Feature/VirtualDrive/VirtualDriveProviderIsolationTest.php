@@ -84,6 +84,33 @@ class VirtualDriveProviderIsolationTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/\b(mapkit|lookAround)\s*\[/', $source);
     }
 
+    /**
+     * MapKit JS 6 declares `location?: CoordinateData | Place | LookAroundScene`,
+     * so the stored MLS coordinate is handed to Look Around directly. A service
+     * call happens only in the opt-in Place mode, and readiness comes from the
+     * documented readyState getter rather than an event v6 no longer names.
+     *
+     * @test
+     */
+    public function the_apple_provider_opens_look_around_from_the_stored_mls_coordinate(): void
+    {
+        $code = $this->code(self::APPLE);
+
+        $this->assertSame('https://cdn.apple-mapkit.com/mk/6/mapkit.core.js', config('virtual_drive.apple.library_url'));
+        $this->assertStringContainsString('{ latitude: listing.latitude, longitude: listing.longitude }', $this->functionBody($code, 'locationFor'));
+        $this->assertStringContainsString("var mode = 'coordinate';", $code);
+
+        // A Coordinate instance and the Geocoder exist only for opt-in Place mode.
+        $placeFor = $this->functionBody($code, 'placeFor');
+
+        $this->assertSame(substr_count($code, 'new mapkit.Coordinate('), substr_count($placeFor, 'new mapkit.Coordinate('));
+        $this->assertSame(substr_count($code, 'new mapkit.Geocoder('), substr_count($placeFor, 'new mapkit.Geocoder('));
+        $this->assertStringNotContainsString('PlaceLookup', $code);
+
+        $this->assertDoesNotMatchRegularExpression("/addEventListener\\(\\s*'(load|readystatechange)'/", $code);
+        $this->assertStringContainsString('lookAround.readyState', $code);
+    }
+
     /** @test */
     public function the_google_provider_uses_only_street_view_libraries(): void
     {

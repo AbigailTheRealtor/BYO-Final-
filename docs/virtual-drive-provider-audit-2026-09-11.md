@@ -565,6 +565,71 @@ Google or Apple request was attempted.
    - Re-check the billing report once it has caught up; that can take hours. Expected: 1 Dynamic
      Street View load for the one launch.
 
+## 15. Apple re-audit against MapKit JS 6 (supersedes the 5.81.65 version references in §5)
+
+Apple's current Look Around sample loads `https://cdn.apple-mapkit.com/mk/6/mapkit.core.js` with
+`data-libraries="services,look-around"`. This section re-checks every Apple conclusion against
+**MapKit JS 6**.
+
+### Sources, all Apple's own
+
+1. **Official type definitions:** `https://cdn.apple-mapkit.com/mk/6/types/mapkit.d.ts`
+   (Last-Modified 30 Jul 2026, 9,109 lines).
+2. **The documentation JSON behind developer.apple.com/documentation/mapkitjs,** parsed directly.
+3. **The shipped library, 6.0.128,** loaded with no token and never `init`-ed; public class members
+   listed.
+4. **Apple's migration guide:** *Migrating from Version 5 to Version 6*.
+
+### Findings
+
+| # | Question | MapKit JS 6 evidence | Answer |
+|---|---|---|---|
+| a | Can the stored MLS coordinate go straight into Look Around? | `constructor(parent?: HTMLElement, location?: CoordinateData \| Place \| LookAroundScene, options?: LookAroundOptions)` (d.ts, and the `lookaroundconstructor` doc). `interface CoordinateData` is "a plain object representation of a coordinate" with `latitude` and `longitude`, introduced in **MapKit JS 6.0**. | **Yes.** No PlaceLookup needed. |
+| b | Does Look Around expose its current scene? | `get scene(): LookAroundScene \| null; set scene(value: LookAroundScene);` on `AbstractLookAround`. | **Yes, as an object,** but see (c). |
+| c | Does `LookAroundScene` expose a coordinate, camera position, heading, pitch, orientation or field of view? | `export class LookAroundScene { #private; copy(): LookAroundScene; }`, documented since 5.79.0 and unchanged in 6. The shipped 6.0.128 class carries only `constructor`, `copy` and an opaque private `_`. | **No.** |
+| d | Any movement or navigation event? | `AbstractLookAround extends EventTarget` and declares no events. The v6 LookAround doc lists only `LookAroundErrorEvent` (`CustomEvent<{ type: LookAroundErrorType; message: string }>`) and `LookAroundErrorType` (`availability-error`, `browser-error`, `service-error`, `unknown-error`). Doc pages for `load` / `readystatechange` return 404. State is `readyState`: `loading \| complete \| error \| destroyed`. | **No.** Loading and error state only. |
+| e | Any heading, pitch, camera or field-of-view member anywhere on Look Around? | `AbstractLookAround` declares exactly `element`, `scene`, `openDialog`, `readyState`, `isNavigationEnabled`, `isZoomEnabled`, `isScrollEnabled`, `showsRoadLabels`, `showsPointsOfInterest`, `padding`, `destroy()`. Every "camera" in the d.ts is a Map zoom limit (`CameraZoomRange`, `CameraBoundaryDescription`). | **No.** |
+| f | Can we add our own annotations or markers inside Look Around? | `Annotation`, `MarkerAnnotation` and `ImageAnnotation` take `location: CoordinateData \| Place \| SearchAutocompleteResult` but are added to a Map. `addAnnotation(s)` / `showItems` are declared only on `class Map`, and `AbstractLookAround` declares no annotation member. `showsPointsOfInterest` toggles **Apple's own** POIs; it is a boolean, not a way to add ours. | **No.** |
+| g | Can a coordinate be projected into the Look Around viewport? | The only coordinate-to-screen method, `convertCoordinateToPointOnPage`, is declared on `class Map` alone. | **No.** |
+| h | Did v6 change any of this? | The migration guide never mentions Look Around. Its changes are native `EventTarget`, `null` instead of `undefined`, object literals as data types (which is what enables `CoordinateData`), CORS for images, and async service APIs. The shipped LookAround public members are identical in 5.81.65 and 6.0.128. | **No.** |
+
+### What only a live token can show
+
+These gaps are real, but none can turn Apple into a working fit.
+
+- **Whether a given home has Look Around coverage,** and where the camera starts relative to it.
+  A coordinate carries no heading, and Apple's DTS confirms the view can face the wrong house.
+- **Whether the `scene` object's identity changes as the user moves.** Even if it does, the class
+  documents nothing readable. It would say *that* the view moved, never *where* it is or what it
+  faces.
+- **Imagery quality, navigation feel, load time and mobile behaviour.**
+
+### Proof changes
+
+- The Apple library is now `mk/6`.
+- The default start passes `{ latitude, longitude }` from the stored Stellar row directly to
+  `new mapkit.LookAround(...)`. It makes **no service call**, which the browser spec asserts: the
+  fake records a plain object with exactly those two keys, and 0 PlaceLookup / 0 Geocoder calls.
+- Place mode remains strictly opt-in and off by default. Its one reason is Apple DTS naming a
+  Place as the way to face the right house; it costs one Geocoder call per home. PlaceLookup is
+  not used at all.
+- Readiness comes from the documented `readyState` getter and the documented `error` event,
+  instead of a `load` event v6 no longer names.
+
+### Updated Apple verdict (MapKit JS 6)
+
+| Capability | Answer | Evidence |
+|---|---|---|
+| Can embed interactive Look Around | **YES** (documented; not yet seen live) | `class LookAround extends AbstractLookAround`; `isNavigationEnabled` / `isScrollEnabled` / `isZoomEnabled` |
+| Can initialize directly from the MLS coordinate | **YES** | `location?: CoordinateData \| Place \| LookAroundScene`; `CoordinateData` = `{ latitude, longitude }` (6.0) |
+| Can read current navigation / camera state | **NO** | `LookAroundScene` = `copy()` only; no heading, pitch, position, FOV or navigation event on `AbstractLookAround` |
+| Can add custom geographic MLS markers inside Look Around | **NO** | annotations attach to `Map`; no annotation member on `AbstractLookAround` |
+| Can keep a FOR SALE / FOR RENT marker attached to the correct house while driving | **NO** | needs (c), (f) or (g); MapKit JS 6 provides none of them |
+
+**Apple overall: PARTIAL PASS at most, and FAIL against the benchmark. Unchanged by MapKit JS 6.**
+Apple can show a neighbourhood from the MLS coordinate with no service call, next to a
+selected-home card. It cannot tell the page which house is in view.
+
 ## Files
 
 - **Created:**
