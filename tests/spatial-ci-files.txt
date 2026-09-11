@@ -138,6 +138,7 @@ tests/Feature/Spatial/TigerShpToNdjsonConverterTest.php
 tests/Feature/Stellar/BuyerMatchingEngineTest.php
 tests/Feature/Stellar/BuyerTenantStateMatchingTest.php
 tests/Feature/Stellar/GeographicMatchingCurrentContractTest.php
+tests/Feature/Stellar/ImportantPlaceMlsMatchingTest.php
 tests/Feature/Stellar/StellarBuyerResultsCriteriaLinkerTest.php
 tests/Feature/Stellar/StellarBuyerResultsPageTest.php
 tests/Feature/Stellar/TenantCommercialLeaseMatchingTest.php
@@ -293,5 +294,7 @@ tests/Unit/Stellar/MatchCheck/MatchReportFactoryTest.php
 tests/Unit/Stellar/MatchCheck/MatchReportTest.php
 tests/Unit/Stellar/Matching/BuyerMatchResultBuilderReportBlocksTest.php
 tests/Unit/Stellar/Matching/BuyerMatchResultOptionalFieldsTest.php
+tests/Unit/Stellar/Matching/ImportantPlaceMatcherTest.php
+tests/Unit/Support/Geo/GreatCircleDistanceTest.php
 tests/Unit/Support/LocationDna/LocationDnaCriteriaDisplayTest.php
 tests/Unit/Support/LocationDna/RadiusSearchRowTest.php

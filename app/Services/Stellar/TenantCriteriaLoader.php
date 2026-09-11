@@ -247,6 +247,10 @@ class TenantCriteriaLoader
 
             'community_feature_keywords'  => [],
             'wants_energy_efficient'      => null,
+
+            // Private: address + coordinate, consumed only by ImportantPlaceMatcher.
+            'important_places'            => (new \App\Services\Offers\ImportantPlacesService())
+                ->normalize($infoGet('important_places_json') ?? ''),
         ];
     }
 

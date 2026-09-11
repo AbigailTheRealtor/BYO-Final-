@@ -26,7 +26,8 @@
     $hasTradeoffs = !empty($card['tradeoffs']);
     $hasCaution   = !empty($card['caution_flags']);
     $hasMissing   = !empty($card['missing_data']);
-    $hasExplanation = $hasWhy || $hasTradeoffs || $hasCaution || $hasMissing;
+    $hasImportantPlaces = !empty($card['important_places'] ?? []);
+    $hasExplanation = $hasWhy || $hasImportantPlaces || $hasTradeoffs || $hasCaution || $hasMissing;
 
     $scoreColor = match(true) {
         $card['total_score'] >= 80 => 'success',
@@ -184,6 +185,29 @@
                                         </li>
                                     @endforeach
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Panel 1b: Location match — distance to each Important Place. Calculated, and
+                     category + distance only: never where the place is. --}}
+                @if($hasImportantPlaces)
+                    <div class="accordion-item border-0">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed px-0 py-2 bg-transparent shadow-none"
+                                    type="button"
+                                    onclick="window.sbToggle(this, '{{ $accordionId }}-important-places')"
+                                    aria-expanded="false"
+                                    style="font-size:.82rem;color:#0369a1;">
+                                <i class="fas fa-location-crosshairs me-2"></i>Location match &middot; Important Places
+                            </button>
+                        </h2>
+                        <div id="{{ $accordionId }}-important-places"
+                             class="accordion-collapse collapse"
+                             data-important-place-matches>
+                            <div class="accordion-body px-0 pt-1 pb-2">
+                                @include('partials.stellar.important-place-rows', ['items' => $card['important_places']])
                             </div>
                         </div>
                     </div>

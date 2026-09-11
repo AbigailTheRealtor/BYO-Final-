@@ -256,6 +256,10 @@ class BuyerCriteriaLoader
 
             'community_feature_keywords'  => $communityFeatureKeywords,
             'wants_energy_efficient'      => $wantsEnergyEfficient,
+
+            // Private: address + coordinate, consumed only by ImportantPlaceMatcher.
+            'important_places'            => (new \App\Services\Offers\ImportantPlacesService())
+                ->normalize($infoGet('important_places_json') ?? ''),
         ];
     }
 

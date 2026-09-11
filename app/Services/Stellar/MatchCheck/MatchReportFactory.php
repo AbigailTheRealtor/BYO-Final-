@@ -53,6 +53,9 @@ final class MatchReportFactory
             recommendations: $detailed->recommendations ?? [],
             generatedAt: $generatedAt,
             narrative: null,
+            // Presented here, so the report — which is flashed into the session and serialized —
+            // never holds a matcher row, let alone a place's address or coordinate.
+            importantPlaces: \App\Services\Stellar\Matching\ImportantPlaceMatcher::present($detailed->importantPlaceMatches),
         );
     }
 }

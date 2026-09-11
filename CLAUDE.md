@@ -213,8 +213,39 @@ minutes", Travel Mode, nor the Buyer/Tenant commute ZIP/minutes/mode fields had 
 routing engine exists, and no scorer reads them. Stored values are preserved: a historical minutes
 row keeps `minutes` (never converted to miles) and renders as a pin without a ring until its owner
 explicitly switches it, and the commute meta is still loaded, re-saved unchanged, and shown on the
-listing page. Important Place miles are **map-only** — no matcher reads them; adding them as radii
-to the Stellar engine would widen matches (it ORs areas), not require proximity.
+listing page. Important Place miles are **not radii**: adding them to the Stellar engine's radius
+list would widen matches (it ORs areas), not require proximity — they are scored per listing instead
+(next paragraph).
+
+**Important Places are private location CONSTRAINTS, and MLS matching measures them locally.**
+`ImportantPlaceMatcher` (`app/Services/Stellar/Matching/`) is the one consumer of a place's private
+coordinate for matching. For each MLS listing it measures the straight-line distance from the
+listing's own `bridge_properties.latitude/longitude` to each place, with `App\Support\Geo\GreatCircleDistance`
+— the one Haversine definition, R = 3958.8 mi, which radius scoring now also uses — and judges it
+against the requested miles. **No Google API, no routing, no network, no per-property fee**: stored
+coordinates in, arithmetic out. Only miles rows are requirements; a historical minutes row is left out,
+never converted. Each place is judged independently; exactly the requested distance is within it.
+
+All four loaders put the places into `BuyerCriteriaPayload::$importantPlaces` (Buyer/Tenant ×
+Criteria/Offer Listing), so the one shared matcher serves the results page, the property-detail match
+context and Match Check alike. **They score, they never select**: a place shares the 18-pt proximity
+slot with radius and polygon criteria by `max()` — every measured requirement met earns the full 18,
+some earns that share — so it can only raise a listing's location score, never lower one a radius
+earned, and the SQL geography is untouched: nothing is excluded for failing a place and nothing is
+added for being near one. A listing with no MLS coordinate, or a place never located, is **"Distance
+unavailable" — never a match, and no credit**. No free geocoder backfills a missing MLS coordinate
+today (the Census rung is off and not wired to `bridge_properties`), and none may be paid for here.
+**Hire Buyer/Tenant listings are not in MLS matching at all** — the Offer Listing loaders select
+`workflow_type = offer_listing` only — so they gain nothing from this until a Hire entry point exists.
+
+**Public output may state the category and the distance, never the place.** Rows leave the matcher as
+type, label (the client's own "Other" label), required miles, measured miles and a verdict — no address,
+no coordinate — and every page receives them through `ImportantPlaceMatcher::present()`, a hand-built
+allowlist: the results card, `x-stellar.matchmaker-important-places` on the detail page, and
+`MatchReport::$importantPlaces` (presented before it is flashed into the session). One partial,
+`partials/stellar/important-place-rows`, words all three. **These are calculated matching results —
+property location intelligence — and are titled "Location match · Important Places"; the client's
+"Search Areas & Location Preferences" describes what they asked for, and the two are never merged.**
 
 **Hire Agent detail pages render Location DNA through the same component.** A Hire listing shares
 its model and meta with the Offer Listing of its role, and stores the same Location DNA.
