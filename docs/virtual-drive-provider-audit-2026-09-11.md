@@ -725,11 +725,141 @@ browser key restricted to that API and to the dev origin — then confirm on scr
 panorama is clean. Everything else in §14's live-session procedure still applies, including the
 "constructions: 1" check throughout.
 
+## 17. The Google kill switch and the daily launch ceiling
+
+Two environment variables, both development-only, added after §16 so the proof can be left open for
+Apple review without Google being able to start, and so a day's Google spend has a ceiling that a
+browser cannot reset.
+
+```
+VIRTUAL_DRIVE_GOOGLE_ENABLED=false
+VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT=10
+```
+
+**No live Google session was started for this work.** Everything below was verified against
+`fake-google-maps.js`, a faked claim endpoint and the PHP suite. The standing prerequisite in §16 —
+clean, unwatermarked imagery confirmed in the Cloud console — is unchanged and still blocks the next
+live session.
+
+### The kill switch: off means nothing can initialize
+
+`VIRTUAL_DRIVE_GOOGLE_ENABLED` is parsed with the same fail-closed rule as
+`VIRTUAL_DRIVE_PROOF_ENABLED` (ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no`
+and anything unrecognised are OFF — a `(bool)` cast reads `off` as ON). It is read only through
+`VirtualDriveGoogleGate`, and it sits **under** the proof gate: `true` on a production host still
+reaches a 404.
+
+Off, three independent things are true of `/dev/virtual-drive/google`, and each alone is sufficient:
+
+1. **`google-streetview-provider.js` is not included.** Not hidden, not disabled — absent. It is the
+   only file that can construct a `StreetViewPanorama`, so the page holds no such capability.
+2. **No browser key is emitted** (see below — none is emitted when the switch is ON either).
+3. **The launch-claim endpoint refuses**, so the shell locks the button and prints the gate's own
+   sentence naming the variable.
+
+The listings, cards, photos, nearby list and the whole comparison page keep working: none of it was
+ever Google's. Apple Look Around is entirely unaffected, which is the point of a separate switch.
+
+### The key moved out of the page, and that is what makes the ceiling enforceable
+
+Previously `data-credential` on the Google page carried `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY`. It no
+longer does, and never does: the key is returned **only** in the response to a granted launch claim at
+`POST /dev/virtual-drive/api/google-launch`. The page says only whether a key *exists*
+(`data-credential-available`), which is what lets the button report "not configured" without
+publishing the key to find out.
+
+This is the difference between a ceiling and a request. A browser past its allowance holds nothing the
+Maps JavaScript API would authenticate, so the refusal does not depend on the page choosing to honour
+it. (Apple's MapKit token still arrives inline — MapKit JS hands it to Apple from the page by design,
+and Apple is not the billed provider here.)
+
+### One launch = one billable panorama
+
+Google bills Dynamic Street View per panorama **object** instantiated; the provider constructs at most
+one for the life of a page and moves it with `setPano()` thereafter. So the unit counted is the unit
+billed:
+
+| Action | Claims an allowance? |
+|---|---|
+| Opening the page, browsing homes, cards, photos, the nearby list | No — nothing is loaded |
+| First "Drive with Google" on a page | **Yes, one** |
+| "Try again" after a home with no imagery | No — the page already holds its permitted panorama |
+| Changing homes, clicking signs, choosing a unit in a building | No |
+| Reload, then press again | **Yes** — a new page is a new panorama |
+
+The claim is taken **before** the Maps JavaScript API is requested, so a refusal means the library was
+never fetched. That is conservative in the one direction that matters: a launch whose home turns out to
+have no coverage has still spent its claim.
+
+### The tally is server-side, shared, and per calendar day
+
+`VirtualDriveGoogleLaunchLedger` keeps one counter per calendar day (app timezone, UTC here) in the
+configured cache, read and written inside a cache lock. "Across the proof environment" is the
+requirement, which rules out anything the browser keeps — `localStorage` is per-browser, per-profile,
+and cleared by a button nobody thinks twice about pressing. Two tabs, two browsers and two people draw
+from one allowance, and a test proves it by spending from one session and being refused in another.
+
+**An absent, non-numeric, negative, fractional or zero limit means ZERO launches, never "unlimited".**
+There is no unlimited value. An operator who switched Google on without choosing a ceiling has not
+authorised an unbounded day, and the refusal names the variable.
+
+**Every write is read back.** A store that cannot hold the tally — `CACHE_DRIVER=null` most obviously —
+would otherwise make every launch look like the first of the day, forever, with no error anywhere: the
+ceiling would read as enforced and enforce nothing. A failed readback, a lock that could not be taken
+and any cache exception are all refusals (HTTP 503).
+
+### Refusals say what happened
+
+| Condition | HTTP | `reason` |
+|---|---|---|
+| Switch off | 403 | `google_disabled` |
+| No ceiling configured | 403 | `ceiling_not_configured` |
+| No browser key | 403 | `credential_missing` |
+| Day's launches spent | 429 | `daily_limit_reached` |
+| Tally unreadable / unwritable | 503 | `ledger_unavailable` |
+
+The shell prints the server's `message` verbatim into the launch panel and locks the button ("Daily
+limit reached" / "Switched off" / "Unavailable"). Nothing retries — one claim per press, and a refusal
+is terminal for that page. The page also reports the allowance *before* anything is pressed, read
+without spending one.
+
+### Existing billing protections are unchanged
+
+One panorama per page (`MAX_PANORAMAS_PER_PAGE = 1`, one construction site, a refused second
+construction that stops the page), no hidden panorama, no preload, no prefetch, the library requested
+once with a failed load staying failed, `gm_authFailure` locking the page, and no
+`google.maps.Map` anywhere. `VirtualDriveProviderIsolationTest` still pins all of it, and the claim
+was added **before** `provider.load()` rather than around it — a source-level test asserts that
+ordering, because reversing it would fetch the billed library before the refusal.
+
+### Verification — mocks and fakes only, no live session
+
+- `tests/Feature/VirtualDrive/VirtualDriveGoogleKillSwitchTest.php` — 10 tests: the default, strict
+  parsing, the absent provider script, the absent key (switch on *and* off), Apple unaffected, the
+  comparison page, the endpoint's refusal, and the proof gate still winning in production.
+- `tests/Feature/VirtualDrive/VirtualDriveGoogleDailyLaunchLimitTest.php` — 13 tests: the configured
+  number, zero-means-refuse for every malformed value, grants up to the limit then 429, the message,
+  **the allowance shared across sessions**, the midnight reset, reading without spending, and the
+  unwritable-ledger refusal.
+- `tests/browser/virtual-drive-google-gate.spec.js` — 8 Playwright specs against the real shell and
+  real provider with a fake Maps API and a faked claim endpoint. The fixture keeps the provider
+  **loaded and registered** even when switched off, so the specs prove the shell refuses when the
+  means is present. Every spec asserts both witnesses (`window.__fakeGoogle` and
+  `VirtualDriveDiagnostics`) and that nothing was attempted against any Google or Apple host.
+- `VirtualDriveProviderIsolationTest` — the claim-before-load ordering, the conditional script tag,
+  and that the gate, ledger and claim controller contain no HTTP client and no provider host.
+
+All 61 Virtual Drive feature tests, 5 unit tests and 30 Virtual Drive browser specs pass. Nothing in
+this work contacted Google or Apple.
+
 ## Files
 
 - **Created:**
   - `config/virtual_drive.php`
   - `app/Support/VirtualDrive/VirtualDriveProofGate.php`
+  - `app/Support/VirtualDrive/VirtualDriveGoogleGate.php` (§17 — the kill switch and the ceiling's number)
+  - `app/Support/VirtualDrive/VirtualDriveGoogleLaunchLedger.php` (§17 — the shared daily tally)
+  - `app/Http/Controllers/Dev/VirtualDriveGoogleLaunchController.php` (§17 — the claim, and the only place the browser key is emitted)
   - `app/Support/VirtualDrive/VirtualDriveListingActions.php`
   - `app/Http/Middleware/CheckVirtualDriveProofEnabled.php`
   - `app/Http/Controllers/Dev/VirtualDriveProofController.php`
@@ -744,8 +874,11 @@ panorama is clean. Everything else in §14's live-session procedure still applie
   - this document
 - **Modified:**
   - `app/Http/Kernel.php`: one middleware alias.
-  - `routes/web.php`: one gated route group. The routes fall under the catalog's existing
-    `dev/*` INFRASTRUCTURE pattern.
+  - `routes/web.php`: one gated route group, plus (§17) the `POST .../api/google-launch` claim. The
+    routes fall under the catalog's existing `dev/*` INFRASTRUCTURE pattern.
+  - `phpunit.xml` / `tests/bootstrap.php`: (§17) `VIRTUAL_DRIVE_GOOGLE_ENABLED=false` and
+    `VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT=0` forced across all three lookup surfaces, for the same
+    reason as the credentials — both are Replit Secrets.
 - **Untouched:** MapLibre, Google Maps code, Location DNA, MLS import and sync, Explore.
 
 ## Sources

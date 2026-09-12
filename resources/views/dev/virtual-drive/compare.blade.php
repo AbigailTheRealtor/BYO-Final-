@@ -41,6 +41,12 @@
         </p>
         <p class="vd-compare-lede">This page loads neither street-level provider. Pick a home and open it on one provider's page. Imagery starts only when you press that page's launch button. On the Google page that button starts one billable Street View session; reloading the page never starts one.</p>
 
+        {{-- Said here because this is where somebody chooses a provider. The page
+             still loads neither and still emits no credential of either kind. --}}
+        @if (! $googleEnabled)
+            <p class="vd-compare-lede vd-compare-refused">{{ $googleRefusal }}</p>
+        @endif
+
         <div class="vd-table-scroll">
             <table class="vd-compare-table">
                 <thead>

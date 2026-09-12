@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Dev;
 
 use App\Http\Controllers\Controller;
+use App\Support\VirtualDrive\VirtualDriveGoogleGate;
+use App\Support\VirtualDrive\VirtualDriveGoogleLaunchLedger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -30,14 +32,37 @@ use Illuminate\Http\Request;
  * Each page reads its own provider's credential and nothing else — the Google
  * page can never fall back to GOOGLE_PLACES_API_KEY (a server key) or to
  * Explore's browser key.
+ *
+ * AND THE GOOGLE CREDENTIAL IS NOT EMITTED AT ALL
+ * ----------------------------------------------
+ * The Google page is rendered with an empty `data-credential`. Its browser key
+ * lives in exactly one response — a granted launch claim — so the kill switch
+ * (VIRTUAL_DRIVE_GOOGLE_ENABLED) and the daily ceiling
+ * (VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT) are enforced by WITHHOLDING THE
+ * MEANS rather than by asking the browser not to. The page says whether a key
+ * exists, which is what lets the launch button report "not configured" without
+ * publishing the key to find out.
+ *
+ * WITH GOOGLE SWITCHED OFF, THE PROVIDER SCRIPT IS NOT ON THE PAGE
+ * ---------------------------------------------------------------
+ * Not hidden, not disabled, not included: google-streetview-provider.js is the
+ * only file that can construct a StreetViewPanorama, and it is omitted. The
+ * rest of the page — the listings, the cards, the photos, the nearby list — is
+ * unaffected, because none of it was ever Google's.
  */
 class VirtualDriveProofController extends Controller
 {
+    public function __construct(private readonly VirtualDriveGoogleLaunchLedger $ledger) {}
+
     public function compare(): View
     {
         return view('dev.virtual-drive.compare', [
             'sharedCoordinateKey' => (string) config('virtual_drive.shared_coordinate_listing_key', ''),
             'defaultListingKey'   => $this->listingKeyOrEmpty(config('virtual_drive.default_listing_key')),
+            // So the page that offers the choice says which provider can answer.
+            // It still loads neither, and still emits no credential of any kind.
+            'googleEnabled'       => VirtualDriveGoogleGate::enabled(),
+            'googleRefusal'       => VirtualDriveGoogleGate::refusalReason(),
         ]);
     }
 
@@ -59,37 +84,90 @@ class VirtualDriveProofController extends Controller
 
     public function google(Request $request): View
     {
+        $enabled = VirtualDriveGoogleGate::enabled();
+        $refusal = VirtualDriveGoogleGate::refusalReason();
+
         return $this->page(
             request:        $request,
             provider:       'google',
             label:          'Google Street View (Maps JavaScript API)',
-            script:         'google-streetview-provider.js',
-            credential:     config('virtual_drive.google.browser_key'),
+            // Omitted entirely when the kill switch is off: nothing on the page
+            // is then capable of constructing a panorama.
+            script:         $enabled ? 'google-streetview-provider.js' : null,
+            // Never the key. The page states only that one exists; the key itself
+            // is handed out by VirtualDriveGoogleLaunchController on a grant.
+            credential:     null,
             credentialName: 'VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY',
             libraryUrl:     null,
             apiVersion:     (string) config('virtual_drive.google.api_version', 'weekly'),
             launchLabel:    'Drive with Google',
-            launchNote:     'Starts one Google Street View session, which Google bills. Nothing is requested from Google until you press this, and reloading the page never starts one.',
+            launchNote:     $refusal ?? $this->googleLaunchNote(),
+            providerEnabled: $enabled,
+            credentialAvailable: VirtualDriveGoogleGate::hasBrowserKey(),
+            claimEndpoint:  $enabled ? route('dev.virtual-drive.api.google-launch') : null,
+            dailyLaunchLimit: VirtualDriveGoogleGate::dailyLaunchLimit(),
         );
     }
 
+    /**
+     * What the launch button says when Google may in fact be launched. The
+     * allowance is read, never claimed — rendering a page must not cost one of
+     * the day's launches.
+     */
+    private function googleLaunchNote(): string
+    {
+        $state = $this->ledger->peek();
+
+        if ($state['readable'] !== true) {
+            return 'Starts one Google Street View session, which Google bills. The daily launch tally cannot '
+                . 'currently be read, so launches will be refused rather than started uncounted.';
+        }
+
+        if ($state['remaining'] === 0) {
+            return 'Daily Google Street View limit reached: all ' . $state['limit'] . ' launches for '
+                . $state['day'] . ' have been used across this proof environment. Nothing will be requested '
+                . 'from Google. Apple Look Around and every listing on this page still work.';
+        }
+
+        return 'Starts one Google Street View session, which Google bills. ' . $state['used'] . ' of '
+            . $state['limit'] . ' launches used today across this proof environment — ' . $state['remaining']
+            . ' left. Nothing is requested from Google until you press this, and reloading the page never '
+            . 'starts one.';
+    }
+
+    /**
+     * @param  string|null  $script            the provider file, or null to include NO provider at all
+     * @param  bool  $providerEnabled          may this page's provider run here?
+     * @param  bool|null  $credentialAvailable  a credential exists (null = infer from $credential)
+     * @param  string|null  $claimEndpoint      where a launch must be claimed before the library loads
+     */
     private function page(
         Request $request,
         string $provider,
         string $label,
-        string $script,
+        ?string $script,
         mixed $credential,
         string $credentialName,
         ?string $libraryUrl,
         ?string $apiVersion,
         string $launchLabel,
         string $launchNote,
+        bool $providerEnabled = true,
+        ?bool $credentialAvailable = null,
+        ?string $claimEndpoint = null,
+        int $dailyLaunchLimit = 0,
     ): View {
+        $inline = is_string($credential) && trim($credential) !== '' ? trim($credential) : null;
+
         return view('dev.virtual-drive.show', [
-            'provider'         => $provider,
-            'providerLabel'    => $label,
-            'providerScript'   => $script,
-            'credential'       => is_string($credential) && trim($credential) !== '' ? trim($credential) : null,
+            'provider'            => $provider,
+            'providerLabel'       => $label,
+            'providerScript'      => $script,
+            'credential'          => $inline,
+            'providerEnabled'     => $providerEnabled,
+            'credentialAvailable' => $credentialAvailable ?? ($inline !== null),
+            'claimEndpoint'       => $claimEndpoint,
+            'dailyLaunchLimit'    => $dailyLaunchLimit,
             'credentialName'   => $credentialName,
             'libraryUrl'       => $libraryUrl,
             'apiVersion'       => $apiVersion,

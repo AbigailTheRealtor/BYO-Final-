@@ -1385,6 +1385,15 @@ Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev
     Route::get('/api/listings', [\App\Http\Controllers\Dev\VirtualDriveListingController::class, 'index'])
         ->middleware('throttle:60,1')
         ->name('api.listings');
+
+    // The Google launch claim. POST because it spends one of the day's launches,
+    // and because a GET that costs money is one a link preview can spend. It is
+    // also the ONLY response that ever carries the Maps JavaScript browser key —
+    // see VirtualDriveGoogleLaunchController. Throttled well below the daily
+    // ceiling it guards, so a loop cannot even reach the refusal in bulk.
+    Route::post('/api/google-launch', [\App\Http\Controllers\Dev\VirtualDriveGoogleLaunchController::class, 'claim'])
+        ->middleware('throttle:20,1')
+        ->name('api.google-launch');
 });
 
 // ===========================================================================

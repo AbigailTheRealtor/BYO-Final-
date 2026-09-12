@@ -12,6 +12,17 @@
     provider library is requested only by the shell's launch(), from one
     deliberate click, and the button locks on that click.
 
+    AND A SWITCHED-OFF PROVIDER IS NOT ON THE PAGE AT ALL. When a provider is
+    disabled (VIRTUAL_DRIVE_GOOGLE_ENABLED=false), its script is not included,
+    so nothing here is capable of constructing a panorama, and the launch panel
+    states the server's reason. Everything else on the page still works.
+
+    THE GOOGLE KEY IS NEVER IN THIS MARKUP. data-credential carries an inline
+    credential only for a provider whose page delivers one (Apple). Google's
+    browser key arrives only in the response to a granted launch claim at
+    data-launch-claim-endpoint, which is also where the daily ceiling is spent —
+    so a page that was refused holds no means of authenticating to Google.
+
     TWO VIEWS OF ONE PAGE. ?view=customer hides the instrumentation and the
     observation sheet so the street-level experience and the shopper card are
     what a reviewer sees; the counters still run underneath. The default is the
@@ -21,7 +32,7 @@
     dev.virtual-drive.api.listings, which reads stored MLS rows through
     Explore's eligibility policy and projection allow-list.
 
-    The provider credential is written into the page only when it is
+    An inline provider credential is written into the page only when it is
     configured, and this route only answers when VirtualDriveProofGate allows it.
 --}}
 <!DOCTYPE html>
@@ -37,6 +48,11 @@
 <div class="vd-shell" id="vd-shell"
      data-provider="{{ $provider }}"
      data-credential="{{ $credential ?? '' }}"
+     data-credential-available="{{ $credentialAvailable ? '1' : '0' }}"
+     data-provider-enabled="{{ $providerEnabled ? '1' : '0' }}"
+     data-launch-claim-endpoint="{{ $claimEndpoint ?? '' }}"
+     data-daily-launch-limit="{{ $dailyLaunchLimit }}"
+     data-csrf-token="{{ csrf_token() }}"
      data-credential-name="{{ $credentialName }}"
      data-library-url="{{ $libraryUrl ?? '' }}"
      data-api-version="{{ $apiVersion ?? '' }}"
@@ -139,6 +155,9 @@
 <script src="{{ asset('js/virtual-drive/virtual-drive-signs.js') }}"></script>
 <script src="{{ asset('js/virtual-drive/virtual-drive-shell.js') }}"></script>
 <script src="{{ asset('js/virtual-drive/virtual-drive-observations.js') }}"></script>
-<script src="{{ asset('js/virtual-drive/' . $providerScript) }}"></script>
+{{-- Omitted entirely for a switched-off provider. Not hidden — absent. --}}
+@if ($providerScript)
+    <script src="{{ asset('js/virtual-drive/' . $providerScript) }}"></script>
+@endif
 </body>
 </html>

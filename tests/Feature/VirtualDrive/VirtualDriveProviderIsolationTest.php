@@ -85,6 +85,20 @@ class VirtualDriveProviderIsolationTest extends TestCase
         return (string) preg_replace('#^\s*//.*$#m', '', (string) $source);
     }
 
+    /** The text between two markers, or null when the opening marker is absent. */
+    private function between(string $haystack, string $open, string $close): ?string
+    {
+        $start = strpos($haystack, $open);
+
+        if ($start === false) {
+            return null;
+        }
+
+        $end = strpos($haystack, $close, $start);
+
+        return $end === false ? null : substr($haystack, $start, $end - $start + strlen($close));
+    }
+
     /** The body of `function $name(` up to the next top-level function in the IIFE. */
     private function functionBody(string $source, string $name): string
     {
@@ -197,6 +211,110 @@ class VirtualDriveProviderIsolationTest extends TestCase
         // The URL may carry the selected home; nothing reads a launch from it.
         $this->assertStringNotContainsString("searchParams.get('launch')", $shell);
         $this->assertStringNotContainsString('autoLaunch', $shell);
+    }
+
+    /**
+     * The kill switch and the daily ceiling are structural, not conventional.
+     *
+     * The ordering is the property: the allowance must be claimed BEFORE
+     * provider.load(), or a refused launch has already fetched the billed
+     * library. Asserted on the text of launch() because that ordering is the
+     * whole protection and a later edit could reverse it while every behavioural
+     * spec still passed against a faked endpoint.
+     *
+     * @test
+     */
+    public function the_shell_claims_the_daily_allowance_before_it_loads_a_provider(): void
+    {
+        $shell  = $this->code(self::SHELL);
+        $launch = $this->functionBody($shell, 'launch');
+
+        $claim = strpos($launch, 'claimDailyAllowance()');
+        $load  = strpos($launch, '.load(cfg, hooks)');
+
+        $this->assertNotFalse($claim, 'launch() must claim the daily allowance');
+        $this->assertNotFalse($load);
+        $this->assertLessThan($load, $claim, 'the allowance must be claimed BEFORE the provider library is requested');
+
+        // A switched-off provider can never reach the load at all.
+        $this->assertStringContainsString('!cfg.providerEnabled', $launch);
+
+        // One attempt per press: nothing schedules a second claim.
+        $claimBody = $this->functionBody($shell, 'claimDailyAllowance');
+
+        foreach (['setTimeout', 'setInterval', 'location.reload'] as $forbidden) {
+            $this->assertStringNotContainsString($forbidden, $claimBody, "the claim must not {$forbidden}");
+        }
+
+        // Declared once, called once, and only from launch().
+        $this->assertSame(1, preg_match_all('/function claimDailyAllowance\(\)/', $shell));
+        $this->assertSame(1, preg_match_all('/(?<!function )\bclaimDailyAllowance\(\)/', $shell));
+
+        // A refused claim is terminal.
+        $this->assertStringContainsString('err.refused', $launch);
+        $this->assertStringContainsString('lock(err.message', $launch);
+    }
+
+    /**
+     * The switched-off page must not merely hide the Google provider — the file
+     * that can construct a panorama must be absent. That is a `@if` in the
+     * template, and this pins it at source alongside the rendered-page assertions
+     * in VirtualDriveGoogleKillSwitchTest.
+     *
+     * @test
+     */
+    public function the_provider_script_tag_is_conditional_in_the_template(): void
+    {
+        $blade = $this->source('resources/views/dev/virtual-drive/show.blade.php');
+
+        $conditional = $this->between($blade, '@if ($providerScript)', '@endif');
+
+        $this->assertNotNull($conditional, 'the provider <script> must be inside @if ($providerScript)');
+        $this->assertStringContainsString('$providerScript', $conditional);
+        $this->assertStringContainsString('<script src=', $conditional);
+
+        // And $providerScript is referenced NOWHERE outside that block, so there is
+        // no second, unconditional way for the provider file to reach the page.
+        $this->assertSame(
+            substr_count($blade, '$providerScript'),
+            substr_count($conditional, '$providerScript'),
+            '$providerScript must be referenced only inside @if ($providerScript)'
+        );
+
+        // The Google browser key has no path into the markup at all.
+        $this->assertStringNotContainsString('google.browser_key', $blade);
+        $this->assertStringNotContainsString('google.browser_key', $this->source('resources/views/dev/virtual-drive/compare.blade.php'));
+    }
+
+    /**
+     * The gate and the ledger decide whether Google may run. Neither may hold a
+     * provider client, name a provider host, or reach the network to find out.
+     *
+     * @test
+     */
+    public function the_google_gate_and_ledger_contact_nobody(): void
+    {
+        foreach ([
+            'app/Support/VirtualDrive/VirtualDriveGoogleGate.php',
+            'app/Support/VirtualDrive/VirtualDriveGoogleLaunchLedger.php',
+            'app/Http/Controllers/Dev/VirtualDriveGoogleLaunchController.php',
+        ] as $path) {
+            $source = $this->source($path);
+
+            foreach ([
+                'Http::',
+                'GuzzleHttp',
+                'file_get_contents',
+                'curl_',
+                'googleapis.com',
+                'maps.googleapis',
+                'BridgeApiService',
+            ] as $forbidden) {
+                $this->assertStringNotContainsString($forbidden, $source, "{$path} must not use {$forbidden}");
+            }
+
+            $this->assertDoesNotMatchRegularExpression('/AIza[0-9A-Za-z_\-]{30,}/', $source, "{$path} contains a Google key");
+        }
     }
 
     /** @test */

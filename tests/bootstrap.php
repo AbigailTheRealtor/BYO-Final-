@@ -41,6 +41,12 @@ $byoBlankedCredentials = [
     'VIRTUAL_DRIVE_MAPKIT_JS_TOKEN'         => '',
     'VIRTUAL_DRIVE_PROOF_ENABLED'           => 'false',
 
+    // The Google kill switch and its daily launch ceiling, for the same reason and
+    // across the same three surfaces: both are Replit Secrets, so getenv() can hold
+    // whatever the host injected no matter what phpunit.xml says about $_SERVER.
+    'VIRTUAL_DRIVE_GOOGLE_ENABLED'             => 'false',
+    'VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT'  => '0',
+
     // ── TEST DATABASE IDENTITY ───────────────────────────────────────────────
     //
     // `DATABASE_URL` is the whole ballgame, and it is why every previous attempt

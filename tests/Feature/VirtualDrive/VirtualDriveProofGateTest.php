@@ -126,7 +126,10 @@ class VirtualDriveProofGateTest extends TestCase
     /** @test */
     public function each_provider_page_loads_exactly_one_provider_and_never_the_other(): void
     {
-        config(['virtual_drive.proof_enabled' => true]);
+        // The Google switch is on here because the Google provider script is only
+        // included when it is — see VirtualDriveGoogleKillSwitchTest. What this
+        // test is about is that neither page ever carries the OTHER provider.
+        config(['virtual_drive.proof_enabled' => true, 'virtual_drive.google.enabled' => true]);
 
         $apple  = $this->get('/dev/virtual-drive/apple')->assertOk()->getContent();
         $google = $this->get('/dev/virtual-drive/google')->assertOk()->getContent();
@@ -156,10 +159,19 @@ class VirtualDriveProofGateTest extends TestCase
     {
         config(['virtual_drive.proof_enabled' => true]);
 
+        config([
+            'virtual_drive.google.enabled'            => true,
+            'virtual_drive.google.browser_key'        => 'GOOGLE-KEY-SENTINEL',
+            'virtual_drive.google.daily_launch_limit' => 10,
+        ]);
+
         $this->get('/dev/virtual-drive/google')
             ->assertSee('id="vd-launch" disabled', false)
             ->assertSee('data-launch-label="Drive with Google"', false)
-            ->assertSee('Google bills');
+            ->assertSee('Google bills')
+            // The key is NOT the thing that makes the button work any more; a
+            // granted launch claim delivers it. See VirtualDriveGoogleKillSwitchTest.
+            ->assertDontSee('GOOGLE-KEY-SENTINEL');
 
         $this->get('/dev/virtual-drive/apple')
             ->assertSee('id="vd-launch" disabled', false)
@@ -228,13 +240,21 @@ class VirtualDriveProofGateTest extends TestCase
         }
     }
 
-    /** @test */
+    /**
+     * Apple's token is a browser credential by design and still arrives inline.
+     * Google's browser key does NOT: it is handed out only by a granted launch
+     * claim, so it must not appear on either page however the switch is set.
+     *
+     * @test
+     */
     public function a_configured_credential_reaches_only_its_own_providers_page(): void
     {
         config([
-            'virtual_drive.proof_enabled'      => true,
-            'virtual_drive.apple.mapkit_token' => 'APPLE-TOKEN-SENTINEL',
-            'virtual_drive.google.browser_key' => 'GOOGLE-KEY-SENTINEL',
+            'virtual_drive.proof_enabled'             => true,
+            'virtual_drive.google.enabled'            => true,
+            'virtual_drive.google.daily_launch_limit' => 10,
+            'virtual_drive.apple.mapkit_token'        => 'APPLE-TOKEN-SENTINEL',
+            'virtual_drive.google.browser_key'        => 'GOOGLE-KEY-SENTINEL',
         ]);
 
         $this->get('/dev/virtual-drive/apple')
@@ -242,7 +262,9 @@ class VirtualDriveProofGateTest extends TestCase
             ->assertDontSee('GOOGLE-KEY-SENTINEL');
 
         $this->get('/dev/virtual-drive/google')
-            ->assertSee('data-credential="GOOGLE-KEY-SENTINEL"', false)
+            ->assertSee('data-credential=""', false)
+            ->assertSee('data-credential-available="1"', false)
+            ->assertDontSee('GOOGLE-KEY-SENTINEL')
             ->assertDontSee('APPLE-TOKEN-SENTINEL');
     }
 

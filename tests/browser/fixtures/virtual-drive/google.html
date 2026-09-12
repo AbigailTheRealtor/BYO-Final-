@@ -22,6 +22,11 @@
 <div class="vd-shell" id="vd-shell"
      data-provider="google"
      data-credential="FIXTURE-NOT-A-CREDENTIAL"
+     data-credential-available="1"
+     data-provider-enabled="1"
+     data-launch-claim-endpoint=""
+     data-daily-launch-limit="0"
+     data-csrf-token="FIXTURE-NOT-A-TOKEN"
      data-credential-name="VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY"
      data-library-url=""
      data-api-version="weekly"
@@ -96,6 +101,33 @@
     // Actions open new tabs; record them instead so no page leaves the fixture origin.
     window.__opened = [];
     window.open = function (url) { window.__opened.push(url); return null; };
+
+    // The proof page's two server-side decisions — the kill switch and the daily
+    // ceiling — reach the shell as data attributes, so a spec sets them the same
+    // way the Blade template does. Applied here, BEFORE the shell script runs,
+    // because the shell reads them once at start.
+    //
+    // The provider script below stays loaded even with ?google=off, deliberately:
+    // the real page omits it entirely (a PHP test asserts that), so leaving it
+    // here makes the browser spec prove the stronger thing — that the shell
+    // refuses to load a provider that IS present and registered.
+    (function () {
+        var params = new URL(window.location.href).searchParams;
+        var shell = document.getElementById('vd-shell');
+
+        if (params.get('google') === 'off') {
+            shell.setAttribute('data-provider-enabled', '0');
+            document.getElementById('vd-launch-note').textContent =
+                'Google Street View is switched off for this proof environment (VIRTUAL_DRIVE_GOOGLE_ENABLED=false).';
+        }
+
+        if (params.get('claim')) {
+            shell.setAttribute('data-launch-claim-endpoint', params.get('claim'));
+            shell.setAttribute('data-credential', '');
+            shell.setAttribute('data-credential-available', '1');
+            shell.setAttribute('data-daily-launch-limit', params.get('limit') || '0');
+        }
+    }());
 </script>
 <script src="/virtual-drive/fake-google-maps.js"></script>
 <script src="/virtual-drive-js/virtual-drive-signs.js"></script>

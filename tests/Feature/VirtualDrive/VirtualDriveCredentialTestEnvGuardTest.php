@@ -45,5 +45,29 @@ class VirtualDriveCredentialTestEnvGuardTest extends TestCase
         }
 
         $this->assertStringContainsString('<server name="VIRTUAL_DRIVE_PROOF_ENABLED" value="false" force="true"/>', $phpunit);
+        $this->assertStringContainsString('<server name="VIRTUAL_DRIVE_GOOGLE_ENABLED" value="false" force="true"/>', $phpunit);
+        $this->assertMatchesRegularExpression("/'VIRTUAL_DRIVE_GOOGLE_ENABLED'\s*=>\s*'false'/", $bootstrap);
+    }
+
+    /**
+     * The kill switch and the ceiling are Replit Secrets, so a test run must see
+     * the refusing values however the host's environment is set up — otherwise a
+     * suite that proves "off means nothing loads" could be running with it on.
+     *
+     * @test
+     */
+    public function the_google_kill_switch_and_its_ceiling_read_as_refusing_in_a_test_run(): void
+    {
+        foreach (['VIRTUAL_DRIVE_GOOGLE_ENABLED', 'VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT'] as $name) {
+            $getenv = getenv($name);
+
+            $this->assertTrue(
+                $getenv === false || $getenv === '' || $getenv === 'false' || $getenv === '0',
+                "{$name} must read as refusing in getenv(), got " . var_export($getenv, true)
+            );
+        }
+
+        $this->assertFalse(config('virtual_drive.google.enabled'));
+        $this->assertSame(0, config('virtual_drive.google.daily_launch_limit'));
     }
 }

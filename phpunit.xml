@@ -66,6 +66,14 @@
         <server name="VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY" value="" force="true"/>
         <server name="VIRTUAL_DRIVE_MAPKIT_JS_TOKEN" value="" force="true"/>
         <server name="VIRTUAL_DRIVE_PROOF_ENABLED" value="false" force="true"/>
+        <!-- The Google kill switch and its daily ceiling are forced to the refusing
+             values too. Not because a flag can spend money on its own, but because
+             these are Replit Secrets: a day when VIRTUAL_DRIVE_GOOGLE_ENABLED=true
+             is injected into the process must not be a day when the suite's default
+             posture quietly changes underneath it. Every test that needs the switch
+             on sets the config itself. -->
+        <server name="VIRTUAL_DRIVE_GOOGLE_ENABLED" value="false" force="true"/>
+        <server name="VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT" value="0" force="true"/>
 
         <!-- Bridge/Stellar safeguards. SAME FAILURE MODE, SAME FIX.
 

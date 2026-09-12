@@ -32,6 +32,27 @@
  * selected home (`?listing=`) and never a launch, so reloading the page can
  * never start a session.
  *
+ * A SWITCHED-OFF PROVIDER NEVER LEAVES `locked`
+ * --------------------------------------------
+ * `data-provider-enabled="0"` means the server has refused this provider for the
+ * whole environment. The page then starts locked and stays locked, with the
+ * server's own reason left in the launch note — and the provider script was not
+ * included at all, so there is nothing here to load even if this were bypassed.
+ *
+ * AND A DAILY CEILING IS CLAIMED BEFORE THE LIBRARY IS REQUESTED
+ * -------------------------------------------------------------
+ * When `data-launch-claim-endpoint` is set, the FIRST launch on this page must
+ * first claim one of the day's launches from the server (which counts them
+ * across the whole proof environment, not in this browser). A refusal locks the
+ * button with the server's message and nothing is loaded. A grant carries the
+ * provider credential, which is the only way this page can ever hold one — so
+ * the ceiling withholds the means rather than asking politely.
+ *
+ * ONE CLAIM PER PAGE, MATCHING WHAT IS BILLED. A provider constructs at most one
+ * panorama per page, so the allowance is spent once: pressing "Try again" after
+ * a home with no imagery, changing homes and clicking signs all reuse the
+ * already-claimed launch. A reload is a new page and a new claim.
+ *
  * PROVIDER CONTRACT (both provider files implement exactly this)
  * -------------------------------------------------------------
  *   id                               'apple' | 'google'
@@ -66,6 +87,16 @@
         provider:        shell.getAttribute('data-provider'),
         credential:      shell.getAttribute('data-credential') || '',
         credentialName:  shell.getAttribute('data-credential-name') || '',
+        // Is this provider permitted here at all? Absent reads as permitted, for
+        // a fixture page; `0` is the server saying no.
+        providerEnabled: shell.getAttribute('data-provider-enabled') !== '0',
+        // A credential EXISTS. Not the credential — a claimed launch may deliver
+        // one that was never in this markup.
+        credentialReady: shell.getAttribute('data-credential-available') === '1'
+            || (shell.getAttribute('data-credential') || '') !== '',
+        claimEndpoint:   shell.getAttribute('data-launch-claim-endpoint') || '',
+        dailyLimit:      parseInt(shell.getAttribute('data-daily-launch-limit'), 10) || 0,
+        csrfToken:       shell.getAttribute('data-csrf-token') || '',
         libraryUrl:      shell.getAttribute('data-library-url') || '',
         apiVersion:      shell.getAttribute('data-api-version') || '',
         endpoint:        shell.getAttribute('data-listings-endpoint'),
@@ -114,7 +145,20 @@
     // reads them back to make a decision.
     var diagnostics = window.VirtualDriveDiagnostics = window.VirtualDriveDiagnostics || {};
 
-    diagnostics.shell = { launchClicks: 0, launchesStarted: 0, launchState: 'loading', providerLoaded: false };
+    diagnostics.shell = {
+        launchClicks: 0,
+        launchesStarted: 0,
+        launchState: 'loading',
+        providerLoaded: false,
+        providerEnabled: cfg.providerEnabled,
+        // The daily ceiling, as this page experienced it. Read-only; nothing
+        // reads them back to make a decision.
+        allowanceClaims: 0,
+        allowanceGranted: 0,
+        allowanceRefused: 0,
+        allowanceReason: null,
+        allowanceRemaining: null
+    };
 
     var state = {
         registered: null,
@@ -129,6 +173,8 @@
         counters: {},
         lightbox: null,
         launch: 'loading',   // loading | idle | opening | open | retry | locked
+        lockLabel: null,     // what the button says once locked, when 'Unavailable' is too vague
+        claimed: false,      // this page holds a granted launch allowance
         loadFailed: false,
         fatal: null,
         launchStartedAt: null,
@@ -616,6 +662,8 @@
 
         diagnostics.shell.launchState = state.launch;
         $('vd-launch-panel').hidden = state.launch === 'open';
+        // A refusal should not look like a button you have not pressed yet.
+        $('vd-launch-panel').classList.toggle('is-refused', state.launch === 'locked');
         $('vd-launch-home').textContent = listing ? describe(listing) : '';
 
         if (state.launch === 'idle') {
@@ -629,17 +677,95 @@
             button.textContent = 'Opening Virtual Drive…';
         } else if (state.launch === 'locked') {
             button.disabled = true;
-            button.textContent = 'Unavailable';
+            button.textContent = state.lockLabel || 'Unavailable';
         } else {
             button.disabled = true;
             button.textContent = 'Loading listings…';
         }
     }
 
-    function lock(message) {
+    // A terminal refusal. `message` null keeps whatever the server already wrote
+    // into the note — the reason for a switched-off provider is the server's to
+    // word, not ours. `label` replaces the vague 'Unavailable' on the button.
+    function lock(message, label) {
         state.launch = 'locked';
-        $('vd-launch-note').textContent = message;
+        state.lockLabel = label || null;
+
+        if (message) {
+            $('vd-launch-note').textContent = message;
+        }
+
         renderLaunch();
+    }
+
+    // ------------------------------------------------------------ the daily ceiling
+    //
+    // Claimed from OUR server, once per page, before any provider library is
+    // requested. The server counts the day's launches across the whole proof
+    // environment — not in this browser, where a cleared profile would reset them
+    // — and a grant is also the only delivery of the provider credential.
+    //
+    // One attempt per press. A refusal and a failed request both reject, both
+    // lock the button, and neither is retried: a ceiling that retries itself is
+    // not a ceiling.
+    function claimDailyAllowance() {
+        var headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+
+        if (cfg.csrfToken) {
+            headers['X-CSRF-TOKEN'] = cfg.csrfToken;
+        }
+
+        diagnostics.shell.allowanceClaims++;
+        count('Daily launch allowance claims');
+
+        return fetch(cfg.claimEndpoint, {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: '{}'
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                return { ok: response.ok, status: response.status, body: body || {} };
+            }, function () {
+                return { ok: false, status: response.status, body: {} };
+            });
+        }).then(function (answer) {
+            var body = answer.body;
+
+            diagnostics.shell.allowanceRemaining = typeof body.remaining === 'number' ? body.remaining : null;
+
+            if (answer.ok && body.granted === true) {
+                diagnostics.shell.allowanceGranted++;
+                state.claimed = true;
+                setCounter('Daily launches used', body.used + ' of ' + body.limit + ' (' + body.day + ')');
+                log('Daily launch allowance granted', body.message || '');
+
+                return body;
+            }
+
+            diagnostics.shell.allowanceRefused++;
+            diagnostics.shell.allowanceReason = body.reason || ('http_' + answer.status);
+            count('Launches refused before anything was loaded');
+
+            var refusal = new Error(body.message
+                || 'The daily launch allowance could not be claimed (HTTP ' + answer.status + ').');
+
+            refusal.refused = true;
+            refusal.reason = diagnostics.shell.allowanceReason;
+
+            throw refusal;
+        }, function (err) {
+            diagnostics.shell.allowanceRefused++;
+            diagnostics.shell.allowanceReason = 'request_failed';
+
+            var refusal = new Error('The daily launch allowance could not be claimed (' + err.message
+                + '), so nothing was loaded.');
+
+            refusal.refused = true;
+            refusal.reason = 'request_failed';
+
+            throw refusal;
+        });
     }
 
     function launch() {
@@ -655,7 +781,7 @@
         var provider = state.registered;
         var listing = selected();
 
-        if (!provider || !listing || !cfg.credential || state.fatal) {
+        if (!provider || !listing || !cfg.credentialReady || !cfg.providerEnabled || state.fatal) {
             return;
         }
 
@@ -667,9 +793,25 @@
         state.launchStartedAt = now();
         log('Launch pressed', provider.id + ' · listing ' + listing.id);
 
-        var ready = state.provider
-            ? Promise.resolve()
-            : provider.load(cfg, hooks).then(function () {
+        // THE DAILY CEILING, and the credential with it. Claimed once per page,
+        // before anything is requested from the provider — and skipped on a later
+        // press, because this page's one billable panorama is already paid for.
+        var allowed = (state.provider || state.claimed || !cfg.claimEndpoint)
+            ? Promise.resolve(null)
+            : claimDailyAllowance().then(function (granted) {
+                if (typeof granted.credential === 'string' && granted.credential !== '') {
+                    cfg.credential = granted.credential;
+                }
+
+                return granted;
+            });
+
+        var ready = allowed.then(function () {
+            if (state.provider) {
+                return null;
+            }
+
+            return provider.load(cfg, hooks).then(function () {
                 if (state.fatal) {
                     throw new Error(state.fatal);
                 }
@@ -683,6 +825,7 @@
 
                 throw err;
             });
+        });
 
         ready.then(function () {
             return showInProvider(listing);
@@ -702,6 +845,15 @@
             log('Launch failed', err.message);
 
             if (state.fatal) {
+                return;
+            }
+
+            // A refused allowance: nothing was loaded, nothing was requested from
+            // the provider, and pressing again must not try. The button says which
+            // refusal it was so 'Unavailable' is not the whole story.
+            if (err.refused) {
+                lock(err.message, err.reason === 'daily_limit_reached' ? 'Daily limit reached' : 'Unavailable');
+
                 return;
             }
 
@@ -1110,6 +1262,17 @@
 
             selectById(requested || fallback || state.walk[0].id, requested ? 'link' : (fallback ? 'default start' : 'initial'));
 
+            // Switched off for this environment. Checked before "is a provider
+            // registered?", because with the provider script omitted the honest
+            // answer is the server's reason, not "none is registered".
+            if (!cfg.providerEnabled) {
+                log('Provider switched off', 'no library was loaded and none can be');
+                setCounter('Provider', 'switched off');
+                lock(null, 'Switched off');
+
+                return;
+            }
+
             if (!state.registered) {
                 lock('No street-level provider is registered on this page.');
 
@@ -1118,12 +1281,16 @@
 
             setCounter('Provider', state.registered.id);
 
-            if (!cfg.credential) {
+            if (!cfg.credentialReady) {
                 log('Provider not loaded', cfg.credentialName + ' is not configured — no request sent to ' + state.registered.id);
                 lock('Street-level imagery is unavailable because ' + cfg.credentialName
                     + ' is not configured. No request was sent to the provider.');
 
                 return;
+            }
+
+            if (cfg.claimEndpoint && cfg.dailyLimit > 0) {
+                setCounter('Daily launch ceiling', cfg.dailyLimit + ' across this proof environment');
             }
 
             state.launch = 'idle';

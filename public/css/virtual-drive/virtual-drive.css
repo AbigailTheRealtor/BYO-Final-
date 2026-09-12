@@ -145,6 +145,10 @@ button.vd-control { cursor: pointer; font-weight: 600; }
 .vd-launch:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
 .vd-launch-note { margin: 0; max-width: 460px; font-size: 13px; color: #d1d5db; }
 .vd-launch-fallback { margin: 0; max-width: 460px; font-size: 12px; color: #9ca3af; }
+/* A refusal — switched off, or the day's launches spent. Stated, not hidden. */
+.vd-launch-panel.is-refused { background: #3f2020; }
+.vd-launch-panel.is-refused .vd-launch-note { color: #fecaca; font-weight: 600; }
+.vd-compare-refused { border-left: 4px solid #f87171; padding-left: 12px; color: #7f1d1d; font-weight: 600; }
 
 /* ---------- observation sheet ---------- */
 .vd-observations { margin-top: 14px; }

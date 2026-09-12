@@ -48,11 +48,62 @@ return [
 
     'google' => [
         /*
+        | THE GOOGLE KILL SWITCH — development-only, and independent of the proof
+        | flag above.
+        |
+        | OFF (the default) means no Google Maps JavaScript library and no
+        | StreetViewPanorama may initialize, and that does not rest on the browser
+        | behaving: the Google page emits no browser key and does not even include
+        | google-streetview-provider.js, so there is nothing on the page that could
+        | construct a panorama, and the launch endpoint refuses.
+        |
+        | Two switches, two jobs. VIRTUAL_DRIVE_PROOF_ENABLED decides whether the
+        | proof exists at all (both providers, every route). This one decides
+        | whether the BILLED provider may run while the proof is open, so Apple
+        | Look Around can be reviewed with Google incapable of starting.
+        |
+        | PARSED STRICTLY, FAILING CLOSED — the same rule as proof_enabled. ON:
+        | `true`, `1`, `on`, `yes` (any case). OFF: unset, empty, `false`, `0`,
+        | `off`, `no`, and anything else. A (bool) cast reads `off` as ON.
+        */
+        'enabled' => filter_var(env('VIRTUAL_DRIVE_GOOGLE_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
+        /*
+        | THE DAILY CEILING — how many intentional Virtual Drive launches the whole
+        | proof environment may start in one calendar day (app timezone).
+        |
+        | DEFAULT 0 = REFUSE, NOT UNLIMITED. An absent, non-numeric, negative or
+        | fractional value is 0, and 0 refuses every launch naming this variable.
+        | That is the same rule as ADDRESS_POINT_CORPUS_VERSION: a gate that is open
+        | with nothing configured is the one failure nobody notices. There is no
+        | "unlimited" value on purpose — a ceiling you can read in config beats one
+        | that is absent.
+        |
+        | One launch = one page that may construct its one billable panorama. See
+        | VirtualDriveGoogleLaunchLedger for why the tally is claimed server-side
+        | and why pressing "Try again" on an already-loaded page does not spend one.
+        */
+        'daily_launch_limit' => (static function ($value): int {
+            if (! is_numeric($value)) {
+                return 0;
+            }
+
+            $value = (float) $value;
+
+            return $value >= 1.0 && $value === floor($value) && $value <= 1000000.0 ? (int) $value : 0;
+        })(env('VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT')),
+
+        /*
         | Its own browser key, referrer-restricted and API-restricted to the Maps
         | JavaScript API. NEVER GOOGLE_PLACES_API_KEY (a server key that must not
         | be emitted into a page) and never EXPLORE_GOOGLE_MAPS_BROWSER_KEY (which
         | carries Explore's quota). No fallback to either. Absent by default:
         | with no key the Maps JavaScript API is never loaded.
+        |
+        | UNLIKE THE APPLE TOKEN, THIS IS NEVER WRITTEN INTO A PAGE. It is handed
+        | to the browser only in the response to a granted launch claim, so a page
+        | that did not get past the kill switch and the daily ceiling holds no key
+        | and the Maps JavaScript API cannot authenticate for it.
         */
         'browser_key' => env('VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY'),
         'api_version' => env('VIRTUAL_DRIVE_GOOGLE_MAPS_VERSION', 'weekly'),
