@@ -1875,17 +1875,55 @@ class AgentAiBuild7Test extends TestCase
     // T7.7 — V1 regression tests
     // ══════════════════════════════════════════════════════════════════════════
 
+    /**
+     * P0.1 — authenticated, so the assertion reaches the V1 CONTROLLER.
+     *
+     * /ask-ai/listing-question carries 'auth' middleware. A guest post returns 401 before
+     * the controller is resolved, which would make "not 404 / not 500" true even for a
+     * controller that had been deleted. Authenticating restores the original signal this
+     * test was written to carry: a 422 from the controller's own validate() call.
+     */
     public function test_v1_ask_ai_route_still_resolves_when_v2_flag_is_on(): void
     {
         config(['ask_ai.agent_ai_v2_enabled' => true]);
 
+        $this->actingAs(User::factory()->create());
+
         $response = $this->postJson('/ask-ai/listing-question', []);
 
-        // V1 route must be reachable (validation error = controller ran)
-        $this->assertNotEquals(404, $response->getStatusCode(),
-            'V1 /ask-ai/listing-question must not return 404 when V2 flag is on');
-        $this->assertNotEquals(500, $response->getStatusCode(),
-            'V1 /ask-ai/listing-question must not return 500 when V2 flag is on');
+        $response->assertStatus(422)
+                 ->assertJsonValidationErrors(['listing_type', 'listing_id', 'question']);
+    }
+
+    /**
+     * P0.1 — the V1 controller's OWNERSHIP logic still runs with the V2 flag on.
+     *
+     * Validation reachability (above) proves the controller ran; this proves the
+     * authorization branch inside it ran too. A signed-in user who does not own the listing
+     * must receive the controller's own 403, not a 401, not a 404, and not an answer.
+     */
+    public function test_v1_ask_ai_ownership_check_still_runs_when_v2_flag_is_on(): void
+    {
+        config(['ask_ai.agent_ai_v2_enabled' => true]);
+
+        $ownerId  = $this->makeAgentUser();
+        $listingId = $this->seedSellerListing($ownerId);
+
+        // A different, authenticated user — not the listing's owner.
+        $this->actingAs(User::factory()->create());
+
+        $response = $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'seller',
+            'listing_id'   => $listingId,
+            'question'     => 'How many bedrooms does this property have?',
+        ]);
+
+        $response->assertStatus(403)
+                 ->assertJson([
+                     'success' => false,
+                     'status'  => 'forbidden',
+                     'answer'  => null,
+                 ]);
     }
 
     public function test_v2_route_returns_404_when_flag_is_off(): void
@@ -1912,8 +1950,19 @@ class AgentAiBuild7Test extends TestCase
             '/agent-ai/session/start must not return 404 when V2 flag is on');
     }
 
+    /**
+     * P0.1 — authenticated, and pinned to 422 rather than only "identical".
+     *
+     * As a guest both sides returned 401 from middleware, so "the statuses match" was
+     * satisfied by two responses that never reached the controller — the comparison had
+     * become a tautology that a deleted V1 controller would still pass. Asserting the
+     * concrete controller-level status on BOTH sides is what makes the comparison mean
+     * "the V1 controller behaves identically", which is the claim in the test's name.
+     */
     public function test_v2_enabled_flag_does_not_alter_v1_behavior(): void
     {
+        $this->actingAs(User::factory()->create());
+
         // With flag OFF
         config(['ask_ai.agent_ai_v2_enabled' => false]);
         $responseOff = $this->postJson('/ask-ai/listing-question', []);
@@ -1926,10 +1975,13 @@ class AgentAiBuild7Test extends TestCase
 
         $this->assertSame($statusOff, $statusOn,
             'V1 route HTTP status must be identical whether V2 flag is on or off');
-        $this->assertNotEquals(404, $statusOn,
-            'V1 route must not 404 when V2 is enabled');
-        $this->assertNotEquals(500, $statusOn,
-            'V1 route must not 500 when V2 is enabled');
+
+        // Both must be the CONTROLLER's validation failure, not a middleware rejection.
+        $this->assertSame(422, $statusOff,
+            'V1 controller validation must run with the V2 flag off');
+        $this->assertSame(422, $statusOn,
+            'V1 controller validation must run with the V2 flag on');
+        $responseOn->assertJsonValidationErrors(['listing_type', 'listing_id', 'question']);
     }
 
     public function test_v2_service_bindings_do_not_break_v1_ask_ai_pipeline(): void
@@ -1956,10 +2008,15 @@ class AgentAiBuild7Test extends TestCase
             }
         }
 
-        // V1 route still resolves correctly
+        // V1 route still resolves correctly. P0.1 — authenticated so the request reaches the
+        // controller; a guest 401 would satisfy "not 500" without exercising V1 at all.
+        $this->actingAs(User::factory()->create());
+
         $response = $this->postJson('/ask-ai/listing-question', []);
         $this->assertNotEquals(500, $response->getStatusCode(),
             'V1 route must not 500 even when V2 service bindings are present');
+        $response->assertStatus(422)
+                 ->assertJsonValidationErrors(['listing_type', 'listing_id', 'question']);
     }
 
     public function test_context_builder_never_queries_blocked_offer_tables(): void

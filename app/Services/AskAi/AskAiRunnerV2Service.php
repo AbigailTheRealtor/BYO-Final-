@@ -1909,10 +1909,22 @@ class AskAiRunnerV2Service
         // property's actual figure. Those context aliases are gone (see
         // AskAiContextBuilderService::CANONICAL_SOURCE_MAP).
         //
-        // NOI and cap-rate questions now route to the seller-answered KB keys
+        // NOI and cap-rate questions now route to the KB keys
         // 'faq_answers.annual_net_operating_income' and 'faq_answers.current_cap_rate',
-        // which are checked first by detectFaqFieldKey(). Do not re-add a listing route
-        // here unless a genuine actual-NOI / actual-cap-rate source field exists.
+        // which are checked first by detectFaqFieldKey().
+        //
+        // P0.1 correction — an earlier version of this comment called those keys
+        // "seller-answered". They are not, today. Both are declared in
+        // AskAiFieldQuestionRegistryService but NEITHER config_key exists in
+        // config/ai_faq_seller.php, so there is no form field, no seller can author them,
+        // and no ai_faq_answers row can be created for them. Both questions therefore
+        // resolve to "information not provided".
+        //
+        // That is the intended behaviour, not an oversight to route around: we hold no
+        // verified actual NOI or cap rate for any listing, so the assistant must not state
+        // one. Whether to add these two KB questions is D3 triage work. Do not re-add a
+        // listing route here unless a genuine actual-NOI / actual-cap-rate source field
+        // exists — the seller's minimums are not it.
         'listing.price_per_sqft' => [
             'price per square foot',
             'cost per sq ft',

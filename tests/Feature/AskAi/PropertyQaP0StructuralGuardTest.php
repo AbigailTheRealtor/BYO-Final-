@@ -5,6 +5,7 @@ namespace Tests\Feature\AskAi;
 use App\Models\AskAiFact;
 use App\Models\AskAiKnowledgeSnapshot;
 use App\Services\AskAi\AskAiKnowledgeSearchService;
+use App\Services\AskAi\AskAiViewerAuthorizationService;
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
@@ -65,9 +66,16 @@ class PropertyQaP0StructuralGuardTest extends TestCase
     // =====================================================================
 
     /**
-     * An 'owner_only' fact must still resolve to a database hit. This is the whole reason
-     * owner_only is a separate tier from restricted: the owner keeps their answer, and
-     * only the public claim is withdrawn.
+     * An 'owner_only' fact must still resolve to a database hit FOR THE OWNER. This is the
+     * whole reason owner_only is a separate tier from restricted: the owner keeps their
+     * answer, and only the public claim is withdrawn.
+     *
+     * P0.1 — the search now takes an explicit viewer scope. When this test was written
+     * AskAiKnowledgeSearchService ignored scope entirely, so "the owner" needed no saying;
+     * P0.1 added the read-time gate that makes owner_only mean something, and an omitted
+     * scope now fails closed to 'public' by design. Passing SCOPE_OWNER states the subject
+     * the test's own name and docblock always had in mind. The companion assertion below
+     * pins the other half, so this file now proves the full claim rather than half of it.
      */
     public function test_owner_only_facts_still_produce_a_database_hit(): void
     {
@@ -77,15 +85,57 @@ class PropertyQaP0StructuralGuardTest extends TestCase
             'seller',
             771001,
             'anything',
-            ['normalized_field_key' => 'listing.some_unclassified_key']
+            [
+                'normalized_field_key' => 'listing.some_unclassified_key',
+                'viewer_scope'         => AskAiViewerAuthorizationService::SCOPE_OWNER,
+            ]
         );
 
         $this->assertSame(
             'database_hit',
             $result['outcome'],
-            'An owner_only fact must still answer from the database — only restricted facts are blocked.'
+            'An owner_only fact must still answer from the database for the listing owner — '
+            . 'that is the entire reason owner_only is not restricted.'
         );
         $this->assertSame('A stored value', $result['answer']);
+    }
+
+    /**
+     * The other half of the same promise, added in P0.1: withdrawing the PUBLIC claim has to
+     * actually withdraw it. The identical fact that the owner just read must not reach a
+     * non-owner, and must not reach a caller who supplied no scope at all.
+     */
+    public function test_owner_only_facts_are_withheld_from_non_owners(): void
+    {
+        $this->makeSnapshotWithFact('some_unclassified_key', 'A stored value', SnapshotFactVisibility::OWNER_ONLY);
+
+        $scopes = [
+            AskAiViewerAuthorizationService::SCOPE_AUTHORIZED,
+            AskAiViewerAuthorizationService::SCOPE_PUBLIC,
+            null, // no scope supplied — must fail closed, not fall open
+        ];
+
+        foreach ($scopes as $scope) {
+            $options = ['normalized_field_key' => 'listing.some_unclassified_key'];
+            if ($scope !== null) {
+                $options['viewer_scope'] = $scope;
+            }
+
+            $result = app(AskAiKnowledgeSearchService::class)->search('seller', 771001, 'anything', $options);
+
+            $label = $scope ?? '(no scope supplied)';
+
+            $this->assertSame(
+                'restricted',
+                $result['outcome'],
+                "An owner_only fact must be withheld from '{$label}'."
+            );
+            $this->assertStringNotContainsString(
+                'A stored value',
+                json_encode($result),
+                "The stored value must not leak to '{$label}' anywhere in the result."
+            );
+        }
     }
 
     /** Restricted facts must still be blocked — that behaviour is unchanged by P0. */
