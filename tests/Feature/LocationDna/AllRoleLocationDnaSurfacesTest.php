@@ -65,7 +65,9 @@ class AllRoleLocationDnaSurfacesTest extends TestCase
             'spatial_basemap.maplibre_renderer_surfaces' => ['hire_buyer', 'hire_tenant', 'create_buyer', 'create_tenant', 'buyer_criteria', 'tenant_criteria', 'display'],
             'spatial_basemap.pmtiles_url'                => 'https://example.invalid/basemap.pmtiles',
             // A placeholder so the Google branch renders its script; nothing is requested.
-            'services.google.places_key'                 => $maplibre ? '' : 'test-placeholder-key',
+            // The BROWSER credential — the map components never read GOOGLE_PLACES_API_KEY.
+            'google_maps_browser.enabled'                => true,
+            'google_maps_browser.key'                    => $maplibre ? '' : 'test-placeholder-key',
         ]);
     }
 

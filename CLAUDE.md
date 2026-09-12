@@ -133,11 +133,36 @@ category, the HTTP status, the exception class and a refusal's reason, and nothi
 **Deliberately NOT budgeted yet — do not treat as done:** Places **Autocomplete** (one request per
 keystroke on the listing forms; the Nearby numbers would break address entry). The middleware
 identifies and passes it through (telemetry still records it); budgeting a family later is one entry
-in its `BUDGETED` map plus config keys, never a second counter system. **Browser-side** Google —
-`google.maps.places.Autocomplete` in ~44 Blade files
-and the Maps JavaScript API — never touches this server, so no server budget can govern it; it needs
-Google Cloud controls (a dedicated, referrer- and API-restricted browser key, quotas, billing alerts,
-a rehearsed key/API disable).
+in its `BUDGETED` map plus config keys, never a second counter system.
+
+### Browser-side Google — a separate credential, behind its own switch
+
+**The browser gets `GOOGLE_MAPS_BROWSER_KEY`, never `GOOGLE_PLACES_API_KEY`.** The server key
+authenticates our own Places and Geocoding calls behind the admission budgets — and it was also
+printed into every page that loads the Maps SDK, the Location DNA map injector and the Stellar
+Maps Embed iframe, including the **public** Offer Listing detail pages. A key in page source can
+be copied and spent against our account, and no server-side ceiling can see those requests: they
+never pass through this process. A key used from both places also cannot be referrer-restricted,
+which is the one protection a browser key has.
+
+`App\Support\Google\GoogleBrowserMaps` is the only reader, and it **never reads the server key** —
+there is no fallback. `GOOGLE_MAPS_BROWSER_ENABLED` (default **off**, parsed fail-closed like the
+other Google switches) and a non-empty key must both agree; either missing means no credential is
+emitted and the surfaces take their existing degraded path — free-text address entry, the amber
+"not configured" panel, the "View on Google Maps" link. The switch is also the emergency stop that
+needs no Google Cloud access. `GoogleBrowserKeySeparationTest` renders every surface, and whole
+public and authenticated pages, with two deliberately different fake keys and asserts the server
+one appears nowhere; `GoogleMapsBladeGuardTest` keeps the SDK URL inside the loader components.
+
+**Still Google Cloud's job, and not done here:** the browser key must be restricted to our exact
+production origins and to the Maps JavaScript / Places / Maps Embed APIs, with its own quotas,
+billing alerts and a rehearsed disable. One key per environment. **No key is created, enabled or
+configured by this change**, and the server key is not rotated yet — that happens only after the
+split is deployed and no page depends on the old key.
+
+**Not yet done, deliberately (later PRs):** Autocomplete field masks, the duplicate-SDK-load guard,
+the geocode-on-blur dedupe, bounded SDK polls, one shared memoized loader, focus-triggered
+Autocomplete and click-to-load public maps.
 
 **The same single-host boundary as Explore.** The counters and the admission lock live in the
 configured cache — the file cache on one host here, where the lock is exclusive across every PHP
@@ -1208,7 +1233,9 @@ Beyond standard Laravel keys, this app requires:
 |-----|---------|
 | `BRIDGE_DATASET` | Bridge Data Output dataset ID |
 | `BRIDGE_SERVER_TOKEN` | Bridge API access token |
-| `GOOGLE_PLACES_API_KEY` | Address validation + POI lookup |
+| `GOOGLE_PLACES_API_KEY` | **SERVER key only** — this application's own Places Nearby Search and Geocoding calls, behind the admission budgets. **Never emitted into a page**: browser surfaces use `GOOGLE_MAPS_BROWSER_KEY`, and there is no fallback between them. Restrict it in Google Cloud to Places + Geocoding (and to the deployment's egress IPs where stable); it does not need the Maps JavaScript API. |
+| `GOOGLE_MAPS_BROWSER_ENABLED` | Master switch for **everything browser-side**: the two Maps SDK loader components, the Location DNA map injector and the Stellar Maps Embed iframe. Default `false`, parsed fail-closed (`true`/`1`/`on`/`yes` only). Off means no SDK tag, no iframe and **no Google credential in the HTML** — address fields still accept typed input and maps show the "not configured" panel. The emergency stop that needs no Google Cloud access. Read only via `App\Support\Google\GoogleBrowserMaps`. |
+| `GOOGLE_MAPS_BROWSER_KEY` | The **browser** credential, a different key from `GOOGLE_PLACES_API_KEY`. Emitted into pages — including the public Offer Listing detail pages — so it must be restricted in Google Cloud to our exact production origins and to the Maps JavaScript / Places / Maps Embed APIs, with its own quotas and billing alerts. One key per environment; a development key names the exact development origin and never a broad wildcard over a shared host suffix. Absent by default; both this and the switch must agree. |
 | `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete. Also required — together with `GOOGLE_GEOCODING_ENABLED` — by the Location DNA geocode step and the geocode backfill command, as it always was. |
 | `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Geocoding has its own ceilings below, Autocomplete is not budgeted, and browser-side Google is not governed by the server. See *Google Places request budget*. |
 | `GOOGLE_GEOCODING_ENABLED` | Master switch for **every server-side Google Geocoding request** — Location DNA's geocode step, the backfill command, the four Tenant address pickers. Default `false`, parsed fail-closed exactly like `GOOGLE_PLACES_ENABLED`; a present key is not permission. **Separate from `GOOGLE_PLACES_ENABLED` on purpose**, and an additional gate — never a replacement — where that switch already applied. Off means zero Geocoding requests: Tenant pickers leave city / state / ZIP / county for the user, Location DNA records the coordinate as `skipped`. |

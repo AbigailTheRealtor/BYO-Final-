@@ -7,11 +7,15 @@
 
   Prerequisites
   -------------
-  - GOOGLE_PLACES_API_KEY must be set in .env (not only as a Replit secret).
+  - GOOGLE_MAPS_BROWSER_KEY must be set in .env (not only as a Replit secret).
     The artisan serve / php-fpm process reads from .env via phpdotenv; Replit
     secrets alone are NOT injected into the workflow process environment.
-  - The key must have the Maps JavaScript API and Places API enabled in Google
-    Cloud Console, and must allow the dev/prod domains as referrers.
+  - GOOGLE_MAPS_BROWSER_ENABLED must be true. Both halves must agree, and there
+    is NO fallback to GOOGLE_PLACES_API_KEY — that is the SERVER key, and a key
+    emitted into a page can be copied and spent outside every server-side budget.
+    See App\Support\Google\GoogleBrowserMaps.
+  - The browser key must be restricted in Google Cloud to our exact origins and
+    to the Maps JavaScript / Places APIs, with its own quotas.
 
   Props
   -----
@@ -21,7 +25,8 @@
 --}}
 @props(['libraries' => 'places', 'callback' => null])
 @php
-    $key = config('services.google.places_key', '');
+    /* The BROWSER credential, never the server key: App\Support\Google\GoogleBrowserMaps. */
+    $key = \App\Support\Google\GoogleBrowserMaps::keyForRender();
 @endphp
 
 @if($key !== '' && $key !== null)

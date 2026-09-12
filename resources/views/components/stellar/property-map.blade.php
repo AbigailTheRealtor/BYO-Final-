@@ -1,8 +1,9 @@
 {{--
   property-map — embedded Google Map for a single property pin.
   Section 1 (MLS Listing Information).
-  Uses Maps Embed API with the same key as the JS Maps API (config.services.google.places_key).
-  Degrades to a "View on Google Maps" link if no coordinates or no API key.
+  Uses the Maps Embed API with the BROWSER key (config/google_maps_browser.php), never the
+  server key — an iframe src is page source, readable by anyone who opens the page.
+  Degrades to a "View on Google Maps" link if no coordinates or no browser credential.
 --}}
 @props([
     'latitude'  => null,
@@ -11,7 +12,10 @@
 ])
 
 @php
-    $mapsKey = config('services.google.places_key', '');
+    /* The BROWSER credential, never the server key — an iframe URL is page source too.
+       See App\Support\Google\GoogleBrowserMaps. With none configured this degrades to
+       the "View on Google Maps" link below, which needs no credential. */
+    $mapsKey = \App\Support\Google\GoogleBrowserMaps::keyForRender();
     $hasCoords = $latitude !== null && $longitude !== null;
     $query = $hasCoords
         ? $latitude . ',' . $longitude
