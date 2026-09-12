@@ -1879,13 +1879,13 @@ class AgentAiBuild7Test extends TestCase
     {
         config(['ask_ai.agent_ai_v2_enabled' => true]);
 
-        $response = $this->postJson('/ask-ai/ask', []);
+        $response = $this->postJson('/ask-ai/listing-question', []);
 
         // V1 route must be reachable (validation error = controller ran)
         $this->assertNotEquals(404, $response->getStatusCode(),
-            'V1 /ask-ai/ask must not return 404 when V2 flag is on');
+            'V1 /ask-ai/listing-question must not return 404 when V2 flag is on');
         $this->assertNotEquals(500, $response->getStatusCode(),
-            'V1 /ask-ai/ask must not return 500 when V2 flag is on');
+            'V1 /ask-ai/listing-question must not return 500 when V2 flag is on');
     }
 
     public function test_v2_route_returns_404_when_flag_is_off(): void
@@ -1916,12 +1916,12 @@ class AgentAiBuild7Test extends TestCase
     {
         // With flag OFF
         config(['ask_ai.agent_ai_v2_enabled' => false]);
-        $responseOff = $this->postJson('/ask-ai/ask', []);
+        $responseOff = $this->postJson('/ask-ai/listing-question', []);
         $statusOff   = $responseOff->getStatusCode();
 
         // With flag ON
         config(['ask_ai.agent_ai_v2_enabled' => true]);
-        $responseOn  = $this->postJson('/ask-ai/ask', []);
+        $responseOn  = $this->postJson('/ask-ai/listing-question', []);
         $statusOn    = $responseOn->getStatusCode();
 
         $this->assertSame($statusOff, $statusOn,
@@ -1957,7 +1957,7 @@ class AgentAiBuild7Test extends TestCase
         }
 
         // V1 route still resolves correctly
-        $response = $this->postJson('/ask-ai/ask', []);
+        $response = $this->postJson('/ask-ai/listing-question', []);
         $this->assertNotEquals(500, $response->getStatusCode(),
             'V1 route must not 500 even when V2 service bindings are present');
     }

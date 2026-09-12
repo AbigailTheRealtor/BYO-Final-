@@ -182,7 +182,13 @@ class AskAiContextBuilderService
             'building_sqft'                  => 'total_square_feet',
             'ceiling_height'                 => 'ceiling_height',
             'parking_spaces'                 => 'garage_parking_spaces',
-            'annual_noi'                     => 'minimum_annual_net_income',
+            // P0 — 'annual_noi' was mapped to 'minimum_annual_net_income' and is REMOVED.
+            // That meta key holds the seller's DESIRED MINIMUM net income (their walk-away
+            // figure), not the property's actual NOI. Publishing it as 'annual_noi' both
+            // disclosed a negotiating floor and stated a wrong number as fact.
+            // There is no actual-NOI source field on the listing. The honest source is the
+            // seller-answered KB question 'faq_answers.annual_net_operating_income', which
+            // the classifier already routes NOI questions to. Do not re-add a listing alias.
             'price_per_sqft'                 => 'price_per_sqft',
             'existing_lease_type'            => 'existing_lease_type',
             'lease_expiration'               => 'lease_expiration',
@@ -194,10 +200,14 @@ class AskAiContextBuilderService
             'unit_mix_summary'               => 'unit_type_configurations',
             'gross_annual_income'            => 'gross_annual_income',
             'annual_operating_expenses'      => 'annual_operating_expenses',
+            // The seller's own minimums, under their honest names. These are owner-only
+            // facts (never on the SnapshotFactVisibility public allow-list).
             'minimum_annual_net_income'      => 'minimum_annual_net_income',
             'minimum_cap_rate'               => 'minimum_cap_rate',
-            'annual_net_income'              => 'minimum_annual_net_income',
-            'cap_rate'                       => 'minimum_cap_rate',
+            // P0 — 'annual_net_income' and 'cap_rate' were aliases onto those same two
+            // minimum values and are REMOVED for the reason given above: a desired minimum
+            // must never be represented as the property's actual figure. The honest source
+            // for an actual cap rate is 'faq_answers.current_cap_rate'.
             'rent_roll_available'            => 'rent_roll_available',
             'operating_statement_available'  => 'operating_statement_available',
             'occupancy_requirement'          => ['assumable_occupancy_requirement', 'assumable_occupancy_other'],

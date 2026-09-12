@@ -1902,24 +1902,17 @@ class AskAiRunnerV2Service
             'total parking available',
             'parking count',
         ],
-        'listing.annual_noi' => [
-            'net operating income',
-            'annual noi',
-            'what is the noi',
-            'what is the net operating income',
-            'annual net operating income',
-        ],
-        'listing.cap_rate' => [
-            'cap rate',
-            'what is the cap rate',
-            'capitalization rate',
-            'capitalization rate for this property',
-            'return rate on this property',
-            'what is the capitalization rate',
-            'what return does this investment yield',
-            'investment yield rate',
-            'property investment return',
-        ],
+        // P0 — the 'listing.annual_noi' and 'listing.cap_rate' keyword routes are REMOVED.
+        // Both resolved to context keys that were aliases onto the seller's DESIRED MINIMUM
+        // figures (minimum_annual_net_income / minimum_cap_rate), so an NOI or cap-rate
+        // question was answered with the seller's negotiating floor presented as the
+        // property's actual figure. Those context aliases are gone (see
+        // AskAiContextBuilderService::CANONICAL_SOURCE_MAP).
+        //
+        // NOI and cap-rate questions now route to the seller-answered KB keys
+        // 'faq_answers.annual_net_operating_income' and 'faq_answers.current_cap_rate',
+        // which are checked first by detectFaqFieldKey(). Do not re-add a listing route
+        // here unless a genuine actual-NOI / actual-cap-rate source field exists.
         'listing.price_per_sqft' => [
             'price per square foot',
             'cost per sq ft',
@@ -5587,8 +5580,8 @@ class AskAiRunnerV2Service
             // current_use covers both commercial and Vacant Land contexts
             'listing.current_use'                        => 'Current land use information',
             // Listing.* fields — Commercial Sale: Financial
-            'listing.annual_noi'                         => 'Annual net operating income information',
-            'listing.cap_rate'                           => 'Cap rate information',
+            // 'listing.annual_noi' / 'listing.cap_rate' labels removed in P0 along with
+            // their keyword routes and context aliases (seller-minimum misrepresentation).
             'listing.price_per_sqft'                     => 'Price per square foot information',
             // Listing.* fields — Commercial Sale: Lease
             'listing.existing_lease_type'                => 'Existing lease type information',

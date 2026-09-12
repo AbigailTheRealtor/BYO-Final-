@@ -83,11 +83,16 @@ class AgentAiV2SmokeTest extends TestCase
     {
         config(['ask_ai.agent_ai_v2_enabled' => false]);
 
-        // We only verify the route exists and is reachable (not 404/405).
-        // A 422 means validation ran — the V1 controller is alive.
-        $response = $this->postJson('/ask-ai/ask', []);
+        // Targets /ask-ai/listing-question, the V1 route every Ask AI surface in the
+        // product actually posts to. This assertion previously used /ask-ai/ask, the
+        // unauthenticated endpoint that P0 removed for having no caller at all — which
+        // made it the wrong route to guard the V1 pipeline with.
+        //
+        // We only verify the route exists and is reachable (not 404/405). An auth
+        // redirect or 401 means routing resolved and middleware ran — V1 is alive.
+        $response = $this->postJson('/ask-ai/listing-question', []);
 
-        $this->assertNotEquals(404, $response->getStatusCode(), 'V1 /ask-ai/ask must not return 404');
-        $this->assertNotEquals(405, $response->getStatusCode(), 'V1 /ask-ai/ask must not return 405 (Method Not Allowed)');
+        $this->assertNotEquals(404, $response->getStatusCode(), 'V1 /ask-ai/listing-question must not return 404');
+        $this->assertNotEquals(405, $response->getStatusCode(), 'V1 /ask-ai/listing-question must not return 405 (Method Not Allowed)');
     }
 }
