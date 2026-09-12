@@ -96,11 +96,17 @@ class MlsQuickImportActionVisibilityTest extends TestCase
     }
 
     /**
-     * "Continue" (step 3) and "Review My Listing" (step 4).
+     * Every primary advance button between Method and Review.
      *
      * `step` is a public Livewire property, so the later steps can be rendered
      * directly without driving a live Bridge lookup — this test is about the
      * markup, not the flow.
+     *
+     * ONE ASSERTION PER STEP, and the list grows with the wizard. The AI
+     * Knowledge Base step landed between Terms and Review, which moved
+     * "Review My Listing" off the Terms step and onto it; a step added without
+     * a line here is a primary button that Preflight's CSS flattening can turn
+     * invisible with nothing failing.
      *
      * @dataProvider roleProvider
      */
@@ -112,11 +118,19 @@ class MlsQuickImportActionVisibilityTest extends TestCase
         $this->assertStringContainsString('Continue', $method);
         $this->assertButtonCarriesBackground($method, 'continueToTerms');
 
+        // Terms now advances to the AI Knowledge Base step, not to Review.
         $terms = Livewire::actingAs($this->user)->test($component)
             ->set('step', 'terms')->lastRenderedDom;
 
-        $this->assertStringContainsString('Review My Listing', $terms);
-        $this->assertButtonCarriesBackground($terms, 'continueToReview');
+        $this->assertStringContainsString('Continue', $terms);
+        $this->assertButtonCarriesBackground($terms, 'continueToKnowledge');
+
+        // The AI Knowledge Base step is what now carries "Review My Listing".
+        $knowledge = Livewire::actingAs($this->user)->test($component)
+            ->set('step', 'knowledge')->lastRenderedDom;
+
+        $this->assertStringContainsString('Review My Listing', $knowledge);
+        $this->assertButtonCarriesBackground($knowledge, 'continueToReview');
     }
 
     /**
