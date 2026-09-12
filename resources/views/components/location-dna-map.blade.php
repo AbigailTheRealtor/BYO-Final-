@@ -475,7 +475,13 @@
         'ldnaMaplibreBoundaries' => $ldnaMlBoundaries,
     ])
     @else
+    {{-- The Google canvas is emitted only when there is a key to draw it with. Without one the
+         loader below never runs, so the 360px box stayed empty for the life of the page — which
+         reads as a broken map, not an unconfigured one. The chips, the radius and Important Place
+         rows and the criteria summary below still state every saved preference in words. --}}
+    @if($mapsKey !== '')
     <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+    @endif
     @endif
 
     @if($hasFloodZones)
@@ -702,7 +708,13 @@
         'ldnaMaplibreBoundaries' => $ldnaMlBoundaries,
     ])
     @else
+    {{-- The Google canvas is emitted only when there is a key to draw it with. Without one the
+         loader below never runs, so the 360px box stayed empty for the life of the page — which
+         reads as a broken map, not an unconfigured one. The chips, the radius and Important Place
+         rows and the criteria summary below still state every saved preference in words. --}}
+    @if($mapsKey !== '')
     <div id="{{ $componentId }}" class="ldna-hero-map"></div>
+    @endif
     @endif
 
     @if($hasFloodZones)

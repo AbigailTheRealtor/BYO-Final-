@@ -135,7 +135,8 @@
           :floodZoneData="$floodZoneData ?? null"
           :schoolDistrictData="$schoolDistrictData ?? null"
         />
-        <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
+        {{-- Calculated lines only: restating the client's own criteria is not intelligence. --}}
+        <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['calculated_lines'] ?? []" />
         <!-- Description Box  -->
         <div class="card description">
           <div class="card-body">
@@ -189,24 +190,33 @@
             <hr>
             <div class="row">
               <h4>Listing Information:</h4>
-              @if (@$auction->get->cities != null)
+              @php
+                // Blank entries dropped, so an empty or all-blank list renders no row at all.
+                $tcListingValues = fn ($v) => array_values(array_filter((array) ($v ?? []), fn ($x) => trim((string) $x) !== ''));
+                $tcListingCities   = $tcListingValues(@$auction->get->cities);
+                $tcListingCounties = $tcListingValues(@$auction->get->counties);
+                $tcListingStates   = $tcListingValues(@$auction->get->state);
+              @endphp
+              @if ($tcListingCities)
                 <div class="col-md-12 col-12  mt-2">
                   <i class="fa-regular fa-check-square"></i> <strong>Cities:</strong>
-                  @foreach (@$auction->get->cities as $item)
+                  @foreach ($tcListingCities as $item)
                     <span class="bg-secondary text-white rounded d-inline-block px-2 my-1"> {{ $item }}</span>
                   @endforeach
                 </div>
               @endif
-              @if (isset($auction->get->counties))
+              {{-- A row only when it holds a value: `isset()` is true for an empty list, which used to
+                   print a bare "Counties:" / "State:" label with nothing after it. --}}
+              @if ($tcListingCounties)
                 <div class="col-md-12 col-12  mt-2"><i class="fa-regular fa-check-square"></i> <strong>Counties:</strong>
-                  @foreach (@$auction->get->counties as $item)
+                  @foreach ($tcListingCounties as $item)
                     <span class="bg-secondary text-white rounded d-inline-block px-2 my-1"> {{ $item }}</span>
                   @endforeach
                 </div>
               @endif
-              @if (isset($auction->get->state))
+              @if ($tcListingStates)
                 <div class="col-md-12 col-12  mt-2"><i class="fa-regular fa-check-square"></i> <strong>State:</strong>
-                  @foreach (@$auction->get->state as $item)
+                  @foreach ($tcListingStates as $item)
                     <span class="bg-secondary text-white rounded d-inline-block px-2 my-1"> {{ $item }}</span>
                   @endforeach
                 </div>

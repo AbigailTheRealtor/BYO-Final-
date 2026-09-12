@@ -168,9 +168,12 @@ class BuyerTenantCriteriaResponseOfferTest extends TestCase
             "Exactly one OfferAuction bridge row must exist for listing_id='{$bridgeListingId}' even after two POSTs.");
     }
 
-    // ── Buyer listing HTML — listing_type=buyer_criteria in all four forms ──────
+    // ── Buyer listing HTML — listing_type=buyer_criteria on the one Respond form ─
+    //
+    // The page uses the Criteria page family, so the Respond form lives once, in the right-column
+    // actions; the hero, Quick Actions grid, sidebar and mobile-bar copies are gone.
 
-    public function test_buyer_listing_view_contains_listing_type_buyer_criteria_in_all_four_forms(): void
+    public function test_buyer_listing_view_contains_listing_type_buyer_criteria_on_its_one_form(): void
     {
         $buyerAuction = BuyerAgentAuction::create([
             'user_id'     => $this->user->id,
@@ -192,13 +195,13 @@ class BuyerTenantCriteriaResponseOfferTest extends TestCase
         $body = $response->getContent();
 
         $count = substr_count($body, 'value="buyer_criteria"');
-        $this->assertSame(4, $count,
-            "The hidden input value=\"buyer_criteria\" must appear exactly 4 times (one per form); found {$count}.");
+        $this->assertSame(1, $count,
+            "The hidden input value=\"buyer_criteria\" must appear exactly once (the Respond form); found {$count}.");
     }
 
-    // ── Tenant listing HTML — listing_type=tenant_criteria in all four forms ────
+    // ── Tenant listing HTML — listing_type=tenant_criteria on the one Respond form ─
 
-    public function test_tenant_listing_view_contains_listing_type_tenant_criteria_in_all_four_forms(): void
+    public function test_tenant_listing_view_contains_listing_type_tenant_criteria_on_its_one_form(): void
     {
         $tenantAuction = TenantAgentAuction::forceCreate([
             'user_id'     => $this->user->id,
@@ -220,8 +223,8 @@ class BuyerTenantCriteriaResponseOfferTest extends TestCase
         $body = $response->getContent();
 
         $count = substr_count($body, 'value="tenant_criteria"');
-        $this->assertSame(4, $count,
-            "The hidden input value=\"tenant_criteria\" must appear exactly 4 times (one per form); found {$count}.");
+        $this->assertSame(1, $count,
+            "The hidden input value=\"tenant_criteria\" must appear exactly once (the Respond form); found {$count}.");
     }
 
     // ── Backward compatibility — no listing_type uses original validation path ─

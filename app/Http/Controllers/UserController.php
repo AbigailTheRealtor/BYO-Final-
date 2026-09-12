@@ -38,27 +38,27 @@ class UserController extends Controller
                 $page_data['auctions'] = LandlordAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
                 return view('author_inc.landlord_auctions', $page_data);
             } else if ($type == 2) {
-                $page_data['pAuctions'] = BuyerCriteriaAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
+                $page_data['pAuctions'] = BuyerCriteriaAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->paginate(12);
                 return view('author_inc.buyers_criteria_auctions', $page_data);
             } else if ($type == 3) {
-                $page_data['pAuctions'] = TenantCriteriaAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
+                $page_data['pAuctions'] = TenantCriteriaAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->paginate(12);
                 return view('author_inc.tenant_criteria_auctions', $page_data);
             } else if ($type == 4) {
-                $page_data['pAuctions'] = AgentServiceAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
+                $page_data['pAuctions'] = AgentServiceAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->paginate(12);
                 return view('author_inc.agent_service_auctions', $page_data);
             }
         } else if ($user->user_type == 'buyer') {
-            // is_approved / is_sold are varchar and hold 'true'/'false' as well as
-            // '1'/'0'. is_draft is filtered too: matching 'true' must not publish a draft.
-            $pAuctions = BuyerAgentAuction::where('is_archived', 0)->where('is_draft', false);
+            // Only the profile user's own listings. is_approved / is_sold are varchar and hold
+            // 'true'/'false' as well as '1'/'0'. is_draft is filtered too: matching 'true' must not publish a draft.
+            $pAuctions = BuyerAgentAuction::where('user_id', $user->id)->where('is_archived', 0)->where('is_draft', false);
             ListingFlag::whereTrue($pAuctions, 'is_approved');
             ListingFlag::whereNotTrue($pAuctions, 'is_sold');
             $page_data['pAuctions'] = $pAuctions->paginate(12);
             return view('author_inc.buyer_agent_auctions', $page_data);
         } else if ($user->user_type == 'seller') {
-            // is_approved / is_sold are varchar and hold '1'/'0' as well as
-            // 'true'/'false'. is_draft is filtered too: a wizard draft stores is_approved '1'.
-            $pAuctions = SellerAgentAuction::where('is_archived', 0)->where('is_draft', false)
+            // Only the profile user's own listings. is_approved / is_sold are varchar and hold '1'/'0'
+            // as well as 'true'/'false'. is_draft is filtered too: a wizard draft stores is_approved '1'.
+            $pAuctions = SellerAgentAuction::where('user_id', $user->id)->where('is_archived', 0)->where('is_draft', false)
                 ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
                 ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); });
             ListingFlag::whereTrue($pAuctions, 'is_approved');
@@ -66,7 +66,7 @@ class UserController extends Controller
             $page_data['pAuctions'] = $pAuctions->paginate(12);
             return view('author_inc.seller_agent_auctions', $page_data);
         } else if ($user->user_type == 'landlord') {
-            $page_data['pAuctions'] = LandlordAgentAuction::where('is_sold', false)->where('is_approved', 1)->where('is_archived', 0)->paginate(12);
+            $page_data['pAuctions'] = LandlordAgentAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->where('is_archived', 0)->paginate(12);
             return view('author_inc.landlord_agent_auctions', $page_data);
         } else if ($user->user_type == 'tenant') {
             // Tenant dashboard: Owner sees all their listings (including unapproved),

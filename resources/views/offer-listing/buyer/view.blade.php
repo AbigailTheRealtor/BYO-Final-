@@ -44,11 +44,12 @@
     };
     $row = function($label, $value) {
         if ($value === null || $value === '' || $value === false) return '';
-        return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7" style="overflow-wrap:break-word;word-break:break-word;">' . e($value) . '</div></div>';
+        return '<div class="bol-field"><i class="fa-regular fa-square-check" aria-hidden="true"></i> <strong>' . e($label) . ':</strong> <span class="bol-field-value">' . e($value) . '</span></div>';
     };
 @endphp
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
 <style>
 /* ============================================================
    Design tokens — shared across all offer-listing view pages
@@ -394,11 +395,78 @@
     border-color: #1d4ed8 !important;
     color: #ffffff !important;
 }
+/* ============================================================
+   Criteria page family — this page uses the Buyer/Tenant Criteria frame:
+   `container listingDescription`, an 8/4 two-column row, the Search Areas
+   component and one description card on the left, title + actions on the right.
+   ============================================================ */
+.bol-view-page .bol-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem;
+}
+.bol-view-page .bol-toolbar-meta { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; font-size: .85rem; color: #64748b; }
+.bol-view-page .bol-crit-section + .bol-crit-section { border-top: 1px solid #e5e7eb; margin-top: 1rem; }
+.bol-view-page .bol-crit-title {
+    color: #0f172a !important; font-weight: 700 !important; font-size: 1.15rem;
+    margin: .9rem 0 .35rem;
+}
+.bol-view-page .bol-crit-section:first-child .bol-crit-title { margin-top: .25rem; }
+.bol-view-page .bol-field {
+    border-bottom: 1px solid #e5e7eb; padding: .45rem 0;
+    color: #111827; font-weight: 600; font-size: .95rem; line-height: 1.6;
+    overflow-wrap: break-word; word-break: break-word;
+}
+.bol-view-page .bol-field strong { color: #64748b; font-weight: 500; }
+.bol-view-page .bol-field .fa-square-check { color: #049399; margin-right: .15rem; }
+.bol-view-page .bol-crit-body .field-label { color: #64748b; font-weight: 500; font-size: .95rem; }
+.bol-view-page .bol-crit-body .field-value { color: #111827; font-weight: 600; font-size: .95rem; }
+.bol-view-page .bol-crit-body h6 { margin-top: .9rem; }
+.bol-view-page .bol-crit-body hr { margin: .75rem 0; }
+
+.bol-view-page .bol-photos { height: 340px; border-radius: .5rem; overflow: hidden; margin-bottom: 1.25rem; }
+.bol-view-page .bol-photos .bol-hero-carousel-wrap { height: 100%; min-height: 0; }
+
+.bol-view-page .rightCol h1 {
+    font-size: 1.6rem; font-weight: 700; color: #0f172a; line-height: 1.25;
+    word-break: break-word; margin-bottom: .35rem;
+}
+.bol-view-page .bol-right-sub { color: #64748b; font-size: .9rem; margin-bottom: 0; }
+.bol-view-page .bol-timer { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; font-size: .85rem; color: #64748b; margin-bottom: .75rem; }
+.bol-view-page .bol-price { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .75rem; }
+.bol-view-page .bol-price-label { font-size: .78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.bol-view-page .bol-price-value { font-size: 1.5rem; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
+.bol-view-page .rightCol .bol-actions { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.5rem; }
+.bol-view-page .rightCol .bol-actions form { margin: 0; }
+.bol-view-page .rightCol .bol-actions .btn {
+    width: 100% !important; margin: 0 !important; padding: .55rem .75rem !important;
+    font-weight: 600; display: flex; align-items: center; justify-content: center; gap: .45rem; border-radius: 5px;
+}
+.bol-view-page .rightCol .bol-actions .bol-act-primary { background: #049399 !important; border: 1px solid #049399 !important; color: #fff !important; }
+.bol-view-page .rightCol .bol-actions .bol-act-primary:hover { background: #037c81 !important; }
+.bol-view-page .rightCol .bol-actions .bol-act-outline { background: #fff !important; border: 1px solid #cbd5e1 !important; color: #334155 !important; }
+.bol-view-page .rightCol .bol-actions .bol-act-outline:hover { background: #f8fafc !important; }
+/* The compiled Tailwind preflight clears [type='button'] backgrounds, which leaves a bare
+   .btn-success white-on-white; the Criteria "Send Message" green is restated here. */
+.bol-view-page .rightCol .bol-actions .btn-success { background: #198754 !important; border: 1px solid #198754 !important; color: #fff !important; }
+.bol-view-page .rightCol .bol-actions .btn-success:hover { background: #157347 !important; }
+.bol-view-page .rightCol .bol-summary ul { padding: 0; margin: 0; }
+.bol-view-page .rightCol .bol-summary li { gap: .75rem; font-size: .9rem; }
+.bol-view-page .rightCol .bol-summary li span:last-child { text-align: right; color: #334155; word-break: break-word; }
+.bol-view-page .rightCol .bol-summary-badges { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .25rem; }
+.bol-view-page .rightCol .bol-standout {
+    margin-top: .75rem; padding: .6rem .8rem; border-radius: 6px;
+    background: #f0fdfa; border: 1px solid #99f6e4; color: #134e4a; font-size: .85rem;
+}
+.bol-view-page .rightCol .bol-standout-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #0f766e; }
+.bol-view-page .rightCol .bol-share .qr-code { text-align: center; }
+.bol-view-page .rightCol .bol-share .qr-code svg { width: 180px !important; height: 180px !important; }
+.bol-view-page .rightCol .bol-share .field button { margin: 0 !important; padding: 4px 10px !important; min-width: 60px; width: auto !important; white-space: nowrap; }
+.bol-view-page .rightCol .bol-share .bol-native-share { margin: .75rem 0 0 !important; padding: .4rem .75rem !important; }
 </style>
 @endpush
 
 @section('content')
-<div class="container py-4 bol-view-page">
+<div class="container listingDescription bol-view-page">
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -407,28 +475,10 @@
         </div>
     @endif
 
-    {{-- Page Header --}}
     @php
         $listingTitle = $meta['listing_title'] ?? ($auction->title ?? 'Buyer Criteria Listing');
         $propType     = $str('property_type');
     @endphp
-    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-        <div>
-            <h2 class="mb-1 fw-bold" style="color:#1e293b;">{{ $listingTitle }}</h2>
-            <p class="text-muted mb-0">
-                <i class="fa-solid fa-magnifying-glass-location me-1"></i>Buyer Criteria Listing
-                @if($propType) &bull; {{ $propType }} @endif
-            </p>
-        </div>
-        @if(auth()->check() && auth()->id() === $auction->user_id)
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}"
-               class="btn btn-outline-primary">
-                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
-            </a>
-        </div>
-        @endif
-    </div>
 
     @php
         /* Hero: max budget / purchase price */
@@ -475,7 +525,6 @@
         $heroBadgesDisplay = array_slice(array_values(array_filter($heroBadges, fn($b) => $b['show'])), 0, 5);
     @endphp
 
-    {{-- HERO --}}
     @php
         /* Hero photos: decode property_photos JSON array */
         $bolPropertyPhotos = $meta['property_photos'] ?? [];
@@ -510,72 +559,7 @@
         $bpClosed              = $bw->isClosed();
         $_timerEnd             = $bpEndsAtDisplay;
     @endphp
-    <div class="bol-hero mb-4">
-        <div class="row g-0" style="min-height:280px;">
-            <div class="col-lg-8">
-                <div class="bol-hero-carousel-wrap">
-                    @if(count($bolHeroPhotoUrls))
-                        <img id="bolHeroCarouselImg"
-                             src="{{ $bolHeroPhotoUrls[$bolCoverPhotoIdx] }}"
-                             alt="Buyer listing photo"
-                             class="bol-hero-photo"
-                             style="cursor:pointer;"
-                             onerror="this.style.display='none';var ph=document.getElementById('bolHeroCarouselPlaceholder');if(ph)ph.style.display='flex'">
-                        <div id="bolHeroCarouselPlaceholder" class="bol-hero-placeholder" style="display:none;">
-                            <i class="fa-solid fa-magnifying-glass-dollar"></i>
-                        </div>
-                        @if(count($bolHeroPhotoUrls) > 1)
-                        <button class="bol-hero-arrow bol-hero-arrow-prev" id="bolHeroCarouselPrev" aria-label="Previous photo">&#8249;</button>
-                        <button class="bol-hero-arrow bol-hero-arrow-next" id="bolHeroCarouselNext" aria-label="Next photo">&#8250;</button>
-                        <div class="bol-hero-carousel-counter" id="bolHeroCarouselCounter">{{ $bolCoverPhotoIdx + 1 }} / {{ count($bolHeroPhotoUrls) }}</div>
-                        @endif
-                    @else
-                    @php
-                        $_bSnapRows = [];
-                        if ($heroPrice) $_bSnapRows[] = ['icon'=>'fa-solid fa-dollar-sign','label'=>'Max Budget','val'=>$heroPrice];
-                        $_bLocParts = array_filter([$str('property_city') ?: null]);
-                        if (empty($_bLocParts)) {
-                            $_bLocCities = $arr('cities') ?: [];
-                            if (count($_bLocCities)) $_bLocParts[] = implode(', ', array_slice($_bLocCities, 0, 2));
-                        }
-                        $_bLocState = $str('state') ?: $str('property_state') ?: null;
-                        if ($_bLocState) $_bLocParts[] = $_bLocState;
-                        $_bSnapLoc = implode(', ', array_filter($_bLocParts));
-                        if ($_bSnapLoc) $_bSnapRows[] = ['icon'=>'fa-solid fa-location-dot','label'=>'Location','val'=>$_bSnapLoc];
-                        if ($heroPropType) $_bSnapRows[] = ['icon'=>'fa-solid fa-tag','label'=>'Property Type','val'=>$heroPropType];
-                        if ($heroBeds) $_bSnapRows[] = ['icon'=>'fa-solid fa-bed','label'=>'Min. Beds','val'=>$heroBeds];
-                        if ($heroBaths) $_bSnapRows[] = ['icon'=>'fa-solid fa-bath','label'=>'Min. Baths','val'=>$heroBaths];
-                        if ($heroSqft) $_bSnapRows[] = ['icon'=>'fa-solid fa-ruler-combined','label'=>'Min. Sq Ft','val'=>number_format((int)preg_replace('/[^0-9]/','',$heroSqft)).'+ sq ft'];
-                        $_bPurpose = $str('purchase_purpose');
-                        if ($_bPurpose) $_bSnapRows[] = ['icon'=>'fa-solid fa-bullseye','label'=>'Purpose','val'=>$_bPurpose];
-                        if ($badgePreApproved) $_bSnapRows[] = ['icon'=>'fa-solid fa-circle-check','label'=>'Pre-Approved','val'=>'Yes'];
-                        if (count($heroOfFin)) $_bSnapRows[] = ['icon'=>'fa-solid fa-hand-holding-dollar','label'=>'Financing','val'=>implode(', ', array_slice($heroOfFin, 0, 2))];
-                        if ($heroStatus) $_bSnapRows[] = ['icon'=>'fa-solid fa-circle','label'=>'Status','val'=>$heroStatus];
-                    @endphp
-                    <div style="height:100%;min-height:280px;padding:1.5rem 1.25rem;background:#ffffff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
-                        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2563EB;font-weight:700;margin-bottom:.5rem;">Buyer Criteria Snapshot</div>
-                        @foreach($_bSnapRows as $_bsr)
-                        <div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid #f1f5f9;">
-                            <i class="{{ $_bsr['icon'] }}" style="font-size:.68rem;color:#2563eb;min-width:13px;text-align:center;"></i>
-                            <span style="font-size:.7rem;color:#64748b;white-space:nowrap;">{{ $_bsr['label'] }}</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#0f172a;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $_bsr['val'] }}">{{ $_bsr['val'] }}</span>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-                </div>
-                <script>var _bolHeroPhotos={!! json_encode($bolHeroPhotoUrls) !!};var _bolHeroStartIdx={{ $bolCoverPhotoIdx }};</script>
-            </div>
-            <div class="col-lg-4">
-                <div class="bol-hero-summary">
-                    @if($heroPrice)
-                        <div class="bol-hero-price">{{ $heroPrice }}</div>
-                        <div class="bol-hero-sub">Max Purchase Budget</div>
-                    @endif
-
-                    <div class="bol-hero-title">{{ $listingTitle }}</div>
-
-                    @php
+    @php
                         $locationParts = array_filter([
                             $str('property_city') ?: null,
                             $str('property_county') ? $str('property_county') . ' County' : null,
@@ -589,260 +573,11 @@
                             if (count($countiesArr)) $locationParts[] = $countiesArr[0] . ' County';
                         }
                         $locationDisplay = implode(', ', $locationParts);
-                    @endphp
-                    @if($locationDisplay)
-                        <div class="bol-hero-sub"><i class="fa-solid fa-location-dot me-1" style="color:#2563eb;"></i>{{ $locationDisplay }}</div>
-                    @endif
-
-                    <div class="bol-hero-meta">
-                        @if($heroBeds)
-                            <span class="bol-hero-meta-item"><i class="fa-solid fa-bed"></i>{{ $heroBeds }} Bed{{ $heroBeds != '1' ? 's' : '' }}</span>
-                        @endif
-                        @if($heroBaths)
-                            <span class="bol-hero-meta-item"><i class="fa-solid fa-bath"></i>{{ $heroBaths }} Bath{{ $heroBaths != '1' ? 's' : '' }}</span>
-                        @endif
-                        @if($heroSqft)
-                            <span class="bol-hero-meta-item"><i class="fa-solid fa-ruler-combined"></i>{{ number_format((int)preg_replace('/[^0-9]/','',$heroSqft)) }}+ Sq Ft</span>
-                        @endif
-                        @if($heroPropType)
-                            <span class="bol-hero-meta-item"><i class="fa-solid fa-tag"></i>{{ $heroPropType }}</span>
-                        @endif
-                    </div>
-
-                    @if($heroStatus)
-                        <div><span class="bol-hero-status"><i class="fa-solid fa-circle-check"></i>{{ $heroStatus }}</span></div>
-                    @endif
-
-                    @if($heroListDate || $heroUpdDate)
-                        <div class="bol-hero-dates">
-                            @if($heroListDate)<span>Listed: {{ $heroListDate }}</span>@endif
-                            @if($heroListDate && $heroUpdDate)<span class="mx-1">·</span>@endif
-                            @if($heroUpdDate)<span>Updated: {{ $heroUpdDate }}</span>@endif
-                        </div>
-                    @endif
-
-                    <div class="bol-hero-badges">
-                        @foreach ($heroBadgesDisplay as $b)
-                            <span class="bol-badge bol-badge-{{ $b['color'] }}"><i class="{{ $b['icon'] }}"></i> {{ $b['label'] }}</span>
-                        @endforeach
-                    </div>
-
-                    @php
                         $bolStandoutParts = array_values(array_map(
                             fn($b) => $b['label'],
                             array_filter($heroBadgesDisplay, fn($b) => !empty($b['strong']))
                         ));
-                    @endphp
-                    @if(count($bolStandoutParts) >= 2)
-                    <div style="margin-top:10px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
-                        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#1d4ed8;margin-bottom:3px;">Why This Buyer Stands Out</div>
-                        @php
-                            $bSlice = array_slice($bolStandoutParts, 0, -1);
-                            $bLast  = end($bolStandoutParts);
-                        @endphp
-                        <div style="font-size:0.88rem;color:#1e3a5f;">{{ count($bolStandoutParts) > 1 ? implode(', ', $bSlice) . ' and ' . $bLast : $bLast }}.</div>
-                    </div>
-                    @endif
-
-                    @if($hasBPTimer)
-                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
-                        <span class="text-muted fw-semibold" style="font-size:.8rem;"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
-                        @if($timerRemainingSeconds <= 0)
-                            <span class="badge bg-secondary" style="font-size:.8rem;">Expired</span>
-                        @else
-                            <span class="badge bg-info text-dark bol-bp-timer"
-                                  data-seconds="{{ $timerRemainingSeconds }}"
-                                  style="font-size:.8rem;font-variant-numeric:tabular-nums;">
-                                @php
-                                    $_bs = $timerRemainingSeconds;
-                                    if ($_bs < 60) { echo $_bs . 's Remaining'; }
-                                    else {
-                                        $_bd = intdiv($_bs, 86400); $_bs %= 86400;
-                                        $_bh = intdiv($_bs, 3600);  $_bs %= 3600;
-                                        $_bi = intdiv($_bs, 60);
-                                        $_bp = [];
-                                        if ($_bd) $_bp[] = $_bd . 'd';
-                                        if ($_bh) $_bp[] = $_bh . 'h';
-                                        if ($_bi) $_bp[] = $_bi . 'm';
-                                        echo implode(' ', $_bp) . ' Remaining';
-                                    }
-                                @endphp
-                            </span>
-                        @endif
-                    </div>
-                    @endif
-
-                    <div class="bol-hero-ctas">
-                        <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
-                            @csrf
-                            <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
-                            <input type="hidden" name="role" value="buyer">
-                            <input type="hidden" name="listing_type" value="buyer_criteria">
-                            <button type="submit" class="btn btn-primary" aria-label="Respond to this Buyer Criteria listing">
-                                <i class="fa-solid fa-reply me-1"></i>Respond to Buyer Criteria
-                            </button>
-                        </form>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bolShowingModal" aria-label="Schedule a showing">
-                            <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bolQuestionModal" aria-label="Ask a question about this listing">
-                            <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Search Areas & Location Preferences — directly below the hero/snapshot so it is always
-         visible. Important Places are located only for the owner (controller decides). --}}
-    <x-location-dna-map
-        :preferences="$locationDnaPreferences ?? null"
-        :legacyLocation="$legacyLocation ?? []"
-        :importantPlaces="$importantPlaces ?? []"
-        :importantPlacesExact="$importantPlacesExact ?? false"
-        :showHeading="true"
-        :boundaryData="$boundaryData ?? null"
-        :floodZoneData="$floodZoneData ?? null"
-        :schoolDistrictData="$schoolDistrictData ?? null"
-    />
-    <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
-
-    {{-- ===== INTERACTION HUB ===== --}}
-    <div class="bol-interaction-hub" id="bol-interaction-hub">
-        <div class="bol-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
-        <div class="bol-interaction-grid">
-
-            {{-- 1. Respond to Buyer Criteria --}}
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-reply"></i></div>
-                <div class="bol-interaction-card-label">Respond to Buyer Criteria</div>
-                <div class="bol-interaction-card-helper">Submit a property that matches this buyer's criteria.</div>
-                <form method="POST" action="{{ route('offers.store') }}">
-                    @csrf
-                    <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
-                    <input type="hidden" name="role" value="buyer">
-                    <input type="hidden" name="listing_type" value="buyer_criteria">
-                    <button type="submit" class="bol-interaction-cta bol-interaction-cta-primary"
-                            aria-label="Respond to this Buyer Criteria listing">
-                        <i class="fa-solid fa-reply"></i>Respond
-                    </button>
-                </form>
-            </div>
-
-            {{-- 2. Schedule Showing --}}
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
-                <div class="bol-interaction-card-label">Schedule Showing</div>
-                <div class="bol-interaction-card-helper">Request an in-person or virtual showing.</div>
-                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#bolShowingModal"
-                        aria-label="Schedule a showing">
-                    <i class="fa-solid fa-calendar-plus"></i>Request Showing
-                </button>
-            </div>
-
-            {{-- 3. Ask AI --}}
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
-                <div class="bol-interaction-card-label">Ask AI</div>
-                <div class="bol-interaction-ai-chips">
-                    <span class="bol-interaction-ai-chip">What financing does this buyer prefer?</span>
-                    <span class="bol-interaction-ai-chip">Is this buyer pre-approved?</span>
-                    <span class="bol-interaction-ai-chip">What property features are required?</span>
-                    <span class="bol-interaction-ai-chip">What is the buyer's timeline?</span>
-                    <span class="bol-interaction-ai-chip">What contingencies does the buyer need?</span>
-                </div>
-                <input type="text" class="form-control form-control-sm"
-                       placeholder="Ask a question about this buyer…"
-                       aria-label="AI question input" disabled
-                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
-                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#bolAiModal"
-                        aria-label="Ask AI a question about this buyer listing">
-                    <i class="fa-solid fa-robot"></i>Ask AI
-                </button>
-            </div>
-
-            {{-- 4. Ask a Question --}}
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
-                <div class="bol-interaction-card-label">Ask a Question</div>
-                <div class="bol-interaction-card-helper">Send a direct question to the listing contact.</div>
-                <button type="button" class="bol-interaction-cta bol-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#bolQuestionModal"
-                        aria-label="Ask a question about this listing">
-                    <i class="fa-solid fa-paper-plane"></i>Send Question
-                </button>
-            </div>
-
-            {{-- 5. Share Listing --}}
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-share-nodes"></i></div>
-                <div class="bol-interaction-card-label">Share Listing</div>
-                <div class="bol-interaction-card-helper">Share this listing with friends, family, or your network.</div>
-                <div class="bol-interaction-share-row">
-                    <button type="button" class="bol-interaction-cta bol-interaction-cta-outline" id="bolHubCopyBtn"
-                            aria-label="Copy listing link to clipboard">
-                        <i class="fa-solid fa-link"></i>Copy Link
-                    </button>
-                    <button type="button" class="bol-interaction-cta bol-interaction-cta-outline" id="bolHubNativeShareBtn"
-                            style="display:none;" aria-label="Share this listing via your device's share sheet">
-                        <i class="fa-solid fa-share-nodes"></i>Share
-                    </button>
-                </div>
-                <div class="bol-interaction-share-row" style="margin-top:.15rem;">
-                    <span class="bol-interaction-cta bol-interaction-cta-muted" aria-label="QR Code — coming soon">
-                        <i class="fa-solid fa-qrcode"></i>QR Code
-                    </span>
-                    <span class="bol-interaction-cta bol-interaction-cta-muted" aria-label="Embed widget — coming soon">
-                        <i class="fa-solid fa-code"></i>Embed
-                    </span>
-                </div>
-            </div>
-
-            {{-- 6. Hire an Agent --}}
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-user-tie"></i></div>
-                <div class="bol-interaction-card-label">Hire an Agent</div>
-                <div class="bol-interaction-card-helper">Need representation? Connect with a licensed real estate agent.</div>
-                <button type="button" class="bol-interaction-cta bol-interaction-cta-hire"
-                        data-bs-toggle="modal" data-bs-target="#bolHireAgentModal"
-                        aria-label="Find and hire a real estate agent">
-                    <i class="fa-solid fa-user-tie"></i>Find an Agent
-                </button>
-            </div>
-
-            {{-- Activity — hidden until live data is available --}}
-            @if(false)
-            <div class="bol-interaction-card">
-                <div class="bol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
-                <div class="bol-interaction-card-label">Activity</div>
-                <div style="margin-top:.1rem;">
-                    <div class="bol-interaction-activity-row">
-                        <span>Views</span><span class="bol-interaction-activity-val">Coming Soon</span>
-                    </div>
-                    <div class="bol-interaction-activity-row">
-                        <span>Saves</span><span class="bol-interaction-activity-val">Coming Soon</span>
-                    </div>
-                    <div class="bol-interaction-activity-row">
-                        <span>Questions</span><span class="bol-interaction-activity-val">Coming Soon</span>
-                    </div>
-                    <div class="bol-interaction-activity-row">
-                        <span>Bids</span><span class="bol-interaction-activity-val">Coming Soon</span>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-        </div>{{-- /bol-interaction-grid --}}
-    </div>{{-- /bol-interaction-hub --}}
-
-    {{-- TWO-COLUMN LAYOUT --}}
-    <div class="row g-4 align-items-start">
-
-        {{-- Main content column --}}
-        <div class="col-lg-9 bol-main-content-wrap">
+    @endphp
 
     {{-- Section visibility flags — computed once, reused by nav tabs AND section guards --}}
     @php
@@ -896,66 +631,74 @@
             || $str('additional_purchase_terms');
     @endphp
 
-    {{-- SMOOTH-SCROLL NAV TABS --}}
-    <div class="bol-nav-tabs-wrap">
-        <ul class="bol-nav-tabs" id="bolNavTabs">
-            <li><a href="#section-overview">Overview</a></li>
-            @if($hasCriteriaContent)<li><a href="#section-criteria">Purchase Criteria</a></li>@endif
-            @if($hasFinancingContent)<li><a href="#section-financing">Financing</a></li>@endif
-            @if($hasPurchaseTermsContent)<li><a href="#section-purchase-terms">Purchase Terms</a></li>@endif
-            @if($hasFeaturesContent)<li><a href="#section-features">Property Features</a></li>@endif
-            @if($hasContact)<li><a href="#section-contact">Contact</a></li>@endif
-        </ul>
-    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
+            {{-- Status and owner tools, in the same place as on the Criteria pages. --}}
+            <div class="bol-toolbar">
+                <div class="bol-toolbar-meta">
+                    @if($heroStatus)<span class="badge bg-primary">{{ $heroStatus }}</span>@endif
+                    <span><i class="fa-solid fa-magnifying-glass-location me-1"></i>Buyer Criteria Listing @if($propType) &bull; {{ $propType }} @endif</span>
+                </div>
+                @if(auth()->check() && auth()->id() === $auction->user_id)
+                    <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}" class="btn btn-success btn-sm px-3">
+                        <i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing
+                    </a>
+                @endif
+            </div>
+
+            {{-- Search Areas & Location Preferences — inside the left column, as on the Criteria pages.
+                 Important Places are located only for the owner (controller decides). --}}
+            <x-location-dna-map
+                :preferences="$locationDnaPreferences ?? null"
+                :legacyLocation="$legacyLocation ?? []"
+                :importantPlaces="$importantPlaces ?? []"
+                :importantPlacesExact="$importantPlacesExact ?? false"
+                :showHeading="true"
+                :boundaryData="$boundaryData ?? null"
+                :floodZoneData="$floodZoneData ?? null"
+                :schoolDistrictData="$schoolDistrictData ?? null"
+            />
+            {{-- Calculated lines only: restating the client's own criteria is not intelligence. --}}
+            <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['calculated_lines'] ?? []" />
+
+            <div class="card description bol-description">
+                <div class="card-body">
+                    @if(count($bolHeroPhotoUrls))
+                    <div class="bol-photos">
+                        <div class="bol-hero-carousel-wrap">
+                        <img id="bolHeroCarouselImg"
+                             src="{{ $bolHeroPhotoUrls[$bolCoverPhotoIdx] }}"
+                             alt="Buyer listing photo"
+                             class="bol-hero-photo"
+                             style="cursor:pointer;"
+                             onerror="this.style.display='none';var ph=document.getElementById('bolHeroCarouselPlaceholder');if(ph)ph.style.display='flex'">
+                        <div id="bolHeroCarouselPlaceholder" class="bol-hero-placeholder" style="display:none;">
+                            <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                        </div>
+                        @if(count($bolHeroPhotoUrls) > 1)
+                        <button class="bol-hero-arrow bol-hero-arrow-prev" id="bolHeroCarouselPrev" aria-label="Previous photo">&#8249;</button>
+                        <button class="bol-hero-arrow bol-hero-arrow-next" id="bolHeroCarouselNext" aria-label="Next photo">&#8250;</button>
+                        <div class="bol-hero-carousel-counter" id="bolHeroCarouselCounter">{{ $bolCoverPhotoIdx + 1 }} / {{ count($bolHeroPhotoUrls) }}</div>
+                        @endif
+                        </div>
+                    </div>
+                    <script>var _bolHeroPhotos={!! json_encode($bolHeroPhotoUrls) !!};var _bolHeroStartIdx={{ $bolCoverPhotoIdx }};</script>
+                    @endif
 
     {{-- Listing Overview --}}
-    <div class="card section-card" id="section-overview">
-        <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Overview</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Listing Title', $str('listing_title') ?: $auction->title) !!}
                     {!! $row('Auction Type', $str('auction_type')) !!}
                     {!! $row('Listing Status', $str('listing_status')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
                     {!! $row('Expiration Date', $fmtDate($str('expiration_date'))) !!}
                     {!! $row('Bidding Period', $str('auction_time')) !!}
                 </div>
             </div>
-            {{-- Bidding Period countdown timer (source: created_at + auction_time) --}}
-            @if($hasBPTimer)
-            <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="text-muted fw-semibold" style="font-size:.85rem;">
-                        <i class="fa-regular fa-clock me-1"></i>Bidding Period Time Remaining:
-                    </span>
-                    @if($timerRemainingSeconds <= 0)
-                        <span class="badge bg-secondary" style="font-size:.85rem;">Expired</span>
-                    @else
-                        <span class="badge bg-info text-dark bol-bp-timer"
-                              data-seconds="{{ $timerRemainingSeconds }}"
-                              style="font-size:.85rem;font-variant-numeric:tabular-nums;">
-                            @php
-                                $_s = $timerRemainingSeconds;
-                                if ($_s < 60) { echo $_s . 's Remaining'; }
-                                else {
-                                    $_d = intdiv($_s, 86400); $_s %= 86400;
-                                    $_h = intdiv($_s, 3600);  $_s %= 3600;
-                                    $_i = intdiv($_s, 60);
-                                    $_p = [];
-                                    if ($_d) $_p[] = $_d . 'd';
-                                    if ($_h) $_p[] = $_h . 'h';
-                                    if ($_i) $_p[] = $_i . 'm';
-                                    echo implode(' ', $_p) . ' Remaining';
-                                }
-                            @endphp
-                        </span>
-                    @endif
-                </div>
-            </div>
-            @endif
             @if($val('additional_details') || $val('preferance_details'))
             <hr>
             @if($val('additional_details'))
@@ -971,16 +714,20 @@
             </div>
             @endif
             @endif
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="bol-crit-section" id="section-overview">
+        <h4 class="bol-crit-title">Listing Overview:</h4>
+        <div class="bol-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
 
     {{-- Purchase Criteria --}}
     @if($hasCriteriaContent)
-    <div class="card section-card" id="section-criteria">
-        <div class="card-header"><i class="fa-solid fa-magnifying-glass-dollar me-2"></i>Purchase Criteria</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Property Type', $str('property_type')) !!}
                     {!! $row('Bedrooms', $orOther($str('bedrooms'), $str('other_bedrooms') ?: $str('custom_bedrooms'))) !!}
                     {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms') ?: $str('custom_bathrooms'))) !!}
@@ -990,7 +737,7 @@
                     {!! $row('Max Purchase Budget', $fmtMoney($str('maximum_budget') ?: $str('buyer_budget'))) !!}
                     {!! $row('Max Purchase Price', $fmtMoney($str('max_purchase_price') ?: $str('purchase_price'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Target Closing Date', $str('target_closing_date') ?: $fmtDate($str('target_closing_date'))) !!}
                     {!! $row('Desired Hire Date', $fmtDate($str('desired_agent_hire_date'))) !!}
                     {!! $row('Working with an Agent', $str('working_with_agent')) !!}
@@ -1024,7 +771,7 @@
             @if(count($propCondBuyer))
             <hr>
             <div class="row">
-                <div class="col-md-6">{!! $row('Acceptable Property Conditions', implode(', ', $propCondBuyer)) !!}</div>
+                <div class="col-md-12">{!! $row('Acceptable Property Conditions', implode(', ', $propCondBuyer)) !!}</div>
             </div>
             @endif
 
@@ -1051,30 +798,34 @@
             <h6 class="fw-semibold mb-2">Lifestyle &amp; Location Preferences</h6>
             <div class="row">
                 @foreach($dnaFields as $f)
-                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                <div class="col-md-12">{!! $row($f[0], $f[1]) !!}</div>
                 @endforeach
             </div>
             @endif
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="bol-crit-section" id="section-criteria">
+        <h4 class="bol-crit-title">Purchase Criteria:</h4>
+        <div class="bol-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
 
     @endif {{-- /hasCriteriaContent --}}
 
 
     {{-- Financing Details --}}
     @if($hasFinancingContent)
-    <div class="card section-card" id="section-financing">
-        <div class="card-header"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Financing Details</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @php $ofFin = $subOther($arr('offered_financing'), $str('other_financing')); @endphp
                     @if(count($ofFin)) {!! $row('Financing Types', implode(', ', $ofFin)) !!} @endif
                     {!! $row('Buyer Pre-Approved', $str('pre_approved')) !!}
                     {!! $row('Pre-Approval Amount', $fmtMoney($str('pre_approval_amount'))) !!}
                     {!! $row('Cash Budget', $fmtMoney($str('cash_budget'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @php
                         $_dpType = $str('down_payment_type');
                         $_dpAmt  = $_dpType === '%' ? $fmtPercent($str('down_payment_amount')) : $fmtMoney($str('down_payment_amount'));
@@ -1102,12 +853,12 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Seller Financing Terms Sought</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Interest Rate', $str('interest_rate') ? $fmtPercent($str('interest_rate')) : null) !!}
                     {!! $row('Loan Duration (Years)', $str('loan_duration')) !!}
                     {!! $row('Prepayment Penalty Amount', $fmtMoney($str('prepayment_penalty_amount'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Balloon Payment', $yesNo($str('balloon_payment'))) !!}
                     {!! $row('Balloon Payment Amount', $fmtMoney($str('balloon_payment_amount'))) !!}
                     {!! $row('Balloon Payment Date', $str('balloon_payment_date')) !!}
@@ -1120,11 +871,11 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Assumable Financing Interest</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Interested in Assumable Financing', $str('assumable_interest')) !!}
                     {!! $row('Max Acceptable Interest Rate', $str('assumable_max_interest_rate') ? $fmtPercent($str('assumable_max_interest_rate')) : null) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Max Monthly Payment (P&I)', $fmtMoney($str('assumable_max_monthly_payment'))) !!}
                     {!! $row('Cash to Bridge Gap', $fmtMoney($str('assumable_bridge_gap_cash'))) !!}
                 </div>
@@ -1136,14 +887,14 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Lease Option</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Option Purchase Price', $fmtMoney($str('lease_option_price'))) !!}
                     {!! $row('Monthly Payment', $fmtMoney($str('lease_option_payment'))) !!}
                     {!! $row('Duration (Months)', $str('lease_option_duration')) !!}
                     {!! $row('Option Fee', $yesNo($str('has_option_fee'))) !!}
                     {!! $row('Option Fee Amount', $fmtMoney($str('option_fee_amount'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Option Fee Credit', $str('lease_option_fee_credit')) !!}
                     {!! $row('Option Fee Credit %', $str('lease_option_fee_credit_percentage') ? $fmtPercent($str('lease_option_fee_credit_percentage')) : null) !!}
                     {!! $row('Conditions', $str('lease_option_conditions')) !!}
@@ -1157,13 +908,13 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Lease Purchase</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Purchase Price', $fmtMoney($str('lease_purchase_price'))) !!}
                     {!! $row('Monthly Payment', $fmtMoney($str('lease_purchase_payment'))) !!}
                     {!! $row('Duration (Months)', $str('lease_purchase_duration')) !!}
                     {!! $row('Rent Credit Toward Purchase', $str('lease_purchase_rent_credit')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Non-Refundable Deposit', $fmtMoney($str('lease_purchase_deposit'))) !!}
                     {!! $row('Conditions', $str('lease_purchase_conditions')) !!}
                     {!! $row('Terms', $str('lease_purchase_terms')) !!}
@@ -1176,12 +927,12 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Cryptocurrency</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Cryptocurrency Type', $str('cryptocurrency_type')) !!}
                     {!! $row('Crypto % of Purchase Price', $str('crypto_percentage') ? $fmtPercent($str('crypto_percentage')) : null) !!}
                     {!! $row('Cash % of Purchase Price', $str('cash_percentage_crypto') ? $fmtPercent($str('cash_percentage_crypto')) : null) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Exchange Method', $str('crypto_exchange_method')) !!}
                     {!! $row('Custodian / Wallet', $str('crypto_custodian_wallet')) !!}
                     {!! $row('Transaction Fees Responsibility', $str('crypto_transaction_fees')) !!}
@@ -1194,12 +945,12 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Exchange / Trade</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Exchange Item', $str('other_exchange_item')) !!}
                     {!! $row('Estimated Value', $fmtMoney($str('exchange_item_value'))) !!}
                     {!! $row('Condition of Exchange Item', $str('exchange_item_condition')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Additional Cash Required', $fmtMoney($str('additional_cash'))) !!}
                     {!! $row('Transfer Method', $str('exchange_transfer_method')) !!}
                     {!! $row('Liens / Encumbrances', $str('exchange_liens') . ($str('exchange_liens_details') ? ' – ' . $str('exchange_liens_details') : '')) !!}
@@ -1212,12 +963,12 @@
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Non-Fungible Token (NFT)</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('NFT Description', $str('nft_description')) !!}
                     {!! $row('NFT % of Purchase Price', $str('nft_percentage') ? $fmtPercent($str('nft_percentage')) : null) !!}
                     {!! $row('Cash % of Purchase Price', $str('cash_percentage_nft') ? $fmtPercent($str('cash_percentage_nft')) : null) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('NFT Valuation Method', $str('nft_valuation_method')) !!}
                     {!! $row('NFT Transfer Method', $str('nft_transfer_method')) !!}
                     {!! $row('Gas Fees Responsibility', $str('nft_gas_fees')) !!}
@@ -1225,18 +976,22 @@
             </div>
             @endif
 
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="bol-crit-section" id="section-financing">
+        <h4 class="bol-crit-title">Financing Details:</h4>
+        <div class="bol-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
 
     @endif {{-- /hasFinancingContent --}}
 
     {{-- Desired Property Features --}}
     @if($hasFeaturesContent)
-    <div class="card section-card" id="section-features">
-        <div class="card-header"><i class="fa-solid fa-house me-2"></i>Desired Property Features</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Garage', $str('garage_needed')) !!}
                     {!! $row('Garage Spaces', $orOther($str('garage_parking_spaces'), $str('other_garage_needed'))) !!}
                     {!! $row('Carport', $str('carport_needed')) !!}
@@ -1250,7 +1005,7 @@
                     @endphp
                     {!! $row('Pool Type', count($poolTypeList) ? implode(', ', $poolTypeList) : null) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     @php $viewPref = $subOther($arr('view_preference'), $str('other_preferences')); @endphp
                     @if(count($viewPref)) {!! $row('View Preference', implode(', ', $viewPref)) !!} @endif
                     {!! $row('Leasing Space', $str('leasing_space')) !!}
@@ -1281,20 +1036,24 @@
             <hr>
             <div class="row">
                 @foreach($unitFields as $f)
-                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                <div class="col-md-12">{!! $row($f[0], $f[1]) !!}</div>
                 @endforeach
             </div>
             @endif
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="bol-crit-section" id="section-features">
+        <h4 class="bol-crit-title">Desired Property Features:</h4>
+        <div class="bol-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
 
     @endif {{-- /hasFeaturesContent --}}
 
     {{-- Additional Purchase Terms --}}
     @if($hasPurchaseTermsContent)
-    <div class="card section-card" id="section-purchase-terms">
-        <div class="card-header"><i class="fa-solid fa-file-signature me-2"></i>Additional Purchase Terms</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
 
             {{-- Earnest Money --}}
             @php
@@ -1308,8 +1067,8 @@
             @if($_emFmt || $str('earnest_money_timing'))
             <h6 class="fw-semibold mb-2">Earnest Money / EMD</h6>
             <div class="row">
-                <div class="col-md-6">{!! $row('EMD Amount', $_emFmt) !!}</div>
-                <div class="col-md-6">{!! $row('EMD Timing', $str('earnest_money_timing')) !!}</div>
+                <div class="col-md-12">{!! $row('EMD Amount', $_emFmt) !!}</div>
+                <div class="col-md-12">{!! $row('EMD Timing', $str('earnest_money_timing')) !!}</div>
             </div>
             <hr>
             @endif
@@ -1331,7 +1090,7 @@
             @endphp
             <h6 class="fw-semibold mb-2">Inspections & Contingencies</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Inspection Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('inspection_contingency_buyer'))) !!}
                     @if($__buyerShowsPeriod($str('inspection_contingency_buyer')) && $__inspPeriodDisplay !== '')
                         {!! $row('Inspection Contingency Period', $__inspPeriodDisplay) !!}
@@ -1341,7 +1100,7 @@
                         {!! $row('Appraisal Contingency Period', $str('appraisal_contingency_days') . ' days') !!}
                     @endif
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Financing Contingency', \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($str('financing_contingency_buyer'))) !!}
                     @if($__buyerShowsPeriod($str('financing_contingency_buyer')) && $str('financing_contingency_period') !== '')
                         {!! $row('Financing Contingency Period', $str('financing_contingency_period') . ' days') !!}
@@ -1355,7 +1114,7 @@
             @if(in_array(\App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency')), ['Included', 'Negotiable'], true))
             <h6 class="fw-semibold mb-2">Home Sale Contingency</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Home Sale Contingency', \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency'))) !!}
                     @if($str('home_sale_contingency_period') !== '')
                         {!! $row('Home Sale Contingency Period', $str('home_sale_contingency_period') . ' days') !!}
@@ -1364,14 +1123,14 @@
                     {!! $row('Unit / Apt / Suite #', $str('unit_number')) !!}
                     {!! $row('Target Date', $fmtDate($str('home_sale_contingency_date'))) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Under Contract', $str('home_sale_contingency_under_contract')) !!}
                     {!! $row('Details', $str('home_sale_contingency_details')) !!}
                 </div>
             </div>
             @else
             <div class="row">
-                <div class="col-md-6">{!! $row('Home Sale Contingency', \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency'))) !!}</div>
+                <div class="col-md-12">{!! $row('Home Sale Contingency', \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($str('home_sale_contingency'))) !!}</div>
             </div>
             @endif
             @endif
@@ -1384,7 +1143,7 @@
             <hr>
             <h6 class="fw-semibold mb-2">Possession & Closing</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Seller Contribution', $str('seller_contribution')) !!}
                     @if($str('seller_contribution') !== '' && $str('seller_contribution') !== 'None')
                         {!! $row('Seller Contribution Details', $str('seller_contribution_details')) !!}
@@ -1394,7 +1153,7 @@
                         {!! $row('Possession Details', $str('possession_details')) !!}
                     @endif
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Closing Cost Responsibility', $str('closing_cost_responsibility')) !!}
                 </div>
             </div>
@@ -1408,14 +1167,14 @@
             <hr>
             <h6 class="fw-semibold mb-2">Property & Warranty</h6>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Home Warranty Requested', $str('home_warranty_requested')) !!}
                     @if($str('home_warranty_requested') !== '' && $str('home_warranty_requested') !== 'No')
                         {!! $row('Home Warranty Details', $str('home_warranty_details')) !!}
                     @endif
                     {!! $row('As-Is Purchase', $str('as_is_purchase')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Property Inclusions', $str('property_inclusions')) !!}
                     {!! $row('Property Exclusions', $str('property_exclusions')) !!}
                 </div>
@@ -1430,22 +1189,26 @@
             </div>
             @endif
 
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="bol-crit-section" id="section-purchase-terms">
+        <h4 class="bol-crit-title">Additional Purchase Terms:</h4>
+        <div class="bol-crit-body">{!! $__olSectionBody !!}</div>
     </div>
+    @endif
     @endif {{-- /hasPurchaseTermsContent --}}
 
     {{-- Contact --}}
     @if($hasContact)
-    <div class="card section-card" id="section-contact">
-        <div class="card-header"><i class="fa-solid fa-address-card me-2"></i>Contact Information</div>
-        <div class="card-body">
+    @php ob_start(); @endphp
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Name', $contactName ?: null) !!}
                     {!! $row('Email', $str('email')) !!}
                     {!! $row('Phone', $str('phone_number')) !!}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     {!! $row('Brokerage', $str('agent_brokerage')) !!}
                     {!! $row('License Number', $str('agent_license_number')) !!}
                     {!! $row('NAR Member ID', $str('agent_nar_member_id')) !!}
@@ -1461,124 +1224,150 @@
                     <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                 </button>
             </div>
-        </div>
+    @php $__olSectionBody = trim(ob_get_clean()); @endphp
+    {{-- A section renders only when its rows produced something: a heading over nothing is the old empty-section bug. --}}
+    @if(trim(strip_tags($__olSectionBody, '<iframe><video><img>')) !== '')
+    <div class="bol-crit-section" id="section-contact">
+        <h4 class="bol-crit-title">Contact Information:</h4>
+        <div class="bol-crit-body">{!! $__olSectionBody !!}</div>
     </div>
     @endif
-
-    {{-- Edit Button (bottom, owner only) --}}
-    @if(auth()->check() && auth()->id() === $auction->user_id)
-    <div class="text-end mt-2 mb-4">
-        <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}"
-           class="btn btn-primary">
-            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
-        </a>
-    </div>
     @endif
+                </div>
+            </div>
+        </div>{{-- /leftCol --}}
 
-        </div>{{-- /col-lg-9 --}}
+        {{-- Right column — title, bidding period, actions and a compact summary, as on the Criteria pages. --}}
+        <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
+            <h1>{{ $listingTitle }}</h1>
+            @if($locationDisplay)
+                <p class="bol-right-sub"><i class="fa-solid fa-location-dot me-1"></i>{{ $locationDisplay }}</p>
+            @endif
+            <hr>
+            @if($hasBPTimer)
+            <div class="bol-timer">
+                <span class="fw-semibold"><i class="fa-regular fa-clock me-1"></i>Bidding Period:</span>
+                @if($timerRemainingSeconds <= 0)
+                    <span class="badge bg-secondary">Expired</span>
+                @else
+                    <span class="badge bg-info text-dark bol-bp-timer"
+                          data-seconds="{{ $timerRemainingSeconds }}"
+                          style="font-variant-numeric:tabular-nums;">
+                        @php
+                            $_rs = $timerRemainingSeconds;
+                            if ($_rs < 60) { echo $_rs . 's Remaining'; }
+                            else {
+                                $_rd = intdiv($_rs, 86400); $_rs %= 86400;
+                                $_rh = intdiv($_rs, 3600);  $_rs %= 3600;
+                                $_ri = intdiv($_rs, 60);
+                                $_rp = [];
+                                if ($_rd) $_rp[] = $_rd . 'd';
+                                if ($_rh) $_rp[] = $_rh . 'h';
+                                if ($_ri) $_rp[] = $_ri . 'm';
+                                echo implode(' ', $_rp) . ' Remaining';
+                            }
+                        @endphp
+                    </span>
+                @endif
+            </div>
+            @endif
+            @if($heroPrice)
+            <div class="bol-price">
+                <span class="bol-price-label">Max Purchase Budget</span>
+                <span class="bol-price-value">{{ $heroPrice }}</span>
+            </div>
+            @endif
 
-        {{-- Sticky sidebar --}}
-        <div class="col-lg-3 d-none d-lg-block">
-            <div class="bol-sticky-card">
-                <div class="bol-sticky-title"><i class="fa-solid fa-bolt me-1"></i>Quick Actions</div>
-
+            <div class="bol-actions">
                 <form method="POST" action="{{ route('offers.store') }}">
                     @csrf
                     <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
                     <input type="hidden" name="role" value="buyer">
                     <input type="hidden" name="listing_type" value="buyer_criteria">
-                    <button type="submit" class="bol-action-btn bol-action-primary">
+                    <button type="submit" class="btn bol-act-primary" aria-label="Respond to this Buyer Criteria listing">
                         <i class="fa-solid fa-reply"></i>Respond to Buyer Criteria
                     </button>
                 </form>
-                {{-- Option A: Ask AI added to sidebar to match Seller view --}}
-                <button class="bol-action-btn bol-action-outline" data-bs-toggle="modal" data-bs-target="#bolAiModal">
-                    <i class="fa-solid fa-robot"></i>Ask AI About Criteria
-                </button>
-                <button class="bol-action-btn bol-action-outline" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bolQuestionModal" aria-label="Ask a question about this listing">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
-                <button type="button" class="bol-action-btn bol-action-outline" id="bolShareBtn">
-                    <i class="fa-solid fa-share-nodes"></i>Share Listing
+                <button type="button" class="btn bol-act-outline" data-bs-toggle="modal" data-bs-target="#bolShowingModal" aria-label="Schedule a showing">
+                    <i class="fa-solid fa-calendar-days"></i>Schedule Showing
                 </button>
-                <button type="button" class="bol-action-btn bol-action-outline bol-action-hire"
-                        data-bs-toggle="modal" data-bs-target="#bolHireAgentModal">
+                <button type="button" class="btn bol-act-outline" data-bs-toggle="modal" data-bs-target="#bolAiModal" aria-label="Ask AI a question about this buyer listing">
+                    <i class="fa-solid fa-robot"></i>Ask AI About Criteria
+                </button>
+                <button type="button" class="btn bol-act-outline" data-bs-toggle="modal" data-bs-target="#bolHireAgentModal" aria-label="Find and hire a real estate agent">
                     <i class="fa-solid fa-user-tie"></i>Hire an Agent
                 </button>
-                <button type="button" class="bol-action-btn bol-action-outline" disabled style="cursor:default;opacity:.6;">
-                    <i class="fa-regular fa-bookmark"></i>Save Listing
-                </button>
-
-                <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9;">
-
-                @if($heroPrice)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Max Budget</div>
-                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;letter-spacing:-0.02em;">{{ $heroPrice }}</div>
-                </div>
-                @endif
-
-                @if($heroBeds || $heroBaths || $heroSqft)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    @if($heroBeds)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bedrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBeds }}</span></div>@endif
-                    @if($heroBaths)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Bathrooms</span><span style="font-size:.82rem;font-weight:700;">{{ $heroBaths }}</span></div>@endif
-                    @if($heroSqft)<div class="d-flex justify-content-between mb-1"><span style="font-size:.82rem;color:#64748b;">Min. Sq Ft</span><span style="font-size:.82rem;font-weight:700;">{{ number_format((int)preg_replace('/[^0-9]/','',$heroSqft)) }}+</span></div>@endif
-                </div>
-                @endif
-
-                @if($heroPropType)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Property Type</div>
-                    <div style="font-size:.88rem;font-weight:600;color:#1e293b;margin-top:2px;">{{ $heroPropType }}</div>
-                </div>
-                @endif
-
-                @if($locationDisplay)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Location Preference</div>
-                    <div style="font-size:.82rem;color:#334155;margin-top:3px;">{{ $locationDisplay }}</div>
-                </div>
-                @endif
-
-                @if($hasBPTimer && $bpEndsAtDisplay)
-                <div class="mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
-                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;">
-                        <span><i class="fa-regular fa-clock me-1"></i>Bidding Ends</span>
-                        <span style="font-weight:700;color:#475569;">{{ $bpEndsAtDisplay->format('M j, Y g:i A') }} {{ $bpTimezone }}</span>
-                    </div>
-                </div>
-                @endif
-
-                <a href="{{ route('offer.listing.buyer.searchListing') }}"
-                   class="bol-action-btn bol-action-outline" style="justify-content:center;text-align:center;">
+                <a href="{{ route('offer.listing.buyer.searchListing') }}" class="btn bol-act-outline">
                     <i class="fa-solid fa-arrow-left"></i>Back to Search
                 </a>
+            </div>
 
-                {{-- Activity section hidden until live data is available --}}
-                @if(false)
-                <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid #f1f5f9;">
-                    <div style="font-size:0.74rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Activity</div>
-                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
-                        <span>Views</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
+            @php
+                $_sumRows = array_values(array_filter([
+                    ['Property Type', $heroPropType],
+                    ['Bedrooms', $heroBeds],
+                    ['Bathrooms', $heroBaths],
+                    ['Min. Sq Ft', $heroSqft ? number_format((int) preg_replace('/[^0-9]/', '', $heroSqft)) . '+' : null],
+                    ['Listed', $heroListDate],
+                    ['Updated', $heroUpdDate],
+                    ['Bidding Ends', ($hasBPTimer && $bpEndsAtDisplay) ? $bpEndsAtDisplay->format('M j, Y g:i A') . ' ' . $bpTimezone : null],
+                ], fn ($r) => $r[1] !== null && $r[1] !== ''));
+                // The property type already has its own row.
+                $_sumBadges = array_values(array_filter($heroBadgesDisplay, fn ($b) => $b['label'] !== $heroPropType));
+            @endphp
+            @if(count($_sumRows) || count($_sumBadges))
+            <div class="card bol-summary">
+                <div class="card-body">
+                    @if(count($_sumRows))
+                    <ul>
+                        @foreach($_sumRows as $_sumRow)
+                            <li><span>{{ $_sumRow[0] }}</span><span>{{ $_sumRow[1] }}</span></li>
+                        @endforeach
+                    </ul>
+                    @endif
+                    @if(count($_sumBadges))
+                    <div class="bol-summary-badges">
+                        @foreach($_sumBadges as $b)
+                            <span class="bol-badge bol-badge-{{ $b['color'] }}"><i class="{{ $b['icon'] }}"></i> {{ $b['label'] }}</span>
+                        @endforeach
                     </div>
-                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
-                        <span>Saves</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#64748b;">
-                        <span>Questions</span><span style="font-weight:700;color:#94a3b8;">Coming Soon</span>
-                    </div>
-                    @if($heroUpdDate)
-                    <div class="d-flex justify-content-between" style="font-size:.78rem;color:#64748b;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f1f5f9;">
-                        <span>Updated</span><span style="font-weight:700;color:#475569;">{{ $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('M j, Y') : '' }}</span>
+                    @endif
+                    @if(count($bolStandoutParts) >= 2)
+                    <div class="bol-standout">
+                        <div class="bol-standout-label">Why This Buyer Stands Out</div>
+                        @php
+                            $_soSlice = array_slice($bolStandoutParts, 0, -1);
+                            $_soLast  = end($bolStandoutParts);
+                        @endphp
+                        {{ count($bolStandoutParts) > 1 ? implode(', ', $_soSlice) . ' and ' . $_soLast : $_soLast }}.
                     </div>
                     @endif
                 </div>
-                @endif
-
-                </div>{{-- /data summary panel --}}
             </div>
-        </div>{{-- /col-lg-3 --}}
+            @endif
 
+            {{-- Share card, as on the Criteria pages: QR code and a copyable link. --}}
+            @php $_shareUrl = route('offer.listing.buyer.view', $auction->id); @endphp
+            <div class="p-4 card bol-share">
+                <p class="text-600 mb-2">Share this link via</p>
+                <div class="qr-code">{{ qr_code($_shareUrl, 180) }}</div>
+                <div class="card-social">
+                    <p class="small opacity-8 mb-1 mt-3">Or copy link</p>
+                    <div class="field">
+                        <i class="fa-solid fa-link"></i>
+                        <input type="text" readonly id="bolShareLink" value="{{ $_shareUrl }}" aria-label="Listing link">
+                        <button type="button" class="btn-primary btn-sm text-600 border-0" id="bolHubCopyBtn" aria-label="Copy listing link to clipboard">Copy</button>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 bol-native-share" id="bolHubNativeShareBtn"
+                            style="display:none;" aria-label="Share this listing via your device's share sheet">
+                        <i class="fa-solid fa-share-nodes me-1"></i>Share
+                    </button>
+                </div>
+            </div>
+        </div>{{-- /rightCol --}}
     </div>{{-- /row --}}
 
     {{-- ===== MODALS ===== --}}
@@ -1811,48 +1600,6 @@
 
 </div>{{-- /container --}}
 
-{{-- Mobile sticky bottom bar --}}
-<div class="bol-mobile-bar d-lg-none">
-    <a href="{{ route('offer.listing.buyer.searchListing') }}" class="bol-mobile-bar-btn">
-        <i class="fa-solid fa-arrow-left"></i>
-        <span>Back</span>
-    </a>
-    <button type="button" class="bol-mobile-bar-btn"
-            data-bs-toggle="modal" data-bs-target="#bolHireAgentModal">
-        <i class="fa-solid fa-user-tie"></i>
-        <span>Agent</span>
-    </button>
-    <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolQuestionModal">
-        <i class="fa-solid fa-circle-question"></i>
-        <span>Ask</span>
-    </button>
-    <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolAiModal">
-        <i class="fa-solid fa-robot"></i>
-        <span>Ask AI</span>
-    </button>
-    <form method="POST" action="{{ route('offers.store') }}" style="display:contents;">
-        @csrf
-        <input type="hidden" name="offer_auction_id" value="{{ $auction->id }}">
-        <input type="hidden" name="role" value="buyer">
-        <input type="hidden" name="listing_type" value="buyer_criteria">
-        <button type="submit" class="bol-mobile-bar-btn bol-mobile-bar-respond">
-            <i class="fa-solid fa-reply"></i>
-            <span>Respond</span>
-        </button>
-    </form>
-    {{-- Option A: Ask AI added to mobile bar to match Seller view --}}
-    <button class="bol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#bolAiModal">
-        <i class="fa-solid fa-robot"></i>
-        <span>Ask AI</span>
-    </button>
-    @if(auth()->check() && auth()->id() === $auction->user_id)
-    <a href="{{ route('offer.listing.buyer.edit', ['auctionId' => $auction->id]) }}" class="bol-mobile-bar-btn">
-        <i class="fa-solid fa-pen-to-square"></i>
-        <span>Edit</span>
-    </a>
-    @endif
-</div>
-
 {{-- ===== HIRE AGENT MODAL ===== --}}
 <x-hire-agent-modal
     listing-id="{{ $auction->id }}"
@@ -1900,36 +1647,6 @@
         });
     }());
 
-    /* ---- Smooth-scroll + active-section highlighting ---- */
-    var BOL_OFFSET = 82;
-    var bolNavLinks = Array.from(document.querySelectorAll('#bolNavTabs a[href^="#"]'));
-    var bolSections  = bolNavLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
-    bolSections.sort(function (a, b) { return a.offsetTop - b.offsetTop; });
-
-    bolNavLinks.forEach(function (a) {
-        a.addEventListener('click', function (e) {
-            var target = document.querySelector(a.getAttribute('href'));
-            if (!target) return;
-            e.preventDefault();
-            var top = target.getBoundingClientRect().top + window.scrollY - BOL_OFFSET;
-            window.scrollTo({ top: top, behavior: 'smooth' });
-        });
-    });
-
-    function bolOnScroll() {
-        var scrollY = window.scrollY + BOL_OFFSET + 10;
-        var active = null;
-        bolSections.forEach(function (s) {
-            if (s && s.offsetTop <= scrollY) active = s;
-        });
-        bolNavLinks.forEach(function (a) { a.classList.remove('bol-nav-active'); });
-        if (active) {
-            var link = document.querySelector('#bolNavTabs a[href="#' + active.id + '"]');
-            if (link) link.classList.add('bol-nav-active');
-        }
-    }
-    window.addEventListener('scroll', bolOnScroll, { passive: true });
-    bolOnScroll();
 
     /* Share listing */
     function shareHandler() {
@@ -2378,12 +2095,4 @@
 }());
 
 </script>
-@endpush
-@push('scripts')
-<script>
-window.byoBuyerViewMapsReady = function() {
-    document.dispatchEvent(new Event('google-maps-loaded'));
-};
-</script>
-<x-google-maps-script :libraries="'places'" :callback="'byoBuyerViewMapsReady'" />
 @endpush
