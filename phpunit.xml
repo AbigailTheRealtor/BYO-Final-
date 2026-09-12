@@ -60,6 +60,10 @@
         <server name="GOOGLE_GEOCODING_ENABLED" value="false" force="true"/>
         <server name="GOOGLE_GEOCODING_DAILY_LIMIT" value="100" force="true"/>
         <server name="GOOGLE_GEOCODING_HOURLY_LIMIT" value="25" force="true"/>
+        <!-- The BROWSER credential and its switch, forced OFF and blank for the same reason:
+             a real key in the process environment must never reach a rendered page in a test. -->
+        <server name="GOOGLE_MAPS_BROWSER_KEY" value="" force="true"/>
+        <server name="GOOGLE_MAPS_BROWSER_ENABLED" value="false" force="true"/>
 
         <!-- Bridge/Stellar safeguards. SAME FAILURE MODE, SAME FIX.
 

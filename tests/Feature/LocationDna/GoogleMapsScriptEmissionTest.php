@@ -11,7 +11,8 @@ use Tests\TestCase;
  *
  * WHY IT NEEDS TO EXIST
  * ---------------------
- * `tests/bootstrap.php` blanks `GOOGLE_PLACES_API_KEY` for the whole suite (INV-11), so
+ * The suite blanks the browser credential and switches it off for every test (`phpunit.xml`,
+ * alongside the same blanking of `GOOGLE_PLACES_API_KEY` — INV-11), so
  * every other test runs in the degraded state and none of them can distinguish "the loader
  * correctly emits the SDK" from "the loader emits nothing at all". That is precisely the
  * blind spot that let a missing credential take out city autocomplete, county autocomplete,
@@ -30,7 +31,12 @@ class GoogleMapsScriptEmissionTest extends TestCase
 {
     private function render(string $key): string
     {
-        config(['services.google.places_key' => $key]);
+        /* The loader reads the BROWSER credential, never the server key, and both halves of it
+           must agree — so the switch goes on alongside the key. See GoogleBrowserKeySeparationTest. */
+        config([
+            'google_maps_browser.enabled' => true,
+            'google_maps_browser.key'     => $key,
+        ]);
 
         return Blade::render('<x-google-maps-script :libraries="\'places,drawing\'" />');
     }

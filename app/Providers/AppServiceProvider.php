@@ -420,17 +420,35 @@ class AppServiceProvider extends ServiceProvider
         PropertyDnaProfile::observe(PropertyDnaProfileCompatibilityObserver::class);
         BuyerTenantDnaProfile::observe(BuyerTenantDnaProfileCompatibilityObserver::class);
 
-        // Boot-time guard: warn immediately when the Google Maps/Places API key is absent.
-        // The key MUST be set in .env (not only as a Replit platform secret) because phpdotenv
+        // Boot-time guards for the two Google credentials, which fail in DIFFERENT places.
+        //
+        // Either key MUST be set in .env (not only as a Replit platform secret) because phpdotenv
         // reads only .env at startup — platform secrets are not injected into the workflow process.
-        // Missing key → x-google-maps-script emits an amber warning div instead of the <script>
-        // tag, breaking address autocomplete on seller/landlord/offers pages and the drawing map
-        // on buyer/tenant pages.
+        //
+        // The SERVER key is this application's own Places and Geocoding calls. Since the
+        // browser/server split it no longer has anything to do with what a page renders, so this
+        // warning must not claim autocomplete or the map is broken — it would send an operator to
+        // the wrong variable.
         if (empty(config('services.google.places_key'))) {
             Log::warning(
                 '[BYO] GOOGLE_PLACES_API_KEY is not set. ' .
-                'Address autocomplete and the property-preference map will not work. ' .
+                'Server-side Places Nearby Search and Geocoding (Location DNA POIs and the ' .
+                'coordinate step) will not run. This key is never emitted into a page; ' .
+                'browser maps use GOOGLE_MAPS_BROWSER_KEY. ' .
                 'Add GOOGLE_PLACES_API_KEY to .env (not only as a Replit platform secret).'
+            );
+        }
+
+        // The BROWSER key is what address autocomplete, the drawing map and the Location DNA map
+        // need. Warned about ONLY when the switch is on and the key is missing — that combination
+        // is a misconfiguration. Switched off is a deliberate state and must stay silent, or every
+        // environment running the shipped default logs a warning about a decision it made.
+        if (\App\Support\Google\GoogleBrowserMaps::enabled() && \App\Support\Google\GoogleBrowserMaps::key() === '') {
+            Log::warning(
+                '[BYO] GOOGLE_MAPS_BROWSER_ENABLED is on but GOOGLE_MAPS_BROWSER_KEY is empty. ' .
+                'Address autocomplete and the property-preference map will show the ' .
+                '"not configured" panel. There is no fallback to GOOGLE_PLACES_API_KEY. ' .
+                'Add GOOGLE_MAPS_BROWSER_KEY to .env (not only as a Replit platform secret).'
             );
         }
     }
