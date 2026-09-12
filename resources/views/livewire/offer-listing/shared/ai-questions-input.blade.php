@@ -12,64 +12,41 @@
 @php
     $propertyType = $property_type ?? '';
 
-    // All four roles now share the same groups + gating config shape.
-    $configMap = [
-        'seller'   => 'ai_faq_seller',
-        'buyer'    => 'ai_faq_buyer',
-        'landlord' => 'ai_faq_landlord',
-        'tenant'   => 'tenant_ai_faq',
-    ];
-    $configKey = $configMap[$user_type] ?? null;
+    // WHICH questions render is NOT decided here. AskAiFaqConfigService::gatedQuestions()
+    // owns the role + property-type gating (the 'universal' group plus the one group the
+    // config's 'gating' map names, with the short/long vocabulary alias applied and the
+    // universal-only fail-safe for an absent or unrecognised type). It moved out of this
+    // template when MLS Quick Import needed the same answer in PHP to decide which keys a
+    // client may write: the form and the persist must agree about what belongs to a
+    // Seller Commercial listing, and two copies of that rule is how they stop agreeing.
+    //
+    // What stays here is presentation: splitting the gated set into the two rendered
+    // sections by 'category_type' (Part D — Common Questions vs AI Insights).
+    //
+    // Answers already entered persist in $listing_ai_faq across property-type changes
+    // (no consumer prunes it), so switching type and back is safe.
+    $configKey = \App\Services\AskAi\AskAiFaqConfigService::CONFIG_MAP[$user_type] ?? null;
     $genericPlaceholder = 'Enter your answer here (e.g., provide as much detail as you\'d like — all fields are optional)';
 
     $commonQuestions  = [];
     $insightQuestions = [];
 
     if ($configKey) {
-        $groups = config($configKey . '.groups', []);
-        $gating = config($configKey . '.gating', []);
+        $gated = \App\Services\AskAi\AskAiFaqConfigService::gatedQuestions($user_type, $propertyType);
 
-        // Normalize the stored property_type to its canonical gating key. Seller/Buyer
-        // listings store SHORT values (Income, Commercial, Business); Landlord/Tenant and
-        // the gating maps use LONG values (Income Property, ...). This single alias map
-        // (config/property_types.php) bridges the two vocabularies so the intended
-        // property-specific KB groups render. Already-long values pass through unchanged.
-        $gatingAliases = config('property_types.ai_faq_gating_aliases', []);
-        $gatingKey     = $gatingAliases[$propertyType] ?? $propertyType;
-
-        // Resolve which groups render for this property type.
-        //  - No property type selected yet  → show ONLY the universal questions, so a
-        //    property-type interview is never revealed before the type is chosen.
-        //  - Selected & recognized          → universal + that property type's group.
-        //  - Selected but unrecognized      → fail safe to universal-only (never leak
-        //    residential questions for an unexpected value).
-        // Answers already entered persist in $listing_ai_faq across property-type
-        // changes (the components never prune it), so switching type and back is safe.
-        if ($gatingKey === '' || $gatingKey === null) {
-            $activeGroups = ['universal'];
-        } else {
-            $activeGroups = $gating[$gatingKey] ?? ['universal'];
-        }
-
-        foreach ($activeGroups as $groupName) {
-            $group = $groups[$groupName] ?? [];
-            foreach ($group as $category => $questions) {
-                foreach ($questions as $key => $entry) {
-                    if (! is_array($entry)) {
-                        continue;
-                    }
-                    $row = [
-                        'key'         => $key,
-                        'label'       => $entry['label'] ?? '',
-                        'placeholder' => $entry['placeholder'] ?? $genericPlaceholder,
-                        'tooltip'     => $entry['tooltip'] ?? '',
-                        'category'    => $category,
-                    ];
-                    if (($entry['category_type'] ?? 'common') === 'insight') {
-                        $insightQuestions[$category][$key] = $row;
-                    } else {
-                        $commonQuestions[$category][$key] = $row;
-                    }
+        foreach ($gated as $category => $questions) {
+            foreach ($questions as $key => $entry) {
+                $row = [
+                    'key'         => $key,
+                    'label'       => $entry['label'] ?? '',
+                    'placeholder' => $entry['placeholder'] ?? $genericPlaceholder,
+                    'tooltip'     => $entry['tooltip'] ?? '',
+                    'category'    => $category,
+                ];
+                if (($entry['category_type'] ?? 'common') === 'insight') {
+                    $insightQuestions[$category][$key] = $row;
+                } else {
+                    $commonQuestions[$category][$key] = $row;
                 }
             }
         }
