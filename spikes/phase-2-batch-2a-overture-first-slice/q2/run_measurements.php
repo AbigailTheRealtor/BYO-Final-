@@ -14,6 +14,8 @@
  * count-only SQL and fills the projection using the accepted planning proxies.
  *
  *   Usage:  php spikes/phase-2-batch-2a-overture-first-slice/q2/run_measurements.php
+ *
+ * @manual-script-guard not-applicable: shells out to a local DuckDB over committed SQL files; never loads Laravel or opens a database connection.
  */
 
 // Accepted planning proxies (owner decision). SSOT: config/overture_places.php

@@ -1193,6 +1193,38 @@ asking a landlord to pre-declare a policy invites a blanket answer to an individ
 unlocking value is ambiguous and guessing it would drop stored text), the lease/commercial prose
 set, and any historical remediation command.
 
+### Manual QA / debug entry points refuse the production database
+
+PHPUnit is isolated (`tests/bootstrap.php`, `TestCase::resolvedConnection()`). **Nothing else is.**
+A standalone script inherits the shell, and on this host the shell is production: `DATABASE_URL`,
+`PGHOST=helium`, `DB_DATABASE=heliumdb`, and `APP_ENV=production` in the workspace `.env`.
+`ProductionDatabaseGuard` (`app/Support/Safeguards/`) is the one decision. It resolves every
+connection through the same `ConfigurationUrlParser` the factory uses, applies libpq's
+`PGHOST`/`PGDATABASE` fallback, reads the raw process environment, and refuses on **any one**
+production signal. An unverifiable target counts as production too. It opens no connection.
+
+* **Scripts** (`scripts/`, `spikes/`) boot with `$app = \App\Support\Safeguards\ManualScriptBootstrap::boot(__FILE__);`,
+  never `bootstrap/app.php` directly. The check runs after config loads and before any provider
+  boots. `ManualScriptGuardCoverageTest` **discovers** every PHP file in those directories. A new
+  script must be guarded or carry `@manual-script-guard not-applicable: <why>`, and that claim is
+  verified against its code.
+* **Artisan QA commands** use `RefusesProductionDatabase` as the first statement of `handle()`. A
+  command whose description says `CI only` / `DEV-ONLY` / `staging/dev` / `pre-GA` / `Benchmark`
+  must use it (tested).
+* **Fixture seeders** (users, `*TestSeeder`) check `assessApplication()` or call
+  `ProductionDatabaseRefused::unlessSafe()` (tested).
+* **Override:** `--i-know-this-is-production`, exact token only and never an environment variable.
+  It is opt-in per entry point, and today only the read-only `ldna:audit-listing` and
+  `matching:preview` accept it. Do not add it to anything that writes.
+* **Stage 0 `psql` spike runners** (`spikes/phase-2-batch-0a-postgis-knn/`) source
+  `lib/require-isolated-target.sh`. The target must be named in `SPIKE_PGHOST`/`SPIKE_PGDATABASE`,
+  never the ambient `PG*`. `helium`, `heliumdb`, a blank target or a Replit deployment refuses
+  before any `psql` (`Stage0SpikeRunnerIsolationTest`).
+* **`tinker` warns on STDERR, it does not block.** Runbooks use `tinker --execute` for read-only
+  production checks. Do not create QA fixtures in tinker.
+
+Audit, remaining risks and the proposed `qa:fixture` command: `docs/manual-qa-database-safety.md`.
+
 ### Deployment & migrations
 
 **`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.

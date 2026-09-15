@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Support\Safeguards\ProductionDatabaseGuard;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -42,7 +42,8 @@ class BridgePropertySeeder extends Seeder
 {
     public function run(): void
     {
-        if (App::environment('production')) {
+        // Checks the resolved database as well as APP_ENV. See ProductionDatabaseGuard.
+        if (ProductionDatabaseGuard::assessApplication()->isProduction()) {
             $this->command->error(
                 'BridgePropertySeeder is not allowed in the production environment. Aborting.'
             );
