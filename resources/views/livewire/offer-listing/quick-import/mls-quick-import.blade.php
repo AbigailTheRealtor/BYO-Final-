@@ -127,6 +127,7 @@
             \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::STEP_CONFIRM => 'Confirm Property',
             \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::STEP_METHOD  => 'Listing Method',
             \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::STEP_TERMS   => 'Your Terms',
+            \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::STEP_KNOWLEDGE => 'AI Knowledge Base',
             \App\Http\Livewire\OfferListing\QuickImport\MlsQuickImportComponent::STEP_REVIEW  => 'Review',
         ];
         $stepKeys  = array_keys($steps);
@@ -374,7 +375,7 @@
 
         <div class="d-flex gap-2 mt-3 mb-5">
             <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
-            <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
+            <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToKnowledge">Continue</button>
         </div>
     @else
         @php
@@ -462,13 +463,57 @@
             </div>
             <div class="card-footer bg-white d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" wire:click="backToMethod">Back</button>
-                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToReview">Review My Listing</button>
+                <button type="button" class="btn btn-primary" style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;" wire:click="continueToKnowledge">Continue</button>
             </div>
         </div>
     @endif{{-- /canonical vs schema-driven terms --}}
     @endif
 
-    {{-- ── Step 5: review before publish ────────────────────────────────── --}}
+    {{-- ── Step 5: AI Knowledge Base ────────────────────────────────────── --}}
+    @if($step === 'knowledge')
+        {{--
+            THE MANUAL WIZARD'S OWN KNOWLEDGE BASE TAB. Not a copy of it: the same
+            partial file the Seller, Buyer, Landlord and Tenant Create and Edit
+            screens include, so the questions, their wording, their grouping and
+            their property-type gating cannot drift between the two entry paths,
+            because there is only one of each.
+
+            It reads three variables off the host component and nothing else:
+              $user_type      — passed here from the component's own role(), so this
+                                flow does not carry a second, client-writable copy of
+                                which role it serves;
+              $property_type  — the NORMALISED imported type set at Confirm;
+              $listing_ai_faq — the answers, bound by the partial's own wire:model.
+
+            Do not add a question here. Add it to config/ai_faq_{role}.php, where
+            both entry paths and the Ask AI admission boundary all see it.
+        --}}
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="fw-semibold mb-1">AI Knowledge Base</h4>
+                <p class="text-muted">
+                    The MLS describes the property. These questions capture what it doesn't — the things
+                    buyers and agents ask that only you can answer. They pre-load your listing's AI
+                    assistant. <strong>Every question is optional</strong>, and you can add or change
+                    answers later from Edit Listing.
+                </p>
+
+                @include('livewire.offer-listing.shared.ai-questions-input', ['user_type' => $role])
+            </div>
+            <div class="card-footer bg-white d-flex flex-wrap align-items-center gap-2">
+                <button type="button" class="btn btn-outline-secondary" wire:click="backToTerms">Back</button>
+                <button type="button" class="btn btn-primary"
+                        style="background-color:#0d6efd; border-color:#0d6efd; color:#fff;"
+                        wire:click="continueToReview">Review My Listing</button>
+                {{-- The same transition, for a user who does not want to answer now.
+                     Whatever has been typed is still saved — see skipKnowledge(). --}}
+                <button type="button" class="btn btn-link text-muted ms-auto p-0"
+                        wire:click="skipKnowledge">Skip for now</button>
+            </div>
+        </div>
+    @endif
+
+    {{-- ── Step 6: review before publish ────────────────────────────────── --}}
     @if($step === 'review')
         <div class="card shadow-sm mb-3">
             <div class="card-body">
@@ -609,8 +654,42 @@
             </div>
         </div>
 
+        {{--
+            AI Knowledge Base summary.
+
+            A COUNT, not the answers. The purpose is to confirm the step was
+            captured, and the answers themselves are long free text that would
+            bury the transaction terms above them — those are what a user is
+            actually reviewing before making a listing public.
+
+            The count comes from knowledgeAnsweredCount(), which counts through
+            the admission gate, so it states what will be STORED rather than what
+            is sitting on the component.
+        --}}
+        <div class="card shadow-sm mb-3">
+            <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                <div>
+                    <h5 class="fw-semibold mb-1">AI Knowledge Base</h5>
+                    <p class="text-muted mb-0 small">
+                        @if($knowledgeAnswered === 0)
+                            No questions answered. Your listing will still publish — you can add
+                            answers any time from Edit Listing.
+                        @else
+                            {{ $knowledgeAnswered }} of {{ $knowledgeTotal }}
+                            {{ \Illuminate\Support\Str::plural('question', $knowledgeTotal) }}
+                            answered.
+                        @endif
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+                        wire:click="backToKnowledge">
+                    {{ $knowledgeAnswered === 0 ? 'Add answers' : 'Edit answers' }}
+                </button>
+            </div>
+        </div>
+
         <div class="d-flex gap-2 mb-5">
-            <button type="button" class="btn btn-outline-secondary" wire:click="backToTerms">Back to terms</button>
+            <button type="button" class="btn btn-outline-secondary" wire:click="backToKnowledge">Back</button>
             <button type="button" class="btn btn-success btn-lg" style="background-color:#198754; border-color:#198754; color:#fff;" wire:click="publish"
                     wire:loading.attr="disabled" wire:target="publish">
                 <span wire:loading.remove wire:target="publish">Publish Listing</span>
