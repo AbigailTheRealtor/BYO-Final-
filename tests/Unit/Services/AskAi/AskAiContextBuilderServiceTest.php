@@ -2398,9 +2398,9 @@ class AskAiContextBuilderServiceTest extends TestCase
 
     public function test_case_S_faq_answers_populated_from_tenant_native_column(): void
     {
-        // Registered tenant key from the config SSOT (config/tenant_ai_faq.php), and one
-        // that is NOT on AskAiViewerAuthorizationService::APPLICANT_SENSITIVE_FAQ_KEYS, so
-        // this test stays about native-column population rather than viewer redaction.
+        // Registered tenant key from the config SSOT (config/tenant_ai_faq.php), and not an
+        // applicant-sensitive one, so this test stays about native-column population rather
+        // than viewer redaction.
         // 'move_in_flexibility' is not defined in the config and is correctly dropped by
         // the registered-only admission boundary.
         $faqData = ['tenant_rental_needs' => 'Can move in within 30 days'];

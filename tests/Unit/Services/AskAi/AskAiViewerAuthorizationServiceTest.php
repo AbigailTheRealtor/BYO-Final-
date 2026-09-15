@@ -181,15 +181,14 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
         $this->assertArrayNotHasKey('eviction_history', $out['listing']);
         // Applicant-sensitive native fields gone for public.
         $this->assertArrayNotHasKey('monthly_income', $out['listing']);
-        // Applicant-sensitive FAQ gone for public.
-        $this->assertArrayNotHasKey('faq_q17', $out['faq_answers']);
-        $this->assertArrayNotHasKey('faq_q18', $out['faq_answers']);
-        $this->assertArrayNotHasKey('tenant_prior_conduct', $out['faq_answers']);
 
-        // Non-sensitive fields retained.
+        // Batch 0: the whole Knowledge Base is gone for a non-owner — the applicant-sensitive
+        // answers AND the ordinary ones (faq_q10) that used to be kept.
+        $this->assertArrayNotHasKey('faq_answers', $out);
+
+        // Non-sensitive listing fields retained.
         $this->assertArrayHasKey('desired_lease_length', $out['listing']);
         $this->assertArrayHasKey('pets_allowed', $out['listing']);
-        $this->assertArrayHasKey('faq_q10', $out['faq_answers']);
     }
 
     public function test_authorized_scope_keeps_applicant_subset_but_drops_never_expose(): void
@@ -200,20 +199,224 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
         $this->assertArrayNotHasKey('credit_score', $out['listing']);
         $this->assertArrayNotHasKey('eviction_history', $out['listing']);
 
-        // Authorized subset retained: income source/amount + references + conduct.
+        // Authorized native subset retained: income source/amount.
         $this->assertArrayHasKey('monthly_income', $out['listing']);
-        $this->assertArrayHasKey('faq_q17', $out['faq_answers']);
-        $this->assertArrayHasKey('faq_q18', $out['faq_answers']);
-        $this->assertArrayHasKey('tenant_prior_conduct', $out['faq_answers']);
+
+        // Batch 0: an authorized counterparty is still not the owner, so the tenant's
+        // Knowledge Base answers (references, income source, prior conduct) are removed too.
+        $this->assertArrayNotHasKey('faq_answers', $out);
     }
 
-    public function test_non_tenant_listing_is_never_redacted(): void
+    /**
+     * Replaces test_non_tenant_listing_is_never_redacted, whose premise — a non-tenant,
+     * non-owner context comes back byte-for-byte unchanged — was the Knowledge Base leak.
+     * The rest of that premise still holds: nothing but faq_answers is removed here.
+     */
+    public function test_non_tenant_non_owner_listing_loses_only_faq_answers(): void
     {
         $ctx = [
             'listing'     => ['monthly_income' => '$5,000', 'credit_score' => '700'],
             'faq_answers' => ['faq_q18' => 'whatever'],
         ];
         $out = $this->svc->redactContext($ctx, 'seller', AskAiViewerAuthorizationService::SCOPE_PUBLIC);
-        $this->assertSame($ctx, $out);
+
+        $expected = $ctx;
+        unset($expected['faq_answers']);
+        $this->assertSame($expected, $out);
+    }
+
+    // -------------------------------------------------------------------------
+    // Batch 0 — the Knowledge Base (faq_answers) is owner-only in every context
+    // -------------------------------------------------------------------------
+
+    private const KB_SENTINEL = 'KB-SENTINEL-roof-replaced-2019-by-owner';
+
+    /**
+     * A context carrying the Knowledge Base in the enriched shape the context builder
+     * emits, with the sentinel buried in nested answer text, alongside listing fields,
+     * seller minimums and an avatar section, so side effects on other sections show up.
+     */
+    private function contextWithKnowledgeBase(): array
+    {
+        return [
+            'listing' => [
+                'bedrooms'                  => 3,
+                'city'                      => 'Tampa',
+                'minimum_cap_rate'          => '7.5',
+                'minimum_annual_net_income' => '120000',
+                'hoa_fee'                   => 250,
+            ],
+            'faq_answers' => [
+                'roof_age_and_condition' => [
+                    'answer_text'           => self::KB_SENTINEL,
+                    'question_label'        => 'How old is the roof, and what condition is it in?',
+                    'question_group'        => 'Property Condition & Systems',
+                    'intelligence_category' => 'condition',
+                ],
+                'seller_motivation_for_selling' => [
+                    'answer_text'    => 'Relocating for work — ' . self::KB_SENTINEL,
+                    'question_label' => 'Why is the owner selling the property?',
+                ],
+                'faq_q18'  => 'Legacy raw-string answer ' . self::KB_SENTINEL,
+                'nested'   => ['deeper' => ['deepest' => self::KB_SENTINEL]],
+            ],
+            'buyer_avatar' => ['primary_motivation' => 'first home'],
+            'agent_profile' => ['display_name' => 'Pat Agent'],
+        ];
+    }
+
+    public static function allRolesProvider(): array
+    {
+        return [
+            'seller'   => ['seller'],
+            'landlord' => ['landlord'],
+            'buyer'    => ['buyer'],
+            'tenant'   => ['tenant'],
+        ];
+    }
+
+    /**
+     * Every non-owner scope the service can be handed, including values no caller should
+     * produce. Anything that is not exactly SCOPE_OWNER must fail closed.
+     */
+    public static function nonOwnerKnowledgeBaseProvider(): array
+    {
+        $scopes = [
+            'public'               => AskAiViewerAuthorizationService::SCOPE_PUBLIC,
+            'authorized'           => AskAiViewerAuthorizationService::SCOPE_AUTHORIZED,
+            'empty scope'          => '',
+            'unknown scope'        => 'guest',
+            'uppercase owner'      => 'OWNER',
+            'padded owner'         => ' owner',
+        ];
+
+        $cases = [];
+        foreach (['seller', 'landlord', 'buyer', 'tenant'] as $role) {
+            foreach ($scopes as $label => $scope) {
+                $cases["{$role} / {$label}"] = [$role, $scope];
+            }
+        }
+        return $cases;
+    }
+
+    /**
+     * @dataProvider allRolesProvider
+     */
+    public function test_owner_retains_the_complete_knowledge_base(string $role): void
+    {
+        $ctx = $this->contextWithKnowledgeBase();
+        $out = $this->svc->redactContext($ctx, $role, AskAiViewerAuthorizationService::SCOPE_OWNER);
+
+        $this->assertSame($ctx, $out, "Owner context must be returned unchanged for role={$role}");
+        $this->assertSame($ctx['faq_answers'], $out['faq_answers']);
+    }
+
+    /**
+     * @dataProvider nonOwnerKnowledgeBaseProvider
+     */
+    public function test_non_owner_loses_the_entire_knowledge_base(string $role, string $scope): void
+    {
+        $out = $this->svc->redactContext($this->contextWithKnowledgeBase(), $role, $scope);
+
+        $this->assertArrayNotHasKey(
+            'faq_answers',
+            $out,
+            "faq_answers must be removed for role={$role} scope='{$scope}'"
+        );
+
+        // Gone, not renamed, blanked or moved: no nested answer text survives anywhere.
+        $serialized = json_encode($out);
+        $this->assertStringNotContainsString(self::KB_SENTINEL, $serialized);
+        $this->assertStringNotContainsString('roof_age_and_condition', $serialized);
+        $this->assertStringNotContainsString('seller_motivation_for_selling', $serialized);
+        $this->assertStringNotContainsString('faq_', $serialized);
+    }
+
+    /**
+     * Knowledge Base removal changes nothing else. For every role and every non-owner
+     * scope, redacting a context WITH faq_answers yields exactly what redacting the same
+     * context WITHOUT it yields — so no other section (seller minimums included) became
+     * more or less visible as a side effect.
+     *
+     * @dataProvider nonOwnerKnowledgeBaseProvider
+     */
+    public function test_knowledge_base_removal_has_no_side_effect_on_other_sections(string $role, string $scope): void
+    {
+        $with    = $this->contextWithKnowledgeBase();
+        $without = $with;
+        unset($without['faq_answers']);
+
+        $this->assertSame(
+            $this->svc->redactContext($without, $role, $scope),
+            $this->svc->redactContext($with, $role, $scope)
+        );
+    }
+
+    /**
+     * Seller minimums are not a Knowledge Base concern and their visibility is unchanged:
+     * this layer never stripped them and does not start or stop now. (They are kept out of
+     * public answers by SnapshotFactVisibility and the Agent AI loaders, pinned elsewhere.)
+     */
+    public function test_seller_minimum_visibility_is_unchanged_by_knowledge_base_removal(): void
+    {
+        $out = $this->svc->redactContext(
+            $this->contextWithKnowledgeBase(),
+            'seller',
+            AskAiViewerAuthorizationService::SCOPE_PUBLIC
+        );
+
+        $this->assertSame('7.5', $out['listing']['minimum_cap_rate']);
+        $this->assertSame('120000', $out['listing']['minimum_annual_net_income']);
+        $this->assertArrayNotHasKey('hoa_fee', $out['listing'], 'C2s compliance stripping still applies');
+        $this->assertArrayNotHasKey('buyer_avatar', $out, 'Avatar stripping still applies');
+        $this->assertSame(['display_name' => 'Pat Agent'], $out['agent_profile']);
+    }
+
+    /**
+     * The tenant branch used to return a tenant's Knowledge Base minus a subset; the
+     * non-tenant early return used to return it whole. Neither path can skip the removal.
+     */
+    public function test_neither_early_return_path_can_bypass_knowledge_base_removal(): void
+    {
+        foreach (['seller', 'landlord', 'buyer'] as $nonTenant) {
+            $out = $this->svc->redactContext($this->contextWithKnowledgeBase(), $nonTenant, AskAiViewerAuthorizationService::SCOPE_PUBLIC);
+            $this->assertArrayNotHasKey('faq_answers', $out, "non-tenant early return: {$nonTenant}");
+        }
+
+        foreach ([AskAiViewerAuthorizationService::SCOPE_PUBLIC, AskAiViewerAuthorizationService::SCOPE_AUTHORIZED] as $scope) {
+            $out = $this->svc->redactContext($this->tenantContext(), 'tenant', $scope);
+            $this->assertArrayNotHasKey('faq_answers', $out, "tenant branch: {$scope}");
+        }
+    }
+
+    /**
+     * Listing-type aliases and an unrecognised listing type reach the same removal:
+     * ownership, not the type string, decides.
+     */
+    public function test_listing_type_aliases_and_unknown_types_still_remove_knowledge_base(): void
+    {
+        foreach ([
+            'property_auction', 'seller_agent_auction', 'landlord_auction', 'landlord_agent_auction',
+            'buyer_criteria_auction', 'buyer_agent_auction', 'tenant_criteria_auction',
+            'tenant_agent_auction', 'TENANT', 'not_a_real_type', '',
+        ] as $type) {
+            $out = $this->svc->redactContext($this->contextWithKnowledgeBase(), $type, AskAiViewerAuthorizationService::SCOPE_PUBLIC);
+            $this->assertArrayNotHasKey('faq_answers', $out, "listing type '{$type}'");
+        }
+    }
+
+    public function test_context_without_knowledge_base_is_handled_for_non_owner(): void
+    {
+        $ctx = ['listing' => ['bedrooms' => 3]];
+
+        $this->assertSame($ctx, $this->svc->redactContext($ctx, 'seller', AskAiViewerAuthorizationService::SCOPE_PUBLIC));
+        $this->assertArrayNotHasKey(
+            'faq_answers',
+            $this->svc->redactContext($ctx + ['faq_answers' => null], 'landlord', AskAiViewerAuthorizationService::SCOPE_PUBLIC)
+        );
+        $this->assertArrayNotHasKey(
+            'faq_answers',
+            $this->svc->redactContext($ctx + ['faq_answers' => 'not-an-array ' . self::KB_SENTINEL], 'buyer', AskAiViewerAuthorizationService::SCOPE_PUBLIC)
+        );
     }
 }
