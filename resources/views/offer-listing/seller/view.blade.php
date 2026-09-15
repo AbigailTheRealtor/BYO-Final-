@@ -737,26 +737,6 @@
     color: #94a3b8;
     font-size: 0.72rem;
 }
-.sol-view-page .sol-interaction-ai-chips {
-    display: flex;
-    flex-direction: column;
-    gap: 0.28rem;
-    margin-bottom: 0.35rem;
-}
-.sol-view-page .sol-interaction-ai-chip {
-    font-size: 0.69rem;
-    color: #3b82f6;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: 20px;
-    padding: 0.2rem 0.5rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    cursor: default;
-}
-
 /* ---- Ask AI Suggestion Chips ---- */
 .ask-ai-chip {
     display: inline-flex;
@@ -1236,28 +1216,14 @@
                 </button>
             </div>
 
-            {{-- 3. Ask AI --}}
-            <div class="sol-interaction-card">
-                <div class="sol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
-                <div class="sol-interaction-card-label">Ask AI</div>
-                <div class="sol-interaction-ai-chips">
-                    <span class="sol-interaction-ai-chip">HOA fees &amp; what they cover?</span>
-                    <span class="sol-interaction-ai-chip">Is this in a flood zone?</span>
-                    <span class="sol-interaction-ai-chip">Financing options available?</span>
-                    <span class="sol-interaction-ai-chip">Roof age &amp; condition?</span>
-                    <span class="sol-interaction-ai-chip">School districts nearby?</span>
-                </div>
-                <input type="text" class="form-control form-control-sm"
-                       placeholder="Ask a question about this property…"
-                       aria-label="AI question input"
-                       disabled
-                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
-                <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#solAiModal"
-                        aria-label="Ask AI a question about this property">
-                    <i class="fa-solid fa-robot"></i>Ask AI
-                </button>
-            </div>
+            {{-- 3. Ask AI — Questions About This Property (verified, precomputed) --}}
+            @include('offer-listing.partials._ask-ai-property-card', [
+                'questions'     => $propertyQuestions ?? [],
+                'role'          => 'seller',
+                'prefix'        => 'sol',
+                'viewerIsOwner' => $askAiViewerIsOwner ?? false,
+                'modalId'       => 'solAiModal',
+            ])
 
             {{-- 4. Ask a Question --}}
             <div class="sol-interaction-card">
@@ -2002,11 +1968,6 @@
         'mlsNumber' => ($mlsDetails ?? null)?->mlsNumber,
     ])
 
-    @include('offer-listing.partials._property-questions', [
-        'questions' => $propertyQuestions ?? [],
-        'role'      => 'seller',
-    ])
-
     {{-- Sale Terms --}}
     <div class="card section-card" id="section-financing">
         <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Sale Terms</div>
@@ -2707,9 +2668,15 @@
                     <i class="fa-solid fa-lock"></i>Log in to Request a Showing
                 </a>
                 @endauth
+                @if($askAiViewerIsOwner ?? false)
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solAiModal">
                     <i class="fa-solid fa-robot"></i>Ask AI About Property
                 </button>
+                @else
+                <a href="#sol-ask-ai-card" class="sol-action-btn sol-action-outline">
+                    <i class="fa-solid fa-robot"></i>Ask AI About Property
+                </a>
+                @endif
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
@@ -2872,7 +2839,10 @@
         </div>
     </div>
 
-    {{-- Modal: Ask AI About This Property --}}
+    {{-- Modal: Ask AI About This Property — OWNER ONLY. Its endpoint is owner-scoped, so a
+         shopper would only ever reach the "available to the listing owner" notice; shoppers
+         get the verified questions in the Ask AI card instead. --}}
+    @if($askAiViewerIsOwner ?? false)
     <div class="modal fade" id="solAiModal" tabindex="-1" aria-labelledby="solAiModalLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
@@ -2975,6 +2945,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 </div>{{-- /container --}}
 
@@ -2993,10 +2964,17 @@
         <i class="fa-solid fa-calendar-days"></i>
         <span>Showing</span>
     </button>
+    @if($askAiViewerIsOwner ?? false)
     <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solAiModal">
         <i class="fa-solid fa-robot"></i>
         <span>Ask AI</span>
     </button>
+    @else
+    <a href="#sol-ask-ai-card" class="sol-mobile-bar-btn">
+        <i class="fa-solid fa-robot"></i>
+        <span>Ask AI</span>
+    </a>
+    @endif
     <button class="sol-mobile-bar-btn" id="solMobileShareBtn">
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
@@ -3121,7 +3099,8 @@
     }());
     @endif
 
-    /* ---- AI modal example questions rotation ---- */
+    @if($askAiViewerIsOwner ?? false)
+    /* ---- AI modal example questions rotation (owner modal only) ---- */
     var aiExamples = [
         '"What are the HOA fees and what do they cover?"',
         '"Is this property in a flood zone?"',
@@ -3142,6 +3121,7 @@
         }, 3500);
         aiEl.style.transition = 'opacity .3s ease';
     }
+    @endif
 
     /* ---- Share listing (Web Share API with clipboard fallback, clipboard-guarded) ---- */
     function shareHandler() {
@@ -3199,7 +3179,8 @@
         });
     });
 
-    /* ---- Ask AI modal — V2-aware submit + session management ---- */
+    @if($askAiViewerIsOwner ?? false)
+    /* ---- Ask AI modal — V2-aware submit + session management (owner modal only) ---- */
     (function () {
         var submitBtn  = document.getElementById('solAiSubmitBtn');
         var textarea   = document.getElementById('solAiTextarea');
@@ -3547,6 +3528,7 @@
             });
         }
     }());
+    @endif
 
 })();
 </script>

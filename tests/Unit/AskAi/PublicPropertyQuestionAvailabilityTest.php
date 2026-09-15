@@ -486,7 +486,13 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     public function test_surface_has_no_path_to_a_language_model_or_network_call(): void
     {
         $service = file_get_contents(base_path('app/Services/AskAi/AskAiPublicPropertyQuestionService.php'));
-        $partial = file_get_contents(base_path('resources/views/offer-listing/partials/_property-questions.blade.php'));
+        // Batch 2a moved the surface into the Ask AI card; Blade comments are documentation,
+        // not markup, so they are removed before the scan.
+        $partial = preg_replace(
+            '/\{\{--.*?--\}\}/s',
+            '',
+            file_get_contents(base_path('resources/views/offer-listing/partials/_ask-ai-property-card.blade.php'))
+        );
 
         foreach ([$service, $partial] as $source) {
             foreach ([
@@ -502,8 +508,9 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         $reflection = new \ReflectionClass(AskAiPublicPropertyQuestionService::class);
         $this->assertNull($reflection->getConstructor(), 'The service must have no injected dependencies.');
 
-        // The partial is inert markup: no script, no form, no Livewire, no Ask AI textbox.
-        foreach (['<script', '<form', 'wire:', 'fetch(', 'solAi', 'lolAi', 'textarea'] as $forbidden) {
+        // The partial is inert markup: no script, no form, no Livewire, no Ask AI textbox,
+        // no link or handler that could turn revealing an answer into a request.
+        foreach (['<script', '<form', 'wire:', 'fetch(', 'XMLHttpRequest', 'solAi', 'lolAi', 'textarea', '<input', 'href=', 'onclick', '/ask-ai', '/agent-ai'] as $forbidden) {
             $this->assertStringNotContainsStringIgnoringCase($forbidden, $partial, "Partial contains '{$forbidden}'.");
         }
     }

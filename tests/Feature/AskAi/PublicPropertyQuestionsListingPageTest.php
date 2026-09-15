@@ -109,14 +109,19 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         return $this->get(route('offer.listing.landlord.view', ['id' => $listing->id]))->assertStatus(200)->getContent();
     }
 
-    /** Only the Questions About This Property card, so values printed elsewhere on the page cannot satisfy an assertion. */
+    /**
+     * Only the Ask AI card (Batch 2a: the one home of Questions About This Property), so
+     * values printed elsewhere on the page cannot satisfy an assertion. The card ends where
+     * the next quick-actions card begins.
+     */
     private function section(string $html, string $role): string
     {
-        $start = strpos($html, 'data-property-questions="' . $role . '"');
+        $start = strpos($html, 'data-ask-ai-property-questions="' . $role . '"');
         if ($start === false) {
             return '';
         }
-        $next = strpos($html, 'class="card section-card"', $start);
+        $prefix = $role === 'landlord' ? 'lol' : 'sol';
+        $next   = strpos($html, 'class="' . $prefix . '-interaction-card"', $start);
 
         return substr($html, $start, $next === false ? null : $next - $start);
     }
@@ -179,11 +184,15 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         $this->assertArrayHasKey('seller_bedrooms', $questions);
     }
 
-    public function test_seller_listing_with_no_answerable_facts_renders_no_section(): void
+    public function test_seller_listing_with_no_answerable_facts_renders_an_honest_empty_state(): void
     {
-        $html = $this->sellerPage($this->sellerListing(['auction_type' => 'Traditional']));
+        $html    = $this->sellerPage($this->sellerListing(['auction_type' => 'Traditional']));
+        $section = $this->section($html, 'seller');
 
-        $this->assertStringNotContainsString('data-property-questions', $html);
+        // The Ask AI card is still there, says plainly that nothing is verified yet, and
+        // offers no invented question in its place.
+        $this->assertStringContainsString('No verified property questions are available yet.', $section);
+        $this->assertStringNotContainsString('data-property-question=', $html);
         $this->assertStringNotContainsString('Questions About This Property', $html);
     }
 

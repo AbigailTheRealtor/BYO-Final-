@@ -124,6 +124,11 @@ class SellerOfferListingController extends Controller
         $propertyQuestions = app(\App\Services\AskAi\AskAiPublicPropertyQuestionService::class)
             ->forListing('seller', $askAiChipContext, $meta);
 
+        // Who gets the free-text Ask AI modal. Its endpoint is owner-scoped, so a shopper
+        // gets only the questions above. auth()->check() first: a guest's null id and a
+        // listing's null user_id both cast to 0, and must never read as ownership.
+        $askAiViewerIsOwner = auth()->check() && (int) auth()->id() === (int) $auction->user_id;
+
         $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
         $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
         $agentAiScope   = 'public_listing_seller';
@@ -175,7 +180,7 @@ class SellerOfferListingController extends Controller
         // earn, and a false provenance claim is worse than a missing one.
         $mlsImported       = $mlsReader->isMlsImported($meta);
 
-        return view('offer-listing.seller.view', ['propertyQuestions' => $propertyQuestions] + compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + ['mlsDetails' => $mlsDetails, 'mlsAddressVisible' => $mlsAddressVisible, 'mlsAddressNotice' => $mlsAddressNotice, 'mlsImported' => $mlsImported] + $page_data);
+        return view('offer-listing.seller.view', ['propertyQuestions' => $propertyQuestions, 'askAiViewerIsOwner' => $askAiViewerIsOwner] + compact('auction', 'meta', 'offerAuction', 'calcData', 'askAiChipContext', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + ['mlsDetails' => $mlsDetails, 'mlsAddressVisible' => $mlsAddressVisible, 'mlsAddressNotice' => $mlsAddressNotice, 'mlsImported' => $mlsImported] + $page_data);
     }
 
     /**
