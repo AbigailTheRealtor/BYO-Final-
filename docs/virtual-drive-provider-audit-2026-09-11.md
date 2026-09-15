@@ -852,6 +852,117 @@ ordering, because reversing it would fetch the billed library before the refusal
 All 61 Virtual Drive feature tests, 5 unit tests and 30 Virtual Drive browser specs pass. Nothing in
 this work contacted Google or Apple.
 
+## 18. The auth-failure stop-loss, the exact Google error, and the proof ceiling
+
+**Why.** On 2026-09-15 the ledger went from 4/10 to 10/10 in eleven minutes (04:28–04:39 UTC): six
+reload-and-press attempts from one browser, each correctly granted and each rejected by Google, and
+the page could say only "referrer or API restriction". A claim is granted before the Maps JavaScript
+API loads — that ordering is what makes a refusal mean nothing was fetched — so a rejected key spends
+its launch. Nothing about the key changes between presses, so every press after the first was
+certain to fail.
+
+**The exact error.** `gm_authFailure` is called with no argument; Google prints the reason only to the
+console. Before the library loads, the provider now wraps `console.error` / `console.warn` (every
+message still reaches the console) and reads Maps errors out of them: the code
+(`RefererNotAllowedMapError`, `ApiTargetBlockedMapError`, `InvalidKeyMapError`, … — the documented
+authorization codes stop the page even without `gm_authFailure`; any other Maps message is only
+logged) and "Your site URL to be authorized". The launch panel shows that beside this page's origin,
+the referrer policy, the Referer the browser sends, the origin the server received on the report,
+and the restriction entry that would match. The key is removed from everything kept: the delivered
+credential, anything `AIza…`-shaped, and any `key=` parameter.
+
+**The stop-loss.** The first rejection is reported once (`POST /dev/virtual-drive/api/google-auth-failure`,
+after a 400 ms settle so a late console message is included) and recorded by
+`VirtualDriveGoogleAuthBlock` as a JSON file under `storage/app/virtual-drive/`. From then on the
+ledger refuses every claim with HTTP 423 `auth_failure_blocked`, from any page, session or day, and
+`cache:clear` does not lift it. A reloaded page is rendered already locked with the recorded cause.
+**Nothing is refunded**: the failed launch stays counted. A report can only stop launches, so it being
+untrusted browser input is acceptable. An unreadable block file is a block.
+
+**The only reset** is deliberate and at the machine, with the proof's environment:
+
+```
+APP_ENV=local php artisan virtual-drive:google-auth-block            # read-only status
+APP_ENV=local php artisan virtual-drive:google-auth-block --reset    # prompts, then clears
+```
+
+`--yes` confirms without a prompt. It refuses outside local/development/testing, prints what it
+cleared, logs `virtual_drive_google_auth_block_reset`, and does not touch the tally. There is no HTTP
+route that clears the block.
+
+**The proof ceiling: 20.** `scripts/dev/virtual-drive-proof-serve.sh` runs the server with
+`VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT=20` for that process, whatever the Replit Secret says, and
+prints whether a block is recorded. It was briefly pinned to 1 in this change; the owner raised it
+from 10 to 20 on 2026-09-15 to continue live testing. The day's tally was kept as it was (10 used),
+not reset or refunded, so the raise left 10 launches for that day. Changing the ceiling is an edit
+to the script.
+
+**Verification — fakes only, no live session.** `VirtualDriveGoogleAuthFailureStopLossTest` (15 tests)
+and `tests/browser/virtual-drive-auth-failure.spec.js` (7 specs). No Google request was made and no
+launch was consumed.
+
+## 19. Live Google validation of Option A AR markers — 2026-09-15
+
+**Result: successful.** Google Street View loaded with the dedicated Virtual Drive browser key and the
+Option A AR-style markers behaved as designed. The checklist below was confirmed **manually by the
+product owner** in their own browser. **No UX or threshold change was made because of this session.**
+
+### What Option A is
+
+An AR-style floating property marker in place of the earlier yard-sign drawing: a large house number
+(the strongest identifier), a FOR SALE / FOR RENT chip, the price where appropriate, a yellow selected
+treatment, and a leader line to the geographic anchor at the listing's exact stored MLS latitude and
+longitude. Detail levels come from `VirtualDriveSigns.DEFAULTS`:
+
+| Marker | Full | Compact | Pin | Hidden beyond |
+|---|---|---|---|---|
+| Selected home | ≤ 110 m | ≤ 160 m | ≤ 180 m | 180 m |
+| Neighbour | ≤ 50 m | ≤ 110 m | ≤ 160 m | 160 m |
+
+Clicking a marker only selects; **Face the selected home** is the explicit camera turn. The page keeps
+one panorama, and the launch and cost controls in §17 and §18 were not changed.
+
+### Session record (server-side facts)
+
+- **Server:** `scripts/dev/virtual-drive-proof-serve.sh` on port 8000 (`APP_ENV=local`, file cache and
+  sessions, a process-local `APP_KEY`, `PGOPTIONS=-c default_transaction_read_only=on`, daily ceiling 20).
+  Page: `/dev/virtual-drive/google?listing=c1382a833198014114a52e2e737905ad&view=customer`
+  (6590 Manasota Key Rd).
+- **18:19:36 UTC — launch 11, rejected by Google.** The §18 capture recorded
+  `RefererNotAllowedMapError`, with "Your site URL to be authorized:
+  `https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev:8000/dev/virtual-drive/google`".
+  The origin the server received matched that URL, port included. The block was recorded at
+  18:19:37 from one report; no further launch was granted while it stood, and the failed launch
+  stayed counted.
+- **Fix, made in Google Cloud by the owner:** that exact page URL was added to the key's website
+  restrictions. After waiting more than 5 minutes, the block was cleared with
+  `virtual-drive:google-auth-block --reset` at 18:42:49 UTC. Nothing was refunded.
+- **18:44:27 UTC — launch 12, successful.** No auth-failure block was recorded afterwards. The tally
+  after the session was **12 of 20** launches used.
+
+The stop-loss did its job on its first live outing: one rejected launch cost one launch, not six.
+
+### Confirmed manually
+
+| # | Behaviour | Result |
+|---|---|---|
+| 1 | Google Street View loads with the dedicated browser key | ✅ |
+| 2 | Option A markers stay attached to their MLS coordinates | ✅ |
+| 3 | The selected property is visually distinct with the yellow treatment | ✅ |
+| 4 | The neighbouring property stays visually secondary | ✅ |
+| 5 | Clicking another property changes the selection without moving or rotating Street View | ✅ |
+| 6 | "Face the selected home" rotates the camera toward the selected property | ✅ |
+| 7 | The selected marker moves Full → Compact → Pin as distance increases | ✅ |
+| 8 | The selected marker disappears beyond approximately 180 m | ✅ |
+| 9 | Neighbouring markers keep their own distance and state independently | ✅ |
+| 10 | Driving back toward the properties restores the marker detail levels | ✅ |
+| 11 | The house number remains the strongest identifier | ✅ |
+| 12 | No fake physical yard-sign behaviour remains | ✅ |
+
+**Not assessed in this session, so not claimed here:** the §16 standing prerequisite (clean,
+unwatermarked imagery confirmed in the Cloud console), mobile or touch behaviour, the Apple side,
+and a Cloud billing check of the per-panorama charge.
+
 ## Files
 
 - **Created:**

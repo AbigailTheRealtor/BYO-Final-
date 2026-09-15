@@ -1394,6 +1394,14 @@ Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev
     Route::post('/api/google-launch', [\App\Http\Controllers\Dev\VirtualDriveGoogleLaunchController::class, 'claim'])
         ->middleware('throttle:20,1')
         ->name('api.google-launch');
+
+    // Google rejected the browser key. Recording it BLOCKS every later launch
+    // claim until `php artisan virtual-drive:google-auth-block --reset` — there
+    // is deliberately no route that clears it. It can only stop spend, never
+    // start any; see VirtualDriveGoogleAuthFailureController.
+    Route::post('/api/google-auth-failure', [\App\Http\Controllers\Dev\VirtualDriveGoogleAuthFailureController::class, 'report'])
+        ->middleware('throttle:10,1')
+        ->name('api.google-auth-failure');
 });
 
 // ===========================================================================

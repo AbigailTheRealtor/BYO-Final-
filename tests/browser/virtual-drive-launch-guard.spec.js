@@ -234,7 +234,7 @@ test.describe('Virtual Drive · Google launch guard (fake Maps API, no network)'
         const record = await openGoogle(page, '?fake=authfail');
 
         await page.click('#vd-launch');
-        await expect(page.locator('#vd-launch')).toHaveText('Unavailable');
+        await expect(page.locator('#vd-launch')).toHaveText('Blocked: key rejected');
         await expect(page.locator('#vd-launch')).toBeDisabled();
 
         await page.evaluate(() => { for (let i = 0; i < 3; i += 1) window.VirtualDrive.launch(); });

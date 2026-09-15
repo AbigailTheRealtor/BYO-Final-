@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Virtual Drive — sign marker design options. STATIC MOCKUP, DEVELOPMENT ONLY.
+
+  No Google Street View, no Maps JavaScript API, no provider of any kind. The
+  street scenes are inline SVG drawn by this file. The CSP below forbids every
+  network fetch except this document itself: no scripts, styles, fonts, images
+  or connections from anywhere else, so even an accidental URL cannot load.
+
+  Sizes are the live softened perspective curve from
+  public/js/virtual-drive/virtual-drive-signs.js (near 200 px @ 20 m, far 68 px
+  @ 160 m, softening 15 m, selected x1.25), replicated here read-only. That file
+  is not imported and not modified. The selected cap is the PROPOSED 180 m.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="robots" content="noindex, nofollow">
+<title>Virtual Drive Marker Options</title>
+<style>
+:root {
+  --bg: #f2f3f5; --card: #ffffff; --ink: #0f172a; --muted: #566171; --line: #dde1e7;
+  --chip: #e8ebf0; --chip-on: #0f172a; --chip-on-ink: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0d1117; --card: #161b22; --ink: #e6edf3; --muted: #97a3b0; --line: #2a313b;
+          --chip: #222a33; --chip-on: #e6edf3; --chip-on-ink: #0d1117; }
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); padding: 0 20px 72px;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.wrap { max-width: 1440px; margin: 0 auto; }
+
+header { padding: 28px 0 10px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 8px; letter-spacing: -.01em; }
+.lede { color: var(--muted); max-width: 78ch; margin: 0; }
+
+.bar { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--line);
+  padding: 10px 0; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; background: var(--chip); border-radius: 8px; padding: 2px; }
+.seg button { border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12px; font-weight: 600;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-ink); }
+.bar nav { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.bar nav a { font-size: 12px; font-weight: 600; color: var(--ink); text-decoration: none; padding: 5px 10px;
+  border: 1px solid var(--line); border-radius: 999px; }
+.bar nav a:hover { background: var(--chip); }
+
+.facts { display: flex; flex-wrap: wrap; gap: 16px 28px; margin: 18px 0 0; }
+.facts table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.facts th, .facts td { padding: 4px 12px 4px 0; text-align: left; border-bottom: 1px solid var(--line); }
+.facts th { color: var(--muted); font-weight: 600; }
+.facts ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; max-width: 70ch; }
+.facts li { margin: 2px 0; }
+
+section { margin-top: 44px; scroll-margin-top: 64px; }
+h2 { font-size: 20px; margin: 0 0 4px; letter-spacing: -.005em; }
+h2 .tag { display: inline-block; font-size: 12px; font-weight: 800; background: var(--ink); color: var(--bg);
+  border-radius: 6px; padding: 1px 7px; margin-right: 8px; vertical-align: 2px; }
+h3 { font-size: 14px; margin: 22px 0 8px; }
+.sub { color: var(--muted); margin: 0 0 6px; max-width: 86ch; }
+.watch { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; padding-left: 18px; max-width: 86ch; }
+
+.row { display: flex; gap: 14px; overflow-x: auto; padding: 2px 0 8px; }
+.cell { flex: none; }
+.cap { font-size: 12px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.cap b { color: var(--ink); font-weight: 700; }
+.colhead { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.dist { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 8px; }
+.dist strong { font-size: 15px; }
+.dist span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- the stage: a 1:1 pixel crop of a 960 px wide panorama ---------- */
+.stage { position: relative; height: 340px; overflow: hidden; border-radius: 10px; border: 1px solid var(--line);
+  background: #8aa; isolation: isolate; }
+.stage .scene { position: absolute; left: 0; top: 0; display: block; }
+.mk { position: absolute; width: 0; height: 0; }
+.mk.is-sel { z-index: 3; }
+.mk.is-nb { z-index: 2; }
+
+/* scene palettes (on body so the shared SVG gradient resolves them too) */
+body.theme-day   { --sky1:#8fbbe3; --sky2:#e4eef6; --far:#6b875c; --lawn:#8dab69; --wall:#efe8da; --roof:#8a6d58;
+                   --win:#5b6f82; --door:#6b4f3f; --walk:#d8d4cc; --road:#5a5e65; --lane:#efe39a; --bush:#587549; --canopy:#2e4a2b; }
+body.theme-shade { --sky1:#7898b0; --sky2:#c3d0d7; --far:#3d5638; --lawn:#5b7746; --wall:#c7bfb0; --roof:#5d4a3d;
+                   --win:#3b4855; --door:#4b382d; --walk:#b3b0a9; --road:#44474d; --lane:#c9bf80; --bush:#3c5533; --canopy:#243a22; }
+body.theme-dusk  { --sky1:#28365a; --sky2:#e3956a; --far:#27352f; --lawn:#3b4d35; --wall:#b1a393; --roof:#46372f;
+                   --win:#f1c66a; --door:#3b2c25; --walk:#8f8a82; --road:#313339; --lane:#a99d62; --bush:#2c3b28; --canopy:#1a2619; }
+.s-far { fill: var(--far); } .s-lawn { fill: var(--lawn); } .s-wall { fill: var(--wall); } .s-roof { fill: var(--roof); }
+.s-win { fill: var(--win); } .s-door { fill: var(--door); } .s-walk { fill: var(--walk); } .s-road { fill: var(--road); }
+.s-bush { fill: var(--bush); } .s-lane { stroke: var(--lane); stroke-width: 2; stroke-dasharray: 18 14; fill: none; }
+.s-canopy { fill: var(--canopy); display: none; }
+body.theme-shade .s-canopy { display: inline; }
+
+/* size guide: the width budget the live curve grants this marker */
+.guide { position: absolute; left: 0; top: 14px; transform: translateX(-50%); height: 7px; display: none;
+  border: 1.5px solid #ff3fd2; border-top: 0; }
+.guide span { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); font: 700 10px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  color: #fff; background: #c0169b; border-radius: 3px; padding: 0 4px; white-space: nowrap; }
+.mk.is-sel .guide { top: 34px; }
+body.guides .guide { display: block; }
+
+/* shared tones */
+.tone-sale { --tone:#ef4444; --tone-lt:#ff9090; --tone-solid:#dc2626; --tone-glow:rgba(239,68,68,.55); }
+.tone-rent { --tone:#3b82f6; --tone-lt:#96c1ff; --tone-solid:#2563eb; --tone-glow:rgba(59,130,246,.6); }
+.num { font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums lining-nums; letter-spacing: .01em; }
+
+/* ======================= OPTION A — floating callout card ======================= */
+.a { position: absolute; left: 0; bottom: -8px; transform: translateX(-50%); display: flex; flex-direction: column;
+  align-items: center; white-space: nowrap; }
+.a-card { position: relative; color: #fff; background: rgba(9,13,20,.80); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 0 0 1px var(--tone-glow), 0 0 14px var(--tone-glow), 0 8px 18px rgba(0,0,0,.35); }
+.a-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--tone); }
+.a-status { font-weight: 800; letter-spacing: .09em; color: var(--tone-lt); line-height: 1.1; }
+.a-num { color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.45); }
+.a-price { font-weight: 600; color: rgba(255,255,255,.88); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.a-leader { width: 2px; background: linear-gradient(to bottom, rgba(255,255,255,.92), rgba(255,255,255,.12)); }
+.a-anchor { position: relative; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--tone);
+  background: rgba(0,0,0,.2); box-shadow: 0 0 7px var(--tone-glow); }
+.a-anchor::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px;
+  border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,.65); }
+.a-tab { background: #facc15; color: #111827; font-weight: 900; letter-spacing: .1em; line-height: 1.35;
+  padding: 1px 8px 0; border-radius: 6px 6px 0 0; margin-bottom: -2px; position: relative; z-index: 1; }
+/* full */
+.a-full .a-card { text-align: center; padding: 9px 8px 8px; }
+.a-full .a-num { margin: 3px 0 4px; }
+/* compact */
+.a-compact .a-card { display: flex; border-radius: 8px; }
+.a-compact .a-card::before { right: auto; bottom: 0; width: 4px; height: auto; }
+.a-compact .a-body { padding: 4px 9px 5px 11px; text-align: left; }
+.a-compact .a-num { margin-top: 1px; }
+/* pin */
+.a-pin .a-card { padding: 3px 7px 3px; border-radius: 7px; border: 2px solid var(--tone);
+  box-shadow: 0 0 10px var(--tone-glow), 0 4px 10px rgba(0,0,0,.35); }
+.a-pin .a-card::before { display: none; }
+.a-pin .a-anchor { width: 12px; height: 12px; }
+.a-pin .a-anchor::after { width: 4px; height: 4px; margin: -2px 0 0 -2px; }
+.a-pin { bottom: -6px; }
+/* selected */
+.a.sel .a-card { border: 2px solid #facc15;
+  box-shadow: 0 0 0 1px rgba(250,204,21,.55), 0 0 18px rgba(250,204,21,.7), 0 8px 18px rgba(0,0,0,.35); }
+.a.sel .a-leader { background: linear-gradient(to bottom, #facc15, rgba(250,204,21,.15)); }
+.a.sel .a-anchor { border-color: #facc15; box-shadow: 0 0 9px rgba(250,204,21,.85); }
+
+/* ======================= OPTION B — map pin with label ======================= */
+.b { position: absolute; left: 0; bottom: 0; }
+.b-pin { position: absolute; left: 0; bottom: 0; transform: translateX(-50%); overflow: visible;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.45)); }
+.b-pin-body { fill: var(--tone-solid); stroke: #fff; stroke-width: 1.8; }
+.b-pin-eye { fill: #fff; }
+.b-label { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; color: #0f172a;
+  background: rgba(255,255,255,.97); border: 1px solid rgba(15,23,42,.14); border-radius: 8px; padding: 4px 9px 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.b-row { display: flex; align-items: center; gap: 6px; }
+.b-tag { font-weight: 800; letter-spacing: .06em; color: #fff; background: var(--tone-solid); border-radius: 4px;
+  padding: 1px 4px; line-height: 1.25; }
+.b-price { font-weight: 600; color: #334155; line-height: 1.2; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.b-halo { position: absolute; left: 0; bottom: -6px; transform: translateX(-50%); width: 30px; height: 12px;
+  border-radius: 50%; border: 2px solid #facc15; box-shadow: 0 0 9px rgba(250,204,21,.85); }
+.b.sel .b-pin-body { fill: #facc15; stroke: #111827; }
+.b.sel .b-pin-eye { fill: #111827; }
+.b.sel .b-label { border: 2.5px solid #facc15; box-shadow: 0 0 0 1px rgba(17,24,39,.55), 0 0 14px rgba(250,204,21,.75); }
+
+/* ======================= OPTION C — game waypoint ======================= */
+.c { position: absolute; left: 0; bottom: -6px; transform: translateX(-50%); display: flex; flex-direction: column;
+  align-items: center; white-space: nowrap; color: #fff; text-align: center; }
+.c-num { text-shadow: 0 0 1px #000, 0 0 3px rgba(0,0,0,.95), 0 1px 5px rgba(0,0,0,.85); }
+.c-sub { font-weight: 800; letter-spacing: .06em; color: var(--tone-lt); margin-top: 2px; line-height: 1.1;
+  text-shadow: 0 0 2px #000, 0 0 4px rgba(0,0,0,.95); }
+.c-dist { font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: rgba(0,0,0,.6);
+  color: #e5e7eb; border-radius: 3px; padding: 2px 4px; margin: 4px 0 6px; }
+.c-dia { transform: rotate(45deg); background: var(--tone); border: 2px solid #fff;
+  box-shadow: 0 0 9px var(--tone-glow), 0 0 0 1px rgba(0,0,0,.45); }
+.c-beam { width: 2px; margin-top: 4px; background: linear-gradient(to bottom, var(--tone-lt), rgba(255,255,255,.2));
+  box-shadow: 0 0 6px var(--tone-glow); }
+.c-ring { width: 22px; height: 9px; border-radius: 50%; border: 2px solid var(--tone-lt); box-shadow: 0 0 6px var(--tone-glow); }
+.c.sel .c-dia { background: #facc15; border-color: #111827; box-shadow: 0 0 14px rgba(250,204,21,.95); }
+.c.sel .c-beam { width: 3px; background: linear-gradient(to bottom, #facc15, rgba(250,204,21,.25)); box-shadow: 0 0 9px rgba(250,204,21,.8); }
+.c.sel .c-ring { width: 30px; height: 12px; border-color: #facc15; box-shadow: 0 0 0 3px rgba(250,204,21,.25), 0 0 10px rgba(250,204,21,.8); }
+.c.sel .c-dist { background: #facc15; color: #111827; }
+
+/* level table for Option A */
+.levels { border-collapse: collapse; font-size: 12.5px; margin: 4px 0 4px; font-variant-numeric: tabular-nums; }
+.levels th, .levels td { border-bottom: 1px solid var(--line); padding: 4px 14px 4px 0; text-align: left; }
+.levels th { color: var(--muted); font-weight: 600; }
+
+@media (max-width: 640px) {
+  body { padding: 0 16px 56px; }
+  h1 { font-size: 22px; }
+  .bar nav { margin-left: 0; }
+}
+</style>
+</head>
+<body class="theme-day">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="vd-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:var(--sky1)"/>
+      <stop offset="1" style="stop-color:var(--sky2)"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Virtual Drive · static mockup · no Street View</div>
+    <h1>Sign marker options</h1>
+    <p class="lede">Three directions for the FOR SALE / FOR RENT marker, drawn over a hand-made street scene at true on-screen
+      pixel size. The test that matters: can you tell <b>6580</b> from <b>6590</b> at a glance?</p>
+    <div class="facts">
+      <table aria-label="Width budget from the live sign curve">
+        <thead><tr><th>Distance</th><th>Neighbour</th><th>Selected</th></tr></thead>
+        <tbody id="budget"></tbody>
+      </table>
+      <ul>
+        <li>Each scene is a <b>1:1 pixel crop</b> of a 960&nbsp;px wide panorama. Marker widths come from the live softened
+          perspective curve (unchanged; replicated read-only here).</li>
+        <li>Selected marker capped at the <b>proposed 180&nbsp;m</b>. Neighbours stay hidden beyond 160&nbsp;m, as today.</li>
+        <li>Houses sit on 18&nbsp;m (≈60&nbsp;ft) lots, so the side-by-side scenes show real crowding at 150&nbsp;m.</li>
+        <li>No blur-behind effects: a Street View marker icon cannot sample the imagery behind it, so none are faked here.</li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="bar" role="toolbar" aria-label="Scene controls">
+    <div class="ctl">Light
+      <div class="seg" data-ctl="theme">
+        <button type="button" data-v="day" aria-pressed="true">Daylight</button>
+        <button type="button" data-v="shade" aria-pressed="false">Shade</button>
+        <button type="button" data-v="dusk" aria-pressed="false">Dusk</button>
+      </div>
+    </div>
+    <div class="ctl">6580 is
+      <div class="seg" data-ctl="nbTone">
+        <button type="button" data-v="sale" aria-pressed="true">For sale</button>
+        <button type="button" data-v="rent" aria-pressed="false">For rent</button>
+      </div>
+    </div>
+    <div class="ctl">Width guides
+      <div class="seg" data-ctl="guides">
+        <button type="button" data-v="off" aria-pressed="true">Off</button>
+        <button type="button" data-v="on" aria-pressed="false">On</button>
+      </div>
+    </div>
+    <nav aria-label="Sections">
+      <a href="#h2h">Side by side</a><a href="#opt-a">A · Callout</a><a href="#opt-b">B · Pin</a><a href="#opt-c">C · Waypoint</a>
+    </nav>
+  </div>
+
+  <section id="h2h">
+    <h2>Side by side: 6580 next to 6590 (selected)</h2>
+    <p class="sub">Two neighbouring houses at the same distance, 6590 selected. "6580 is: For sale" is the hard case,
+      because colour cannot help and only the number tells them apart.</p>
+    <div id="h2h-body"></div>
+  </section>
+
+  <section id="opt-a">
+    <h2><span class="tag">A</span>Floating callout card</h2>
+    <p class="sub">Dark translucent card with a glowing edge, a coloured FOR SALE / FOR RENT accent, a large house number
+      and the price, lifted above the house on a thin fading leader line with an anchor dot and ring. Selected: yellow edge,
+      yellow leader and ring, and a small SELECTED tab.</p>
+
+    <h3>Three detail levels</h3>
+    <table class="levels" aria-label="Proposed Option A detail levels">
+      <thead><tr><th></th><th>Full card</th><th>Compact</th><th>Pin</th><th>Hidden</th></tr></thead>
+      <tbody>
+        <tr><th>Neighbour</th><td>up to 50 m</td><td>50–110 m</td><td>110–160 m</td><td>beyond 160 m</td></tr>
+        <tr><th>Selected</th><td>up to 110 m</td><td>110–160 m</td><td>160–180 m</td><td>beyond 180 m</td></tr>
+      </tbody>
+    </table>
+    <p class="sub">Each level spends the same pixel budget on fewer things, so the number stays large as the marker shrinks.
+      Shown below with 6580 FOR RENT beside 6590 FOR SALE (selected).</p>
+    <div class="row" id="a-levels"></div>
+
+    <h3>At distance</h3>
+    <div id="a-body"></div>
+  </section>
+
+  <section id="opt-b">
+    <h2><span class="tag">B</span>Map pin with label</h2>
+    <p class="sub">A familiar map pin whose tip stands on the property, with a white label above it: house number,
+      FOR SALE / FOR RENT tag and price. Selected: yellow pin, yellow label border and a ground halo. Far neighbours drop the price.</p>
+    <div id="b-body"></div>
+  </section>
+
+  <section id="opt-c">
+    <h2><span class="tag">C</span>Game waypoint</h2>
+    <p class="sub">A diamond on a light beam rising from a ground ring, with a boxless house number, a status and price line,
+      and a distance readout. Selected: yellow diamond, beam, ring and distance chip. Far neighbours drop the status line.</p>
+    <div id="c-body"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- the live sign curve, replicated read-only (virtual-drive-signs.js DEFAULTS) ----
+  var CURVE = { nearDistance: 20, nearWidth: 200, farWidth: 68, softening: 15, maxDistance: 160,
+                selectedScale: 1.25, selectedMaxDistance: 180 /* PROPOSED; live code says 220 */ };
+  var EXP = Math.log(CURVE.nearWidth / CURVE.farWidth)
+          / Math.log((CURVE.maxDistance + CURVE.softening) / (CURVE.nearDistance + CURVE.softening));
+
+  function curve(d) {
+    return CURVE.nearWidth * Math.pow((CURVE.nearDistance + CURVE.softening) / (d + CURVE.softening), EXP);
+  }
+  function budget(d, sel) {
+    if (d > (sel ? CURVE.selectedMaxDistance : CURVE.maxDistance)) { return 0; }
+    return Math.round(sel ? curve(d) * CURVE.selectedScale : curve(d));
+  }
+
+  // ---- scene geometry: pinhole camera, 960 px panorama, ~90° horizontal FOV ----
+  var GEO = { f: 480, horizon: 200, camH: 2.5, houseH: 7, houseW: 11, lot: 18, height: 340 };
+  function groundY(d) { return GEO.horizon + GEO.f * GEO.camH / d; }
+  function px(m, d) { return GEO.f * m / d; }
+
+  var DISTANCES = [35, 80, 150];
+  var state = { theme: 'day', nbTone: 'sale', guides: 'off' };
+
+  function listings() {
+    var rent = state.nbTone === 'rent';
+    return {
+      sel: { num: '6590', tone: 'sale', price: '$489,000', short: '$489K' },
+      nb:  { num: '6580', tone: rent ? 'rent' : 'sale', price: rent ? '$2,850/mo' : '$512,000', short: rent ? '$2.9K/mo' : '$512K' }
+    };
+  }
+  function statusLabel(t) { return t === 'rent' ? 'FOR RENT' : 'FOR SALE'; }
+  function shortLabel(t) { return t === 'rent' ? 'RENT' : 'SALE'; }
+  function r1(n) { return Math.round(n * 10) / 10; }
+
+  // ---------------------------------------------------------------- scene
+  function treeline(w, hz) {
+    var d = 'M0 ' + hz + ' L0 ' + (hz - 8);
+    for (var x = 0, i = 0; x < w + 20; x += 18, i++) {
+      d += ' Q' + (x + 9) + ' ' + (hz - 18 - (i % 3) * 5 - (i % 5 === 0 ? 6 : 0)) + ' ' + (x + 18) + ' ' + (hz - 8);
+    }
+    return d + ' L' + (w + 20) + ' ' + hz + ' Z';
+  }
+
+  function houseSvg(x, d) {
+    var g = groundY(d), W = px(GEO.houseW, d), H = px(GEO.houseH, d), wh = H * 0.58, l = x - W / 2;
+    return '<g>'
+      + '<rect class="s-wall" x="' + r1(l) + '" y="' + r1(g - wh) + '" width="' + r1(W) + '" height="' + r1(wh) + '"/>'
+      + '<polygon class="s-roof" points="' + r1(l - W * .06) + ',' + r1(g - wh) + ' ' + r1(x) + ',' + r1(g - H) + ' ' + r1(l + W * 1.06) + ',' + r1(g - wh) + '"/>'
+      + '<rect class="s-win" x="' + r1(l + W * .12) + '" y="' + r1(g - wh * .74) + '" width="' + r1(W * .22) + '" height="' + r1(wh * .34) + '"/>'
+      + '<rect class="s-win" x="' + r1(l + W * .66) + '" y="' + r1(g - wh * .74) + '" width="' + r1(W * .22) + '" height="' + r1(wh * .34) + '"/>'
+      + '<rect class="s-door" x="' + r1(l + W * .44) + '" y="' + r1(g - wh * .58) + '" width="' + r1(W * .12) + '" height="' + r1(wh * .58) + '"/>'
+      + '<ellipse class="s-bush" cx="' + r1(l + W * .06) + '" cy="' + r1(g) + '" rx="' + r1(W * .1) + '" ry="' + r1(W * .06) + '"/>'
+      + '<ellipse class="s-bush" cx="' + r1(l + W * .94) + '" cy="' + r1(g) + '" rx="' + r1(W * .1) + '" ry="' + r1(W * .06) + '"/>'
+      + '</g>';
+  }
+
+  function sceneSvg(w, houses) {
+    var h = GEO.height, hz = GEO.horizon;
+    return '<svg class="scene" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">'
+      + '<rect width="' + w + '" height="' + hz + '" fill="url(#vd-sky)"/>'
+      + '<path class="s-far" d="' + treeline(w, hz) + '"/>'
+      + '<rect class="s-lawn" y="' + hz + '" width="' + w + '" height="' + (h - hz) + '"/>'
+      + houses.map(function (hs) { return houseSvg(hs.x, hs.d); }).join('')
+      + '<rect class="s-walk" y="300" width="' + w + '" height="9"/>'
+      + '<rect class="s-road" y="309" width="' + w + '" height="' + (h - 309) + '"/>'
+      + '<path class="s-lane" d="M0 326 H' + w + '"/>'
+      + '<g class="s-canopy"><circle cx="-10" cy="-20" r="90"/><circle cx="70" cy="-40" r="70"/>'
+      + '<circle cx="' + (w + 10) + '" cy="-30" r="85"/><circle cx="' + (w - 60) + '" cy="-50" r="60"/></g>'
+      + '</svg>';
+  }
+
+  // ---------------------------------------------------------------- option A
+  function lodA(d, sel) {
+    if (sel) { return d <= 110 ? 'full' : (d <= 160 ? 'compact' : 'pin'); }
+    return d <= 50 ? 'full' : (d <= 110 ? 'compact' : 'pin');
+  }
+
+  function optionA(li, c) {
+    var lod = c.lod || lodA(c.d, c.sel), W = c.W, sel = c.sel;
+    var leader = Math.round(Math.max(c.houseH * 0.95 + 8, lod === 'full' ? 28 : (lod === 'compact' ? 18 : 12)));
+    var cls = 'a a-' + lod + ' tone-' + li.tone + (sel ? ' sel' : '');
+    var body;
+
+    if (lod === 'full') {
+      body = '<div class="a-card" style="width:' + W + 'px">'
+        + '<div class="a-status" style="font-size:' + r1(Math.max(W * .058, 10)) + 'px">' + statusLabel(li.tone) + '</div>'
+        + '<div class="a-num num" style="font-size:' + Math.round(Math.max(W * .235, 28)) + 'px">' + li.num + '</div>'
+        + '<div class="a-price" style="font-size:' + r1(Math.max(W * .075, 12)) + 'px">' + li.price + '</div>'
+        + '</div>';
+    } else if (lod === 'compact') {
+      body = '<div class="a-card"><div class="a-body">'
+        + '<div class="a-status" style="font-size:10px">' + statusLabel(li.tone) + '</div>'
+        + '<div class="a-num num" style="font-size:' + Math.round(Math.max(W * .27, 22)) + 'px">' + li.num + '</div>'
+        + '</div></div>';
+    } else {
+      body = '<div class="a-card"><div class="a-num num" style="font-size:' + Math.round(Math.max(W * .235, 16)) + 'px">' + li.num + '</div></div>';
+    }
+
+    var tab = sel ? '<div class="a-tab" style="font-size:' + (lod === 'full' ? 10 : 9) + 'px">SELECTED</div>' : '';
+
+    return { html: '<div class="' + cls + '">' + tab + body
+      + '<div class="a-leader" style="height:' + leader + 'px"></div><div class="a-anchor"></div></div>',
+      label: lod === 'full' ? 'Full card' : (lod === 'compact' ? 'Compact' : 'Pin') };
+  }
+
+  // ---------------------------------------------------------------- option B
+  function optionB(li, c) {
+    var W = c.W, sel = c.sel, far = !sel && c.d > 110;
+    var pinW = Math.round(Math.max(W * .17, 20)), pinH = Math.round(pinW * 31 / 24);
+    var num = Math.round(Math.max(W * .19, 17)), small = r1(Math.max(W * .06, 10));
+
+    return { html: '<div class="b tone-' + li.tone + (sel ? ' sel' : '') + '">'
+      + (sel ? '<div class="b-halo"></div>' : '')
+      + '<svg class="b-pin" width="' + pinW + '" height="' + pinH + '" viewBox="0 0 24 31" aria-hidden="true">'
+      + '<path class="b-pin-body" d="M12 30C12 30 1.6 18.4 1.6 11.5a10.4 10.4 0 0 1 20.8 0C22.4 18.4 12 30 12 30z"/>'
+      + '<circle class="b-pin-eye" cx="12" cy="11.5" r="4.1"/></svg>'
+      + '<div class="b-label" style="bottom:' + (pinH + 5) + 'px">'
+      + '<div class="b-row"><span class="num" style="font-size:' + num + 'px">' + li.num + '</span>'
+      + '<span class="b-tag" style="font-size:' + small + 'px">' + shortLabel(li.tone) + '</span></div>'
+      + (far ? '' : '<div class="b-price" style="font-size:' + r1(small + 1) + 'px">' + li.price + '</div>')
+      + '</div></div>',
+      label: far ? 'Pin + label, no price' : 'Pin + label' };
+  }
+
+  // ---------------------------------------------------------------- option C
+  function optionC(li, c) {
+    var W = c.W, sel = c.sel, far = !sel && c.d > 110;
+    var dia = Math.round(Math.max(W * .12, 12)), num = Math.round(Math.max(W * .2, 18)), sub = r1(Math.max(W * .06, 10));
+    var beam = Math.round(c.houseH + 14);
+
+    return { html: '<div class="c tone-' + li.tone + (sel ? ' sel' : '') + '">'
+      + '<div class="c-num num" style="font-size:' + num + 'px">' + li.num + '</div>'
+      + (far ? '' : '<div class="c-sub" style="font-size:' + sub + 'px">' + statusLabel(li.tone) + ' · ' + li.short + '</div>')
+      + '<div class="c-dist">' + c.d + ' m</div>'
+      + '<div class="c-dia" style="width:' + dia + 'px;height:' + dia + 'px"></div>'
+      + '<div class="c-beam" style="height:' + beam + 'px"></div>'
+      + '<div class="c-ring"></div></div>',
+      label: far ? 'Waypoint, number only' : 'Waypoint' };
+  }
+
+  // ---------------------------------------------------------------- stage
+  // markers: [{ lat (m, lateral) | x (px), listing, sel, lod? }]
+  function stage(o) {
+    var w = o.w, d = o.d, cx = w / 2, labels = [];
+    var houseLats = (o.fillers || []).concat(o.markers.filter(function (m) { return m.lat !== undefined; }).map(function (m) { return m.lat; }));
+    var html = sceneSvg(w, o.noHouses ? [] : houseLats.map(function (lat) { return { x: cx + px(lat, d), d: d }; }));
+
+    o.markers.slice().sort(function (a, b) { return (a.sel ? 1 : 0) - (b.sel ? 1 : 0); }).forEach(function (m) {
+      var W = budget(d, m.sel);
+      var x = m.x !== undefined ? m.x : cx + px(m.lat, d);
+      var out = o.build(m.listing, { d: d, W: W, sel: m.sel, lod: m.lod, houseH: px(GEO.houseH, d), x: x, w: w });
+
+      labels.push(out.label);
+      html += '<div class="mk ' + (m.sel ? 'is-sel' : 'is-nb') + '" style="left:' + r1(x) + 'px;top:' + r1(groundY(d)) + 'px">'
+        + out.html + '<div class="guide" style="width:' + W + 'px"><span>' + W + ' px</span></div></div>';
+    });
+
+    return { html: '<div class="stage" style="width:' + w + 'px">' + html + '</div>', labels: labels };
+  }
+
+  function cell(head, st, caption) {
+    return '<div class="cell">' + (head ? '<div class="colhead">' + head + '</div>' : '') + st.html
+      + '<div class="cap">' + caption + '</div></div>';
+  }
+
+  function distanceMatrix(build) {
+    var L = listings(), out = '';
+
+    DISTANCES.forEach(function (d) {
+      var sel = stage({ w: 300, d: d, build: build, fillers: [-GEO.lot, GEO.lot, -2 * GEO.lot, 2 * GEO.lot],
+                        markers: [{ lat: 0, listing: L.sel, sel: true }] });
+      var nb = stage({ w: 300, d: d, build: build, fillers: [-GEO.lot, GEO.lot, -2 * GEO.lot, 2 * GEO.lot],
+                       markers: [{ lat: 0, listing: L.nb, sel: false }] });
+      var both = stage({ w: 456, d: d, build: build, fillers: [-1.5 * GEO.lot, 1.5 * GEO.lot, -2.5 * GEO.lot, 2.5 * GEO.lot],
+                         markers: [{ lat: -GEO.lot / 2, listing: L.nb, sel: false }, { lat: GEO.lot / 2, listing: L.sel, sel: true }] });
+
+      out += '<div class="dist"><strong>≈ ' + d + ' m</strong><span>neighbour ' + budget(d, false) + ' px · selected '
+        + budget(d, true) + ' px</span></div><div class="row">'
+        + cell('Selected', sel, '<b>6590</b> · ' + sel.labels[0])
+        + cell('Not selected', nb, '<b>6580</b> · ' + nb.labels[0])
+        + cell('Neighbours, same distance', both, '<b>6580</b> ' + both.labels[0] + ' · <b>6590</b> ' + both.labels[1])
+        + '</div>';
+    });
+
+    return out;
+  }
+
+  function headToHead() {
+    var L = listings(), out = '';
+    var opts = [['A · Callout card', optionA], ['B · Map pin', optionB], ['C · Waypoint', optionC]];
+
+    DISTANCES.forEach(function (d) {
+      out += '<div class="dist"><strong>≈ ' + d + ' m</strong><span>neighbour ' + budget(d, false) + ' px · selected '
+        + budget(d, true) + ' px</span></div><div class="row">';
+      opts.forEach(function (o) {
+        var st = stage({ w: 456, d: d, build: o[1], fillers: [-1.5 * GEO.lot, 1.5 * GEO.lot, -2.5 * GEO.lot, 2.5 * GEO.lot],
+                         markers: [{ lat: -GEO.lot / 2, listing: L.nb, sel: false }, { lat: GEO.lot / 2, listing: L.sel, sel: true }] });
+        out += cell(o[0], st, '<b>6580</b> ' + st.labels[0] + ' · <b>6590</b> ' + st.labels[1]);
+      });
+      out += '</div>';
+    });
+
+    return out;
+  }
+
+  function levelsA() {
+    var rent = { num: '6580', tone: 'rent', price: '$2,850/mo', short: '$2.9K/mo' };
+    var sale = listings().sel;
+    var spec = [['full', 'Full card', 35], ['compact', 'Compact', 80], ['pin', 'Pin', 150]];
+
+    return spec.map(function (s) {
+      var st = stage({ w: 380, d: s[2], build: optionA, noHouses: true,
+                       markers: [{ x: 110, listing: rent, sel: false, lod: s[0] }, { x: 270, listing: sale, sel: true, lod: s[0] }] });
+      return cell(s[1], st, 'Drawn at the ' + s[2] + ' m budget: <b>' + budget(s[2], false) + ' px</b> not selected, <b>'
+        + budget(s[2], true) + ' px</b> selected');
+    }).join('');
+  }
+
+  function renderBudget() {
+    document.getElementById('budget').innerHTML = [35, 80, 150, 180].map(function (d) {
+      var n = budget(d, false), s = budget(d, true);
+      return '<tr><td>' + d + ' m</td><td>' + (n ? n + ' px' : 'hidden') + '</td><td>' + (s ? s + ' px' : 'hidden') + '</td></tr>';
+    }).join('');
+  }
+
+  function render() {
+    document.body.className = 'theme-' + state.theme + (state.guides === 'on' ? ' guides' : '');
+    renderBudget();
+    document.getElementById('h2h-body').innerHTML = headToHead();
+    document.getElementById('a-levels').innerHTML = levelsA();
+    document.getElementById('a-body').innerHTML = distanceMatrix(optionA);
+    document.getElementById('b-body').innerHTML = distanceMatrix(optionB);
+    document.getElementById('c-body').innerHTML = distanceMatrix(optionC);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.seg'), function (seg) {
+    seg.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) { return; }
+      state[seg.getAttribute('data-ctl')] = btn.getAttribute('data-v');
+      Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -148,6 +148,13 @@ button.vd-control { cursor: pointer; font-weight: 600; }
 /* A refusal — switched off, or the day's launches spent. Stated, not hidden. */
 .vd-launch-panel.is-refused { background: #3f2020; }
 .vd-launch-panel.is-refused .vd-launch-note { color: #fecaca; font-weight: 600; }
+/* A rejected key, in Google's own words, beside the origin to compare it with. */
+.vd-auth-failure { max-width: 560px; width: 100%; max-height: 45%; overflow: auto; text-align: left; font-size: 12px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; padding: 10px 12px; }
+.vd-auth-failure[hidden] { display: none; }
+.vd-auth-failure h3 { margin: 0 0 6px; font-size: 13px; color: #fde68a; }
+.vd-auth-failure dl { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 3px 10px; margin: 0; }
+.vd-auth-failure dt { color: #d1d5db; }
+.vd-auth-failure dd { margin: 0; color: #f9fafb; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .vd-compare-refused { border-left: 4px solid #f87171; padding-left: 12px; color: #7f1d1d; font-weight: 600; }
 
 /* ---------- observation sheet ---------- */

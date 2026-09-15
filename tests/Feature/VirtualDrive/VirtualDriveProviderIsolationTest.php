@@ -298,6 +298,9 @@ class VirtualDriveProviderIsolationTest extends TestCase
             'app/Support/VirtualDrive/VirtualDriveGoogleGate.php',
             'app/Support/VirtualDrive/VirtualDriveGoogleLaunchLedger.php',
             'app/Http/Controllers/Dev/VirtualDriveGoogleLaunchController.php',
+            'app/Support/VirtualDrive/VirtualDriveGoogleAuthBlock.php',
+            'app/Http/Controllers/Dev/VirtualDriveGoogleAuthFailureController.php',
+            'app/Console/Commands/VirtualDriveGoogleAuthBlockCommand.php',
         ] as $path) {
             $source = $this->source($path);
 

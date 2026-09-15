@@ -23,6 +23,12 @@
     data-launch-claim-endpoint, which is also where the daily ceiling is spent —
     so a page that was refused holds no means of authenticating to Google.
 
+    A REJECTED KEY STOPS EVERY LATER LAUNCH. When Google rejects the key, the
+    shell reports it to data-google-auth-failure-endpoint and the server refuses
+    all further claims until `php artisan virtual-drive:google-auth-block --reset`.
+    data-google-auth-block carries a standing block into a reloaded page, so it
+    starts locked and shows the recorded error and origin.
+
     TWO VIEWS OF ONE PAGE. ?view=customer hides the instrumentation and the
     observation sheet so the street-level experience and the shopper card are
     what a reviewer sees; the counters still run underneath. The default is the
@@ -52,6 +58,8 @@
      data-provider-enabled="{{ $providerEnabled ? '1' : '0' }}"
      data-launch-claim-endpoint="{{ $claimEndpoint ?? '' }}"
      data-daily-launch-limit="{{ $dailyLaunchLimit }}"
+     data-google-auth-failure-endpoint="{{ $authFailureEndpoint ?? '' }}"
+     data-google-auth-block="{{ $authBlockJson ?? '' }}"
      data-csrf-token="{{ csrf_token() }}"
      data-credential-name="{{ $credentialName }}"
      data-library-url="{{ $libraryUrl ?? '' }}"
@@ -95,6 +103,9 @@
             <p class="vd-launch-home" id="vd-launch-home"></p>
             <button type="button" class="vd-launch" id="vd-launch" disabled>Loading listings…</button>
             <p class="vd-launch-note" id="vd-launch-note">{{ $launchNote }}</p>
+            {{-- Filled by the shell when Google rejects the key: the exact Maps error
+                 and the origin to compare with the key's restrictions. Never the key. --}}
+            <div class="vd-auth-failure" id="vd-auth-failure" hidden></div>
             <p class="vd-launch-fallback">Listings stay fully usable without street-level imagery: pick a home and open it normally.</p>
         </div>
 

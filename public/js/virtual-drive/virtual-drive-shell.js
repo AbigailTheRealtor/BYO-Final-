@@ -96,6 +96,10 @@
             || (shell.getAttribute('data-credential') || '') !== '',
         claimEndpoint:   shell.getAttribute('data-launch-claim-endpoint') || '',
         dailyLimit:      parseInt(shell.getAttribute('data-daily-launch-limit'), 10) || 0,
+        // Where a rejected key is reported, and a block the server already holds.
+        // A block present here means the page starts locked and never claims.
+        authFailureEndpoint: shell.getAttribute('data-google-auth-failure-endpoint') || '',
+        authBlock:       authBlockFromPage(shell.getAttribute('data-google-auth-block')),
         csrfToken:       shell.getAttribute('data-csrf-token') || '',
         libraryUrl:      shell.getAttribute('data-library-url') || '',
         apiVersion:      shell.getAttribute('data-api-version') || '',
@@ -121,6 +125,22 @@
         var n = parseFloat(value);
 
         return isFinite(n) && n > 0 ? n : undefined;
+    }
+
+    // Empty means no block. Anything else is a block — including a value that
+    // does not parse, because a block we cannot read is still a block.
+    function authBlockFromPage(value) {
+        if (!value) {
+            return null;
+        }
+
+        try {
+            var parsed = JSON.parse(value);
+
+            return parsed && typeof parsed === 'object' ? parsed : { message: 'Launches are blocked by a recorded Google auth failure.' };
+        } catch (e) {
+            return { message: 'Launches are blocked by a recorded Google auth failure.' };
+        }
     }
 
     // The page decides the view. A page that does not (a static fixture) may take
@@ -157,7 +177,12 @@
         allowanceGranted: 0,
         allowanceRefused: 0,
         allowanceReason: null,
-        allowanceRemaining: null
+        allowanceRemaining: null,
+        // A rejected key: what was captured (never the key), and how many times
+        // this page told the server. The latter must never exceed one.
+        authFailure: null,
+        authReportsSent: 0,
+        authReportState: null
     };
 
     var state = {
@@ -177,6 +202,8 @@
         claimed: false,      // this page holds a granted launch allowance
         loadFailed: false,
         fatal: null,
+        authFailure: null,   // the rejected-key detail shown in the launch panel
+        authReport: null,    // null | 'pending' | 'recorded' | 'failed' | 'skipped' — one report per page
         launchStartedAt: null,
         firstImageryLogged: false,
         attribution: '',
@@ -778,6 +805,228 @@
         renderLaunch();
     }
 
+    // ------------------------------------------------------------ a rejected key (the stop-loss)
+    //
+    // Google rejecting the browser key is not a problem with this press — every
+    // later press, on any page, would be rejected the same way and still spend a
+    // launch. So the first rejection:
+    //
+    //   1. stops this page (nothing retries, the button locks);
+    //   2. shows Google's own error code and the origin to compare with the key's
+    //      website restrictions — never the key;
+    //   3. is reported to the server ONCE, which then refuses every launch claim
+    //      until a developer runs the reset command. A reload cannot clear it.
+    //
+    // The report waits a moment after the first signal, because Google may send
+    // gm_authFailure and its console message in either order and the message is
+    // the part worth recording. It is sent once whatever happens next.
+
+    var AUTH_BLOCKED_LABEL = 'Blocked: key rejected';
+    var AUTH_REPORT_SETTLE_MS = 400;
+    var RESET_COMMAND = 'php artisan virtual-drive:google-auth-block --reset';
+
+    // The page's own facts, for comparison with the key's restrictions. The
+    // Referer the browser sends with the provider's script request is decided by
+    // the referrer policy; with none declared the browser default is
+    // strict-origin-when-cross-origin, which sends the origin alone.
+    function pageReferrerFacts() {
+        var meta = document.querySelector('meta[name="referrer"]');
+        var policy = meta && meta.getAttribute('content') ? meta.getAttribute('content').trim().toLowerCase() : 'browser-default';
+        var origin = window.location.origin;
+        var sent;
+
+        if (policy === 'no-referrer' || policy === 'same-origin') {
+            sent = null;
+        } else if (policy === 'unsafe-url' || policy === 'no-referrer-when-downgrade') {
+            sent = origin + window.location.pathname;
+        } else {
+            sent = origin + '/';
+        }
+
+        return { page_origin: origin, referrer_policy: policy, referrer_sent: sent };
+    }
+
+    // One shape for the three sources: the provider's capture, a claim refusal,
+    // and a block rendered into the page. Later values fill gaps, never overwrite.
+    function mergeAuthFailure(update) {
+        var current = state.authFailure || {};
+        var fields = ['code', 'message', 'authorized_url', 'source', 'page_origin', 'referrer_policy', 'referrer_sent',
+            'request_origin', 'reported_at', 'ledger_used', 'ledger_limit'];
+
+        fields.forEach(function (field) {
+            var value = update ? update[field] : null;
+            var empty = current[field] === undefined || current[field] === null;
+
+            // `source` is the provider's running summary of every signal seen, so
+            // its latest value is the complete one.
+            if ((empty || field === 'source') && value !== undefined && value !== null && value !== '') {
+                current[field] = value;
+            }
+        });
+
+        state.authFailure = current;
+        diagnostics.shell.authFailure = JSON.parse(JSON.stringify(current));
+
+        return current;
+    }
+
+    function renderAuthFailure() {
+        var box = $('vd-auth-failure');
+        var f = state.authFailure;
+
+        if (!box) {
+            return;
+        }
+
+        box.textContent = '';
+
+        if (!f) {
+            box.hidden = true;
+
+            return;
+        }
+
+        box.appendChild(node('h3', null, 'Google rejected the browser key'));
+
+        var list = node('dl');
+        var row = function (label, value) {
+            list.appendChild(node('dt', null, label));
+            list.appendChild(node('dd', null, value));
+        };
+
+        row('Google error code', f.code || 'not captured — Google printed no Maps error to this page\'s console');
+
+        if (f.message) {
+            row('Google message', f.message);
+        }
+
+        if (f.authorized_url) {
+            row('Site URL Google asked to authorize', f.authorized_url);
+        }
+
+        row('This page\'s origin', f.page_origin || window.location.origin);
+
+        if (f.request_origin) {
+            row('Origin the server received', f.request_origin);
+        }
+
+        row('Referrer policy', f.referrer_policy || 'browser-default');
+        row('Referrer sent to Google', f.referrer_sent || 'none');
+        row('Restriction entry that matches this page', (f.page_origin || window.location.origin) + '/*');
+
+        if (f.reported_at) {
+            row('Recorded', f.reported_at);
+        }
+
+        if (typeof f.ledger_used === 'number') {
+            row('Launches used when it failed', f.ledger_used + (typeof f.ledger_limit === 'number' ? ' of ' + f.ledger_limit : ''));
+        }
+
+        row('Launches', 'blocked until: ' + RESET_COMMAND);
+        box.appendChild(list);
+        box.hidden = false;
+    }
+
+    // Stop the page on a rejected key. Idempotent: the first call stops, later
+    // calls only add detail to what is shown.
+    function stopForAuthFailure(detail) {
+        mergeAuthFailure(detail);
+        renderAuthFailure();
+
+        if (state.fatal) {
+            return;
+        }
+
+        var f = state.authFailure;
+        var reason = 'Google rejected the browser key' + (f.code ? ' (' + f.code + ')' : '')
+            + '. Nothing will be retried, and further Google launches are blocked until the block is cleared ('
+            + RESET_COMMAND + ').';
+
+        state.fatal = reason;
+        log('STOPPED', reason);
+        setImageryStatus('none', reason);
+        lock(reason, AUTH_BLOCKED_LABEL);
+        renderSign(selected());
+    }
+
+    function scheduleAuthReport() {
+        if (state.authReport !== null) {
+            return;
+        }
+
+        if (!cfg.authFailureEndpoint) {
+            state.authReport = 'skipped';
+            diagnostics.shell.authReportState = 'skipped';
+
+            return;
+        }
+
+        state.authReport = 'pending';
+        diagnostics.shell.authReportState = 'pending';
+        setTimeout(sendAuthReport, AUTH_REPORT_SETTLE_MS);
+    }
+
+    // Sent once. A failure is stated, never retried: the page is already stopped.
+    function sendAuthReport() {
+        var f = state.authFailure || {};
+        var headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+
+        if (cfg.csrfToken) {
+            headers['X-CSRF-TOKEN'] = cfg.csrfToken;
+        }
+
+        diagnostics.shell.authReportsSent++;
+        count('Auth-failure reports sent');
+
+        fetch(cfg.authFailureEndpoint, {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                code: f.code || null,
+                message: f.message || null,
+                authorized_url: f.authorized_url || null,
+                source: f.source || null,
+                page_origin: f.page_origin || null,
+                referrer_policy: f.referrer_policy || null,
+                referrer_sent: f.referrer_sent || null
+            })
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                return { ok: response.ok, status: response.status, body: body || {} };
+            }, function () {
+                return { ok: false, status: response.status, body: {} };
+            });
+        }).then(function (answer) {
+            if (answer.ok && answer.body.blocked === true) {
+                state.authReport = 'recorded';
+                mergeAuthFailure(answer.body.auth_failure || null);
+                renderAuthFailure();
+
+                if (answer.body.message) {
+                    $('vd-launch-note').textContent = answer.body.message;
+                }
+
+                log('Auth failure recorded', 'Google launches are blocked for this proof environment until reset');
+            } else {
+                authReportFailed(answer.body.message || 'HTTP ' + answer.status);
+            }
+
+            diagnostics.shell.authReportState = state.authReport;
+        }, function (err) {
+            authReportFailed(err.message);
+            diagnostics.shell.authReportState = state.authReport;
+        });
+    }
+
+    function authReportFailed(why) {
+        state.authReport = 'failed';
+        log('Auth failure NOT recorded', why);
+        $('vd-launch-note').textContent = (state.fatal || 'Google rejected the browser key.')
+            + ' The block could not be recorded on the server (' + why + '), so other pages are not yet '
+            + 'blocked: do not launch again until the key is fixed.';
+    }
+
     // ------------------------------------------------------------ the daily ceiling
     //
     // Claimed from OUR server, once per page, before any provider library is
@@ -832,6 +1081,7 @@
 
             refusal.refused = true;
             refusal.reason = diagnostics.shell.allowanceReason;
+            refusal.authFailure = body.auth_failure || null;
 
             throw refusal;
         }, function (err) {
@@ -932,6 +1182,17 @@
             // the provider, and pressing again must not try. The button says which
             // refusal it was so 'Unavailable' is not the whole story.
             if (err.refused) {
+                // Blocked by an earlier rejected key: show the recorded cause, the
+                // same way the page that hit it did. Nothing was loaded or claimed.
+                if (err.reason === 'auth_failure_blocked') {
+                    mergeAuthFailure(err.authFailure);
+                    mergeAuthFailure(pageReferrerFacts());
+                    renderAuthFailure();
+                    lock(err.message, AUTH_BLOCKED_LABEL);
+
+                    return;
+                }
+
                 lock(err.message, err.reason === 'daily_limit_reached' ? 'Daily limit reached' : 'Unavailable');
 
                 return;
@@ -1237,6 +1498,15 @@
             lock(reason);
             renderSign(selected());
         },
+        // Google rejected the key. `detail` is the provider's capture — error code,
+        // Google's message and the URL it asked to authorize, key already removed.
+        // Called again as more detail arrives; stops once, reports once.
+        authFailure: function (detail) {
+            stopForAuthFailure(detail);
+            mergeAuthFailure(pageReferrerFacts());
+            renderAuthFailure();
+            scheduleAuthReport();
+        },
         onSelect: function (id, via) {
             selectById(id, via, { move: false });
         },
@@ -1357,6 +1627,20 @@
                 log('Provider switched off', 'no library was loaded and none can be');
                 setCounter('Provider', 'switched off');
                 lock(null, 'Switched off');
+
+                return;
+            }
+
+            // A key Google already rejected: start locked, say why, claim nothing.
+            // The server refuses the claim regardless; this is so a reload shows
+            // the recorded error instead of offering a button that cannot work.
+            if (cfg.authBlock) {
+                mergeAuthFailure(cfg.authBlock);
+                mergeAuthFailure(pageReferrerFacts());
+                renderAuthFailure();
+                log('Google launches blocked', 'a rejected key is recorded for this proof environment — ' + RESET_COMMAND);
+                setCounter('Provider', 'blocked (key rejected)');
+                lock(null, AUTH_BLOCKED_LABEL);
 
                 return;
             }

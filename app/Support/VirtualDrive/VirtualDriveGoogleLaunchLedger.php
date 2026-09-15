@@ -23,7 +23,10 @@ use Throwable;
  *   • pressing "Try again" after a home with no imagery, changing homes,
  *     clicking signs, choosing a unit in a building — no further claim, because
  *     the page already holds its one permitted panorama;
- *   • reloading and pressing again — a new page, a new panorama, a new claim.
+ *   • reloading and pressing again — a new page, a new panorama, a new claim;
+ *   • after Google has rejected the key once — NO claim for anybody, on any
+ *     page, until `virtual-drive:google-auth-block --reset` is run. The launch
+ *     that was rejected is not refunded (VirtualDriveGoogleAuthBlock).
  *
  * The claim is taken BEFORE the Maps JavaScript API is requested, so a refusal
  * means the library was never fetched and no panorama could exist. That is
@@ -77,7 +80,16 @@ final class VirtualDriveGoogleLaunchLedger
 
     public const REASON_LEDGER_UNAVAILABLE = 'ledger_unavailable';
 
+    /**
+     * Google rejected the browser key earlier and nobody has cleared it. See
+     * VirtualDriveGoogleAuthBlock: a standing refusal that survives reloads,
+     * sessions and midnight, and is lifted only by the explicit reset command.
+     */
+    public const REASON_AUTH_FAILURE_BLOCKED = 'auth_failure_blocked';
+
     private const LOCK_SECONDS = 5;
+
+    public function __construct(private readonly VirtualDriveGoogleAuthBlock $authBlock) {}
 
     private const LOCK_WAIT_SECONDS = 3;
 
@@ -133,6 +145,13 @@ final class VirtualDriveGoogleLaunchLedger
             return $this->refuse(self::REASON_NO_CREDENTIAL, $limit, 0);
         }
 
+        // THE STOP-LOSS. A key Google has already rejected will be rejected again,
+        // so granting would only spend a launch. Checked before the tally is
+        // touched — and again under the lock, for a report that lands mid-claim.
+        if ($this->authBlock->blocks()) {
+            return $this->refuse(self::REASON_AUTH_FAILURE_BLOCKED, $limit, $this->countOrZero());
+        }
+
         $lock = $this->lock();
 
         if ($lock === false) {
@@ -156,6 +175,10 @@ final class VirtualDriveGoogleLaunchLedger
     private function claimUnderLock(int $limit): array
     {
         $used = $this->storedCount();
+
+        if ($this->authBlock->blocks()) {
+            return $this->refuse(self::REASON_AUTH_FAILURE_BLOCKED, $limit, $used);
+        }
 
         if ($used >= $limit) {
             return $this->refuse(self::REASON_LIMIT_REACHED, $limit, $used);
@@ -198,6 +221,16 @@ final class VirtualDriveGoogleLaunchLedger
     public function key(): string
     {
         return self::KEY_PREFIX . $this->day();
+    }
+
+    /** For a refusal's report only; a tally that cannot be read reports zero. */
+    private function countOrZero(): int
+    {
+        try {
+            return $this->storedCount();
+        } catch (Throwable $e) {
+            return 0;
+        }
     }
 
     private function storedCount(): int

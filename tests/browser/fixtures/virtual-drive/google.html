@@ -26,6 +26,8 @@
      data-provider-enabled="1"
      data-launch-claim-endpoint=""
      data-daily-launch-limit="0"
+     data-google-auth-failure-endpoint=""
+     data-google-auth-block=""
      data-csrf-token="FIXTURE-NOT-A-TOKEN"
      data-credential-name="VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY"
      data-library-url=""
@@ -54,6 +56,7 @@
             <p class="vd-launch-home" id="vd-launch-home"></p>
             <button type="button" class="vd-launch" id="vd-launch" disabled>Loading listings…</button>
             <p class="vd-launch-note" id="vd-launch-note">Fixture launch note.</p>
+            <div class="vd-auth-failure" id="vd-auth-failure" hidden></div>
             <p class="vd-launch-fallback">Listings stay fully usable without street-level imagery.</p>
         </div>
         <div class="vd-sign" id="vd-sign" hidden>
@@ -126,6 +129,19 @@
             shell.setAttribute('data-credential', '');
             shell.setAttribute('data-credential-available', '1');
             shell.setAttribute('data-daily-launch-limit', params.get('limit') || '0');
+        }
+
+        // The auth-failure stop-loss: where a rejected key is reported, and a
+        // block the server already holds (rendered into the page as JSON, the way
+        // VirtualDriveProofController does, with its refusal as the launch note).
+        if (params.get('authreport')) {
+            shell.setAttribute('data-google-auth-failure-endpoint', params.get('authreport'));
+        }
+
+        if (params.get('authblock')) {
+            shell.setAttribute('data-google-auth-block', params.get('authblock'));
+            document.getElementById('vd-launch-note').textContent =
+                'Google Street View launches are blocked in this proof environment: Google rejected the browser key.';
         }
     }());
 </script>

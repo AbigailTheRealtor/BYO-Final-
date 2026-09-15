@@ -24,6 +24,8 @@
      data-provider-enabled="1"
      data-launch-claim-endpoint=""
      data-daily-launch-limit="0"
+     data-google-auth-failure-endpoint=""
+     data-google-auth-block=""
      data-csrf-token="FIXTURE-NOT-A-TOKEN"
      data-credential-name="VIRTUAL_DRIVE_MAPKIT_JS_TOKEN"
      data-library-url="https://cdn.apple-mapkit.com/mk/6/mapkit.core.js"
@@ -52,6 +54,7 @@
             <p class="vd-launch-home" id="vd-launch-home"></p>
             <button type="button" class="vd-launch" id="vd-launch" disabled>Loading listings…</button>
             <p class="vd-launch-note" id="vd-launch-note">Fixture launch note.</p>
+            <div class="vd-auth-failure" id="vd-auth-failure" hidden></div>
             <p class="vd-launch-fallback">Listings stay fully usable without street-level imagery.</p>
         </div>
         <div class="vd-sign" id="vd-sign" hidden>

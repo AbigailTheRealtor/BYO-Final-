@@ -160,6 +160,8 @@
     }
 
     Marker.prototype.setIcon = function (icon) { counters.iconUpdates++; this._options.icon = icon; };
+    Marker.prototype.setZIndex = function (z) { this._options.zIndex = z; };
+    Marker.prototype.getZIndex = function () { return this._options.zIndex; };
     Marker.prototype.setVisible = function (visible) { this._visible = !!visible; };
     Marker.prototype.getVisible = function () { return this._visible; };
     Marker.prototype.setMap = function (map) {
@@ -251,7 +253,16 @@
                     iconWidth: icon && icon.scaledSize ? icon.scaledSize.width : null,
                     iconHeight: icon && icon.scaledSize ? icon.scaledSize.height : null,
                     text: Array.from(svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)).map(function (x) { return x[1].replace(/&amp;/g, '&'); }),
-                    selectedOutline: /facc15/.test(svg)
+                    // Font size of each <text>, in the same order as `text`.
+                    fontSizes: Array.from(svg.matchAll(/<text[^>]*font-size="([\d.]+)"[^>]*>/g)).map(function (x) { return Number(x[1]); }),
+                    zIndex: m._options.zIndex === undefined ? null : m._options.zIndex,
+                    anchorX: icon && icon.anchor ? icon.anchor.x : null,
+                    anchorY: icon && icon.anchor ? icon.anchor.y : null,
+                    level: (/data-level="(\w+)"/.exec(svg) || [])[1] || null,
+                    number: ((/data-part="number"[^>]*>([^<]*)</).exec(svg) || [])[1] || null,
+                    parts: Array.from(svg.matchAll(/data-part="([\w-]+)"/g)).map(function (x) { return x[1]; }),
+                    selectedOutline: /facc15/.test(svg),
+                    svg: svg
                 };
             });
         },

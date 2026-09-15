@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dev;
 
 use App\Http\Controllers\Controller;
+use App\Support\VirtualDrive\VirtualDriveGoogleAuthBlock;
 use App\Support\VirtualDrive\VirtualDriveGoogleGate;
 use App\Support\VirtualDrive\VirtualDriveGoogleLaunchLedger;
 use Illuminate\Http\JsonResponse;
@@ -36,7 +37,10 @@ use Illuminate\Http\JsonResponse;
  */
 class VirtualDriveGoogleLaunchController extends Controller
 {
-    public function __construct(private readonly VirtualDriveGoogleLaunchLedger $ledger) {}
+    public function __construct(
+        private readonly VirtualDriveGoogleLaunchLedger $ledger,
+        private readonly VirtualDriveGoogleAuthBlock $authBlock,
+    ) {}
 
     /** POST /dev/virtual-drive/api/google-launch */
     public function claim(): JsonResponse
@@ -51,7 +55,28 @@ class VirtualDriveGoogleLaunchController extends Controller
             ]);
         }
 
+        if ($decision['reason'] === VirtualDriveGoogleLaunchLedger::REASON_AUTH_FAILURE_BLOCKED) {
+            // The recorded cause travels with the refusal, so a page opened after
+            // the failure shows the same error code and origin as the page that hit it.
+            $block = $this->blockOrUnreadable();
+
+            return response()->json($decision + [
+                'message'      => $this->authBlock->refusalMessage($block),
+                'auth_failure' => $this->authBlock->publicView($block),
+            ], $this->status($decision));
+        }
+
         return response()->json($decision + ['message' => $this->refusedMessage($decision)], $this->status($decision));
+    }
+
+    /** @return array<string,mixed> */
+    private function blockOrUnreadable(): array
+    {
+        try {
+            return $this->authBlock->current() ?? [];
+        } catch (\Throwable $e) {
+            return ['message' => 'The recorded auth-failure block could not be read; launches stay refused.'];
+        }
     }
 
     /** @param array{limit:int,used:int,remaining:int,day:string} $decision */
@@ -94,6 +119,10 @@ class VirtualDriveGoogleLaunchController extends Controller
 
         if ($decision['reason'] === VirtualDriveGoogleLaunchLedger::REASON_LEDGER_UNAVAILABLE) {
             return 503;
+        }
+
+        if ($decision['reason'] === VirtualDriveGoogleLaunchLedger::REASON_AUTH_FAILURE_BLOCKED) {
+            return 423;
         }
 
         return 403;

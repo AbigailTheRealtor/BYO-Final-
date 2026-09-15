@@ -41,6 +41,20 @@
 #
 #   VIRTUAL_DRIVE_GOOGLE_ENABLED=true bash scripts/dev/virtual-drive-proof-serve.sh
 #
+# THE DAILY LAUNCH CEILING IS PINNED TO 20 HERE, ON PURPOSE. This process always
+# runs with a ceiling of 20 launches per UTC day, whatever the Replit Secret
+# VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT says; changing it is an edit to this
+# file, not an environment tweak. Raised from 10 by owner decision on 2026-09-15
+# to continue live testing; the existing tally is kept, never reset. What stops a
+# rejected key from spending the rest of the day is the auth-failure stop-loss
+# below, not a small ceiling: on 2026-09-15 a key Google kept rejecting spent six
+# launches in eleven minutes before it existed.
+#
+# A REJECTED KEY BLOCKS EVERY LATER LAUNCH until it is cleared explicitly:
+#   APP_ENV=local php artisan virtual-drive:google-auth-block            (status)
+#   APP_ENV=local php artisan virtual-drive:google-auth-block --reset    (clear)
+# The block is a file under storage/app and survives this server restarting.
+#
 # STOP IT WHEN THE SESSION ENDS. Bound to 0.0.0.0 so the Replit dev URL can reach
 # it, and the proof has no login of its own.
 #
@@ -80,6 +94,15 @@ if [ -z "${APP_KEY:-}" ]; then
     APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"
 fi
 
+GOOGLE_LAUNCH_LIMIT=20
+
+echo "Google launch ceiling for this process: ${GOOGLE_LAUNCH_LIMIT} per UTC day (the Secret is ignored)."
+
+if [ -f storage/app/virtual-drive/google-auth-failure-block.json ]; then
+    echo "Google launches are BLOCKED: a rejected browser key is recorded. Fix the key, then run:"
+    echo "  APP_ENV=local php artisan virtual-drive:google-auth-block --reset"
+fi
+
 echo "Virtual Drive proof on ${HOST}:${PORT} — open /dev/virtual-drive. Ctrl+C to stop."
 
 exec env \
@@ -87,6 +110,7 @@ exec env \
     APP_ENV=local \
     APP_DEBUG=false \
     VIRTUAL_DRIVE_PROOF_ENABLED=true \
+    VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT="${GOOGLE_LAUNCH_LIMIT}" \
     SESSION_DRIVER=file \
     CACHE_DRIVER=file \
     QUEUE_CONNECTION=sync \

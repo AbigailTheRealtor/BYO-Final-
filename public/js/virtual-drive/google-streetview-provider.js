@@ -34,10 +34,12 @@
  * is Google, not this file, that keeps it on the house as the camera turns and
  * moves.
  *
- * What this file does choose is the sign's documented icon.scaledSize and
- * visibility: as the camera moves, each sign's size is re-fitted so it stays
- * readable and clickable (VirtualDriveSigns explains the measured compensation),
- * and a sign beyond useful range is hidden rather than drawn as a dot. Listings
+ * What this file does choose is the sign's documented icon (its drawing and
+ * scaledSize) and visibility: as the camera moves, each sign's size is
+ * re-fitted so it stays readable and clickable (VirtualDriveSigns explains the
+ * measured compensation), its detail level follows its distance — full card,
+ * compact card, then a number on a map pin — and a sign beyond useful range is
+ * hidden rather than drawn as a dot. Listings
  * that share a building coordinate get ONE building sign ("FOR RENT · 12 UNITS")
  * that opens a unit chooser, never a stack of signs on one point.
  *
@@ -64,7 +66,9 @@
         getPanoramaRequests: 0,       // StreetViewService lookups (metadata, not a panorama load)
         setPanoCalls: 0,              // moves of the ONE panorama to another home
         authFailed: false,
-        signIconUpdates: 0,           // documented setIcon calls (size / selection changes)
+        authError: null,              // { code, authorized_url, source } — never the key
+        consoleMapsMessages: 0,       // Maps JavaScript API messages seen in the console
+        signIconUpdates: 0,          // documented setIcon calls (size / selection changes)
         signsShown: 0,                // signs currently within range
         signs: []                     // per sign: distance, intended screen width, icon width
     };
@@ -93,6 +97,150 @@
         return google.maps.importLibrary(name);
     }
 
+    // ------------------------------------------------------------ a rejected key, in Google's own words
+    //
+    // gm_authFailure is called with NO argument: it says "rejected" and not why.
+    // The why — RefererNotAllowedMapError, ApiTargetBlockedMapError, … and "Your
+    // site URL to be authorized: …" — is printed by the Maps JavaScript API to the
+    // browser console and nowhere else. So before the library can print anything,
+    // console.error and console.warn are wrapped (every message still reaches the
+    // console unchanged) and a Maps error is read out of what passes through.
+    //
+    // Whatever is kept has the key removed: the credential this page was handed,
+    // anything shaped like a Google API key, and any key= query parameter.
+    //
+    // No timer lives here. The shell decides when to report, and reports once.
+
+    // Authorization failures documented in the Maps JavaScript API error-messages
+    // reference. A code outside this list is logged, never treated as a rejection.
+    var AUTH_ERROR_CODES = [
+        'ApiNotActivatedMapError', 'ApiProjectMapError', 'ApiTargetBlockedMapError',
+        'BillingNotEnabledMapError', 'DeletedApiProjectMapError', 'ExpiredKeyMapError',
+        'InvalidClientIdMapError', 'InvalidKeyMapError', 'MissingKeyMapError', 'OverQuotaMapError',
+        'ProjectDeniedMapError', 'RefererDeniedMapError', 'RefererNotAllowedMapError',
+        'UnauthorizedURLForClientIdMapError'
+    ];
+
+    var authDetail = null;       // { code, message, authorized_url, source }
+    var consoleCaptured = false;
+    var credentialForRedaction = '';
+
+    function redact(text) {
+        var out = String(text);
+
+        if (credentialForRedaction) {
+            out = out.split(credentialForRedaction).join('[redacted key]');
+        }
+
+        return out
+            .replace(/AIza[0-9A-Za-z_\-]{10,}/g, '[redacted key]')
+            .replace(/([?&]key=)[^&\s#]+/gi, '$1[redacted]');
+    }
+
+    // A Maps JavaScript API error found in one console call, or null.
+    function readMapsConsoleMessage(args) {
+        var text = Array.prototype.map.call(args, function (arg) {
+            if (typeof arg === 'string') {
+                return arg;
+            }
+
+            return arg && typeof arg.message === 'string' ? arg.message : String(arg);
+        }).join(' ');
+
+        var code = /\b([A-Z][A-Za-z]+MapError)\b/.exec(text);
+
+        if (!code && text.indexOf('Google Maps JavaScript API') === -1) {
+            return null;
+        }
+
+        var authorized = /Your site URL to be authorized:\s*(\S+)/i.exec(text);
+
+        return {
+            code: code ? code[1] : null,
+            message: redact(text).slice(0, 600),
+            authorized_url: authorized ? redact(authorized[1]).slice(0, 300) : null
+        };
+    }
+
+    function captureMapsConsole() {
+        if (consoleCaptured || !window.console) {
+            return;
+        }
+
+        consoleCaptured = true;
+
+        ['error', 'warn'].forEach(function (level) {
+            var original = console[level];
+
+            if (typeof original !== 'function') {
+                return;
+            }
+
+            console[level] = function () {
+                original.apply(console, arguments);
+
+                var found;
+
+                try {
+                    found = readMapsConsoleMessage(arguments);
+                } catch (e) {
+                    found = null;
+                }
+
+                if (!found) {
+                    return;
+                }
+
+                diag.consoleMapsMessages++;
+
+                if (found.code && AUTH_ERROR_CODES.indexOf(found.code) !== -1) {
+                    noteAuthFailure('console', found);
+                } else if (hooks) {
+                    hooks.log('Google console ' + level, found.message);
+                }
+            };
+        });
+    }
+
+    // Every signal of a rejection lands here, in whatever order Google sends
+    // them. The first one stops the page; later ones only add detail.
+    function noteAuthFailure(source, found) {
+        var first = authDetail === null;
+
+        authDetail = authDetail || { code: null, message: null, authorized_url: null, source: null };
+
+        if (found) {
+            authDetail.code = authDetail.code || found.code;
+            authDetail.message = authDetail.message || found.message;
+            authDetail.authorized_url = authDetail.authorized_url || found.authorized_url;
+        }
+
+        authDetail.source = !authDetail.source || authDetail.source === source
+            ? source
+            : 'gm_authFailure+console';
+
+        diag.authFailed = true;
+        diag.authError = { code: authDetail.code, authorized_url: authDetail.authorized_url, source: authDetail.source };
+
+        if (!hooks) {
+            return;
+        }
+
+        var copy = {
+            code: authDetail.code,
+            message: authDetail.message,
+            authorized_url: authDetail.authorized_url,
+            source: authDetail.source
+        };
+
+        if (typeof hooks.authFailure === 'function') {
+            hooks.authFailure(copy);
+        } else if (first) {
+            hooks.fatal('Google rejected the browser key' + (copy.code ? ' (' + copy.code + ')' : '')
+                + '. Nothing will be retried.');
+        }
+    }
+
     // Latched: one request per page, and a failed load stays failed — no retry
     // against a billed API.
     function loadLibrary(settings) {
@@ -100,11 +248,13 @@
             return loadPromise;
         }
 
+        credentialForRedaction = settings.credential || '';
+        captureMapsConsole();
+
         loadPromise = new Promise(function (resolve, reject) {
             // Documented hook for a rejected key (referrer or API restriction).
             window.gm_authFailure = function () {
-                diag.authFailed = true;
-                hooks.fatal('Google rejected the browser key (referrer or API restriction). Nothing will be retried.');
+                noteAuthFailure('gm_authFailure', null);
             };
 
             // An API already on the page is adopted, never loaded a second time —
@@ -147,39 +297,25 @@
         return { lat: item.latitude !== undefined ? item.latitude : item.lat, lng: item.longitude !== undefined ? item.longitude : item.lng };
     }
 
-    function escapeXml(value) {
-        return String(value).replace(/[&<>"']/g, function (c) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c];
-        });
-    }
+    // The selected sign is always drawn above its neighbours (documented
+    // MarkerOptions.zIndex); the stacking order never depends on creation order.
+    var Z_SELECTED = 1000;
+    var Z_NEIGHBOUR = 1;
 
-    function svgText(y, size, weight, value) {
-        return '<text x="100" y="' + y + '" font-family="Arial,Helvetica,sans-serif" font-size="' + size + '" font-weight="' + weight
-            + '" fill="#ffffff" text-anchor="middle">' + escapeXml(value) + '</text>';
-    }
-
-    // The sign itself. Its words identify the property (house number, FOR SALE /
-    // FOR RENT, price — or, for a building, the unit count), so neighbours never
-    // depend on the selection outline to be told apart.
-    function signIcon(place, isSelected, width) {
-        var fill = place.tone === 'rent' ? '#1d4ed8' : (place.tone === 'sale' ? '#b91c1c' : '#6d28d9');
-        var l = place.lines;
-        var titleSize = l.title && l.title.length > 8 ? 24 : 30;
-        var body = l.title
-            ? svgText(36, titleSize, 800, l.title) + svgText(62, 18, 700, l.label) + svgText(88, 20, 700, l.detail)
-            : svgText(44, 22, 800, l.label) + svgText(78, 22, 700, l.detail);
-        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="124" viewBox="0 0 200 124">'
-            + '<rect x="4" y="4" width="192" height="94" rx="12" fill="' + fill + '" stroke="'
-            + (isSelected ? '#facc15' : '#ffffff') + '" stroke-width="' + (isSelected ? 8 : 4) + '"/>'
-            + body
-            + '<path d="M86 97 L100 122 L114 97 Z" fill="' + fill + '"/>'
-            + '</svg>';
-        var height = Math.round(width * 124 / 200);
+    // The marker itself, drawn by VirtualDriveSigns.signDrawing at this sign's
+    // detail level: the house number is the largest line, so neighbours never
+    // depend on the selection treatment to be told apart.
+    function signIcon(place, isSelected, width, level) {
+        var drawing = Signs.signDrawing(place, isSelected, level);
+        var scale = width / drawing.width;
+        var height = Math.round(drawing.height * scale);
 
         return {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(drawing.svg),
             scaledSize: new lib.core.Size(width, height),
-            anchor: new lib.core.Point(width / 2, height)
+            // The drawing's own anchor — the dot under a card, the tip of a pin —
+            // is the point Google places on the MLS coordinate.
+            anchor: new lib.core.Point(Math.round(drawing.anchorX * scale), Math.round(drawing.anchorY * scale))
         };
     }
 
@@ -237,11 +373,12 @@
                 position: latLng(place),
                 map: panorama,
                 title: signTitle(place),
-                visible: false
+                visible: false,
+                zIndex: Z_NEIGHBOUR
             });
 
             marker.addListener('click', function () { onSignClick(id); });
-            places[id] = { place: place, marker: marker, width: 0, visible: false, selected: null };
+            places[id] = { place: place, marker: marker, width: 0, visible: false, selected: null, level: null };
         });
 
         Object.keys(places).forEach(function (id) {
@@ -275,15 +412,18 @@
         Object.keys(places).forEach(function (id) {
             var entry = places[id];
             var distance = lib.geometry.spherical.computeDistanceBetween(here, latLng(entry.place));
-            var width = Signs.iconWidth(distance, viewport, cfg.signs);
             var isSelected = entry.place.listings.some(function (l) { return l.id === selectedId; });
+            var width = Signs.iconWidth(distance, viewport, cfg.signs, isSelected);
+            var level = Signs.detailLevel(distance, cfg.signs, isSelected);
 
             report.push({
                 id: id,
                 units: entry.place.listings.length,
+                selected: isSelected,
                 distance: Math.round(distance),
-                screenWidth: Signs.screenWidth(distance, cfg.signs),
-                iconWidth: width
+                screenWidth: Signs.screenWidth(distance, cfg.signs, isSelected),
+                iconWidth: width,
+                level: level
             });
 
             if (!width) {
@@ -297,10 +437,15 @@
 
             shown++;
 
-            if (!entry.width || Math.abs(width - entry.width) / entry.width > 0.06 || entry.selected !== isSelected) {
-                entry.marker.setIcon(signIcon(entry.place, isSelected, width));
+            if (entry.selected !== isSelected) {
+                entry.marker.setZIndex(isSelected ? Z_SELECTED : Z_NEIGHBOUR);
+            }
+
+            if (!entry.width || Math.abs(width - entry.width) / entry.width > 0.06 || entry.selected !== isSelected || entry.level !== level) {
+                entry.marker.setIcon(signIcon(entry.place, isSelected, width, level));
                 entry.width = width;
                 entry.selected = isSelected;
+                entry.level = level;
                 diag.signIconUpdates++;
             }
 

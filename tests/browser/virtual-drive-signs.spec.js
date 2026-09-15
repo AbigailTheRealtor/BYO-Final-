@@ -86,18 +86,22 @@ test.describe('Virtual Drive · signs a shopper can read and click (fake Maps AP
             };
         });
 
-        // Every sign inside useful range lands between the floor and the ceiling.
+        // Every sign inside useful range is drawn at its target, within the curve's
+        // own end points (farWidth at the range limit).
         for (const size of result.sizes) {
             expect(size.icon, `an icon is chosen at ${size.d} m`).toBeGreaterThan(0);
-            expect(size.onScreen, `sign at ${size.d} m is at least the minimum`).toBeGreaterThanOrEqual(result.defaults.farWidth - 1);
-            expect(size.onScreen, `sign at ${size.d} m is no larger than the maximum`).toBeLessThanOrEqual(result.defaults.nearWidth + 1);
+            expect(size.onScreen, `sign at ${size.d} m is at least the range-limit width`).toBeGreaterThanOrEqual(result.defaults.farWidth - 1);
             expect(Math.abs(size.onScreen - size.want), `sign at ${size.d} m matches its target`).toBeLessThanOrEqual(2);
         }
 
-        // Closer is bigger, all the way out.
+        // Closer is bigger, at every step — the depth cue that keeps a sign on its house.
         const widths = result.sizes.map((s) => s.onScreen);
 
-        expect(widths[0]).toBeGreaterThan(widths[widths.length - 1]);
+        for (let i = 1; i < widths.length; i += 1) {
+            expect(widths[i], `${result.sizes[i].d} m is smaller than ${result.sizes[i - 1].d} m`).toBeLessThanOrEqual(widths[i - 1]);
+        }
+
+        expect(widths[0]).toBeGreaterThan(widths[widths.length - 1] * 2.5);
 
         // Out of range: hidden, never a dot.
         expect(result.hiddenTooFar).toBe(0);
@@ -125,11 +129,16 @@ test.describe('Virtual Drive · signs a shopper can read and click (fake Maps AP
         // One sign per place: two houses, two condo-free homes far away, one building.
         expect(list).toHaveLength(5);
 
-        expect(a.text).toEqual(['6590', 'FOR RENT', '$14,000/mo']);
-        expect(b.text).toEqual(['6580', 'FOR RENT', '$14,000/mo']);
+        // A (selected, ~35 m) is a full card; B (a neighbour ~66 m away) is compact,
+        // which keeps its number and status and drops the price.
+        expect(a.level).toBe('full');
+        expect(b.level).toBe('compact');
+        expect(a.text).toEqual(['SELECTED', 'FOR RENT', '6590', '$14,000/mo']);
+        expect(b.text).toEqual(['FOR RENT', '6580']);
 
         // Neighbours 33 m apart are told apart by their numbers, not by an outline.
-        expect(a.text[0]).not.toBe(b.text[0]);
+        expect(a.number).toBe('6590');
+        expect(b.number).toBe('6580');
         expect(a.visible).toBe(true);
         expect(b.visible).toBe(true);
 
@@ -138,14 +147,21 @@ test.describe('Virtual Drive · signs a shopper can read and click (fake Maps AP
             const S = window.VirtualDriveSigns;
             const width = document.getElementById('vd-street').clientWidth;
             const here = window.__fakeGoogle.lastPanorama().getPosition();
-            const at = (lat, lng) => S.iconWidth(S.meters({ lat: here.lat(), lng: here.lng() }, { lat, lng }), width);
+            const at = (lat, lng, selected) => S.iconWidth(S.meters({ lat: here.lat(), lng: here.lng() }, { lat, lng }), width, undefined, selected);
 
-            return { a: at(26.960258, -82.38292), b: at(26.959994, -82.382761), width };
+            return { a: at(26.960258, -82.38292, true), b: at(26.959994, -82.382761, false), width };
         });
 
         expect(a.iconWidth).toBe(expected.a);
         expect(b.iconWidth).toBe(expected.b);
-        expect(a.iconHeight).toBe(Math.round(a.iconWidth * 124 / 200));
+        const drawnHeight = await page.evaluate(() => {
+            const S = window.VirtualDriveSigns;
+            const place = S.places([{ id: 'x', latitude: 1, longitude: 1, transaction_type: 'rent', sign_label: 'FOR RENT', display_price: '$14,000/mo', address: '6590 FIXTURE Manasota Key A' }])[0];
+
+            return S.signDrawing(place, true, 'full').height;
+        });
+
+        expect(a.iconHeight).toBe(Math.round(a.iconWidth * drawnHeight / 200));
 
         // The homes 98 km away are hidden, not drawn as dots.
         expect(signOf(list, 'Stones Throw sale').visible).toBe(false);
@@ -228,7 +244,8 @@ test.describe('Virtual Drive · signs a shopper can read and click (fake Maps AP
 
         // Three units, one sign — not three stacked on one point.
         expect(building).toHaveLength(1);
-        expect(building[0].text).toEqual(['FOR RENT', '3 UNITS']);
+        // The selected home is one of its units, so the building sign is the selected one.
+        expect(building[0].text).toEqual(['SELECTED', 'FOR RENT', '3 UNITS']);
         expect(building[0].visible).toBe(true);
         expect(building[0].title).toContain('3 units');
 

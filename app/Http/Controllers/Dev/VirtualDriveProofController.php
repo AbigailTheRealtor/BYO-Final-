@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dev;
 
 use App\Http\Controllers\Controller;
+use App\Support\VirtualDrive\VirtualDriveGoogleAuthBlock;
 use App\Support\VirtualDrive\VirtualDriveGoogleGate;
 use App\Support\VirtualDrive\VirtualDriveGoogleLaunchLedger;
 use Illuminate\Contracts\View\View;
@@ -52,7 +53,10 @@ use Illuminate\Http\Request;
  */
 class VirtualDriveProofController extends Controller
 {
-    public function __construct(private readonly VirtualDriveGoogleLaunchLedger $ledger) {}
+    public function __construct(
+        private readonly VirtualDriveGoogleLaunchLedger $ledger,
+        private readonly VirtualDriveGoogleAuthBlock $authBlock,
+    ) {}
 
     public function compare(): View
     {
@@ -87,6 +91,15 @@ class VirtualDriveProofController extends Controller
         $enabled = VirtualDriveGoogleGate::enabled();
         $refusal = VirtualDriveGoogleGate::refusalReason();
 
+        // A standing auth-failure block is stated before anybody presses
+        // anything, and the shell starts locked on it. The claim endpoint refuses
+        // regardless; this is so a reload SAYS why instead of offering a button.
+        $authBlock = $this->authBlockForPage();
+
+        if ($refusal === null && $authBlock !== null) {
+            $refusal = $this->authBlock->refusalMessage($authBlock);
+        }
+
         return $this->page(
             request:        $request,
             provider:       'google',
@@ -106,7 +119,24 @@ class VirtualDriveProofController extends Controller
             credentialAvailable: VirtualDriveGoogleGate::hasBrowserKey(),
             claimEndpoint:  $enabled ? route('dev.virtual-drive.api.google-launch', [], false) : null,
             dailyLaunchLimit: VirtualDriveGoogleGate::dailyLaunchLimit(),
+            authFailureEndpoint: $enabled ? route('dev.virtual-drive.api.google-auth-failure', [], false) : null,
+            authBlock:      $authBlock,
         );
+    }
+
+    /**
+     * The public view of a recorded block, `['unreadable' => …]` for a block file
+     * that exists but cannot be read (still a block), or null.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function authBlockForPage(): ?array
+    {
+        try {
+            return $this->authBlock->publicView($this->authBlock->current());
+        } catch (\Throwable $e) {
+            return ['code' => null, 'message' => 'The recorded auth-failure block could not be read; launches stay refused.'];
+        }
     }
 
     /**
@@ -156,6 +186,8 @@ class VirtualDriveProofController extends Controller
         ?bool $credentialAvailable = null,
         ?string $claimEndpoint = null,
         int $dailyLaunchLimit = 0,
+        ?string $authFailureEndpoint = null,
+        ?array $authBlock = null,
     ): View {
         $inline = is_string($credential) && trim($credential) !== '' ? trim($credential) : null;
 
@@ -168,6 +200,9 @@ class VirtualDriveProofController extends Controller
             'credentialAvailable' => $credentialAvailable ?? ($inline !== null),
             'claimEndpoint'       => $claimEndpoint,
             'dailyLaunchLimit'    => $dailyLaunchLimit,
+            'authFailureEndpoint' => $authFailureEndpoint,
+            // JSON for a data attribute; Blade escapes it. Never contains the key.
+            'authBlockJson'       => $authBlock === null ? '' : (string) json_encode($authBlock, JSON_UNESCAPED_SLASHES),
             'credentialName'   => $credentialName,
             'libraryUrl'       => $libraryUrl,
             'apiVersion'       => $apiVersion,

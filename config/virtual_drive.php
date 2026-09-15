@@ -165,13 +165,18 @@ return [
 
     /*
     | FOR SALE / FOR RENT signs in Street View. See virtual-drive-signs.js for
-    | why the size is compensated. Distances in metres, widths in screen px.
+    | why the size is only partly compensated. Distances in metres, widths in
+    | screen px. The sign follows a softened perspective curve through
+    | (20 m, near_width_px) and (max_distance_meters, far_width_px) and keeps
+    | shrinking beyond both; far_width_px was 132, which read as a HUD.
+    | The selected home's range (180 m) and the full / compact / pin detail
+    | levels are VirtualDriveSigns.DEFAULTS, beside the drawing they govern.
     */
     'signs' => [
         'max_distance_meters'    => 160,
         'min_distance_meters'    => 6,
         'near_width_px'          => 200,
-        'far_width_px'           => 132,
+        'far_width_px'           => 68,
         'group_radius_meters'    => 8,
         'close_coverage_meters'  => 60,
     ],
