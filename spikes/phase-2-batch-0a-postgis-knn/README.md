@@ -43,11 +43,15 @@ spikes/phase-2-batch-0a-postgis-knn/
 
 ```bash
 docker start byo-batch0-spike
-bash spikes/phase-2-batch-0a-postgis-knn/run_spike.sh
+SPIKE_PGHOST=172.17.0.2 SPIKE_PGDATABASE=spike \
+  bash spikes/phase-2-batch-0a-postgis-knn/run_spike.sh
 ```
 
-Connection is configurable via `PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD/PSQL_BIN`
-(see the header of `run_spike.sh`). Defaults connect to the container over TCP,
+The target must be named in `SPIKE_PGHOST` and `SPIKE_PGDATABASE`
+(`SPIKE_PGPORT/SPIKE_PGUSER/SPIKE_PGPASSWORD/PSQL_BIN` are optional; see the header of
+`run_spike.sh`). The ambient `PG*` variables are never used: in the Replit workspace they point
+at the production database, so the runner refuses `helium`, `heliumdb`, an unnamed target and a
+Replit deployment before any `psql` runs (`lib/require-isolated-target.sh`). It connects over TCP
 because `docker exec` is unavailable in some sandbox environments. On a standard
 Docker host you can instead pipe each file through
 `docker exec -i byo-batch0-spike psql -U postgres -d spike -f -`.

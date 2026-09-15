@@ -138,6 +138,9 @@ class Kernel extends ConsoleKernel
     {
         $this->load(__DIR__ . '/Commands');
 
+        // Warns (never blocks) when `tinker` starts against the production database.
+        \App\Support\Safeguards\TinkerProductionNotice::register($this->app['events']);
+
         require base_path('routes/console.php');
     }
 }

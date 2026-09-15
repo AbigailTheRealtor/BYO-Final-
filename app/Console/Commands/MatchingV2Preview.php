@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RefusesProductionDatabase;
 use App\Services\Dna\Relevance\MatchingV2Service;
+use App\Support\Safeguards\ProductionDatabaseGuard;
 use Illuminate\Console\Command;
 
 /**
@@ -21,6 +23,8 @@ use Illuminate\Console\Command;
  */
 class MatchingV2Preview extends Command
 {
+    use RefusesProductionDatabase;
+
     private const SUPPORTED = ['seller_agent', 'landlord_agent', 'buyer_agent', 'tenant_agent'];
 
     protected $signature = 'matching:preview
@@ -29,12 +33,18 @@ class MatchingV2Preview extends Command
         {--cap= : override the discovery candidate cap}
         {--limit=20 : max rows to display (display only)}
         {--json : emit the machine-readable result instead of a table}
-        {--respect-flag : honour MATCHING_V2_ENABLED instead of force-enabling}';
+        {--respect-flag : honour MATCHING_V2_ENABLED instead of force-enabling}
+        {--i-know-this-is-production : Preview against PRODUCTION data deliberately. This command only reads.}';
 
     protected $description = 'Preview the read-only Matching V2 pipeline for one subject (pre-GA validation).';
 
     public function handle(): int
     {
+        // Read-only, so a deliberate production preview may pass the override.
+        if ($this->refusesProductionDatabase(true)) {
+            return ProductionDatabaseGuard::EXIT_REFUSED;
+        }
+
         $type = (string) $this->argument('listingType');
         $id   = (int) $this->argument('listingId');
         $cap  = $this->option('cap') !== null ? (int) $this->option('cap') : null;

@@ -193,9 +193,9 @@ filter-walk thousands of rows for sparse categories.
 
 ```bash
 docker start byo-batch0-spike
-bash spikes/phase-2-batch-0a-postgis-knn/run_spike.sh   # outputs under results/
+SPIKE_PGHOST=172.17.0.2 SPIKE_PGDATABASE=spike \
+  bash spikes/phase-2-batch-0a-postgis-knn/run_spike.sh   # outputs under results/
 ```
 
-Connection defaults target the container over TCP (see `run_spike.sh` header for
-env overrides; `docker exec` is unavailable in some sandboxes). Captured evidence
+The container target must now be named explicitly (see `run_spike.sh` header; `docker exec` is unavailable in some sandboxes). Captured evidence
 for this run is committed under `results/`.

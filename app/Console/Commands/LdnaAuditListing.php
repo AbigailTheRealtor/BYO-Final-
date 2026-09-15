@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RefusesProductionDatabase;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationDnaAudit;
 use App\Models\PropertyLocationPoi;
+use App\Support\Safeguards\ProductionDatabaseGuard;
 use Illuminate\Console\Command;
 
 /**
@@ -35,14 +37,22 @@ use Illuminate\Console\Command;
  */
 class LdnaAuditListing extends Command
 {
+    use RefusesProductionDatabase;
+
     protected $signature = 'ldna:audit-listing
         {listingId              : The listing primary key to audit}
-        {--listing-type=        : Optional listing_type filter (e.g. seller_agent, landlord_agent, seller, landlord). Omit to return all types for this ID.}';
+        {--listing-type=        : Optional listing_type filter (e.g. seller_agent, landlord_agent, seller, landlord). Omit to return all types for this ID.}
+        {--i-know-this-is-production : Read a PRODUCTION listing deliberately. This command only reads.}';
 
     protected $description = '[DEV-ONLY] Dump raw Location DNA payload (DNA record, all POI candidates by rank, latest audit entry) for one listing as JSON';
 
     public function handle(): int
     {
+        // Read-only, so a deliberate production investigation may pass the override.
+        if ($this->refusesProductionDatabase(true)) {
+            return ProductionDatabaseGuard::EXIT_REFUSED;
+        }
+
         $listingId   = (int) $this->argument('listingId');
         $listingType = $this->option('listing-type') ?: null;
 

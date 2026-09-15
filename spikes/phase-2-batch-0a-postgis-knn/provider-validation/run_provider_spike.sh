@@ -20,7 +20,9 @@
 # Configuration is via environment (see env.example):
 #   PROVIDER   crunchy|digitalocean|neon|rds   (required)
 #   TIER       1|2                             (required)
-#   PGHOST PGPORT PGUSER PGDATABASE            (required)
+#   SPIKE_PGHOST SPIKE_PGPORT SPIKE_PGUSER SPIKE_PGDATABASE   (required)
+#   The ambient PG* variables are never used for the target: in the Replit workspace
+#   they point at production. See ../lib/require-isolated-target.sh.
 #   PGSSLMODE  (default: require)   PSQL_BIN (default: psql)
 set -euo pipefail
 
@@ -50,10 +52,17 @@ while [ $# -gt 0 ]; do
 done
 
 # ---------------------------------------------------------------------------
+# Fail-closed target isolation — before validation, before --dry-run, before psql
+# ---------------------------------------------------------------------------
+# shellcheck source=../lib/require-isolated-target.sh
+. "$HERE/../lib/require-isolated-target.sh"
+stage0_require_isolated_target
+
+# ---------------------------------------------------------------------------
 # Fail-closed environment validation
 # ---------------------------------------------------------------------------
 missing=()
-for v in PROVIDER TIER PGHOST PGPORT PGUSER PGDATABASE; do
+for v in PROVIDER TIER SPIKE_PGPORT SPIKE_PGUSER; do
     if [ -z "${!v:-}" ]; then missing+=("$v"); fi
 done
 if [ "${#missing[@]}" -gt 0 ]; then
@@ -72,6 +81,8 @@ esac
 PGSSLMODE="${PGSSLMODE:-require}"
 PSQL_BIN="${PSQL_BIN:-psql}"
 export PGSSLMODE
+export PGPORT="$SPIKE_PGPORT"
+export PGUSER="$SPIKE_PGUSER"
 # NOTE: PGPASSWORD is intentionally never set/read here — psql uses ~/.pgpass.
 
 RESULTS_DIR="$RESULTS_ROOT/$PROVIDER/tier$TIER"
