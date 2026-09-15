@@ -2002,6 +2002,10 @@
         'mlsNumber' => ($mlsDetails ?? null)?->mlsNumber,
     ])
 
+    @include('offer-listing.partials._property-questions', [
+        'questions' => $propertyQuestions ?? [],
+        'role'      => 'seller',
+    ])
 
     {{-- Sale Terms --}}
     <div class="card section-card" id="section-financing">
