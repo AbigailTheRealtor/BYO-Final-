@@ -158,6 +158,12 @@ class LandlordOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'landlord');
 
+        // Questions About This Property — precomputed, deterministic answers from the chip
+        // context above. No request, no classifier, no generated text; only questions
+        // whose source is public_allowed and present are returned.
+        $propertyQuestions = app(\App\Services\AskAi\AskAiPublicPropertyQuestionService::class)
+            ->forListing('landlord', $askAiChipContext, $meta);
+
         $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
         $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
         $agentAiScope   = 'public_listing_landlord';
@@ -214,7 +220,7 @@ class LandlordOfferListingController extends Controller
         // earn, and a false provenance claim is worse than a missing one.
         $mlsImported       = $mlsReader->isMlsImported($meta);
 
-        return view('offer-listing.landlord.view', compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + ['mlsDetails' => $mlsDetails, 'mlsAddressVisible' => $mlsAddressVisible, 'mlsAddressNotice' => $mlsAddressNotice, 'mlsImported' => $mlsImported] + $page_data);
+        return view('offer-listing.landlord.view', ['propertyQuestions' => $propertyQuestions] + compact('auction', 'meta', 'askAiChipContext', 'offerAuction', 'agentAiV2', 'agentAiAgentId', 'agentAiScope', 'locationDna', 'locationPois', 'biddingWindow', 'canViewBidFeed', 'bidFeed') + ['mlsDetails' => $mlsDetails, 'mlsAddressVisible' => $mlsAddressVisible, 'mlsAddressNotice' => $mlsAddressNotice, 'mlsImported' => $mlsImported] + $page_data);
     }
 
     public function submitQuestion(Request $request, $auction)

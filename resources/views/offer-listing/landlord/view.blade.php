@@ -1365,6 +1365,10 @@
         'valueStyle' => $mlsValueStyle,
     ])
 
+    @include('offer-listing.partials._property-questions', [
+        'questions' => $propertyQuestions ?? [],
+        'role'      => 'landlord',
+    ])
 
     {{-- ================================================================
          LEASING TERMS
