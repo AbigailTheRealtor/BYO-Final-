@@ -104,7 +104,7 @@ class VirtualDriveProofController extends Controller
             launchNote:     $refusal ?? $this->googleLaunchNote(),
             providerEnabled: $enabled,
             credentialAvailable: VirtualDriveGoogleGate::hasBrowserKey(),
-            claimEndpoint:  $enabled ? route('dev.virtual-drive.api.google-launch') : null,
+            claimEndpoint:  $enabled ? route('dev.virtual-drive.api.google-launch', [], false) : null,
             dailyLaunchLimit: VirtualDriveGoogleGate::dailyLaunchLimit(),
         );
     }

@@ -180,7 +180,12 @@
         launchStartedAt: null,
         firstImageryLogged: false,
         attribution: '',
-        coverageNotes: {},   // listing id -> "imagery is nearby, not at the home"
+        coverageNotes: {},   // listing id -> "imagery is nearby, not at the home" (shopper wording)
+        // listing id -> the provider's answer when that home was OPENED. A snapshot
+        // of the initial panorama match; camera movement never refreshes it.
+        imagery: {},
+        imageryBase: null,   // { kind, text } while loading, with no coverage, or after a failure
+        relative: null,      // the live camera → selected-listing reading, when the provider exposes one
         shopper: null        // { listingId, building: [ids] | null, photo, choosing }
     };
 
@@ -588,6 +593,7 @@
             });
         } else {
             state.provider.select(listing);
+            renderImageryStatus();
         }
     }
 
@@ -602,14 +608,83 @@
         selectById(state.walk[i].id, delta > 0 ? 'Next Home' : 'Previous Home');
     }
 
+    // A transient status (loading, no coverage, failure). It stands until a
+    // coverage answer for the selected listing replaces it.
     function setImageryStatus(kind, text) {
+        state.imageryBase = { kind: kind, text: text || '' };
+        renderImageryStatus();
+    }
+
+    function degrees(value) {
+        return Math.round(((value % 360) + 360) % 360) + '°';
+    }
+
+    /*
+     * The status line under the HUD, worded per view.
+     *
+     * Two distances exist and they are NOT the same measurement:
+     *   • the INITIAL match — how far the panorama Google found when the home was
+     *     opened is from the MLS coordinate. Taken once; walking never changes it.
+     *   • the CURRENT distance — panorama.getPosition() → the MLS coordinate, live
+     *     on position_changed / pov_changed. The HUD shows it to everyone.
+     * Shown side by side unlabelled, the first reads as a stale contradiction of
+     * the second (a live session saw "116 m away" beside "imagery is 35 m from the
+     * home"). So the customer preview never shows the initial figure or any
+     * heading, and the developer view names both for what they are.
+     */
+    function renderImageryStatus() {
         var status = $('vd-imagery-status');
+        var listing = selected();
+        // A stopped provider's reason outranks any coverage answer.
+        var result = listing && !state.fatal ? state.imagery[listing.id] : null;
+        var customer = cfg.viewMode === 'customer';
+        var kind;
+        var lines = [];
+
+        if (result) {
+            kind = result.near === false ? 'far' : 'ok';
+            lines.push(customer ? (result.customerNote !== undefined ? result.customerNote : result.note) : result.note);
+        } else if (state.imageryBase) {
+            kind = state.imageryBase.kind;
+            lines.push(state.imageryBase.text);
+        } else {
+            kind = 'ok';
+
+            if (!customer && listing && state.relative) {
+                lines.push('Initial Street View match: not measured for this listing — the camera was not moved to it.');
+            }
+        }
+
+        if (!customer && state.relative && (result || !state.imageryBase)) {
+            var r = state.relative;
+
+            lines.push('Current panorama distance: ' + Math.round(r.distance) + ' m from selected listing.'
+                + (typeof r.cameraHeading === 'number'
+                    ? ' Heading: camera ' + degrees(r.cameraHeading)
+                        + ', bearing to listing ' + degrees(r.bearing)
+                        + (typeof r.requestedHeading === 'number' ? ', last requested ' + degrees(r.requestedHeading) : '')
+                        + '.'
+                    : ''));
+        }
 
         status.className = 'vd-imagery-status is-' + kind;
-        status.textContent = text || '';
+        status.textContent = '';
+
+        lines.filter(Boolean).forEach(function (text, index) {
+            var line = node('div', 'vd-imagery-line', text);
+
+            // The live line changes with every turn of the camera; announcing
+            // each change would drown out the status it sits under.
+            if (index > 0) {
+                line.setAttribute('aria-live', 'off');
+            }
+
+            status.appendChild(line);
+        });
     }
 
     function showInProvider(listing) {
+        delete state.imagery[listing.id];
         setImageryStatus('loading', 'Loading street-level imagery at the MLS coordinate…');
 
         return state.provider.show(listing).then(function (result) {
@@ -620,9 +695,10 @@
 
             state.coverage[listing.id] = result.coverage;
 
-            // Imagery that exists only some way off is reported as exactly that.
+            // Imagery that exists only some way off is reported as exactly that —
+            // to a shopper without the initial-match figure, which goes stale.
             if (result.coverage && result.near === false) {
-                state.coverageNotes[listing.id] = result.note;
+                state.coverageNotes[listing.id] = result.customerNote !== undefined ? result.customerNote : result.note;
             } else {
                 delete state.coverageNotes[listing.id];
             }
@@ -635,9 +711,13 @@
                 setCounter('Launch press → provider ready (ms)', Math.round(now() - state.launchStartedAt));
             }
 
-            setImageryStatus(result.coverage ? (result.near === false ? 'far' : 'ok') : 'none', result.coverage
-                ? result.note
-                : 'No street-level imagery for this home. ' + (result.note || '') + ' The listing stays fully available.');
+            if (result.coverage) {
+                state.imagery[listing.id] = result;
+                state.imageryBase = null;
+                renderImageryStatus();
+            } else {
+                setImageryStatus('none', 'No street-level imagery for this home. ' + (result.note || '') + ' The listing stays fully available.');
+            }
 
             if (state.selectedId === listing.id) {
                 renderCard(listing);
@@ -1171,8 +1251,16 @@
             renderNearby();
             maybeQueryNearby(position, 'camera moved');
         },
+        // Live: panorama.getPosition() → the selected listing's MLS coordinate,
+        // on every position_changed / pov_changed. The one distance a shopper sees.
         onRelative: function (info) {
             var hud = $('vd-hud');
+
+            state.relative = info || null;
+
+            if (cfg.viewMode !== 'customer') {
+                renderImageryStatus();
+            }
 
             if (!info) {
                 hud.hidden = true;

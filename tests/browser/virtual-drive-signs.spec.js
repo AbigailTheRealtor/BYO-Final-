@@ -264,8 +264,10 @@ test.describe('Virtual Drive · signs a shopper can read and click (fake Maps AP
 
         await expect(status).toHaveClass(/is-far/);
         await expect(status).toContainText('not directly at this property');
-        await expect(status).toContainText('132 m away');
-        await expect(page.locator('.vd-shopper-coverage')).toContainText('not directly at this property');
+        // Developer view: the figure is labelled as the initial match, not a live distance.
+        await expect(status).toContainText('Initial Street View match: 132 m');
+        // The card is a shopper surface: the customer wording, with no figure.
+        await expect(page.locator('.vd-shopper-coverage')).toHaveText('Street View is nearby, but this view is not directly in front of the property.');
 
         await page.goto('/virtual-drive/google.html?offset=20');
         await expect(page.locator('#vd-launch')).toBeEnabled();

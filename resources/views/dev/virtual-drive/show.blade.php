@@ -42,7 +42,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>Virtual Drive proof · {{ $providerLabel }}</title>
-    <link rel="stylesheet" href="{{ asset('css/virtual-drive/virtual-drive.css') }}">
+    <link rel="stylesheet" href="/css/virtual-drive/virtual-drive.css">
 </head>
 <body class="vd-body vd-view-{{ $viewMode }}">
 <div class="vd-shell" id="vd-shell"
@@ -56,7 +56,7 @@
      data-credential-name="{{ $credentialName }}"
      data-library-url="{{ $libraryUrl ?? '' }}"
      data-api-version="{{ $apiVersion ?? '' }}"
-     data-listings-endpoint="{{ route('dev.virtual-drive.api.listings') }}"
+     data-listings-endpoint="{{ route('dev.virtual-drive.api.listings', [], false) }}"
      data-nearby-radius="{{ $nearbyRadius }}"
      data-nearby-requery="{{ $nearbyRequery }}"
      data-selected-listing="{{ $selectedListing }}"
@@ -76,13 +76,13 @@
             <strong>{{ $providerLabel }}</strong>
         </div>
         <nav class="vd-provider-nav" aria-label="Street-level provider">
-            <a href="{{ route('dev.virtual-drive.compare') }}">Comparison</a>
-            <a href="{{ route('dev.virtual-drive.apple') }}" class="{{ $provider === 'apple' ? 'is-active' : '' }}">Apple Look Around</a>
-            <a href="{{ route('dev.virtual-drive.google') }}" class="{{ $provider === 'google' ? 'is-active' : '' }}">Google Street View</a>
+            <a href="{{ route('dev.virtual-drive.compare', [], false) }}">Comparison</a>
+            <a href="{{ route('dev.virtual-drive.apple', [], false) }}" class="{{ $provider === 'apple' ? 'is-active' : '' }}">Apple Look Around</a>
+            <a href="{{ route('dev.virtual-drive.google', [], false) }}" class="{{ $provider === 'google' ? 'is-active' : '' }}">Google Street View</a>
             @if ($viewMode === 'customer')
-                <a href="{{ request()->fullUrlWithQuery(['view' => 'dev']) }}">Developer view</a>
+                <a href="{{ '?' . http_build_query(array_merge(request()->query(), ['view' => 'dev'])) }}">Developer view</a>
             @else
-                <a href="{{ request()->fullUrlWithQuery(['view' => 'customer']) }}">Customer preview</a>
+                <a href="{{ '?' . http_build_query(array_merge(request()->query(), ['view' => 'customer'])) }}">Customer preview</a>
             @endif
         </nav>
     </header>
@@ -152,12 +152,12 @@
     </div>
 </div>
 
-<script src="{{ asset('js/virtual-drive/virtual-drive-signs.js') }}"></script>
-<script src="{{ asset('js/virtual-drive/virtual-drive-shell.js') }}"></script>
-<script src="{{ asset('js/virtual-drive/virtual-drive-observations.js') }}"></script>
+<script src="/js/virtual-drive/virtual-drive-signs.js"></script>
+<script src="/js/virtual-drive/virtual-drive-shell.js"></script>
+<script src="/js/virtual-drive/virtual-drive-observations.js"></script>
 {{-- Omitted entirely for a switched-off provider. Not hidden — absent. --}}
 @if ($providerScript)
-    <script src="{{ asset('js/virtual-drive/' . $providerScript) }}"></script>
+    <script src="/js/virtual-drive/{{ $providerScript }}"></script>
 @endif
 </body>
 </html>

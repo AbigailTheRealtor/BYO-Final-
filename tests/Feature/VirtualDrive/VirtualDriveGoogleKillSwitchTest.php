@@ -120,7 +120,14 @@ class VirtualDriveGoogleKillSwitchTest extends TestCase
         $this->assertStringNotContainsString('GOOGLE-KEY-SENTINEL', $page);
         $this->assertStringContainsString('data-credential=""', $page);
         $this->assertStringContainsString('data-credential-available="1"', $page);
-        $this->assertStringContainsString('data-launch-claim-endpoint="' . route('dev.virtual-drive.api.google-launch') . '"', $page);
+        // RELATIVE, and asserted as relative on purpose. The proof is served from a
+        // non-default port behind a TLS proxy that reports the public port, not the
+        // one the browser is on, so an absolute URL built from the request root drops
+        // `:8080` and sends the claim to whatever answers on the bare domain — in this
+        // workspace, the production app, which 404s it. A same-origin path cannot be
+        // wrong about the origin it is already on.
+        $this->assertStringContainsString('data-launch-claim-endpoint="' . route('dev.virtual-drive.api.google-launch', [], false) . '"', $page);
+        $this->assertStringNotContainsString('data-launch-claim-endpoint="http', $page);
     }
 
     /** @test */

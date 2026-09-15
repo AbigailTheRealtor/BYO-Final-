@@ -195,19 +195,30 @@
         return width * k / distance;
     }
 
+    // What the FIRST panorama lookup for a home found, worded for two audiences.
+    //
+    // `gapMeters` is the distance from the panorama Google matched to the MLS
+    // coordinate at the moment the home was opened. It is a snapshot: it is not
+    // where the camera is now, and walking does not change it. So:
+    //   • `message` is the developer diagnostic, labelled as the initial match so
+    //     it can never be read as the live distance;
+    //   • `customerMessage` carries no number at all. A near match says nothing
+    //     (the live "Selected home: X m away" readout already answers it), and a
+    //     far match keeps the honest warning without a figure that goes stale.
     function coverage(gapMeters, overrides) {
         var cfg = config(overrides);
         var gap = Math.round(gapMeters);
+        var initial = 'Initial Street View match: ' + gap + ' m from the selected listing\'s MLS coordinate.';
 
         if (gapMeters > cfg.closeCoverage) {
             return {
                 near: false,
-                message: 'Street View is available nearby, but not directly at this property — the closest imagery is '
-                    + gap + ' m away. You are not in front of the home.'
+                message: initial + ' Nearby only — not directly at this property.',
+                customerMessage: 'Street View is nearby, but this view is not directly in front of the property.'
             };
         }
 
-        return { near: true, message: 'Street View imagery is ' + gap + ' m from the home.' };
+        return { near: true, message: initial, customerMessage: '' };
     }
 
     root.VirtualDriveSigns = {

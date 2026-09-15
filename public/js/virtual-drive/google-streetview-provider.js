@@ -81,6 +81,7 @@
     var selectedId = null;
     var generation = 0;
     var pendingTiming = null;
+    var requestedHeading = null; // the last heading this file asked setPov() for (diagnostic only)
 
     function now() {
         return window.performance && performance.now ? performance.now() : Date.now();
@@ -332,20 +333,28 @@
         var target = latLng(listings[selectedId]);
         var heading = lib.geometry.spherical.computeHeading(here, target);
         var distance = lib.geometry.spherical.computeDistanceBetween(here, target);
-        var relativeHeading = ((heading - panorama.getPov().heading + 540) % 360) - 180;
+        var cameraHeading = panorama.getPov().heading;
+        var relativeHeading = ((heading - cameraHeading + 540) % 360) - 180;
 
-        hooks.onRelative({ distance: distance, relativeHeading: relativeHeading });
+        hooks.onRelative({
+            distance: distance,
+            relativeHeading: relativeHeading,
+            // Developer diagnostics only; the shopper readout uses the two above.
+            bearing: heading,
+            cameraHeading: cameraHeading,
+            requestedHeading: requestedHeading
+        });
     }
 
+    // Turns the camera; never moves it. The position — and so the distance to
+    // the home — is exactly what it was before the press.
     function aimAtSelected() {
         if (!panorama || !selectedId || !listings[selectedId] || !panorama.getPosition()) {
             return;
         }
 
-        panorama.setPov({
-            heading: lib.geometry.spherical.computeHeading(panorama.getPosition(), latLng(listings[selectedId])),
-            pitch: 0
-        });
+        requestedHeading = lib.geometry.spherical.computeHeading(panorama.getPosition(), latLng(listings[selectedId]));
+        panorama.setPov({ heading: requestedHeading, pitch: 0 });
         hooks.log('Camera aimed at the selected home', selectedId);
     }
 
@@ -529,6 +538,7 @@
                 hooks.fact(listing.id, 'Google panorama distance from MLS coordinate', Math.round(gap) + ' m');
                 hooks.fact(listing.id, 'Google imagery date', data.imageDate || 'not provided');
                 pendingTiming = { id: listing.id, startedAt: startedAt };
+                requestedHeading = heading;
 
                 if (!panorama) {
                     constructPanorama(data.location.pano, heading);
@@ -540,12 +550,20 @@
 
                 updateSigns();
 
+                // `gap` is measured from the panorama matched NOW, not from wherever
+                // the camera goes next. `note` is the labelled developer diagnostic;
+                // `customerNote` is what a shopper may see (often nothing). The live
+                // distance lives in onRelative, recomputed on position_changed.
                 return {
                     coverage: true,
                     near: coverage.near,
                     gap: Math.round(gap),
-                    note: coverage.message + ' Camera turned to heading ' + Math.round((heading + 360) % 360) + '° to face it.'
-                        + (data.imageDate ? ' Imagery captured ' + data.imageDate + '.' : '')
+                    requestedHeading: heading,
+                    imageDate: data.imageDate || null,
+                    note: coverage.message
+                        + ' Requested initial heading ' + Math.round((heading + 360) % 360) + '°.'
+                        + (data.imageDate ? ' Imagery captured ' + data.imageDate + '.' : ''),
+                    customerNote: coverage.customerMessage
                 };
             });
         }
