@@ -266,11 +266,18 @@ Route::post('/ask-ai/listing-question', [\App\Http\Controllers\AskAiListingQuest
     ->middleware(['auth', 'throttle:ask-ai-api'])
     ->name('ask-ai.listing-question');
 
-// Ask AI — channel-agnostic canonical API endpoint (web channel).
-// Sits alongside the existing listing-question route; does not replace it.
-Route::post('/ask-ai/ask', [\App\Http\Controllers\AskAi\AskAiApiController::class, 'ask'])
-    ->middleware('throttle:ask-ai-api')
-    ->name('ask-ai.ask');
+// Ask AI — the unauthenticated web channel endpoint (POST /ask-ai/ask) was REMOVED in P0.
+//
+// It carried only 'throttle:ask-ai-api' — no auth, no ownership check — so any anonymous
+// visitor could post a listing_type + listing_id and drive the full Ask AI pipeline,
+// including its OpenAI calls, at our expense. An audit of the whole application found NO
+// caller: no Blade view, no JavaScript, no controller, no console command. Every Ask AI
+// surface in the product posts to /ask-ai/listing-question, which is authenticated and
+// ownership-scoped.
+//
+// The canonical channel-agnostic contract this route shared with external integrations is
+// UNCHANGED and still served by POST /api/ask-ai/ask under 'auth:sanctum' (routes/api.php).
+// AskAiApiController is untouched. Only the unauthenticated door is gone.
 
 // Location DNA — free-text address lookup (Radius Search, Important Places).
 //

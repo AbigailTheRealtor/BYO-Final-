@@ -9,6 +9,9 @@ use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 
 class SellerSnapshotBuilder
 {
+    /** Canonical role this builder produces snapshots for (drives fact visibility). */
+    private const ROLE = 'seller';
+
     public function __construct(
         private AskAiContextBuilderService $contextBuilder
     ) {}
@@ -37,7 +40,7 @@ class SellerSnapshotBuilder
             }
 
             $encoded    = is_array($value) ? json_encode($value) : (string) $value;
-            $visibility = SnapshotFactVisibility::classify($key);
+            $visibility = SnapshotFactVisibility::classify($key, self::ROLE);
 
             $snapshot->facts()->create([
                 'canonical_key'  => $key,
@@ -48,9 +51,13 @@ class SellerSnapshotBuilder
                 'label'          => SnapshotFactVisibility::deriveLabel($key),
                 'value_type'     => SnapshotFactVisibility::detectValueType($value),
                 'source_path'    => 'context.listing.' . $key,
-                'classification' => $visibility === 'restricted' ? 'compliance_sensitive' : 'public_factual',
-                'public_allowed' => $visibility === 'public_allowed',
-                'restricted'     => $visibility === 'restricted',
+                'classification' => match ($visibility) {
+                    SnapshotFactVisibility::RESTRICTED     => 'compliance_sensitive',
+                    SnapshotFactVisibility::PUBLIC_ALLOWED => 'public_factual',
+                    default                                => 'owner_only',
+                },
+                'public_allowed' => $visibility === SnapshotFactVisibility::PUBLIC_ALLOWED,
+                'restricted'     => $visibility === SnapshotFactVisibility::RESTRICTED,
                 'sort_order'     => $sortOrder++,
             ]);
         }
@@ -142,7 +149,9 @@ class SellerSnapshotBuilder
                 'answer_text'    => $answerText,
                 'question_id'    => $questionId,
                 'classification' => 'faq_answer',
-                'visibility'     => 'public_allowed',
+                // D3: owner-authored KB answers default to owner_only until the per-key
+                // triage approves them for publication. Fail closed, like the facts above.
+                'visibility'     => SnapshotFactVisibility::OWNER_ONLY,
                 'source_path'    => 'context.faq_answers.' . $key,
                 'sort_order'     => $sortOrder++,
             ]);

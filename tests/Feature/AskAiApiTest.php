@@ -13,6 +13,9 @@ class AskAiApiTest extends TestCase
 {
     use DatabaseTransactions;
 
+    /** The single authenticated requester used by postCanonical() within one test. */
+    private ?User $canonicalCaller = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -83,6 +86,29 @@ class AskAiApiTest extends TestCase
         return $mock;
     }
 
+    /**
+     * POST the canonical Ask AI contract as an authenticated caller.
+     *
+     * These assertions used to run against the unauthenticated web route POST /ask-ai/ask,
+     * which was removed in P0 (it had no caller anywhere in the application and let a guest
+     * drive the paid pipeline). The contract itself is unchanged and is still served by
+     * POST /api/ask-ai/ask under auth:sanctum by the same AskAiApiController, so every
+     * assertion below is preserved — only the door it knocks on has changed.
+     *
+     * P0.2 — the caller is created ONCE per test and reused. The 'ask-ai-api' limiter keys on
+     * the authenticated user id, so a fresh user on every call put each request in its own
+     * bucket and the rate-limit tests could never reach 429. PHPUnit builds a new instance
+     * per test, so the reuse never crosses test boundaries.
+     */
+    private function postCanonical(?array $payload = null)
+    {
+        $this->canonicalCaller ??= User::factory()->create();
+
+        Sanctum::actingAs($this->canonicalCaller);
+
+        return $this->postJson('/api/ask-ai/ask', $payload ?? $this->apiPayload());
+    }
+
     private function webPayload(array $overrides = []): array
     {
         return array_merge([
@@ -111,7 +137,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeAnsweredResult());
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson([
             'success'          => true,
@@ -153,10 +179,15 @@ class AskAiApiTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // (3) Missing listing_id returns 422 — web route
+    // (3) P0 — the unauthenticated web route is GONE and unreachable by a guest
+    //
+    // POST /ask-ai/ask carried only a throttle: no auth, no ownership check. A guest
+    // could drive the full Ask AI pipeline, including its OpenAI calls, at our expense.
+    // It had no caller anywhere in the application. This proves the door is closed and,
+    // critically, that nothing reaches the runner on the way to finding that out.
     // -------------------------------------------------------------------------
 
-    public function test_missing_listing_id_returns_422_on_web_route(): void
+    public function test_removed_unauthenticated_web_route_is_unreachable_by_guest(): void
     {
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->never())->method('run');
@@ -164,12 +195,30 @@ class AskAiApiTest extends TestCase
 
         $response = $this->postJson('/ask-ai/ask', [
             'listing_type' => 'seller',
+            'listing_id'   => 42,
             'question'     => 'What is the price?',
             'channel'      => 'web',
         ]);
 
-        $response->assertUnprocessable()
-                 ->assertJsonValidationErrors(['listing_id']);
+        $this->assertSame(
+            404,
+            $response->getStatusCode(),
+            'POST /ask-ai/ask must no longer be routable — it let a guest reach the paid pipeline.'
+        );
+    }
+
+    /**
+     * The authenticated Sanctum route that replaced it must still reject a guest with 401
+     * rather than 404 — proving the canonical contract itself was not removed along with
+     * the unauthenticated door.
+     */
+    public function test_canonical_api_route_still_exists_and_requires_auth(): void
+    {
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->never())->method('run');
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
+
+        $this->postJson('/api/ask-ai/ask', $this->apiPayload())->assertUnauthorized();
     }
 
     // -------------------------------------------------------------------------
@@ -205,9 +254,9 @@ class AskAiApiTest extends TestCase
 
         config(['ask_ai.rate_limit_per_minute' => 1]);
 
-        $this->postJson('/ask-ai/ask', $this->webPayload())->assertOk();
+        $this->postCanonical($this->webPayload())->assertOk();
 
-        $this->postJson('/ask-ai/ask', $this->webPayload())->assertStatus(429);
+        $this->postCanonical($this->webPayload())->assertStatus(429);
     }
 
     // -------------------------------------------------------------------------
@@ -233,7 +282,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeAnsweredResult());
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'answered', 'success' => true]);
     }
@@ -242,7 +291,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeRunnerResult('insufficient_context'));
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'insufficient_context', 'success' => false]);
     }
@@ -251,7 +300,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeRunnerResult('blocked'));
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'blocked', 'success' => false]);
     }
@@ -260,7 +309,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeRunnerResult('unsupported'));
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'unsupported', 'success' => false]);
     }
@@ -269,7 +318,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeRunnerResult('failed'));
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'failed', 'success' => false]);
     }
@@ -287,7 +336,7 @@ class AskAiApiTest extends TestCase
             ->willReturn($this->makeAnsweredResult());
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
-        $this->postJson('/ask-ai/ask', $this->webPayload())->assertOk();
+        $this->postCanonical($this->webPayload())->assertOk();
     }
 
     // -------------------------------------------------------------------------
@@ -298,7 +347,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeAnsweredResult());
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
         $data = $response->json();
 
         $this->assertArrayNotHasKey('prompt_package',  $data);
@@ -320,7 +369,7 @@ class AskAiApiTest extends TestCase
         $result['error'] = 'Internal runner returned no prompt_package; OpenAI call skipped.';
         $this->mockRunner($result);
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
         $data = $response->json();
 
         $this->assertSame('failed', $data['status']);
@@ -345,7 +394,7 @@ class AskAiApiTest extends TestCase
         $mock->method('run')->willThrowException(new \RuntimeException('Secret DB connection string or stack trace'));
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
         $data = $response->json();
 
         $this->assertSame('failed', $data['status']);
@@ -365,7 +414,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeAnsweredResult());
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'answered', 'error' => null]);
     }
@@ -374,7 +423,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeRunnerResult('blocked'));
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['status' => 'blocked', 'error' => null]);
     }
@@ -387,7 +436,7 @@ class AskAiApiTest extends TestCase
     {
         $this->mockRunner($this->makeAnsweredResult());
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
 
         $response->assertOk()->assertJson(['contract_version' => 'ASK_AI_API_V1']);
     }
@@ -402,9 +451,9 @@ class AskAiApiTest extends TestCase
 
         config(['ask_ai.rate_limit_per_minute' => 1]);
 
-        $this->postJson('/ask-ai/ask', $this->webPayload())->assertOk();
+        $this->postCanonical($this->webPayload())->assertOk();
 
-        $response = $this->postJson('/ask-ai/ask', $this->webPayload());
+        $response = $this->postCanonical($this->webPayload());
         $response->assertStatus(429);
         $this->assertNotEmpty($response->headers->get('Retry-After'));
     }
