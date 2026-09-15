@@ -3576,6 +3576,8 @@ class AskAiFieldQuestionRegistryService
      *   'other_companion'  — optional: ['selected_in' => meta key of the stored selections,
      *                        'meta_key' => meta key of the "Other" text, 'reject_figures' =>
      *                        bool]; the only meta values an answer may contain
+     *   'other_companions' — optional, instead of other_companion, for a composite that reads
+     *                        several such fields: [name => the same spec]
      *   'formatter'        — identity of a formatter in AskAiPublicPropertyQuestionService
      *   'guards'           — identities of hide-only ambiguity checks; never reveal anything
      *   'category'         — display grouping for later batches
@@ -3583,7 +3585,11 @@ class AskAiFieldQuestionRegistryService
      *   'aliases'          — lower-case phrasings for the later typed-question matcher; they
      *                        can only ever point at an AVAILABLE question
      *
-     * A 'narrower_of' key is reserved for the composite batch and is not used yet.
+     *   'narrower_of'      — optional: the id of a richer composite entry of the same role.
+     *                        When that composite is available for a listing it replaces this
+     *                        entry, so the two near-identical questions never both show; when
+     *                        it is not, this entry stands in as the complete narrower answer.
+     *                        One level only — a composite itself declares no narrower_of.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -3679,6 +3685,39 @@ class AskAiFieldQuestionRegistryService
                 'category'         => 'hoa',
                 'order'            => 70,
                 'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'hoa dues'],
+                'narrower_of'      => 'seller_hoa_fee_coverage',
+            ],
+            'seller_hoa_fee_coverage' => [
+                'role'             => 'seller',
+                'question'         => 'HOA fees & what do they cover?',
+                'source_kind'      => 'listing',
+                // Composite (Batch 2c): the fee statement of seller_hoa_fee plus what the fee
+                // covers, from the structured fee-includes selections. Needs a valid fee AND at
+                // least one covered item; otherwise seller_hoa_fee answers instead.
+                'source_path'      => 'listing.hoa_fee',
+                'supporting_paths' => ['listing.hoa_association', 'listing.hoa_payment_schedule', 'listing.association_fee_includes'],
+                'other_companions' => [
+                    'frequency' => ['selected_in' => 'association_fee_frequency', 'meta_key' => 'association_fee_frequency_other'],
+                    'includes'  => ['selected_in' => 'association_fee_includes', 'meta_key' => 'association_fee_includes_other'],
+                ],
+                'formatter'        => 'hoa_fee_coverage',
+                'guards'           => [],
+                'category'         => 'hoa',
+                'order'            => 69,
+                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'what does the hoa cover', 'what does the hoa fee include', 'hoa includes'],
+            ],
+            'seller_cdd_fee' => [
+                'role'             => 'seller',
+                'question'         => 'Is there a CDD fee?',
+                'source_kind'      => 'listing',
+                // has_cdd (Yes / No / Unknown) with the annual amount when one is stated.
+                'source_path'      => 'listing.has_cdd',
+                'supporting_paths' => ['listing.annual_cdd_fee'],
+                'formatter'        => 'cdd_fee',
+                'guards'           => [],
+                'category'         => 'costs',
+                'order'            => 75,
+                'aliases'          => ['cdd', 'cdd fee', 'community development district'],
             ],
             'seller_total_acreage' => [
                 'role'             => 'seller',
@@ -3726,10 +3765,11 @@ class AskAiFieldQuestionRegistryService
                 'role'             => 'seller',
                 'question'         => 'Are pets allowed?',
                 'source_kind'      => 'listing',
-                // context pets_allowed ← meta 'pets' (Yes / No). The count, types, weight and
-                // breed rows beside it are not read.
+                // context pets_allowed ← meta 'pets' (Yes / No). Batch 2c adds the listing's own
+                // numeric pet-policy limits (number_of_pets, weight_of_pets) to a "Yes" answer.
+                // Pet types, breeds and restriction text are not read.
                 'source_path'      => 'listing.pets_allowed',
-                'supporting_paths' => [],
+                'supporting_paths' => ['listing.number_of_pets_allowed', 'listing.max_pet_weight'],
                 'formatter'        => 'pets_allowed',
                 'guards'           => [],
                 'category'         => 'policies',
@@ -3923,6 +3963,23 @@ class AskAiFieldQuestionRegistryService
                 'category'         => 'hoa',
                 'order'            => 70,
                 'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'hoa dues'],
+                'narrower_of'      => 'landlord_hoa_fee_coverage',
+            ],
+            'landlord_hoa_fee_coverage' => [
+                'role'             => 'landlord',
+                'question'         => 'HOA fees & what do they cover?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.association_fee_amount',
+                'supporting_paths' => ['listing.has_hoa', 'listing.association_fee_frequency', 'listing.association_fee_includes'],
+                'other_companions' => [
+                    'frequency' => ['selected_in' => 'association_fee_frequency', 'meta_key' => 'association_fee_frequency_other'],
+                    'includes'  => ['selected_in' => 'association_fee_includes', 'meta_key' => 'association_fee_includes_other'],
+                ],
+                'formatter'        => 'hoa_fee_coverage',
+                'guards'           => [],
+                'category'         => 'hoa',
+                'order'            => 69,
+                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'what does the hoa cover', 'what does the hoa fee include', 'hoa includes'],
             ],
             'landlord_zoning' => [
                 'role'             => 'landlord',

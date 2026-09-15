@@ -46,9 +46,14 @@ use App\Support\Listing\ListingPriceDisplay;
  *      the context value and what the page itself publishes, and never expose a value.
  * Anything unrecognised — role, path, key, source kind, formatter, guard — fails closed.
  *
+ * COMPOSITES (Batch 2c) answer one question from several declared structured sources and
+ * need every required part; a narrower entry naming the composite in 'narrower_of' stands in
+ * when the composite is unavailable and is suppressed when it is available, so near-identical
+ * questions never both show.
+ *
  * META IS READ FOR TWO THINGS ONLY: hide-only guards, and an entry's declared
- * 'other_companion' — the exact stored selections of the field (the key named in
- * 'selected_in') and the free-text "Other" value beside it (the key named in 'meta_key').
+ * 'other_companion' / 'other_companions' — the exact stored selections of a field (the key
+ * named in 'selected_in') and the free-text "Other" value beside it (the key named in 'meta_key').
  * Both keys are named by the catalog entry; nothing else in $meta is ever read into an
  * answer. The companion text is used only when "Other" is actually selected, the same
  * substitution the listing page performs, and only when it is a short, single-line,
@@ -123,19 +128,31 @@ class AskAiPublicPropertyQuestionService
         $ids = array_keys($catalog);
         usort($ids, static fn ($a, $b): int => ((int) ($catalog[$a]['order'] ?? PHP_INT_MAX)) <=> ((int) ($catalog[$b]['order'] ?? PHP_INT_MAX)));
 
-        $questions = [];
+        $available = [];
         foreach ($ids as $id) {
+            $result = $this->evaluate($catalog[$id], $role, $context, $meta);
+            if ($result['available']) {
+                $available[$id] = $result['answer'];
+            }
+        }
+
+        $questions = [];
+        foreach ($available as $id => $answer) {
             $entry = $catalog[$id];
 
-            $result = $this->evaluate($entry, $role, $context, $meta);
-            if (!$result['available']) {
+            // narrower_of: this entry is the narrower fallback of a richer composite. When that
+            // composite is itself available for this listing it answers the same question more
+            // completely, so the narrower one is not shown beside it. A narrower_of that names
+            // nothing in this role's catalog suppresses nothing.
+            $richer = $entry['narrower_of'] ?? null;
+            if (is_string($richer) && $richer !== $id && isset($available[$richer])) {
                 continue;
             }
 
             $questions[] = [
                 'id'          => (string) $id,
                 'question'    => (string) $entry['question'],
-                'answer'      => $result['answer'],
+                'answer'      => $answer,
                 'source_path' => (string) $entry['source_path'],
             ];
         }
@@ -205,21 +222,37 @@ class AskAiPublicPropertyQuestionService
             }
         }
 
-        // The declared "Other" companion, if any: the stored selections and the "Other" text.
-        $companion = $this->companion($entry['other_companion'] ?? null, $meta);
-        if ($companion === false) {
+        // The declared "Other" companion(s): the stored selections and the "Other" text. One
+        // field declares 'other_companion'; a composite reading several declares
+        // 'other_companions' (name => spec). Declaring both is malformed.
+        if (array_key_exists('other_companion', $entry) && array_key_exists('other_companions', $entry)) {
             return $this->hidden('other_companion_invalid');
         }
-        if (($companion['unsafe'] ?? false) === true) {
-            return $this->hidden('other_companion_unsafe');
+        $specs = array_key_exists('other_companions', $entry)
+            ? $entry['other_companions']
+            : ['default' => $entry['other_companion'] ?? null];
+        if (!is_array($specs) || $specs === []) {
+            return $this->hidden('other_companion_invalid');
         }
+        $companions = [];
+        foreach ($specs as $name => $spec) {
+            $resolved = $this->companion($spec, $meta);
+            if ($resolved === false || !is_string($name)) {
+                return $this->hidden('other_companion_invalid');
+            }
+            if (($resolved['unsafe'] ?? false) === true) {
+                return $this->hidden('other_companion_unsafe');
+            }
+            $companions[$name] = $resolved;
+        }
+        $companion = $companions['default'] ?? null;
 
         // 5. A deterministic formatter that accepts this exact value.
         $formatter = (string) ($entry['formatter'] ?? '');
         if (!$this->hasFormatter($formatter)) {
             return $this->hidden('formatter_missing');
         }
-        $answer = $this->format($formatter, $value, $supporting, $companion);
+        $answer = $this->format($formatter, $value, $supporting, $companion, $companions);
         if ($answer === null) {
             return $this->hidden('formatter_rejected_value');
         }
@@ -430,14 +463,17 @@ class AskAiPublicPropertyQuestionService
             // Batch 2b
             'has_pool', 'has_garage', 'zoning', 'roof_type_list', 'leasing_restrictions',
             'community_amenity_list', 'financing_types',
+            // Batch 2c
+            'hoa_fee_coverage', 'cdd_fee',
         ], true);
     }
 
     /**
-     * @param array<string,mixed>                                                   $supporting
-     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null $companion
+     * @param array<string,mixed>                                                                 $supporting
+     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null               $companion
+     * @param array<string, array{selections: list<string>, other: string|null, unsafe: bool}|null> $companions
      */
-    private function format(string $formatter, mixed $value, array $supporting, ?array $companion = null): ?string
+    private function format(string $formatter, mixed $value, array $supporting, ?array $companion = null, array $companions = []): ?string
     {
         if (!is_scalar($value)) {
             return null;
@@ -463,7 +499,11 @@ class AskAiPublicPropertyQuestionService
             'acreage_band'           => $this->acreageBand($text),
             'appliance_list'         => $this->list($text, 'Appliances listed for this property'),
             'utility_list'           => $this->list($text, 'Utilities listed for this property'),
-            'pets_allowed'           => $this->petsAllowed($text),
+            'pets_allowed'           => $this->petsAllowed(
+                                            $text,
+                                            $supporting['number_of_pets_allowed'] ?? null,
+                                            $supporting['max_pet_weight'] ?? null
+                                        ),
             'has_pool'               => $this->yesNo($text, 'This property has a pool.', 'This property does not have a pool.'),
             'has_garage'             => $this->yesNo($text, 'This property has a garage.', 'This property does not have a garage.'),
             'zoning'                 => $this->zoning($text),
@@ -475,6 +515,14 @@ class AskAiPublicPropertyQuestionService
                                             'The listing indicates there are no leasing restrictions.'
                                         )),
             'financing_types'        => $this->financingTypes($companion),
+            'hoa_fee_coverage'       => $this->hoaFeeCoverage(
+                                            $text,
+                                            $hasHoa,
+                                            $supporting['hoa_payment_schedule'] ?? $supporting['association_fee_frequency'] ?? null,
+                                            $companions['frequency'] ?? null,
+                                            $companions['includes'] ?? null
+                                        ),
+            'cdd_fee'                => $this->cddFee($text, $supporting['annual_cdd_fee'] ?? null),
             default                  => null,
         };
     }
@@ -539,6 +587,17 @@ class AskAiPublicPropertyQuestionService
      */
     private function hoaFee(string $text, mixed $hasHoa, mixed $frequency, ?string $frequencyOther): ?string
     {
+        $clause = $this->hoaFeeClause($text, $hasHoa, $frequency, $frequencyOther);
+
+        return $clause === null ? null : $clause . '.';
+    }
+
+    /**
+     * "The HOA fee is $250 per month" — the fee statement without its full stop, shared by the
+     * fee question and the fee-and-coverage composite so the two can never word it differently.
+     */
+    private function hoaFeeClause(string $text, mixed $hasHoa, mixed $frequency, ?string $frequencyOther): ?string
+    {
         if (!$this->isYes($hasHoa)) {
             return null;
         }
@@ -549,22 +608,91 @@ class AskAiPublicPropertyQuestionService
                 : '';
 
             if ($key === 'one-time') {
-                return "The HOA fee is a one-time fee of {$money}.";
+                return "The HOA fee is a one-time fee of {$money}";
             }
 
             $phrase = self::HOA_FREQUENCY_PHRASES[$key] ?? null;
             if ($phrase !== null) {
-                return "The HOA fee is {$money} {$phrase}.";
+                return "The HOA fee is {$money} {$phrase}";
             }
 
             // "Other" with the owner's own frequency text: restated as written, never
             // reinterpreted into a period.
             if ($key === 'other' && $frequencyOther !== null) {
-                return "The HOA fee is {$money} (frequency: {$frequencyOther}).";
+                return "The HOA fee is {$money} (frequency: {$frequencyOther})";
             }
 
-            return "The HOA fee is {$money}.";
+            return "The HOA fee is {$money}";
         });
+    }
+
+    /**
+     * Batch 2c composite: the fee AND what it covers, from structured fields only. Both halves
+     * are required — no valid fee, or nothing it covers, and this returns null so the narrower
+     * fee question stands in (see narrower_of). Nothing is inferred about coverage.
+     *
+     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null $frequency
+     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null $includes
+     */
+    private function hoaFeeCoverage(string $text, mixed $hasHoa, mixed $frequencyValue, ?array $frequency, ?array $includes): ?string
+    {
+        $clause = $this->hoaFeeClause($text, $hasHoa, $frequencyValue, $frequency['other'] ?? null);
+        if ($clause === null) {
+            return null;
+        }
+
+        $items = [];
+        foreach ($this->selectionItems($includes) as $item) {
+            // Form options read as ordinary words mid-sentence ("Common Area Maintenance" →
+            // "common area maintenance"; "Cable TV" → "cable TV"). The owner's own "Other"
+            // text is restated exactly as written.
+            $items[] = ($includes !== null && $item === $includes['other'])
+                ? $item
+                : $this->sentenceCase($item);
+        }
+        if ($items === []) {
+            return null;
+        }
+
+        return $clause . ' and includes ' . $this->joinList($items) . '.';
+    }
+
+    /** "A", "A and B", "A, B and C". */
+    private function joinList(array $items): string
+    {
+        $items = array_values($items);
+        if (count($items) <= 2) {
+            return implode(' and ', $items);
+        }
+        $last = array_pop($items);
+
+        return implode(', ', $items) . ' and ' . $last;
+    }
+
+    /** Lower-case capitalised words ("Grounds" → "grounds"); leave acronyms ("TV") and anything else. */
+    private function sentenceCase(string $item): string
+    {
+        return implode(' ', array_map(
+            static fn (string $word): string => preg_match('/^[A-Z][a-z]+$/', $word) === 1 ? strtolower($word) : $word,
+            explode(' ', $item)
+        ));
+    }
+
+    /**
+     * Batch 2c: "Is there a CDD fee?" from has_cdd and annual_cdd_fee. A stated "No" is
+     * restated as nothing listed (never "no CDD exists"); "Yes" with a valid amount states
+     * the annual fee; "Yes" without one says only that a CDD is listed. Anything else hides.
+     */
+    private function cddFee(string $hasCdd, mixed $annualFee): ?string
+    {
+        return match (strtolower($hasCdd)) {
+            'no'  => 'There is no CDD fee listed for this property.',
+            'yes' => (is_scalar($annualFee) && !is_bool($annualFee)
+                        ? $this->withMoney(trim((string) $annualFee), fn (string $m) => "The annual CDD fee is {$m}.")
+                        : null)
+                     ?? 'This property is listed as having a CDD.',
+            default => null,
+        };
     }
 
     private function isYes(mixed $value): bool
@@ -691,13 +819,46 @@ class AskAiPublicPropertyQuestionService
         return $items === [] ? null : $lead . ': ' . rtrim(implode(', ', $items), '.') . '.';
     }
 
-    private function petsAllowed(string $text): ?string
+    /**
+     * The Yes / No pet policy, optionally followed (for "Yes" only) by the listing's own
+     * structured limits: a whole-number count of pets allowed and a maximum weight per pet.
+     * A value that is not exactly a number is left out rather than interpreted, and the
+     * "No" sentence is never changed. Only pet-POLICY fields of the listing are passed in —
+     * never an applicant's pets, breeds, service or support animals.
+     */
+    private function petsAllowed(string $text, mixed $count = null, mixed $maxWeight = null): ?string
     {
         return match (strtolower($text)) {
-            'yes' => 'Pets are allowed at this property.',
+            'yes' => trim('Pets are allowed at this property. ' . $this->petCountSentence($count) . ' ' . $this->petWeightSentence($maxWeight)),
             'no'  => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
             default => null,
         };
+    }
+
+    private function petCountSentence(mixed $count): string
+    {
+        if (!is_scalar($count) || is_bool($count) || preg_match('/^\s*(\d{1,2})\s*$/', (string) $count, $m) !== 1) {
+            return '';
+        }
+        $n = (int) $m[1];
+        if ($n < 1) {
+            return '';
+        }
+
+        return $n === 1 ? 'Up to 1 pet is permitted.' : "Up to {$n} pets are permitted.";
+    }
+
+    private function petWeightSentence(mixed $weight): string
+    {
+        if (!is_scalar($weight) || is_bool($weight) || preg_match('/^\s*(\d{1,3})\s*(lbs?\.?)?\s*$/i', (string) $weight, $m) !== 1) {
+            return '';
+        }
+        $lbs = (int) $m[1];
+        if ($lbs < 1) {
+            return '';
+        }
+
+        return "The maximum weight per pet is {$lbs} lbs.";
     }
 
     // =========================================================================

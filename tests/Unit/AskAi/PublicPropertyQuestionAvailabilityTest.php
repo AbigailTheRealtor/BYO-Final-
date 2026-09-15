@@ -63,6 +63,10 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'roof_type'             => 'Shingle',
             'rental_restrictions'   => 'Yes',
             'offered_financing'     => 'Conventional, FHA, VA, Cash',
+            // Batch 2c
+            'association_fee_includes' => 'Water, Trash',
+            'has_cdd'               => 'Yes',
+            'annual_cdd_fee'        => '1200',
         ]);
     }
 
@@ -75,6 +79,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'association_fee_frequency' => 'Monthly',
             'roof_type'                 => json_encode(['Shingle']),
             'offered_financing'         => json_encode(['Conventional', 'FHA', 'VA', 'Cash']),
+            'association_fee_includes'  => json_encode(['Water', 'Trash']),
         ];
     }
 
@@ -97,6 +102,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'roof_type'                 => 'Tile, Metal',
             'leasing_restrictions'      => 'No',
             'association_amenities'     => 'Clubhouse, Fitness Center',
+            'association_fee_includes'  => 'Grounds Maintenance',
         ]);
     }
 
@@ -106,6 +112,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'association_fee_frequency' => 'Quarterly',
             'roof_type'                 => json_encode(['Tile', 'Metal']),
             'association_amenities'     => json_encode(['Clubhouse', 'Fitness Center']),
+            'association_fee_includes'  => json_encode(['Grounds Maintenance']),
         ];
     }
 
@@ -147,11 +154,19 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
     public function test_every_catalog_question_is_answerable_from_a_complete_listing(): void
     {
+        // Batch 2c: a composite and its narrower fallback never render together, so a listing
+        // complete enough for every composite answers every question EXCEPT the narrower
+        // entries those composites replace.
+        $narrower = array_keys(array_filter(
+            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
+            fn (array $e) => isset($e['narrower_of'])
+        ));
+
         $seller = $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta());
-        $this->assertSame($this->catalogIds('seller'), array_keys($seller));
+        $this->assertSame(array_values(array_diff($this->catalogIds('seller'), $narrower)), array_keys($seller));
 
         $landlord = $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta());
-        $this->assertSame($this->catalogIds('landlord'), array_keys($landlord));
+        $this->assertSame(array_values(array_diff($this->catalogIds('landlord'), $narrower)), array_keys($landlord));
     }
 
     // ── 2 + 3. Null and blank values hide the question ──────────────────────
@@ -421,7 +436,8 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_heated_square_feet' => 'The heated square footage is 1,850 square feet.',
             'seller_year_built'         => 'This property was built in 1998.',
             'seller_property_taxes'     => 'Annual property taxes are $1,856 for tax year 2025.',
-            'seller_hoa_fee'            => 'The HOA fee is $250 per month.',
+            'seller_hoa_fee_coverage'   => 'The HOA fee is $250 per month and includes water and trash.',
+            'seller_cdd_fee'            => 'The annual CDD fee is $1,200.',
             'seller_total_acreage'      => 'The total acreage is 1/4 to less than 1/2 acre.',
             'seller_appliances'         => 'Appliances listed for this property: Dishwasher, Range, Refrigerator.',
             'seller_utilities'          => 'Utilities listed for this property: Electricity Connected, Water Available.',
@@ -441,7 +457,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'landlord_heated_square_feet'    => 'The heated square footage is 950 square feet.',
             'landlord_year_built'            => 'This property was built in 2004.',
             'landlord_property_taxes'        => 'Annual property taxes are $3,120 for tax year 2024.',
-            'landlord_hoa_fee'               => 'The HOA fee is $175 per quarter.',
+            'landlord_hoa_fee_coverage'      => 'The HOA fee is $175 per quarter and includes grounds maintenance.',
             'landlord_appliances'            => 'Appliances listed for this property: Washer, Dryer.',
             'landlord_pets_allowed'          => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
             'landlord_zoning'                => 'The zoning is listed as RM-15.',
