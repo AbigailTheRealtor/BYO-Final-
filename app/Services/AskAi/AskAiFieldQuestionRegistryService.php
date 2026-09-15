@@ -2372,15 +2372,10 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'How much is the community development district fee per year?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.annual_noi' => [
-                'roles'                => ['seller'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'annual_noi',
-                'label'                => 'Annual Net Operating Income (NOI)',
-                'sample_question'      => 'What is the net operating income for this property?',
-                'sample_question_2'    => 'What annual NOI does this investment property generate?',
-                'keyword_route_status' => 'listing_native',
-            ],
+            // P0.2 — 'listing.annual_noi' is REMOVED. Its context alias (onto the seller's
+            // desired minimum_annual_net_income) and its keyword route were removed in P0; this
+            // entry was left behind, still claiming 'listing_native'. There is no actual-NOI
+            // listing field, so there is nothing for a listing path to declare.
             'listing.gross_annual_income' => [
                 'roles'                => ['seller'],
                 'field_type'           => 'listing_model',

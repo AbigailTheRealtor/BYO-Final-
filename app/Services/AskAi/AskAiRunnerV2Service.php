@@ -2450,12 +2450,13 @@ class AskAiRunnerV2Service
             'annual gross income',
             'total revenue this property generates',
         ],
-        'listing.annual_net_income' => [
-            'annual net income',
-            'net operating income amount',
-            'what is the annual net income',
-            'noi amount',
-        ],
+        // P0.2 — the 'listing.annual_net_income' keyword route is REMOVED, fail-closed.
+        // It resolved to the 'annual_net_income' context key, which P0 removed because it was
+        // an alias onto the seller's DESIRED MINIMUM (minimum_annual_net_income). The route
+        // survived P0 pointing at nothing, inconsistent with the listing.cap_rate /
+        // listing.annual_noi removal above. It is deliberately NOT redirected to a
+        // faq_answers.* key: exposing an annual operating income figure from an approved
+        // public source is a separate decision.
         'listing.annual_operating_expenses' => [
             'annual operating expenses',
             'total annual expenses',
@@ -5642,7 +5643,7 @@ class AskAiRunnerV2Service
             'listing.special_assessment_description'     => 'Special assessment description information',
             // Listing.* fields — Income / Multifamily
             'listing.gross_annual_income'                => 'Gross annual rental income information',
-            'listing.annual_net_income'                  => 'Annual net operating income information',
+            // 'listing.annual_net_income' label removed in P0.2 along with its keyword route.
             'listing.annual_operating_expenses'          => 'Annual operating expenses information',
             'listing.total_units'                        => 'Total unit count information',
             'listing.total_buildings'                    => 'Total building count information',

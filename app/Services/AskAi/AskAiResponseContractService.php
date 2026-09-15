@@ -340,7 +340,7 @@ class AskAiResponseContractService
                 'listing.total_buildings',
                 // Commercial: Fees & Assessments
                 'listing.annual_cdd_fee',
-                'listing.annual_noi',
+                // 'listing.annual_noi' removed in P0.2 (seller-minimum alias; no actual-NOI field).
                 'listing.gross_annual_income',
                 // Business Opportunity: Identity & People
                 'listing.annual_revenue',

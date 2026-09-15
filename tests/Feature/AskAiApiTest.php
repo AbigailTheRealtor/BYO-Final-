@@ -13,6 +13,9 @@ class AskAiApiTest extends TestCase
 {
     use DatabaseTransactions;
 
+    /** The single authenticated requester used by postCanonical() within one test. */
+    private ?User $canonicalCaller = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -91,10 +94,17 @@ class AskAiApiTest extends TestCase
      * drive the paid pipeline). The contract itself is unchanged and is still served by
      * POST /api/ask-ai/ask under auth:sanctum by the same AskAiApiController, so every
      * assertion below is preserved — only the door it knocks on has changed.
+     *
+     * P0.2 — the caller is created ONCE per test and reused. The 'ask-ai-api' limiter keys on
+     * the authenticated user id, so a fresh user on every call put each request in its own
+     * bucket and the rate-limit tests could never reach 429. PHPUnit builds a new instance
+     * per test, so the reuse never crosses test boundaries.
      */
     private function postCanonical(?array $payload = null)
     {
-        Sanctum::actingAs(User::factory()->create());
+        $this->canonicalCaller ??= User::factory()->create();
+
+        Sanctum::actingAs($this->canonicalCaller);
 
         return $this->postJson('/api/ask-ai/ask', $payload ?? $this->apiPayload());
     }
