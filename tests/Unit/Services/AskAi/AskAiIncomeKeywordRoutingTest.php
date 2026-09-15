@@ -22,11 +22,15 @@ use ReflectionClass;
  */
 class AskAiIncomeKeywordRoutingTest extends TestCase
 {
-    /** Income listing.* keys added for income/multifamily support. */
+    /**
+     * Income listing.* keys added for income/multifamily support.
+     *
+     * P0.2 — 'listing.annual_net_income' and 'listing.cap_rate' are no longer listed. Both
+     * resolved to context aliases onto the seller's DESIRED MINIMUM figures, which P0 removed;
+     * their routes are removed too. REMOVED_SELLER_MINIMUM_ROUTES pins their absence.
+     */
     private const INCOME_LISTING_KEYS = [
         'listing.gross_annual_income',
-        'listing.annual_net_income',
-        'listing.cap_rate',
         'listing.annual_operating_expenses',
         'listing.total_units',
         'listing.total_buildings',
@@ -40,17 +44,18 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
     ];
 
     /**
-     * The 10 canonical income acceptance questions and the listing.* key each
+     * The canonical income acceptance questions and the listing.* key each
      * must resolve to via detectListingFieldKey().
      *
      * These must NOT match any FAQ entry first (detectFaqFieldKey must return
      * null for each of them).
+     *
+     * P0.2 — the cap-rate and annual-net-income questions moved to
+     * REMOVED_ROUTE_QUESTIONS: they must no longer reach a listing key at all.
      */
     private const ACCEPTANCE_ROUTING = [
         'What is the gross annual income?'                          => 'listing.gross_annual_income',
         'What are the annual operating expenses?'                   => 'listing.annual_operating_expenses',
-        'What is the cap rate?'                                     => 'listing.cap_rate',
-        'What is the annual net income?'                            => 'listing.annual_net_income',
         'How many units does this property have?'                   => 'listing.total_units',
         'How many buildings are on this property?'                  => 'listing.total_buildings',
         'What is the unit mix?'                                     => 'listing.unit_mix_summary',
@@ -70,10 +75,6 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
     private const PHRASE_TO_KEY = [
         'gross annual income'                   => 'listing.gross_annual_income',
         'total annual rent collected'           => 'listing.gross_annual_income',
-        'annual net income'                     => 'listing.annual_net_income',
-        'net operating income amount'           => 'listing.annual_net_income',
-        'cap rate'                              => 'listing.cap_rate',
-        'capitalization rate for this property' => 'listing.cap_rate',
         'annual operating expenses'             => 'listing.annual_operating_expenses',
         'total annual expenses'                 => 'listing.annual_operating_expenses',
         'how many units'                        => 'listing.total_units',
@@ -97,6 +98,31 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
         'income requirement'                            => 'listing.min_income_requirement',
         'minimum income required'                       => 'listing.min_income_requirement',
         'what income is required'                       => 'listing.min_income_requirement',
+    ];
+
+    /**
+     * P0.2 — listing routes removed because they answered from the seller's desired
+     * minimum (minimum_annual_net_income / minimum_cap_rate) as if it were the property's
+     * actual figure. None may exist in LISTING_KEY_KEYWORD_MAP.
+     */
+    private const REMOVED_SELLER_MINIMUM_ROUTES = [
+        'listing.annual_net_income',
+        'listing.cap_rate',
+        'listing.annual_noi',
+    ];
+
+    /**
+     * Questions (the former acceptance cases and phrase fixtures for the removed routes)
+     * that must not resolve to any removed listing route.
+     */
+    private const REMOVED_ROUTE_QUESTIONS = [
+        'What is the cap rate?',
+        'What is the annual net income?',
+        'annual net income',
+        'net operating income amount',
+        'noi amount',
+        'cap rate',
+        'capitalization rate for this property',
     ];
 
     // -------------------------------------------------------------------------
@@ -287,6 +313,41 @@ class AskAiIncomeKeywordRoutingTest extends TestCase
             array_keys(self::ACCEPTANCE_ROUTING),
             array_values(self::ACCEPTANCE_ROUTING)
         );
+    }
+
+    // =========================================================================
+    // Case E2 — P0.2: the removed seller-minimum listing routes stay removed, and
+    //            the questions that used to reach them reach no listing route.
+    // =========================================================================
+
+    public function test_case_E2_removed_seller_minimum_routes_are_absent_from_listing_key_keyword_map(): void
+    {
+        $map = $this->getListingKeyKeywordMap();
+
+        foreach (self::REMOVED_SELLER_MINIMUM_ROUTES as $key) {
+            $this->assertArrayNotHasKey($key, $map,
+                "Removed route '{$key}' must not be in LISTING_KEY_KEYWORD_MAP (seller-minimum misrepresentation)");
+        }
+    }
+
+    /**
+     * @dataProvider removedRouteQuestionProvider
+     */
+    public function test_case_E2_question_does_not_route_to_a_removed_listing_key(string $question): void
+    {
+        $listingKey = $this->callDetectListingFieldKey($question);
+
+        $this->assertNotContains(
+            $listingKey,
+            self::REMOVED_SELLER_MINIMUM_ROUTES,
+            "Question '{$question}' must not route to a removed seller-minimum listing key, got "
+                . var_export($listingKey, true)
+        );
+    }
+
+    public static function removedRouteQuestionProvider(): array
+    {
+        return array_map(static fn(string $q) => [$q], self::REMOVED_ROUTE_QUESTIONS);
     }
 
     // =========================================================================

@@ -155,8 +155,23 @@ class SellerListingLoader
                 'annual_property_taxes'     => $infoGet('annual_property_taxes'),
                 'building_sqft'             => $infoGet('total_square_feet'),
                 'ceiling_height'            => $infoGet('ceiling_height'),
-                'annual_noi'                => $infoGet('minimum_annual_net_income'),
-                'cap_rate'                  => $infoGet('minimum_cap_rate'),
+                // P0.1 — 'annual_noi' and 'cap_rate' are REMOVED.
+                //
+                // They read 'minimum_annual_net_income' and 'minimum_cap_rate', which are the
+                // seller's DESIRED MINIMUM figures — their walk-away threshold — not the
+                // property's actual NOI or cap rate. Emitting them under those names both
+                // disclosed a negotiating floor and stated a wrong number as fact.
+                //
+                // This is the same defect P0 removed from AskAiContextBuilderService's
+                // CANONICAL_SOURCE_MAP; it survived there because this loader is a SECOND,
+                // independent context pipeline (Agent AI V2) that does not pass through that
+                // map. This loader's scope is PublicListingSeller and the routes that reach it
+                // carry no auth middleware, so the exposure here was the wider of the two.
+                //
+                // There is no actual-NOI and no actual-cap-rate field on a seller listing.
+                // Do not re-add either key with a substituted source: if we do not hold a
+                // verified actual figure, the assistant must not supply one. The seller's own
+                // minimums remain available to the owner under their honest names elsewhere.
                 'price_per_sqft'            => $infoGet('price_per_sqft'),
                 'existing_lease_type'       => $infoGet('existing_lease_type'),
                 'lease_expiration'          => $infoGet('lease_expiration'),

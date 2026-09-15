@@ -593,15 +593,23 @@ class AskAiSnapshotBuilderTest extends TestCase
         ];
 
         foreach ($restrictedKeys as $key) {
-            $this->assertEquals('restricted', SnapshotFactVisibility::classify($key),
+            // Restricted is role-independent — a compliance key is restricted everywhere.
+            $this->assertEquals('restricted', SnapshotFactVisibility::classify($key, 'landlord'),
                 "Key '{$key}' should be classified as 'restricted'.");
         }
 
+        // P0 — visibility is now an explicit allow-list, and the ROLE is part of the
+        // question: an ordinary property fact is public on a seller/landlord listing and
+        // owner-only on buyer/tenant criteria (decision D2). classify() with no role
+        // fails closed.
         $publicKeys = ['address', 'bedrooms', 'bathrooms', 'description', 'asking_price'];
 
         foreach ($publicKeys as $key) {
-            $this->assertEquals('public_allowed', SnapshotFactVisibility::classify($key),
-                "Key '{$key}' should be classified as 'public_allowed'.");
+            $this->assertEquals('public_allowed', SnapshotFactVisibility::classify($key, 'seller'),
+                "Key '{$key}' should be classified as 'public_allowed' for a seller listing.");
+
+            $this->assertEquals('owner_only', SnapshotFactVisibility::classify($key),
+                "Key '{$key}' must fail closed to 'owner_only' when no role is supplied.");
         }
 
         // --- Part 2: Integration — restricted key stored with correct visibility ---

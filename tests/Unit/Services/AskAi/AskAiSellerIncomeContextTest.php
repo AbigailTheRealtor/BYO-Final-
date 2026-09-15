@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\AskAi;
 
 use App\Services\AskAi\AskAiContextBuilderService;
+use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Services\Dna\PropertyIntelligenceProfileService;
 use App\Services\LocationDna\LocationDnaIntelligenceContextService;
 use App\Services\LocationDna\LocationDnaMarketingContextService;
@@ -22,8 +23,8 @@ use PHPUnit\Framework\TestCase;
  * EAV key → context key mapping under test:
  *   gross_annual_income           → listing.gross_annual_income
  *   annual_operating_expenses     → listing.annual_operating_expenses
- *   minimum_annual_net_income     → listing.annual_net_income
- *   minimum_cap_rate              → listing.cap_rate
+ *   minimum_annual_net_income     → listing.minimum_annual_net_income (owner-only; never annual_net_income)
+ *   minimum_cap_rate              → listing.minimum_cap_rate          (owner-only; never cap_rate)
  *   unit_number                   → listing.total_units
  *   unit_buildings                → listing.total_buildings
  *   rent_roll_available           → listing.rent_roll_available
@@ -184,10 +185,16 @@ class AskAiSellerIncomeContextTest extends TestCase
     }
 
     // =========================================================================
-    // annual_net_income (EAV key: minimum_annual_net_income)
+    // P0.2 — minimum_annual_net_income is NOT the property's annual net income
+    //
+    // These tests used to require minimum_annual_net_income → listing.annual_net_income and
+    // minimum_cap_rate → listing.cap_rate. Those EAV keys hold the seller's DESIRED MINIMUM
+    // (their walk-away figure), not the property's actual NOI or cap rate; the aliases were
+    // removed in P0 and must stay removed. The minimums survive only under their own names,
+    // and those names are owner-only facts.
     // =========================================================================
 
-    public function test_annual_net_income_appears_in_seller_listing_context(): void
+    public function test_minimum_annual_net_income_is_not_aliased_to_annual_net_income(): void
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
@@ -196,16 +203,21 @@ class AskAiSellerIncomeContextTest extends TestCase
 
         $result = $service->buildForListing('seller', 1);
 
-        $this->assertArrayHasKey('annual_net_income', $result['listing'],
-            'listing context must include annual_net_income (from minimum_annual_net_income EAV key)');
-        $this->assertSame('75000', $result['listing']['annual_net_income']);
+        $this->assertArrayNotHasKey('annual_net_income', $result['listing'],
+            'the seller minimum must never be presented as the property annual_net_income');
+        $this->assertArrayNotHasKey('annual_noi', $result['listing'],
+            'the seller minimum must never be presented as the property annual_noi');
+        $this->assertNotContains('75000', array_diff_key($result['listing'], ['minimum_annual_net_income' => true]),
+            'the seller minimum value must not surface under any other listing key');
+
+        $this->assertArrayHasKey('minimum_annual_net_income', $result['listing']);
+        $this->assertSame('75000', $result['listing']['minimum_annual_net_income']);
+        $this->assertSame(SnapshotFactVisibility::OWNER_ONLY,
+            SnapshotFactVisibility::classify('minimum_annual_net_income', 'seller'),
+            'the seller minimum is an owner-only fact, never public');
     }
 
-    // =========================================================================
-    // cap_rate (EAV key: minimum_cap_rate)
-    // =========================================================================
-
-    public function test_cap_rate_appears_in_seller_listing_context(): void
+    public function test_minimum_cap_rate_is_not_aliased_to_cap_rate(): void
     {
         $service = $this->makeService();
         $service->method('findListing')->willReturn(
@@ -214,9 +226,16 @@ class AskAiSellerIncomeContextTest extends TestCase
 
         $result = $service->buildForListing('seller', 1);
 
-        $this->assertArrayHasKey('cap_rate', $result['listing'],
-            'listing context must include cap_rate (from minimum_cap_rate EAV key)');
-        $this->assertSame('6.5', $result['listing']['cap_rate']);
+        $this->assertArrayNotHasKey('cap_rate', $result['listing'],
+            'the seller minimum must never be presented as the property cap_rate');
+        $this->assertNotContains('6.5', array_diff_key($result['listing'], ['minimum_cap_rate' => true]),
+            'the seller minimum value must not surface under any other listing key');
+
+        $this->assertArrayHasKey('minimum_cap_rate', $result['listing']);
+        $this->assertSame('6.5', $result['listing']['minimum_cap_rate']);
+        $this->assertSame(SnapshotFactVisibility::OWNER_ONLY,
+            SnapshotFactVisibility::classify('minimum_cap_rate', 'seller'),
+            'the seller minimum is an owner-only fact, never public');
     }
 
     // =========================================================================
@@ -462,8 +481,10 @@ class AskAiSellerIncomeContextTest extends TestCase
         $incomeKeys = [
             'gross_annual_income',
             'annual_operating_expenses',
-            'annual_net_income',
-            'cap_rate',
+            // P0.2 — the seller minimums, under their own names. 'annual_net_income' and
+            // 'cap_rate' are no longer context keys at all (see the absence test below).
+            'minimum_annual_net_income',
+            'minimum_cap_rate',
             'total_units',
             'total_buildings',
             'rent_roll_available',
@@ -483,6 +504,11 @@ class AskAiSellerIncomeContextTest extends TestCase
                 "Income key '{$key}' must always be present in seller context (even when null)");
             $this->assertNull($listing[$key],
                 "Income key '{$key}' must be null when the EAV meta is absent");
+        }
+
+        foreach (['annual_net_income', 'annual_noi', 'cap_rate'] as $removedAlias) {
+            $this->assertArrayNotHasKey($removedAlias, $listing,
+                "Removed seller-minimum alias '{$removedAlias}' must not be a seller context key");
         }
     }
 }

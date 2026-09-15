@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Support\Safeguards\ProductionDatabaseRefused;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +22,10 @@ class LocationDnaSellerSeeder extends Seeder
 {
     public function run(): void
     {
+        // Creates a factory user and a test listing. Throws rather than skipping, because the
+        // manual workflow above continues with the printed listing id.
+        ProductionDatabaseRefused::unlessSafe(static::class, 'php artisan db:seed --class=LocationDnaSellerSeeder');
+
         $stateId = $this->ensureState('FL', 'Florida');
         $cityId  = $this->ensureCity('Tampa', $stateId);
 

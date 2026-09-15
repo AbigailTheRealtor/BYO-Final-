@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RefusesProductionDatabase;
 use App\Models\PropertyLocationDna;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
 use App\Services\LocationDna\LocationDnaPoiTileCache;
+use App\Support\Safeguards\ProductionDatabaseGuard;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -23,6 +25,8 @@ use Throwable;
  */
 class LdnaBenchmarkTilePrecision extends Command
 {
+    use RefusesProductionDatabase;
+
     protected $signature = 'ldna:benchmark-tile-precision
         {--listing-ids= : Comma-separated listing IDs to benchmark (format: type:id e.g. seller_agent_auction:5)}
         {--listing-type=seller_agent_auction : Listing type to use when IDs are bare integers}
@@ -34,6 +38,12 @@ class LdnaBenchmarkTilePrecision extends Command
 
     public function handle(): int
     {
+        // A benchmark: it flushes the POI tile cache and re-runs POI lookups per listing.
+        // Not a production operation, so there is no override.
+        if ($this->refusesProductionDatabase()) {
+            return ProductionDatabaseGuard::EXIT_REFUSED;
+        }
+
         $listingPairs = $this->resolveListingPairs();
 
         if (empty($listingPairs)) {

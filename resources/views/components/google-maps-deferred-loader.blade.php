@@ -29,7 +29,8 @@
 ])
 
 @php
-    $mapsKey = \App\Support\Google\GoogleCredential::value();
+    /* The BROWSER credential, never the server key: App\Support\Google\GoogleBrowserMaps. */
+    $mapsKey = \App\Support\Google\GoogleBrowserMaps::keyForRender();
 @endphp
 
 @if($mapsKey !== '')

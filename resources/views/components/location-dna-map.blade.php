@@ -217,7 +217,9 @@
   }
 
   $componentId = 'ldna-display-' . uniqid();
-  $mapsKey     = config('services.google.places_key', '');
+  /* The BROWSER credential, never the server key. This component renders on PUBLIC
+     listing pages, so the key it emits is readable by anyone: App\Support\Google\GoogleBrowserMaps. */
+  $mapsKey     = \App\Support\Google\GoogleBrowserMaps::keyForRender();
 
   /* ── Phase 2: renderer selection for the read-only display surface ──────────
    * One gate, asked once. `display` is a single surface key for all four roles on

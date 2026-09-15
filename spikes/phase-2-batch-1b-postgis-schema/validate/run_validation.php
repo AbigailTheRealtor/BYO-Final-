@@ -19,9 +19,9 @@ $root = dirname(__DIR__, 3);
 require $root . '/vendor/autoload.php';
 require_once $root . '/tests/Support/Spatial/ExplainPlanShape.php';
 
-/** @var \Illuminate\Foundation\Application $app */
-$app = require $root . '/bootstrap/app.php';
-$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+// Refuses to run against the production database. See App\Support\Safeguards\ManualScriptBootstrap.
+// The APP_ENV check below predates it and is kept.
+$app = \App\Support\Safeguards\ManualScriptBootstrap::boot(__FILE__);
 
 use Illuminate\Support\Facades\DB;
 use Tests\Support\Spatial\ExplainPlanShape;

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RefusesProductionDatabase;
 use App\Jobs\MaterializeMatchesForSubject;
 use App\Services\Dna\Relevance\MatchingV2Service;
 use App\Services\Dna\Relevance\Persistence\MatchResultPersister;
@@ -26,6 +27,8 @@ use Illuminate\Console\Command;
  */
 class MatchingMaterialize extends Command
 {
+    use RefusesProductionDatabase;
+
     private const SUPPORTED = ['seller_agent', 'landlord_agent', 'buyer_agent', 'tenant_agent'];
     private const EXIT_REFUSED = 2;
 
@@ -47,6 +50,11 @@ class MatchingMaterialize extends Command
         // --- guard 1: staging/dev only, never overridable ---
         if ($this->getLaravel()->environment('production')) {
             $this->error('matching:materialize writes and refuses to run in production.');
+            return self::EXIT_REFUSED;
+        }
+
+        // --- guard 1b: APP_ENV alone is not the database; check what the connection resolves to ---
+        if ($this->refusesProductionDatabase()) {
             return self::EXIT_REFUSED;
         }
 

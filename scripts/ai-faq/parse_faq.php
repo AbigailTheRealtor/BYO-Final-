@@ -1,4 +1,5 @@
 <?php
+// @manual-script-guard not-applicable: formats the static config/ai_faq_*.php arrays; never loads Laravel or opens a database connection.
 $roles = ['seller'=>'ai_faq_seller','buyer'=>'ai_faq_buyer','landlord'=>'ai_faq_landlord','tenant'=>'tenant_ai_faq'];
 $grand=0;
 $byRoleType=[];

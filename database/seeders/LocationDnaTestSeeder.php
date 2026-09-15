@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\Safeguards\ProductionDatabaseRefused;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -19,6 +20,9 @@ class LocationDnaTestSeeder extends Seeder
 {
     public function run(): void
     {
+        // Writes test criteria for hard-coded user and record ids. Never production.
+        ProductionDatabaseRefused::unlessSafe(static::class, 'php artisan db:seed --class=LocationDnaTestSeeder');
+
         $now = Carbon::now();
 
         $buyerLdna = json_encode([
