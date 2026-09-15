@@ -971,6 +971,66 @@ absent from the shipped renderer. The renderer is a **static asset**, not a Mix 
 part of `app.js`: it has no imports, so compiling it would buy nothing and couple `/explore`
 to a build.
 
+### Smart Tags (Phase 1 foundation — inert)
+
+**One governed taxonomy of property characteristics, shared by every listing source.** Bridge rows,
+native Seller and Landlord Offer Listings, and (later) Buyer/Tenant preferences all use the same
+canonical keys (`private_pool`, `quartz_countertops`, `loading_dock`, `cleared_land`, …). There is no
+MLS, Seller, Landlord, Buyer or Tenant vocabulary. **One key, one meaning**: a phrase that means
+different things by property type becomes separate keys with disjoint contexts (`turnkey_home` /
+`turnkey_business`, `fenced_yard` / `fenced_lot`). Governance: `docs/smart-tags/SMART_TAGS_GOVERNANCE.md`.
+
+**Nothing calls it yet.** No import, sync or save hook, no command, no UI, no search change.
+`SmartTagArchitectureGuardTest` asserts that nothing outside `app/{Services,Support}/SmartTags` references
+the derivation, writer or purger services, and that Bridge import, ListingImport, Stellar matching,
+Explore, Location DNA, DNA and Livewire code do not mention Smart Tags.
+
+**Config is the taxonomy, read only through `SmartTagConfig`.** `config/smart_tags.php` declares each
+tag's contexts, surfaces (`mls_derivable`, `native_derivable`, `owner_selectable`, `seeker_selectable`,
+`public_display`, `negatable`), conflicts and compliance status; `config/smart_tag_sources.php` holds the
+source rules, shared value dictionaries, description phrases and forbidden source keys. Rules can only
+emit declared keys, and the derivability flags must match the rules (tested). The prohibited-concept
+patterns live in code (`SmartTagComplianceGuard`) so a config edit cannot relax them. The pure classes
+(taxonomy, policy, derivers, parser) answer without a booted container, like `LandlordScreeningPolicy`.
+
+**Seven contexts, resolved exactly and fail-closed** (`SmartTagContextResolver`): `residential.sale`,
+`income.sale`, `commercial.sale`, `business.sale`, `land.sale`, `residential.lease`, `commercial.lease`.
+Native transactions come from the ROLE — never `PropertyTypeVocabulary`, whose `classifySource()` reads
+`Residential Property` as a sale. An unknown property type has no context and receives no tags.
+
+**Storage is shared, `(listing_type, listing_id)`, from one registry.** `SmartTagListingType` is the only
+producer of `bridge` (= `bridge_properties.id`), `seller_agent`, `landlord_agent` — never `seller` /
+`landlord`, which already mean different tables in different subsystems. Native rows are Offer Listings
+only. `smart_tag_evidence` holds one row per listing × tag × **source**; `smart_tag_assignments` holds the
+**one** resolved row per listing × tag that matching will read; `smart_tag_derivation_states` holds
+change-detection hashes; `smart_tag_manual_events` is append-only. `smart_tag_preferences` is reserved
+for the Buyer/Tenant phase and not created.
+
+**Sources and precedence**: `structured_mls` > `structured_native_listing` > `manual_listing_owner` >
+`mls_remarks` / `native_listing_description`. **Unknown is the absence of a row.** Only a structured source
+reading an explicit "No" on a negatable tag records `absent`; a description, an unmentioned feature, a
+checklist omission, or an owner deselection never does. Re-deriving one source replaces only that
+source's evidence, so it can never erase an owner's selections.
+
+**Manual owner tags** go through `ManualSmartTagWriter`: owner of a non-archived Offer Listing only
+(`HireAgentProposalAccess::isListingOwner` + `ListingWorkflowResolver`), context from the STORED property
+type, projected by `SmartTagSelectionPolicy` (canonical, applicable, owner-selectable, not pending review).
+A tag the listing's own authoritative Yes/No field already answers is refused — the owner edits Property
+Details. Deselection means unknown.
+
+**Descriptions are parsed deterministically, never by AI.** The native description is meta
+`additional_details` for both roles; Landlord prose is read only through
+`LandlordProviderTextPolicy::displayValue()`. Screening, approval, pet/breed, clientele, compatibility,
+broker and `other_*` / `custom_*` fields are forbidden sources. **MLS PublicRemarks is licence-RESTRICTED
+and not processed**: `SmartTagDerivationService::MLS_REMARKS_PROCESSING_APPROVED` and
+`SmartTagEvidenceWriter::MLS_REMARKS_PERSISTENCE_APPROVED` are `false`, and flipping either is a reviewed
+code change after a licensing decision.
+
+**Fair Housing**: no tag describes people, protected classes, demographics or neighbourhood quality;
+55+/62+ stays a compliance gate (`leasing_55_plus` and `SeniorCommunityYN` are not sources); accessibility
+and playground are owner-describable but not seeker-selectable; `pets_allowed` carries the
+assistance-animal notice; proximity is Location DNA; ranges and terms stay structured criteria.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.
