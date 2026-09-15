@@ -290,9 +290,12 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
             $section = $this->section($this->sellerPage($listing), 'seller');
 
             $this->assertNotSame('', $section);
-            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Seller Financing', 'Short Sale', 'flood', '6.125'] as $leak) {
+            // Batch 2b: the offered financing TYPE is now published deliberately
+            // ("Seller Financing" may appear); its TERMS — here the interest rate — never are.
+            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Short Sale', 'flood', '6.125', 'interest'] as $leak) {
                 $this->assertStringNotContainsStringIgnoringCase($leak, $section, "'{$leak}' must never appear in the public questions.");
             }
+            $this->assertStringContainsString('The seller has indicated they will consider the following financing type: Seller Financing.', $section);
         }
     }
 

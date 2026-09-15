@@ -6,15 +6,15 @@ use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\Listing\ListingPriceDisplay;
 
 /**
- * AskAiPublicPropertyQuestionService — "Questions About This Property" (Batch 1)
+ * AskAiPublicPropertyQuestionService — "Questions About This Property" (Batches 1, 2b)
  *
  * GOVERNANCE BLOCK:
  * ==================================================================================
  * ROLE: Turns the approved catalog in
  * AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() into verified,
- * precomputed question/answer pairs for the PUBLIC Seller and Landlord listing pages.
- * Every answer is a fixed sentence built from one listing value the page already
- * assembled into its Ask AI chip context.
+ * precomputed question/answer pairs for the PUBLIC Seller and Landlord listing pages,
+ * rendered in the Ask AI card. Every answer is a fixed sentence built from structured
+ * listing values the page already assembled into its Ask AI chip context.
  *
  * This service MUST NEVER:
  *   - Call a language model, the free-text classifier, the intent normaliser, the
@@ -25,34 +25,76 @@ use App\Support\Listing\ListingPriceDisplay;
  *   - Answer from an owner-authored Knowledge Base answer (faq_answers.*). Those remain
  *     owner-only under P0 / P0.1 / P0.2.
  *   - Answer for a buyer or tenant listing. Those are search criteria (decision D2).
- *   - Make any fact public. Visibility is SnapshotFactVisibility's decision alone.
+ *   - Make a fact public that is not already public. Visibility is SnapshotFactVisibility's
+ *     decision, with exactly one narrow exception: PUBLIC_QUESTION_ADMISSIONS names a
+ *     source this surface may restate because the listing page itself already publishes
+ *     it. An admission applies to this surface only — it never touches
+ *     SnapshotFactVisibility, snapshots, the Ask AI redactor or Agent AI.
  * ==================================================================================
  *
  * THE AVAILABILITY RULE (evaluate()) — a question is shown only when ALL hold:
  *   1. its role is seller or landlord, and the entry is in the catalog for that role;
  *   2. source_path is exactly one 'listing.<key>' path, and <key> is a context key the
  *      context builder defines for that role (CANONICAL_SOURCE_MAP);
- *   3. SnapshotFactVisibility::classify(<key>, role) is 'public_allowed' — for the
- *      source AND every supporting path the formatter reads;
+ *   3. SnapshotFactVisibility::classify(<key>, role) is 'public_allowed' for the source
+ *      AND every supporting path — or, for the SOURCE only, the entry is
+ *      source_kind 'admitted_listing' and the key is in PUBLIC_QUESTION_ADMISSIONS;
  *   4. the source value is present and meaningful;
  *   5. the named formatter exists and accepts the value (a formatter returns null for
  *      anything it cannot state exactly, which hides the question);
  *   6. every named guard passes. Guards only ever HIDE — they resolve ambiguity between
  *      the context value and what the page itself publishes, and never expose a value.
- * Anything unrecognised — role, path, key, formatter, guard — fails closed.
+ * Anything unrecognised — role, path, key, source kind, formatter, guard — fails closed.
+ *
+ * META IS READ FOR TWO THINGS ONLY: hide-only guards, and an entry's declared
+ * 'other_companion' — the exact stored selections of the field (the key named in
+ * 'selected_in') and the free-text "Other" value beside it (the key named in 'meta_key').
+ * Both keys are named by the catalog entry; nothing else in $meta is ever read into an
+ * answer. The companion text is used only when "Other" is actually selected, the same
+ * substitution the listing page performs, and only when it is a short, single-line,
+ * non-placeholder value; text that cannot be restated safely hides the whole question.
  */
 class AskAiPublicPropertyQuestionService
 {
     /** Roles whose listings describe a property. Mirrors SnapshotFactVisibility. */
     private const ELIGIBLE_ROLES = ['seller', 'landlord'];
 
-    /** Frequencies with an unambiguous English phrase. Anything else gets no suffix. */
+    /**
+     * Sources this surface may restate although SnapshotFactVisibility keeps them owner-only
+     * for the AI context. Each is already published on the listing page. Used ONLY by
+     * entries declaring source_kind 'admitted_listing', and only as the source_path — never
+     * as a supporting path.
+     */
+    private const PUBLIC_QUESTION_ADMISSIONS = [
+        'seller' => [
+            // The page's "Offered Financing" row and hero badges publish the financing
+            // types (product decision 2026-09-15). Seller-financing TERMS — down payment,
+            // interest rate, term, balloon — stay RESTRICTED and are never read here.
+            'offered_financing' => 'Offered financing types are published on the seller listing page.',
+        ],
+    ];
+
+    /**
+     * Frequencies with an unambiguous English phrase, keyed by the normalised spelling
+     * (lower case, '_' and spaces as '-'), so 'Semi-Annually', 'semi_annually' and
+     * 'semi-annually' all agree. Anything else — 'Bi-Monthly' included, which reads as both
+     * twice a month and every two months — gets no period at all.
+     */
     private const HOA_FREQUENCY_PHRASES = [
         'monthly'       => 'per month',
         'quarterly'     => 'per quarter',
         'semi-annually' => 'every six months',
         'annually'      => 'per year',
     ];
+
+    /** Stored values that say nothing; never published as an answer or an "Other" text. */
+    private const PLACEHOLDER_VALUES = [
+        'other', 'n/a', 'na', 'none', 'unknown', 'tbd', 't.b.d.', 'not applicable',
+        'not available', 'see remarks', 'see private remarks', 'per remarks', '-', '--', '?', '.',
+    ];
+
+    /** Longest free-text value ("Other" text, zoning code) restated verbatim. */
+    private const MAX_VERBATIM_LENGTH = 60;
 
     /** Deterministic range for a plausible construction year. */
     private const YEAR_BUILT_MIN = 1600;
@@ -73,11 +115,17 @@ class AskAiPublicPropertyQuestionService
             return [];
         }
 
+        $catalog = array_filter(
+            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
+            static fn ($entry): bool => is_array($entry) && ($entry['role'] ?? null) === $role
+        );
+        // Display order; usort is stable (PHP 8), so equal orders keep catalog order.
+        $ids = array_keys($catalog);
+        usort($ids, static fn ($a, $b): int => ((int) ($catalog[$a]['order'] ?? PHP_INT_MAX)) <=> ((int) ($catalog[$b]['order'] ?? PHP_INT_MAX)));
+
         $questions = [];
-        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
-            if (($entry['role'] ?? null) !== $role) {
-                continue;
-            }
+        foreach ($ids as $id) {
+            $entry = $catalog[$id];
 
             $result = $this->evaluate($entry, $role, $context, $meta);
             if (!$result['available']) {
@@ -112,8 +160,13 @@ class AskAiPublicPropertyQuestionService
             return $this->hidden('not_in_catalog_for_role');
         }
 
-        // 2 + 3. One exact, defined, public source — and the same for every supporting path.
-        $sourceKey = $this->publicListingKey($entry['source_path'] ?? null, $role);
+        // 2 + 3. One exact, defined, public (or explicitly admitted) source — and every
+        // supporting path public in its own right.
+        $sourceKind = $entry['source_kind'] ?? 'listing';
+        if (!in_array($sourceKind, ['listing', 'admitted_listing'], true)) {
+            return $this->hidden('source_kind_unknown');
+        }
+        $sourceKey = $this->publicListingKey($entry['source_path'] ?? null, $role, $sourceKind === 'admitted_listing');
         if ($sourceKey['reason'] !== null) {
             return $this->hidden($sourceKey['reason']);
         }
@@ -152,12 +205,21 @@ class AskAiPublicPropertyQuestionService
             }
         }
 
+        // The declared "Other" companion, if any: the stored selections and the "Other" text.
+        $companion = $this->companion($entry['other_companion'] ?? null, $meta);
+        if ($companion === false) {
+            return $this->hidden('other_companion_invalid');
+        }
+        if (($companion['unsafe'] ?? false) === true) {
+            return $this->hidden('other_companion_unsafe');
+        }
+
         // 5. A deterministic formatter that accepts this exact value.
         $formatter = (string) ($entry['formatter'] ?? '');
         if (!$this->hasFormatter($formatter)) {
             return $this->hidden('formatter_missing');
         }
-        $answer = $this->format($formatter, $value, $supporting);
+        $answer = $this->format($formatter, $value, $supporting, $companion);
         if ($answer === null) {
             return $this->hidden('formatter_rejected_value');
         }
@@ -170,11 +232,22 @@ class AskAiPublicPropertyQuestionService
     // =========================================================================
 
     /**
-     * Resolve 'listing.<key>' to a key that is defined for the role AND public.
+     * The sources this surface may restate beyond SnapshotFactVisibility's public tier.
+     *
+     * @return array<string, array<string, string>> role => [key => reason]
+     */
+    public static function publicQuestionAdmissions(): array
+    {
+        return self::PUBLIC_QUESTION_ADMISSIONS;
+    }
+
+    /**
+     * Resolve 'listing.<key>' to a key that is defined for the role AND public — or, when
+     * $allowAdmission is set (an 'admitted_listing' source), explicitly admitted.
      *
      * @return array{key: string|null, reason: string|null}
      */
-    private function publicListingKey(mixed $path, string $role): array
+    private function publicListingKey(mixed $path, string $role, bool $allowAdmission = false): array
     {
         if (!is_string($path) || preg_match('/^listing\.([a-z0-9_]+)$/', $path, $m) !== 1) {
             return ['key' => null, 'reason' => 'source_path_invalid'];
@@ -186,11 +259,103 @@ class AskAiPublicPropertyQuestionService
             return ['key' => null, 'reason' => 'source_not_in_context_map'];
         }
 
-        if (SnapshotFactVisibility::classify($key, $role) !== SnapshotFactVisibility::PUBLIC_ALLOWED) {
-            return ['key' => null, 'reason' => 'not_public_allowed'];
+        if (SnapshotFactVisibility::classify($key, $role) === SnapshotFactVisibility::PUBLIC_ALLOWED) {
+            return ['key' => $key, 'reason' => null];
         }
 
-        return ['key' => $key, 'reason' => null];
+        // RESTRICTED keys are never admitted, whatever the admission list says.
+        if (
+            $allowAdmission
+            && SnapshotFactVisibility::classify($key, $role) === SnapshotFactVisibility::OWNER_ONLY
+            && isset(self::PUBLIC_QUESTION_ADMISSIONS[$role][$key])
+        ) {
+            return ['key' => $key, 'reason' => null];
+        }
+
+        return ['key' => null, 'reason' => 'not_public_allowed'];
+    }
+
+    /**
+     * Resolve an entry's declared "Other" companion from meta.
+     *
+     * Returns null when the entry declares none; false when the declaration is malformed;
+     * otherwise the stored selections, the usable "Other" text (null when "Other" is not
+     * selected or its text is blank or a placeholder) and whether that text is unsafe to
+     * restate (too long, multi-line, or — with reject_figures — carrying figures).
+     *
+     * @return array{selections: list<string>, other: string|null, unsafe: bool}|false|null
+     */
+    private function companion(mixed $spec, array $meta): array|false|null
+    {
+        if ($spec === null) {
+            return null;
+        }
+        if (
+            !is_array($spec)
+            || !is_string($spec['selected_in'] ?? null) || preg_match('/^[a-z0-9_]+$/', $spec['selected_in']) !== 1
+            || !is_string($spec['meta_key'] ?? null) || preg_match('/^[a-z0-9_]+$/', $spec['meta_key']) !== 1
+        ) {
+            return false;
+        }
+
+        $selections    = $this->storedSelections($meta[$spec['selected_in']] ?? null);
+        $otherSelected = in_array('other', array_map('strtolower', $selections), true);
+
+        $other  = null;
+        $unsafe = false;
+        if ($otherSelected) {
+            $raw = $meta[$spec['meta_key']] ?? null;
+            $text = is_scalar($raw) && !is_bool($raw) ? (string) $raw : '';
+            $verdict = $this->verbatim($text, (bool) ($spec['reject_figures'] ?? false));
+            if ($verdict === false) {
+                $unsafe = true;
+            } else {
+                $other = $verdict;
+            }
+        }
+
+        return ['selections' => $selections, 'other' => $other, 'unsafe' => $unsafe];
+    }
+
+    /** A stored multi-select (JSON array) or single value, as trimmed, non-empty strings. */
+    private function storedSelections(mixed $raw): array
+    {
+        if (is_array($raw)) {
+            $items = $raw;
+        } elseif (is_string($raw) && trim($raw) !== '') {
+            $decoded = json_decode($raw, true);
+            $items   = is_array($decoded) ? $decoded : [$raw];
+        } else {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map(static fn ($v): string => is_scalar($v) && !is_bool($v) ? trim((string) $v) : '', $items),
+            static fn (string $v): bool => $v !== ''
+        ));
+    }
+
+    /**
+     * A free-text value that may be restated word for word.
+     *
+     * @return string|null|false  string = usable; null = blank or placeholder (nothing to say);
+     *                            false = present but unsafe to restate
+     */
+    private function verbatim(string $text, bool $rejectFigures = false): string|null|false
+    {
+        $clean = trim(preg_replace('/[ \t]+/', ' ', $text) ?? '');
+        if ($clean === '' || in_array(strtolower($clean), self::PLACEHOLDER_VALUES, true)) {
+            return null;
+        }
+        if (
+            preg_match('/[\r\n\x00-\x1F\x7F]/', $clean) === 1
+            || mb_strlen($clean) > self::MAX_VERBATIM_LENGTH
+            || ($rejectFigures && preg_match('/[0-9%$]/', $clean) === 1)
+        ) {
+            return false;
+        }
+
+        return $clean;
     }
 
     private function listingValue(array $context, string $key): mixed
@@ -262,30 +427,55 @@ class AskAiPublicPropertyQuestionService
             'asking_price', 'bedroom_count', 'bathroom_count', 'heated_square_feet', 'year_built',
             'annual_property_taxes', 'hoa_fee', 'acreage_band', 'appliance_list', 'utility_list',
             'pets_allowed',
+            // Batch 2b
+            'has_pool', 'has_garage', 'zoning', 'roof_type_list', 'leasing_restrictions',
+            'community_amenity_list', 'financing_types',
         ], true);
     }
 
-    /** @param array<string,mixed> $supporting */
-    private function format(string $formatter, mixed $value, array $supporting): ?string
+    /**
+     * @param array<string,mixed>                                                   $supporting
+     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null $companion
+     */
+    private function format(string $formatter, mixed $value, array $supporting, ?array $companion = null): ?string
     {
         if (!is_scalar($value)) {
             return null;
         }
         $text = trim((string) $value);
 
+        // Seller and landlord name the same HOA facts differently in context.
+        $hasHoa = $supporting['hoa_association'] ?? $supporting['has_hoa'] ?? null;
+
         return match ($formatter) {
-            'asking_price'          => $this->withMoney($text, fn (string $m) => "The asking price is {$m}."),
-            'bedroom_count'         => $this->bedrooms($text),
-            'bathroom_count'        => $this->bathrooms($text),
-            'heated_square_feet'    => $this->heatedSquareFeet($text),
-            'year_built'            => $this->yearBuilt($text),
-            'annual_property_taxes' => $this->annualTaxes($text, $supporting['tax_year'] ?? null),
-            'hoa_fee'               => $this->hoaFee($text, $supporting['hoa_association'] ?? null, $supporting['hoa_payment_schedule'] ?? null),
-            'acreage_band'          => $this->acreageBand($text),
-            'appliance_list'        => $this->list($text, 'Appliances listed for this property'),
-            'utility_list'          => $this->list($text, 'Utilities listed for this property'),
-            'pets_allowed'          => $this->petsAllowed($text),
-            default                 => null,
+            'asking_price'           => $this->withMoney($text, fn (string $m) => "The asking price is {$m}."),
+            'bedroom_count'          => $this->bedrooms($text),
+            'bathroom_count'         => $this->bathrooms($text),
+            'heated_square_feet'     => $this->heatedSquareFeet($text),
+            'year_built'             => $this->yearBuilt($text),
+            'annual_property_taxes'  => $this->annualTaxes($text, $supporting['tax_year'] ?? null),
+            'hoa_fee'                => $this->hoaFee(
+                                            $text,
+                                            $hasHoa,
+                                            $supporting['hoa_payment_schedule'] ?? $supporting['association_fee_frequency'] ?? null,
+                                            $companion['other'] ?? null
+                                        ),
+            'acreage_band'           => $this->acreageBand($text),
+            'appliance_list'         => $this->list($text, 'Appliances listed for this property'),
+            'utility_list'           => $this->list($text, 'Utilities listed for this property'),
+            'pets_allowed'           => $this->petsAllowed($text),
+            'has_pool'               => $this->yesNo($text, 'This property has a pool.', 'This property does not have a pool.'),
+            'has_garage'             => $this->yesNo($text, 'This property has a garage.', 'This property does not have a garage.'),
+            'zoning'                 => $this->zoning($text),
+            'roof_type_list'         => $this->selectionList($companion, 'Roof type listed for this property', 'Roof types listed for this property'),
+            'community_amenity_list' => $this->hoaOnly($hasHoa, fn () => $this->selectionList($companion, 'Community amenity listed for this property', 'Community amenities listed for this property')),
+            'leasing_restrictions'   => $this->hoaOnly($hasHoa, fn () => $this->yesNo(
+                                            $text,
+                                            'The listing indicates there are leasing restrictions.',
+                                            'The listing indicates there are no leasing restrictions.'
+                                        )),
+            'financing_types'        => $this->financingTypes($companion),
+            default                  => null,
         };
     }
 
@@ -347,20 +537,132 @@ class AskAiPublicPropertyQuestionService
      * Only published when the listing currently says it HAS an HOA: an amount left behind
      * after the seller answered "No" or "Unknown" is a stale child value, not a fee.
      */
-    private function hoaFee(string $text, mixed $hasHoa, mixed $frequency): ?string
+    private function hoaFee(string $text, mixed $hasHoa, mixed $frequency, ?string $frequencyOther): ?string
     {
-        if (!is_scalar($hasHoa) || strtolower(trim((string) $hasHoa)) !== 'yes') {
+        if (!$this->isYes($hasHoa)) {
             return null;
         }
 
-        return $this->withMoney($text, function (string $money) use ($frequency): string {
-            $key    = is_scalar($frequency) ? strtolower(trim((string) $frequency)) : '';
-            $phrase = self::HOA_FREQUENCY_PHRASES[$key] ?? null;
+        return $this->withMoney($text, function (string $money) use ($frequency, $frequencyOther): string {
+            $key = is_scalar($frequency) && !is_bool($frequency)
+                ? (string) preg_replace('/[\s_]+/', '-', strtolower(trim((string) $frequency)))
+                : '';
 
-            return $phrase !== null
-                ? "The HOA fee is {$money} {$phrase}."
-                : "The HOA fee is {$money}.";
+            if ($key === 'one-time') {
+                return "The HOA fee is a one-time fee of {$money}.";
+            }
+
+            $phrase = self::HOA_FREQUENCY_PHRASES[$key] ?? null;
+            if ($phrase !== null) {
+                return "The HOA fee is {$money} {$phrase}.";
+            }
+
+            // "Other" with the owner's own frequency text: restated as written, never
+            // reinterpreted into a period.
+            if ($key === 'other' && $frequencyOther !== null) {
+                return "The HOA fee is {$money} (frequency: {$frequencyOther}).";
+            }
+
+            return "The HOA fee is {$money}.";
         });
+    }
+
+    private function isYes(mixed $value): bool
+    {
+        return is_scalar($value) && !is_bool($value) && strtolower(trim((string) $value)) === 'yes';
+    }
+
+    /** Exactly "Yes" or "No" (any case); anything else — Unknown, Not Applicable, Optional — hides. */
+    private function yesNo(string $text, string $yes, string $no): ?string
+    {
+        return match (strtolower($text)) {
+            'yes'   => $yes,
+            'no'    => $no,
+            default => null,
+        };
+    }
+
+    /**
+     * Facts the page publishes only inside its HOA / Association block — leasing restrictions
+     * and community amenities — are published only while the listing says it HAS an HOA.
+     *
+     * @param callable(): ?string $answer
+     */
+    private function hoaOnly(mixed $hasHoa, callable $answer): ?string
+    {
+        return $this->isYes($hasHoa) ? $answer() : null;
+    }
+
+    /** A zoning designation, restated word for word when it is short, single-line and real. */
+    private function zoning(string $text): ?string
+    {
+        $value = $this->verbatim($text);
+
+        return is_string($value) ? "The zoning is listed as {$value}." : null;
+    }
+
+    /**
+     * A multi-select answered from its stored selections: "Other" becomes the owner's "Other"
+     * text when that text is usable and is dropped otherwise; placeholders are dropped.
+     *
+     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null $companion
+     */
+    private function selectionItems(?array $companion): array
+    {
+        if ($companion === null) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($companion['selections'] as $selection) {
+            if (strtolower($selection) === 'other') {
+                if ($companion['other'] !== null) {
+                    $items[] = $companion['other'];
+                }
+                continue;
+            }
+            $value = $this->verbatim($selection);
+            if (is_string($value)) {
+                $items[] = $value;
+            }
+        }
+
+        return array_values(array_unique($items));
+    }
+
+    /** @param array{selections: list<string>, other: string|null, unsafe: bool}|null $companion */
+    private function selectionList(?array $companion, string $singular, string $plural): ?string
+    {
+        $items = $this->selectionItems($companion);
+        if ($items === []) {
+            return null;
+        }
+
+        return (count($items) === 1 ? $singular : $plural) . ': ' . implode(', ', $items) . '.';
+    }
+
+    /**
+     * The financing types the seller will consider, exactly as selected. The "Other" text is
+     * read with reject_figures, so a typed rate, amount or percentage hides the question
+     * rather than publishing a financing TERM.
+     *
+     * @param array{selections: list<string>, other: string|null, unsafe: bool}|null $companion
+     */
+    private function financingTypes(?array $companion): ?string
+    {
+        $items = $this->selectionItems($companion);
+        if ($items === []) {
+            return null;
+        }
+
+        if (count($items) === 1) {
+            return "The seller has indicated they will consider the following financing type: {$items[0]}.";
+        }
+
+        $last = array_pop($items);
+
+        return 'The seller has indicated they will consider the following financing types: '
+            . implode(', ', $items) . ' and ' . $last . '.';
     }
 
     /** Only an exact band from the form's own option list; 'Non-Applicable' is not a size. */

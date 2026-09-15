@@ -38,7 +38,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         return ['listing' => $listing, 'faq_answers' => []];
     }
 
-    /** A seller listing whose every Batch 1 question is answerable. */
+    /** A seller listing whose every catalog question (Batch 1 + 2b) is answerable. */
     private function fullSellerContext(): array
     {
         return $this->context([
@@ -55,12 +55,27 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'total_acreage'         => '1/4 to less than 1/2 acre',
             'appliances'            => 'Dishwasher, Range, Refrigerator',
             'utilities'             => 'Electricity Connected, Water Available',
+            // Batch 2b
+            'pets_allowed'          => 'Yes',
+            'pool'                  => 'Yes',
+            'garage'                => 'No',
+            'zoning'                => 'RS-60',
+            'roof_type'             => 'Shingle',
+            'rental_restrictions'   => 'Yes',
+            'offered_financing'     => 'Conventional, FHA, VA, Cash',
         ]);
     }
 
     private function fullSellerMeta(): array
     {
-        return ['bedrooms' => '3', 'bathrooms' => '2.5', 'auction_type' => 'Traditional'];
+        return [
+            'bedrooms'                  => '3',
+            'bathrooms'                 => '2.5',
+            'auction_type'              => 'Traditional',
+            'association_fee_frequency' => 'Monthly',
+            'roof_type'                 => json_encode(['Shingle']),
+            'offered_financing'         => json_encode(['Conventional', 'FHA', 'VA', 'Cash']),
+        ];
     }
 
     private function fullLandlordContext(): array
@@ -71,7 +86,40 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'square_feet' => '950',
             'appliances'  => 'Washer, Dryer',
             'pet_policy'  => 'No',
+            // Batch 2b
+            'year_built'                => '2004',
+            'annual_property_taxes'     => '3120',
+            'tax_year'                  => '2024',
+            'has_hoa'                   => 'Yes',
+            'association_fee_amount'    => '175',
+            'association_fee_frequency' => 'Quarterly',
+            'zoning'                    => 'RM-15',
+            'roof_type'                 => 'Tile, Metal',
+            'leasing_restrictions'      => 'No',
+            'association_amenities'     => 'Clubhouse, Fitness Center',
         ]);
+    }
+
+    private function fullLandlordMeta(): array
+    {
+        return [
+            'association_fee_frequency' => 'Quarterly',
+            'roof_type'                 => json_encode(['Tile', 'Metal']),
+            'association_amenities'     => json_encode(['Clubhouse', 'Fitness Center']),
+        ];
+    }
+
+    /** Catalog ids for a role, in display order. */
+    private function catalogIds(string $role): array
+    {
+        $catalog = array_filter(
+            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
+            fn (array $e) => $e['role'] === $role
+        );
+        $ids = array_keys($catalog);
+        usort($ids, fn ($a, $b) => $catalog[$a]['order'] <=> $catalog[$b]['order']);
+
+        return $ids;
     }
 
     /** @return array<string,string> id => answer */
@@ -100,18 +148,10 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     public function test_every_catalog_question_is_answerable_from_a_complete_listing(): void
     {
         $seller = $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta());
-        $sellerCatalog = array_keys(array_filter(
-            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            fn (array $e) => $e['role'] === 'seller'
-        ));
-        $this->assertSame($sellerCatalog, array_keys($seller));
+        $this->assertSame($this->catalogIds('seller'), array_keys($seller));
 
-        $landlord = $this->answers('landlord', $this->fullLandlordContext(), []);
-        $landlordCatalog = array_keys(array_filter(
-            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            fn (array $e) => $e['role'] === 'landlord'
-        ));
-        $this->assertSame($landlordCatalog, array_keys($landlord));
+        $landlord = $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta());
+        $this->assertSame($this->catalogIds('landlord'), array_keys($landlord));
     }
 
     // ── 2 + 3. Null and blank values hide the question ──────────────────────
@@ -258,14 +298,27 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         $catalog = AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry();
         $this->assertNotEmpty($catalog);
 
+        $admissions = AskAiPublicPropertyQuestionService::publicQuestionAdmissions();
+
         foreach ($catalog as $id => $entry) {
             $this->assertContains($entry['role'], ['seller', 'landlord'], $id);
+            $this->assertContains($entry['source_kind'], ['listing', 'admitted_listing'], $id);
 
-            foreach (array_merge([$entry['source_path']], $entry['supporting_paths']) as $path) {
+            foreach (array_merge([$entry['source_path']], $entry['supporting_paths']) as $i => $path) {
                 $this->assertMatchesRegularExpression('/^listing\.[a-z0-9_]+$/', $path, $id);
                 $key = substr($path, strlen('listing.'));
 
                 $this->assertArrayHasKey($key, AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$entry['role']], "{$id}: {$path}");
+
+                // Batch 2b: an admitted SOURCE is owner_only for the AI context (never
+                // restricted) and named in the public question layer's admission list.
+                // Supporting paths are never admitted.
+                if ($i === 0 && $entry['source_kind'] === 'admitted_listing') {
+                    $this->assertArrayHasKey($key, $admissions[$entry['role']] ?? [], "{$id}: {$path} must be explicitly admitted.");
+                    $this->assertSame(SnapshotFactVisibility::OWNER_ONLY, SnapshotFactVisibility::classify($key, $entry['role']), "{$id}: {$path}");
+                    continue;
+                }
+
                 $this->assertSame(
                     SnapshotFactVisibility::PUBLIC_ALLOWED,
                     SnapshotFactVisibility::classify($key, $entry['role']),
@@ -273,6 +326,9 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
                 );
             }
         }
+
+        // The admission list stays exactly as narrow as decided.
+        $this->assertSame(['seller' => ['offered_financing']], array_map('array_keys', $admissions));
     }
 
     // ── 6. Seller minimums never create public questions ────────────────────
@@ -306,7 +362,11 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         }
 
         foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
-            $paths = implode(' ', array_merge([$entry['source_path']], $entry['supporting_paths']));
+            $paths = implode(' ', array_merge(
+                [$entry['source_path']],
+                $entry['supporting_paths'],
+                array_values($entry['other_companion'] ?? [])
+            ));
             foreach (['minimum', 'cap_rate', 'noi', 'net_income', 'walk_away', 'reserve'] as $needle) {
                 $this->assertStringNotContainsString($needle, $paths, "{$id} must not read {$needle}.");
             }
@@ -365,16 +425,30 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_total_acreage'      => 'The total acreage is 1/4 to less than 1/2 acre.',
             'seller_appliances'         => 'Appliances listed for this property: Dishwasher, Range, Refrigerator.',
             'seller_utilities'          => 'Utilities listed for this property: Electricity Connected, Water Available.',
+            'seller_pets_allowed'       => 'Pets are allowed at this property.',
+            'seller_pool'               => 'This property has a pool.',
+            'seller_garage'             => 'This property does not have a garage.',
+            'seller_zoning'             => 'The zoning is listed as RS-60.',
+            'seller_roof_type'          => 'Roof type listed for this property: Shingle.',
+            'seller_leasing_restrictions' => 'The listing indicates there are leasing restrictions.',
+            'seller_offered_financing'  => 'The seller has indicated they will consider the following financing types: Conventional, FHA, VA and Cash.',
         ];
         $this->assertSame($expected, $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta()));
 
         $this->assertSame([
-            'landlord_bedrooms'           => 'This property has 2 bedrooms.',
-            'landlord_bathrooms'          => 'This property has 1 bathroom.',
-            'landlord_heated_square_feet' => 'The heated square footage is 950 square feet.',
-            'landlord_appliances'         => 'Appliances listed for this property: Washer, Dryer.',
-            'landlord_pets_allowed'       => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
-        ], $this->answers('landlord', $this->fullLandlordContext(), []));
+            'landlord_bedrooms'              => 'This property has 2 bedrooms.',
+            'landlord_bathrooms'             => 'This property has 1 bathroom.',
+            'landlord_heated_square_feet'    => 'The heated square footage is 950 square feet.',
+            'landlord_year_built'            => 'This property was built in 2004.',
+            'landlord_property_taxes'        => 'Annual property taxes are $3,120 for tax year 2024.',
+            'landlord_hoa_fee'               => 'The HOA fee is $175 per quarter.',
+            'landlord_appliances'            => 'Appliances listed for this property: Washer, Dryer.',
+            'landlord_pets_allowed'          => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
+            'landlord_zoning'                => 'The zoning is listed as RM-15.',
+            'landlord_roof_type'             => 'Roof types listed for this property: Tile, Metal.',
+            'landlord_leasing_restrictions'  => 'The listing indicates there are no leasing restrictions.',
+            'landlord_association_amenities' => 'Community amenities listed for this property: Clubhouse, Fitness Center.',
+        ], $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta()));
     }
 
     public function test_formatter_output_is_deterministic(): void

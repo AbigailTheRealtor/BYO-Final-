@@ -27,7 +27,25 @@
 .ask-ai-pq-heading { font-size: .72rem; font-weight: 600; color: #475569; margin-top: -.15rem; }
 /* No inner scroll box: every available question stays visible. A capped, scrolling list hid
    most of a seller's ten questions behind a scrollbar that macOS and touch devices do not show. */
-.ask-ai-pq-list { display: flex; flex-direction: column; gap: .3rem; }
+.ask-ai-pq-list { display: grid; grid-template-columns: 1fr; gap: .3rem .5rem; align-items: start; }
+
+/* Full-width row. In a grid cell this card's height (up to 17 questions) stretched every
+   Quick Action card in its row and pushed their buttons far from their headings. From 480px
+   it spans the whole grid; from 768px, where the grid has 3+ columns, it also sits after the
+   other quick actions so it never leaves empty cells beside them. Below 480px the grid is a
+   single column already and nothing changes. */
+@media (min-width: 480px) {
+    .sol-view-page #sol-ask-ai-card,
+    .lol-view-page #lol-ask-ai-card { grid-column: 1 / -1; }
+}
+@media (min-width: 768px) {
+    .sol-view-page #sol-ask-ai-card,
+    .lol-view-page #lol-ask-ai-card { order: 99; }
+    .ask-ai-pq-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1200px) {
+    .ask-ai-pq-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .ask-ai-pq-item { border: 1px solid #bfdbfe; border-radius: .5rem; background: #eff6ff; }
 .ask-ai-pq-item[open] { background: #fff; }
 .ask-ai-pq-question {
