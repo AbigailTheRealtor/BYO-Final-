@@ -65,7 +65,7 @@ autosuspend for the run so cold/warm methodology is controlled.
 
 ```bash
 # 1. Configure (locally, gitignored)
-cp env.example .env.local && $EDITOR .env.local        # PROVIDER, TIER, PG* (no password)
+cp env.example .env.local && $EDITOR .env.local        # PROVIDER, TIER, SPIKE_PG* (no password)
 echo 'HOST:PORT:spike:USER:REDACTED' >> ~/.pgpass && chmod 600 ~/.pgpass
 
 # 2. Inspect what would run — offline, no connection, no secrets

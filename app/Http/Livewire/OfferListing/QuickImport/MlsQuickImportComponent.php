@@ -5,6 +5,7 @@ namespace App\Http\Livewire\OfferListing\QuickImport;
 use App\Http\Livewire\Concerns\ResolvesOwnedAuction;
 use App\Http\Livewire\OfferListing\Concerns\ResolvesPropertyCoordinates;
 use App\Http\Livewire\OfferListing\Concerns\StampsBiddingActivation;
+use App\Services\AskAi\AskAiFaqConfigService;
 use App\Services\ListingImport\Media\MlsListingGallerySync;
 use App\Services\ListingImport\Mls\MlsSupplementalDetails;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
@@ -67,11 +68,12 @@ abstract class MlsQuickImportComponent extends Component
     use ResolvesPropertyCoordinates;
     use StampsBiddingActivation;
 
-    public const STEP_LOOKUP  = 'lookup';
-    public const STEP_CONFIRM = 'confirm';
-    public const STEP_METHOD  = 'method';
-    public const STEP_TERMS   = 'terms';
-    public const STEP_REVIEW  = 'review';
+    public const STEP_LOOKUP    = 'lookup';
+    public const STEP_CONFIRM   = 'confirm';
+    public const STEP_METHOD    = 'method';
+    public const STEP_TERMS     = 'terms';
+    public const STEP_KNOWLEDGE = 'knowledge';
+    public const STEP_REVIEW    = 'review';
 
     public string $step = self::STEP_LOOKUP;
 
@@ -106,6 +108,23 @@ abstract class MlsQuickImportComponent extends Component
 
     /** Multi-select answers (financing, lease length), keyed by field name. */
     public array $multiTerms = [];
+
+    /**
+     * Listing AI Knowledge Base answers, keyed by config question key.
+     *
+     * THE SAME PROPERTY THE MANUAL WIZARD DECLARES, bound by the SAME shared
+     * partial, stored under the SAME `listing_ai_faq` meta key. This flow
+     * introduces no knowledge-base vocabulary of its own — see the knowledge
+     * step in the blade, which @includes the manual wizard's own partial rather
+     * than restating a single question.
+     *
+     * CLIENT-WRITABLE, and treated that way. `wire:model.defer` on a public array
+     * means a client may place any key at any path in here, so what reaches meta
+     * is not this property — it is {@see admittedKnowledgeAnswers()}, an
+     * intersection against the questions this role and property type actually
+     * ask. Nothing else in this class may write the blob.
+     */
+    public array $listing_ai_faq = [];
 
     // ── Display state, rebuilt from the owned record on every render ────────
 
@@ -389,6 +408,18 @@ abstract class MlsQuickImportComponent extends Component
             $this->role(),
         );
 
+        // RESUME. materialise() returns the user's EXISTING draft when one is
+        // already open for this MLS number, so re-entering the number is how a
+        // half-finished import is picked back up — and a knowledge base answered
+        // yesterday must still be there today. Read AFTER property_type is
+        // normalised above, because the gate that admits these answers is
+        // property-type-scoped.
+        //
+        // Read through the same admission gate that wrote them: stored bytes are
+        // not automatically trustworthy either, and a row written before a
+        // question was retired must not come back into an editable form.
+        $this->hydrateKnowledgeAnswers($auction);
+
         // Seed the price the user is asking, as a starting point they can change.
         // What may legitimately be seeded is role-specific — see seededPrice() —
         // because the MLS list price means different things on a sale record and
@@ -504,7 +535,15 @@ abstract class MlsQuickImportComponent extends Component
 
     // ─── Step 4 — transaction terms ──────────────────────────────────────────
 
-    public function continueToReview(): void
+    /**
+     * Terms → AI Knowledge Base.
+     *
+     * The required-terms check belongs to THIS transition, because it guards the
+     * terms step's own answers. It is asserted again on the way out of the
+     * knowledge step and again in publish(), so the knowledge step cannot become
+     * a way around it.
+     */
+    public function continueToKnowledge(): void
     {
         $this->errorMessage = '';
 
@@ -527,12 +566,66 @@ abstract class MlsQuickImportComponent extends Component
 
         $this->persistAnswers($auction);
 
+        $this->step = self::STEP_KNOWLEDGE;
+    }
+
+    // ─── Step 5 — AI Knowledge Base ──────────────────────────────────────────
+
+    /**
+     * AI Knowledge Base → Review.
+     *
+     * EVERY QUESTION IS OPTIONAL, so this transition validates nothing about the
+     * answers and an empty knowledge base is a complete one. {@see skipKnowledge()}
+     * is the same transition under a different label, not a different path — both
+     * persist what has been entered, because a user who types two answers and
+     * then skips has still typed two answers.
+     *
+     * The terms check is repeated here rather than trusted from the way in: a
+     * hand-crafted Livewire call can set `step` and invoke this directly, and
+     * Review is the screen that publishes.
+     */
+    public function continueToReview(): void
+    {
+        $this->errorMessage = '';
+
+        $auction = $this->resolveOwnedDraft();
+
+        if ($auction === null) {
+            $this->errorMessage = 'Your imported listing could not be found. Please start again.';
+            $this->step         = self::STEP_LOOKUP;
+
+            return;
+        }
+
+        $missing = $this->missingRequiredTerms();
+
+        if ($missing !== []) {
+            $this->errorMessage = 'Please complete: ' . implode(', ', $missing) . '.';
+            $this->step         = self::STEP_TERMS;
+
+            return;
+        }
+
+        $this->persistAnswers($auction);
+
         $this->step = self::STEP_REVIEW;
+    }
+
+    /** The secondary label on the same transition. See {@see continueToReview()}. */
+    public function skipKnowledge(): void
+    {
+        $this->continueToReview();
     }
 
     public function backToTerms(): void
     {
         $this->step         = self::STEP_TERMS;
+        $this->errorMessage = '';
+    }
+
+    public function backToKnowledge(): void
+    {
+        $this->step         = self::STEP_KNOWLEDGE;
         $this->errorMessage = '';
     }
 
@@ -730,6 +823,10 @@ abstract class MlsQuickImportComponent extends Component
             'methods'     => $this->availableMethods(),
             'mlsDetails'  => $this->reviewDetailsFor($auction),
             'priceField'  => $this->priceField(),
+            // Counted here rather than in the template so the Review summary is
+            // driven by the admission gate, not by the raw client-writable array.
+            'knowledgeAnswered' => $this->knowledgeAnsweredCount(),
+            'knowledgeTotal'    => $this->knowledgeQuestionCount(),
         ])->extends('layouts.main')->section('content');
     }
 
@@ -818,6 +915,130 @@ abstract class MlsQuickImportComponent extends Component
             $value = $this->terms[$field];
             $auction->saveMeta($field, is_scalar($value) ? (string) $value : '');
         }
+
+        $this->persistKnowledgeAnswers($auction);
+    }
+
+    /**
+     * Write the Listing AI Knowledge Base blob under the SAME meta key and in the
+     * SAME shape the manual wizard writes — a JSON object of question key to
+     * answer string.
+     *
+     * Runs on every persistAnswers() call, which is both the way out of the
+     * knowledge step and publish()'s safety net. It is idempotent, and it writes
+     * the blob even when empty so that clearing an answer clears it in storage
+     * rather than leaving the previous value behind.
+     */
+    private function persistKnowledgeAnswers(object $auction): void
+    {
+        $auction->saveMeta('listing_ai_faq', json_encode($this->admittedKnowledgeAnswers()));
+    }
+
+    /**
+     * Load previously stored knowledge answers onto the component.
+     *
+     * Same meta key and same JSON shape the manual wizard reads, so a listing
+     * started here and continued in Edit Listing — or the reverse — sees one set
+     * of answers. Anything that is not a JSON object is treated as no answers
+     * rather than as an error: a malformed blob must not stop an import.
+     */
+    private function hydrateKnowledgeAnswers(object $auction): void
+    {
+        $decoded = json_decode((string) ($auction->info('listing_ai_faq') ?: '{}'), true);
+
+        if (! is_array($decoded)) {
+            $this->listing_ai_faq = [];
+
+            return;
+        }
+
+        $this->listing_ai_faq = $decoded;
+
+        // Re-gate immediately, so what the form binds to is what may be written.
+        $this->listing_ai_faq = $this->admittedKnowledgeAnswers();
+    }
+
+    /**
+     * THE ADMISSION BOUNDARY for this flow.
+     *
+     * `$listing_ai_faq` is a public Livewire array bound with `wire:model.defer`,
+     * so its contents are whatever the client sent — any key, at any path. This
+     * is the only thing in this class that may turn that into a meta write, and
+     * it is an INTERSECTION: a key survives by being one this role and this
+     * property type actually ask, never by failing to appear on a deny-list.
+     *
+     * The set comes from {@see AskAiFaqConfigService::gatedKeys()} — the same
+     * definition, from the same config, that decides which questions the step
+     * renders. So the form and the persist cannot disagree, and a question
+     * retired from the config (the Fair Housing remediation path) stops being
+     * writable here the moment it leaves that file, with no second list to
+     * remember to update.
+     *
+     * `$property_type` is the NORMALISED import value set in acceptProperty(),
+     * not a client-supplied one — but it is still a public property, so this
+     * gate is written to be safe under a tampered value too: an unrecognised
+     * type resolves to the universal group only, which narrows the admission set
+     * rather than widening it.
+     *
+     * FAIL CLOSED: an unknown role or an unloadable config yields no keys and
+     * therefore admits nothing. Losing a knowledge answer degrades an Ask AI
+     * reply; admitting an unvetted key is what puts arbitrary client text into
+     * LLM prompt context, and that is the failure this exists to stop.
+     *
+     * @return array<string, string>
+     */
+    protected function admittedKnowledgeAnswers(): array
+    {
+        $allowed = AskAiFaqConfigService::gatedKeys($this->role(), $this->property_type);
+        $out     = [];
+
+        foreach ($allowed as $key) {
+            if (! array_key_exists($key, $this->listing_ai_faq)) {
+                continue;
+            }
+
+            $value = $this->listing_ai_faq[$key];
+
+            // Only scalar text is an answer. An array or object here is a client
+            // shaping the blob, not a person answering a question.
+            if (! is_scalar($value)) {
+                continue;
+            }
+
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $out[$key] = $value;
+        }
+
+        return $out;
+    }
+
+    /**
+     * How many knowledge-base questions carry an admitted answer.
+     *
+     * Counted through the admission gate rather than over the raw property, so
+     * the Review screen states what will actually be STORED. A count taken from
+     * `$listing_ai_faq` directly would report injected keys back to the user as
+     * captured knowledge.
+     */
+    public function knowledgeAnsweredCount(): int
+    {
+        return count($this->admittedKnowledgeAnswers());
+    }
+
+    /**
+     * How many questions this role and property type ask in total.
+     *
+     * Gives the Review summary a denominator, and gives it from the same gated
+     * definition the step renders from.
+     */
+    public function knowledgeQuestionCount(): int
+    {
+        return count(AskAiFaqConfigService::gatedKeys($this->role(), $this->property_type));
     }
 
     /**

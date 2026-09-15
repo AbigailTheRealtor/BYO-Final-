@@ -208,6 +208,7 @@ Phase 6b   Credential + schema teardown               (GMP-12, GMP-13, GMP-14, G
 | **Effort** | **1–2 wks** |
 | **Phase** | **5a** |
 | **Status** | ⬜ Not Started |
+| **Interim cost guard (2026-09-11)** | Every server-side Geocoding request is now admitted by `GoogleProviderAdmissionMiddleware` on the shared client: `GOOGLE_GEOCODING_ENABLED` (default **off**) plus a hard **25 / hour, 100 / day** ceiling on its own `ProviderRequestBudget`, independent of Nearby Search (`config/google_geocoding.php`). A guard on the legacy path, not the replacement above — the migration is unchanged. |
 
 ---
 

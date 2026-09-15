@@ -468,14 +468,70 @@ class AskAiCoverageRemediationRoutingTest extends TestCase
         $this->assertSame('listing.lease_length', $this->detect('what lease lengths are available'));
     }
 
-    /** @test */
-    public function p2_cap_rate_investment_yield_aliases_route_correctly(): void
+    /**
+     * P0 — cap-rate and NOI questions must NOT route to a listing field.
+     *
+     * 'listing.cap_rate' and 'listing.annual_noi' resolved to context keys that were
+     * aliases onto the seller's DESIRED MINIMUM figures (minimum_cap_rate /
+     * minimum_annual_net_income). Routing here answered "what is the cap rate?" with the
+     * seller's private walk-away figure, presented as the property's actual cap rate.
+     *
+     * Both the context aliases and these keyword routes were removed. There is no
+     * actual-cap-rate or actual-NOI field on the listing, so there is nothing correct for
+     * a listing route to point at.
+     *
+     * @test
+     */
+    public function p2_cap_rate_and_noi_do_not_route_to_a_listing_field(): void
     {
-        $this->assertSame('listing.cap_rate', $this->detect('cap rate'));
-        $this->assertSame('listing.cap_rate', $this->detect('what return does this investment yield'));
-        $this->assertSame('listing.cap_rate', $this->detect('investment yield rate'));
-        $this->assertSame('listing.cap_rate', $this->detect('property investment return'));
-        $this->assertSame('listing.cap_rate', $this->detect('capitalization rate'));
+        $questions = [
+            'cap rate',
+            'what is the cap rate',
+            'capitalization rate',
+            'what return does this investment yield',
+            'investment yield rate',
+            'property investment return',
+            'annual noi',
+            'what is the net operating income',
+        ];
+
+        foreach ($questions as $question) {
+            $detected = $this->detect($question);
+
+            $this->assertNotSame(
+                'listing.cap_rate',
+                $detected,
+                "'{$question}' must not route to listing.cap_rate (seller-minimum misrepresentation)."
+            );
+            $this->assertNotSame(
+                'listing.annual_noi',
+                $detected,
+                "'{$question}' must not route to listing.annual_noi (seller-minimum misrepresentation)."
+            );
+        }
+    }
+
+    /**
+     * The honest source survives: these questions are answered from the seller-authored
+     * knowledge-base entries, which hold the property's ACTUAL figures when the seller
+     * has supplied them.
+     *
+     * @test
+     */
+    public function p2_cap_rate_and_noi_route_to_the_seller_authored_kb_keys(): void
+    {
+        $runner = $this->makeRunner();
+        $method = new \ReflectionMethod(AskAiRunnerV2Service::class, 'detectFaqFieldKey');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'faq_answers.current_cap_rate',
+            $method->invoke($runner, 'what is the current cap rate')
+        );
+        $this->assertSame(
+            'faq_answers.annual_net_operating_income',
+            $method->invoke($runner, 'what is the net operating income')
+        );
     }
 
     /** @test */

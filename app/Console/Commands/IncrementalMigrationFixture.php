@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RefusesProductionDatabase;
 use App\Support\Migrations\MigrationPaths;
+use App\Support\Safeguards\ProductionDatabaseGuard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -37,6 +39,8 @@ use Throwable;
  */
 class IncrementalMigrationFixture extends Command
 {
+    use RefusesProductionDatabase;
+
     protected $signature = 'migrate:incremental-fixture {action : seed|verify}';
 
     protected $description = 'CI only: plant rows before pending migrations, then verify they survived and none remain pending';
@@ -57,6 +61,12 @@ class IncrementalMigrationFixture extends Command
 
     public function handle(): int
     {
+        // "CI-only by construction" was a docblock, not a check. `seed` writes rows and `verify`
+        // deletes them; neither may ever reach production, so there is no override.
+        if ($this->refusesProductionDatabase()) {
+            return ProductionDatabaseGuard::EXIT_REFUSED;
+        }
+
         return match ((string) $this->argument('action')) {
             'seed'   => $this->seed(),
             'verify' => $this->verify(),

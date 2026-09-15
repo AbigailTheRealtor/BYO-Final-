@@ -129,7 +129,12 @@ class LocationIntelligenceComposerTest extends TestCase
             ->compose($this->boundaryData(), $this->preferences());
 
         $this->assertSame($this->enrichmentPayload(), $result['enrichment']);
-        $this->assertSame($this->summaryPayload(), $result['summary']);
+        // The summary is passed through unchanged, plus the additive `calculated_lines` — here the
+        // same lines, since the analyzer (constructed without a stub) restates nothing.
+        $this->assertSame(
+            $this->summaryPayload() + ['calculated_lines' => $this->summaryPayload()['summary_lines']],
+            $result['summary']
+        );
         $this->assertNotEmpty($result['summary']['summary_lines']);
     }
 
@@ -319,6 +324,34 @@ class LocationIntelligenceComposerTest extends TestCase
         $prefIdx     = 0;
         $enrichIdx   = array_search('Flood Zone: AE', $allLines);
         $this->assertTrue($prefIdx < $enrichIdx, 'Preference line must precede enrichment lines');
+    }
+
+    // -------------------------------------------------------------------------
+    // (8b) calculated_lines — the enrichment lines alone, never the restatements
+    // -------------------------------------------------------------------------
+
+    public function test_calculated_lines_carry_the_enrichment_lines_and_no_preference_restatement(): void
+    {
+        $analyzer = $this->mockAnalyzer();
+        $runner   = $this->mockRunner();
+        $summary  = $this->mockSummary();
+
+        $runner->shouldReceive('run')->once()->andReturn($this->enrichmentPayload());
+        $summary->shouldReceive('summarize')->once()->andReturn($this->summaryPayload());
+        $analyzer->shouldReceive('analyze')->once()
+            ->andReturn(['summary_lines' => ['Highly targeted location preferences.']]);
+
+        $result = $this->makeComposer($runner, $summary, $analyzer)
+            ->compose($this->boundaryData(), $this->preferences());
+
+        $this->assertSame($this->summaryPayload()['summary_lines'], $result['summary']['calculated_lines']);
+        $this->assertNotContains('Highly targeted location preferences.', $result['summary']['calculated_lines']);
+
+        // summary_lines is unchanged for any other reader: restatement first, then the same lines.
+        $this->assertSame(
+            array_merge(['Highly targeted location preferences.'], $this->summaryPayload()['summary_lines']),
+            $result['summary']['summary_lines']
+        );
     }
 
     // -------------------------------------------------------------------------

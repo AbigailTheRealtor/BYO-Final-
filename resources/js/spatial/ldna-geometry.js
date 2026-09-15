@@ -342,12 +342,105 @@ export function importantPlacesToFeatureCollection(places) {
                 ldnaType: 'important_place',
                 placeType: place.type || '',
                 address: place.address || '',
-                distancePreference: place.distance_preference || place.distpref || '',
-                distanceValue: place.distance_value !== undefined ? place.distance_value : (place.value ?? ''),
+                distancePreference: placeDistancePreference(place),
+                distanceValue: placeDistanceValue(place),
                 travelMode: place.travel_mode || place.mode || '',
             },
             geometry: { type: 'Point', coordinates: position },
         });
+    });
+
+    return { type: 'FeatureCollection', features };
+}
+
+/**
+ * Which distance preference a stored Important Place row expresses.
+ *
+ * THE CANONICAL KEY IS `distance_pref`, and nothing else is written today.
+ * `ImportantPlacesService::normalize()` rebuilds every row from eight named
+ * keys on every save and drops the rest, so a row that has been through the
+ * service — which is every row a save path produces — carries exactly that
+ * spelling.
+ *
+ * This function existed in an earlier form that read `distance_preference ||
+ * distpref` and never read the canonical key at all, so the property was empty
+ * on every feature. That was invisible while nothing consumed it and stopped
+ * being invisible the moment it decided whether a circle is drawn.
+ *
+ * The two legacy spellings are kept as FALLBACKS ONLY, consulted after the
+ * canonical key and never in front of it. They cost one `||` each, they cannot
+ * change the answer for a row that carries `distance_pref`, and dropping them
+ * would silently change how a hand-edited or externally-supplied row renders —
+ * which is not a thing this change is trying to decide.
+ *
+ * An unrecognised value is treated as ABSENT rather than as miles: a circle is
+ * an assertion about an area, and asserting one from a value we do not
+ * understand is exactly the guess this module refuses everywhere else.
+ */
+export function placeDistancePreference(place) {
+    const raw = (place && (place.distance_pref || place.distance_preference || place.distpref)) || '';
+    const value = String(raw).trim().toLowerCase();
+
+    return value === 'miles' || value === 'minutes' ? value : '';
+}
+
+/** The stored distance figure, or null when there is not a usable one. */
+export function placeDistanceValue(place) {
+    const raw = place && (place.distance_value !== undefined ? place.distance_value : place.value);
+    const value = Number(raw);
+
+    return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+/**
+ * The radius circles implied by Important Places — miles rows only.
+ *
+ * A SEPARATE COLLECTION FROM `radius_searches`, DELIBERATELY.
+ * These circles belong to `important_places_json` and must never enter the
+ * renderer's `radius_searches` working set: that set is what `emitChange()`
+ * reports and what the host serialises, so a place ring that leaked into it
+ * would be written back as a search area the user never drew, and would then
+ * be indistinguishable from one they did.
+ *
+ * MINUTES ROWS PRODUCE NOTHING. A travel time describes a drive along a road
+ * network; drawing it as a circle would assert a reachable area no routing
+ * engine here has computed, and there is no routing engine here — the commute
+ * capability resolves to a stub. A minutes row gets its pin and no ring, which
+ * is what the widget's own on-screen copy promises.
+ */
+export function importantPlaceCirclesToFeatureCollection(places) {
+    const features = [];
+
+    (places || []).forEach((place, i) => {
+        if (placeDistancePreference(place) !== 'miles') {
+            return;
+        }
+
+        const miles = placeDistanceValue(place);
+
+        if (miles === null) {
+            return;
+        }
+
+        const feature = circleToFeature(
+            { lat: place.lat, lng: place.lng, radius_miles: miles },
+            `place-ring:${i}`
+        );
+
+        if (!feature) {
+            return;
+        }
+
+        // Overwritten rather than merged: circleToFeature labels its output as a
+        // radius-search circle, and a place ring is not one.
+        feature.properties = {
+            ldnaId: `place-ring:${i}`,
+            ldnaType: 'important_place_ring',
+            placeType: place.type || '',
+            distanceValue: miles,
+        };
+
+        features.push(feature);
     });
 
     return { type: 'FeatureCollection', features };

@@ -35,10 +35,15 @@ class GoogleMapsBladeGuardTest extends TestCase
         'resources/views/components/location-dna-map.blade.php',
     ];
 
-    /** Dead, unreferenced backup. No route or include resolves it. */
-    private const DEAD_FILES = [
-        'resources/views/hire_tenant_agent/add.blade09012024.php',
-    ];
+    /**
+     * Dead, unreferenced backups excluded from the scans.
+     *
+     * EMPTY because both are now DELETED, not merely skipped: `hire_tenant_agent/add.blade09012024.php`
+     * (which printed `env('GOOGLE_PLACES_API_KEY')` straight into a script tag) and
+     * `buyer_criteria/add-bid.blade1.php` were removed with the browser/server key split. The
+     * constant stays so a future dead file has a documented home rather than a silent exception.
+     */
+    private const DEAD_FILES = [];
 
     /** @return string[] */
     private function bladeFiles(): array
@@ -174,11 +179,15 @@ class GoogleMapsBladeGuardTest extends TestCase
         // assertion above still requires every remaining google-touching function to check the
         // SDK before using it. Lower this only alongside a deletion you can name — a drop with
         // no such explanation means the scanner broke, which is what this test exists to catch.
+        // Floor lowered 38 -> 37 when `buyer_criteria/add-bid.blade1.php` was deleted with the
+        // browser/server key split. It was an unreferenced backup of add-bid.blade.php carrying one
+        // google-touching initialize(), so the guarded population legitimately fell 39 -> 38.
         $this->assertGreaterThanOrEqual(
-            38,
+            37,
             $checked,
-            "The scan found only {$checked} google-touching entry functions; 39 are expected after "
-            . 'the counter-terms edit views were retired. The scanner is broken and is not proving anything.',
+            "The scan found only {$checked} google-touching entry functions; 38 are expected after "
+            . 'the counter-terms edit views and the add-bid backup were retired. The scanner is broken '
+            . 'and is not proving anything.',
         );
     }
 

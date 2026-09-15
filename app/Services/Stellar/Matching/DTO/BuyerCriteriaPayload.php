@@ -2,6 +2,7 @@
 
 namespace App\Services\Stellar\Matching\DTO;
 
+use App\Services\Offers\ImportantPlacesService;
 use App\Support\Location\UsStateCode;
 
 class BuyerCriteriaPayload
@@ -72,6 +73,16 @@ class BuyerCriteriaPayload
      * Not used by the Buyer matching flow (BuyerOfferListingCriteriaLoader leaves it empty).
      */
     public readonly array $preferredLeaseTerms;
+
+    /**
+     * The client's Important Places, as ImportantPlacesService::normalize() rows — INCLUDING each
+     * place's private address and coordinate.
+     *
+     * Internal to matching. ImportantPlaceMatcher reads the coordinate to measure a straight-line
+     * distance, and nothing it returns carries the address or the coordinate. Deliberately NOT part
+     * of CriteriaHashService's hash: it changes no MLS request, only how fetched listings are scored.
+     */
+    public readonly array $importantPlaces;
 
     public function __construct(array $data)
     {
@@ -154,5 +165,9 @@ class BuyerCriteriaPayload
         $this->wantsEnergyEfficient     = $data['wants_energy_efficient']     ?? null;
 
         $this->preferredLeaseTerms = $data['preferred_lease_terms'] ?? [];
+
+        // Normalised here, like the state, so every producer of this payload hands the matcher the
+        // same canonical row shape the wizards save.
+        $this->importantPlaces = (new ImportantPlacesService())->normalize($data['important_places'] ?? []);
     }
 }

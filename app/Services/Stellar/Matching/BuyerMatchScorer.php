@@ -5,11 +5,10 @@ namespace App\Services\Stellar\Matching;
 use App\Models\BridgeProperty;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
+use App\Support\Geo\GreatCircleDistance;
 
 class BuyerMatchScorer
 {
-    private const EARTH_RADIUS_MILES = 3958.8;
-
     /**
      * Phase 1 price proximity maximum (20 pts).
      * Full category weight is 25 pts; the remaining 5 pts are the price-reduction
@@ -47,7 +46,15 @@ class BuyerMatchScorer
             $rawJson = [];
         }
 
-        $locationScore        = $this->scoreLocation($listing, $criteria);
+        // Important Places: measured once per listing — used by the location score and carried on
+        // the result for display. The rows name a category and a distance, never the place itself.
+        $importantPlaceMatches = ImportantPlaceMatcher::evaluate(
+            $listing->latitude !== null ? (float) $listing->latitude : null,
+            $listing->longitude !== null ? (float) $listing->longitude : null,
+            $criteria->importantPlaces
+        );
+
+        $locationScore        = $this->scoreLocation($listing, $criteria, $importantPlaceMatches);
         $priceScore           = $this->scorePrice($listing, $criteria);
         $sizeScore            = $this->scoreSize($listing, $criteria);
         $propertyTypeScore    = $this->scorePropertyType($listing, $criteria);
@@ -80,7 +87,7 @@ class BuyerMatchScorer
             'non_residential' => (int) round($nonResidentialScore['score']),
         ];
 
-        return new BuyerMatchResult(
+        $result = new BuyerMatchResult(
             listingKey:     $listing->listing_key ?? (string) $listing->id,
             totalScore:     $total,
             categoryScores: $categoryScores,
@@ -90,13 +97,16 @@ class BuyerMatchScorer
             cautionFlags:   [],
             missingData:    []
         );
+        $result->importantPlaceMatches = $importantPlaceMatches;
+
+        return $result;
     }
 
     // =========================================================================
     // Category 1: Location (30 pts)
     // =========================================================================
 
-    private function scoreLocation(BridgeProperty $listing, BuyerCriteriaPayload $criteria): array
+    private function scoreLocation(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $importantPlaceMatches = []): array
     {
         $proximityScore = 0.0;
         $hasRadiusCriteria = !empty($criteria->radiusSearches);
@@ -147,6 +157,18 @@ class BuyerMatchScorer
                     break;
                 }
             }
+        }
+
+        // Important Places — "within N miles of Work", measured straight-line from this listing.
+        // They share the 18-pt proximity slot with radius and polygon criteria, combined by max():
+        // a listing meeting every measured requirement earns the full 18 (as a polygon hit does),
+        // meeting some earns that share. Max, not a sum or a replacement, so a place can only RAISE
+        // proximity — never lower a score a radius or polygon already earned — and the location cap
+        // below still applies. They select and exclude nothing: the SQL geography is unchanged, and
+        // a requirement that could not be measured (no listing or place coordinate) earns nothing.
+        $importantPlaceShare = ImportantPlaceMatcher::satisfiedShare($importantPlaceMatches);
+        if ($importantPlaceShare !== null) {
+            $proximityScore = max($proximityScore, 18.0 * $importantPlaceShare);
         }
 
         // City / ZIP exact match (6 pts) or county match (3 pts)
@@ -781,17 +803,10 @@ class BuyerMatchScorer
         return (float) ($search['center']['lng'] ?? 0);
     }
 
+    /** Radius searches and Important Places are measured by one definition of a mile. */
     private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-
-        $a = sin($dLat / 2) ** 2
-           + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
-
-        $c = 2 * asin(sqrt($a));
-
-        return self::EARTH_RADIUS_MILES * $c;
+        return GreatCircleDistance::miles($lat1, $lng1, $lat2, $lng2);
     }
 
     /**

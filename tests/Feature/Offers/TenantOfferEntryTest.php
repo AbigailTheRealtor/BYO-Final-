@@ -71,9 +71,13 @@ class TenantOfferEntryTest extends TestCase
         $response->assertStatus(200);
     }
 
-    // ── Test 2: Each of the four sections contains its own offers.store form ─
+    // ── Test 2: The right-column actions hold the offers.store form ─────────
+    //
+    // The page uses the Criteria page family: one action column on the right. The hero CTA row,
+    // the Quick Actions grid, the sticky sidebar and the mobile bar each carried a copy of this
+    // form; all four are gone and the form lives once, in class="tcl-actions".
 
-    public function test_each_cta_section_contains_an_offers_store_form_with_role_tenant(): void
+    public function test_the_right_column_actions_contain_an_offers_store_form_with_role_tenant(): void
     {
         $response = $this->actingAs($this->user)
             ->get(route('offer.listing.tenant.view', $this->auction->id));
@@ -83,57 +87,22 @@ class TenantOfferEntryTest extends TestCase
         $body     = $response->getContent();
         $storeUrl = route('offers.store');
 
-        // ── Hero section: <div class="tcl-hero-ctas"> ────────────────────
-        // Use the HTML attribute form to skip the CSS definition earlier in the page.
-        $heroSlice = $this->sliceAfter($body, 'class="tcl-hero-ctas"', 2000);
-        $this->assertNotFalse($heroSlice,
-            'Hero CTA container (class="tcl-hero-ctas") was not found in the response.');
-        $this->assertStringContainsString($storeUrl, $heroSlice,
-            'Hero CTA section must contain a form POSTing to offers.store.');
-        $this->assertStringContainsString('value="tenant"', $heroSlice,
-            'Hero CTA form must include a role=tenant hidden input.');
-        $this->assertStringContainsString('Respond to Tenant Criteria', $heroSlice,
-            'Hero CTA must display the label "Respond to Tenant Criteria".');
+        // The HTML attribute form skips the CSS definition earlier in the page.
+        $actions = $this->sliceAfter($body, 'class="tcl-actions"', 1500);
+        $this->assertNotFalse($actions, 'Right-column actions (class="tcl-actions") were not found in the response.');
+        $this->assertStringContainsString($storeUrl, $actions, 'The actions must contain a form POSTing to offers.store.');
+        $this->assertStringContainsString('name="role" value="tenant"', $actions, 'The form must include role=tenant.');
+        $this->assertStringContainsString('name="listing_type" value="tenant_criteria"', $actions, 'The form must include listing_type=tenant_criteria.');
+        $this->assertStringContainsString('Respond to Tenant Criteria', $actions, 'The CTA must read "Respond to Tenant Criteria".');
 
-        // ── Interaction Hub card: id="tcl-interaction-hub" ───────────────
-        $hubSlice = $this->sliceAfter($body, 'id="tcl-interaction-hub"', 3500);
-        $this->assertNotFalse($hubSlice,
-            'Interaction Hub container (id="tcl-interaction-hub") was not found in the response.');
-        $this->assertStringContainsString($storeUrl, $hubSlice,
-            'Interaction Hub must contain a form POSTing to offers.store.');
-        $this->assertStringContainsString('value="tenant"', $hubSlice,
-            'Interaction Hub form must include a role=tenant hidden input.');
-        $this->assertStringContainsString('Respond to Tenant Criteria', $hubSlice,
-            'Interaction Hub must have a "Respond to Tenant Criteria" card label.');
-
-        // ── Sticky Sidebar: class="tcl-sticky-card" ───────────────────────
-        $sidebarSlice = $this->sliceAfter($body, 'class="tcl-sticky-card"', 2500);
-        $this->assertNotFalse($sidebarSlice,
-            'Sticky sidebar container (class="tcl-sticky-card") was not found in the response.');
-        $this->assertStringContainsString($storeUrl, $sidebarSlice,
-            'Sticky sidebar must contain a form POSTing to offers.store.');
-        $this->assertStringContainsString('value="tenant"', $sidebarSlice,
-            'Sticky sidebar form must include a role=tenant hidden input.');
-        $this->assertStringContainsString('Respond to Tenant Criteria', $sidebarSlice,
-            'Sticky sidebar CTA must display the label "Respond to Tenant Criteria".');
-
-        // ── Mobile Bottom Bar: class="tcl-mobile-bar … ───────────────────
-        // Match the opening of the HTML element (not the CSS rule) by targeting
-        // the attribute syntax including the opening quote.
-        $mobileSlice = $this->sliceAfter($body, 'class="tcl-mobile-bar', 2000);
-        $this->assertNotFalse($mobileSlice,
-            'Mobile bar container (class="tcl-mobile-bar …) was not found in the response.');
-        $this->assertStringContainsString($storeUrl, $mobileSlice,
-            'Mobile bar must contain a form POSTing to offers.store.');
-        $this->assertStringContainsString('value="tenant"', $mobileSlice,
-            'Mobile bar form must include a role=tenant hidden input.');
-        $this->assertStringContainsString('>Respond<', $mobileSlice,
-            'Mobile bar CTA must display the submit label "Respond".');
+        foreach (['class="tcl-hero-ctas"', 'id="tcl-interaction-hub"', 'class="tcl-sticky-card"', 'class="tcl-mobile-bar'] as $legacy) {
+            $this->assertStringNotContainsString($legacy, $body, "The legacy {$legacy} container must not render.");
+        }
     }
 
-    // ── Test 3: offers.store route appears exactly four times (one per CTA) ─
+    // ── Test 3: offers.store route appears exactly once ─────────────────────
 
-    public function test_tenant_listing_view_contains_offers_store_action_exactly_four_times(): void
+    public function test_tenant_listing_view_contains_offers_store_action_exactly_once(): void
     {
         $response = $this->actingAs($this->user)
             ->get(route('offer.listing.tenant.view', $this->auction->id));
@@ -144,8 +113,8 @@ class TenantOfferEntryTest extends TestCase
         $storeUrl = route('offers.store');
         $count    = substr_count($body, $storeUrl);
 
-        $this->assertSame(4, $count,
-            "The offers.store URL must appear exactly 4 times in the response (one per CTA); found {$count}.");
+        $this->assertSame(1, $count,
+            "The offers.store URL must appear exactly once (the right-column Respond form); found {$count}.");
     }
 
     // ── Test 4: POST to offers.store with role=tenant creates Offer, redirects

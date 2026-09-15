@@ -7,6 +7,7 @@ use App\Models\BuyerAgentAuction;
 use App\Models\TenantCriteriaAuction;
 use App\Models\TenantAgentAuction;
 use App\Models\User;
+use App\Support\Listing\ListingFlag;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -121,12 +122,15 @@ class CriteriaListingResolver
                 ->pluck('buyer_agent_auction_id');
 
             if ($offerListingIds->isNotEmpty()) {
-                $buyerOfferRecords = BuyerAgentAuction::whereIn('id', $offerListingIds)
-                    ->whereIn('user_id', $allowedUserIds)
-                    ->where('is_approved', true)
-                    ->where('is_sold', false)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+                $buyerOfferQuery = BuyerAgentAuction::whereIn('id', $offerListingIds)
+                    ->whereIn('user_id', $allowedUserIds);
+
+                // buyer_agent_auctions' flags are varchar and the wizard publishes
+                // 'true' / 'false'; ListingFlag reads every stored form, as the model does.
+                ListingFlag::whereTrue($buyerOfferQuery, 'is_approved');
+                ListingFlag::whereNotTrue($buyerOfferQuery, 'is_sold');
+
+                $buyerOfferRecords = $buyerOfferQuery->orderBy('created_at', 'desc')->get();
 
                 foreach ($buyerOfferRecords as $record) {
                     $items[] = [

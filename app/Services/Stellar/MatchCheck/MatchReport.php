@@ -37,6 +37,9 @@ final class MatchReport
      * @param  array               $recommendations  Rule-based v1 suggestions (F3).
      * @param  string              $generatedAt      Injected ISO-8601 timestamp (never now() inside).
      * @param  array|null          $narrative        Nullable AI/narrative slot (F8); default null.
+     * @param  array               $importantPlaces  ImportantPlaceMatcher::present() rows — category,
+     *                                               distance and verdict; never a place's address or
+     *                                               coordinate. Additive, default [].
      */
     public function __construct(
         public readonly int $criteriaId,
@@ -53,6 +56,7 @@ final class MatchReport
         public readonly array $recommendations,
         public readonly string $generatedAt,
         public readonly ?array $narrative = null,
+        public readonly array $importantPlaces = [],
     ) {
     }
 
@@ -78,6 +82,7 @@ final class MatchReport
             'recommendations'  => $this->recommendations,
             'generated_at'     => $this->generatedAt,
             'narrative'        => $this->narrative,
+            'important_places' => $this->importantPlaces,
         ];
     }
 }

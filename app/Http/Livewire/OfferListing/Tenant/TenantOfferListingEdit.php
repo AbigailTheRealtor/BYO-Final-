@@ -1787,9 +1787,11 @@ class TenantOfferListingEdit extends Component
                     return compact('city', 'state', 'zipCode', 'county');
                 }
             }
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
-            // Handle any errors that may occur during the request
-            \Log::error('Geocode API error: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            // Switched off, over budget, timed out, or Google answered with an error: no
+            // details, and the address the user picked stays as picked. Never log the
+            // message — Guzzle writes the request URL, key included, into it.
+            \App\Support\Google\GoogleProviderFailure::log($e, 'geocoding', 'tenant_address_details');
         }
 
         return [];
@@ -1948,7 +1950,8 @@ class TenantOfferListingEdit extends Component
                 return $prediction['description'];
             }, $predictions);
         } catch (\Exception $e) {
-            Log::error('Google Places API error: ' . $e->getMessage());
+            // Never log the message — Guzzle writes the request URL, key included, into it.
+            \App\Support\Google\GoogleProviderFailure::log($e, 'places_autocomplete', 'address_suggestions');
             return [];
         }
     }
@@ -3273,6 +3276,12 @@ class TenantOfferListingEdit extends Component
                 // save aborts cleanly BEFORE DB::beginTransaction (avoids a no-op rollBack).
                 $ipErrors = $this->importantPlacesService()->validate($this->important_places_json ?? '');
                 if (!empty($ipErrors)) {
+                    // Also on the error bag, under the key the shared map-input partial renders,
+                    // so Tenant Edit shows the same inline Important Places alert as every other
+                    // Buyer/Tenant surface — the browser event alone never reached that block.
+                    foreach ($ipErrors as $ipError) {
+                        $this->addError('important_places_json', $ipError);
+                    }
                     $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $ipErrors]);
                     return;
                 }

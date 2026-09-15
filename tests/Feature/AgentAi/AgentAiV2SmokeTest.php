@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\AgentAi;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -15,7 +16,7 @@ use Tests\TestCase;
  *  - Flag OFF  → POST /agent-ai/session/start returns 404
  *  - Flag ON   → POST /agent-ai/ask           returns a real response (not 404/405)
  *  - Flag ON   → POST /agent-ai/session/start returns a real response (not 404/405)
- *  - V1 route  → POST /ask-ai/ask             still resolves (unchanged)
+ *  - V1 route  → POST /ask-ai/listing-question still reaches its controller (authenticated)
  *
  * Build 1 note: Originally asserted {"status":"not_implemented"}. Updated in
  * Build 3 when the controller was fully implemented.
@@ -83,11 +84,24 @@ class AgentAiV2SmokeTest extends TestCase
     {
         config(['ask_ai.agent_ai_v2_enabled' => false]);
 
-        // We only verify the route exists and is reachable (not 404/405).
-        // A 422 means validation ran — the V1 controller is alive.
-        $response = $this->postJson('/ask-ai/ask', []);
+        // Targets /ask-ai/listing-question, the V1 route every Ask AI surface in the
+        // product actually posts to. This assertion previously used /ask-ai/ask, the
+        // unauthenticated endpoint that P0 removed for having no caller at all — which
+        // made it the wrong route to guard the V1 pipeline with.
+        //
+        // P0.1 — the request is now AUTHENTICATED. /ask-ai/listing-question carries 'auth'
+        // middleware, so a guest post is rejected with 401 before the controller is even
+        // resolved: "not 404/405" would then hold for a route whose controller was broken or
+        // deleted outright, which is not what this test exists to prove. Authenticating gets
+        // past the middleware so the assertion lands where the original one did — on the
+        // controller's own validation.
+        $this->actingAs(User::factory()->create());
 
-        $this->assertNotEquals(404, $response->getStatusCode(), 'V1 /ask-ai/ask must not return 404');
-        $this->assertNotEquals(405, $response->getStatusCode(), 'V1 /ask-ai/ask must not return 405 (Method Not Allowed)');
+        $response = $this->postJson('/ask-ai/listing-question', []);
+
+        // 422 with these three field errors can only come from the controller's validate()
+        // call — it proves the V1 controller ran, not merely that a route is registered.
+        $response->assertStatus(422)
+                 ->assertJsonValidationErrors(['listing_type', 'listing_id', 'question']);
     }
 }

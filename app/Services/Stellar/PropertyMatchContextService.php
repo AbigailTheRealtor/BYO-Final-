@@ -35,7 +35,7 @@ class PropertyMatchContextService
      *
      * @return array{total_score:int,score_display:string,category_bars:array,
      *               why_this_matches:array,tradeoffs:array,caution_flags:array,
-     *               missing_data:array}|null
+     *               missing_data:array,important_places:array}|null
      */
     public function resolve(
         BridgeProperty $listing,
@@ -65,6 +65,7 @@ class PropertyMatchContextService
             'tradeoffs',
             'caution_flags',
             'missing_data',
+            'important_places', // category + distance + verdict only (ImportantPlaceMatcher::present())
         ]));
     }
 

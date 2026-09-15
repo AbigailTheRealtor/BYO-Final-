@@ -118,6 +118,19 @@ class AskAiViewerAuthorizationService
     ];
 
     /**
+     * Whole context sections holding a private profile of the CONSUMER rather than facts
+     * about a property. Removed in full for every non-owner scope, for every role.
+     *
+     * These are psychographic: motivation, readiness, personality tags, narrative and
+     * preference summaries, produced by the AI DNA profilers. None of it is a property
+     * fact, and none of it belongs to anyone but the listing's owner.
+     */
+    private const CONFIDENTIAL_CONTEXT_SECTIONS = [
+        'buyer_avatar',
+        'tenant_avatar',
+    ];
+
+    /**
      * Compliance-restricted listing tokens (C2s). Mirrors SnapshotFactVisibility's
      * 'restricted' tier and covers the aliases the context builder actually emits
      * (e.g. 'hoa_fee', 'security_deposit_amount', 'annual_cdd_fee', 'max_rent').
@@ -201,6 +214,23 @@ class AskAiViewerAuthorizationService
         // applicant handling below so seller/buyer/landlord/tenant are all covered.
         if ($scope !== self::SCOPE_OWNER && isset($context['listing']) && is_array($context['listing'])) {
             $context['listing'] = $this->stripRestrictedComplianceKeys($context['listing']);
+        }
+
+        // P0 — consumer psychographic profiles. The buyer_avatar / tenant_avatar sections
+        // carry primary_motivation, secondary_motivation, readiness and confidence scores,
+        // personality tags, narrative and preference summaries: a private profile OF THE
+        // CONSUMER, not a fact about a property.
+        //
+        // These sections were reachable by every non-owner. The two guards above and below
+        // both miss them — stripRestrictedComplianceKeys() only ever touches
+        // $context['listing'], and the applicant handling below is preceded by an early
+        // return for any role that is not 'tenant', so a BUYER's motivation and readiness
+        // score were never redacted for any scope. Removed wholesale for every non-owner,
+        // across all roles, before that early return can apply.
+        if ($scope !== self::SCOPE_OWNER) {
+            foreach (self::CONFIDENTIAL_CONTEXT_SECTIONS as $section) {
+                unset($context[$section]);
+            }
         }
 
         if ($role !== 'tenant') {

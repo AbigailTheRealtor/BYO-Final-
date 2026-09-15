@@ -1503,6 +1503,39 @@ class OfferWorkflowReadinessTest extends TestCase
             //     AgentController is permitted above too.
             'app/Support/Listing/ListingFlag.php',
             'app/Models/BuyerAgentAuction.php',
+
+            // ── Role model is_approved semantics (2026-09-11) ────────────────
+            //
+            // All four role models cast `is_approved` to `boolean` — `(bool)` —
+            // so the string 'false' in the Seller / Buyer varchar columns read as
+            // approved to every consumer of the model.
+            //
+            //   app/Models/Concerns/HasApprovalFlag.php
+            //     Reads the RAW stored value through ListingFlag, and judges whether
+            //     an assignment is a change by the same contract. No stored value
+            //     is rewritten. The four models and ListingFlag are permitted above.
+            'app/Models/Concerns/HasApprovalFlag.php',
+
+            // ── Messaging schema (2026-09-11) ────────────────────────────────
+            //
+            // No migration created the five tables the listing messaging system
+            // reads and writes; they existed only in the pre-migration byo2.sql.
+            //
+            //   database/migrations/2026_09_11_000001_create_messaging_tables.php
+            //     Creates each table only when it is absent. Alters, backfills and
+            //     drops nothing, and its down() deliberately leaves the tables.
+            'database/migrations/2026_09_11_000001_create_messaging_tables.php',
+
+            // ── Buyer approval query semantics (2026-09-11) ──────────────────
+            //
+            // Buyer queries filtered the varchar is_approved / is_sold columns with
+            // bare booleans, which match '1' / '0' alone, so a wizard-published
+            // Buyer listing ('true' / 'false') was missing from them. Each now uses
+            // ListingFlag::whereTrue() / whereNotTrue(). ListingFlag, AgentController
+            // and BuyerAgentAuctionController are permitted above.
+            'app/Http/Controllers/UserController.php',
+            'app/Services/Stellar/BuyerOfferListingCriteriaLoader.php',
+            'app/Services/Stellar/CriteriaListingResolver.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

@@ -750,48 +750,14 @@
     </div>
 </div>
 
-{{-- Commute Preferences Sub-Section --}}
-<div class="card border-0 bg-light rounded-3 p-3 mt-4 mb-2">
-    <div class="d-flex align-items-center mb-1">
-        <i class="fa-solid fa-route text-primary me-2 fs-5"></i>
-        <h5 class="fw-bold text-primary mb-0">Commute Preferences</h5>
-    </div>
-    <p class="text-muted small mb-3">Tell us your commute so we can score properties by how well they fit your daily routine.</p>
-    <div class="row g-3">
-        <div class="col-md-4">
-            <label class="fw-bold form-label mb-1">Work or School ZIP Code</label>
-            <div class="input-cover">
-                <input type="text" wire:model="commute_destination_zip" class="form-control has-icon"
-                    data-icon="fa-solid fa-map-pin" maxlength="10"
-                    placeholder="e.g. 32801">
-            </div>
-        </div>
-        <div class="col-md-4">
-            <label class="fw-bold form-label mb-1">Max Commute Time (minutes)</label>
-            <div class="input-cover">
-                <input type="number" wire:model="max_commute_minutes" class="form-control has-icon"
-                    data-icon="fa-solid fa-clock" min="0"
-                    placeholder="e.g. 30">
-            </div>
-            <div class="form-text text-muted mt-1">
-                <i class="fa-solid fa-circle-info me-1"></i>15 = short &nbsp;&middot;&nbsp; 30 = typical &nbsp;&middot;&nbsp; 60 = flexible
-            </div>
-        </div>
-        <div class="col-md-4">
-            <label class="fw-bold form-label mb-1">How Will You Commute?</label>
-            <div class="input-cover">
-                <select wire:model="commute_mode" class="form-control has-icon" data-icon="fa-solid fa-route">
-                    <option value="">Select a mode</option>
-                    <option value="Drive">Drive</option>
-                    <option value="Transit">Transit (Bus / Rail)</option>
-                    <option value="Walk">Walk</option>
-                    <option value="Bike">Bike</option>
-                    <option value="Remote">Remote — no commute</option>
-                </select>
-            </div>
-        </div>
-    </div>
-</div>
+{{-- Commute Preferences — RETIRED from this form (Buyer and Tenant alike).
+     It promised "so we can score properties" by commute, and nothing does: no scorer,
+     matcher or DNA generator reads commute_destination_zip, max_commute_minutes or
+     commute_mode, and no routing engine exists to measure a commute time. Where to be
+     is now asked as an Important Place, within a distance in miles, which the map can
+     honestly draw.
+     Nothing stored is deleted: the component still loads these values and writes them
+     back unchanged, and the listing page and Ask AI still read them. --}}
 
 {{-- Phase D Tenant Tier 2 & Tier 3 Fields --}}
 <div class="form-group">

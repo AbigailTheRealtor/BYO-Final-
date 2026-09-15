@@ -3,6 +3,7 @@
 namespace App\Services\LocationDna;
 
 use App\Contracts\FloodZoneAdapterInterface;
+use App\Support\LocationDna\RadiusSearchRow;
 use Illuminate\Support\Facades\Log;
 
 class FloodZoneLookupService
@@ -135,11 +136,12 @@ class FloodZoneLookupService
 
         // 3. Radius circles from preferences
         foreach ($radii as $r) {
-            $center = $r['center'] ?? null;
-            $miles  = (float) ($r['radius_miles'] ?? 0);
-            if (!isset($center['lat'], $center['lng']) || $miles <= 0) continue;
-            $lat = (float) $center['lat'];
-            $lng = (float) $center['lng'];
+            // Either stored shape — flat {lat, lng} or nested {center} (see RadiusSearchRow).
+            $circle = RadiusSearchRow::circle($r);
+            if ($circle === null) continue;
+            $miles = $circle['radius_miles'];
+            $lat   = $circle['lat'];
+            $lng   = $circle['lng'];
             $degLat = $miles / self::MILES_PER_DEGREE;
             // Longitude degrees per mile varies with latitude; use cos(lat) adjustment
             $degLng = ($lat !== 0.0)

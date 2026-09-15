@@ -1234,7 +1234,8 @@ class BuyerOfferListing extends Component
                 return $prediction['description'];
             }, $predictions);
         } catch (\Exception $e) {
-            Log::error('Google Places API error: ' . $e->getMessage());
+            // Never log the message — Guzzle writes the request URL, key included, into it.
+            \App\Support\Google\GoogleProviderFailure::log($e, 'places_autocomplete', 'address_suggestions');
             return [];
         }
     }

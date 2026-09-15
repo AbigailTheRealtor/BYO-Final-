@@ -71,10 +71,12 @@ class BuyerResultViewMapper
      *   listing_key, score_display, total_score, category_bars,
      *   price_display, address, city_state_zip, beds, baths, sqft,
      *   property_type, property_sub_type,
-     *   why_this_matches, tradeoffs, caution_flags, missing_data
+     *   why_this_matches, tradeoffs, caution_flags, missing_data, important_places
      *
      * Never includes: raw_json, agent name/email/phone, brokerage info,
-     *                 lockbox fields, showing instructions, or any Tier 6 field.
+     *                 lockbox fields, showing instructions, or any Tier 6 field — nor an
+     *                 Important Place's address or coordinate (important_places carries the
+     *                 category, the distance and the verdict, via ImportantPlaceMatcher::present()).
      */
     public function mapOne(BuyerMatchResult $result): array
     {
@@ -173,6 +175,7 @@ class BuyerResultViewMapper
             'tradeoffs'         => $tradeoffs,
             'caution_flags'     => $cautionFlags,
             'missing_data'      => $missingData,
+            'important_places'  => \App\Services\Stellar\Matching\ImportantPlaceMatcher::present($result->importantPlaceMatches),
             'latitude'          => $listing->latitude !== null ? (float) $listing->latitude : null,
             'longitude'         => $listing->longitude !== null ? (float) $listing->longitude : null,
             'hero_photo_url'    => $this->extractFirstPhotoUrl($listing),

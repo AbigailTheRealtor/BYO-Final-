@@ -115,7 +115,8 @@ class GeocodeBackfillKillSwitchTest extends TestCase
         // of it, not in place of it.
         $this->bindClientThatMustNeverBeCalled();
 
-        config(['google_places.enabled' => true]);
+        // Both switches on — the Geocoding switch is checked ahead of the credential too.
+        config(['google_places.enabled' => true, 'google_geocoding.enabled' => true]);
         config(['services.google.places_key' => '']);
 
         $this->artisan('app:geocode-seller-landlord-listings')

@@ -160,6 +160,7 @@
                 />
                 <x-stellar.matchmaker-category-bars :bars="$matchContext['category_bars']" />
                 <x-stellar.matchmaker-why :items="$matchContext['why_this_matches']" />
+                <x-stellar.matchmaker-important-places :items="$matchContext['important_places'] ?? []" />
                 <x-stellar.matchmaker-tradeoffs :items="$matchContext['tradeoffs']" />
                 <x-stellar.matchmaker-caution :items="$matchContext['caution_flags']" />
                 <x-stellar.matchmaker-missing :items="$matchContext['missing_data']" />

@@ -657,15 +657,14 @@ class GeographicMatchingCurrentContractTest extends TestCase
     /**
      * @test
      *
-     * The known legacy asymmetry, pinned rather than fixed: `TenantCriteriaLoader`
-     * hard-codes `preferred_zip_codes => []` because the legacy tenant criteria
-     * form has no ZIP field. That is a LOADER limitation, not a matching one —
-     * the shared engine scores a tenant ZIP perfectly well when a payload
-     * carries one, which is what the modern `TenantOfferListingCriteriaLoader`
-     * supplies. Asserting it here keeps the limitation visible and stops anyone
-     * "discovering" it later as a scoring bug.
+     * The engine has no tenant-specific ZIP behaviour: a tenant payload carrying a ZIP
+     * scores exactly as a buyer's does. This used to be pinned alongside a known
+     * loader gap — `TenantCriteriaLoader` hard-coded `preferred_zip_codes => []` and so
+     * withheld every legacy tenant ZIP. That loader now reads the blob's `zip_codes`
+     * (see TenantCriteriaZipMatchingTest); this case keeps proving the half that was
+     * never broken, the shared scoring.
      */
-    public function the_shared_engine_scores_zip_for_tenant_payloads_even_though_the_legacy_loader_sends_none(): void
+    public function the_shared_engine_scores_zip_for_tenant_payloads(): void
     {
         $tenantWithZip = new BuyerCriteriaPayload([
             'property_types'      => ['Residential Lease'],
@@ -676,7 +675,7 @@ class GeographicMatchingCurrentContractTest extends TestCase
         $this->assertSame(
             self::CITY_ZIP_PTS,
             $this->locationScore($this->listing(['postal_code' => '33602']), $tenantWithZip),
-            'The engine has no tenant-specific ZIP behaviour; only the legacy loader withholds ZIPs'
+            'The engine has no tenant-specific ZIP behaviour'
         );
     }
 }

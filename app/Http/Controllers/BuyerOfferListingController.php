@@ -126,6 +126,10 @@ class BuyerOfferListingController extends Controller
          * produce no pin; nothing here geocodes. */
         $importantPlaces = app(\App\Services\Offers\ImportantPlacesService::class)
             ->normalize($auction->info('important_places_json'));
+        // Where each Important Place is belongs to the client: exact for the listing's owner (the
+        // only account that can edit it), type + miles for everyone else. `auth()->check()` first
+        // — a guest's null id and a null user_id would otherwise both cast to 0 and "match".
+        $importantPlacesExact = auth()->check() && (int) auth()->id() === (int) $auction->user_id;
 
         $boundaryData = $boundaryLookupService->resolve($locationDnaPreferences, $legacyLocation);
         $floodZoneData = $floodZoneLookupService->resolve($boundaryData, $locationDnaPreferences ?? []);
@@ -147,7 +151,7 @@ class BuyerOfferListingController extends Controller
 
         return view('offer-listing.buyer.view', compact(
             'auction', 'meta', 'askAiChipContext', 'biddingWindow',
-            'locationDnaPreferences', 'legacyLocation', 'importantPlaces',
+            'locationDnaPreferences', 'legacyLocation', 'importantPlaces', 'importantPlacesExact',
             'boundaryData', 'floodZoneData', 'schoolDistrictData',
             'locationIntelligenceSummary',
             'agentAiV2', 'agentAiAgentId', 'agentAiScope'

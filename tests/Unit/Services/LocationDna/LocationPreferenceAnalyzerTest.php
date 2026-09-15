@@ -17,7 +17,8 @@ use Tests\TestCase;
  *   (6)  Single city (no ZIPs/polygons/radii) → highly targeted line
  *   (7)  Single polygon → "Focused on a specifically defined target area."
  *   (8)  Multiple polygons → "Searching across several custom-defined target areas."
- *   (9)  Radius search present → radius insight line
+ *   (9)  Radius search present → NO generic radius line (retired: the criteria summary
+ *        states each radius exactly; the sentence read as location intelligence)
  *   (10) Two or more cities → submarket-framing line
  *   (11) Cities-only preference type line
  *   (12) ZIP-only preference type line
@@ -28,7 +29,8 @@ use Tests\TestCase;
  *         Updated for Phase 5B: uses ZIPs for breadth so no combining rules fire.
  *   (17) Governance — no DB, Eloquent, or OpenAI imports in the service file
  *   (18) Phase 5B — combined flexibility + city list sentence (rule a)
- *   (19) Phase 5B — combined flexibility + radius sentence (rule b)
+ *   (19) Rule (b) retired — flexibility + radius yields the standalone flexibility line and
+ *        no "commuting distance" claim
  *   (20) Phase 5B — broad + submarket deduplication: broad absent, submarket present (rule c)
  *   (21) Phase 5B — determinism: analyze() called twice with same input returns identical array
  *
@@ -307,11 +309,11 @@ class LocationPreferenceAnalyzerTest extends TestCase
     }
 
     // =========================================================================
-    // (9) Radius search present → radius insight line
+    // (9) Radius search present → NO generic radius line
     // =========================================================================
 
     /** @test */
-    public function it_generates_radius_line_when_radius_searches_are_present(): void
+    public function it_does_not_restate_a_radius_search_as_a_generic_line(): void
     {
         $preferences = [
             'radius_searches' => [
@@ -322,10 +324,9 @@ class LocationPreferenceAnalyzerTest extends TestCase
         $result = $this->makeAnalyzer()->analyze($preferences);
 
         $this->assertSummaryShape($result);
-        $this->assertContains(
-            'Searching within a defined radius from a preferred location.',
-            $result['summary_lines'],
-        );
+        $this->assertSame([], $result['summary_lines'], 'A radius alone yields no intelligence line');
+        $this->assertNull($this->indexOfLineContaining($result['summary_lines'], 'radius'));
+        $this->assertNull($this->indexOfLineContaining($result['summary_lines'], 'preferred location'));
     }
 
     /** @test */
@@ -658,7 +659,7 @@ class LocationPreferenceAnalyzerTest extends TestCase
     /** @test */
     public function it_places_submarket_line_before_radius_line(): void
     {
-        // Standalone submarket (no flex) + radius → submarket before radius.
+        // Standalone submarket (no flex) + radius → the submarket line, and still no radius line.
         $preferences = [
             'cities'          => ['Tampa', 'St. Petersburg'],
             'radius_searches' => [
@@ -671,16 +672,8 @@ class LocationPreferenceAnalyzerTest extends TestCase
 
         $this->assertSummaryShape($result);
 
-        $geoIdx    = $this->indexOfLineContaining($lines, 'submarkets');
-        $radiusIdx = $this->indexOfLineContaining($lines, 'defined radius');
-
-        $this->assertNotNull($geoIdx, 'Submarket line must be present');
-        $this->assertNotNull($radiusIdx, 'Radius line must be present');
-
-        $this->assertTrue(
-            $geoIdx < $radiusIdx,
-            'Geographic targeting must come before polygon/radius lines',
-        );
+        $this->assertNotNull($this->indexOfLineContaining($lines, 'submarkets'), 'Submarket line must be present');
+        $this->assertNull($this->indexOfLineContaining($lines, 'defined radius'), 'No generic radius line');
     }
 
     // =========================================================================
@@ -780,11 +773,11 @@ class LocationPreferenceAnalyzerTest extends TestCase
     }
 
     // =========================================================================
-    // (19) Phase 5B — combined flexibility + radius sentence (rule b)
+    // (19) Rule (b) retired — flexibility + radius → standalone flexibility line
     // =========================================================================
 
     /** @test */
-    public function it_combines_flexibility_and_radius_into_single_commute_distance_sentence(): void
+    public function it_uses_the_standalone_flexibility_line_when_flexibility_accompanies_a_radius(): void
     {
         $preferences = [
             'flexible_location' => true,
@@ -798,31 +791,21 @@ class LocationPreferenceAnalyzerTest extends TestCase
 
         $this->assertSummaryShape($result);
 
-        // Combined sentence must be present.
-        $this->assertContains(
-            'Open to opportunities within commuting distance of preferred areas while remaining flexible on exact location.',
+        $this->assertSame(
+            ['Open to multiple areas and willing to prioritize overall fit over a specific neighborhood.'],
             $lines,
         );
 
-        // Standalone flexibility line must NOT appear.
-        $this->assertNotContains(
-            'Open to multiple areas and willing to prioritize overall fit over a specific neighborhood.',
-            $lines,
-        );
-
-        // Standalone radius line must NOT appear.
-        $this->assertNotContains(
-            'Searching within a defined radius from a preferred location.',
-            $lines,
-        );
+        // Nothing measures commuting; a radius is not a commute.
+        $this->assertNull($this->indexOfLineContaining($lines, 'commuting'));
+        $this->assertNull($this->indexOfLineContaining($lines, 'defined radius'));
     }
 
     /** @test */
-    public function it_applies_rule_a_not_rule_b_when_both_cities_and_radius_accompany_flexibility(): void
+    public function it_applies_rule_a_when_both_cities_and_radius_accompany_flexibility(): void
     {
-        // When flex + multi-city + radius all appear, rule (a) fires first and
-        // consumes flexibility. Rule (b) must NOT fire because flex is already consumed.
-        // The radius line appears separately (not consumed by rule b).
+        // Flex + multi-city + radius: rule (a) fires and consumes flexibility; the radius adds
+        // no line of its own.
         $preferences = [
             'flexible_location' => true,
             'cities'            => ['Tampa', 'St. Petersburg'],
@@ -841,17 +824,8 @@ class LocationPreferenceAnalyzerTest extends TestCase
         $this->assertNotNull($combined, 'Rule (a) combined line must be present');
         $this->assertStringContainsString('overall fit', $combined);
 
-        // Rule (b) combined line must NOT appear (rule a consumed flexibility first).
-        $this->assertNotContains(
-            'Open to opportunities within commuting distance of preferred areas while remaining flexible on exact location.',
-            $lines,
-        );
-
-        // Radius line appears independently (not consumed by rule b since rule b didn't fire).
-        $this->assertContains(
-            'Searching within a defined radius from a preferred location.',
-            $lines,
-        );
+        $this->assertNull($this->indexOfLineContaining($lines, 'commuting'));
+        $this->assertNull($this->indexOfLineContaining($lines, 'defined radius'));
     }
 
     // =========================================================================

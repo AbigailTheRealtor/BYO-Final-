@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Listing\ListingFlag;
 use App\Support\Listing\ListingWorkflow;
 
 use Carbon\Carbon;
@@ -498,7 +499,13 @@ class BuyerAgentAuctionController extends Controller
         // Gates the owner-only empty state — a bid count is itself a disclosure.
         $canReviewAllProposals = $proposalAccess->canReviewAllProposals(auth()->id(), $auction);
 
-        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals', 'hlaAudience', 'hlaViewerIsOwner'));
+        // Location DNA — the search areas, radius searches and Important Places this listing already
+        // stores, in the inputs of the same shared map component the Buyer Offer Listing page uses.
+        // Important Places are located only for the owner; everyone else gets type + miles.
+        $hireLocationDna = app(\App\Services\LocationDna\ListingLocationDnaViewData::class)
+            ->forSearch($auction, [], $hlaViewerIsOwner);
+
+        return view('hire_buyer_agent.view', compact('counties', 'auction', 'data', 'counterTerms', 'canReviewAllProposals', 'hlaAudience', 'hlaViewerIsOwner', 'hireLocationDna'));
     }
 
     public function buyerAgentAuctionsAdmin(Request $request)
@@ -506,13 +513,17 @@ class BuyerAgentAuctionController extends Controller
         $page_data['title'] = "Hire Buyer's Agent";
         $page_data['type'] = $type = $request->type ?? 0;
 
+        // is_approved / is_sold are varchar and hold 'true'/'false' as well as '1'/'0';
+        // ListingFlag reads both. A 'false' row belongs in Pending, where it can be approved.
+        $auctions = BuyerAgentAuction::where('is_draft', false);
         if ($type == 1) {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_approved', true)->where('is_draft', false)->get();
+            ListingFlag::whereTrue($auctions, 'is_approved');
         } elseif ($type == 2) {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_sold', true)->where('is_draft', false)->get();
+            ListingFlag::whereTrue($auctions, 'is_sold');
         } else {
-            $page_data['auctions'] = BuyerAgentAuction::where('is_approved', false)->where('is_draft', false)->get();
+            ListingFlag::whereNotTrue($auctions, 'is_approved');
         }
+        $page_data['auctions'] = $auctions->get();
         return view('admin.buyerAgentAuctions', $page_data);
     }
 

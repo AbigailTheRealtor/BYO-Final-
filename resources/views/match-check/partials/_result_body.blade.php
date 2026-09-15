@@ -58,6 +58,13 @@
                     </ul>
                 @endif
 
+                @if (!empty($report->importantPlaces))
+                    <h3 class="h6">Location match &middot; Important Places</h3>
+                    <div class="mb-3" data-important-place-matches>
+                        @include('partials.stellar.important-place-rows', ['items' => $report->importantPlaces])
+                    </div>
+                @endif
+
                 @if (!empty($report->tradeoffs))
                     <h3 class="h6">Trade-offs</h3>
                     <ul class="mb-3">

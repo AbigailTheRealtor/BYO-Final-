@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Support\Safeguards\ProductionDatabaseGuard;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -104,9 +105,18 @@ class UserSeeder extends Seeder
         // Safety gate: these are shared-credential dev/test accounts (password
         // 12345678, including an admin@exp.com admin). They must never be
         // provisioned in production, regardless of how the seeder is invoked.
-        if (app()->environment('production')) {
+        //
+        // APP_ENV alone was not enough: scripts/post-merge.sh runs this seeder whenever the
+        // shell's APP_ENV is not "production", and the shell does not carry the workspace .env.
+        // The assessment also checks what the database connection actually resolves to.
+        $assessment = ProductionDatabaseGuard::assessApplication();
+
+        if ($assessment->isProduction()) {
             if ($this->command) {
                 $this->command->warn('UserSeeder skipped: dev/test accounts are not seeded in production.');
+                foreach ($assessment->signals() as $signal) {
+                    $this->command->warn('  - ' . $signal);
+                }
             }
             return;
         }

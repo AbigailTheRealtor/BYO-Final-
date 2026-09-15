@@ -98,14 +98,71 @@ boolean `true`. It was `(bool) env(...)`, under which `off` and `no` switched th
 (authorised by the product owner) — so the network guard, telemetry and admission see them.
 `TenantGoogleClientRoutingTest` checks the source before invoking anything.
 
+**Geocoding is budgeted too, on its OWN allowance, behind its OWN switch.** It is the second entry
+in the middleware's `BUDGETED` map — `google_geocoding.enabled` / `.hourly_limit` / `.daily_limit`
+(`config/google_geocoding.php`) — so it is a separate `ProviderRequestBudget` (`google_geocoding`)
+from Nearby's (`google_places_nearby`): spending one never spends the other, and they share only
+the admission lock, which counts nothing. `GOOGLE_GEOCODING_ENABLED` defaults **off** and parses
+exactly like the Places switch; a present key is not permission. Ceilings 25 / hour and 100 / day,
+hard, one unit per outbound Geocoding request. It is **separate from `GOOGLE_PLACES_ENABLED` on
+purpose**: sharing one switch would mean turning Location DNA's POIs on also turned tenant
+geocoding on. The Location DNA geocode step and `app:geocode-seller-landlord-listings` require
+**both** switches — the Geocoding one is an additional gate there, never a replacement.
+
+Every server-side Geocoding caller resolves the container client, so admission cannot be skipped:
+`LocationDnaGeocodeService`, the backfill command, and the four Tenant address pickers
+(`TenantOfferListing`/`Edit`, `TenantAgentAuction`/`Edit`). What each does with a refusal:
+`LocationDnaGeocodeService` records **`skipped`** (`google_geocoding_refused: <reason>`) — never
+`failed`, never "no coordinates", never cached as an answer — so the next run asks again; the
+command **stops** at the first refusal, prints how many rows it never processed, and exits non-zero
+rather than looping through refusals; the Tenant pickers leave city / state / ZIP / county empty for
+the user to fill in, keep the address as picked, and never raise a validation error for it. That
+last change is the only edit to the frozen `TenantAgentAuction` / `TenantAgentAuctionEdit` beyond the
+client routing, and was separately authorised: their catch caught only `RequestException`, so a
+refusal or a timeout crashed the Livewire request.
+
+**No Google exception message is ever logged, stored raw, or shown.** Guzzle writes the request URI
+into its exception messages and redacts only user-info, never the query string — which is where
+every server-side Google key travels. `Log::error('…' . $e->getMessage())` was in every Tenant
+geocode and autocomplete catch and two Buyer ones, and wrote the key into the log on the first
+4xx/5xx or timeout. `GoogleProviderFailure::log()` records provider, family, operation, a safe
+category, the HTTP status, the exception class and a refusal's reason, and nothing from the request;
+`GoogleProviderFailure::redact()` strips every URL's query string where a message must be kept (the
+`geocode_error` on a Location DNA row). `GoogleCredentialLogRedactionTest` fails with a fake key.
+
 **Deliberately NOT budgeted yet — do not treat as done:** Places **Autocomplete** (one request per
-keystroke on the listing forms; the Nearby numbers would break address entry) and Google
-**Geocoding** (no agreed limit). The middleware identifies and passes both through (telemetry still
-records them); budgeting a family later is one entry in its `BUDGETED` map plus config keys, never a
-second counter system. **Browser-side** Google — `google.maps.places.Autocomplete` in ~44 Blade files
-and the Maps JavaScript API — never touches this server, so no server budget can govern it; it needs
-Google Cloud controls (a dedicated, referrer- and API-restricted browser key, quotas, billing alerts,
-a rehearsed key/API disable).
+keystroke on the listing forms; the Nearby numbers would break address entry). The middleware
+identifies and passes it through (telemetry still records it); budgeting a family later is one entry
+in its `BUDGETED` map plus config keys, never a second counter system.
+
+### Browser-side Google — a separate credential, behind its own switch
+
+**The browser gets `GOOGLE_MAPS_BROWSER_KEY`, never `GOOGLE_PLACES_API_KEY`.** The server key
+authenticates our own Places and Geocoding calls behind the admission budgets — and it was also
+printed into every page that loads the Maps SDK, the Location DNA map injector and the Stellar
+Maps Embed iframe, including the **public** Offer Listing detail pages. A key in page source can
+be copied and spent against our account, and no server-side ceiling can see those requests: they
+never pass through this process. A key used from both places also cannot be referrer-restricted,
+which is the one protection a browser key has.
+
+`App\Support\Google\GoogleBrowserMaps` is the only reader, and it **never reads the server key** —
+there is no fallback. `GOOGLE_MAPS_BROWSER_ENABLED` (default **off**, parsed fail-closed like the
+other Google switches) and a non-empty key must both agree; either missing means no credential is
+emitted and the surfaces take their existing degraded path — free-text address entry, the amber
+"not configured" panel, the "View on Google Maps" link. The switch is also the emergency stop that
+needs no Google Cloud access. `GoogleBrowserKeySeparationTest` renders every surface, and whole
+public and authenticated pages, with two deliberately different fake keys and asserts the server
+one appears nowhere; `GoogleMapsBladeGuardTest` keeps the SDK URL inside the loader components.
+
+**Still Google Cloud's job, and not done here:** the browser key must be restricted to our exact
+production origins and to the Maps JavaScript / Places / Maps Embed APIs, with its own quotas,
+billing alerts and a rehearsed disable. One key per environment. **No key is created, enabled or
+configured by this change**, and the server key is not rotated yet — that happens only after the
+split is deployed and no page depends on the old key.
+
+**Not yet done, deliberately (later PRs):** Autocomplete field masks, the duplicate-SDK-load guard,
+the geocode-on-blur dedupe, bounded SDK polls, one shared memoized loader, focus-triggered
+Autocomplete and click-to-load public maps.
 
 **The same single-host boundary as Explore.** The counters and the admission lock live in the
 configured cache — the file cache on one host here, where the lock is exclusive across every PHP
@@ -169,6 +226,117 @@ them and the listing never showed them. Both Buyer and Tenant controllers normal
 designation, which needs a styled multi-layer source the renderer does not have yet; their
 legends are suppressed under MapLibre rather than drawn in the wrong colours. Deferred, not
 dropped.
+
+**A radius row has two stored shapes, and `RadiusSearchRow` is the one reading of both.** The
+widget writes flat `{address|label, lat, lng, radius_miles}`; older rows are nested
+`{center: {lat, lng}, radius_miles}`. The matchers always read both, but the Google detail map,
+`FloodZoneLookupService`, `SchoolDistrictLookupService` and `LocationDnaEnrichmentRunner` read only
+`center` — so every radius saved by the current UI drew no Google circle and derived no flood,
+school or POI geometry. All four now go through `App\Support\LocationDna\RadiusSearchRow` (flat
+first, then `center`, the matchers' order). It is read-only: no row is ever rewritten.
+
+**The detail map says in words what it draws.** `LocationDnaCriteriaDisplay` turns the same stored
+rows into radius addresses and miles, Important Place type/address/miles, and a custom-area count,
+rendered by `partials/location-dna/_criteria-summary` inside the shared `x-location-dna-map` — one
+reading for Buyer and Tenant, never coordinates or JSON. It is display only: not a serializer, not a
+matcher. Seller and Landlord carry a property pin, never reach it, and their pin is withheld wherever
+`$mlsAddressVisible` withholds the address line — a rooftop point is the address, drawn.
+
+**Important Places are private to the listing's owner.** A place is the client's workplace, their
+child's school, a relative's home — and all six Buyer/Tenant detail pages (Offer Listing, Criteria,
+Hire) are public. Everyone else sees the type and the miles ("Work · Within 3 miles") and nothing
+that locates it: no address, no coordinate, so no pin, no ring centred on it, no tooltip, and nothing
+in the map's JSON payload. `x-location-dna-map` reduces the rows through
+`ImportantPlacesService::publicRows()` (an allowlist, `PUBLIC_KEYS`) **before** the tier chain, the
+summary and both renderers read them, unless the caller passes `importantPlacesExact` = true — and
+**that is the default in every direction**: absent, false or truthy-but-not-`true` is private, and
+`LocationDnaCriteriaDisplay::from()` defaults private too. The controllers set the flag from
+ownership (`auth()->check()` first — a guest's null id and a null `user_id` both cast to 0); Hire
+passes `$hlaViewerIsOwner` into `forSearch()`, which also drops the private keys before the view.
+The owner is the only account that can edit these listings, so "owner" and "authorized editor" are
+the same set today. Stored rows, save paths and matchers keep the exact address and coordinate.
+
+**Buyer/Tenant criteria are LOCATION PREFERENCES, and are labelled so.** Radius searches, Important
+Places, named areas, custom areas, flexibility and notes are what the client asked for, not calculated
+Location DNA about a property. The Buyer/Tenant detail pages carry a "Search Areas & Location
+Preferences" heading (opt-in `showHeading`, because Seller/Landlord render the same component), and
+the Hire section is titled the same for Buyer/Tenant. `LocationPreferenceAnalyzer` no longer emits
+"Searching within a defined radius from a preferred location." or rule (b)'s "within commuting
+distance": both sat under "Location Intelligence" reading as findings, and neither was true as
+written. The criteria summary states each radius exactly.
+
+**Important Places are miles only; the "Commute Preferences" block is retired.** Neither "within
+minutes", Travel Mode, nor the Buyer/Tenant commute ZIP/minutes/mode fields had a consumer — no
+routing engine exists, and no scorer reads them. Stored values are preserved: a historical minutes
+row keeps `minutes` (never converted to miles) and renders as a pin without a ring until its owner
+explicitly switches it, and the commute meta is still loaded, re-saved unchanged, and shown on the
+listing page. Important Place miles are **not radii**: adding them to the Stellar engine's radius
+list would widen matches (it ORs areas), not require proximity — they are scored per listing instead
+(next paragraph).
+
+**Important Places are private location CONSTRAINTS, and MLS matching measures them locally.**
+`ImportantPlaceMatcher` (`app/Services/Stellar/Matching/`) is the one consumer of a place's private
+coordinate for matching. For each MLS listing it measures the straight-line distance from the
+listing's own `bridge_properties.latitude/longitude` to each place, with `App\Support\Geo\GreatCircleDistance`
+— the one Haversine definition, R = 3958.8 mi, which radius scoring now also uses — and judges it
+against the requested miles. **No Google API, no routing, no network, no per-property fee**: stored
+coordinates in, arithmetic out. Only miles rows are requirements; a historical minutes row is left out,
+never converted. Each place is judged independently; exactly the requested distance is within it.
+
+All four loaders put the places into `BuyerCriteriaPayload::$importantPlaces` (Buyer/Tenant ×
+Criteria/Offer Listing), so the one shared matcher serves the results page, the property-detail match
+context and Match Check alike. **They score, they never select**: a place shares the 18-pt proximity
+slot with radius and polygon criteria by `max()` — every measured requirement met earns the full 18,
+some earns that share — so it can only raise a listing's location score, never lower one a radius
+earned, and the SQL geography is untouched: nothing is excluded for failing a place and nothing is
+added for being near one. A listing with no MLS coordinate, or a place never located, is **"Distance
+unavailable" — never a match, and no credit**. No free geocoder backfills a missing MLS coordinate
+today (the Census rung is off and not wired to `bridge_properties`), and none may be paid for here.
+**Hire Buyer/Tenant listings are not in MLS matching at all** — the Offer Listing loaders select
+`workflow_type = offer_listing` only — so they gain nothing from this until a Hire entry point exists.
+
+**Public output may state the category and the distance, never the place.** Rows leave the matcher as
+type, label (the client's own "Other" label), required miles, measured miles and a verdict — no address,
+no coordinate — and every page receives them through `ImportantPlaceMatcher::present()`, a hand-built
+allowlist: the results card, `x-stellar.matchmaker-important-places` on the detail page, and
+`MatchReport::$importantPlaces` (presented before it is flashed into the session). One partial,
+`partials/stellar/important-place-rows`, words all three. **These are calculated matching results —
+property location intelligence — and are titled "Location match · Important Places"; the client's
+"Search Areas & Location Preferences" describes what they asked for, and the two are never merged.**
+
+**Hire Agent detail pages render Location DNA through the same component.** A Hire listing shares
+its model and meta with the Offer Listing of its role, and stores the same Location DNA.
+`ListingLocationDnaViewData` builds the component's inputs from that meta (`forSearch()` for
+Buyer/Tenant, `forProperty()` for Seller/Landlord) and `partials/location-dna/_hire-agent-section`
+renders them in the `location-dna` section of `config/hire_agent_sections.php`. The section renders
+only when there is something to show. **Seller Hire's exact location is owner-only** — that page
+never publishes the street address; Landlord Hire's is public because its hero already titles the
+listing with the address.
+
+**Buyer/Tenant Criteria carry Important Places, and their Edit pages edit.** Same miles-only widget,
+same `ImportantPlacesService`, same `important_places_json` meta. Incomplete rows are kept rather
+than rejected: these are plain multi-step POST forms that repopulate nothing from `old()`, so a
+rejection would discard the wizard. Both Edit forms used to post to the ADD route (every save made
+a new listing), and the update methods checked no owner — Tenant's even reassigned `user_id` to the
+poster. Edit and update are owner-only now; the Buyer check sits before the `try`, whose `catch`
+turns any exception into a 200.
+
+**`TenantCriteriaLoader` sends ZIPs, and map cities/counties as a fallback.** It hard-coded
+`preferred_zip_codes => []` while the tenant form's only ZIP input (the Location DNA widget) stores
+them in the blob; it reads `zip_codes` now, with the Buyer loader's key-presence semantics. Cities
+and counties follow a different, deliberate rule: the form's EXPLICIT `cities` / `counties` field
+when it holds anything, otherwise the blob's list (`CriteriaLocationValues::explicitElseMap()`).
+Never a union — two representations must not widen matching — and never an override. Both sides
+get Buyer's name normalisation (`CriteriaLocationValues`), because the matcher compares against
+Bridge's spelling exactly. **Buyer Criteria is not the same contract**: its cities are map-first
+(blob wins whenever it has a `cities` key) and its counties read only `preferred_counties`.
+
+**A manual Seller/Landlord listing only gets a pin from a live coordinate rung.** The pin code works
+whenever a trusted coordinate exists. The autocomplete's browser point is deliberately not
+persisted, and an unprovenanced geocode reads as coarse, so with Census and the address-point corpus
+both off the ladder resolves nothing and there is NO EXACT PIN — by design, not a lost write, and
+out of scope for PR #146. Enabling a trusted rung in production is a separate operations / product
+decision. MLS-imported listings are unaffected.
 
 ### Location DNA attribution, and the Overture pre-activation gate
 
@@ -307,9 +475,14 @@ there must carry a sentence saying why.
 allow-lists fail closed; a field nobody has cleared is rendered nowhere.
 
 **Tier 1 is not repeated in Tier 2** — except where the listing page does not actually render the
-destination. `TIER1_MAPPED_BUT_UNRENDERED` names those (landlord's `air_conditioning`, `sewer`,
-`water`, `floor_covering`, …) and is re-derived from the Blade templates by the parity test, so it
-cannot go stale in either direction.
+destination, or where the import did not actually write the value whole. `TIER1_MAPPED_BUT_UNRENDERED`
+names the first (landlord's `air_conditioning`, `sewer`, `water`, `floor_covering`, …) and is
+re-derived from the Blade templates by the parity test, so it cannot go stale in either direction.
+`MlsNativeFieldCoverage` decides the second by running the real prefill and `MlsFactProjection` on
+the record: a fact the form cannot take for that property type (a garage on Income), a value the
+destination vocabulary cannot represent (`LivingAreaSource = Estimated`) or a multi-value source
+reduced to a single-select (`BusinessType`) stays in MLS Details. **Having a map target is not being
+written.** `BuildingAreaTotal` is shown there for landlord, whose map deliberately has no target.
 
 **Do not map a field whose NAME matches and whose MEANING does not.** `minimum_cap_rate` and
 `minimum_annual_net_income` are the seller's *desired minimum*, not the property's actual figures;
@@ -1020,6 +1193,38 @@ asking a landlord to pre-declare a policy invites a blanket answer to an individ
 unlocking value is ambiguous and guessing it would drop stored text), the lease/commercial prose
 set, and any historical remediation command.
 
+### Manual QA / debug entry points refuse the production database
+
+PHPUnit is isolated (`tests/bootstrap.php`, `TestCase::resolvedConnection()`). **Nothing else is.**
+A standalone script inherits the shell, and on this host the shell is production: `DATABASE_URL`,
+`PGHOST=helium`, `DB_DATABASE=heliumdb`, and `APP_ENV=production` in the workspace `.env`.
+`ProductionDatabaseGuard` (`app/Support/Safeguards/`) is the one decision. It resolves every
+connection through the same `ConfigurationUrlParser` the factory uses, applies libpq's
+`PGHOST`/`PGDATABASE` fallback, reads the raw process environment, and refuses on **any one**
+production signal. An unverifiable target counts as production too. It opens no connection.
+
+* **Scripts** (`scripts/`, `spikes/`) boot with `$app = \App\Support\Safeguards\ManualScriptBootstrap::boot(__FILE__);`,
+  never `bootstrap/app.php` directly. The check runs after config loads and before any provider
+  boots. `ManualScriptGuardCoverageTest` **discovers** every PHP file in those directories. A new
+  script must be guarded or carry `@manual-script-guard not-applicable: <why>`, and that claim is
+  verified against its code.
+* **Artisan QA commands** use `RefusesProductionDatabase` as the first statement of `handle()`. A
+  command whose description says `CI only` / `DEV-ONLY` / `staging/dev` / `pre-GA` / `Benchmark`
+  must use it (tested).
+* **Fixture seeders** (users, `*TestSeeder`) check `assessApplication()` or call
+  `ProductionDatabaseRefused::unlessSafe()` (tested).
+* **Override:** `--i-know-this-is-production`, exact token only and never an environment variable.
+  It is opt-in per entry point, and today only the read-only `ldna:audit-listing` and
+  `matching:preview` accept it. Do not add it to anything that writes.
+* **Stage 0 `psql` spike runners** (`spikes/phase-2-batch-0a-postgis-knn/`) source
+  `lib/require-isolated-target.sh`. The target must be named in `SPIKE_PGHOST`/`SPIKE_PGDATABASE`,
+  never the ambient `PG*`. `helium`, `heliumdb`, a blank target or a Replit deployment refuses
+  before any `psql` (`Stage0SpikeRunnerIsolationTest`).
+* **`tinker` warns on STDERR, it does not block.** Runbooks use `tinker --execute` for read-only
+  production checks. Do not create QA fixtures in tinker.
+
+Audit, remaining risks and the proposed `qa:fixture` command: `docs/manual-qa-database-safety.md`.
+
 ### Deployment & migrations
 
 **`deploy/start-production.sh` is the only thing that runs migrations.** The Replit `[deployment] run` command invokes it; it reports via `deploy:preflight`, then runs `php artisan migrate --force`, then serves — and a failed migration stops the deploy rather than serving against an old schema.
@@ -1060,9 +1265,13 @@ Beyond standard Laravel keys, this app requires:
 |-----|---------|
 | `BRIDGE_DATASET` | Bridge Data Output dataset ID |
 | `BRIDGE_SERVER_TOKEN` | Bridge API access token |
-| `GOOGLE_PLACES_API_KEY` | Address validation + POI lookup |
-| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete or Geocoding. |
-| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Autocomplete and Geocoding are not budgeted yet, and browser-side Google is not governed by the server. See *Google Places request budget*. |
+| `GOOGLE_PLACES_API_KEY` | **SERVER key only** — this application's own Places Nearby Search and Geocoding calls, behind the admission budgets. **Never emitted into a page**: browser surfaces use `GOOGLE_MAPS_BROWSER_KEY`, and there is no fallback between them. Restrict it in Google Cloud to Places + Geocoding (and to the deployment's egress IPs where stable); it does not need the Maps JavaScript API. |
+| `GOOGLE_MAPS_BROWSER_ENABLED` | Master switch for **everything browser-side**: the two Maps SDK loader components, the Location DNA map injector and the Stellar Maps Embed iframe. Default `false`, parsed fail-closed (`true`/`1`/`on`/`yes` only). Off means no SDK tag, no iframe and **no Google credential in the HTML** — address fields still accept typed input and maps show the "not configured" panel. The emergency stop that needs no Google Cloud access. Read only via `App\Support\Google\GoogleBrowserMaps`. |
+| `GOOGLE_MAPS_BROWSER_KEY` | The **browser** credential, a different key from `GOOGLE_PLACES_API_KEY`. Emitted into pages — including the public Offer Listing detail pages — so it must be restricted in Google Cloud to our exact production origins and to the Maps JavaScript / Places / Maps Embed APIs, with its own quotas and billing alerts. One key per environment; a development key names the exact development origin and never a broad wildcard over a shared host suffix. Absent by default; both this and the switch must agree. |
+| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete. Also required — together with `GOOGLE_GEOCODING_ENABLED` — by the Location DNA geocode step and the geocode backfill command, as it always was. |
+| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Geocoding has its own ceilings below, Autocomplete is not budgeted, and browser-side Google is not governed by the server. See *Google Places request budget*. |
+| `GOOGLE_GEOCODING_ENABLED` | Master switch for **every server-side Google Geocoding request** — Location DNA's geocode step, the backfill command, the four Tenant address pickers. Default `false`, parsed fail-closed exactly like `GOOGLE_PLACES_ENABLED`; a present key is not permission. **Separate from `GOOGLE_PLACES_ENABLED` on purpose**, and an additional gate — never a replacement — where that switch already applied. Off means zero Geocoding requests: Tenant pickers leave city / state / ZIP / county for the user, Location DNA records the coordinate as `skipped`. |
+| `GOOGLE_GEOCODING_HOURLY_LIMIT` / `GOOGLE_GEOCODING_DAILY_LIMIT` | **HARD** Geocoding ceilings (25 / 100) on their **own** `ProviderRequestBudget` — independent of the Nearby ceilings; spending one never spends the other. One unit per outbound Geocoding request, admitted before it is sent; a stored or cached coordinate is free; a retry pays again. Zero or malformed blocks Geocoding entirely. See *Google Places request budget*. |
 | `OPENAI_API_KEY` | DNA profile generation |
 | `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked) |
 | `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`) |

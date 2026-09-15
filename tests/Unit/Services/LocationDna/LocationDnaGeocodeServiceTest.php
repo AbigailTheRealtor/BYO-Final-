@@ -74,7 +74,11 @@ class LocationDnaGeocodeServiceTest extends TestCase
         // keeps these cases exercising the branch they were written for; the
         // switched-off behaviour is asserted separately in
         // tests/Feature/Security/GooglePlacesKillSwitchTest.
-        config(['google_places.enabled' => true]);
+        //
+        // Geocoding has its own switch too (config/google_geocoding.php), required in
+        // addition to the Places switch; the same reasoning applies. Its switched-off and
+        // over-budget behaviour is asserted in tests/Feature/Security/GoogleGeocodingBudgetTest.
+        config(['google_places.enabled' => true, 'google_geocoding.enabled' => true]);
     }
 
     // =========================================================================

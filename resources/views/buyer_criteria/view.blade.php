@@ -272,15 +272,19 @@
                     :share-token="$auction->ai_share_token"
                     :property-type="$auction->get->property_type ?? ''"
                 />
-                <!-- Location DNA Map Hero -->
+                <!-- Search Areas & Location Preferences -->
                 <x-location-dna-map
                     :preferences="$locationDnaPreferences ?? null"
                     :legacyLocation="$legacyLocation ?? []"
+                    :importantPlaces="$importantPlaces ?? []"
+                    :importantPlacesExact="$importantPlacesExact ?? false"
+                    :showHeading="true"
                     :boundaryData="$boundaryData ?? null"
                     :floodZoneData="$floodZoneData ?? null"
                     :schoolDistrictData="$schoolDistrictData ?? null"
                 />
-                <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['summary_lines'] ?? []" />
+                {{-- Calculated lines only: restating the client's own criteria is not intelligence. --}}
+                <x-location-dna-intelligence-summary :summaryLines="$locationIntelligenceSummary['calculated_lines'] ?? []" />
                 <!-- Description Box  -->
                 <div class="card description">
                     {{-- {{dd(@$auction)}} --}}

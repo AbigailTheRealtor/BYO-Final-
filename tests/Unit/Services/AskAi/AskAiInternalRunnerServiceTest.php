@@ -226,7 +226,18 @@ class AskAiInternalRunnerServiceTest extends TestCase
 
         $result = $runner->run('seller', 1, 'property_standout', 'What makes this property stand out?');
 
-        $this->assertSame($context, $result['context']);
+        // P0.2 — no viewer_scope is passed, so the runner fails closed to the PUBLIC scope, and
+        // public-scope redaction removes the consumer psychographic sections outright (P0).
+        // Everything else passes through unchanged.
+        $this->assertArrayNotHasKey('buyer_avatar', $result['context'],
+            'buyer_avatar must be absent from a public/non-owner context');
+        $this->assertArrayNotHasKey('tenant_avatar', $result['context'],
+            'tenant_avatar must be absent from a public/non-owner context');
+
+        $expectedContext = $context;
+        unset($expectedContext['buyer_avatar'], $expectedContext['tenant_avatar']);
+
+        $this->assertSame($expectedContext, $result['context']);
         $this->assertSame($contract, $result['contract']);
         $this->assertSame($package, $result['prompt_package']);
     }

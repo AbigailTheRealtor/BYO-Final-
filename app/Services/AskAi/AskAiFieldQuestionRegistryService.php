@@ -2372,15 +2372,10 @@ class AskAiFieldQuestionRegistryService
                 'sample_question_2'    => 'How much is the community development district fee per year?',
                 'keyword_route_status' => 'listing_native',
             ],
-            'listing.annual_noi' => [
-                'roles'                => ['seller'],
-                'field_type'           => 'listing_model',
-                'config_key'           => 'annual_noi',
-                'label'                => 'Annual Net Operating Income (NOI)',
-                'sample_question'      => 'What is the net operating income for this property?',
-                'sample_question_2'    => 'What annual NOI does this investment property generate?',
-                'keyword_route_status' => 'listing_native',
-            ],
+            // P0.2 — 'listing.annual_noi' is REMOVED. Its context alias (onto the seller's
+            // desired minimum_annual_net_income) and its keyword route were removed in P0; this
+            // entry was left behind, still claiming 'listing_native'. There is no actual-NOI
+            // listing field, so there is nothing for a listing path to declare.
             'listing.gross_annual_income' => [
                 'roles'                => ['seller'],
                 'field_type'           => 'listing_model',
@@ -3543,6 +3538,174 @@ class AskAiFieldQuestionRegistryService
                 'source_path'         => null,
                 'requires_data'       => false,
                 'public_allowed'      => true,
+            ],
+        ];
+    }
+
+    /**
+     * Approved catalog for the public "Questions About This Property" section on the
+     * Seller and Landlord listing pages.
+     *
+     * This is NOT another question engine. It adds no routing, no classification and no
+     * visibility tier: each entry names one context path this registry and
+     * AskAiContextBuilderService::CANONICAL_SOURCE_MAP already define, plus the identity
+     * of a deterministic formatter. Whether an entry is actually shown is decided in one
+     * place, AskAiPublicPropertyQuestionService::evaluate(), which requires every
+     * source_path and supporting_path to classify 'public_allowed' in
+     * SnapshotFactVisibility for the entry's role. Nothing here can make a fact public.
+     *
+     * Deliberately kept out of registry(), listingFieldRegistry() and
+     * suggestedQuestionRegistry(): those feed the free-form Ask AI router, the knowledge
+     * snapshot builders and the Ask AI chips, and none of them may change in Batch 1.
+     *
+     * Only seller and landlord appear. Buyer and tenant listings are search criteria and
+     * stay owner-only (SnapshotFactVisibility decision D2); the evaluator refuses those
+     * roles even if an entry for them were added here.
+     *
+     * Entry schema (keyed by a stable question id):
+     *   'role'             — exactly one of 'seller' | 'landlord'
+     *   'question'         — the shopper-facing question text
+     *   'source_path'      — the one listing.* context path the answer is read from
+     *   'supporting_paths' — further listing.* paths the formatter reads (each must also
+     *                        be public_allowed, or the question is hidden)
+     *   'formatter'        — identity of a formatter in AskAiPublicPropertyQuestionService
+     *   'guards'           — identities of hide-only ambiguity checks; never reveal anything
+     *
+     * @return array<string, array{role: string, question: string, source_path: string, supporting_paths: string[], formatter: string, guards: string[]}>
+     */
+    public static function publicPropertyQuestionRegistry(): array
+    {
+        return [
+            // ---- Seller ----
+            'seller_asking_price' => [
+                'role'             => 'seller',
+                'question'         => 'What is the asking price?',
+                'source_path'      => 'listing.asking_price',
+                'supporting_paths' => [],
+                'formatter'        => 'asking_price',
+                // The page hides Desired Sale Price on a Bidding Period listing, and shows
+                // two separately labelled prices when the MLS list price differs.
+                'guards'           => ['not_bidding_period', 'mls_price_not_divergent'],
+            ],
+            'seller_bedrooms' => [
+                'role'             => 'seller',
+                'question'         => 'How many bedrooms are there?',
+                'source_path'      => 'listing.bedrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'bedroom_count',
+                // Without the meta row the context falls back to the native bedroom_id
+                // column, which is a foreign key, not a count.
+                'guards'           => ['meta_present:bedrooms'],
+            ],
+            'seller_bathrooms' => [
+                'role'             => 'seller',
+                'question'         => 'How many bathrooms are there?',
+                'source_path'      => 'listing.bathrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'bathroom_count',
+                'guards'           => ['meta_present:bathrooms'],
+            ],
+            'seller_heated_square_feet' => [
+                'role'             => 'seller',
+                'question'         => 'What is the heated square footage?',
+                'source_path'      => 'listing.square_feet',
+                'supporting_paths' => [],
+                'formatter'        => 'heated_square_feet',
+                'guards'           => [],
+            ],
+            'seller_year_built' => [
+                'role'             => 'seller',
+                'question'         => 'What year was the property built?',
+                'source_path'      => 'listing.year_built',
+                'supporting_paths' => [],
+                'formatter'        => 'year_built',
+                'guards'           => [],
+            ],
+            'seller_property_taxes' => [
+                'role'             => 'seller',
+                'question'         => 'What are the property taxes?',
+                'source_path'      => 'listing.annual_property_taxes',
+                'supporting_paths' => ['listing.tax_year'],
+                'formatter'        => 'annual_property_taxes',
+                'guards'           => [],
+            ],
+            'seller_hoa_fee' => [
+                'role'             => 'seller',
+                'question'         => 'What are the HOA fees?',
+                'source_path'      => 'listing.hoa_fee',
+                'supporting_paths' => ['listing.hoa_association', 'listing.hoa_payment_schedule'],
+                'formatter'        => 'hoa_fee',
+                'guards'           => [],
+            ],
+            'seller_total_acreage' => [
+                'role'             => 'seller',
+                'question'         => 'What is the lot size / acreage?',
+                'source_path'      => 'listing.total_acreage',
+                'supporting_paths' => [],
+                'formatter'        => 'acreage_band',
+                // The page prints a legacy min_acreage in preference to total_acreage.
+                'guards'           => ['acreage_not_overridden'],
+            ],
+            'seller_appliances' => [
+                'role'             => 'seller',
+                'question'         => 'What appliances are included?',
+                'source_path'      => 'listing.appliances',
+                'supporting_paths' => [],
+                'formatter'        => 'appliance_list',
+                'guards'           => [],
+            ],
+            'seller_utilities' => [
+                'role'             => 'seller',
+                // The seller field records utilities AVAILABLE or CONNECTED at the property
+                // ("Electricity Connected"), not utilities included in a price, so the
+                // question says what the field holds.
+                'question'         => 'What utilities are listed for this property?',
+                'source_path'      => 'listing.utilities',
+                'supporting_paths' => [],
+                'formatter'        => 'utility_list',
+                'guards'           => [],
+            ],
+
+            // ---- Landlord ----
+            'landlord_bedrooms' => [
+                'role'             => 'landlord',
+                'question'         => 'How many bedrooms are there?',
+                'source_path'      => 'listing.bedrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'bedroom_count',
+                'guards'           => [],
+            ],
+            'landlord_bathrooms' => [
+                'role'             => 'landlord',
+                'question'         => 'How many bathrooms are there?',
+                'source_path'      => 'listing.bathrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'bathroom_count',
+                'guards'           => [],
+            ],
+            'landlord_heated_square_feet' => [
+                'role'             => 'landlord',
+                'question'         => 'What is the heated square footage?',
+                'source_path'      => 'listing.square_feet',
+                'supporting_paths' => [],
+                'formatter'        => 'heated_square_feet',
+                'guards'           => [],
+            ],
+            'landlord_appliances' => [
+                'role'             => 'landlord',
+                'question'         => 'What appliances are included?',
+                'source_path'      => 'listing.appliances',
+                'supporting_paths' => [],
+                'formatter'        => 'appliance_list',
+                'guards'           => [],
+            ],
+            'landlord_pets_allowed' => [
+                'role'             => 'landlord',
+                'question'         => 'Are pets allowed?',
+                'source_path'      => 'listing.pet_policy',
+                'supporting_paths' => [],
+                'formatter'        => 'pets_allowed',
+                'guards'           => [],
             ],
         ];
     }

@@ -31,6 +31,7 @@ import { Protocol } from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { createLdnaRenderer } from './ldna-maplibre-renderer.js';
+import { lookupAddress, lookupWithButton } from './ldna-address-lookup.js';
 
 /** Reassembled namespaces, shaped exactly as the renderer expects to receive them. */
 const maplibregl = { Map: MaplibreMap, Marker, NavigationControl, ScaleControl, addProtocol, setWorkerUrl };
@@ -223,5 +224,23 @@ if (document.readyState === 'loading') {
 }
 
 window.ldnaMaplibreMount = mountAllLdnaMaplibre;
+
+/*
+ * ADDRESS LOOKUP, EXPOSED FOR THE HOST WIDGET.
+ *
+ * The host is still the incumbent Blade partial — inline, non-module script — so
+ * it cannot import anything. It reaches the lookup the same way it reaches the
+ * renderer: through a global this entry point publishes.
+ *
+ * Attached here rather than in ldna-address-lookup.js so that module stays pure
+ * and importable by a test with no page, and so there is exactly one file that
+ * decides what this bundle puts on `window`.
+ *
+ * It is published unconditionally alongside the renderer, which is what makes
+ * "MapLibre is on for this surface" and "typed addresses resolve on this
+ * surface" the same fact rather than two flags that can disagree.
+ */
+window.ldnaAddressLookup = lookupAddress;
+window.ldnaAddressLookupWithButton = lookupWithButton;
 
 export { createLdnaRenderer };

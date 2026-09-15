@@ -42,13 +42,15 @@ use App\Services\ListingImport\Mls\MlsValueFormatter;
  *
  * TIER 1 IS NOT REPEATED HERE
  * ---------------------------
- * When a role is supplied, a fact that reached an editable Create Offer field
- * for that role is omitted: the listing already shows it, from the field the
- * user can correct, and printing it twice makes the MLS copy look like a second
- * conflicting claim. Role asymmetry is respected — `building_size_sqft` has a
- * Seller destination and no Landlord one, so a landlord listing still shows it
- * here rather than losing it. With no role (the pure allow-list view used by the
- * compliance tests) nothing is omitted.
+ * When a role is supplied, a fact the import wrote COMPLETELY into an editable
+ * Create Offer field for that role is omitted: the listing already shows it,
+ * from the field the user can correct, and printing it twice makes the MLS copy
+ * look like a second conflicting claim. A fact that merely has a target — but
+ * was not written, or was written only in part — stays here; see
+ * tier1DestinationsFor(). Role asymmetry is respected — `building_size_sqft`
+ * has a Seller destination and no Landlord one, so a landlord listing shows
+ * `BuildingAreaTotal` here rather than losing it. With no role (the pure
+ * allow-list view used by the compliance tests) nothing is omitted.
  *
  * Only populated values are rendered. A section whose every field is empty does
  * not appear at all, because a "Community" heading over a blank space tells the
@@ -128,7 +130,7 @@ class MlsPropertyDetailsPresenter
      */
     public function present(array $raw, ?string $role = null): array
     {
-        $tier1ForRole = $this->tier1DestinationsFor($role);
+        $tier1ForRole = $this->tier1DestinationsFor($raw, $role);
         $sections     = [];
 
         foreach (self::FIELDS as $section => $fields) {
@@ -168,36 +170,38 @@ class MlsPropertyDetailsPresenter
     }
 
     /**
-     * Bridge fields whose canonical key actually has a destination on this
-     * role's form.
+     * Bridge fields this role's listing already shows from its own field: the
+     * import wrote them there COMPLETELY, and the listing page renders them.
      *
-     * Asked of {@see MlsFieldMap} rather than assumed, because the Seller and
-     * Landlord maps are deliberately asymmetric: a fact with no destination on
-     * this role's form was never written anywhere, so omitting it here would
-     * lose it outright.
+     * Both halves are required, and each was once missing:
      *
+     *  · WRITTEN, not merely mapped. This used to ask only whether
+     *    {@see MlsFieldMap} named a target — and a target is not a write. A
+     *    garage on an Income listing (no garage control on that form), an
+     *    "Estimated" square-footage source (no such option), the second and
+     *    third of three Business Types (a single-select) all have targets and
+     *    none is written whole, so hiding them here lost them at both layers.
+     *    {@see Mls\MlsNativeFieldCoverage} now answers by running the real
+     *    import pipeline on the record.
+     *  · RENDERED, not merely written. A destination this role's listing page
+     *    never prints is one whose only surface is MLS Details — see
+     *    TIER1_MAPPED_BUT_UNRENDERED.
+     *
+     * @param  array<string,mixed>  $raw
      * @return array<string,true>
      */
-    private function tier1DestinationsFor(?string $role): array
+    private function tier1DestinationsFor(array $raw, ?string $role): array
     {
         if ($role === null) {
             return [];
         }
 
-        $map        = MlsFieldMap::forRole($role);
         $unrendered = MlsFieldCatalog::TIER1_MAPPED_BUT_UNRENDERED[$role] ?? [];
-        $out        = [];
 
-        foreach (MlsFieldCatalog::TIER1_BYO as $field => $canonicalKey) {
-            // Mapped is not the same as shown. A destination this role's listing
-            // page never renders is one whose only surface is MLS Details, so it
-            // stays here. See TIER1_MAPPED_BUT_UNRENDERED.
-            if (isset($map[$canonicalKey]) && ! in_array($field, $unrendered, true)) {
-                $out[$field] = true;
-            }
-        }
-
-        return $out;
+        return array_diff_key(
+            Mls\MlsNativeFieldCoverage::completelyWritten($raw, $role),
+            array_flip($unrendered),
+        );
     }
 
     /** @param list<array{key: string, label: string, value: string}> $rows */

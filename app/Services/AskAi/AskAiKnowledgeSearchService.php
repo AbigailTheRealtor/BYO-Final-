@@ -32,10 +32,56 @@ use App\Models\AskAiQuestion;
  *   - Blank / null stored values return outcome = 'blank_information_not_provided'.
  *   - This service MUST NOT write to any table or call any external HTTP service.
  *   - All exceptions are caught internally; callers always receive a typed result.
+ *
+ * ==========================================================================================
+ * VIEWER-SCOPE ENFORCEMENT (P0.1)
+ * ==========================================================================================
+ * This is the READ-TIME half of the fail-closed contract that P0 established on the write
+ * side in SnapshotFactVisibility. Before P0.1 this service gated on `restricted` ALONE and
+ * ignored `public_allowed`, `visibility` and the viewer scope it was already being handed in
+ * $options — so 'owner_only' was a classification with no reader, and the database-first path
+ * would serve an owner-only fact to any authenticated non-owner who reached
+ * POST /api/ask-ai/ask (which authenticates but, unlike /ask-ai/listing-question, performs no
+ * ownership check of its own).
+ *
+ * The three tiers are now enforced here, using the SAME scope the controller already resolves
+ * via AskAiViewerAuthorizationService::resolveScope() and threads through
+ * AskAiInternalRunnerService — no second authorization model:
+ *
+ *   restricted     → outcome 'restricted' for EVERY scope, owner included. Unchanged: this is
+ *                    a compliance obligation, not an ownership question.
+ *   owner_only     → served to SCOPE_OWNER; blocked for every other scope.
+ *   public_allowed → served to every scope.
+ *
+ * FAIL CLOSED: an absent, empty or unrecognised viewer_scope resolves to SCOPE_PUBLIC, the
+ * most restrictive tier. A caller that forgets to pass the scope gets the guest's answer, not
+ * the owner's.
+ *
+ * WHY A BLOCKED NON-OWNER REUSES THE 'restricted' OUTCOME:
+ *   The runner's Phase 4 already maps 'restricted' to status 'blocked' with a null answer and
+ *   the refusal template. Returning an outcome the runner does not recognise would fall
+ *   through to the OpenAI path instead — and the redacted context still carries some
+ *   owner-only keys (the seller's minimums among them), so falling through is precisely the
+ *   leak this guard exists to close. The result therefore reuses 'restricted' and records
+ *   source.visibility_block = 'owner_only' so traces and tests can tell a compliance block
+ *   from an ownership block without the runner needing a new branch.
+ *
+ * ROWS WRITTEN BEFORE P0 STILL CARRY THE OLD DEFAULT-OPEN FLAGS. This guard reads what is
+ * stored, so a stale snapshot will still present its facts as public_allowed until it is
+ * rebuilt. Rebuilding is deliberately NOT part of P0.1 — see
+ * docs/ask-ai-agent-ai-v2-activation-prerequisites.md.
+ * ==========================================================================================
  */
 class AskAiKnowledgeSearchService
 {
     public const INFORMATION_NOT_PROVIDED = 'Information not provided.';
+
+    /**
+     * Stored `visibility` value meaning "not public, but the listing owner may read it".
+     * Mirrors SnapshotFactVisibility::OWNER_ONLY; duplicated as a literal rather than
+     * imported so this read-time guard cannot be altered by an edit to the writer's enum.
+     */
+    private const VISIBILITY_PUBLIC_ALLOWED = 'public_allowed';
 
     private const SYNONYM_MAP = [
         'sq footage'  => 'square footage',
@@ -74,7 +120,10 @@ class AskAiKnowledgeSearchService
      * @param  string $listingType  Canonical listing type ('seller', 'buyer', 'landlord', 'tenant').
      * @param  int    $listingId    Primary key of the listing record.
      * @param  string $question     Raw user question string.
-     * @param  array  $options      Pipeline options; may contain 'normalized_field_key'.
+     * @param  array  $options      Pipeline options; may contain 'normalized_field_key' and
+     *                              'viewer_scope' (AskAiViewerAuthorizationService::SCOPE_*).
+     *                              An absent or unrecognised viewer_scope fails closed to
+     *                              SCOPE_PUBLIC.
      * @return array{
      *   outcome: 'database_hit'|'blank_information_not_provided'|'restricted'|'not_found',
      *   answer: string|null,
@@ -106,23 +155,29 @@ class AskAiKnowledgeSearchService
 
             $normalizedFieldKey = $options['normalized_field_key'] ?? null;
 
+            // P0.1 — resolve the viewer scope ONCE, here, and thread it down every lookup
+            // path. It is passed as an argument rather than stored on the instance because
+            // this service is a container singleton shared across the request: per-request
+            // state on it would be a cross-request authorization bug waiting to happen.
+            $viewerScope = $this->resolveViewerScope($options);
+
             // Step A — Exact question_text / sample_question / sample_question_2 match.
             // Checked first so verbatim questions resolve without requiring a canonical key.
-            $result = $this->searchByExactQuestion($snapshot, $question);
+            $result = $this->searchByExactQuestion($snapshot, $question, $viewerScope);
             if ($result !== null) {
                 return $result;
             }
 
             // Step B — Direct canonical key lookup (high confidence when normalizer resolved a key).
             if ($normalizedFieldKey !== null) {
-                $result = $this->searchByCanonicalKey($snapshot, $normalizedFieldKey);
+                $result = $this->searchByCanonicalKey($snapshot, $normalizedFieldKey, $viewerScope);
                 if ($result !== null) {
                     return $result;
                 }
             }
 
             // Step C — Normalised variant match.
-            $result = $this->searchByNormalizedVariant($snapshot, $question);
+            $result = $this->searchByNormalizedVariant($snapshot, $question, $viewerScope);
             if ($result !== null) {
                 return $result;
             }
@@ -137,14 +192,17 @@ class AskAiKnowledgeSearchService
     // Step A — Canonical key lookup
     // =========================================================================
 
-    private function searchByCanonicalKey(AskAiKnowledgeSnapshot $snapshot, string $normalizedFieldKey): ?array
-    {
+    private function searchByCanonicalKey(
+        AskAiKnowledgeSnapshot $snapshot,
+        string $normalizedFieldKey,
+        string $viewerScope
+    ): ?array {
         if (str_starts_with($normalizedFieldKey, 'faq_answers.')) {
-            return $this->lookupFaqAnswer($snapshot, $normalizedFieldKey, 'canonical_field');
+            return $this->lookupFaqAnswer($snapshot, $normalizedFieldKey, 'canonical_field', $viewerScope);
         }
 
         if (str_starts_with($normalizedFieldKey, 'listing.')) {
-            return $this->lookupListingFact($snapshot, $normalizedFieldKey, 'canonical_field');
+            return $this->lookupListingFact($snapshot, $normalizedFieldKey, 'canonical_field', $viewerScope);
         }
 
         return null;
@@ -154,8 +212,11 @@ class AskAiKnowledgeSearchService
     // Step B — Exact question text matching
     // =========================================================================
 
-    private function searchByExactQuestion(AskAiKnowledgeSnapshot $snapshot, string $question): ?array
-    {
+    private function searchByExactQuestion(
+        AskAiKnowledgeSnapshot $snapshot,
+        string $question,
+        string $viewerScope
+    ): ?array {
         $lower = mb_strtolower(trim($question));
 
         // Collect all rows that match on question_text or sample_question.
@@ -172,7 +233,7 @@ class AskAiKnowledgeSearchService
                 return null;
             }
             $row = $primaryMatches->first();
-            return $this->resolveAnswerForQuestion($snapshot, $row, $row->canonical_key, 'exact_question');
+            return $this->resolveAnswerForQuestion($snapshot, $row, $row->canonical_key, 'exact_question', $viewerScope);
         }
 
         // Check sample_question_2 separately (alternate).
@@ -185,7 +246,7 @@ class AskAiKnowledgeSearchService
                 return null;
             }
             $row = $alternateMatches->first();
-            return $this->resolveAnswerForQuestion($snapshot, $row, $row->canonical_key, 'alternate_question');
+            return $this->resolveAnswerForQuestion($snapshot, $row, $row->canonical_key, 'alternate_question', $viewerScope);
         }
 
         return null;
@@ -195,8 +256,11 @@ class AskAiKnowledgeSearchService
     // Step C — Normalised variant matching
     // =========================================================================
 
-    private function searchByNormalizedVariant(AskAiKnowledgeSnapshot $snapshot, string $question): ?array
-    {
+    private function searchByNormalizedVariant(
+        AskAiKnowledgeSnapshot $snapshot,
+        string $question,
+        string $viewerScope
+    ): ?array {
         $normalized = $this->normalizeQuestion($question);
         if ($normalized === '') {
             return null;
@@ -236,7 +300,13 @@ class AskAiKnowledgeSearchService
         }
 
         $first = $candidates[0];
-        return $this->resolveAnswerForQuestion($snapshot, $first['row'], $first['row']->canonical_key, $first['matchType']);
+        return $this->resolveAnswerForQuestion(
+            $snapshot,
+            $first['row'],
+            $first['row']->canonical_key,
+            $first['matchType'],
+            $viewerScope
+        );
     }
 
     // =========================================================================
@@ -251,14 +321,15 @@ class AskAiKnowledgeSearchService
         AskAiKnowledgeSnapshot $snapshot,
         AskAiQuestion $question,
         string $canonicalKey,
-        string $matchType
+        string $matchType,
+        string $viewerScope
     ): ?array {
         if (str_starts_with($canonicalKey, 'faq_answers.')) {
-            return $this->lookupFaqAnswer($snapshot, $canonicalKey, $matchType);
+            return $this->lookupFaqAnswer($snapshot, $canonicalKey, $matchType, $viewerScope);
         }
 
         if (str_starts_with($canonicalKey, 'listing.')) {
-            return $this->lookupListingFact($snapshot, $canonicalKey, $matchType);
+            return $this->lookupListingFact($snapshot, $canonicalKey, $matchType, $viewerScope);
         }
 
         // Bare key without prefix — try answers table (could be a bare FAQ key).
@@ -267,6 +338,13 @@ class AskAiKnowledgeSearchService
             ->first();
 
         if ($answer !== null) {
+            // P0.1 — the bare-key path is a third way into the same rows and needs the same
+            // gate as lookupFaqAnswer()/lookupListingFact(). Gating only the prefixed paths
+            // would leave this one open to exactly the questions that reach it.
+            if (! $this->answerVisibleToScope($answer, $viewerScope)) {
+                return $this->ownerOnlyBlockedResult($snapshot, $canonicalKey, $matchType);
+            }
+
             $text = $answer->answer_text ?? null;
             if ($text === null || trim($text) === '') {
                 return $this->blankResult($snapshot, $canonicalKey, $matchType);
@@ -282,6 +360,9 @@ class AskAiKnowledgeSearchService
         if ($fact !== null) {
             if ($fact->restricted) {
                 return $this->restrictedResult($snapshot, $canonicalKey, $matchType);
+            }
+            if (! $this->factVisibleToScope($fact, $viewerScope)) {
+                return $this->ownerOnlyBlockedResult($snapshot, $canonicalKey, $matchType);
             }
             $value = $fact->value ?? null;
             if ($value === null || trim($value) === '') {
@@ -300,8 +381,12 @@ class AskAiKnowledgeSearchService
      * ('faq_answers.roof_age_and_condition') or the bare key ('roof_age_and_condition')
      * depending on how the snapshot builder persisted it. Both forms are tried.
      */
-    private function lookupFaqAnswer(AskAiKnowledgeSnapshot $snapshot, string $normalizedFieldKey, string $matchType): ?array
-    {
+    private function lookupFaqAnswer(
+        AskAiKnowledgeSnapshot $snapshot,
+        string $normalizedFieldKey,
+        string $matchType,
+        string $viewerScope
+    ): ?array {
         $bareKey = str_starts_with($normalizedFieldKey, 'faq_answers.')
             ? substr($normalizedFieldKey, strlen('faq_answers.'))
             : $normalizedFieldKey;
@@ -314,6 +399,12 @@ class AskAiKnowledgeSearchService
             ->first();
 
         if ($answer !== null) {
+            // P0.1 — owner-authored KB answers persist as 'owner_only' (see the four snapshot
+            // builders). Blocked for every non-owner scope; the owner keeps their own answer.
+            if (! $this->answerVisibleToScope($answer, $viewerScope)) {
+                return $this->ownerOnlyBlockedResult($snapshot, $normalizedFieldKey, $matchType);
+            }
+
             $text = $answer->answer_text ?? null;
             if ($text === null || trim($text) === '') {
                 return $this->blankResult($snapshot, $normalizedFieldKey, $matchType);
@@ -342,8 +433,12 @@ class AskAiKnowledgeSearchService
      *
      * Facts are stored with the bare key (no 'listing.' prefix).
      */
-    private function lookupListingFact(AskAiKnowledgeSnapshot $snapshot, string $normalizedFieldKey, string $matchType): ?array
-    {
+    private function lookupListingFact(
+        AskAiKnowledgeSnapshot $snapshot,
+        string $normalizedFieldKey,
+        string $matchType,
+        string $viewerScope
+    ): ?array {
         $bareKey = str_starts_with($normalizedFieldKey, 'listing.')
             ? substr($normalizedFieldKey, strlen('listing.'))
             : $normalizedFieldKey;
@@ -353,8 +448,14 @@ class AskAiKnowledgeSearchService
             ->first();
 
         if ($fact !== null) {
+            // Compliance first: restricted is blocked for every scope, the owner included.
             if ($fact->restricted) {
                 return $this->restrictedResult($snapshot, $normalizedFieldKey, $matchType);
+            }
+            // P0.1 — then ownership: an owner_only fact (which includes every buyer/tenant
+            // criteria fact and the seller's own minimums) reaches the owner and nobody else.
+            if (! $this->factVisibleToScope($fact, $viewerScope)) {
+                return $this->ownerOnlyBlockedResult($snapshot, $normalizedFieldKey, $matchType);
             }
             $value = $fact->value ?? null;
             if ($value === null || trim($value) === '') {
@@ -468,6 +569,91 @@ class AskAiKnowledgeSearchService
                 'snapshot_version' => $snapshot->version,
             ],
         ];
+    }
+
+    /**
+     * An ownership block, reported through the runner's existing 'restricted' branch.
+     *
+     * source.visibility_block distinguishes it from a compliance block for traces, logs and
+     * tests. The answer is null and no stored value is echoed back, so a blocked non-owner
+     * learns nothing about the value — only that the assistant will not answer.
+     */
+    private function ownerOnlyBlockedResult(
+        AskAiKnowledgeSnapshot $snapshot,
+        string $canonicalKey,
+        string $matchType
+    ): array {
+        $result = $this->restrictedResult($snapshot, $canonicalKey, $matchType);
+        $result['source']['visibility_block'] = 'owner_only';
+
+        return $result;
+    }
+
+    /**
+     * Resolve the requester's scope from the pipeline options, failing closed.
+     *
+     * Anything absent, empty, non-string or unrecognised becomes SCOPE_PUBLIC — the most
+     * restrictive tier — so a caller that omits the scope is treated as a guest rather than
+     * silently granted the owner's view.
+     */
+    private function resolveViewerScope(array $options): string
+    {
+        $scope = $options['viewer_scope'] ?? null;
+
+        if (! is_string($scope)) {
+            return AskAiViewerAuthorizationService::SCOPE_PUBLIC;
+        }
+
+        $scope = strtolower(trim($scope));
+
+        return in_array($scope, [
+            AskAiViewerAuthorizationService::SCOPE_OWNER,
+            AskAiViewerAuthorizationService::SCOPE_AUTHORIZED,
+            AskAiViewerAuthorizationService::SCOPE_PUBLIC,
+        ], true)
+            ? $scope
+            : AskAiViewerAuthorizationService::SCOPE_PUBLIC;
+    }
+
+    /**
+     * True when a stored FACT may be served to this scope.
+     *
+     * The owner sees anything that is not compliance-restricted. Everyone else needs the
+     * fact to be explicitly public: `public_allowed = true` AND `visibility` still saying
+     * 'public_allowed', so a row whose two columns disagree is withheld rather than served.
+     */
+    private function factVisibleToScope(AskAiFact $fact, string $viewerScope): bool
+    {
+        if ($viewerScope === AskAiViewerAuthorizationService::SCOPE_OWNER) {
+            return true;
+        }
+
+        return ((bool) $fact->public_allowed) === true
+            && $this->normalizeVisibility($fact->visibility) === self::VISIBILITY_PUBLIC_ALLOWED;
+    }
+
+    /**
+     * True when a stored ANSWER may be served to this scope.
+     *
+     * `ask_ai_answers` has no `public_allowed` column, so `visibility` is the whole record.
+     * A null or unrecognised value reads as not-public.
+     */
+    private function answerVisibleToScope(AskAiAnswer $answer, string $viewerScope): bool
+    {
+        if ($viewerScope === AskAiViewerAuthorizationService::SCOPE_OWNER) {
+            return true;
+        }
+
+        return $this->normalizeVisibility($answer->visibility) === self::VISIBILITY_PUBLIC_ALLOWED;
+    }
+
+    /**
+     * Normalise a stored visibility value. Null, non-string and blank all become '' so they
+     * can never equal 'public_allowed' — an unclassified row is not a public row.
+     */
+    private function normalizeVisibility(mixed $visibility): string
+    {
+        return is_string($visibility) ? strtolower(trim($visibility)) : '';
     }
 
     private function notFound(): array

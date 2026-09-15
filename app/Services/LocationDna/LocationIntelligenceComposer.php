@@ -21,8 +21,17 @@ use Throwable;
  * Return shape:
  * [
  *   'enrichment' => [...],          // runner payload or empty fallback
- *   'summary'    => ['summary_lines' => [...]], // preference lines + enrichment lines, or empty
+ *   'summary'    => [
+ *       'summary_lines'    => [...], // preference lines + enrichment lines, or empty
+ *       'calculated_lines' => [...], // enrichment lines ONLY (absent on the failure fallbacks)
+ *   ],
  * ]
+ *
+ * `calculated_lines` is what the Buyer/Tenant pages show under "Location Intelligence". The
+ * preference lines restate the client's own criteria ("Highly targeted location preferences.")
+ * and read as findings about a location when they are not; the enrichment lines — flood zones,
+ * school districts, nearby places, measured commutes — are calculated. Additive: `summary_lines`
+ * is unchanged for any other reader.
  */
 class LocationIntelligenceComposer
 {
@@ -77,12 +86,14 @@ class LocationIntelligenceComposer
             ];
         }
 
+        $calculatedLines = $summary['summary_lines'] ?? [];
         $preferenceLines = $this->analyzePreferences($preferences);
 
         $summary['summary_lines'] = array_merge(
             $preferenceLines,
-            $summary['summary_lines'] ?? [],
+            $calculatedLines,
         );
+        $summary['calculated_lines'] = $calculatedLines;
 
         return [
             'enrichment' => $enrichment,

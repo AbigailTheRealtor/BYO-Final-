@@ -42,7 +42,15 @@ class TenantGoogleClientRoutingTest extends TestCase
         parent::setUp();
 
         Cache::flush();
-        config(['services.google.places_key' => 'fake-test-key']);
+        config([
+            'services.google.places_key'    => 'fake-test-key',
+            // Geocoding is budgeted and OFF by default; these cases prove ROUTING, so they
+            // opt in. The switched-off and over-budget behaviour of the same methods is
+            // TenantGeocodingFailureSafetyTest's job.
+            'google_geocoding.enabled'      => true,
+            'google_geocoding.hourly_limit' => 25,
+            'google_geocoding.daily_limit'  => 100,
+        ]);
 
         $this->app->instance(ClientInterface::class, GoogleHttpClientFactory::make(
             function (RequestInterface $request) {

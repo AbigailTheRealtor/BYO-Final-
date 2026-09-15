@@ -355,7 +355,9 @@
           <div class="steps-progress-percent"></div>
         </div>
 
-        <form class="p-4 pt-0 mainform" action="{{ route('agent.tenant.criteria.auction.add') }}" method="POST"
+        {{-- Posts to UPDATE for this record. It posted to the ADD route, so every save from this
+             page created a new listing and left the edited one as it was. update() is owner-only. --}}
+        <form class="p-4 pt-0 mainform" action="{{ route('agent.tenant.criteria.auction.edit', $auction->id) }}" method="POST"
           enctype="multipart/form-data">
           @csrf
           <div class="wizard-step" data-step="1">
@@ -424,7 +426,7 @@
                 </tbody>
               </table>
             </div>
-            @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'ldnaSurface' => \App\Support\Spatial\LdnaBasemapSurface::TENANT_CRITERIA])
+            @include('partials.location-dna.map-input', ['existingLocationDna' => $existingLocationDna ?? [], 'ldnaSurface' => \App\Support\Spatial\LdnaBasemapSurface::TENANT_CRITERIA, 'enableImportantPlaces' => true, 'existingImportantPlaces' => $existingImportantPlaces ?? []])
           </div>
           <div class="wizard-step" data-step="2">
             <?php

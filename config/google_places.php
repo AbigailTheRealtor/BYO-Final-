@@ -43,10 +43,11 @@ return [
     | (the missing categories are fetched on a later run) and the search-area
     | lookup reports the provider as unavailable without caching the answer.
     |
-    | NEARBY SEARCH ONLY. Places Autocomplete and Geocoding are not governed by
-    | these numbers and are not yet budgeted server-side. Browser-side Places
-    | (the Maps JavaScript API) never reaches this server and needs Google Cloud
-    | controls instead.
+    | NEARBY SEARCH ONLY. Geocoding has its own switch and its own, independent
+    | ceilings in config/google_geocoding.php (the Location DNA geocode step and
+    | the geocode backfill command require that switch AND this one). Places
+    | Autocomplete is not budgeted server-side. Browser-side Places (the Maps
+    | JavaScript API) never reaches this server and needs Google Cloud controls.
     |
     | A zero, negative or malformed value is a ceiling of zero: it blocks Nearby
     | Search entirely rather than unleashing it.

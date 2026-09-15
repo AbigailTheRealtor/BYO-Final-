@@ -293,6 +293,10 @@ final class ProductSurfaceCatalog
         'agent/location-dna/*',
         'agent/property-dna/*',
         'owner/property-dna/*',
+        // The MapLibre Radius Search / Important Places lookup behind
+        // partials/location-dna/map-input — Hire Buyer and Hire Tenant here, and
+        // Create Offer Buyer/Tenant and the legacy criteria forms on BidYourOffer.
+        'POST location/address-lookup',
 
         // Profiles, referrals, small helpers, telemetry.
         'author/*',

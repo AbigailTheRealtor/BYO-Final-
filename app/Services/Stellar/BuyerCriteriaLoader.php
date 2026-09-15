@@ -256,6 +256,10 @@ class BuyerCriteriaLoader
 
             'community_feature_keywords'  => $communityFeatureKeywords,
             'wants_energy_efficient'      => $wantsEnergyEfficient,
+
+            // Private: address + coordinate, consumed only by ImportantPlaceMatcher.
+            'important_places'            => (new \App\Services\Offers\ImportantPlacesService())
+                ->normalize($infoGet('important_places_json') ?? ''),
         ];
     }
 
@@ -265,9 +269,8 @@ class BuyerCriteriaLoader
      */
     private function normalizeCountyName(string $county): string
     {
-        $county = preg_replace('/,\s*[A-Z]{2}\s*$/u', '', trim($county));
-        $county = preg_replace('/\s+County\s*$/iu', '', trim($county));
-        return trim($county);
+        // The rule lives in CriteriaLocationValues so the Tenant Criteria loader applies the same one.
+        return \App\Services\Stellar\Matching\CriteriaLocationValues::normalizeCounty($county);
     }
 
     /**
@@ -276,9 +279,7 @@ class BuyerCriteriaLoader
      */
     private function normalizeCityName(string $city): string
     {
-        $city = preg_replace('/,\s*[A-Z]{2}\s*$/u', '', trim($city));
-        $city = preg_replace(['/\bSt\.\s+/u', '/\bFt\.\s+/u', '/\bMt\.\s+/u'], ['Saint ', 'Fort ', 'Mount '], $city);
-        return trim($city);
+        return \App\Services\Stellar\Matching\CriteriaLocationValues::normalizeCity($city);
     }
 
     /**

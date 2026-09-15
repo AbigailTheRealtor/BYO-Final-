@@ -21,6 +21,15 @@ class ListingWorkflowBackfillTest extends TestCase
     use DatabaseTransactions;
     use MakesWorkflowListings;
 
+    /**
+     * Rolled back by path, not `--step 2`: a step count names the newest migrations, and
+     * these stop being the newest the moment any later migration exists.
+     */
+    private const WORKFLOW_MIGRATIONS = [
+        'database/migrations/2026_08_27_000002_add_workflow_type_to_agent_auction_tables.php',
+        'database/migrations/2026_08_27_000003_backfill_workflow_type_on_agent_auction_tables.php',
+    ];
+
     private ListingWorkflowBackfiller $backfiller;
 
     protected function setUp(): void
@@ -51,7 +60,7 @@ class ListingWorkflowBackfillTest extends TestCase
      */
     public function test_the_new_migrations_roll_back_and_reapply(): void
     {
-        $this->artisan('migrate:rollback', ['--step' => 2, '--force' => true])->assertExitCode(0);
+        $this->artisan('migrate:rollback', ['--path' => self::WORKFLOW_MIGRATIONS, '--force' => true])->assertExitCode(0);
 
         ListingWorkflow::forgetSchemaMemo();
 
@@ -82,7 +91,7 @@ class ListingWorkflowBackfillTest extends TestCase
         $user  = $this->makeUser();
         $draft = $this->makeLegacyQuickImportDraft('seller', $user->id);
 
-        $this->artisan('migrate:rollback', ['--step' => 2, '--force' => true])->assertExitCode(0);
+        $this->artisan('migrate:rollback', ['--path' => self::WORKFLOW_MIGRATIONS, '--force' => true])->assertExitCode(0);
         ListingWorkflow::forgetSchemaMemo();
 
         $this->assertSame(

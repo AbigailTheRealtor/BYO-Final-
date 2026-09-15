@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 
 class AuctionChatController extends Controller
 {
@@ -91,7 +92,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'seller-property';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -140,7 +141,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'landlord-property';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -189,7 +190,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'buyer-criteria';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -238,7 +239,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'tenant-criteria';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -287,7 +288,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'buyer-agent';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -336,7 +337,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'seller-agent';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -385,7 +386,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'landlord-agent';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -434,7 +435,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'tenant-agent';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -483,7 +484,7 @@ class AuctionChatController extends Controller
                         $chat_token = new AuctionChatToken();
                         $chat_token->auction_id = $auction->id;
                         $chat_token->auction_type = 'agent-service';
-                        $chat_token->token = uniqid();
+                        $chat_token->token = $this->newThreadToken();
                         $chat_token->last_message = 'New Chat';
                         $chat_token->save();
                         $chat_user = new AuctionChatUser();
@@ -543,7 +544,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'seller-property';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -590,7 +591,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'landlord-property';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -637,7 +638,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'buyer-criteria';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -684,7 +685,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'tenant-criteria';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -731,7 +732,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'buyer-agent';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -778,7 +779,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'seller-agent';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -825,7 +826,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'landlord-agent';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -872,7 +873,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'tenant-agent';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -919,7 +920,7 @@ class AuctionChatController extends Controller
                     $chat_token = new AuctionChatToken();
                     $chat_token->auction_id = $auction->id;
                     $chat_token->auction_type = 'agent-service';
-                    $chat_token->token = uniqid();
+                    $chat_token->token = $this->newThreadToken();
                     $chat_token->last_message = 'New Chat';
                     $chat_token->save();
                     $chat_user = new AuctionChatUser();
@@ -968,6 +969,39 @@ class AuctionChatController extends Controller
         return view('messages', $page_data);
     }
 
+    /**
+     * The conversation behind $token — but only for one of its participants.
+     *
+     * Membership is an auction_chat_users row for this thread and the signed-in user.
+     * Knowing the token is not membership, and neither is holding an agent account or
+     * owning the listing: one listing carries a separate thread per agent who wrote in.
+     * A token that matches nothing and a thread the caller is not in both come back
+     * null, so no caller can use these endpoints to learn which tokens exist.
+     */
+    private function participantThread(string $token): ?AuctionChatToken
+    {
+        return AuctionChatToken::whereToken($token)
+            ->whereHas('chat_users', function ($chat_user) {
+                $chat_user->where('user_id', Auth::id());
+            })
+            ->first();
+    }
+
+    private function refuseThread()
+    {
+        return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
+    }
+
+    /**
+     * uniqid() is the clock in hex, so tokens made from it can be guessed. Tokens
+     * already issued keep working — access never rests on the token being secret;
+     * participantThread() is the boundary.
+     */
+    private function newThreadToken(): string
+    {
+        return Str::random(40);
+    }
+
     public function sendMessage(Request $request)
     {
         $user  = Auth::user();
@@ -978,15 +1012,9 @@ class AuctionChatController extends Controller
             return response()->json(['success' => false, 'error' => 'Empty message or token'], 422);
         }
 
-        $chat_token = AuctionChatToken::whereToken($token)->first();
+        $chat_token = $this->participantThread($token);
         if (!$chat_token) {
-            return response()->json(['success' => false, 'error' => 'Invalid token'], 404);
-        }
-
-        // Verify the authenticated user is a participant in this thread
-        $isParticipant = $chat_token->chat_users()->where('user_id', $user->id)->exists();
-        if (!$isParticipant) {
-            return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
+            return $this->refuseThread();
         }
 
         $chat = new AuctionChat();
@@ -1013,8 +1041,11 @@ class AuctionChatController extends Controller
 
     public function load_chat_messages($token)
     {
-        // dd('ok');
-        $page_data['current_token'] = $current_token = AuctionChatToken::whereToken($token)->firstOrFail();
+        $current_token = $this->participantThread($token);
+        if (!$current_token) {
+            return $this->refuseThread();
+        }
+        $page_data['current_token'] = $current_token;
         $type = $current_token->auction_type;
         if ($type == 'seller-property') {
             $chat_title = $current_token->auction->address;
@@ -1055,7 +1086,12 @@ class AuctionChatController extends Controller
 
     public function chat_bot_reply($token, Request $request)
     {
-        $chat_token = AuctionChatToken::whereToken($token)->firstOrFail();
+        // Before anything is read or written: the reply below is saved under the
+        // listing owner's user id.
+        $chat_token = $this->participantThread($token);
+        if (!$chat_token) {
+            return $this->refuseThread();
+        }
         $auction_id = $chat_token->auction_id;
         $auction_type = $chat_token->auction_type;
         $bot_question = BotQuestion::where('auction_id', $auction_id)->where('auction_type', $auction_type)->where('question', 'LIKE',  $request->message)->first();

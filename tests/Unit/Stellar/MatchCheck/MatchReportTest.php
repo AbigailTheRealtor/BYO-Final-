@@ -54,6 +54,9 @@ class MatchReportTest extends TestCase
             'recommendations'  => [['label' => 'Widen price ~$25k']],
             'generated_at'     => '2026-07-06T18:45:16+00:00',
             'narrative'        => null,
+            // Additive: ImportantPlaceMatcher::present() rows (category, distance, verdict — never a
+            // place's address or coordinate). Defaults to [] when a report is built without them.
+            'important_places' => [],
         ], $report->toArray());
     }
 

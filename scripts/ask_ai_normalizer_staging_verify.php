@@ -4,11 +4,18 @@
  * Ask AI OpenAI Normalizer Staging Verification Script
  * Task #2281
  *
- * Run: php artisan tinker --no-interaction < scripts/ask_ai_normalizer_staging_verify.php
- * Or:  php -r "require 'vendor/autoload.php'; $app = require 'bootstrap/app.php'; ..." (not recommended)
+ * Run: php scripts/ask_ai_normalizer_staging_verify.php
+ *
+ * This used to be piped into `php artisan tinker`, which skips every guard. It now boots through
+ * ManualScriptBootstrap like every other script here and refuses to run against production.
  *
  * Uses the real AskAiRunnerV2Service pipeline with a live OpenAI call for the normalizer step.
  */
+
+require __DIR__ . '/../vendor/autoload.php';
+
+// Refuses to run against the production database. See App\Support\Safeguards\ManualScriptBootstrap.
+$app = \App\Support\Safeguards\ManualScriptBootstrap::boot(__FILE__);
 
 $listingType = 'seller';
 $listingId   = 121;

@@ -86,7 +86,6 @@
   $ldnaSurface     = $ldnaSurface ?? null;
   $ldnaUseMaplibre = \App\Support\Spatial\LdnaBasemapSurface::enabledFor($ldnaSurface);
   $ldnaIpTypes           = \App\Services\Offers\ImportantPlacesService::TYPES;
-  $ldnaIpModes           = \App\Services\Offers\ImportantPlacesService::TRAVEL_MODES;
 @endphp
 
 <style>
@@ -332,12 +331,11 @@
   {{-- ── Important Places (9C — repeatable rows; own additive `important_places_json` key) ── --}}
   <div class="ldna-ip-section mt-4" id="ldna-ip-section">
     <label class="fw-bold" style="font-size:.88rem;">Important Places
-      <small class="text-muted">(work, school, family &amp; more — with a distance or travel-time preference)</small>
+      <small class="text-muted">(work, school, family &amp; more — each within a distance in miles)</small>
     </label>
     <div class="ldna-hint">
       <i class="fa-solid fa-location-dot"></i>
-      Each located place drops a pin on the map. A "within miles" preference also draws a radius circle;
-      "within minutes" shows only a pin — travel-time areas are never drawn as fake circles.
+      Each located place drops a pin on the map, with a ring at the number of miles you choose.
     </div>
 
     {{-- ── Submit guard errors ──────────────────────────────────────────────────────────
@@ -395,26 +393,25 @@
               onblur="ldnaIpGeocodeRow(this)" oninput="ldnaIpSerialize()">
           </div>
         </div>
+        {{-- Distance is MILES ONLY. The travel-time ("within minutes") preference and its
+             Travel Mode were retired: no routing engine exists here, so a minutes row could
+             only ever be a pin with nothing around it, while the form implied a commute was
+             being measured. A row saved earlier with minutes is not converted — ten minutes
+             is not a number of miles — and is written back exactly as stored unless the
+             user explicitly switches it to miles (`ldnaIpUseMiles`). The preference and
+             travel mode live on the row's dataset, not in a control, so an untouched row
+             round-trips byte-for-byte. --}}
         <div class="row g-2 align-items-end mt-1">
-          <div class="col-md-3">
-            <label class="text-muted mb-1" style="font-size:.75rem;">Distance Preference</label>
-            <select class="form-select form-select-sm ldna-ip-distpref" onchange="ldnaIpOnDistPrefChange(this)">
-              <option value="miles">Within miles</option>
-              <option value="minutes">Within minutes</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="text-muted mb-1 ldna-ip-distval-label" style="font-size:.75rem;">Miles</label>
+          <div class="col-md-3 ldna-ip-distval-wrap">
+            <label class="text-muted mb-1 ldna-ip-distval-label" style="font-size:.75rem;">Within (miles)</label>
             <input type="number" min="0.1" step="0.1" class="form-control form-control-sm ldna-ip-distval"
               placeholder="e.g. 5" oninput="ldnaIpSerialize()">
           </div>
-          <div class="col-md-3">
-            <label class="text-muted mb-1" style="font-size:.75rem;">Travel Mode</label>
-            <select class="form-select form-select-sm ldna-ip-mode" onchange="ldnaIpSerialize()">
-              @foreach($ldnaIpModes as $m)
-                <option value="{{ $m }}">{{ ucfirst($m) }}</option>
-              @endforeach
-            </select>
+          <div class="col-md-6 ldna-ip-legacy-wrap" style="display:none;">
+            <div class="ldna-hint ldna-ip-legacy" style="color:#92400e;">
+              <span class="ldna-ip-legacy-text"></span>
+              <button type="button" class="btn btn-link btn-sm p-0 align-baseline" onclick="ldnaIpUseMiles(this)">Use miles instead</button>
+            </div>
           </div>
           <div class="col-md-3 d-flex gap-2">
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="ldnaIpGeocodeRow(this)" title="Show on map">
@@ -477,6 +474,40 @@
     var el = document.getElementById('{{ $mapPanelId }}');
     return (el && el._ldnaRenderer) ? el._ldnaRenderer : null;
   }
+
+@if ($ldnaUseMaplibre)
+  /* ── Server-side address lookup (MapLibre surfaces only) ──────────────────
+     One wrapper around the bundle's `window.ldnaAddressLookup`, so the Radius
+     Search box and every Important Places row take the same path and get the
+     same failure behaviour.
+
+     WHY A WRAPPER RATHER THAN CALLING THE GLOBAL DIRECTLY. The bundle is a
+     deferred script and this is inline: on a slow load, or on a page where the
+     bundle 404s after a bad deploy, the global is simply absent. Calling it
+     unguarded would throw a TypeError inside a click handler, which reaches the
+     user as a button that does nothing at all. This answers the way a failed
+     lookup answers, so every caller has one shape to handle. */
+  function ldnaLookupAddress(address) {
+    if (typeof window.ldnaAddressLookup !== 'function') {
+      return Promise.resolve({
+        ok: false,
+        message: 'Address lookup is still loading. Wait a moment and try again.',
+      });
+    }
+    return window.ldnaAddressLookup(address);
+  }
+
+  /* The inline message line for one Important Places row, created on first use. */
+  function ldnaIpHint(row) {
+    var hint = row.querySelector('.ldna-ip-geocode-hint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.className = 'ldna-hint ldna-ip-geocode-hint';
+      row.appendChild(hint);
+    }
+    return hint;
+  }
+@endif
 
   /* ── State ───────────────────────────────────────────────────────────────── */
   var ldnaState = {
@@ -620,9 +651,22 @@
     if (typeSel && otherWrap) {
       otherWrap.style.display = (typeSel.value === 'Other') ? '' : 'none';
     }
-    var pref = row.querySelector('.ldna-ip-distpref');
-    var lbl  = row.querySelector('.ldna-ip-distval-label');
-    if (pref && lbl) lbl.textContent = (pref.value === 'minutes') ? 'Minutes' : 'Miles';
+    /* A historical travel-time row hides the miles input — its number is MINUTES, and a
+       field labelled miles holding it would invite exactly the conversion that must not
+       happen — and says what it is instead. */
+    var legacy  = row.dataset.distPref === 'minutes';
+    var valWrap = row.querySelector('.ldna-ip-distval-wrap');
+    var legWrap = row.querySelector('.ldna-ip-legacy-wrap');
+    var legText = row.querySelector('.ldna-ip-legacy-text');
+    var valEl   = row.querySelector('.ldna-ip-distval');
+    if (valWrap) valWrap.style.display = legacy ? 'none' : '';
+    if (legWrap) legWrap.style.display = legacy ? '' : 'none';
+    if (legText) {
+      legText.textContent = legacy
+        ? 'Saved earlier as a travel-time preference' + (valEl && valEl.value ? ' (' + valEl.value + ' minutes)' : '')
+          + '. Travel time is no longer offered, so this place shows as a pin without a radius. It is kept exactly as saved.'
+        : '';
+    }
   }
 
   window.ldnaIpSerialize = function () {
@@ -639,9 +683,11 @@
         address:        val('.ldna-ip-address'),
         lat:            (lat !== '' && lat != null) ? parseFloat(lat) : null,
         lng:            (lng !== '' && lng != null) ? parseFloat(lng) : null,
-        distance_pref:  val('.ldna-ip-distpref') || 'miles',
+        /* From the row's dataset, not a control — see the row template. A new row is miles;
+           a stored minutes row stays minutes until the user explicitly switches it. */
+        distance_pref:  row.dataset.distPref === 'minutes' ? 'minutes' : 'miles',
         distance_value: distVal !== '' ? parseFloat(distVal) : null,
-        travel_mode:    val('.ldna-ip-mode') || 'driving'
+        travel_mode:    row.dataset.travelMode || 'driving'
       };
       /* Drop fully-empty rows from the serialized payload (mirrors the server normalizer). */
       var empty = !entry.type && !entry.type_other && !entry.address &&
@@ -693,10 +739,9 @@
     var overlay = { marker: marker, circle: null };
 
     /* Radius circle ONLY for the "miles" preference — never for travel-time minutes. */
-    var pref    = row.querySelector('.ldna-ip-distpref');
     var distEl  = row.querySelector('.ldna-ip-distval');
     var miles   = distEl ? parseFloat(distEl.value) : NaN;
-    if (pref && pref.value === 'miles' && !isNaN(miles) && miles > 0) {
+    if (row.dataset.distPref !== 'minutes' && !isNaN(miles) && miles > 0) {
       overlay.circle = new google.maps.Circle({
         center: { lat: lat, lng: lng }, radius: miles * 1609.34,
         fillColor: '#dc2626', fillOpacity: 0.07,
@@ -739,14 +784,22 @@
     if (prefill.type)          row.querySelector('.ldna-ip-type').value       = prefill.type;
     if (prefill.type_other)    row.querySelector('.ldna-ip-type-other').value = prefill.type_other;
     if (prefill.address)       row.querySelector('.ldna-ip-address').value    = prefill.address;
-    if (prefill.distance_pref) row.querySelector('.ldna-ip-distpref').value   = prefill.distance_pref;
     if (prefill.distance_value !== undefined && prefill.distance_value !== null)
       row.querySelector('.ldna-ip-distval').value = prefill.distance_value;
-    if (prefill.travel_mode)   row.querySelector('.ldna-ip-mode').value       = prefill.travel_mode;
+    /* Carried, not shown: a stored minutes row keeps `minutes` and its travel mode, so
+       reopening and re-saving a listing changes nothing the user did not change. */
+    row.dataset.distPref   = prefill.distance_pref === 'minutes' ? 'minutes' : 'miles';
+    row.dataset.travelMode = prefill.travel_mode || 'driving';
     if (prefill.lat !== undefined && prefill.lat !== null &&
         prefill.lng !== undefined && prefill.lng !== null) {
       row.dataset.lat = prefill.lat;
       row.dataset.lng = prefill.lng;
+      /* A stored row is ALREADY resolved, for the address it was stored with. Recording
+         that here is what stops a reopened listing re-resolving every place the moment the
+         user tabs through the form: a blur on an untouched field would otherwise look
+         exactly like a new address. Editing the field changes the value and the guard
+         stops matching, which is when a lookup is wanted. */
+      row.dataset.ldnaResolvedFor = prefill.address || '';
     }
 
     container.appendChild(frag);
@@ -776,11 +829,19 @@
     ldnaIpSerialize();
   };
 
-  window.ldnaIpOnDistPrefChange = function (sel) {
-    var row = sel.closest('.ldna-ip-row');
+  /* The ONLY way a historical travel-time row becomes a miles row: the user asks for it.
+     The minutes figure is cleared rather than carried over — it was never a distance —
+     and the miles input is revealed empty for the user to fill in. */
+  window.ldnaIpUseMiles = function (el) {
+    var row = el.closest('.ldna-ip-row');
+    if (!row) return;
+    row.dataset.distPref = 'miles';
+    var valEl = row.querySelector('.ldna-ip-distval');
+    if (valEl) valEl.value = '';
     ldnaIpSyncRowConditionals(row);
-    ldnaIpDrawOverlay(row);   /* redraw: circle only when miles */
+    ldnaIpDrawOverlay(row);   /* redraw: a miles ring appears once a value is entered */
     ldnaIpSerialize();
+    if (valEl) valEl.focus();
   };
 
   window.ldnaIpGeocodeRow = function (el) {
@@ -790,23 +851,57 @@
     var address = addrEl ? addrEl.value.trim() : '';
     if (!address) return;
 @if ($ldnaUseMaplibre)
-    /* No geocoder on this surface, by design — see window.ldnaAddRadiusSearch below for the
-       same reasoning. Crucially this must not fall through to the Google branch, whose
-       `if (!ldnaMap)` line retries every 600ms FOREVER when there is no Google map, which
-       is the same unbounded-poll defect the init path used to have.
+    /* Server-side lookup. The address goes to this application's own endpoint, which
+       resolves it through the coordinate ladder; nothing here talks to a geocoder and no
+       credential exists in this page to talk to one with.
 
-       The row is still saved. Address, type, distance and travel mode all persist; only the
-       PIN needs a coordinate, and a row without one simply has no pin — which the renderer
-       already handles rather than guessing a location. */
-    var _ipHint = row.querySelector('.ldna-ip-geocode-hint');
-    if (!_ipHint) {
-      _ipHint = document.createElement('div');
-      _ipHint.className = 'ldna-hint ldna-ip-geocode-hint';
-      _ipHint.style.color = '#92400e';
-      row.appendChild(_ipHint);
+       IT MUST NOT FALL THROUGH TO THE GOOGLE BRANCH BELOW. That branch's `if (!ldnaMap)`
+       line retries every 600ms FOREVER when there is no Google map — the unbounded-poll
+       defect the init path used to have — and on a MapLibre surface there is never going
+       to be a Google map for it to find. The `return` at the end of this block is what
+       keeps that unreachable, so it stays whatever else changes here. */
+    var _ipHint = ldnaIpHint(row);
+
+    if (row.dataset.ldnaLookupBusy === '1') return;   /* blur + click, or a double click */
+
+    /* Nothing to do when this row already holds the coordinate for this exact address:
+       reopening a saved listing fires blur on every row, and re-resolving addresses
+       nobody edited is how a free provider stops answering us. */
+    if (row.dataset.lat && row.dataset.lng && row.dataset.ldnaResolvedFor === address) {
+      _ipHint.textContent = '';
+      return;
     }
-    _ipHint.textContent = 'Address lookup is not available on this map, so this place will '
-      + 'not show a pin. It is still saved with the listing.';
+
+    row.dataset.ldnaLookupBusy = '1';
+    _ipHint.style.color = '#475569';
+    _ipHint.textContent = 'Locating address…';
+
+    ldnaLookupAddress(address).then(function (result) {
+      delete row.dataset.ldnaLookupBusy;
+
+      if (!result || !result.ok) {
+        /* FAILURE LEAVES EVERYTHING ALONE. A previously located place keeps its pin and
+           its coordinate; the row is saved either way, with its type, distance and travel
+           mode intact. What it must never do is move the pin somewhere plausible. */
+        _ipHint.style.color = '#92400e';
+        _ipHint.textContent = result && result.message
+          ? result.message
+          : 'Address could not be located. Try adding the city, state, or ZIP code.';
+        return;
+      }
+
+      if (result.address) {
+        addrEl.value = result.address;   /* what was matched, not what was typed */
+      }
+      row.dataset.lat = result.lat;
+      row.dataset.lng = result.lng;
+      row.dataset.ldnaResolvedFor = result.address || address;
+
+      _ipHint.style.color = '#475569';
+      _ipHint.textContent = '';
+
+      ldnaIpSerialize();   /* pins and the miles ring follow from the stored rows */
+    });
     return;
 @endif
     if (!ldnaMap) { ldnaRequestInit(); setTimeout(function () { window.ldnaIpGeocodeRow(el); }, 600); return; }
@@ -1929,24 +2024,95 @@
     ldnaMlRefreshOverlayList();
   };
 
-  /* Address-based radius needs a GEOCODER, and this renderer deliberately has none —
-     "no address becomes a coordinate in this file" is the renderer's stated contract, and
-     the Google geocoder is exactly the dependency this surface exists to stop needing.
-     So say what the user can do instead of failing silently: the Circle tool produces the
-     same stored radius_searches entry from two map clicks, with no third party involved.
-     A radius already saved with an address keeps it — nothing here rewrites stored rows. */
-  window.ldnaAddRadiusSearch = function () {
+  /* Address-based radius, resolved by the SERVER.
+     The renderer's own contract is unchanged — "no address becomes a coordinate in that
+     file" — because the coordinate arrives here already resolved and is handed to
+     `addRadiusSearch()`, which has always taken a point. What changed is that this widget
+     now has somewhere to get a point from that is not Google.
+
+     The Circle tool still exists and still produces the same stored entry from two map
+     clicks. It is the answer when an address cannot be resolved at all, and it needs no
+     network. */
+  function ldnaRadiusMessage(text, tone) {
     var warn = document.getElementById('ldna-radius-warning');
     if (!warn) {
       warn = document.createElement('div');
       warn.id = 'ldna-radius-warning';
       warn.className = 'ldna-hint';
-      warn.style.color = '#92400e';
       var form = document.querySelector('.ldna-radius-form');
       if (form && form.parentNode) form.parentNode.insertBefore(warn, form.nextSibling);
     }
-    warn.textContent = 'Address lookup is not available on this map. Use the Circle tool '
-      + 'above: click the centre, then click again to set the radius.';
+    warn.style.color = tone === 'error' ? '#92400e' : '#475569';
+    warn.textContent = text;
+    return warn;
+  }
+
+  window.ldnaAddRadiusSearch = function () {
+    var addrEl  = document.getElementById('ldna-radius-address');
+    var milesEl = document.getElementById('ldna-radius-miles');
+    if (!addrEl || !milesEl) return;
+
+    var address = addrEl.value.trim();
+    var miles   = parseFloat(milesEl.value) || 5;
+
+    if (!address) {
+      ldnaRadiusMessage('Enter an address or place for the centre of the radius.', 'error');
+      return;
+    }
+
+    var r = ldnaMlRenderer();
+    if (!r) {
+      /* No renderer yet — say so and stop. The Google branch's answer to this is a 600ms
+         retry loop with no ceiling, which on a surface that will never have a Google map
+         runs for the life of the page. */
+      ldnaRadiusMessage('The map is still loading. Try again in a moment.', 'error');
+      return;
+    }
+
+    var button = document.querySelector('[onclick="ldnaAddRadiusSearch()"]');
+    ldnaRadiusMessage('Locating address…', 'info');
+
+    var lookup = (button && typeof window.ldnaAddressLookupWithButton === 'function')
+      ? window.ldnaAddressLookupWithButton(button, address)
+      : ldnaLookupAddress(address);
+
+    lookup.then(function (result) {
+      if (!result || !result.ok) {
+        /* NOTHING IS ADDED AND NOTHING STORED IS TOUCHED. No circle at 0,0, none at the
+           centre of the state, none at the middle of the current view — a circle the user
+           did not place is indistinguishable from one they did once it is saved. */
+        if (result && result.message === '') return;   /* a suppressed double-click */
+        ldnaRadiusMessage(
+          (result && result.message) || 'Address could not be located. Try adding the city, state, or ZIP code.',
+          'error'
+        );
+        return;
+      }
+
+      /* The EXISTING creation path and the EXISTING stored shape:
+         { address, lat, lng, radius_miles }. Nothing new is invented, and
+         `ldnaSerialize` still rebuilds the blob from the renderer's own state. */
+      var entry = r.addRadiusSearch({
+        lat: result.lat,
+        lng: result.lng,
+        radius_miles: miles,
+        address: result.address || address,
+      });
+
+      if (!entry) {
+        ldnaRadiusMessage('That location could not be placed on the map.', 'error');
+        return;
+      }
+
+      /* The overlay list refreshes itself: addRadiusSearch emits a change, the renderer
+         calls window.ldnaSerialize, and the MapLibre wrapper on that function is what
+         redraws the list. Calling it again here would be a second path to the same
+         update, free to disagree with the first. */
+      r.fitToGeometry();
+
+      addrEl.value = '';
+      ldnaRadiusMessage('Added ' + (result.address || address) + ' (' + miles + ' mi).', 'info');
+    });
   };
 
   /* The renderer reports edits through onChange -> window.ldnaSerialize (wrapped by the

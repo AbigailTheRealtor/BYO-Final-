@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Concerns\RefusesProductionDatabase;
 use App\Models\DnaScore;
 use App\Services\Dna\Relevance\Validation\MatchingValidationRunner;
 use App\Services\Dna\Relevance\Validation\ValidationReport;
@@ -31,6 +32,8 @@ use Illuminate\Support\Facades\File;
  */
 class MatchingValidate extends Command
 {
+    use RefusesProductionDatabase;
+
     protected $signature = 'matching:validate
         {--roster= : path to a pinned roster JSON (default: auto-discover)}
         {--out= : output directory (default storage/app/matching-validation)}
@@ -48,6 +51,11 @@ class MatchingValidate extends Command
         // --- guard 1: staging/dev only, no override ---
         if ($this->getLaravel()->environment('production')) {
             $this->error('matching:validate is a staging/dev diagnostic and refuses to run in production.');
+            return self::EXIT_REFUSED;
+        }
+
+        // --- guard 1b: APP_ENV alone is not the database; check what the connection resolves to ---
+        if ($this->refusesProductionDatabase()) {
             return self::EXIT_REFUSED;
         }
 

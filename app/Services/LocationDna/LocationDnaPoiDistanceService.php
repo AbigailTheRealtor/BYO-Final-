@@ -11,6 +11,7 @@ use App\Services\LocationDna\Providers\CanonicalField;
 use App\Services\LocationDna\Providers\CanonicalPoiAssembler;
 use App\Services\LocationDna\Providers\LocationProviderRegistry;
 use App\Services\LocationDna\Providers\NearbyPoiFetcherFactory;
+use App\Support\Google\GoogleProviderFailure;
 use App\Support\Telemetry\OutboundCallContext;
 use GuzzleHttp\ClientInterface;
 use Illuminate\Support\Facades\DB;
@@ -845,12 +846,14 @@ class LocationDnaPoiDistanceService
             return $output;
 
         } catch (Throwable $e) {
+            // Redacted before it is audited or returned: a Guzzle/curl message carries the
+            // full request URL, and the Places key travels in its query string.
             $output = $this->failedOutput(
                 $listingType,
                 $listingId,
                 null,
                 null,
-                $e->getMessage(),
+                GoogleProviderFailure::redact($e->getMessage()),
             );
             $this->audit($listingType, $listingId, $output);
             $this->setLastRunStats($listingType, $listingId, null);
@@ -1302,7 +1305,10 @@ class LocationDnaPoiDistanceService
                     sourceLng:   $sourceLng,
                     rank:        1,
                     status:      'error',
-                    error:       $e->getMessage(),
+                    // Redacted before it is persisted: fetchNearby() lets Guzzle/curl
+                    // exceptions through, and their message is the full request URL —
+                    // the Places key included.
+                    error:       GoogleProviderFailure::redact($e->getMessage()),
                 );
                 return [[$row->toArray()], []];
             } catch (Throwable) {

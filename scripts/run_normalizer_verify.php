@@ -2,8 +2,8 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$app = require __DIR__ . '/../bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+// Refuses to run against the production database. See App\Support\Safeguards\ManualScriptBootstrap.
+$app = \App\Support\Safeguards\ManualScriptBootstrap::boot(__FILE__);
 
 $listingType = 'seller';
 $listingId   = 121;

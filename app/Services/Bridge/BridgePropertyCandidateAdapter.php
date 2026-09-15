@@ -28,6 +28,48 @@ class BridgePropertyCandidateAdapter
             }
         }
 
+        return $this->build($p, $raw);
+    }
+
+    /**
+     * The candidate a raw Bridge record WOULD produce once cached, without
+     * caching it.
+     *
+     * For a caller holding a decoded record and no bridge_properties row — the
+     * MLS Details presenter asking which facts an import writes natively. The
+     * native columns come from the ingestion normalizer exactly as an upsert
+     * derives them, then pass through the same mapping as fromModel(). Nothing
+     * is persisted: the row built here is never saved.
+     *
+     * A record with no ListingKey (a hand-built test record, say) is normalised
+     * under a placeholder, because the normalizer refuses keyless records for
+     * the sake of the upsert identity rather than the facts — and the
+     * placeholder is removed again so it can never surface as a real key.
+     */
+    public function fromRecord(array $raw): PropertyCandidate
+    {
+        $keyed   = trim((string) ($raw['ListingKey'] ?? '')) !== '';
+        $columns = (new BridgePropertyNormalizer())->normalize(
+            $keyed ? $raw : ['ListingKey' => 'unkeyed-record'] + $raw
+        ) ?? [];
+
+        unset($columns['raw_json'], $columns['imported_at']);
+
+        if (! $keyed) {
+            $columns['listing_key'] = null;
+        }
+
+        $model = new BridgeProperty();
+        // The format BridgePropertyNormalizer writes (Carbon::toDateTimeString()),
+        // declared so reading the datetime cast needs no database connection.
+        $model->setDateFormat('Y-m-d H:i:s');
+        $model->setRawAttributes($columns);
+
+        return $this->build($model, $raw);
+    }
+
+    private function build(BridgeProperty $p, array $raw): PropertyCandidate
+    {
         return new PropertyCandidate(
             source:            'bridge',
             sourceRecordId:    $p->id !== null ? (string) $p->id : null,
