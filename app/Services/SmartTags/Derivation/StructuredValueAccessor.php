@@ -29,7 +29,15 @@ interface StructuredValueAccessor
     public function flag(array $rule): ?bool;
 
     /**
-     * The raw inputs a set of rules reads, for change detection.
+     * The inputs a set of rules reads, for change detection.
+     *
+     * THE CONTRACT IS STABILITY UNDER EQUAL MEANING: two records the rules would
+     * read identically must produce an identical array, whatever representation
+     * the underlying store happened to hand back. An accessor whose store can
+     * return one logical value in more than one shape must canonicalise here —
+     * {@see BridgeRecordAccessor::inputsFor()} does, because a boolean column
+     * reads back as PHP `true` from a just-written model and as `1` from a
+     * re-read one, and hashing that difference made unchanged rows look changed.
      *
      * @param array<int, array<string, mixed>> $rules
      * @return array<string, mixed>
