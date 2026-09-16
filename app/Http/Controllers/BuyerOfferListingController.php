@@ -12,6 +12,7 @@ use App\Services\LocationDna\SchoolDistrictLookupService;
 use App\Services\Offers\BiddingWindowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Support\OfferListing\CriteriaPrivacyPolicy;
 
 class BuyerOfferListingController extends Controller
 {
@@ -102,6 +103,18 @@ class BuyerOfferListingController extends Controller
                 ? $decoded
                 : $row->meta_value;
         }
+
+        /* Fair Housing / privacy — the consumer's private criteria never leave here.
+         *
+         * This route has no auth middleware; the two checks above gate only archived
+         * and draft listings. Everything below is rendered to the open internet, so a
+         * non-owner's $meta is redacted BEFORE the view sees it. Every meta read on
+         * that page closes over this one array — $str/$arr/$val, each section's own
+         * has…Content guard, the hero, the badges and the sidebar — which is why the
+         * gate is here and not on ~20 individual $row() calls.
+         * config/offer_listing_private_criteria.php states the reasoning per key. */
+        $buyerViewerIsOwner = CriteriaPrivacyPolicy::viewerIsOwner(auth()->id(), $auction->user_id);
+        $meta = CriteriaPrivacyPolicy::redactForViewer('buyer', $meta, $buyerViewerIsOwner);
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'buyer');
 
