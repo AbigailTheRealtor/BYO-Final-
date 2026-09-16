@@ -65,6 +65,24 @@
         <server name="GOOGLE_MAPS_BROWSER_KEY" value="" force="true"/>
         <server name="GOOGLE_MAPS_BROWSER_ENABLED" value="false" force="true"/>
 
+        <!-- Virtual Drive proof credentials (dev-only proof; see
+             docs/virtual-drive-provider-audit-2026-09-11.md). A Street View browser
+             key can start a billable session, so it is blanked — and the proof
+             switched off — in every test run, force="true" for the same reason as
+             above. The browser specs use a fake Maps API and never need a key.
+             Asserted by tests/Feature/VirtualDrive/VirtualDriveCredentialTestEnvGuardTest.php. -->
+        <server name="VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY" value="" force="true"/>
+        <server name="VIRTUAL_DRIVE_MAPKIT_JS_TOKEN" value="" force="true"/>
+        <server name="VIRTUAL_DRIVE_PROOF_ENABLED" value="false" force="true"/>
+        <!-- The Google kill switch and its daily ceiling are forced to the refusing
+             values too. Not because a flag can spend money on its own, but because
+             these are Replit Secrets: a day when VIRTUAL_DRIVE_GOOGLE_ENABLED=true
+             is injected into the process must not be a day when the suite's default
+             posture quietly changes underneath it. Every test that needs the switch
+             on sets the config itself. -->
+        <server name="VIRTUAL_DRIVE_GOOGLE_ENABLED" value="false" force="true"/>
+        <server name="VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT" value="0" force="true"/>
+
         <!-- Bridge/Stellar safeguards. SAME FAILURE MODE, SAME FIX.
 
              Replit injects BRIDGE_DATASET and BRIDGE_SERVER_TOKEN as system
