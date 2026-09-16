@@ -88,7 +88,7 @@ $native = ['native_derivable' => true];
 
 return [
 
-    'version' => '2026-09-15.1',
+    'version' => '2026-09-16.1',
 
     'categories' => [
         'kitchen'        => ['label' => 'Kitchen',                    'display_order' => 10],
@@ -174,6 +174,25 @@ return [
         'tray_ceilings'              => $tag('Tray Ceilings', 'interior', $RES, $both),
         'crown_molding'              => $tag('Crown Molding', 'interior', $RES, $both),
         'skylights'                  => $tag('Skylights', 'interior', $RES, $both),
+        // Added 2026-09-16 for the Listing Preference foundation.
+        //
+        // APPROVED AS CANONICAL, AND NON-DERIVABLE. Interior daylight is claimed
+        // in prose far more often than it is recorded in a structured field, so
+        // until a source rule is separately reviewed there is to be:
+        //   • NO phrase rule,
+        //   • NO photo / vision inference,
+        //   • NO marketing-copy inference.
+        // Any of those written before the evidence is reviewed would manufacture
+        // confident tags out of sales language.
+        //
+        // Owner- and seeker-selectable now; derivation may only be enabled later
+        // by a separately reviewed rule in config/smart_tag_sources.php. Both
+        // derivable flags stay false until one exists — SmartTagSourceRulesTest
+        // asserts the flags and the rules agree in both directions, so they can
+        // only flip in the same change that adds the rule.
+        'natural_light'              => $tag('Natural Light', 'interior', $RES, [
+            'description' => 'Interior daylight described or recorded as abundant.',
+        ]),
         'fireplace'                  => $tag('Fireplace', 'interior', $RES, $both + ['negatable' => true]),
         'updated_bathrooms'          => $tag('Updated Bathrooms', 'interior', $RES, $both),
         'walk_in_closet'             => $tag('Walk-In Closet', 'interior', $RES, $both),

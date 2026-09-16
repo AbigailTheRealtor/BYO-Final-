@@ -1031,6 +1031,96 @@ code change after a licensing decision.
 and playground are owner-describable but not seeker-selectable; `pets_allowed` carries the
 assistance-animal notice; proximity is Location DNA; ranges and terms stay structured criteria.
 
+### Listing preferences — Save | Maybe | Pass (Phase 1, inert)
+
+**Customer terminology is Save | Maybe | Pass.** Earlier planning notes said "Love/Maybe/Pass";
+that wording is superseded. Governance is
+`docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md`.
+
+**Phase 1 ships inert and that is the point.** Three tables, one governed vocabulary, two pure
+boundaries and a resolver — and **no route, controller, UI, write path or learner**. An
+architecture test fails the build if anything under `routes/`, `resources/views/`, `resources/js/`,
+`public/js/` or `app/Http/` references the subsystem, and if any `app/` code writes through the
+models. Merging it changes no customer-visible behaviour, which is what keeps the customer-facing
+phase a separate reviewable decision.
+
+**One current state, plus an append-only history, and the split is load-bearing.**
+`listing_preferences` holds exactly one row per `(user_id, seeker_role, subject_key)` — the unique
+index is what makes Save → Maybe → Pass an *update* rather than a pile of contradictions, rather
+than leaving it to application discipline. `listing_preference_events` records every transition and
+**refuses updates and deletes** (the `SmartTagManualEvent` pattern). Current state alone cannot
+answer "repeated patterns grow stronger" or "one Pass must not permanently define a customer" —
+both are statements about **time** — nor undo, nor Fair Housing auditability. Reasons cascade from
+the current state; **events deliberately do not**, because deleting a state must never erase the
+record that it existed.
+
+**Two identities are stored, and the second one prevents a live collision.** The acted-on
+`(listing_type, listing_id)` is audit truth, produced only by `SmartTagListingType`. `subject_key`
+decides uniqueness: `mls:<listing_key>` for a Bridge row **and** for a native listing carrying
+`mls_listing_key` provenance, `byo:<listing_type>:<id>` otherwise. Without it, one house is both
+`bridge:12345` and `seller_agent:678` — `ExploreCanonicalListingResolver` already links them — so a
+Pass on the map would not suppress the same property in results. Keying Bridge subjects on the
+listing_key **string** also survives the surrogate-id churn `bridge_properties.id` is only
+conditionally safe from. `ListingPreferenceSubjectResolver` is the only reader of provenance for
+this purpose; it is read-only, batches one query per listing type, and returns **null** for a Bridge
+row with no listing key rather than inventing an identity. **No parcel, address or coordinate
+grouping** — `ExplorePropertyIdentity` answers a different question, and adopting it here would
+merge two listings a customer may feel differently about.
+
+**`seeker_role` is stored, never derived.** `users.user_type` is single-valued and can change;
+deriving the role would retroactively reinterpret every preference a customer ever expressed, and a
+Pass on a rental must not suppress a purchase. It is part of the uniqueness key.
+
+**The reason vocabulary is not a second taxonomy.** `config/listing_preference_reasons.php` is the
+SSOT with one reader (`ListingPreferenceConfig`, the container-or-file pattern, test-asserted).
+Reasons carry a **dimension**: `smart_tag` (links to a canonical key), `criteria` (price, size,
+fees — which the Smart Tag taxonomy excludes **by name**), `location` (Location DNA's territory) and
+`unspecified`. Forcing all four into tags would be the duplicate vocabulary governance forbids.
+**`unspecified` is captured and never learned** — there is nothing structured to learn it against.
+A reason also declares which states may offer it, because the three prompts ask different questions:
+"Too expensive" is not an answer to *What do you like about this property?*
+
+**Fair Housing is inherited, not restated.** `ListingPreferenceReasonPolicy` is an intersection
+(the `SmartTagSelectionPolicy` rule) and re-validates tag-backed reasons through that policy on
+`SURFACE_SEEKER`. `seeker_selectable` — inert until now — is the gate, so `accessible_features` and
+`playground` can never become chips and there is no second exclusion list. Reason keys and labels are
+scanned by the **same** `SmartTagComplianceGuard`, which lives in code so config cannot relax it.
+Where no context is available the policy relaxes only *applicability*, never `isSeekerSelectable()`.
+**The governance doc §6 prohibits, for any future learner: user-to-user similarity, collaborative
+neighbourhood or location learning, neighbourhood demographic inference, geographic clustering of
+preference outcomes and protected-class inference.** That is the exposure the compliance guard cannot
+see — collaborative filtering reproduces redlining with no prohibited word written down — so it is
+prohibited in prose and is a condition of building a learner at all. Location learning may use only
+the customer's **own** stated Important Places and commute anchors.
+
+**`natural_light` was added to the Smart Tag taxonomy** (version `2026-09-16.1`) so the chip links to
+a canonical key rather than minting a parallel one. It ships with **no derivation rule** — both
+derivable flags `false`, which `SmartTagSourceRulesTest` enforces in both directions — because
+daylight is claimed in prose far more than it is recorded structurally. Generic **Style** was
+rejected for V1: no well-defined taxonomy exists, and a vague style tag is exactly the duplicate
+vocabulary being avoided.
+
+**Guests: authenticated only in Phases 1–2.** No anonymous or session records. The controls may
+later be visible to a signed-out visitor, but using one prompts authentication. The data model is
+shaped so capture-and-claim is additive later (a claim step rewriting `user_id`), never a redesign.
+
+**Ranking is untouched, and a learner may not change that carelessly.** `config/match_scoring.php`
+requires enabled weights to sum to 100 and `BuyerMatchScorer` has fixed caps, so preference must
+never become a scoring category. The precedent is `ImportantPlaceMatcher`: it **scores, it never
+selects**. Preference will apply as a post-score re-rank; **Pass is a display decision only** and
+never deletes, hides or alters listing or MLS data.
+
+**Flags** live in `config/listing_preferences.php`, all default `false`, parsed fail-closed
+(`LISTING_PREFERENCES_ENABLED` is ON only for `true`/`1`/`on`/`yes`). Phase 1 **does not read them to
+decide anything** — there is no write path to gate — and a test asserts enabling them starts nothing.
+**None is in `config/required_production_flags.php` and none may be added**: that contract may never
+name a safety switch.
+
+**The Virtual Drive is untouched.** `VirtualDriveListingActions` still reports Save as unavailable
+("No Save / Favorite feature exists anywhere in this application"), and a test pins that string.
+Phase 3 replaces that one array entry with a delegation to the shared service, so the card gains no
+business logic.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.

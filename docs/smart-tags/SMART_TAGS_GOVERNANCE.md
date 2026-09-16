@@ -142,9 +142,31 @@ reparsed. Derivation is local CPU only — no provider calls at import, save, se
 ## 11. Explicitly out of scope for Phase 1
 
 Import / sync / save hooks, backfill, production remarks or description processing, any picker UI,
-`smart_tag_preferences`, search and ranking, cards and detail pages, Explore, Matching V2, Location DNA,
-Virtual Drive, Taste DNA, Love/Maybe/Pass, Find More Like This, natural-language search, image or
+search and ranking, cards and detail pages, Explore, Matching V2, Location DNA,
+Virtual Drive, Taste DNA, Find More Like This, natural-language search, image or
 vision analysis. Behavioural learning additionally requires its own governance revision.
+
+**Update, 2026-09-16 — Buyer/Tenant preferences.** What this section called
+`smart_tag_preferences` and "Love/Maybe/Pass" now exists as a separate subsystem:
+**Save | Maybe | Pass**, governed by
+[`docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md`](../listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md).
+Three points matter here:
+
+* **Customer terminology is Save | Maybe | Pass.** "Love" is superseded and must not reappear.
+* **It is not a second vocabulary and not a Smart Tag table.** Preference reasons live in
+  `config/listing_preference_reasons.php` and *link* to canonical tag keys; a reason about a
+  property characteristic with no canonical tag is a taxonomy change made here, under §12, never an
+  edit there. Price, size and proximity stay out of this taxonomy, as §9 already requires — the
+  reason vocabulary carries them in its own `criteria` and `location` dimensions.
+* **`seeker_selectable` is now load-bearing.** It was inert; it is the gate that keeps
+  `accessible_features` and `playground` out of the customer-facing chip list, and the preference
+  catalog inherits it rather than restating it. Clearing that flag on a tag removes its chip.
+
+Behavioural learning remains out of scope and still requires its own governance revision. The Fair
+Housing half of that revision is §6 of the listing-preference governance document, which prohibits
+user-to-user similarity learning, collaborative neighbourhood or location learning, neighbourhood
+demographic inference, geographic clustering of preference outcomes and protected-class preference
+inference. A learner additionally needs its decay model, retention policy and audit surface reviewed.
 
 ## 12. Changing the taxonomy
 
@@ -153,3 +175,31 @@ vision analysis. Behavioural learning additionally requires its own governance r
 3. A change to either file changes the tagger version, which marks every listing stale for re-derivation
    once derivation is wired.
 4. A new sensitive concept needs `compliance.status` other than `approved`, with a note, and review.
+5. A tag that is `seeker_selectable` becomes eligible to back a preference reason chip. Confirm that
+   is intended: the chip is customer-facing on public pages.
+
+### Change log
+
+**2026-09-16 — added `natural_light`** (`interior`, residential contexts; taxonomy version
+`2026-09-15.1` → `2026-09-16.1`).
+
+Added as a real property characteristic so the Save/Maybe/Pass reason "Natural light" links to a
+canonical key instead of minting a parallel one. Owner- and seeker-selectable; compliance
+`approved` — `SmartTagComplianceGuard` reports no violation in the key, label or description.
+
+It ships **non-derivable by review decision**, so both `mls_derivable` and `native_derivable` are
+`false`. Until a source rule is separately reviewed there is to be:
+
+* **no phrase rule**,
+* **no photo or vision inference**,
+* **no marketing-copy inference**.
+
+Interior daylight is claimed in prose far more often than it is recorded in a structured field, and
+any of those written before that evidence is reviewed would manufacture confident tags out of sales
+language. `SmartTagSourceRulesTest` asserts the flags and the rules agree in both directions, so the
+flags can only flip in the same change that adds the rule — a later, separately reviewed edit to
+`config/smart_tag_sources.php`.
+
+Generic **"Style"** was considered alongside it and **rejected for V1**: there is no well-defined
+style taxonomy, and a vague style tag would be precisely the duplicate vocabulary §2 forbids.
+Specific architectural tags remain available to add individually.
