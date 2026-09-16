@@ -515,7 +515,8 @@
         $heroState    = $str('state') ?: $str('property_state') ?: null;
         $heroCities   = $arr('cities');
         $heroCounties = $arr('counties');
-        $heroZip      = $str('zip_codes') ?: $str('property_zip') ?: null;
+        /* Same canonical key as the ZIP Codes row below; see the note there. */
+        $heroZip      = ($_z = $dedupe($arr('zipCodes'))) ? implode(', ', $_z) : ($str('zip_codes') ?: $str('property_zip') ?: null);
         $heroPropType = $str('property_type') ?: null;
         $heroBeds     = $str('bedrooms') ?: null;
         $heroBaths    = $str('bathrooms') ?: null;
@@ -745,7 +746,22 @@
     @php
         $cities   = $dedupe($arr('cities'));
         $counties = $dedupe($arr('counties'));
-        $zipCodes = $str('zip_codes') ?: $str('property_zip') ?: null;
+        /* ZIP codes are stored under `zipCodes` — every Tenant component writes
+           saveMeta('zipCodes', json_encode($this->zipCodes)), and `zip_codes` is written
+           nowhere in the application. Reading the snake_case spelling made this row
+           permanently blank for every listing the current form has ever produced, and
+           `zipCodes` is in $knownKeys below, so the Additional Information fallback did not
+           surface it either — the criterion was public and invisible.
+
+           Read as an ARRAY, like the Cities and Counties rows beside it: the controller
+           decodes the stored JSON into a PHP array. The two legacy string spellings remain
+           as fallbacks so an older row that stored a plain string still renders, and they
+           are only consulted when the canonical key yields nothing — so no listing can
+           produce the row twice. */
+        $zipList  = $dedupe($arr('zipCodes'));
+        $zipCodes = count($zipList)
+            ? implode(', ', $zipList)
+            : ($str('zip_codes') ?: $str('property_zip') ?: null);
         $address  = $str('address') ?: null;
         $stateVal = $str('state') ?: $str('property_state') ?: null;
         $hasLocation = $stateVal || count($cities) || count($counties) || $zipCodes || $address;
@@ -1026,7 +1042,16 @@
                     {!! $row('Renewal Option Details', $str('renewal_option_details')) !!}
                     {!! $row('Occupancy Status', $str('occupancy_status')) !!}
                     {!! $row('Occupied Until', $str('occupied_until')) !!}
-                    @if(count($tenantRequire)) {!! $row('Tenant Requirements', implode(', ', $tenantRequire)) !!} @endif
+                    {{-- `tenant_require` holds a FURNISHINGS value — "Furnished", "Unfurnished",
+                         "Turnkey", "Partially Furnished" — from the form's own "Furnishings
+                         Needed:" select. The key's name reads like an occupant requirement and
+                         is not one, and "Tenant Requirements" announced a requirement about the
+                         PERSON that this listing never made: the same conflation Fair Housing
+                         Phase 3 removed from the landlord and agent views, which now label it
+                         "Furnishings". The wording here matches the form the tenant filled in
+                         and the Hire Tenant Agent view's label for this same key. Display only:
+                         the meta key, the component state and the stored value are untouched. --}}
+                    @if(count($tenantRequire)) {!! $row('Furnishings Needed', implode(', ', $tenantRequire)) !!} @endif
                 </div>
                 <div class="col-md-12">
                     {!! $row('Tenant Conditions', $str('tenant_conditions')) !!}
