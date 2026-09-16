@@ -139,6 +139,26 @@ description and the tagger version (taxonomy + rules + engine version). A source
 when its own input, the tagger version or the listing's context changes; unchanged prose is never
 reparsed. Derivation is local CPU only — no provider calls at import, save, search or render.
 
+**Structured hashes are taken over INTERPRETED values, not raw stored ones.** An accessor's
+`inputsFor()` must give equal output for two records the rules would read identically, whatever shape
+the store handed back. `BridgeRecordAccessor` therefore reads each rule through the same accessor
+method the rule engine will use for that rule's kind — `boolean`, `scalar`, `values`, `number`,
+`flag` — and keys each entry by that reading, so one field read two ways keeps both interpretations
+and kinds that share a reading collapse to one.
+
+This is not tidiness. `bridge_properties.waterfront_yn` and `pool_private_yn` are boolean columns that
+come back as PHP `true` from a just-written model and as `1` from a re-read row. Hashing the raw value
+made the same unchanged listing produce two different hashes depending on which code path had looked
+at it, so a caller deriving from a freshly written model and a caller reading rows fresh each
+re-derived what the other had already done. The tags were never wrong — re-derivation is idempotent —
+but "unchanged input skips re-derivation" was not true across those paths.
+
+`true`, `1`, `"1"`, `"true"`, `"Y"` and `"yes"` all canonicalise to the same hash because
+`BridgeRecordAccessor::toBool()` already says they mean the same thing; this changes no vocabulary,
+it stops hashing before interpretation. An unrecognised value canonicalises to UNKNOWN and never to
+YES. A rule kind with no declared reading falls back to the raw value rather than being dropped,
+because change detection that silently stops watching a field is the worse failure.
+
 ## 11. Explicitly out of scope for Phase 1
 
 Import / sync / save hooks, backfill, production remarks or description processing, any picker UI,

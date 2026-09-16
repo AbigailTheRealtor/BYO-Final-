@@ -1006,6 +1006,17 @@ only. `smart_tag_evidence` holds one row per listing × tag × **source**; `smar
 change-detection hashes; `smart_tag_manual_events` is append-only. `smart_tag_preferences` is reserved
 for the Buyer/Tenant phase and not created.
 
+**A structured hash is taken over INTERPRETED values, never raw stored ones.**
+`BridgeRecordAccessor::inputsFor()` reads each rule through the same accessor method the rule engine
+uses for that rule's kind (`boolean`, `scalar`, `values`, `number`, `flag`) and keys each entry by
+that reading, so the hash and the derivation agree on what a value means. It hashed raw attributes
+before, and `bridge_properties.waterfront_yn` / `pool_private_yn` read back as PHP `true` from a
+just-written model and as `1` from a re-read row — so one unchanged listing had two hashes depending
+on which path looked at it, and a caller deriving from a written model re-derived everything a caller
+reading fresh rows had already done. `true`, `1`, `"1"`, `"Y"`, `"yes"` now hash alike because
+`toBool()` already says they mean the same thing; an unrecognised value hashes as UNKNOWN, never YES;
+an unknown rule kind falls back to the raw value rather than being dropped.
+
 **Sources and precedence**: `structured_mls` > `structured_native_listing` > `manual_listing_owner` >
 `mls_remarks` / `native_listing_description`. **Unknown is the absence of a row.** Only a structured source
 reading an explicit "No" on a negatable tag records `absent`; a description, an unmentioned feature, a
