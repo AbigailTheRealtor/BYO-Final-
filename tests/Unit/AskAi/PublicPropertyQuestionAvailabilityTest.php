@@ -315,13 +315,52 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
         $admissions = AskAiPublicPropertyQuestionService::publicQuestionAdmissions();
 
+        $criteria = AskAiPublicPropertyQuestionService::publicCriteria();
+
         foreach ($catalog as $id => $entry) {
-            $this->assertContains($entry['role'], ['seller', 'landlord'], $id);
-            $this->assertContains($entry['source_kind'], ['listing', 'admitted_listing'], $id);
+            $this->assertContains($entry['role'], ['seller', 'landlord', 'buyer', 'tenant'], $id);
+            $this->assertContains($entry['source_kind'], ['listing', 'admitted_listing', 'criteria_meta'], $id);
+
+            // Batch 2d — the CRITERIA roles are governed by their own explicit catalogs
+            // instead of SnapshotFactVisibility's public tier, because D2 gives them no
+            // public tier at all. They have two admissions and no others: the context-key
+            // catalog, and the narrow page-meta allowlist for criteria the shared context
+            // does not carry. The property roles' mechanism is not available to them, and
+            // theirs is not available to the property roles.
+            $isCriteria = isset($criteria[$entry['role']]);
+            if ($isCriteria) {
+                $this->assertContains($entry['source_kind'], ['listing', 'criteria_meta'],
+                    "{$id}: a criteria entry may not use admitted_listing.");
+            } else {
+                $this->assertNotSame('criteria_meta', $entry['source_kind'],
+                    "{$id}: the page-meta mechanism belongs to the criteria roles.");
+            }
+
+            // A page-meta source is checked against its own allowlist; every key it reads is
+            // re-verified as public-and-unrestricted at read time by the service itself.
+            if ($entry['source_kind'] === 'criteria_meta') {
+                $sources = AskAiPublicPropertyQuestionService::publicCriteriaMetaSources()[$entry['role']] ?? [];
+                $this->assertMatchesRegularExpression('/^criteria_meta\.[a-z0-9_]+$/', $entry['source_path'], $id);
+                $this->assertArrayHasKey(str_replace('criteria_meta.', '', $entry['source_path']), $sources, $id);
+                // Supporting paths remain ordinary context keys, checked by the loop below.
+                foreach ($entry['supporting_paths'] as $path) {
+                    $key = substr($path, strlen('listing.'));
+                    $this->assertArrayHasKey($key, $criteria[$entry['role']], "{$id}: {$path}");
+                }
+                continue;
+            }
 
             foreach (array_merge([$entry['source_path']], $entry['supporting_paths']) as $i => $path) {
                 $this->assertMatchesRegularExpression('/^listing\.[a-z0-9_]+$/', $path, $id);
                 $key = substr($path, strlen('listing.'));
+
+                if ($isCriteria) {
+                    $this->assertArrayHasKey($key, $criteria[$entry['role']],
+                        "{$id}: {$path} is not in PUBLIC_" . strtoupper($entry['role']) . '_CRITERIA.');
+                    $this->assertNotSame(SnapshotFactVisibility::RESTRICTED, SnapshotFactVisibility::classify($key, $entry['role']),
+                        "{$id}: {$path} is compliance-restricted and must never be read.");
+                    continue;
+                }
 
                 $this->assertArrayHasKey($key, AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$entry['role']], "{$id}: {$path}");
 
@@ -388,9 +427,22 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         }
     }
 
-    // ── 7. Buyer and tenant criteria never appear publicly ──────────────────
+    // ── 7. Only an approved criteria key is readable for a criteria role ────
 
-    public function test_buyer_and_tenant_criteria_never_appear_publicly(): void
+    /**
+     * SUPERSEDED AND REPLACED by Batch 2d.
+     *
+     * This was "buyer and tenant produce no public questions at all", which was the right
+     * rule while those roles had no approved surface. They have one now, so the blanket
+     * emptiness claim is false by design — but the reason it existed is not, and it is
+     * restated here in the stronger form the new design actually supports:
+     *
+     *   - a role name that is not exactly 'buyer' or 'tenant' still produces nothing, so an
+     *     alias, a casing variant or an empty string cannot reach the surface sideways;
+     *   - for the two real criteria roles, only a key named in their own catalog resolves;
+     *   - a qualification key is refused even when the listing carries a value for it.
+     */
+    public function test_only_an_approved_criteria_key_is_readable_for_a_criteria_role(): void
     {
         $criteria = $this->context([
             'bedrooms'    => '3',
@@ -401,17 +453,36 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'appliances'  => 'Washer, Dryer',
         ]);
 
-        foreach (['buyer', 'tenant', 'buyer_agent_auction', 'tenant_criteria_auction', 'BUYER', '', 'agent_profile'] as $role) {
+        // An ALIAS role name answers nothing. forListing() has lowercased its argument since
+        // Batch 1, so 'BUYER' does resolve to 'buyer' — casing is normalised, identity is
+        // not, and a listing-type alias is not a role.
+        foreach (['buyer_agent_auction', 'tenant_criteria_auction', '', 'agent_profile', 'buyer_criteria'] as $role) {
             $this->assertSame([], $this->service->forListing($role, $criteria, []), "'{$role}' must produce no public questions.");
-
-            foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $entry) {
-                $entry['role'] = $role;
-                $this->assertFalse($this->service->evaluate($entry, $role, $criteria, [])['available'], "'{$role}'");
-            }
         }
+        // Casing tolerance must not become key tolerance: the uppercase spelling reaches the
+        // same catalog, never a wider one.
+        $this->assertSame(
+            $this->service->forListing('buyer', $criteria, []),
+            $this->service->forListing('BUYER', $criteria, [])
+        );
 
-        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
-            $this->assertNotContains($entry['role'], ['buyer', 'tenant'], $id);
+        // For the two real criteria roles, the catalog is the whole permission.
+        $catalogs = AskAiPublicPropertyQuestionService::publicCriteria();
+        foreach (['buyer', 'tenant'] as $role) {
+            foreach ($this->service->forListing($role, $criteria, []) as $question) {
+                $key = substr($question['source_path'], strlen('listing.'));
+                $this->assertArrayHasKey($key, $catalogs[$role], "{$question['id']} read an unapproved key.");
+            }
+
+            // A qualification key present on the listing is still refused.
+            $probe = $role === 'tenant' ? 'monthly_income' : 'pre_approval_amount';
+            $entry = [
+                'role' => $role, 'question' => 'probe', 'source_kind' => 'listing',
+                'source_path' => 'listing.' . $probe, 'supporting_paths' => [],
+                'formatter' => 'criteria_property_type', 'guards' => [],
+            ];
+            $result = $this->service->evaluate($entry, $role, $this->context([$probe => '99999']), []);
+            $this->assertFalse($result['available'], "{$role}.{$probe} became available.");
         }
     }
 

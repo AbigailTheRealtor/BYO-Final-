@@ -317,8 +317,15 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
             'pet_information' => 'SENTINEL-PET-INFORMATION',
         ];
 
+        // Batch 2d: a criteria role DOES answer now, and the guarantee is sharper for it.
+        // The tenant pets question states the housing requirement from `pets_allowed` and
+        // nothing else — no applicant pet detail, breed or weight, and no assistance animal.
         foreach (['tenant', 'buyer'] as $criteriaRole) {
-            $this->assertSame([], $this->service->forListing($criteriaRole, ['listing' => $tenantShaped], []));
+            foreach ($this->service->forListing($criteriaRole, ['listing' => $tenantShaped], []) as $q) {
+                $this->assertStringNotContainsString('SENTINEL', $q['answer'], $q['id']);
+                $this->assertStringNotContainsString('80', $q['answer'], $q['id']);
+                $this->assertStringNotContainsStringIgnoringCase('animal', $q['answer'], $q['id']);
+            }
         }
 
         $seller = $this->answers('seller', $tenantShaped);
@@ -394,17 +401,42 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
         }
     }
 
-    public function test_26_buyer_and_tenant_criteria_stay_excluded(): void
+    /**
+     * SUPERSEDED AND REPLACED by Batch 2d.
+     *
+     * Batch 2c's rule was "the criteria roles are excluded from this surface entirely".
+     * They have their own approved surface now, so what is asserted instead is the property
+     * half that never changed: a PROPERTY composite — the HOA and CDD questions this batch
+     * added — is not reachable from a criteria role, whatever the listing happens to carry.
+     */
+    public function test_26_property_composites_stay_out_of_the_criteria_roles(): void
     {
         $criteria = ['listing' => [
             'hoa_association' => 'Yes', 'hoa_fee' => '250', 'association_fee_includes' => 'Water', 'has_cdd' => 'Yes',
             'max_price' => '450000', 'max_hoa_fee' => '300', 'pets_allowed' => 'Yes',
         ]];
+        $meta = ['association_fee_includes' => json_encode(['Water'])];
 
-        foreach (['buyer', 'tenant', 'buyer_agent_auction', 'tenant_criteria_auction'] as $role) {
-            $this->assertSame([], $this->service->forListing($role, $criteria, ['association_fee_includes' => json_encode(['Water'])]), $role);
+        // An alias role still answers nothing at all.
+        foreach (['buyer_agent_auction', 'tenant_criteria_auction'] as $role) {
+            $this->assertSame([], $this->service->forListing($role, $criteria, $meta), $role);
         }
-        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
+
+        // For the real criteria roles, no HOA / CDD / fee question appears — none of those
+        // keys is in either criteria catalog, so none can resolve.
+        foreach (['buyer', 'tenant'] as $role) {
+            foreach ($this->service->forListing($role, $criteria, $meta) as $q) {
+                foreach (['hoa', 'cdd', 'association', 'fee'] as $forbidden) {
+                    $this->assertStringNotContainsStringIgnoringCase($forbidden, $q['source_path'], "{$q['id']} read a property fee source.");
+                    $this->assertStringNotContainsStringIgnoringCase($forbidden, $q['answer'], "{$q['id']} published a property fee.");
+                }
+            }
+        }
+
+        // And every composite added by this batch belongs to a property role.
+        foreach (['seller_hoa_fee_coverage', 'landlord_hoa_fee_coverage', 'seller_cdd_fee'] as $id) {
+            $entry = AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry()[$id] ?? null;
+            $this->assertNotNull($entry, $id);
             $this->assertContains($entry['role'], ['seller', 'landlord'], $id);
         }
     }
@@ -426,9 +458,17 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
             $pairs[$id] = $richer;
         }
 
+        // Pinned so a narrower/richer pair cannot be added or lost unnoticed. The four
+        // Batch 2d entries are the criteria surface's own fallbacks: an areas question that
+        // names only counties when no city is listed, and a features question that carries
+        // the remaining structured lists when the richest source is empty.
         $this->assertSame([
-            'seller_hoa_fee'   => 'seller_hoa_fee_coverage',
-            'landlord_hoa_fee' => 'landlord_hoa_fee_coverage',
+            'seller_hoa_fee'                => 'seller_hoa_fee_coverage',
+            'landlord_hoa_fee'              => 'landlord_hoa_fee_coverage',
+            'buyer_search_areas_counties'   => 'buyer_search_areas',
+            'buyer_view_preference'         => 'buyer_property_features',
+            'tenant_search_areas_counties'  => 'tenant_search_areas',
+            'tenant_appliances'             => 'tenant_property_features',
         ], $pairs);
     }
 

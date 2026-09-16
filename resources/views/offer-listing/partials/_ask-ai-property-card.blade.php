@@ -15,12 +15,32 @@
     its trigger renders for the listing owner alone. A shopper gets the questions, or a
     plain empty state, and never a text box that can only answer "owner only".
 
+    Batch 2d added the two CRITERIA roles to this same card rather than building a second
+    one. A buyer or tenant listing is a search request, not a property, so only the heading
+    and the empty-state wording change; the mechanism — precomputed pairs, a <details>
+    toggle, no script, no request — is identical, and so is the guarantee that comes with it.
+
     @param array  $questions      list of {id, question, answer, source_path}
-    @param string $role           'seller' | 'landlord'
-    @param string $prefix         the page's class prefix: 'sol' | 'lol'
+    @param string $role           'seller' | 'landlord' | 'buyer' | 'tenant'
+    @param string $prefix         the page's class prefix: 'sol' | 'lol' | 'bol' | 'tcl'
     @param bool   $viewerIsOwner  true only for the authenticated listing owner
-    @param string $modalId        the owner Ask AI modal id: 'solAiModal' | 'lolAiModal'
+    @param string $modalId        the owner Ask AI modal id
+    @param string $heading        optional; defaults to the property wording
+    @param string $emptyText      optional; defaults to the property wording
+    @param string $subject        optional; the noun in the empty state ('property')
 --}}
+@php
+    /* A criteria listing describes what someone is LOOKING FOR. Saying "Questions About
+       This Property" over a buyer's search request would name a property that does not
+       exist. Resolved from the role so a caller cannot pair the wrong heading with a role. */
+    $askAiPqSubject = $subject ?? (in_array($role, ['buyer', 'tenant'], true) ? 'criteria' : 'property');
+    $askAiPqHeading = $heading ?? match ($role) {
+        'buyer'  => "Questions About This Buyer's Criteria",
+        'tenant' => "Questions About This Tenant's Criteria",
+        default  => 'Questions About This Property',
+    };
+    $askAiPqEmpty = $emptyText ?? "No verified {$askAiPqSubject} questions are available yet.";
+@endphp
 @once
 @push('styles')
 <style>
@@ -58,11 +78,24 @@
 .ask-ai-pq-question:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; border-radius: .5rem; }
 .ask-ai-pq-answer { font-size: .72rem; color: #1e293b; line-height: 1.45; margin: 0; padding: 0 .55rem .45rem; }
 .ask-ai-pq-note { font-size: .66rem; color: #64748b; line-height: 1.4; }
-/* Landlord pages use the teal palette their old Ask AI chips used. */
-.lol-view-page .ask-ai-pq-item { border-color: #99f6e4; background: #f0fdfa; }
-.lol-view-page .ask-ai-pq-item[open] { background: #fff; }
-.lol-view-page .ask-ai-pq-question { color: #0f766e; }
-.lol-view-page .ask-ai-pq-question::after { color: #0f766e; }
+/* Landlord and tenant pages use the teal palette their old Ask AI chips used. Buyer keeps
+   the blue default above, which is the buyer page's own accent. */
+.lol-view-page .ask-ai-pq-item,
+.tcl-view-page .ask-ai-pq-item { border-color: #99f6e4; background: #f0fdfa; }
+.lol-view-page .ask-ai-pq-item[open],
+.tcl-view-page .ask-ai-pq-item[open] { background: #fff; }
+.lol-view-page .ask-ai-pq-question,
+.tcl-view-page .ask-ai-pq-question { color: #0f766e; }
+.lol-view-page .ask-ai-pq-question::after,
+.tcl-view-page .ask-ai-pq-question::after { color: #0f766e; }
+
+/* The criteria pages render this card on its own in the left column rather than inside a
+   quick-actions grid, so it has no cell to stretch and needs no grid-column override. It
+   still must not grow a horizontal scrollbar at phone width. */
+.bol-view-page #bol-ask-ai-card,
+.tcl-view-page #tcl-ask-ai-card { margin-top: 1.25rem; }
+.ask-ai-pq-list > * { min-width: 0; }
+.ask-ai-pq-question, .ask-ai-pq-answer { overflow-wrap: anywhere; }
 </style>
 @endpush
 @endonce
@@ -70,7 +103,7 @@
     <div class="{{ $prefix }}-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
     <div class="{{ $prefix }}-interaction-card-label">Ask AI</div>
     @if(!empty($questions))
-        <div class="ask-ai-pq-heading">Questions About This Property</div>
+        <div class="ask-ai-pq-heading">{{ $askAiPqHeading }}</div>
         <div class="ask-ai-pq-list">
             @foreach($questions as $q)
             <details class="ask-ai-pq-item" data-property-question="{{ $q['id'] }}">
@@ -81,7 +114,7 @@
         </div>
         <div class="ask-ai-pq-note">Answers come directly from this listing's details.</div>
     @else
-        <div class="{{ $prefix }}-interaction-card-helper">No verified property questions are available yet.</div>
+        <div class="{{ $prefix }}-interaction-card-helper">{{ $askAiPqEmpty }}</div>
     @endif
     @if($viewerIsOwner)
         <button type="button" class="{{ $prefix }}-interaction-cta {{ $prefix }}-interaction-cta-outline"

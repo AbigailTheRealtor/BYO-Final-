@@ -121,6 +121,23 @@ class TenantOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'tenant');
 
+        /* Questions About This Tenant's Criteria (Batch 2d) — precomputed, deterministic
+         * answers. No request, no classifier, no model, no generated text. Only the keys in
+         * AskAiPublicPropertyQuestionService::PUBLIC_TENANT_CRITERIA are readable: the
+         * tenant's income, credit, eviction and felony answers, service and support animal
+         * status, accessibility requirements, household size, address and commute
+         * destination are all in this listing's context and none is in that catalog.
+         *
+         * $meta is already redacted for a non-owner, so the guards and multi-select
+         * companions below read the same array the page does. */
+        $propertyQuestions = app(\App\Services\AskAi\AskAiPublicPropertyQuestionService::class)
+            ->forListing('tenant', $askAiChipContext, $meta);
+
+        /* Who gets the free-text Ask AI modal. Its endpoint is owner-scoped, so a shopper
+         * gets the deterministic questions above and never a text box that can only answer
+         * "owner only". The criteria questions themselves are the same for both. */
+        $askAiViewerIsOwner = $tenantViewerIsOwner;
+
         $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
         $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
         $agentAiScope   = 'tenant_criteria';
@@ -165,6 +182,8 @@ class TenantOfferListingController extends Controller
             'meta'                       => $meta,
             'ownerId'                    => $auction->user_id,
             'askAiChipContext'           => $askAiChipContext,
+            'propertyQuestions'          => $propertyQuestions,
+            'askAiViewerIsOwner'         => $askAiViewerIsOwner,
             'locationDnaPreferences'     => $locationDnaPreferences,
             'legacyLocation'             => $legacyLocation,
             'importantPlaces'            => $importantPlaces,

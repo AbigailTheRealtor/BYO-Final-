@@ -4033,6 +4033,415 @@ class AskAiFieldQuestionRegistryService
                 'order'            => 165,
                 'aliases'          => ['amenities', 'community amenities', 'clubhouse', 'community pool'],
             ],
+
+            // ================================================================
+            // Buyer — search criteria (Batch 2d)
+            //
+            // A buyer listing is a SEARCH REQUEST, not a property. Every question below
+            // asks what this buyer is looking for and every answer says so; none states a
+            // fact about a property, because no property is being described.
+            //
+            // Every source_path names a key in
+            // AskAiPublicPropertyQuestionService::PUBLIC_BUYER_CRITERIA. That catalog is
+            // the only admission these roles have — SnapshotFactVisibility answers
+            // OWNER_ONLY for every buyer key (D2, unchanged) — so a path added here that is
+            // not in it resolves to 'not_public_allowed' and the question never renders.
+            // Pre-approval, cash, down payment, credit, lender, occupants and the buyer's
+            // own address are absent from that catalog and unreachable from here.
+            // ================================================================
+            'buyer_budget' => [
+                'role'             => 'buyer',
+                'question'         => "What is the buyer's budget?",
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.max_price',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_max_purchase_budget',
+                // The page prints Max Purchase Budget and Max Purchase Price as separate
+                // rows from four keys. When they disagree it shows both and lets a reader
+                // judge; one sentence cannot, so the question hides rather than choosing.
+                'guards'           => ['buyer_budget_not_divergent'],
+                'category'         => 'price',
+                'order'            => 10,
+                'aliases'          => ['budget', 'price range', 'how much can they spend', 'max budget'],
+            ],
+            'buyer_search_areas' => [
+                'role'             => 'buyer',
+                'question'         => 'What areas is the buyer looking in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.cities',
+                'supporting_paths' => ['listing.counties'],
+                'formatter'        => 'criteria_search_areas',
+                'guards'           => [],
+                'category'         => 'location',
+                'order'            => 20,
+                'aliases'          => ['areas', 'where', 'locations', 'cities', 'neighborhoods'],
+            ],
+            'buyer_search_areas_counties' => [
+                'role'             => 'buyer',
+                'question'         => 'What areas is the buyer looking in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.counties',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_search_areas_counties',
+                'guards'           => [],
+                // Stands in when no cities are named; suppressed when the fuller entry above
+                // is available, so the same question never appears twice.
+                'narrower_of'      => 'buyer_search_areas',
+                'category'         => 'location',
+                'order'            => 21,
+                'aliases'          => ['areas', 'where', 'counties'],
+            ],
+            'buyer_property_type' => [
+                'role'             => 'buyer',
+                'question'         => 'What property type is the buyer interested in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.property_type',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_property_type',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 30,
+                'aliases'          => ['property type', 'what kind of property', 'type of home'],
+            ],
+            'buyer_bedrooms' => [
+                'role'             => 'buyer',
+                'question'         => 'How many bedrooms are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.bedrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_bedrooms',
+                // The context resolves an "Other" free-text bedroom value; require the
+                // structured field so the answer is a number the form actually stored.
+                'guards'           => ['meta_present:bedrooms'],
+                'category'         => 'size',
+                'order'            => 40,
+                'aliases'          => ['bedrooms', 'beds', 'how many bedrooms'],
+            ],
+            'buyer_bathrooms' => [
+                'role'             => 'buyer',
+                'question'         => 'How many bathrooms are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.bathrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_bathrooms',
+                'guards'           => ['meta_present:bathrooms'],
+                'category'         => 'size',
+                'order'            => 50,
+                'aliases'          => ['bathrooms', 'baths', 'how many bathrooms'],
+            ],
+            'buyer_square_feet' => [
+                'role'             => 'buyer',
+                'question'         => 'What square footage are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.square_feet',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_square_feet',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 60,
+                'aliases'          => ['square footage', 'square feet', 'sq ft', 'how big'],
+            ],
+            'buyer_acreage' => [
+                'role'             => 'buyer',
+                'question'         => 'What acreage are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.total_acreage',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_acreage_band',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 70,
+                'aliases'          => ['acreage', 'lot size', 'acres', 'land'],
+            ],
+            'buyer_pool' => [
+                'role'             => 'buyer',
+                'question'         => 'Do they want a pool?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.pool',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_wants_pool',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 80,
+                'aliases'          => ['pool', 'swimming pool', 'do they want a pool'],
+            ],
+            'buyer_garage' => [
+                'role'             => 'buyer',
+                'question'         => 'Do they want a garage?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.garage',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_wants_garage',
+                // The context cascades garage_needed -> other_garage -> other_garage_needed,
+                // and the last two are free text that can hold a COUNT. The Yes/No field
+                // must be the one that answered, or this becomes a count read as a flag.
+                'guards'           => ['meta_present:garage_needed'],
+                'category'         => 'features',
+                'order'            => 90,
+                'aliases'          => ['garage', 'parking', 'do they want a garage'],
+            ],
+            'buyer_timeframe' => [
+                'role'             => 'buyer',
+                'question'         => "What is the buyer's timeframe?",
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.closing_date',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_closing_timeframe',
+                'guards'           => [],
+                'category'         => 'timing',
+                'order'            => 100,
+                'aliases'          => ['timeframe', 'when', 'closing date', 'how soon'],
+            ],
+            'buyer_property_features' => [
+                'role'             => 'buyer',
+                'question'         => 'What other property features are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.non_negotiable_amenities',
+                'supporting_paths' => [],
+                // Structured multi-selects only, read as their exact stored selections.
+                'other_companions' => [
+                    'amenities' => ['selected_in' => 'non_negotiable_amenities', 'meta_key' => 'other_non_negotiable_amenities'],
+                    'views'     => ['selected_in' => 'view_preference',          'meta_key' => 'other_preferences'],
+                ],
+                'formatter'        => 'criteria_feature_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 110,
+                'aliases'          => ['features', 'amenities', 'must haves', 'what else'],
+            ],
+            'buyer_view_preference' => [
+                'role'             => 'buyer',
+                'question'         => 'What other property features are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.water_view',
+                'supporting_paths' => [],
+                'other_companions' => [
+                    'views' => ['selected_in' => 'view_preference', 'meta_key' => 'other_preferences'],
+                ],
+                'formatter'        => 'criteria_feature_list',
+                'guards'           => [],
+                'narrower_of'      => 'buyer_property_features',
+                'category'         => 'features',
+                'order'            => 111,
+                'aliases'          => ['view', 'views', 'water view'],
+            ],
+
+            // ================================================================
+            // Tenant — search criteria (Batch 2d)
+            //
+            // Same contract as buyer, over a context that also carries monthly_income,
+            // credit_score_range, prior_eviction, prior_felony, service_animal,
+            // emotional_support_animal, accessibility_requirements, number_of_occupants and
+            // the tenant's own address. None of those is in PUBLIC_TENANT_CRITERIA, so none
+            // is reachable from any entry below.
+            //
+            // A SERVICE OR SUPPORT ANIMAL IS NOT A PET, and the pets question does not go
+            // near either one: it reads the form's own "Pets:" Yes/No and nothing else.
+            // ================================================================
+            'tenant_max_rent' => [
+                'role'             => 'tenant',
+                'question'         => "What is the tenant's maximum rent?",
+                // criteria_meta, NOT a shared-context key: the rent budget is read from the
+                // page's own meta through PUBLIC_CRITERIA_META_SOURCES, so nothing is widened
+                // into the generic Ask AI / Agent AI context to make this question work.
+                // NOT max_rent / min_rent / rental_price — a landlord's advertised rent range,
+                // RESTRICTED for every role and structurally unreadable from here.
+                'source_kind'      => 'criteria_meta',
+                'source_path'      => 'criteria_meta.rent_budget',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_max_rent',
+                // Never derived from income or move-in funds; those keys are not readable
+                // here at all. The guard covers the page's own three-key rent fallback.
+                'guards'           => ['tenant_rent_not_divergent'],
+                'category'         => 'price',
+                'order'            => 10,
+                'aliases'          => ['rent', 'budget', 'max rent', 'how much rent'],
+            ],
+            'tenant_search_areas' => [
+                'role'             => 'tenant',
+                'question'         => 'What areas are they looking in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.cities',
+                'supporting_paths' => ['listing.counties', 'listing.zip_codes'],
+                'formatter'        => 'criteria_search_areas',
+                'guards'           => [],
+                'category'         => 'location',
+                'order'            => 20,
+                'aliases'          => ['areas', 'where', 'locations', 'cities', 'neighborhoods'],
+            ],
+            'tenant_search_areas_counties' => [
+                'role'             => 'tenant',
+                'question'         => 'What areas are they looking in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.counties',
+                'supporting_paths' => ['listing.zip_codes'],
+                'formatter'        => 'criteria_search_areas_counties',
+                'guards'           => [],
+                'narrower_of'      => 'tenant_search_areas',
+                'category'         => 'location',
+                'order'            => 21,
+                'aliases'          => ['areas', 'where', 'counties'],
+            ],
+            'tenant_property_type' => [
+                'role'             => 'tenant',
+                'question'         => 'What property type are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.property_type',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_property_type',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 30,
+                'aliases'          => ['property type', 'what kind of property', 'type of rental'],
+            ],
+            'tenant_bedrooms' => [
+                'role'             => 'tenant',
+                'question'         => 'How many bedrooms are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.bedrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_bedrooms',
+                'guards'           => ['meta_present:bedrooms'],
+                'category'         => 'size',
+                'order'            => 40,
+                'aliases'          => ['bedrooms', 'beds', 'how many bedrooms'],
+            ],
+            'tenant_bathrooms' => [
+                'role'             => 'tenant',
+                'question'         => 'How many bathrooms are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.bathrooms',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_bathrooms',
+                'guards'           => ['meta_present:bathrooms'],
+                'category'         => 'size',
+                'order'            => 50,
+                'aliases'          => ['bathrooms', 'baths', 'how many bathrooms'],
+            ],
+            'tenant_square_feet' => [
+                'role'             => 'tenant',
+                'question'         => 'What square footage are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.square_feet',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_square_feet',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 60,
+                'aliases'          => ['square footage', 'square feet', 'sq ft', 'how big'],
+            ],
+            'tenant_acreage' => [
+                'role'             => 'tenant',
+                'question'         => 'What acreage are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.total_acreage',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_min_acreage_band',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 70,
+                'aliases'          => ['acreage', 'lot size', 'acres', 'land'],
+            ],
+            'tenant_lease_term' => [
+                'role'             => 'tenant',
+                'question'         => 'What lease term are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.desired_lease_length',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_lease_term',
+                // The context cascades desired_lease_length -> lease_for, and "Leasing For"
+                // is a different question ("Residential", "Commercial"). Require the desired
+                // lease-length field itself. `min_lease_period` is NOT consulted anywhere:
+                // it is a seller/HOA restriction on a property, not a tenant preference.
+                'guards'           => ['meta_present:desired_lease_length'],
+                'category'         => 'lease',
+                'order'            => 80,
+                'aliases'          => ['lease term', 'lease length', 'how long', 'term'],
+            ],
+            'tenant_move_in' => [
+                'role'             => 'tenant',
+                'question'         => 'When do they want to move in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.move_in_date_earliest',
+                'supporting_paths' => ['listing.move_in_date_latest'],
+                'formatter'        => 'criteria_move_in_window',
+                'guards'           => [],
+                'category'         => 'timing',
+                'order'            => 90,
+                'aliases'          => ['move in', 'move-in date', 'when can they move', 'availability'],
+            ],
+            'tenant_pets' => [
+                'role'             => 'tenant',
+                'question'         => 'Do they need pets allowed?',
+                'source_kind'      => 'criteria_meta',
+                'source_path'      => 'criteria_meta.pets_allowed',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_pets_needed',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 100,
+                'aliases'          => ['pets', 'pet friendly', 'do they have pets', 'animals'],
+            ],
+            'tenant_furnishings' => [
+                'role'             => 'tenant',
+                'question'         => 'Do they want the property furnished?',
+                'source_kind'      => 'criteria_meta',
+                'source_path'      => 'criteria_meta.furnishings',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_furnishings',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 110,
+                'aliases'          => ['furnished', 'furnishings', 'unfurnished', 'turnkey'],
+            ],
+            'tenant_property_features' => [
+                'role'             => 'tenant',
+                'question'         => 'What amenities and features are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.non_negotiable_amenities',
+                'supporting_paths' => [],
+                'other_companions' => [
+                    'amenities' => ['selected_in' => 'non_negotiable_amenities', 'meta_key' => 'other_non_negotiable_amenities'],
+                    'appliances'=> ['selected_in' => 'appliances',               'meta_key' => 'other_appliances'],
+                    'items'     => ['selected_in' => 'property_items',           'meta_key' => 'other_property_items'],
+                    'views'     => ['selected_in' => 'view_preference',          'meta_key' => 'other_preferences'],
+                ],
+                'formatter'        => 'criteria_feature_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 120,
+                'aliases'          => ['features', 'amenities', 'must haves', 'appliances', 'what else'],
+            ],
+            'tenant_appliances' => [
+                'role'             => 'tenant',
+                'question'         => 'What amenities and features are they looking for?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.appliances',
+                'supporting_paths' => [],
+                'other_companions' => [
+                    'appliances'=> ['selected_in' => 'appliances',      'meta_key' => 'other_appliances'],
+                    'items'     => ['selected_in' => 'property_items',  'meta_key' => 'other_property_items'],
+                    'views'     => ['selected_in' => 'view_preference', 'meta_key' => 'other_preferences'],
+                ],
+                'formatter'        => 'criteria_feature_list',
+                'guards'           => [],
+                'narrower_of'      => 'tenant_property_features',
+                'category'         => 'features',
+                'order'            => 121,
+                'aliases'          => ['appliances', 'features'],
+            ],
+            'tenant_pool' => [
+                'role'             => 'tenant',
+                'question'         => 'Do they want a pool?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.pool',
+                'supporting_paths' => [],
+                'formatter'        => 'criteria_wants_pool',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 130,
+                'aliases'          => ['pool', 'swimming pool'],
+            ],
         ];
     }
 

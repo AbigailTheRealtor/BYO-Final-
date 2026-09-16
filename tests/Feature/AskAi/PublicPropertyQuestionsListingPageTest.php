@@ -299,20 +299,45 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         }
     }
 
-    // ── 7. Buyer and tenant criteria pages carry no public question surface ─
+    // ── 7. Buyer and tenant pages carry the CRITERIA surface, never this one ─
 
-    public function test_buyer_and_tenant_pages_do_not_include_the_surface(): void
+    /**
+     * SUPERSEDED AND REPLACED, deliberately.
+     *
+     * This assertion used to be "the buyer and tenant pages do not reference
+     * AskAiPublicPropertyQuestionService at all". Batch 2d gives those two pages their own
+     * deterministic card, so that form of the test is now false by design — but the thing it
+     * was protecting is not, and deleting it outright would have dropped the guarantee along
+     * with the stale wording.
+     *
+     * What still must hold is sharper than a file-level absence: a criteria page may render
+     * the shared card, and must never render a PROPERTY question through it. Seller and
+     * landlord catalog entries are unreachable for those roles, and the property heading
+     * never appears on their pages.
+     */
+    public function test_buyer_and_tenant_pages_never_render_a_property_question(): void
     {
-        foreach ([
-            'resources/views/offer-listing/buyer/view.blade.php',
-            'resources/views/offer-listing/tenant/view.blade.php',
-            'app/Http/Controllers/BuyerOfferListingController.php',
-            'app/Http/Controllers/TenantOfferListingController.php',
-        ] as $file) {
-            $source = file_get_contents(base_path($file));
-            $this->assertStringNotContainsString('_property-questions', $source, $file);
-            $this->assertStringNotContainsString('AskAiPublicPropertyQuestionService', $source, $file);
-            $this->assertStringNotContainsString('propertyQuestions', $source, $file);
+        $registry = \App\Services\AskAi\AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry();
+        $service  = new \App\Services\AskAi\AskAiPublicPropertyQuestionService();
+
+        // A property role's own catalog entry, evaluated for a criteria role, is refused —
+        // by role membership first, and by the criteria allowlist behind it.
+        foreach (['seller_asking_price', 'seller_bedrooms', 'landlord_pets_allowed'] as $id) {
+            if (!isset($registry[$id])) {
+                continue;
+            }
+            foreach (['buyer', 'tenant'] as $role) {
+                $result = $service->evaluate($registry[$id], $role, ['listing' => ['asking_price' => '500000', 'bedrooms' => '3', 'pets_allowed' => 'Yes']], []);
+                $this->assertFalse($result['available'], "{$id} became available for {$role}.");
+            }
+        }
+
+        // And no criteria question is ever worded as a fact about a property.
+        foreach ($registry as $id => $entry) {
+            if (!in_array($entry['role'] ?? '', ['buyer', 'tenant'], true)) {
+                continue;
+            }
+            $this->assertStringNotContainsStringIgnoringCase('this property has', (string) ($entry['question'] ?? ''), $id);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\AskAi;
 
+use App\Services\AskAi\AskAiContextBuilderService;
 use App\Services\AskAi\AskAiFieldQuestionRegistryService;
 use App\Services\AskAi\AskAiPublicPropertyQuestionService;
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
@@ -273,10 +274,32 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
 
     public function test_water_view_is_not_in_the_catalog(): void
     {
-        // Not published on either listing page (the page's "View" row reads view_preference),
-        // and water_view has no editable form control — so there is nothing to restate.
+        // Not published on either PROPERTY listing page (the page's "View" row reads
+        // view_preference), and water_view has no editable form control there — so for
+        // seller and landlord there is nothing to restate.
+        //
+        // Batch 2d scopes this to the property roles, and the reason is the same
+        // same-name-different-meaning trap the rule was written to catch, seen from the
+        // other side. On a BUYER listing the context key `water_view` is an ALIAS for the
+        // `view_preference` meta — a June 2026 live-DB audit confirmed no `water_view` key
+        // exists in buyer_agent_auction_metas — and view_preference IS published on the
+        // buyer page as "View Preference". So the buyer entry restates a published value
+        // under an unfortunate key name, which is asserted below rather than banned.
         foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
+            if (in_array($entry['role'], ['buyer', 'tenant'], true)) {
+                continue;
+            }
             $this->assertStringNotContainsString('water_view', $entry['source_path'], $id);
+            $this->assertStringNotContainsStringIgnoringCase('water view', $entry['question'], $id);
+        }
+
+        // The buyer alias points at the published meta key, and no criteria question is
+        // worded as though a water view were a property fact.
+        $this->assertSame('view_preference', AskAiContextBuilderService::CANONICAL_SOURCE_MAP['buyer']['water_view']);
+        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
+            if (!in_array($entry['role'], ['buyer', 'tenant'], true)) {
+                continue;
+            }
             $this->assertStringNotContainsStringIgnoringCase('water view', $entry['question'], $id);
         }
     }
@@ -438,7 +461,9 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
     {
         $orders = [];
         foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
-            $this->assertContains($entry['source_kind'], ['listing', 'admitted_listing'], $id);
+            // 'criteria_meta' joined the set in Batch 2d: the narrow page-meta accessor the
+            // buyer/tenant criteria questions use instead of widening the shared AI context.
+            $this->assertContains($entry['source_kind'], ['listing', 'admitted_listing', 'criteria_meta'], $id);
             $this->assertIsString($entry['category'], $id);
             $this->assertNotSame('', $entry['category'], $id);
             $this->assertIsInt($entry['order'], $id);

@@ -1235,6 +1235,25 @@
     @endif
                 </div>
             </div>
+
+            {{-- Ask AI — deterministic criteria questions (Batch 2d).
+
+                 The same card the Seller and Landlord pages use. Every question and answer
+                 is precomputed by AskAiPublicPropertyQuestionService from this listing's own
+                 published criteria; revealing one is a native <details> toggle over markup
+                 that is already on the page, so it sends no request and reaches no model.
+
+                 Rendered on its own at the end of the left column rather than inside a
+                 quick-actions grid: it has no fixed-height neighbours to stretch, and the
+                 left column is wide enough for the question grid to use its columns. --}}
+            @include('offer-listing.partials._ask-ai-property-card', [
+                'questions'     => $propertyQuestions ?? [],
+                'role'          => 'buyer',
+                'prefix'        => 'bol',
+                'viewerIsOwner' => $askAiViewerIsOwner ?? false,
+                'modalId'       => 'bolAiModal',
+            ])
+
         </div>{{-- /leftCol --}}
 
         {{-- Right column — title, bidding period, actions and a compact summary, as on the Criteria pages. --}}
