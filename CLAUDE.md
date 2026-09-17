@@ -1413,6 +1413,71 @@ asking a landlord to pre-declare a policy invites a blanket answer to an individ
 unlocking value is ambiguous and guessing it would drop stored text), the lease/commercial prose
 set, and any historical remediation command.
 
+**The steering category now covers FAMILIAL-STATUS steering, and that is a SHARED change.** The
+rules caught the exclusionary half (*"this area is not for children"*) and the young-professional
+half, but not the welcoming half — *"Perfect family neighborhood"*, *"family-friendly
+neighborhood"*, *"perfect for families"* — and a welcoming steer is still a steer about a protected
+class. The new patterns live in `config/landlord_provider_text.php`, so they govern the three Phase
+3 landlord prose fields **and** the Batch 4 public knowledge-base surface from one definition.
+They match **a claim about a place or an audience, never the word "family"**: a suitability
+adjective plus a PLACE noun, `... for families`, `family-friendly <place>`, `<place> for families`,
+`great for kids`, `full of families`. *"Family room"*, *"great family room off the kitchen"*,
+*"bedrooms"* and a children's pool carry no place noun and no suitability-for construction, so none
+of them can reach these rules — a vocabulary filter on "family" would have deleted the floor plan.
+
+### Ask AI public knowledge-base answers (Batch 4) — opt-in per listing
+
+**The Listing AI Knowledge Base is owner-only and stays owner-only.** Snapshot rows are
+`OWNER_ONLY` and the non-owner redaction strips the whole `faq_answers` structure; none of that is
+relaxed. Batch 4 opens **one narrow, key-by-key admission** for **one surface** — the deterministic
+public "Questions About This Property" card. Full reasoning:
+`docs/ask-ai/ASK_AI_KNOWLEDGE_BASE_V1.md` §10.
+
+**Seller and Landlord only, 38 curated keys. Buyer and Tenant have ZERO public-KB keys** — no
+allowlist entry exists for them, so their knowledge bases produce no public candidate by
+construction. Motivation and negotiating posture, disclosure and defect history, anything
+describing *who* the property suits, other people's data (tenant lease terms, rent roll, every
+`business_*` key) and the whole `insight` category are excluded by decision, and an
+allowlist-integrity test asserts it.
+
+**The allowlist does not bypass property-type gating** — it is an additional, narrower gate on top
+of `AskAiFaqConfigService::gatedKeys()`, plus a declared-group check, so a key moved between config
+groups becomes unpublishable rather than quietly public for a different property type.
+
+**Nothing publishes without the owner's acknowledgement.** One listing-level flag —
+`listing_ai_faq_public_ack`, an ordinary sibling meta key of `listing_ai_faq`, **no migration and no
+schema change** — default NOT confirmed, parsed fail-closed (`1`/`true`/`on`/`yes` only) by the one
+reader `AskAiPublicPropertyQuestionService::kbPublicationConfirmed()`. **Legacy listings carry no
+such row and therefore publish nothing**: merging this does not make one previously private answer
+public. Revoking stops every KB-derived answer at the next render. **MLS quick-import listings
+arrive unconfirmed** and stay so until their owner edits the listing. Confirmation is never inferred
+from a past save, from stored answers, or from the listing being published.
+
+**An admitted answer still passes every screen, and every gate hides rather than rewrites.** Fair
+Housing (`PublicProviderTextPolicy`, role-neutral, sharing the Phase 3 vocabulary rather than
+copying it); PII (`PublicAnswerPiiScreen` — e-mail, phone, URL, street address, demanding
+STRUCTURE not digits, so "2 blocks from Central Avenue" and "Parcel number 1234567890" publish
+while "123 Oak Lane" and "Call me at 727-555-0147" do not); the listing's **own withheld address**,
+where **address visibility must be explicitly decided** or the answer is refused as
+`kb_address_visibility_unknown` — an absent decision, or a withheld address with nothing to screen
+against, both refuse, and non-KB questions are unaffected by its absence. Over **1,200 characters is
+withheld whole, never truncated**. Placeholder-equivalents and the config's own example text are
+suppressed — but **`No` and `None` are meaningful answers and publish**, deliberately, because
+hiding them would favour listings whose answer happens to be yes.
+
+**Published answers are attributed**: `According to the seller:` / `According to the landlord:` —
+statements by the owner, not facts the platform verified — and sort below the field-sourced catalog
+so verified structured facts lead the card.
+
+**MLS `PublicRemarks` is unrelated and unaffected**: still licence-RESTRICTED, still not processed
+or persisted, neither read nor changed here. The owner's own authored text is the only source
+admitted.
+
+**The form gains disclosure, not control**: a per-question eligibility marker and the single
+acknowledgement checkbox. No per-question toggle, no other stored value, and nothing rendered for
+Buyer/Tenant — their components do not declare the property, and a `wire:model` on an undeclared
+property would be a runtime error, so the role check in the shared blade is load-bearing.
+
 ### Manual QA / debug entry points refuse the production database
 
 PHPUnit is isolated (`tests/bootstrap.php`, `TestCase::resolvedConnection()`). **Nothing else is.**

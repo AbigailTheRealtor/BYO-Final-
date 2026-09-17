@@ -6,6 +6,8 @@ use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\Listing\ListingPriceDisplay;
 use App\Support\Listing\FloodZoneCode;
 use App\Support\OfferListing\CriteriaPrivacyPolicy;
+use App\Support\OfferListing\PublicProviderTextPolicy;
+use App\Support\AskAi\PublicAnswerPiiScreen;
 
 /**
  * AskAiPublicPropertyQuestionService — "Questions About This Property" (Batches 1, 2b)
@@ -235,6 +237,165 @@ class AskAiPublicPropertyQuestionService
     ];
 
     /**
+     * BATCH 4 — the knowledge-base answers a public listing page may restate.
+     *
+     * THE KNOWLEDGE BASE IS OWNER-ONLY AND STAYS OWNER-ONLY. Every KB answer is private:
+     * the snapshot rows are OWNER_ONLY, the non-owner context redaction removes the whole
+     * `faq_answers` structure, and none of that is relaxed. This constant is a separate,
+     * narrower admission for ONE surface — the deterministic public question card — and
+     * it names individual keys, never the store.
+     *
+     * WHAT EARNED A PLACE HERE. Only factual, property-descriptive questions whose answer
+     * a shopper could get from a listing sheet or a showing: systems and their age,
+     * utilities, what conveys, parking, notice periods. Deliberately absent, and not to be
+     * added without a separate decision: the owner's MOTIVATION and negotiating posture
+     * (why they are selling, leaseback, concessions, flexibility), DISCLOSURE and defect
+     * history (known issues, foundation, pest, flood damage, mould, claims, deferred
+     * maintenance), anything describing WHO the property suits (neighbourhood character,
+     * ideal tenant/buyer fit, target industries, redevelopment vision), OTHER PEOPLE'S
+     * data (existing tenant lease terms, rent roll, payment history, every `business_*`
+     * key), and the whole `insight` category, which exists to prompt interpretation
+     * rather than to state a fact. Buyer and Tenant knowledge bases are absent entirely
+     * and have no group here at all.
+     *
+     * THE GROUP IS DECLARED, AND THE DECLARATION IS CHECKED. Each key is filed under the
+     * config group it belongs to. At read time the key must ALSO be in
+     * AskAiFaqConfigService::gatedKeys() for this listing's property type AND still sit in
+     * the group declared here. Two independent statements of the same fact: if a key is
+     * ever moved between groups in the config, it stops being publishable instead of
+     * quietly becoming public for a different property type.
+     *
+     * @var array<string, array<string, list<string>>> role => config group => keys
+     */
+    private const PUBLIC_SAFE_KB_KEYS = [
+        'seller' => [
+            'universal' => [
+                'items_excluded_from_sale',
+            ],
+            'residential' => [
+                'roof_age_and_condition',
+                'hvac_system_age',
+                'water_heater_age_type',
+                'recent_renovations_list',
+                'solar_panels_owned_leased',
+                'smart_home_ev_features',
+                'pool_spa_equipment_condition',
+                'average_utility_costs',
+                'internet_utility_providers',
+                'storage_space_available',
+            ],
+            'income' => [
+                'professional_management',
+                'income_utilities_split',
+                'income_building_systems_age',
+            ],
+            'commercial' => [
+                'commercial_building_systems',
+                'commercial_restroom_count',
+                'commercial_parking_loading',
+                'commercial_systems_age',
+                'commercial_recent_improvements',
+                'commercial_ceiling_height',
+            ],
+            'land' => [
+                'land_survey_available',
+                'land_utilities_available',
+            ],
+        ],
+        'landlord' => [
+            'universal' => [
+                'maintenance_request_response_time',
+                'planned_renovations',
+                'notice_to_vacate_required',
+            ],
+            'residential' => [
+                'internet_providers',
+                'furnished_or_unfurnished',
+                'ev_charging_available',
+                'short_term_rentals_allowed',
+                'utilities_individually_metered',
+                'renters_insurance_required',
+                'lawn_landscaping_responsibility',
+                'guest_parking',
+            ],
+            'commercial' => [
+                'commercial_loading_dock_freight_elevator',
+                'commercial_electrical_capacity',
+                'commercial_hvac_zones',
+                'commercial_cam_structure',
+                'commercial_parking_ratio',
+            ],
+        ],
+    ];
+
+    /**
+     * How an owner's own words are attributed when a public page restates them.
+     *
+     * These are STATEMENTS BY THE OWNER, not facts the platform verified, and the page
+     * must say so in the answer itself rather than in a footnote a reader may not
+     * connect to it. The substantive answer follows verbatim.
+     */
+    private const KB_ATTRIBUTION = [
+        'seller'   => 'According to the seller: ',
+        'landlord' => 'According to the landlord: ',
+    ];
+
+    /**
+     * Answers that are typed but say nothing, compared after lowercasing, trimming and
+     * stripping trailing punctuation.
+     *
+     * "No" and "None" are NOT here and must never be added. "Is there EV charging? — No"
+     * is a complete, useful, meaningful answer; treating it as blank would hide the very
+     * questions a shopper most wants settled and would quietly favour listings whose
+     * answer happens to be yes.
+     */
+    private const KB_PLACEHOLDER_ANSWERS = [
+        'n/a', 'na', 'n.a.', 'unknown', 'not sure', 'unsure', 'tbd', 't.b.d.',
+        'not provided', 'idk', 'no idea', 'not applicable', 'not available',
+        '-', '--', '---', '?', '??', '...', '.', 'x', 'none of the above',
+    ];
+
+    /**
+     * Where knowledge-base questions start in the display order.
+     *
+     * Far above the field-sourced catalog (seller's highest is 180) so the verified
+     * structured facts a shopper came for lead the card, and the owner's own statements
+     * follow them rather than interleaving with them.
+     */
+    private const KB_ORDER_BASE = 1000;
+
+    /** A published KB answer longer than this is withheld rather than truncated. */
+    private const KB_MAX_ANSWER_LENGTH = 1200;
+
+    /**
+     * The listing meta key holding the owner's explicit publication acknowledgement.
+     *
+     * ONE LISTING-LEVEL FLAG, NOT 38 TOGGLES. The allowlist, the property-type gating,
+     * the Fair Housing policy and the PII screen already decide WHICH answers may be
+     * published; what was missing is the owner agreeing that any of them may be. A
+     * per-question toggle would ask an owner to re-answer a question they have already
+     * answered, 38 times, and would make "which of these did I turn on" a thing they must
+     * remember. This asks once.
+     *
+     * NO SCHEMA CHANGE. It is an ordinary sibling of `listing_ai_faq` in the same EAV meta
+     * store, written by the same saveMeta() calls in the same components, and read from
+     * the same fully-decoded $meta array the controllers already build from every meta
+     * row. Nothing new had to be created to hold one boolean.
+     */
+    public const KB_PUBLICATION_ACK_META_KEY = 'listing_ai_faq_public_ack';
+
+    /**
+     * The stored values that count as an acknowledgement.
+     *
+     * An EAV meta value is a string, and a checkbox round-trips through Livewire and
+     * json_encode as any of these. Matched EXACTLY, after lowercasing and trimming:
+     * absent, empty, '0', 'false', 'off', 'no', a stray blob or any unrecognised value is
+     * NOT confirmed. This is the same fail-closed parsing the platform's provider
+     * switches use, and for the same reason — an unreadable value is not permission.
+     */
+    private const KB_PUBLICATION_ACK_TRUTHY = ['1', 'true', 'on', 'yes'];
+
+    /**
      * Frequencies with an unambiguous English phrase, keyed by the normalised spelling
      * (lower case, '_' and spaces as '-'), so 'Semi-Annually', 'semi_annually' and
      * 'semi-annually' all agree. Anything else — 'Bi-Monthly' included, which reads as both
@@ -266,9 +427,27 @@ class AskAiPublicPropertyQuestionService
      * @param  string               $role     'seller' | 'landlord' (anything else returns [])
      * @param  array                $context  AskAiContextBuilderService::buildChipContext() output
      * @param  array<string,mixed>  $meta     The listing's decoded meta array (guards only)
+     * @param  array<string,mixed>  $viewer   Batch 4. What the PAGE already decided about this
+     *                                        viewer, passed in rather than re-derived:
+     *                                        'address_withheld' (bool) and the listing's own
+     *                                        'address' / 'unit' for the PII screen's
+     *                                        withheld-address rule.
+     *
+     *                                        REQUIRED for knowledge-base questions, and a
+     *                                        real boolean: an absent or non-boolean
+     *                                        'address_withheld', or a withheld address with
+     *                                        nothing to screen against, withholds every KB
+     *                                        answer as 'kb_address_visibility_unknown'. An
+     *                                        earlier version defaulted the flag to true and
+     *                                        called that fail-closed; it was not, because an
+     *                                        empty fragment list means the withheld-address
+     *                                        rule never runs.
+     *
+     *                                        Field-sourced (non-KB) questions ignore it
+     *                                        entirely and are unaffected by its absence.
      * @return list<array{id: string, question: string, answer: string, source_path: string}>
      */
-    public function forListing(string $role, array $context, array $meta): array
+    public function forListing(string $role, array $context, array $meta, array $viewer = []): array
     {
         $role = strtolower(trim($role));
         if (!in_array($role, self::ELIGIBLE_ROLES, true)) {
@@ -279,13 +458,27 @@ class AskAiPublicPropertyQuestionService
             AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
             static fn ($entry): bool => is_array($entry) && ($entry['role'] ?? null) === $role
         );
+
+        // Batch 4 — the curated knowledge-base questions, built from the canonical KB
+        // config for THIS listing's role and property type. They are ordinary catalog
+        // entries from here on, which is the point: they sort, evaluate, suppress and
+        // emit their aliases through exactly the same machinery, so the typed matcher
+        // and the card need to know nothing about where a question came from.
+        foreach ($this->kbCatalog($role, $meta) as $id => $entry) {
+            // A static catalog id always wins. Nothing collides today and a test pins
+            // that, but a silent overwrite of a field-sourced question by a KB one is
+            // not a failure mode worth leaving open.
+            if (!array_key_exists($id, $catalog)) {
+                $catalog[$id] = $entry;
+            }
+        }
         // Display order; usort is stable (PHP 8), so equal orders keep catalog order.
         $ids = array_keys($catalog);
         usort($ids, static fn ($a, $b): int => ((int) ($catalog[$a]['order'] ?? PHP_INT_MAX)) <=> ((int) ($catalog[$b]['order'] ?? PHP_INT_MAX)));
 
         $available = [];
         foreach ($ids as $id) {
-            $result = $this->evaluate($catalog[$id], $role, $context, $meta);
+            $result = $this->evaluate($catalog[$id], $role, $context, $meta, $viewer);
             if ($result['available']) {
                 $available[$id] = $result['answer'];
             }
@@ -393,7 +586,7 @@ class AskAiPublicPropertyQuestionService
      *
      * @return array{available: bool, reason: string, answer: string|null}
      */
-    public function evaluate(array $entry, string $role, array $context, array $meta): array
+    public function evaluate(array $entry, string $role, array $context, array $meta, array $viewer = []): array
     {
         $role = strtolower(trim($role));
 
@@ -408,8 +601,18 @@ class AskAiPublicPropertyQuestionService
         // 2 + 3. One exact, defined, public (or explicitly admitted) source — and every
         // supporting path public in its own right.
         $sourceKind = $entry['source_kind'] ?? 'listing';
-        if (!in_array($sourceKind, ['listing', 'admitted_listing', 'criteria_meta'], true)) {
+        if (!in_array($sourceKind, ['listing', 'admitted_listing', 'criteria_meta', 'kb'], true)) {
             return $this->hidden('source_kind_unknown');
+        }
+
+        // Batch 4 — a knowledge-base answer. Its whole admission is decided here, in one
+        // place, and it shares none of the context/formatter path below: a KB answer is
+        // the owner's own sentence, not a listing fact to be formatted, so there is no
+        // source_path into the shared context to resolve and nothing for a formatter to
+        // reject. Keeping it inside evaluate() is what makes forListing()'s ordering,
+        // suppression and alias emission apply to it unchanged.
+        if ($sourceKind === 'kb') {
+            return $this->evaluateKb($entry, $role, $meta, $viewer);
         }
         // A criteria entry has exactly two admissions — its role's public criteria catalog
         // (context keys) and its narrow page-meta allowlist. Refusing the property roles'
@@ -665,6 +868,417 @@ class AskAiPublicPropertyQuestionService
     public static function publicCriteriaMetaSources(): array
     {
         return self::PUBLIC_CRITERIA_META_SOURCES;
+    }
+
+
+    // =========================================================================
+    // Batch 4 — public-safe knowledge-base questions
+    // =========================================================================
+
+    /** The Batch 4 allowlist, for tests and audits. @return array<string,array<string,list<string>>> */
+    public static function publicSafeKbKeys(): array
+    {
+        return self::PUBLIC_SAFE_KB_KEYS;
+    }
+
+    /** Every allowlisted key for one role, flattened. @return list<string> */
+    public static function publicSafeKbKeysForRole(string $role): array
+    {
+        $groups = self::PUBLIC_SAFE_KB_KEYS[strtolower(trim($role))] ?? [];
+        $keys   = [];
+
+        foreach ($groups as $group) {
+            foreach ($group as $key) {
+                $keys[] = (string) $key;
+            }
+        }
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * Is this key one the public card may EVER carry, for this role?
+     *
+     * The single predicate the knowledge-base FORM asks so it can mark the questions an
+     * owner should know are publishable. It answers membership of the allowlist only —
+     * not whether any particular listing's answer will actually appear, which depends on
+     * the property type, what was written, and both safety screens.
+     */
+    public static function isPublicSafeKbKey(string $role, string $key): bool
+    {
+        return in_array($key, self::publicSafeKbKeysForRole($role), true);
+    }
+
+    /**
+     * Build the KB questions that are even CANDIDATES for this listing.
+     *
+     * Three independent narrowings, in order, each able to produce nothing:
+     *   1. the role has an allowlist at all (seller and landlord only — buyer and tenant
+     *      have no entry in PUBLIC_SAFE_KB_KEYS, so their knowledge bases can produce no
+     *      candidate here by construction, not by a check someone must remember);
+     *   2. the key is gated ON for this listing's property type by the existing
+     *      AskAiFaqConfigService gating — the SAME definition the form renders from, so a
+     *      residential listing cannot offer a commercial question and an absent or
+     *      unrecognised property type falls back to universal-only;
+     *   3. the key still sits in the group this class declared for it.
+     *
+     * Nothing about the ANSWER is consulted here. Whether the owner filled it in, and
+     * whether what they wrote is publishable, is evaluateKb()'s decision — so a question
+     * that fails those checks never becomes an available question and therefore never
+     * emits a display question or an alias.
+     *
+     * @return array<string, array> catalog id => entry
+     */
+    private function kbCatalog(string $role, array $meta): array
+    {
+        $allowlist = self::PUBLIC_SAFE_KB_KEYS[$role] ?? null;
+
+        if (!is_array($allowlist) || $allowlist === []) {
+            return [];
+        }
+
+        $propertyType = $meta['property_type'] ?? '';
+        $propertyType = is_string($propertyType) ? $propertyType : '';
+
+        // The gating SSOT — role + property type, universal-only fail-safe.
+        $gatedKeys = AskAiFaqConfigService::gatedKeys($role, $propertyType);
+
+        if ($gatedKeys === []) {
+            return [];
+        }
+
+        $configured = $this->kbConfiguredEntries($role);
+        $catalog    = [];
+        $order      = self::KB_ORDER_BASE;
+
+        foreach ($allowlist as $declaredGroup => $keys) {
+            foreach ($keys as $key) {
+                $key = (string) $key;
+
+                if (!in_array($key, $gatedKeys, true)) {
+                    continue;
+                }
+
+                $configuredEntry = $configured[$key] ?? null;
+
+                // Fail closed on any disagreement with the canonical config: an unknown
+                // key, a key that has moved group, or one with no question text. The
+                // alternative — publishing under a guessed or stale label — is how a
+                // shopper ends up reading an answer under the wrong question.
+                if (!is_array($configuredEntry)
+                    || $configuredEntry['group'] !== (string) $declaredGroup
+                    || !is_string($configuredEntry['label'])
+                    || trim($configuredEntry['label']) === '') {
+                    continue;
+                }
+
+                $catalog['kb_' . $role . '_' . $key] = [
+                    'role'        => $role,
+                    // The canonical question text, read from the config the owner answered
+                    // under. Never a second copy: a divergent label would ask the public a
+                    // subtly different question from the one the owner was answering.
+                    'question'    => trim($configuredEntry['label']),
+                    'source_kind' => 'kb',
+                    'source_path' => 'kb.' . $key,
+                    'kb_key'      => $key,
+                    'kb_group'    => (string) $declaredGroup,
+                    'category'    => 'owner_knowledge',
+                    'order'       => $order,
+                    // Batch 3 vocabulary. Deliberately EMPTY: exact matching on the
+                    // displayed question already works, and inventing aliases for 38
+                    // questions — or worse, harvesting them from the owner's answer text —
+                    // is how collisions and unintended meanings get in. Aliases here are a
+                    // later, audited decision.
+                    'aliases'     => [],
+                ];
+
+                $order += 10;
+            }
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * Flatten one role's KB config to key => ['group' => …, 'label' => …].
+     *
+     * Reads every group rather than the gated ones, because this is the map used to
+     * VERIFY a key's declared group; asking the gated set would make the check circular.
+     *
+     * @return array<string, array{group:string, label:mixed}>
+     */
+    private function kbConfiguredEntries(string $role): array
+    {
+        $configKey = AskAiFaqConfigService::CONFIG_MAP[$role] ?? null;
+
+        if ($configKey === null) {
+            return [];
+        }
+
+        $config = AskAiFaqConfigService::rawConfig($configKey);
+        $out    = [];
+
+        foreach (($config['groups'] ?? []) as $groupName => $categories) {
+            if (!is_array($categories)) {
+                continue;
+            }
+            foreach ($categories as $questions) {
+                if (!is_array($questions)) {
+                    continue;
+                }
+                foreach ($questions as $key => $entry) {
+                    if (is_array($entry) && !isset($out[(string) $key])) {
+                        $out[(string) $key] = [
+                            'group' => (string) $groupName,
+                            'label' => $entry['label'] ?? null,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Decide one knowledge-base question, end to end.
+     *
+     * Every gate hides; none rewrites. There is no path in this method that returns a
+     * modified version of what the owner wrote — an answer is published as typed (bar
+     * whitespace collapsing) or it is not published.
+     */
+    private function evaluateKb(array $entry, string $role, array $meta, array $viewer): array
+    {
+        // A KB question exists for the property roles only. Buyer and tenant knowledge
+        // bases are not publishable by any route, and this is the read-time restatement
+        // of that: even a hand-built entry claiming source_kind 'kb' is refused here.
+        if (!in_array($role, self::PROPERTY_ROLES, true)) {
+            return $this->hidden('kb_not_available_for_role');
+        }
+
+        // The owner's explicit publication acknowledgement. Checked BEFORE the key, the
+        // answer and both screens, because it is the broadest refusal: without it this
+        // listing has no publishable knowledge base at all, and there is nothing to be
+        // gained by reading the owner's answers first. Legacy listings — every listing
+        // that existed before this gate — carry no acknowledgement and therefore publish
+        // nothing, which is the whole point: merging Batch 4 must not make a single
+        // previously private answer public.
+        if (!self::kbPublicationConfirmed($meta)) {
+            return $this->hidden('kb_owner_publication_not_confirmed');
+        }
+
+        $key = $entry['kb_key'] ?? null;
+        if (!is_string($key) || $key === '' || !$this->isPublicSafeKbKeyInGroup($role, $key, $entry['kb_group'] ?? null)) {
+            return $this->hidden('kb_key_not_public_safe');
+        }
+
+        // Re-assert the property-type gating at read time. kbCatalog() already applied it;
+        // asking again here means a directly-invoked evaluate() cannot bypass it.
+        $propertyType = is_string($meta['property_type'] ?? null) ? $meta['property_type'] : '';
+        if (!in_array($key, AskAiFaqConfigService::gatedKeys($role, $propertyType), true)) {
+            return $this->hidden('kb_key_not_gated_for_property_type');
+        }
+
+        $answer = $this->kbStoredAnswer($meta, $key);
+        if ($answer === null) {
+            return $this->hidden('kb_answer_missing');
+        }
+
+        if (!$this->kbAnswerIsMeaningful($answer, $key, $role)) {
+            return $this->hidden('kb_answer_not_meaningful');
+        }
+
+        if (mb_strlen($answer) > self::KB_MAX_ANSWER_LENGTH) {
+            // Withheld whole rather than truncated: a cut-off sentence can invert its own
+            // meaning, and an ellipsis on a public page reads as the platform editing the
+            // owner.
+            return $this->hidden('kb_answer_too_long');
+        }
+
+        // Fair Housing. Role-neutral, shares its vocabulary with the Phase 3 landlord
+        // policy, and returns a verdict rather than a cleaned string.
+        if (!PublicProviderTextPolicy::isPublishable($answer)) {
+            return $this->hidden('kb_answer_blocked_by_provider_text_policy');
+        }
+
+        // Address visibility must be DECIDED, not assumed.
+        //
+        // This gate used to default a missing flag to "withheld" and call that failing
+        // closed. It was not: addressFragments() with no address returns an empty list,
+        // so the withheld-address rule simply never ran and the answer published with
+        // LESS screening than if the caller had said anything at all. A caller that
+        // forgets the viewer context is exactly the caller whose page state we cannot
+        // reason about, so the answer is withheld instead.
+        //
+        // Two distinct unknowns land here, and both refuse:
+        //   - no explicit boolean decision about whether this viewer may see the address;
+        //   - a decision of "withheld" that supplies no address to screen against, which
+        //     would silently skip the screening this branch exists to perform.
+        $addressWithheld = $viewer['address_withheld'] ?? null;
+        if (!is_bool($addressWithheld)) {
+            return $this->hidden('kb_address_visibility_unknown');
+        }
+
+        $withheld = PublicAnswerPiiScreen::addressFragments(
+            $addressWithheld,
+            $viewer['address'] ?? null,
+            $viewer['unit'] ?? null,
+        );
+
+        if ($addressWithheld && $withheld === []) {
+            return $this->hidden('kb_address_visibility_unknown');
+        }
+
+        if (!PublicAnswerPiiScreen::isPublishable($answer, $withheld)) {
+            // The reason names the category only. It never carries the matched text, and
+            // never the withheld address — a diagnostic that quoted either would publish
+            // the thing the screen just refused.
+            return $this->hidden('kb_answer_blocked_by_pii_screen');
+        }
+
+        $attribution = self::KB_ATTRIBUTION[$role] ?? null;
+        if ($attribution === null) {
+            return $this->hidden('kb_attribution_missing');
+        }
+
+        return ['available' => true, 'reason' => 'available', 'answer' => $attribution . $answer];
+    }
+
+    /**
+     * Has the OWNER acknowledged that selected knowledge-base answers may be published?
+     *
+     * Public so the knowledge-base form and the tests can ask the same question the read
+     * path asks, rather than each deciding for itself what a stored acknowledgement looks
+     * like.
+     *
+     * DEFAULT IS NOT CONFIRMED, and it is never inferred. A listing saved before this
+     * gate existed has no such meta row; a listing whose owner never ticked the box has
+     * no such meta row; both read as false. Un-ticking the box writes a falsey value and
+     * every KB-derived public answer stops at the next render — there is no cache and no
+     * snapshot in this path, so revocation takes effect immediately.
+     *
+     * Deliberately NOT inferred from the presence of answers, from a past save, or from
+     * the listing being published: none of those is the owner saying yes to this.
+     */
+    public static function kbPublicationConfirmed(array $meta): bool
+    {
+        $value = $meta[self::KB_PUBLICATION_ACK_META_KEY] ?? null;
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value === 1;
+        }
+
+        if (!is_string($value)) {
+            // Arrays, objects, null — an acknowledgement is a single scalar yes.
+            return false;
+        }
+
+        return in_array(strtolower(trim($value)), self::KB_PUBLICATION_ACK_TRUTHY, true);
+    }
+
+    /** Allowlist membership, asserted against the group the catalog entry declared. */
+    private function isPublicSafeKbKeyInGroup(string $role, string $key, mixed $group): bool
+    {
+        if (!is_string($group) || $group === '') {
+            return false;
+        }
+
+        $keys = self::PUBLIC_SAFE_KB_KEYS[$role][$group] ?? null;
+
+        return is_array($keys) && in_array($key, $keys, true);
+    }
+
+    /**
+     * The owner's stored answer for one key, whitespace-normalised.
+     *
+     * Reads the page's own meta and nothing else — no database query, no snapshot, no
+     * generic Ask AI context. `listing_ai_faq` arrives already decoded when the meta
+     * value was JSON; the string branch covers a meta array built by a caller that did
+     * not decode.
+     */
+    private function kbStoredAnswer(array $meta, string $key): ?string
+    {
+        $store = $meta['listing_ai_faq'] ?? null;
+
+        if (is_string($store)) {
+            $decoded = json_decode($store, true);
+            $store   = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+        }
+
+        if (!is_array($store) || !array_key_exists($key, $store)) {
+            return null;
+        }
+
+        $value = $store[$key];
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = str_replace(
+            ["\xE2\x80\x99", "\xE2\x80\x98", "\xC2\xA0"],
+            ["'", "'", ' '],
+            $value
+        );
+
+        $value = trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
+
+        return $value === '' ? null : $value;
+    }
+
+    /**
+     * Does this answer actually say something?
+     *
+     * "No" and "None" pass — see KB_PLACEHOLDER_ANSWERS. So does any ordinary sentence.
+     * What does not: the placeholder-equivalents, and the configured placeholder text
+     * itself, which owners paste or leave behind surprisingly often and which would
+     * otherwise publish the platform's own example back as though it were an answer.
+     */
+    private function kbAnswerIsMeaningful(string $answer, string $key, string $role): bool
+    {
+        $compare = strtolower(trim($answer));
+        $compare = trim($compare, " \t\n\r\0\x0B.!,;:");
+
+        if ($compare === '') {
+            return false;
+        }
+
+        if (in_array($compare, self::KB_PLACEHOLDER_ANSWERS, true)) {
+            return false;
+        }
+
+        $placeholder = $this->kbConfiguredPlaceholder($role, $key);
+
+        return !(is_string($placeholder) && strtolower(trim($placeholder)) === strtolower(trim($answer)));
+    }
+
+    /** The configured example text for one key, if the config defines one. */
+    private function kbConfiguredPlaceholder(string $role, string $key): ?string
+    {
+        $configKey = AskAiFaqConfigService::CONFIG_MAP[$role] ?? null;
+
+        if ($configKey === null) {
+            return null;
+        }
+
+        foreach (AskAiFaqConfigService::rawConfig($configKey)['groups'] ?? [] as $categories) {
+            if (!is_array($categories)) {
+                continue;
+            }
+            foreach ($categories as $questions) {
+                if (is_array($questions) && isset($questions[$key]['placeholder'])) {
+                    $placeholder = $questions[$key]['placeholder'];
+
+                    return is_string($placeholder) ? $placeholder : null;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

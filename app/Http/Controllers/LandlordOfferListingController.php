@@ -158,11 +158,39 @@ class LandlordOfferListingController extends Controller
 
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'landlord');
 
+        // ── MLS import payload and the feed's own display permissions ────────
+        //
+        // Resolved here rather than in the template so the permission check
+        // cannot be skipped by a view that forgets it. `$mlsAddressVisible` is
+        // false only for a NON-owner viewing a listing whose feed set
+        // InternetAddressDisplayYN = false — the audit found that flag false on
+        // 71 of 1,202 cached records, and before this the import path honoured
+        // it nowhere. The owner always sees their own address and is told, via
+        // $mlsAddressNotice, why a visitor does not.
+        $mlsReader         = app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class);
+        $mlsDetails        = $mlsReader->detailsFrom($meta);
+        $viewerOwnsListing = (int) $auction->user_id === (int) auth()->id();
+        $mlsAddressVisible = $mlsReader->addressVisibleTo($meta, $viewerOwnsListing);
+        $mlsAddressNotice  = $viewerOwnsListing ? $mlsReader->addressRestrictionNotice($meta) : null;
+
+        // Batch 4 — the knowledge-base questions consult this decision, so it is resolved
+        // BEFORE the questions are built rather than after. Same reader, same inputs, same
+        // values; only the order moved. A KB answer that restates an address this page is
+        // withholding must be withheld with it, and a question service asked before the
+        // page had decided would have had nothing to withhold against.
+
         // Questions About This Property — precomputed, deterministic answers from the chip
         // context above. No request, no classifier, no generated text; only questions
         // whose source is public_allowed and present are returned.
         $propertyQuestions = app(\App\Services\AskAi\AskAiPublicPropertyQuestionService::class)
-            ->forListing('landlord', $askAiChipContext, $meta);
+            ->forListing('landlord', $askAiChipContext, $meta, [
+                // Only what the KB screens need: whether this viewer is being shown the
+                // address, and the address itself so an answer cannot restate it. No
+                // identity, no request, no new query — every value is already resolved above.
+                'address_withheld' => $mlsAddressVisible === false,
+                'address'          => $meta['address'] ?? null,
+                'unit'             => $meta['unit_number'] ?? null,
+            ]);
 
         // Who gets the free-text Ask AI modal. Its endpoint is owner-scoped, so a shopper
         // gets only the questions above. auth()->check() first: a guest's null id and a
@@ -203,21 +231,6 @@ class LandlordOfferListingController extends Controller
         $canViewBidFeed = $feed->canView(auth()->user(), $auction, 'landlord');
         $bidFeed        = $canViewBidFeed ? $feed->build($offerAuction, 'landlord') : [];
 
-
-        // ── MLS import payload and the feed's own display permissions ────────
-        //
-        // Resolved here rather than in the template so the permission check
-        // cannot be skipped by a view that forgets it. `$mlsAddressVisible` is
-        // false only for a NON-owner viewing a listing whose feed set
-        // InternetAddressDisplayYN = false — the audit found that flag false on
-        // 71 of 1,202 cached records, and before this the import path honoured
-        // it nowhere. The owner always sees their own address and is told, via
-        // $mlsAddressNotice, why a visitor does not.
-        $mlsReader         = app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class);
-        $mlsDetails        = $mlsReader->detailsFrom($meta);
-        $viewerOwnsListing = (int) $auction->user_id === (int) auth()->id();
-        $mlsAddressVisible = $mlsReader->addressVisibleTo($meta, $viewerOwnsListing);
-        $mlsAddressNotice  = $viewerOwnsListing ? $mlsReader->addressRestrictionNotice($meta) : null;
 
         // Drives the Stellar/Bridge attribution block. Resolved from PROVENANCE
         // meta, never from "does this listing have MLS-looking data" — a

@@ -240,5 +240,112 @@ optional, but when present it improves:
 
 ---
 
+## 10. Public admission of KB answers (Batch 4)
+
+**The Knowledge Base is owner-only, and it stays owner-only.** Snapshot rows are `OWNER_ONLY`, and
+the non-owner context redaction removes the whole `faq_answers` structure. Batch 4 changes none of
+that. It opens **one narrow, key-by-key admission** for **one surface** — the deterministic public
+"Questions About This Property" card — and everything below is a way that admission refuses.
+
+**This is opt-in per listing, not a platform-wide publication.** A listing publishes nothing from
+its Knowledge Base unless its owner has acknowledged it, and even then only 38 named questions are
+eligible.
+
+### 10.1 Who and what
+
+* **Seller and Landlord only.** Buyer and Tenant have **zero** public-KB keys — no allowlist entry
+  exists for them at all, so their knowledge bases can produce no public candidate by construction
+  rather than by a check someone must remember. Their forms render no acknowledgement control and no
+  eligibility marker.
+* **A curated 38-key allowlist** (`AskAiPublicPropertyQuestionService::PUBLIC_SAFE_KB_KEYS`) — 22
+  seller, 16 landlord — of factual, property-descriptive questions: systems and their age,
+  utilities, what conveys, parking, notice periods.
+* **Deliberately excluded, and not to be added without a separate decision:** owner motivation and
+  negotiating posture; disclosure and defect history; anything describing *who* the property suits;
+  other people's data (tenant lease terms, rent roll, payment history, every `business_*` key); and
+  the whole `insight` category, which exists to prompt interpretation rather than state a fact.
+* **The allowlist does NOT bypass property-type gating.** It is an additional, narrower gate on top
+  of `AskAiFaqConfigService::gatedKeys()` — the same gating the form renders from. A residential key
+  never appears on a Vacant Land listing, and an absent or unrecognised property type still falls
+  back to universal-only. Each key also declares the config **group** it belongs to and must still
+  sit in it at read time; a key moved between groups becomes unpublishable rather than silently
+  becoming public for a different property type.
+
+### 10.2 The owner's acknowledgement
+
+* **One listing-level acknowledgement, not 38 toggles**, stored as the meta key
+  **`listing_ai_faq_public_ack`** — an ordinary sibling of `listing_ai_faq` in the existing EAV meta
+  store. **No migration and no schema change**; the same `saveMeta()` path in the four
+  Seller/Landlord create+edit components writes it, and the controllers' existing full-meta read
+  returns it.
+* **Default is NOT confirmed, and confirmation is never inferred** — not from the presence of
+  answers, not from a past save, not from the listing being published. Parsed fail-closed by the
+  single reader `AskAiPublicPropertyQuestionService::kbPublicationConfirmed()`: only `1` / `true` /
+  `on` / `yes` confirm; absent, empty, `0`, `false`, `off`, `no`, an unrecognised value, an array or
+  `null` all refuse.
+* **Legacy listings fail closed.** Every listing that existed before Batch 4 carries no such meta
+  row and therefore publishes nothing. Merging this work does not make one previously private
+  answer public.
+* **Revocation is immediate.** Unticking writes a falsey value and every KB-derived public answer
+  stops at the next render — there is no cache and no snapshot on this path.
+* **MLS quick-import listings arrive unconfirmed** and stay that way until their owner edits the
+  listing: `MlsQuickImportComponent` does not declare the property, which is the correct fail-closed
+  outcome rather than an oversight.
+
+### 10.3 The screens an admitted answer still passes
+
+Every gate **hides**; none rewrites. There is no path that publishes a modified version of what the
+owner wrote.
+
+* **Fair Housing** — `App\Support\OfferListing\PublicProviderTextPolicy`, role-neutral and stricter
+  than the Phase 3 field-scoped policy (every category applies, including the opt-in ones). It
+  **shares** that policy's vocabulary via `LandlordProviderTextPolicy::categoryDefinitions()` rather
+  than copying it; two hand-maintained pattern lists would eventually refuse a sentence the other
+  publishes.
+* **PII** — `App\Support\AskAi\PublicAnswerPiiScreen` refuses e-mail addresses, phone numbers, URLs
+  and street addresses. Rules demand **structure, not digits**, so "2 car garage", "1,500 sq ft" and
+  "50 amp service" publish. A proximity phrase is not an address ("2 blocks from Central Avenue"
+  publishes; "123 Oak Lane" does not), and a labelled identifier is not a phone number ("Parcel
+  number 1234567890" publishes; "Call me at 727-555-0147" does not, and dialling wording outranks an
+  incidental label).
+* **Withheld-address protection** — when the page is withholding the listing's own address from this
+  viewer (the feed's `InternetAddressDisplayYN = false`), an answer restating it is withheld too,
+  including forms the generic street rule would miss ("the entrance is on Gulf Boulevard").
+  **Address visibility must be explicitly decided**: an absent or non-boolean decision, or a
+  withheld address with nothing to screen against, refuses with `kb_address_visibility_unknown`.
+  Field-sourced (non-KB) questions are unaffected by its absence.
+* **Length** — an answer longer than 1,200 characters is **withheld whole, never truncated**: a
+  cut-off sentence can invert its own meaning and an ellipsis reads as the platform editing the
+  owner.
+* **Placeholders** — placeholder-equivalents (`n/a`, `unknown`, `TBD`, `-`, `?` …) and the config's
+  **own example text**, which owners leave behind surprisingly often, are suppressed.
+* **`No` and `None` are meaningful answers and publish.** They are deliberately *not* treated as
+  placeholders: "Is there EV charging? — No" is complete and useful, and hiding it would quietly
+  favour listings whose answer happens to be yes.
+
+### 10.4 Attribution
+
+A published answer is prefixed **`According to the seller:`** / **`According to the landlord:`**.
+These are statements **by the owner**, not facts the platform verified, and the page says so in the
+answer itself rather than in a footnote a reader may not connect to it. KB questions sort below the
+field-sourced catalog so the verified structured facts lead the card.
+
+### 10.5 Out of scope
+
+**MLS `PublicRemarks` is unrelated to this and remains unaffected.** It is licence-RESTRICTED and is
+not processed or persisted by any Ask AI or Smart Tags path; Batch 4 neither reads it nor changes
+its status. The knowledge base is the owner's own authored text and is the only source admitted
+here.
+
+### 10.6 The form
+
+The owner-facing form gains two things, both **disclosure, not control**: a per-question marker
+("May appear in the public Ask AI section when answered.") on allowlisted questions, and the single
+acknowledgement checkbox. There is no per-question toggle, no consent field beyond the one flag, and
+nothing else stored. An owner who would rather not publish something controls that the way they
+always have — by leaving the box empty or rewriting it.
+
+---
+
 *This document defines the intent behind the v1.0 Ask AI Knowledge Base. Extend it — do not
 overwrite its reasoning — as the KB evolves.*
