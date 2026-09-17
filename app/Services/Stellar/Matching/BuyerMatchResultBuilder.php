@@ -5,6 +5,7 @@ namespace App\Services\Stellar\Matching;
 use App\Models\BridgeProperty;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
+use App\Support\Matching\MonthlyEquivalent;
 
 class BuyerMatchResultBuilder
 {
@@ -26,7 +27,7 @@ class BuyerMatchResultBuilder
         $result->whyThisMatches = $this->buildWhyThisMatches($result);
         $result->tradeoffs      = $this->buildTradeoffs($result, $criteria, $rawJson);
         $result->cautionFlags   = $this->buildCautionFlags($result, $criteria, $rawJson);
-        $result->missingData    = $this->buildMissingData($result, $criteria);
+        $result->missingData    = $this->buildMissingData($result, $criteria, $rawJson);
 
         return $result;
     }
@@ -326,10 +327,41 @@ class BuyerMatchResultBuilder
     // Block 4: missing_data
     // =========================================================================
 
-    private function buildMissingData(BuyerMatchResult $result, BuyerCriteriaPayload $criteria): array
+    private function buildMissingData(BuyerMatchResult $result, BuyerCriteriaPayload $criteria, array $rawJson = []): array
     {
         $missing = [];
         $listing = $result->listing;
+
+        // A rent whose PERIOD the feed did not state, on a lease search where the
+        // seeker gave a monthly budget. The scorer refuses to assume monthly and
+        // awards no price points; without this row the seeker would see a listing
+        // ranked low with nothing saying why, and — worse — would have no signal
+        // that the advertised figure may not be a monthly one.
+        if ($criteria->isLeaseSearch()
+            && $criteria->maxPrice !== null
+            && $listing->list_price !== null
+            && MonthlyEquivalent::leaseFactor(ListingPeriodFacts::leaseFrequency($rawJson)) === null) {
+            $missing[] = [
+                'field' => ListingPeriodFacts::LEASE_FREQUENCY_FIELD,
+                'label' => 'Rent period not stated — this figure may not be monthly; verify before comparing to your budget',
+            ];
+        }
+
+        // An association fee whose BILLING PERIOD the feed did not state, where the
+        // seeker gave a monthly ceiling. The fee is present, so the existing
+        // "amount not listed" rows below do not fire, and the scorer returned its
+        // neutral score rather than a fabricated monthly figure. Say so.
+        if (($criteria->maxMonthlyHoa !== null || $criteria->maxMonthlyTotalBurden !== null)
+            && $listing->association_fee !== null
+            && (float) $listing->association_fee != 0.0
+            && MonthlyEquivalent::associationFeeFactor(
+                ListingPeriodFacts::associationFeeFrequency($rawJson)
+            ) === null) {
+            $missing[] = [
+                'field' => ListingPeriodFacts::ASSOCIATION_FEE_FREQUENCY_FIELD,
+                'label' => 'HOA fee billing period not stated — the amount could not be compared to a monthly ceiling',
+            ];
+        }
 
         // HOA fee missing when buyer expressed an HOA ceiling
         if ($criteria->maxMonthlyHoa !== null && $listing->association_fee === null && $listing->association_yn === true) {

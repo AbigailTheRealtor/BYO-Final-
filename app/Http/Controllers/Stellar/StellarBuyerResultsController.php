@@ -215,20 +215,36 @@ class StellarBuyerResultsController extends Controller
     /**
      * Dispatch criteria loading to the correct loader by type token.
      *
-     * Legacy types:  'buyer'  → BuyerCriteriaLoader
-     *                'tenant' → TenantCriteriaLoader
-     * Modern types:  'buyer_offer'  → BuyerOfferListingCriteriaLoader
-     *                'tenant_offer' → TenantOfferListingCriteriaLoader
+     *   'buyer_offer'  → BuyerOfferListingCriteriaLoader
+     *   'tenant_offer' → TenantOfferListingCriteriaLoader
+     *
+     * THE LEGACY TOKENS ARE REFUSED, AND THE FALLTHROUGH IS GONE.
+     * ----------------------------------------------------------
+     * `criteria_type` arrives from the query string. Removing the legacy types
+     * from CriteriaListingResolver stops them being OFFERED, but the old `default`
+     * arm sent every unrecognised token — including a hand-typed `?criteria_type=buyer`
+     * — straight into the legacy buyer loader. Selection and loading must agree,
+     * or the switcher is cosmetic.
+     *
+     * An unknown or retired token now returns null, which index() already handles:
+     * the page renders its normal "no criteria" empty state. That is the correct
+     * answer for a record that genuinely cannot be matched.
+     *
+     * The two legacy loaders remain injected and untouched so reviving either flow
+     * is a one-line change here once its write surface and key contract are fixed.
      *
      * @param  int[] $allowedUserIds  User IDs allowed to own this record.
      */
     private function loadCriteriaById(string $type, int $id, array $allowedUserIds): ?array
     {
+        if (CriteriaListingResolver::isRetiredLegacyType($type)) {
+            return null;
+        }
+
         return match ($type) {
-            'tenant'       => $this->tenantCriteriaLoader->loadById($id, $allowedUserIds),
             'buyer_offer'  => $this->buyerOfferLoader->loadById($id, $allowedUserIds),
             'tenant_offer' => $this->tenantOfferLoader->loadById($id, $allowedUserIds),
-            default        => $this->buyerCriteriaLoader->loadById($id, $allowedUserIds),
+            default        => null,
         };
     }
 

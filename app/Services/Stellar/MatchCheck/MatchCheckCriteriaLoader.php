@@ -102,11 +102,18 @@ final class MatchCheckCriteriaLoader
      */
     private function loadFlatArray(string $type, int $id, array $allowedUserIds): ?array
     {
+        // The retired legacy types cannot produce a correct match and are no longer
+        // offered by CriteriaListingResolver, so resolvePreferred() can never hand one
+        // back today. The guard is explicit anyway: selection and loading must agree in
+        // BOTH readers, or a future caller that resolves a descriptor some other way
+        // would quietly re-open the path. See CriteriaListingResolver::LEGACY_TYPES.
+        if (CriteriaListingResolver::isRetiredLegacyType($type)) {
+            return null;
+        }
+
         return match ($type) {
-            'tenant'       => $this->tenantCriteriaLoader->loadById($id, $allowedUserIds),
             'buyer_offer'  => $this->buyerOfferLoader->loadById($id, $allowedUserIds),
             'tenant_offer' => $this->tenantOfferLoader->loadById($id, $allowedUserIds),
-            'buyer'        => $this->buyerCriteriaLoader->loadById($id, $allowedUserIds),
             default        => null,
         };
     }

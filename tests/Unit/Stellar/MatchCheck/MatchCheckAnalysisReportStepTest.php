@@ -90,19 +90,26 @@ class MatchCheckAnalysisReportStepTest extends TestCase
         return (new BridgePropertyCandidateAdapter())->fromModel($listing->fresh());
     }
 
-    /** A real MatchCheckCriteriaLoader whose buyer leaf returns $flat (mirrors the C6/C8 tests). */
+    /**
+     * A real MatchCheckCriteriaLoader whose BUYER OFFER leaf returns $flat.
+     *
+     * The stub sits on the offer-listing loader rather than the legacy
+     * BuyerCriteriaLoader because 'buyer' is a retired descriptor type that the
+     * adapter now refuses outright — see CriteriaListingResolver::LEGACY_TYPES.
+     * 'buyer_offer' is the type resolvePreferred() can actually return.
+     */
     private function loaderReturning(?array $flat): MatchCheckCriteriaLoader
     {
-        $buyer = Mockery::mock(BuyerCriteriaLoader::class);
-        $buyer->shouldReceive('loadById')->andReturn($flat);
+        $buyerOffer = Mockery::mock(BuyerOfferListingCriteriaLoader::class);
+        $buyerOffer->shouldReceive('loadById')->andReturn($flat);
 
         $resolver = Mockery::mock(CriteriaListingResolver::class);
         $resolver->shouldReceive('resolveAllowedUserIds')->andReturn([99]);
 
         return new MatchCheckCriteriaLoader(
-            $buyer,
+            Mockery::mock(BuyerCriteriaLoader::class),
             Mockery::mock(TenantCriteriaLoader::class),
-            Mockery::mock(BuyerOfferListingCriteriaLoader::class),
+            $buyerOffer,
             Mockery::mock(TenantOfferListingCriteriaLoader::class),
             $resolver,
         );
@@ -132,7 +139,7 @@ class MatchCheckAnalysisReportStepTest extends TestCase
         $detector->shouldReceive('detectFromModel')->once()->andReturn(CriteriaIntentDetector::BUYER);
         $resolver = Mockery::mock(CriteriaListingResolver::class);
         $resolver->shouldReceive('resolvePreferred')->once()->andReturn([
-            'id' => 7, 'type' => 'buyer', 'label' => 'My buyer criteria', 'created_at' => Carbon::parse('2026-05-01'),
+            'id' => 7, 'type' => 'buyer_offer', 'label' => 'My buyer criteria', 'created_at' => Carbon::parse('2026-05-01'),
         ]);
 
         // Real MatchCheckScorer/BuyerMatchScorer (scorer=null) + real builder/factory (defaults) →
@@ -160,7 +167,7 @@ class MatchCheckAnalysisReportStepTest extends TestCase
         $report = $analysis->report;
         // Identity + source injected by the report step.
         $this->assertSame(7, $report->criteriaId);
-        $this->assertSame('buyer', $report->criteriaType);
+        $this->assertSame('buyer_offer', $report->criteriaType);
         $this->assertSame('bridge', $report->source);
         // Score fields consistent with the lean result the analysis also carries (wiring, not math).
         $this->assertSame($analysis->result->totalScore, $report->totalScore);

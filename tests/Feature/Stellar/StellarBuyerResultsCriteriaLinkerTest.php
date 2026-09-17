@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Stellar;
 
-use App\Models\BuyerCriteriaAuction;
-use App\Models\TenantCriteriaAuction;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -13,10 +11,10 @@ use Tests\TestCase;
  * Feature tests for the Criteria Linker (Task: Link Buyer/Tenant Criteria to MLS Matches).
  *
  *  TC-CL01  Agent with zero accessible criteria → no_criteria_listings empty state.
- *  TC-CL02  Agent with exactly one BuyerCriteriaAuction → auto-loads, no selector shown.
- *  TC-CL03  Agent with exactly one TenantCriteriaAuction → auto-loads, runs through pipeline.
+ *  TC-CL02  Agent with exactly one Buyer Offer Listing → auto-loads, no selector shown.
+ *  TC-CL03  Agent with exactly one Tenant Offer Listing → auto-loads, runs through pipeline.
  *  TC-CL04  Agent with multiple criteria (mixed) → select_criteria state with full list.
- *  TC-CL05  Non-agent buyer with one active BuyerCriteriaAuction → existing auto-load regression.
+ *  TC-CL05  Non-agent buyer with one active Buyer Offer Listing → existing auto-load regression.
  *  TC-CL06  Request with criteria_id owned by another user → safe empty state, no data leak.
  *  TC-CL07  Buyer with multiple criteria profiles → switcher strip present with both IDs.
  *  TC-CL08  Agent sees client's buyer criteria via user_agents relationship.
@@ -54,64 +52,87 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
         return ['id' => $id, 'email' => $email];
     }
 
+    /**
+     * A matchable BUYER criteria profile.
+     *
+     * Creates a Buyer OFFER LISTING (buyer_agent_auctions + workflow_type meta), not a
+     * legacy buyer_criteria_auctions row. The legacy type was retired from live
+     * selection — see CriteriaListingResolver::LEGACY_TYPES — because it cannot produce
+     * a match: its form writes one key vocabulary and BuyerCriteriaLoader reads another,
+     * and all four of its write surfaces post to undefined route names.
+     *
+     * This file's subject is the criteria LINKER — auto-selection, the switcher strip,
+     * agent access through user_agents, cross-user isolation, and the full payload →
+     * match pipeline. All of that is still exercised here, now against records that can
+     * actually match. The previous fixture hand-wrote `property_types` / `preferred_cities`,
+     * meta keys the legacy form never writes, so it was proving the loader against a
+     * synthetic contract rather than against anything a user could create.
+     */
     private function makeBuyerCriteria(int $userId, array $metaOverrides = []): int
     {
-        $id = DB::table('buyer_criteria_auctions')->insertGetId([
-            'user_id'     => $userId,
-            'buyer_id'    => $userId,
-            'title'       => 'Test Buyer Criteria',
-            'max_price'   => 500000,
-            'bedrooms'    => 2,
-            'bathrooms'   => 1,
-            'is_approved' => true,
-            'is_sold'     => false,
-            'created_at'  => now(),
-            'updated_at'  => now(),
+        $id = DB::table('buyer_agent_auctions')->insertGetId([
+            'user_id'         => $userId,
+            'title'           => 'Test Buyer Criteria',
+            'is_approved'     => 'true',
+            'is_sold'         => 'false',
+            'is_paid'         => '0',
+            'is_draft'        => false,
+            'referral_locked' => false,
+            'created_at'      => now(),
+            'updated_at'      => now(),
         ]);
 
+        $auction = \App\Models\BuyerAgentAuction::findOrFail($id);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
         $meta = array_merge([
-            'property_types'   => json_encode(['Residential']),
+            'property_type'    => 'residential',
             'preferred_cities' => json_encode(['Orlando']),
+            'maximum_budget'   => '500000',
+            'bedrooms'         => '2',
+            'bathrooms'        => '1',
         ], $metaOverrides);
 
         foreach ($meta as $key => $value) {
-            DB::table('buyer_criteria_auction_metas')->insert([
-                'buyer_criteria_auction_id' => $id,
-                'meta_key'                  => $key,
-                'meta_value'                => $value,
-            ]);
+            $auction->saveMeta($key, $value);
         }
 
         return $id;
     }
 
+    /**
+     * A matchable TENANT criteria profile — a Tenant OFFER LISTING, for the same reason
+     * as makeBuyerCriteria() above. The legacy tenant flow additionally resolved renters
+     * to the FOR-SALE PropertyType and discarded the monthly budget.
+     */
     private function makeTenantCriteria(int $userId, array $metaOverrides = []): int
     {
-        if (!Schema::hasTable('tenant_criteria_auctions')) {
+        if (!Schema::hasTable('tenant_agent_auctions')) {
             return -1;
         }
 
-        $id = DB::table('tenant_criteria_auctions')->insertGetId([
-            'user_id'     => $userId,
-            'is_approved' => true,
-            'is_sold'     => false,
-            'is_draft'    => false,
-            'created_at'  => now(),
-            'updated_at'  => now(),
+        $id = DB::table('tenant_agent_auctions')->insertGetId([
+            'user_id'         => $userId,
+            'is_approved'     => true,
+            'is_sold'         => false,
+            'is_draft'        => false,
+            'auction_ended'   => false,
+            'referral_locked' => false,
+            'created_at'      => now(),
+            'updated_at'      => now(),
         ]);
 
+        $auction = \App\Models\TenantAgentAuction::findOrFail($id);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
         $meta = array_merge([
-            'property_type' => 'Residential Property',
-            'cities'        => json_encode(['Orlando']),
-            'monthly_price' => '2000',
+            'property_type'  => 'Residential Property',
+            'cities'         => json_encode(['Orlando']),
+            'maximum_budget' => '2000',
         ], $metaOverrides);
 
         foreach ($meta as $key => $value) {
-            DB::table('tenant_criteria_auction_metas')->insert([
-                'tenant_criteria_auction_id' => $id,
-                'meta_key'                   => $key,
-                'meta_value'                 => $value,
-            ]);
+            $auction->saveMeta($key, $value);
         }
 
         return $id;
@@ -149,7 +170,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
 
     private function skipIfTablesMissing(): void
     {
-        foreach (['bridge_properties', 'buyer_criteria_auctions', 'buyer_criteria_auction_metas'] as $table) {
+        foreach (['bridge_properties', 'buyer_agent_auctions', 'buyer_agent_auction_metas'] as $table) {
             if (!Schema::hasTable($table)) {
                 $this->markTestSkipped("Table {$table} does not exist in this environment.");
             }
@@ -177,7 +198,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     }
 
     // =========================================================================
-    // TC-CL02: Agent with one BuyerCriteriaAuction → auto-loads, no selector shown
+    // TC-CL02: Agent with one Buyer Offer Listing → auto-loads, no selector shown
     // =========================================================================
 
     /** @test */
@@ -203,7 +224,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     }
 
     // =========================================================================
-    // TC-CL03: Agent with one TenantCriteriaAuction → auto-loads through pipeline
+    // TC-CL03: Agent with one Tenant Offer Listing → auto-loads through pipeline
     // =========================================================================
 
     /** @test */
@@ -211,8 +232,8 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     {
         $this->skipIfTablesMissing();
 
-        if (!Schema::hasTable('tenant_criteria_auctions') || !Schema::hasTable('tenant_criteria_auction_metas')) {
-            $this->markTestSkipped('tenant_criteria_auctions table does not exist in this environment.');
+        if (!Schema::hasTable('tenant_agent_auctions') || !Schema::hasTable('tenant_agent_auction_metas')) {
+            $this->markTestSkipped('tenant_agent_auctions table does not exist in this environment.');
         }
 
         $this->insertListing(['city' => 'Orlando', 'list_price' => 1500]);
@@ -257,8 +278,8 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     {
         $this->skipIfTablesMissing();
 
-        if (!Schema::hasTable('tenant_criteria_auctions') || !Schema::hasTable('tenant_criteria_auction_metas')) {
-            $this->markTestSkipped('tenant_criteria_auctions table does not exist in this environment.');
+        if (!Schema::hasTable('tenant_agent_auctions') || !Schema::hasTable('tenant_agent_auction_metas')) {
+            $this->markTestSkipped('tenant_agent_auctions table does not exist in this environment.');
         }
 
         $this->insertListing();
@@ -280,15 +301,15 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
         $response->assertSee('Matching against:', false);
 
         // … and both profiles are offered in it.
-        $response->assertSee('Buyer Criteria', false);
-        $response->assertSee('Tenant Criteria', false);
+        $response->assertSee('Buyer Offer', false);
+        $response->assertSee('Tenant Offer', false);
 
         // The removed blocking chooser must not come back.
         $response->assertDontSee('Choose a Criteria Profile', false);
     }
 
     // =========================================================================
-    // TC-CL05: Non-agent buyer with one BuyerCriteriaAuction → regression test
+    // TC-CL05: Non-agent buyer with one Buyer Offer Listing → regression test
     // =========================================================================
 
     /** @test */
@@ -331,7 +352,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
         $this->actingAsDbUser($buyer['id']);
 
         $response = $this->get(route('stellar.buyer.results', [
-            'criteria_type' => 'buyer',
+            'criteria_type' => 'buyer_offer',
             'criteria_id'   => $criteriaId1,
         ]));
 
@@ -401,7 +422,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
         $this->actingAsDbUser($attackerUser['id']);
 
         $response = $this->get(route('stellar.buyer.results', [
-            'criteria_type' => 'buyer',
+            'criteria_type' => 'buyer_offer',
             'criteria_id'   => $criteriaId,
         ]));
 
@@ -416,7 +437,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     // TC-CL09: Tenant Criteria → BuyerCriteriaPayload → BuyerMatchService pipeline
     //
     // Proves the end-to-end path:
-    //   TenantCriteriaAuction EAV → TenantCriteriaLoader → BuyerCriteriaPayload
+    //   Tenant Offer Listing EAV → TenantOfferListingCriteriaLoader → BuyerCriteriaPayload
     //   → BuyerMatchService::match() → controller renders results or no_matches
     //
     // If the DTO mapping fails, BuyerCriteriaPayload throws InvalidArgumentException
@@ -429,35 +450,42 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     {
         $this->skipIfTablesMissing();
 
-        if (!Schema::hasTable('tenant_criteria_auctions') || !Schema::hasTable('tenant_criteria_auction_metas')) {
-            $this->markTestSkipped('tenant_criteria_auctions table does not exist in this environment.');
+        if (!Schema::hasTable('tenant_agent_auctions') || !Schema::hasTable('tenant_agent_auction_metas')) {
+            $this->markTestSkipped('tenant_agent_auctions table does not exist in this environment.');
         }
 
         // Seed a matching Active Residential listing in Orlando
+        // A tenant profile resolves to the rental PropertyType, so the seeded
+        // inventory must be a lease record — and it must state its rent period,
+        // or the rent cannot be compared to a monthly budget at all.
         $this->insertListing([
             'city'                    => 'Tampa',
             'list_price'              => 1800,
             'standard_status'         => 'Active',
-            'property_type'           => 'Residential',
+            'property_type'           => 'Residential Lease',
             'bedrooms_total'          => 2,
             'bathrooms_total_integer' => 1,
+            'raw_json'                => json_encode([
+                'IDXParticipationYN'   => true,
+                'LeaseAmountFrequency' => 'Monthly',
+            ]),
         ]);
 
         $agent = $this->makeUser(['user_type' => 'agent']);
 
-        // Create a TenantCriteriaAuction with city + price that aligns with the listing
+        // Create a Tenant Offer Listing with city + price that aligns with the listing
         $criteriaId = $this->makeTenantCriteria($agent['id'], [
-            'property_type' => 'Residential Property',
-            'cities'        => json_encode(['Tampa']),
-            'monthly_price' => '2000',
-            'bedrooms'      => '2',
-            'bathrooms'     => '1',
+            'property_type'  => 'Residential Property',
+            'cities'         => json_encode(['Tampa']),
+            'maximum_budget' => '2000',
+            'bedrooms'       => '2',
+            'bathrooms'      => '1',
         ]);
 
         $this->actingAsDbUser($agent['id']);
 
         $response = $this->get(route('stellar.buyer.results', [
-            'criteria_type' => 'tenant',
+            'criteria_type' => 'tenant_offer',
             'criteria_id'   => $criteriaId,
         ]));
 
