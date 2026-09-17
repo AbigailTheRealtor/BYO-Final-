@@ -149,6 +149,13 @@
                 @endforeach
             </div>
 
+            {{-- Resolve this page's preference state and contexts in batch BEFORE
+                 the card loop. Without it each card's control resolves itself and
+                 a page of results costs a query pair per card. Renders nothing. --}}
+            <x-listing-preference.prefetch
+                listing-type="landlord_agent"
+                :listing-ids="collect($pAuctions)->pluck('id')" />
+
             <div class="cardsDetails row justify-content-start">
 
                 @inject('carbon', 'Carbon\Carbon')
@@ -228,8 +235,26 @@
                         $listingTitle = @$auction->get->titleListing ?: (@$auction->title ?: @$auction->get->address);
                     @endphp
                     <div class="col-sm-6 col-md-12 col-lg-4 mb-3">
-                        <a href="{{ route('offer.listing.landlord.view', $auction->id) }}" style="text-decoration:none;color:inherit;display:block;">
-                        <div class="card" style="overflow: hidden; cursor: pointer; transition: box-shadow .15s;">
+                        {{--
+                            THE LINK WRAPS THE BODY, NOT THE WHOLE CARD.
+
+                            It used to wrap everything including the footer, so any
+                            interactive control placed there was nested inside an
+                            anchor: pressing Save would follow the link, and — worse
+                            — a button inside a link is invalid HTML that screen
+                            readers and keyboard users read as one confused target.
+                            `preventDefault()` would mask the click and fix neither
+                            the markup nor the keyboard behaviour.
+
+                            So the anchor now covers exactly the descriptive part of
+                            the card, which is the part a reader means to click. The
+                            destination, the hover affordance, the styling and the
+                            single-link-per-card tab order are all unchanged; the
+                            footer is simply outside it.
+                        --}}
+                        <div class="card" style="overflow: hidden; transition: box-shadow .15s;">
+                            <a href="{{ route('offer.listing.landlord.view', $auction->id) }}"
+                               style="text-decoration:none;color:inherit;display:block;cursor:pointer;">
                             <div class="card-body pb-2 pt-2">
                                 <div style="min-height: 56px;">
                                     <h5 class="card-title w-75">
@@ -295,6 +320,7 @@
                                 @endif
 
                             </div>
+                            </a>
 
                             <div class="card-footer bg-light">
                                 <div class="row">
@@ -307,22 +333,27 @@
                                                 d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
                                             </path>
                                         </svg>
-                                        <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                            data-bs-trigger="hover focus" data-bs-placement="top"
-                                            data-bs-content="Add Favorites" xmlns="http://www.w3.org/2000/svg"
-                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                                            </path>
-                                        </svg>
+                                        {{-- The "Add Favorites" heart that stood here was a
+                                             decorative SVG with a tooltip: no handler, no route,
+                                             no table. It advertised a feature that did not exist.
+                                             Save | Maybe | Pass is that feature, and this is the
+                                             same shared control the detail page renders. --}}
                                     </div>
                                     <div class="col-6 right text-end">
                                         <b>{{ @$auction->get->leaseAmount }}</b>
                                     </div>
                                 </div>
+
+                                {{-- Outside the anchor above, so pressing a state does not
+                                     navigate. Renders nothing at all while the feature flag
+                                     is off, for a guest-ineligible account, or for a viewer
+                                     whose market this listing is not. --}}
+                                <x-listing-preference.control
+                                    listing-type="landlord_agent"
+                                    :listing-id="$auction->id"
+                                    :compact="true" />
                             </div>
                         </div>
-                        </a>
                     </div>
                 @empty
                     <div class="card p-4 text-center">
