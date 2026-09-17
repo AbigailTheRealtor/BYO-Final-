@@ -684,6 +684,55 @@ class MatchCorrectnessP0Test extends TestCase
         );
     }
 
+    /**
+     * Every reader of a criteria type must refuse a retired one, not just the
+     * results page. The property-detail match context is the third reader, and it
+     * receives the type straight from a query string.
+     *
+     * @test
+     * @dataProvider retiredOrAbsentCriteriaTypeProvider
+     */
+    public function the_property_detail_match_context_refuses_a_retired_or_unknown_type(string $type): void
+    {
+        $this->skipUnless('bridge_properties', 'buyer_criteria_auctions');
+
+        $listing = $this->bridgeListing();
+
+        $userId = $this->makeUser('buyer');
+        $legacyId = DB::table('buyer_criteria_auctions')->insertGetId([
+            'user_id'     => $userId,
+            'buyer_id'    => $userId,
+            'title'       => 'Legacy buyer criteria',
+            'max_price'   => 400000,
+            'is_approved' => true,
+            'is_sold'     => false,
+            'is_paid'     => false,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        $user = \App\Models\User::findOrFail($userId);
+
+        $context = app(\App\Services\Stellar\PropertyMatchContextService::class)
+            ->resolve($listing, $type, $legacyId, $user);
+
+        $this->assertNull(
+            $context,
+            "A '{$type}' criteria type must not resolve a match context — it cannot produce a correct score."
+        );
+    }
+
+    public function retiredOrAbsentCriteriaTypeProvider(): array
+    {
+        return [
+            // 'buyer' is both the retired legacy type AND the controller's default
+            // when the query string omits criteria_type.
+            'retired buyer'  => ['buyer'],
+            'retired tenant' => ['tenant'],
+            'unknown'        => ['something_else'],
+        ];
+    }
+
     /** @test */
     public function an_offer_listing_record_is_still_offered_for_selection(): void
     {
