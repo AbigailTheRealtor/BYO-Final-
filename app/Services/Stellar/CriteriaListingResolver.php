@@ -20,21 +20,73 @@ use Illuminate\Support\Facades\Schema;
  *  - Agents additionally see active records owned by their buyer clients.
  *    "Client" is defined as any user with a user_agents row where agent_id = agent.id.
  *
- * Modern offer listing types are returned alongside legacy criteria types.
- * Legacy records continue to work during the transition period.
+ * ONLY OFFER-LISTING CRITERIA ARE SELECTABLE. The two legacy criteria types are
+ * deliberately NOT returned — see LEGACY_TYPES below. No record is deleted, no
+ * data is migrated, and the legacy view routes are untouched; they are simply
+ * not offered as something that can be matched, because they cannot be.
  *
  * Returned items have shape:
- *   ['id' => int, 'type' => 'buyer'|'tenant'|'buyer_offer'|'tenant_offer',
+ *   ['id' => int, 'type' => 'buyer_offer'|'tenant_offer',
  *    'label' => string, 'created_at' => Carbon]
  *
  * Type tokens:
- *   'buyer'        — legacy BuyerCriteriaAuction record
- *   'tenant'       — legacy TenantCriteriaAuction record
- *   'buyer_offer'  — modern BuyerAgentAuction offer listing (workflow_type='offer_listing')
- *   'tenant_offer' — modern TenantAgentAuction offer listing (workflow_type='offer_listing')
+ *   'buyer_offer'  — BuyerAgentAuction offer listing (workflow_type='offer_listing')
+ *   'tenant_offer' — TenantAgentAuction offer listing (workflow_type='offer_listing')
  */
 class CriteriaListingResolver
 {
+    /**
+     * The legacy criteria type tokens, retired from live selection.
+     *
+     * WHY THEY ARE RETIRED RATHER THAN REPAIRED
+     * -----------------------------------------
+     * Neither legacy flow can produce a correct match, and neither can be created
+     * or edited any more — the evidence is in the repository, not in a judgement
+     * call:
+     *
+     *   · Every legacy criteria WRITE surface is already dead. All four Blade
+     *     views (buyer_criteria/add, buyer_criteria/edit, tenant_criteria/add,
+     *     tenant_criteria/edit) post to route names that are defined NOWHERE in
+     *     routes/ — 'buyer_agent.auction.add', 'buyer_agent.auction.update',
+     *     'agent.tenant.criteria.auction.add', 'agent.tenant.criteria.auction.edit'.
+     *     Laravel's route() helper throws RouteNotFoundException for an undefined
+     *     name, and each call sits unconditionally in the form action, so every
+     *     one of those pages 500s on render. No new legacy record can be created
+     *     and no existing one can be edited.
+     *
+     *   · StellarBuyerResultsController already points its "add criteria" links at
+     *     /offer-listing/buyer and /offer-listing/tenant/tenant — the modern flows.
+     *
+     *   · BuyerCriteriaLoader returns null for every record the legacy controller
+     *     ever wrote: property_types is never written and property_type_id is never
+     *     assigned, so the required-property-types guard rejects the record. Only 5
+     *     of the 32 criteria keys that loader reads are written by the form at all.
+     *
+     *   · TenantCriteriaLoader resolves rental seekers to PropertyType 'Residential'
+     *     — the FOR-SALE type, as TenantOfferListingCriteriaLoader documents — or to
+     *     'Commercial', which is not a Bridge PropertyType value at all, and then
+     *     discards the monthly budget. It does not fail; it returns confident,
+     *     wrong results.
+     *
+     * Repairing the key vocabulary would mean inventing a storage contract for
+     * forms that cannot run. Offering an un-matchable record in the switcher is
+     * the user-visible harm, so that is what is removed.
+     *
+     * NOTHING IS DELETED. The tables, the rows, the models, the loaders and the
+     * public /criteria/view and /tenant/criteria/auction/view routes all stay
+     * exactly as they are. A product decision to revive either flow restores one
+     * entry here — after the write surfaces and the loader contract are repaired.
+     *
+     * @var list<string>
+     */
+    public const LEGACY_TYPES = ['buyer', 'tenant'];
+
+    /** Is this criteria type retired from live matching selection? */
+    public static function isRetiredLegacyType(string $type): bool
+    {
+        return in_array($type, self::LEGACY_TYPES, true);
+    }
+
     /**
      * Return all user IDs whose criteria this user may access.
      * For agents, includes their own ID plus all client IDs from user_agents.
@@ -61,9 +113,8 @@ class CriteriaListingResolver
     /**
      * Return all accessible criteria / offer-listing records for $user, sorted newest-first.
      *
-     * Includes both legacy criteria records (type='buyer'/'tenant') and modern offer-listing
-     * records (type='buyer_offer'/'tenant_offer'). Legacy support is preserved during
-     * the transition period — both sources are merged and surfaced in the criteria switcher.
+     * Offer-listing records only (type='buyer_offer'/'tenant_offer'). The legacy
+     * criteria types are retired from selection — see self::LEGACY_TYPES.
      *
      * @return array<int, array{id: int, type: string, label: string, created_at: \Carbon\Carbon}>
      */
@@ -72,45 +123,10 @@ class CriteriaListingResolver
         $allowedUserIds = $this->resolveAllowedUserIds($user);
         $items = [];
 
-        // -----------------------------------------------------------------------
-        // Legacy: Buyer Criteria Auctions
-        // -----------------------------------------------------------------------
-        if (Schema::hasTable('buyer_criteria_auctions')) {
-            $buyerRecords = BuyerCriteriaAuction::whereIn('user_id', $allowedUserIds)
-                ->where('is_approved', true)
-                ->where('is_sold', false)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            foreach ($buyerRecords as $record) {
-                $items[] = [
-                    'id'         => $record->id,
-                    'type'       => 'buyer',
-                    'label'      => $this->buildBuyerLabel($record),
-                    'created_at' => $record->created_at,
-                ];
-            }
-        }
-
-        // -----------------------------------------------------------------------
-        // Legacy: Tenant Criteria Auctions
-        // -----------------------------------------------------------------------
-        if (Schema::hasTable('tenant_criteria_auctions')) {
-            $tenantRecords = TenantCriteriaAuction::whereIn('user_id', $allowedUserIds)
-                ->where('is_approved', true)
-                ->where('is_sold', false)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            foreach ($tenantRecords as $record) {
-                $items[] = [
-                    'id'         => $record->id,
-                    'type'       => 'tenant',
-                    'label'      => $this->buildTenantLabel($record),
-                    'created_at' => $record->created_at,
-                ];
-            }
-        }
+        // Legacy 'buyer' / 'tenant' criteria records are deliberately NOT collected.
+        // They cannot produce a correct match and can no longer be created or
+        // edited; see self::LEGACY_TYPES for the evidence. Their rows are left
+        // untouched in the database.
 
         // -----------------------------------------------------------------------
         // Modern: Buyer Offer Listing records (buyer_agent_auctions)

@@ -69,13 +69,39 @@ class PropertyMatchContextService
         ]));
     }
 
+    /**
+     * THE THIRD READER OF A CRITERIA TYPE, AND IT MUST AGREE WITH THE OTHER TWO.
+     *
+     * `criteria_type` reaches this service straight from the property-detail
+     * page's query string, and StellarPropertyDetailController defaults it to
+     * 'buyer' when absent. The old `default` arm therefore sent both a hand-typed
+     * `?criteria_type=buyer` AND every request with no type at all into the legacy
+     * BuyerCriteriaLoader — the loader that returns null for every record the
+     * legacy form ever wrote.
+     *
+     * Retiring the legacy types from CriteriaListingResolver stops them being
+     * OFFERED; it does not stop them being TYPED. Selection and loading have to
+     * agree in every reader, so the guard is repeated here exactly as it is in
+     * StellarBuyerResultsController and MatchCheckCriteriaLoader.
+     *
+     * Nothing real is lost by the `default => null`: a request that names no
+     * criteria type cannot say which profile it means, and the legacy loader it
+     * used to fall through to would have returned null anyway. The page simply
+     * renders without a match-context block, which is what it already does for
+     * any criteria it cannot load.
+     *
+     * The two legacy loaders stay injected so reviving either flow is one line.
+     */
     private function loadCriteria(string $type, int $id, array $allowedUserIds): ?array
     {
+        if (CriteriaListingResolver::isRetiredLegacyType($type)) {
+            return null;
+        }
+
         return match ($type) {
-            'tenant'       => $this->tenantLoader->loadById($id, $allowedUserIds),
             'buyer_offer'  => $this->buyerOfferLoader->loadById($id, $allowedUserIds),
             'tenant_offer' => $this->tenantOfferLoader->loadById($id, $allowedUserIds),
-            default        => $this->buyerLoader->loadById($id, $allowedUserIds),
+            default        => null,
         };
     }
 }
