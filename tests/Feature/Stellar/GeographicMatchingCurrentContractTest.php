@@ -106,6 +106,7 @@ class GeographicMatchingCurrentContractTest extends TestCase
     private function listing(array $attributes = []): BridgeProperty
     {
         return new BridgeProperty(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'CONTRACT-' . uniqid(),
             'standard_status'   => 'Active',
             'property_type'     => 'Residential',
@@ -129,6 +130,7 @@ class GeographicMatchingCurrentContractTest extends TestCase
         $key = $overrides['listing_key'] ?? ('CONTRACT-' . uniqid());
 
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => 'LID-' . uniqid(),
             'standard_status'         => 'Active',

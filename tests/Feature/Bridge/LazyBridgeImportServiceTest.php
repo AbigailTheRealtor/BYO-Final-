@@ -451,6 +451,7 @@ class LazyBridgeImportServiceTest extends TestCase
     public function test_existing_bridge_property_is_updated_not_duplicated(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'K-700',
             'standard_status' => 'Active',
             'city'            => 'OldCity',

@@ -92,6 +92,7 @@ class MlsQuickImportOwnershipTest extends TestCase
         }
 
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => $mls,
             'standard_status'         => 'Active',

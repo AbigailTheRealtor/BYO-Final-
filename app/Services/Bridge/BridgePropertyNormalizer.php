@@ -102,9 +102,20 @@ class BridgePropertyNormalizer
         }
 
         $listingKey = $normalized['listing_key'];
-        $upsertData = array_diff_key($normalized, ['listing_key' => true]);
 
-        $existing = BridgeProperty::where('listing_key', $listingKey)->first();
+        // THE UPSERT IDENTITY IS (provider, listing_key), NOT listing_key.
+        //
+        // This is the line the whole change is about. Matching on `listing_key`
+        // alone meant that the day a second MLS sent a key Stellar had already
+        // used, this upsert would find Stellar's row and OVERWRITE it with the
+        // other provider's property — same id, same preferences pointing at it,
+        // a different house. Both identity columns are therefore excluded from
+        // the update payload and used as the match instead.
+        $provider   = MlsProvider::current();
+        $identity   = ['provider' => $provider->value, 'listing_key' => $listingKey];
+        $upsertData = array_diff_key($normalized, ['listing_key' => true, 'provider' => true]);
+
+        $existing = BridgeProperty::forNativeKey($provider, $listingKey)->first();
 
         $isNew = ($existing === null);
 
@@ -138,7 +149,7 @@ class BridgePropertyNormalizer
         }
 
         $model = BridgeProperty::updateOrCreate(
-            ['listing_key' => $listingKey],
+            $identity,
             $upsertData,
         );
 

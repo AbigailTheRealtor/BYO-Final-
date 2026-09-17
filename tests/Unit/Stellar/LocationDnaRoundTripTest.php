@@ -252,6 +252,7 @@ class LocationDnaRoundTripTest extends TestCase
 
         DB::table('bridge_properties')->insert([
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => $insideKey,
                 'listing_id'              => 'LID-' . uniqid(),
                 'standard_status'         => 'Active',
@@ -271,6 +272,7 @@ class LocationDnaRoundTripTest extends TestCase
                 'updated_at'              => now(),
             ],
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => $outsideKey,
                 'listing_id'              => 'LID-' . uniqid(),
                 'standard_status'         => 'Active',

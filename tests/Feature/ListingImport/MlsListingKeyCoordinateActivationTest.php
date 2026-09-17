@@ -71,6 +71,7 @@ class MlsListingKeyCoordinateActivationTest extends TestCase
     private function seedBridgeProperty(array $overrides = []): BridgeProperty
     {
         return BridgeProperty::create(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => self::KEY,
             'listing_id'        => self::MLS,
             'standard_status'   => 'Active',

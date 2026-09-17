@@ -32,6 +32,7 @@ class ListingPreferenceSubjectResolverTest extends TestCase
     public function a_bridge_row_resolves_to_its_listing_key(): void
     {
         $bridge = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'RESOLVER-MFR-1',
             'listing_id'      => 'A1',
             'standard_status' => 'Active',
@@ -57,6 +58,7 @@ class ListingPreferenceSubjectResolverTest extends TestCase
     public function a_bridge_row_without_a_listing_key_resolves_to_nothing(): void
     {
         $bridge = BridgeProperty::create([
+            'provider'        => 'stellar_bridge',
             'listing_id'      => 'A2',
             'standard_status' => 'Active',
             'property_type'   => 'Residential',
@@ -90,6 +92,7 @@ class ListingPreferenceSubjectResolverTest extends TestCase
     public function an_mls_linked_native_listing_resolves_to_the_same_subject_as_its_bridge_row(): void
     {
         $bridge = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'RESOLVER-MFR-SHARED',
             'listing_id'      => 'A3',
             'standard_status' => 'Active',
@@ -124,9 +127,9 @@ class ListingPreferenceSubjectResolverTest extends TestCase
      */
     public function many_refs_resolve_in_one_query_per_listing_type(): void
     {
-        $bridgeA = BridgeProperty::create(['listing_key' => 'RESOLVER-BATCH-A', 'listing_id' => 'B1', 'standard_status' => 'Active', 'property_type' => 'Residential']);
-        $bridgeB = BridgeProperty::create(['listing_key' => 'RESOLVER-BATCH-B', 'listing_id' => 'B2', 'standard_status' => 'Active', 'property_type' => 'Residential']);
-        $noKey   = BridgeProperty::create(['listing_id' => 'B3', 'standard_status' => 'Active', 'property_type' => 'Residential']);
+        $bridgeA = BridgeProperty::create(['provider' => 'stellar_bridge', 'listing_key' => 'RESOLVER-BATCH-A', 'listing_id' => 'B1', 'standard_status' => 'Active', 'property_type' => 'Residential']);
+        $bridgeB = BridgeProperty::create(['provider' => 'stellar_bridge', 'listing_key' => 'RESOLVER-BATCH-B', 'listing_id' => 'B2', 'standard_status' => 'Active', 'property_type' => 'Residential']);
+        $noKey   = BridgeProperty::create(['provider' => 'stellar_bridge', 'listing_id' => 'B3', 'standard_status' => 'Active', 'property_type' => 'Residential']);
         $auction = $this->sellerListing();
 
         $refs = [
@@ -158,6 +161,7 @@ class ListingPreferenceSubjectResolverTest extends TestCase
     public function the_resolver_writes_nothing(): void
     {
         $bridge = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'RESOLVER-READONLY',
             'listing_id'      => 'C1',
             'standard_status' => 'Active',

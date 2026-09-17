@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\Listing\MlsProvider;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class BridgeProperty extends Model
@@ -138,6 +139,59 @@ class BridgeProperty extends Model
     public function mlsProvider(): ?MlsProvider
     {
         return MlsProvider::fromStored($this->provider);
+    }
+
+    /**
+     * THE lookup by native MLS identity: `(provider, listing_key)`.
+     *
+     * WHY THIS EXISTS RATHER THAN A `where()` AT EACH CALL SITE
+     * --------------------------------------------------------
+     * `listing_key` is unique only within the system that minted it, so a bare
+     * `where('listing_key', …)` is a question with no single answer the moment a
+     * second provider exists — it returns whichever row the database reached
+     * first. There were eight such call sites. Adding `->where('provider', …)`
+     * to each would have been eight chances to forget, and the one that was
+     * forgotten would not fail: it would quietly return another MLS's property.
+     *
+     * So the pairing lives here, callers pass a typed {@see MlsProvider} rather
+     * than a second loose string, and `BridgePropertyIdentityGuardTest` asserts
+     * no `where('listing_key'` survives outside this model.
+     *
+     * Returns a Builder, not a model: callers differ in whether they want
+     * `first()`, `exists()` or further constraints, and narrowing that here
+     * would only push some of them back to building their own query.
+     */
+    public static function forNativeKey(MlsProvider $provider, string $listingKey): Builder
+    {
+        return static::query()
+            ->where('provider', $provider->value)
+            ->where('listing_key', trim($listingKey));
+    }
+
+    /**
+     * The same pairing for the human-facing MLS number (`ListingId`).
+     *
+     * `ListingId` is WEAKER than `ListingKey` — the feed's own documentation
+     * calls it unique only within its originating system — so it needs the
+     * provider at least as much, not less.
+     */
+    public static function forNativeMlsNumber(MlsProvider $provider, string $mlsNumber): Builder
+    {
+        return static::query()
+            ->where('provider', $provider->value)
+            ->where('listing_id', trim($mlsNumber));
+    }
+
+    /**
+     * Narrow any existing query to one provider.
+     *
+     * For the callers that are already building a query for their own reasons
+     * (address search, viewport reads) and need the provider dimension added
+     * rather than a lookup performed.
+     */
+    public function scopeForProvider(Builder $query, MlsProvider $provider): Builder
+    {
+        return $query->where('provider', $provider->value);
     }
 
     protected static function boot(): void

@@ -3,6 +3,7 @@
 namespace App\Services\Location\Coordinates\Adapters;
 
 use App\Models\BridgeProperty;
+use App\Support\Listing\MlsProvider;
 use App\Services\Location\Coordinates\CoordinatePrecision;
 use App\Services\Location\Coordinates\CoordinateProviderAdapterInterface;
 use App\Services\Location\Coordinates\CoordinateSource;
@@ -121,9 +122,7 @@ final class BridgeMlsCoordinatesAdapter implements CoordinateProviderAdapterInte
             return PropertyCoordinateResult::unresolved('no_mls_listing_key', $normalized);
         }
 
-        $record = BridgeProperty::query()
-            ->where('listing_key', trim($address->mlsListingKey))
-            ->first();
+        $record = BridgeProperty::forNativeKey(MlsProvider::current(), $address->mlsListingKey)->first();
 
         if ($record === null) {
             return PropertyCoordinateResult::unresolved('mls_record_not_found', $normalized);

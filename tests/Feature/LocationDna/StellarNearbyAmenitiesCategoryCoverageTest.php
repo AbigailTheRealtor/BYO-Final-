@@ -412,6 +412,7 @@ class StellarNearbyAmenitiesCategoryCoverageTest extends TestCase
     private function seedBridgeListing(): \App\Models\BridgeProperty
     {
         $listing = \App\Models\BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'            => 'AUDITKEY'.self::LISTING_ID,
             'listing_id'             => 'A'.self::LISTING_ID,
             'standard_status'        => 'Active',

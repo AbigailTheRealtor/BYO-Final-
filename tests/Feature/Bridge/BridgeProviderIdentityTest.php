@@ -5,6 +5,7 @@ namespace Tests\Feature\Bridge;
 use App\Models\BridgeProperty;
 use App\Services\Bridge\BridgePropertyNormalizer;
 use App\Support\Listing\MlsProvider;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -23,10 +24,35 @@ class BridgeProviderIdentityTest extends TestCase
 
     private const SCHEMA_MIGRATION   = '2026_09_17_000002_add_provider_to_bridge_properties_table.php';
     private const BACKFILL_MIGRATION = '2026_09_17_000003_backfill_provider_on_bridge_properties_table.php';
+    private const IDENTITY_MIGRATION = '2026_09_17_000004_scope_bridge_property_identity_by_provider.php';
 
     private function migration(string $file): object
     {
         return require database_path('migrations/' . $file);
+    }
+
+    /**
+     * Run a closure against the pre-`…_000004` schema, where `provider` was
+     * still nullable, then restore the constraint.
+     *
+     * The identity migration is rolled back and re-applied rather than skipped,
+     * so what is restored afterwards is the real constraint and not a test's
+     * idea of it.
+     *
+     * @template T
+     * @param  callable():T $work
+     * @return T
+     */
+    private function withNullableProvider(callable $work)
+    {
+        $identity = $this->migration(self::IDENTITY_MIGRATION);
+        $identity->down();
+
+        try {
+            return $work();
+        } finally {
+            $identity->up();
+        }
     }
 
     private function normalizer(): BridgePropertyNormalizer
@@ -127,16 +153,36 @@ class BridgeProviderIdentityTest extends TestCase
         $this->assertNull($result->model->fresh()->mlsProvider());
     }
 
+    /**
+     * The accessor still answers null for an absent provider — but a PERSISTED
+     * row can no longer reach that state, so this is asserted against an unsaved
+     * instance and the database's refusal is asserted separately below.
+     *
+     * When this test was written the column was nullable and the row could
+     * simply be updated to null. `2026_09_17_000004` made that impossible, which
+     * is the stronger guarantee; the accessor's defensiveness is kept because it
+     * is what a future provider-aware read path will lean on.
+     *
+     * @test
+     */
+    public function a_null_provider_reads_as_null_on_an_unsaved_model(): void
+    {
+        $model = new BridgeProperty(['provider' => null]);
+
+        $this->assertNull($model->mlsProvider());
+    }
+
+    /** The database itself now refuses a row with no provider. */
     /** @test */
-    public function a_null_stored_provider_reads_as_null(): void
+    public function the_database_refuses_a_row_with_no_provider(): void
     {
         $result = $this->normalizer()->upsert($this->apiRecord('PROV-NULL-1'));
+
+        $this->expectException(QueryException::class);
 
         DB::table('bridge_properties')
             ->where('id', $result->model->id)
             ->update(['provider' => null]);
-
-        $this->assertNull($result->model->fresh()->mlsProvider());
     }
 
     // ─── requirement 1: existing rows acquire the identity ───────────────────
@@ -145,6 +191,11 @@ class BridgeProviderIdentityTest extends TestCase
      * The backfill populates a pre-existing row — one written before the column
      * existed, simulated by nulling it — and leaves everything else alone.
      *
+     * A NULL provider is unreachable once `…_000004` has run, so this test
+     * establishes the world the backfill was written for by rolling that
+     * migration back first and re-applying it afterwards. Weakening the
+     * assertion instead would have quietly stopped testing the backfill at all.
+     *
      * @test
      */
     public function the_backfill_populates_rows_that_predate_the_column(): void
@@ -152,11 +203,13 @@ class BridgeProviderIdentityTest extends TestCase
         $a = $this->normalizer()->upsert($this->apiRecord('PROV-BACKFILL-1'))->model;
         $b = $this->normalizer()->upsert($this->apiRecord('PROV-BACKFILL-2'))->model;
 
-        DB::table('bridge_properties')
-            ->whereIn('id', [$a->id, $b->id])
-            ->update(['provider' => null]);
+        $this->withNullableProvider(function () use ($a, $b): void {
+            DB::table('bridge_properties')
+                ->whereIn('id', [$a->id, $b->id])
+                ->update(['provider' => null]);
 
-        $this->migration(self::BACKFILL_MIGRATION)->up();
+            $this->migration(self::BACKFILL_MIGRATION)->up();
+        });
 
         $this->assertSame('stellar_bridge', $a->fresh()->provider);
         $this->assertSame('stellar_bridge', $b->fresh()->provider);
@@ -171,13 +224,16 @@ class BridgeProviderIdentityTest extends TestCase
     {
         $row = $this->normalizer()->upsert($this->apiRecord('PROV-IDEMPOTENT-1'))->model;
 
-        DB::table('bridge_properties')->where('id', $row->id)->update(['provider' => null]);
+        [$first, $second] = $this->withNullableProvider(function () use ($row): array {
+            DB::table('bridge_properties')->where('id', $row->id)->update(['provider' => null]);
 
-        $this->migration(self::BACKFILL_MIGRATION)->up();
-        $first = $row->fresh()->provider;
+            $this->migration(self::BACKFILL_MIGRATION)->up();
+            $first = $row->fresh()->provider;
 
-        $this->migration(self::BACKFILL_MIGRATION)->up();
-        $second = $row->fresh()->provider;
+            $this->migration(self::BACKFILL_MIGRATION)->up();
+
+            return [$first, $row->fresh()->provider];
+        });
 
         $this->assertSame('stellar_bridge', $first);
         $this->assertSame($first, $second);

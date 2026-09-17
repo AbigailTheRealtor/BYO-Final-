@@ -3,6 +3,7 @@
 namespace App\Services\Explore;
 
 use App\Models\BridgeProperty;
+use App\Support\Listing\MlsProvider;
 use Illuminate\Support\Collection;
 
 /**
@@ -170,7 +171,7 @@ class ExploreListingRepository
             return null;
         }
 
-        $row = BridgeProperty::query()->where('listing_key', $listingKey)->first();
+        $row = BridgeProperty::forNativeKey(MlsProvider::current(), $listingKey)->first();
 
         if ($row === null) {
             return null;

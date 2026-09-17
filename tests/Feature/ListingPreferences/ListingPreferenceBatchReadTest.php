@@ -170,6 +170,7 @@ class ListingPreferenceBatchReadTest extends TestCase
 
         // A Bridge row with NO listing key has no durable identity at all.
         $keyless = BridgeProperty::create([
+            'provider'      => 'stellar_bridge',
             'listing_key'   => null,
             'property_type' => 'Residential',
         ]);
@@ -203,6 +204,7 @@ class ListingPreferenceBatchReadTest extends TestCase
         $listingKey = 'STELLAR-BATCH-0001';
 
         $bridge = BridgeProperty::create([
+            'provider'      => 'stellar_bridge',
             'listing_key'   => $listingKey,
             'property_type' => 'Residential',
         ]);
@@ -379,6 +381,7 @@ class ListingPreferenceBatchReadTest extends TestCase
         $refs = [];
         for ($i = 0; $i < $count; $i++) {
             $row = BridgeProperty::create([
+                'provider'      => 'stellar_bridge',
                 'listing_key'   => 'STELLAR-BATCH-' . uniqid('', true),
                 'property_type' => 'Residential',
             ]);

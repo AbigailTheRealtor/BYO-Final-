@@ -4,6 +4,7 @@ namespace App\Services\Bridge;
 
 use App\Jobs\ComputeLocationDna;
 use App\Models\BridgeProperty;
+use App\Support\Listing\MlsProvider;
 use App\Services\Property\PropertyCandidate;
 use Illuminate\Support\Collection;
 
@@ -53,7 +54,7 @@ class BridgeListingLookupService
             return null;
         }
 
-        $local = BridgeProperty::where('listing_id', $mlsNumber)->first();
+        $local = BridgeProperty::forNativeMlsNumber(MlsProvider::current(), $mlsNumber)->first();
         if ($local !== null) {
             return $this->adapter->fromModel($local);
         }
@@ -113,7 +114,7 @@ class BridgeListingLookupService
             return null;
         }
 
-        $local = BridgeProperty::where('listing_key', $listingKey)->first();
+        $local = BridgeProperty::forNativeKey(MlsProvider::current(), $listingKey)->first();
         if ($local !== null) {
             return $this->adapter->fromModel($local);
         }
