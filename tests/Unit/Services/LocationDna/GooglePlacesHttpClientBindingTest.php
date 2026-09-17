@@ -35,6 +35,11 @@ class GooglePlacesHttpClientBindingTest extends TestCase
             'location_dna.poi.tile_precision' => null,
             'cache.default'              => 'array',
         ]);
+
+        // …and must also SELECT Google as the poi.default base; enabling the provider is
+        // no longer enough, because it is declared `overlay` there.
+        $this->selectGooglePlacesAsPoiBase();
+
         Cache::flush();
     }
 

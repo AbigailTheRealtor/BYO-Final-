@@ -76,6 +76,11 @@ class NearbyPoiErrorRedactionTest extends TestCase
             'location_dna.poi.tile_precision' => null,
         ]);
 
+        // Select Google as the poi.default base — the shipped map declares it `overlay`,
+        // and an overlay is never promoted, so the run would otherwise be refused before
+        // any Nearby request could fail and expose a key.
+        $this->selectGooglePlacesAsPoiBase();
+
         Cache::flush();
 
         $this->app->instance(ClientInterface::class, GoogleHttpClientFactory::make(

@@ -734,6 +734,43 @@ class LocationDnaPoiDistanceService
                 return $output;
             }
 
+            // ── The local corpus is selected but cannot be read ──────────────────
+            //
+            // The corpus counterpart of the Google kill switch below, and it exists for the
+            // same reason: a provider that cannot answer must refuse the run, not answer
+            // "nothing". Gate off, version unpinned, cluster unreachable, table missing —
+            // `isAvailable()` covers all four, cheaply and locally, and the factory would
+            // otherwise hand back the inert stub, which would record 19 categories of
+            // `not_found` and cache a corpus outage as this property's nearby places.
+            //
+            // A category the corpus genuinely has no rows for is a DIFFERENT case and is
+            // left alone: `CorpusPoiCategoryMap` returns null for it, the adapter returns
+            // `[]`, and the run records `not_found` for that one category — the honest
+            // answer, since we did ask a provider that is working.
+            //
+            // Skipped when a fetcher was injected: the caller has supplied the provider, so
+            // the corpus's own readiness is not what decides this run.
+            if (
+                $this->currentProvenanceProvider === self::PROVIDER_OVERTURE_CORPUS
+                && $this->nearbyFetcher === null
+                && ! (new OvertureCorpusPoiAdapter())->isAvailable()
+            ) {
+                $output = $this->failedOutput(
+                    $listingType,
+                    $listingId,
+                    $sourceLat,
+                    $sourceLng,
+                    'overture_corpus_unavailable',
+                );
+                $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
+                return $output;
+            }
+
+            // THE GOOGLE GUARDS RUN ONLY WHEN GOOGLE IS THE SELECTED PROVIDER, which the
+            // shipped `poi.default` map does not do — Google is declared `overlay` there and
+            // `effectiveBase()` will not promote an overlay. Reaching this branch means a
+            // capability map deliberately named `google_places` as the `base`.
             if ($this->currentProvenanceProvider === 'google_places') {
                 // Phase 0 / S2 — master kill switch. Short-circuits before any HTTP
                 // call, and after the cache-return paths above so cached rows still serve.

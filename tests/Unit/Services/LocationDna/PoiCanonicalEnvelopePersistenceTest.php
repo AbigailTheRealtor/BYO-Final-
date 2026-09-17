@@ -55,6 +55,19 @@ class PoiCanonicalEnvelopePersistenceTest extends TestCase
             'location_dna.poi.tile_precision' => null,
             'cache.default'                   => 'array',
         ]);
+
+        // This file pins the envelope written on a GOOGLE-backed run, so it has to select
+        // Google explicitly: the shipped poi.default map declares it `overlay` and
+        // `LocationProviderRegistry::effectiveBase()` no longer promotes overlays, so
+        // without this the run resolves to no provider and is refused before any row is
+        // written. The envelope rules under test are unchanged.
+        //
+        // Whole-array write: the key `poi.default` contains a dot, so the dotted
+        // `config(['...capabilities.poi.default' => ...])` form would set a nested
+        // `poi => default` that nothing reads.
+        $capabilities                = (array) config('location_providers.capabilities');
+        $capabilities['poi.default'] = [['provider' => 'google_places', 'role' => 'base']];
+        config(['location_providers.capabilities' => $capabilities]);
         Cache::flush();
     }
 

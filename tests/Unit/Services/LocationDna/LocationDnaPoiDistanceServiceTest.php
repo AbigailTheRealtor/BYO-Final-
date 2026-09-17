@@ -82,6 +82,11 @@ class LocationDnaPoiDistanceServiceTest extends TestCase
             'location_dna.poi.tile_precision'        => null,
             'cache.default'                          => 'array',
         ]);
+
+        // …and must also SELECT Google: the shipped poi.default map declares it `overlay`,
+        // and an overlay is never promoted to effective base. See the helper's docblock.
+        $this->selectGooglePlacesAsPoiBase();
+
         Cache::flush();
     }
 

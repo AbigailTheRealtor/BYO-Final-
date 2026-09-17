@@ -64,6 +64,12 @@ class GooglePlacesNearbyBudgetTest extends TestCase
             'services.google.places_key' => 'fake-test-key',
         ]);
 
+        // …and SELECT Google as the poi.default base. Enabling the provider is no longer
+        // enough: it is declared `overlay` in the shipped capability map and an overlay is
+        // never promoted to effective base, so without this the Location DNA run is refused
+        // for having no provider and never reaches the budget at all.
+        $this->selectGooglePlacesAsPoiBase();
+
         Cache::flush();
 
         $this->app->instance(ClientInterface::class, GoogleHttpClientFactory::make(

@@ -63,15 +63,30 @@ class CorpusPoiProviderBindingTest extends TestCase
     }
 
     /**
-     * Byte-identical resolution to before the provider was listed. `overture_corpus` is
-     * declared FIRST and as `base` in the capability map, so if the enabled-filter ever
-     * stopped working this would flip immediately.
+     * WITH THE ROUTING GATE OFF, `poi.default` RESOLVES TO NOBODY — NOT TO GOOGLE.
+     *
+     * This replaces `test_shipped_config_still_resolves_poi_default_to_google_places`,
+     * which asserted the behaviour this phase removed. `google_places` is declared
+     * `overlay` here and is still enabled and still resolved as a binding; what changed is
+     * that `effectiveBase()` will no longer promote it, so a map whose every base is off
+     * selects nothing at all rather than silently selecting the billable provider.
      */
-    public function test_shipped_config_still_resolves_poi_default_to_google_places(): void
+    public function test_shipped_config_resolves_poi_default_to_no_provider(): void
     {
         $registry = new LocationProviderRegistry((array) config('location_providers', []));
 
-        $this->assertSame('google_places', $registry->effectiveBase('poi.default')['provider']);
+        // Google is present as a binding …
+        $roles = [];
+        foreach ($registry->resolve('poi.default') as $binding) {
+            $roles[$binding['provider']] = $binding['role'];
+        }
+        $this->assertSame('overlay', $roles['google_places'] ?? null);
+
+        // … and is still not the effective base.
+        $this->assertNull(
+            $registry->effectiveBase('poi.default'),
+            'No enabled base is declared, and an overlay must never be promoted into one.'
+        );
     }
 
     /**
