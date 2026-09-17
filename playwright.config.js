@@ -17,6 +17,21 @@
  | JavaScript itself, and Playwright tests that directly, against static fixtures,
  | with no database and no authentication.
  |
+ | THIS CONFIGURATION BOOTS NO LARAVEL, AND THAT IS A HARD PROPERTY
+ | ---------------------------------------------------------------
+ | Its only web server is `tests/browser/support/static-server.js`, a pure-Node
+ | process. No `php`, no `artisan`, no `vendor/autoload.php`, no database. The CI
+ | job that runs it (.github/workflows/browser-tests.yml) therefore installs Node
+ | and nothing else — no PHP, no Composer — deliberately, because the risk under
+ | test is JavaScript and a PHP toolchain would be pure cost.
+ |
+ | That is not a preference, it is a scar. The Listing Preferences work briefly
+ | added Laravel-backed `webServer` entries HERE, and the Location DNA job died on
+ | `Failed opening required 'vendor/autoload.php'` before one browser spec ran.
+ | The Laravel-backed suite now lives in playwright.app.config.js with its own
+ | job. `ListingPreferenceArchitectureGuardTest` fails the build if an app server
+ | ever reappears in this file.
+ |
  | NO BILLABLE CALLS, EVER
  | -----------------------
  | `tests/browser/support/network.js` installs a route interceptor that ABORTS
@@ -27,108 +42,44 @@
  |
  | THE BROWSER IS PRE-PROVISIONED
  | ------------------------------
- | This environment supplies a Playwright chromium through
- | `REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE`, so `playwright install` — which would
- | download a browser — is never run. When that variable is absent Playwright
- | falls back to its own managed browser, which is the correct behaviour on a
- | developer machine or in GitHub Actions.
+ | See playwright.shared.js — `REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE` supplies a
+ | chromium here, so `playwright install` is never run in this container.
  */
 
 const { defineConfig, devices } = require('@playwright/test');
-
-const chromiumExecutable = process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined;
+const { APP_SPEC, diagnosticDefaults, launchOptions, runnerDefaults } = require('./playwright.shared');
 
 module.exports = defineConfig({
-    testDir: './tests/browser',
-    // Fixtures are static and deterministic; a slow default hides real hangs.
-    timeout: 30_000,
-    expect: { timeout: 5_000 },
-
-    // Fail the run if a `test.only` is committed. A focused test that reaches CI
-    // silently disables its siblings, which is the failure mode this whole suite
-    // exists to prevent.
-    forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 1 : 0,
-    workers: process.env.CI ? 2 : undefined,
-    reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
+    ...runnerDefaults,
 
     /*
-     | TWO SERVERS, BECAUSE THERE ARE TWO KINDS OF RISK.
+     | The Laravel-backed Listing Preferences specs are NOT part of this suite.
+     | They need a booted application on a different origin; run them with
+     | `npm run test:browser:app`, which uses playwright.app.config.js.
      |
-     | 8931 serves STATIC fixtures for the Location DNA renderer, where the risk
-     | is in the JavaScript and a booted Laravel would be pure overhead.
-     |
-     | 8932 serves the REAL application for the listing-preference specs, where
-     | the risk is the opposite shape: persistence, authentication, CSRF and the
-     | feature flag, none of which a static fixture can have. It builds its own
-     | isolated SQLite environment — see tests/browser/support/app-server.js —
-     | and never touches a developer's .env or any shared database.
-     |
-     | Its timeout is generous because it migrates the full chain before serving.
+     | Ignored here rather than left to the projects below, so adding a second
+     | static project cannot accidentally pick them up.
      */
-    webServer: [
-        {
-            command: 'node tests/browser/support/static-server.js',
-            url: 'http://127.0.0.1:8931/health',
-            reuseExistingServer: !process.env.CI,
-            timeout: 20_000,
-        },
-        {
-            command: 'node tests/browser/support/app-server.js',
-            url: 'http://127.0.0.1:8932/login',
-            reuseExistingServer: !process.env.CI,
-            timeout: 180_000,
-        },
-        /*
-         | The same application with the feature flag OFF, on its own port and
-         | its own database. A real server rather than a config poke, because
-         | what is being proven is that a deployment which sets nothing serves no
-         | control and no endpoint.
-         */
-        {
-            command: 'node tests/browser/support/app-server.js',
-            url: 'http://127.0.0.1:8933/login',
-            // ...process.env is REQUIRED: Playwright REPLACES the child
-            // environment with this object rather than merging it, so without
-            // the spread the server started with no PATH and exited 1 before
-            // printing a single line.
-            env: { ...process.env, LP_APP_PORT: '8933', LP_FEATURE_ENABLED: 'false' },
-            reuseExistingServer: !process.env.CI,
-            timeout: 180_000,
-        },
-    ],
+    testIgnore: APP_SPEC,
+
+    webServer: {
+        command: 'node tests/browser/support/static-server.js',
+        url: 'http://127.0.0.1:8931/health',
+        reuseExistingServer: !process.env.CI,
+        timeout: 20_000,
+    },
 
     use: {
+        ...diagnosticDefaults,
         baseURL: 'http://127.0.0.1:8931',
-        trace: 'retain-on-failure',
-        screenshot: 'only-on-failure',
-        video: 'off',
     },
 
     projects: [
-        /*
-         | The real-application specs. Separate project rather than a different
-         | baseURL inside one, so a spec cannot accidentally drive the wrong
-         | origin and so `--project=app` runs them alone.
-         */
-        {
-            name: 'app',
-            testMatch: /listing-preference\.spec\.js/,
-            use: {
-                ...devices['Desktop Chrome'],
-                baseURL: 'http://127.0.0.1:8932',
-                launchOptions: {
-                    ...(chromiumExecutable ? { executablePath: chromiumExecutable } : {}),
-                },
-            },
-        },
         {
             name: 'chromium',
-            testIgnore: /listing-preference\.spec\.js/,
             use: {
                 ...devices['Desktop Chrome'],
-                launchOptions: {
-                    ...(chromiumExecutable ? { executablePath: chromiumExecutable } : {}),
+                launchOptions: launchOptions({
                     /*
                      | MapLibre requires WebGL2, and a headless CI container has no
                      | GPU. Without these the map never initialises and every
@@ -146,7 +97,7 @@ module.exports = defineConfig({
                         '--use-angle=swiftshader',
                         '--enable-unsafe-swiftshader',
                     ],
-                },
+                }),
             },
         },
     ],

@@ -163,6 +163,137 @@ class ListingPreferenceArchitectureGuardTest extends TestCase
     }
 
     /**
+     * THE BROWSER HARNESS SPLIT, PINNED.
+     *
+     * There are two Playwright configurations because the two browser suites have
+     * different dependencies. The DEFAULT one drives static fixtures with a
+     * pure-Node server, and the CI job that runs it installs Node and nothing else
+     * — no PHP, no Composer, no vendor/. The Listing Preferences specs boot the
+     * real application and need all three.
+     *
+     * They were briefly one configuration, and the result was not subtle: the
+     * Location DNA job inherited the Laravel `webServer` entries and died on
+     * `Failed opening required '.../vendor/autoload.php'` before one browser spec
+     * executed. Nothing in either file announces that coupling, and the failure
+     * appears in a suite whose own code is untouched — so it is asserted here
+     * rather than left to a reviewer noticing a webServer entry.
+     *
+     * @test
+     */
+    public function the_default_playwright_config_never_boots_the_laravel_application(): void
+    {
+        $config = (string) file_get_contents($this->root . '/playwright.config.js');
+
+        // Everything after the header comment: the comments deliberately DESCRIBE
+        // the app server, and describing it must not read as configuring it.
+        $code = $this->withoutComments($config);
+
+        foreach (['app-server.js', 'artisan', 'php ', '8932', '8933'] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $code,
+                "playwright.config.js must not reference {$forbidden} — the Laravel-backed "
+                . 'suite belongs in playwright.app.config.js, whose CI job installs PHP'
+            );
+        }
+
+        $this->assertStringContainsString(
+            'static-server.js',
+            $code,
+            'playwright.config.js must keep the pure-Node static fixture server'
+        );
+
+        // The app spec is excluded here and matched there, from one constant.
+        $this->assertStringContainsString('testIgnore: APP_SPEC', $code);
+
+        $appConfig = $this->withoutComments(
+            (string) file_get_contents($this->root . '/playwright.app.config.js')
+        );
+
+        $this->assertStringContainsString('testMatch: APP_SPEC', $appConfig);
+        $this->assertStringContainsString('app-server.js', $appConfig);
+    }
+
+    /**
+     * The Location DNA browser JOB must stay free of a PHP toolchain, and the
+     * Listing Preferences one must have it. Installing PHP into the first would
+     * "fix" a recurrence of the coupling above by hiding it.
+     *
+     * @test
+     */
+    public function the_location_dna_browser_job_provisions_no_php_toolchain(): void
+    {
+        // Comment lines are stripped from both files: these workflows DESCRIBE the
+        // toolchain split in prose, and a sentence saying "no setup-php here" must
+        // not itself trip the assertion that setup-php is absent.
+        $locationDna = $this->withoutYamlComments(
+            (string) file_get_contents($this->root . '/.github/workflows/browser-tests.yml')
+        );
+
+        foreach (['setup-php', 'composer install', 'vendor/autoload.php'] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $locationDna,
+                "The Location DNA browser job must not provision {$forbidden} — it runs "
+                . 'a pure-Node static server, and adding PHP would mask the next coupling'
+            );
+        }
+
+        $this->assertStringNotContainsString(
+            'test:browser:app',
+            $locationDna,
+            'The Location DNA browser job must not run the Laravel-backed suite'
+        );
+
+        $app = $this->withoutYamlComments(
+            (string) file_get_contents($this->root . '/.github/workflows/browser-tests-app.yml')
+        );
+
+        $this->assertStringContainsString('setup-php', $app);
+        $this->assertStringContainsString('composer install', $app);
+        $this->assertStringContainsString('npm run test:browser:app', $app);
+
+        // `composer update` would resolve a tree the application does not ship.
+        $this->assertStringNotContainsString('composer update', $app);
+    }
+
+    /**
+     * Both npm entry points exist and point at their own configuration, so
+     * `npm run test:browser` can never become the Laravel-backed suite by accident.
+     *
+     * @test
+     */
+    public function the_two_browser_suites_have_separate_npm_commands(): void
+    {
+        $package = json_decode(
+            (string) file_get_contents($this->root . '/package.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        $this->assertSame('playwright test', $package['scripts']['test:browser'] ?? null);
+        $this->assertSame(
+            'playwright test --config=playwright.app.config.js',
+            $package['scripts']['test:browser:app'] ?? null
+        );
+    }
+
+    /** Strips whole-line YAML comments, so prose about a step is not read as the step. */
+    private function withoutYamlComments(string $source): string
+    {
+        return (string) preg_replace('/^\s*#.*$/m', '', $source);
+    }
+
+    /** Strips /* *\/ and // comments, so prose describing a thing is not read as the thing. */
+    private function withoutComments(string $source): string
+    {
+        $stripped = preg_replace('#/\*.*?\*/#s', '', $source) ?? $source;
+
+        return (string) preg_replace('#^\s*//.*$#m', '', $stripped);
+    }
+
+    /**
      * @param  list<string>|null $directories
      * @return list<string>      repo-relative paths
      */
