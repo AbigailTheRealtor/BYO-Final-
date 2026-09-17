@@ -17,6 +17,21 @@
  | JavaScript itself, and Playwright tests that directly, against static fixtures,
  | with no database and no authentication.
  |
+ | THIS CONFIGURATION BOOTS NO LARAVEL, AND THAT IS A HARD PROPERTY
+ | ---------------------------------------------------------------
+ | Its only web server is `tests/browser/support/static-server.js`, a pure-Node
+ | process. No `php`, no `artisan`, no `vendor/autoload.php`, no database. The CI
+ | job that runs it (.github/workflows/browser-tests.yml) therefore installs Node
+ | and nothing else — no PHP, no Composer — deliberately, because the risk under
+ | test is JavaScript and a PHP toolchain would be pure cost.
+ |
+ | That is not a preference, it is a scar. The Listing Preferences work briefly
+ | added Laravel-backed `webServer` entries HERE, and the Location DNA job died on
+ | `Failed opening required 'vendor/autoload.php'` before one browser spec ran.
+ | The Laravel-backed suite now lives in playwright.app.config.js with its own
+ | job. `ListingPreferenceArchitectureGuardTest` fails the build if an app server
+ | ever reappears in this file.
+ |
  | NO BILLABLE CALLS, EVER
  | -----------------------
  | `tests/browser/support/network.js` installs a route interceptor that ABORTS
@@ -27,30 +42,25 @@
  |
  | THE BROWSER IS PRE-PROVISIONED
  | ------------------------------
- | This environment supplies a Playwright chromium through
- | `REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE`, so `playwright install` — which would
- | download a browser — is never run. When that variable is absent Playwright
- | falls back to its own managed browser, which is the correct behaviour on a
- | developer machine or in GitHub Actions.
+ | See playwright.shared.js — `REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE` supplies a
+ | chromium here, so `playwright install` is never run in this container.
  */
 
 const { defineConfig, devices } = require('@playwright/test');
-
-const chromiumExecutable = process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined;
+const { APP_SPEC, diagnosticDefaults, launchOptions, runnerDefaults } = require('./playwright.shared');
 
 module.exports = defineConfig({
-    testDir: './tests/browser',
-    // Fixtures are static and deterministic; a slow default hides real hangs.
-    timeout: 30_000,
-    expect: { timeout: 5_000 },
+    ...runnerDefaults,
 
-    // Fail the run if a `test.only` is committed. A focused test that reaches CI
-    // silently disables its siblings, which is the failure mode this whole suite
-    // exists to prevent.
-    forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 1 : 0,
-    workers: process.env.CI ? 2 : undefined,
-    reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
+    /*
+     | The Laravel-backed Listing Preferences specs are NOT part of this suite.
+     | They need a booted application on a different origin; run them with
+     | `npm run test:browser:app`, which uses playwright.app.config.js.
+     |
+     | Ignored here rather than left to the projects below, so adding a second
+     | static project cannot accidentally pick them up.
+     */
+    testIgnore: APP_SPEC,
 
     webServer: {
         command: 'node tests/browser/support/static-server.js',
@@ -60,10 +70,8 @@ module.exports = defineConfig({
     },
 
     use: {
+        ...diagnosticDefaults,
         baseURL: 'http://127.0.0.1:8931',
-        trace: 'retain-on-failure',
-        screenshot: 'only-on-failure',
-        video: 'off',
     },
 
     projects: [
@@ -71,8 +79,7 @@ module.exports = defineConfig({
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
-                launchOptions: {
-                    ...(chromiumExecutable ? { executablePath: chromiumExecutable } : {}),
+                launchOptions: launchOptions({
                     /*
                      | MapLibre requires WebGL2, and a headless CI container has no
                      | GPU. Without these the map never initialises and every
@@ -90,7 +97,7 @@ module.exports = defineConfig({
                         '--use-angle=swiftshader',
                         '--enable-unsafe-swiftshader',
                     ],
-                },
+                }),
             },
         },
     ],

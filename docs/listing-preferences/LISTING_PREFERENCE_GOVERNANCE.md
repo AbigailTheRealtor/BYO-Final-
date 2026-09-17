@@ -1,8 +1,12 @@
 # Listing Preference Governance — Save | Maybe | Pass
 
-Status: **Phase 1 foundation — inert.** Nothing in the application writes, reads or displays a
-listing preference. The tables exist, the vocabulary is governed and the write boundaries are
-written; there is no route, no controller, no UI and no learner.
+Status: **Phase 2 — capture, behind a default-off flag.** Authenticated Buyers and Tenants can
+Save, Maybe or Pass a listing, give optional structured reasons, and undo, from the BidYourOffer
+Seller/Landlord property-detail pages. `LISTING_PREFERENCES_ENABLED` ships **false**, and off means
+the routes 404 and no control renders.
+
+Still not built, and still governed: ranking influence, Ask AI consumption, Virtual Drive, and
+**all behavioural learning** (§6, §10).
 
 Customer terminology is **Save | Maybe | Pass**, everywhere — config, storage, docs and (later)
 the interface. Earlier planning notes used "Love/Maybe/Pass"; that wording is **superseded and must
@@ -301,8 +305,48 @@ before any code is written.
 
 | Phase | Content | Gate |
 |-------|---------|------|
-| 1 | inert foundation — tables, vocabulary, boundaries, tests, this document | — |
-| 2 | write path and one shared surface; authenticated only; undo works | `LISTING_PREFERENCES_ENABLED` |
+| 1 | inert foundation — tables, vocabulary, boundaries, tests, this document | — (merged) |
+| 2 | write path and one shared surface; authenticated only; undo works | `LISTING_PREFERENCES_ENABLED` (shipped off) |
 | 3 | remaining surfaces incl. Virtual Drive's `save` action; history and recovery UI | Phase 2 verified |
 | 4 | behavioural learning | §6 + §10 governance revision |
 | 5 | ranking integration as post-score re-rank; Ask AI consumption | Phase 4 + weight-invariant tests |
+
+---
+
+## 12. Phase 2 — what is wired, and where the boundaries are
+
+**The clear/undo schema correction.** Phase 1 could record the three transitions INTO a state and
+not the one out of all of them: `to_state` was `NOT NULL`. Migration
+`2026_09_17_000001_allow_null_to_state_on_listing_preference_events` makes it nullable, and NULL
+means exactly *no current preference after this transition* — never a fourth state, never a synonym
+for `pass`. Its `down()` **refuses** while any clear event exists rather than inventing a preference
+for those rows or deleting append-only history; on a database with no clear events it restores
+`NOT NULL` normally. Both behaviours are tested.
+
+**One write service.** `ListingPreferenceWriter` is the only thing that persists a preference — a
+guard test asserts it. Controllers, Blade and JavaScript describe intent; the service resolves the
+subject key, the context and the seeker role, validates the state and the reasons, and performs the
+current-state + reasons + history mutation **inside one transaction**. `setState()`,
+`updateReasons()` and `clear()` are the three mutations; each appends exactly **one** event.
+
+**One event per completed mutation, not per chip.** Selecting chips is browsing; pressing Done is
+the decision. The tray sends the final set in one request.
+
+**Reasons never survive a state change.** `setState()` replaces the reason set outright — "Too
+expensive" is not an answer to *What do you like about this property?*
+
+**Nothing is trusted from the browser.** `subject_key`, `seeker_role` and `user_id` are never
+accepted from a request; `listing_type` is validated against `SmartTagListingType`; reasons are
+re-projected server-side. The routes sit behind `web` (CSRF + session), `auth`, the feature gate and
+a per-user rate limit.
+
+**Guests.** No route accepts them and no anonymous row is ever created. The control still renders
+and routes through the existing login flow, preserving the listing so they return to it.
+
+**Context.** `ListingPreferenceContextResolver` resolves the listing's real property context before
+chips are presented or accepted — the obligation §5 places on Phase 2. The null-context fallback is
+reached only when the listing genuinely cannot answer, and even then `isSeekerSelectable()` still
+applies: only *applicability* is relaxed.
+
+**Pass changes nothing about the listing.** A test asserts the seller row and its meta are
+byte-identical after a Pass and a clear.

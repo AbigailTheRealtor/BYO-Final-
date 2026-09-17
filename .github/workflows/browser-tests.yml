@@ -14,6 +14,23 @@ name: Browser Tests (Location DNA map)
 # JavaScript, and testing it directly is both faster and more honest than driving a
 # full application to reach it.
 #
+# THERE IS NO PHP TOOLCHAIN IN THIS JOB, AND THAT IS DELIBERATE. No setup-php, no
+# `composer install`, no vendor/ — playwright.config.js starts one pure-Node static
+# server and nothing else, so none of it is needed.
+#
+# That is also a scar. The Listing Preferences work briefly added Laravel-backed
+# `webServer` entries to the SHARED playwright.config.js, and this job — correctly
+# installing Node and nothing else — died on
+#   Failed opening required '.../vendor/autoload.php'
+# before a single browser spec executed. The fix was to split the suites, not to
+# install PHP here: these specs have no use for it, and a PHP toolchain in this job
+# would only hide the next such coupling.
+#
+# The Laravel-backed Listing Preferences suite is browser-tests-app.yml, which is
+# the only browser job that provisions PHP and Composer.
+# `ListingPreferenceArchitectureGuardTest` fails the build if the two ever merge
+# again.
+#
 # NO BILLABLE CALLS, ENFORCED RATHER THAN TRUSTED. tests/browser/support/network.js
 # aborts every request leaving the fixture origin and records the attempt, and
 # harness.spec.js proves the recorder works by contacting a forbidden host on
@@ -43,6 +60,7 @@ on:
       - 'public/js/virtual-drive/**'
       - 'public/css/virtual-drive/**'
       - 'playwright.config.js'
+      - 'playwright.shared.js'
       - 'package.json'
       - 'package-lock.json'
       - 'webpack.mix.js'
