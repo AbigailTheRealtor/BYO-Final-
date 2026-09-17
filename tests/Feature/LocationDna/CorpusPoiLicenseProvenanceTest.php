@@ -246,7 +246,13 @@ class CorpusPoiLicenseProvenanceTest extends TestCase
 
         // SIA-D18: provenance is a property of the LOOKUP, so a not_found row carries the
         // licence too. A licence error would otherwise hide on the majority of rows.
-        $notFound = PropertyLocationPoi::where('poi_category', 'beach')->where('rank', 1)->firstOrFail();
+        //
+        // The category here is `pharmacy`, not `beach`. The corpus COVERS pharmacy and
+        // this fixture simply returns nothing for it — a genuine not_found, and the only
+        // kind that still exists. `beach` is not carried by the corpus at all and now
+        // persists no row, so it can no longer carry a licence stamp; asserting on it
+        // would be asserting on the misleading row this contract removed.
+        $notFound = PropertyLocationPoi::where('poi_category', 'pharmacy')->where('rank', 1)->firstOrFail();
 
         $this->assertSame('not_found', $notFound->status);
         $this->assertSame(self::CORPUS_LICENSE, $notFound->provenance_json['license']);

@@ -3,6 +3,7 @@
 namespace App\Services\LocationDna;
 
 use App\Contracts\NearbyPoiFetcherInterface;
+use App\Contracts\ProviderCategorySupport;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaRankingEngine;
@@ -67,6 +68,20 @@ class LocationDnaPoiDistanceService
      * the run had not selected and would not have called.
      */
     private const PROVIDER_NONE = 'none';
+
+    /**
+     * The descriptor for the DERIVED `top_rated_dining` category.
+     *
+     * Hoisted to a constant because two places now need the same value: the derivation
+     * itself, and the provider-support question asked before it. Two literals that must
+     * agree forever is how they come to disagree.
+     */
+    private const TOP_RATED_DINING_META = [
+        'label'          => 'Top Rated Dining',
+        'query_strategy' => 'derived',
+        'google_type'    => null,
+        'keyword'        => null,
+    ];
 
     /** Provider id of the local Overture corpus — see config/location_providers.php. */
     private const PROVIDER_OVERTURE_CORPUS = OvertureCorpusPoiAdapter::PROVIDER_ID;
@@ -369,6 +384,17 @@ class LocationDnaPoiDistanceService
     private string $currentProvenanceProvider = self::PROVIDER_NONE;
     private string $currentProvenanceLicense  = 'unknown';
     private string $currentProvenanceMethod   = CanonicalField::METHOD_API;
+
+    /**
+     * Categories the selected provider does not carry, for THIS run.
+     *
+     * The machine-readable half of the skip: no row is written for these, so this list is
+     * what tells a later reader that the rows are absent by coverage rather than missing
+     * by accident. Surfaced through getLastRunStats().
+     *
+     * @var list<string>
+     */
+    private array $unsupportedCategories = [];
     /** @var list<string> */
     private array $currentProvenanceContributors = [];
 
@@ -522,6 +548,7 @@ class LocationDnaPoiDistanceService
         $this->tileCacheHits     = 0;
         $this->tileCacheMisses   = 0;
         $this->categoriesGrouped = 0;
+        $this->unsupportedCategories = [];
 
         // Current version stamps for this run (Stage E0). Computed once; written
         // onto every persisted row and compared against stored rows to decide
@@ -843,8 +870,47 @@ class LocationDnaPoiDistanceService
                     continue;
                 }
 
+                // ── The selected provider does not carry this category at all ────────
+                //
+                // Skip it entirely: no fetch, and NO ROW. `not_found` means "a provider
+                // that covers this category was asked and there is nothing nearby" — a
+                // fact about the neighbourhood. A provider that holds no park data at all
+                // must not be able to produce a row saying there is no park near this
+                // home; those are different claims and only one of them is true.
+                //
+                // The absence of a row is the honest record, and it is machine-readable:
+                // `getLastRunStats()['categories_unsupported_by_provider']` names exactly
+                // which categories were skipped and why the rows are missing, so the
+                // distinction survives the run without a new status value and without a
+                // migration.
+                //
+                // Any row a previous run left behind for this category is deleted, so a
+                // listing carrying stale `not_found` rows written before this rule heals
+                // itself on the next run rather than needing a data fix.
                 // Determine if this category has preloaded candidates from a group primary
                 $preloaded = $groupedRawCandidates[$category] ?? null;
+
+                // ONLY when we would actually ask the provider. A CATEGORY_GROUPS
+                // SECONDARY is derived from its primary's candidates and never reaches the
+                // fetcher, so the provider's coverage of the secondary's own descriptor is
+                // not the question — the primary already answered.
+                //
+                // `fitness_center` is the case that proves it: the corpus crosswalk folds
+                // Overture's `fitness_center` token INTO canonical `gym`, so there is no
+                // `fitness_center` corpus category and `supportsCategory()` says no — yet
+                // the category is perfectly derivable from the ten gym candidates already
+                // in hand, and asking the coverage question here silently deleted all ten
+                // rows. A secondary whose primary WAS skipped has no preloaded candidates
+                // and falls into the branch below, which is correct.
+                if ($preloaded === null && ! $this->providerSupportsCategory($fetcher, $meta)) {
+                    PropertyLocationPoi::where('listing_type', $listingType)
+                        ->where('listing_id', $listingId)
+                        ->where('poi_category', $category)
+                        ->delete();
+
+                    $this->unsupportedCategories[] = $category;
+                    continue;
+                }
 
                 if ($preloaded !== null) {
                     // Secondary category: track as grouped (no API call)
@@ -891,6 +957,21 @@ class LocationDnaPoiDistanceService
                 foreach ($existingTopRated as $row) {
                     $results[] = $row->toArray();
                 }
+            } elseif (! $this->providerSupportsCategory($fetcher, self::TOP_RATED_DINING_META)) {
+                // top_rated_dining is RATING-DERIVED, so a provider that supplies no
+                // rating signal cannot produce it at all — which is a coverage fact, not
+                // a fact about this neighbourhood's restaurants. The Overture corpus has
+                // no reviews by design (fabricating a rating would flow into
+                // review_confidence_score and change ranking), so every listing would
+                // otherwise carry a top_rated_dining row reading "zero results".
+                //
+                // Same rule, same mechanism, same self-healing delete as the fetch loop.
+                PropertyLocationPoi::where('listing_type', $listingType)
+                    ->where('listing_id', $listingId)
+                    ->where('poi_category', 'top_rated_dining')
+                    ->delete();
+
+                $this->unsupportedCategories[] = 'top_rated_dining';
             } else {
                 $topRatedRows = $this->deriveAndPersistTopRatedDining(
                     listingType:          $listingType,
@@ -991,6 +1072,9 @@ class LocationDnaPoiDistanceService
             'categories_from_tile_cache' => $this->tileCacheHits,
             'categories_grouped'       => $this->categoriesGrouped,
             'precision_used'           => $precisionUsed,
+            // Which categories the selected provider does not carry, and therefore wrote
+            // no row for. Additive: every pre-existing key keeps its meaning.
+            'categories_unsupported_by_provider' => $this->unsupportedCategories,
         ];
     }
 
@@ -1016,6 +1100,24 @@ class LocationDnaPoiDistanceService
         } catch (Throwable) {
             // Stats write failure must never block a DNA run.
         }
+    }
+
+    /**
+     * Does the fetcher this run is using carry this category at all?
+     *
+     * A fetcher that does not implement {@see ProviderCategorySupport} is treated as
+     * supporting everything, which is what every caller assumed before the interface
+     * existed — so `GooglePlacesPoiAdapter`, the stub and every test fixture behave
+     * exactly as before and this method can only ever subtract categories from a
+     * provider that opted in to being asked.
+     */
+    private function providerSupportsCategory(NearbyPoiFetcherInterface $fetcher, array $meta): bool
+    {
+        if (! $fetcher instanceof ProviderCategorySupport) {
+            return true;
+        }
+
+        return $fetcher->supportsCategory($meta);
     }
 
     /**
@@ -1443,12 +1545,7 @@ class LocationDnaPoiDistanceService
             ->where('poi_category', 'top_rated_dining')
             ->delete();
 
-        $topRatedMeta = [
-            'label'          => 'Top Rated Dining',
-            'query_strategy' => 'derived',
-            'google_type'    => null,
-            'keyword'        => null,
-        ];
+        $topRatedMeta = self::TOP_RATED_DINING_META;
 
         if (empty($restaurantCandidates)) {
             $row = $this->createPoiRow(
