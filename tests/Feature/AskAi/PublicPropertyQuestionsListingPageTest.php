@@ -292,10 +292,23 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
             $this->assertNotSame('', $section);
             // Batch 2b: the offered financing TYPE is now published deliberately
             // ("Seller Financing" may appear); its TERMS — here the interest rate — never are.
-            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Short Sale', 'flood', '6.125', 'interest'] as $leak) {
+            //
+            // Batch 2e: 'flood' left this list. The FEMA designation is a public
+            // seller/landlord fact by owner decision and is answered below; what must never
+            // appear is a risk or insurance CONCLUSION drawn from it, which is asserted
+            // straight after rather than by banning the word.
+            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Short Sale', '6.125', 'interest'] as $leak) {
                 $this->assertStringNotContainsStringIgnoringCase($leak, $section, "'{$leak}' must never appear in the public questions.");
             }
             $this->assertStringContainsString('The seller has indicated they will consider the following financing type: Seller Financing.', $section);
+
+            $this->assertStringContainsString('This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.', $section);
+            foreach ([
+                'not in a flood zone', 'no flood risk', 'cannot flood',
+                'flood insurance is not required', 'insurance is not required', 'safe from flooding',
+            ] as $forbidden) {
+                $this->assertStringNotContainsStringIgnoringCase($forbidden, $section, "'{$forbidden}' must never be said.");
+            }
         }
     }
 

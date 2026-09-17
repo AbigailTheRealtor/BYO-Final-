@@ -4,6 +4,7 @@ namespace App\Services\AskAi;
 
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\Listing\ListingPriceDisplay;
+use App\Support\Listing\FloodZoneCode;
 use App\Support\OfferListing\CriteriaPrivacyPolicy;
 
 /**
@@ -822,6 +823,8 @@ class AskAiPublicPropertyQuestionService
             'criteria_wants_garage', 'criteria_closing_timeframe', 'criteria_lease_term',
             'criteria_move_in_window', 'criteria_pets_needed', 'criteria_furnishings',
             'criteria_feature_list',
+            // Batch 2e
+            'flood_zone',
         ], true);
     }
 
@@ -915,6 +918,9 @@ class AskAiPublicPropertyQuestionService
                                               ),
             'criteria_furnishings'         => $this->criteriaFurnishings($text),
             'criteria_feature_list'        => $this->criteriaFeatureList($subject, $companions),
+
+            // ---- Batch 2e: FEMA flood zone (seller / landlord) ----
+            'flood_zone'                   => $this->floodZone($text),
 
             default                  => null,
         };
@@ -1616,6 +1622,43 @@ class AskAiPublicPropertyQuestionService
         }
 
         return $whole . '.' . ($money ? str_pad($fraction, 2, '0') : $fraction);
+    }
+
+    /**
+     * The property's FEMA flood zone, from the stored designation and nothing else.
+     *
+     * WHAT THIS MAY NOT SAY. Every sentence below states the DESIGNATION and, for the three
+     * codes whose meaning is unambiguous, what that designation is. None of them says the
+     * property is "not in a flood zone", carries "no flood risk", "cannot flood", or that
+     * insurance "is not required" — and Zone X in particular is where that temptation lives,
+     * which is why its sentence ends by saying flood risk is not zero. Whether a lender or
+     * insurer requires cover depends on the loan, the carrier and the current map panel,
+     * none of which this application stores; inferring it from a letter code would be
+     * inventing a determination on the owner's behalf.
+     *
+     * An unrecognised-but-valid code gets the bare designation with no risk gloss. That is
+     * deliberate: A, AH, AO, V, D and AR each carry their own meaning, and a generic
+     * risk sentence would be wrong for at least one of them.
+     *
+     * The value is re-normalised here rather than trusted. `flood_zone_code` is written by a
+     * form whose own select offers `Unknown` and `Other` (with a free-text branch), and by
+     * an importer that until recently uppercased whatever it was handed — so the column
+     * genuinely holds sentinels, prose and, historically, the literal string `yes`.
+     */
+    private function floodZone(string $text): ?string
+    {
+        $code = FloodZoneCode::canonical($text);
+        if ($code === null) {
+            return null;
+        }
+
+        return match ($code) {
+            'X'  => 'This property is in FEMA Flood Zone X, which is generally outside the '
+                  . 'Special Flood Hazard Area and considered lower flood risk. Flood risk is not zero.',
+            'AE' => 'This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.',
+            'VE' => 'This property is in FEMA Flood Zone VE, a coastal high-hazard Special Flood Hazard Area.',
+            default => "This property is in FEMA Flood Zone {$code}.",
+        };
     }
 
     /** @return array{available: false, reason: string, answer: null} */

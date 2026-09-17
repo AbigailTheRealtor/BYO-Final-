@@ -4034,6 +4034,37 @@ class AskAiFieldQuestionRegistryService
                 'aliases'          => ['amenities', 'community amenities', 'clubhouse', 'community pool'],
             ],
 
+            'seller_flood_zone' => [
+                'role'             => 'seller',
+                'question'         => 'What flood zone is the property in?',
+                'source_kind'      => 'listing',
+                // The canonical stored designation, and the only flood source this surface
+                // reads. NOT flood_zone_designation / flood_zone_description (free-text
+                // narrative, still RESTRICTED), NOT is_in_flood_zone (a boolean, still
+                // RESTRICTED), NOT flood_insurance_required (a lender/insurer requirement,
+                // a different claim), and NOT the FEMA map lookup in Location DNA, which is
+                // a separate system that never writes this field.
+                'source_path'      => 'listing.flood_zone_code',
+                'supporting_paths' => [],
+                'formatter'        => 'flood_zone',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 180,
+                'aliases'          => ['flood zone', 'flood', 'fema', 'flood risk', 'is it in a flood zone'],
+            ],
+            'landlord_flood_zone' => [
+                'role'             => 'landlord',
+                'question'         => 'What flood zone is the property in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.flood_zone_code',
+                'supporting_paths' => [],
+                'formatter'        => 'flood_zone',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 170,
+                'aliases'          => ['flood zone', 'flood', 'fema', 'flood risk', 'is it in a flood zone'],
+            ],
+
             // ================================================================
             // Buyer — search criteria (Batch 2d)
             //

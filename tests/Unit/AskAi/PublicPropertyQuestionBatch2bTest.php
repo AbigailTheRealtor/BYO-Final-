@@ -392,8 +392,21 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
         // An admitted_listing entry cannot reach a key that is not on the list …
         $this->assertSame('not_public_allowed', $this->service->evaluate($probe + ['source_kind' => 'admitted_listing', 'source_path' => 'listing.sale_provision'], 'seller', $context, [])['reason']);
         // … nor a RESTRICTED key, whatever the list says.
-        $this->assertSame('not_public_allowed', $this->service->evaluate($probe + ['source_kind' => 'admitted_listing', 'source_path' => 'listing.flood_zone_code'], 'seller', $context, [])['reason']);
-        $this->assertSame(SnapshotFactVisibility::RESTRICTED, SnapshotFactVisibility::classify('flood_zone_code', 'seller'));
+        //
+        // The probe used to be flood_zone_code. Batch 2e made that key PUBLIC for seller and
+        // landlord by owner decision, so it no longer demonstrates anything about admission.
+        // `income_requirement` replaces it: it is the one key that is BOTH declared in the
+        // seller context map and still RESTRICTED, which is what this probe needs — a key
+        // absent from the map would be refused one step earlier, as
+        // 'source_not_in_context_map', and would prove nothing about admission.
+        $this->assertSame('not_public_allowed', $this->service->evaluate($probe + ['source_kind' => 'admitted_listing', 'source_path' => 'listing.income_requirement'], 'seller', $context, [])['reason']);
+        $this->assertSame(SnapshotFactVisibility::RESTRICTED, SnapshotFactVisibility::classify('income_requirement', 'seller'));
+
+        // And the three flood fields that stayed restricted are still restricted, checked
+        // directly since none of them is a declared seller context key.
+        foreach (['flood_zone_designation', 'flood_zone_description', 'is_in_flood_zone'] as $key) {
+            $this->assertSame(SnapshotFactVisibility::RESTRICTED, SnapshotFactVisibility::classify($key, 'seller'), $key);
+        }
         // A supporting path is never admitted.
         $this->assertSame('supporting_not_public_allowed', $this->service->evaluate(
             array_merge($probe, ['source_kind' => 'listing', 'source_path' => 'listing.zoning', 'supporting_paths' => ['listing.offered_financing']]),

@@ -42,6 +42,8 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     private function fullSellerContext(): array
     {
         return $this->context([
+            // Batch 2e: a complete listing now carries a FEMA designation too.
+            'flood_zone_code'       => 'AE',
             'asking_price'          => '500000',
             'bedrooms'              => '3',
             'bathrooms'             => '2.5',
@@ -86,6 +88,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     private function fullLandlordContext(): array
     {
         return $this->context([
+            'flood_zone_code' => 'VE',
             'bedrooms'    => '2',
             'bathrooms'   => '1',
             'square_feet' => '950',
@@ -211,7 +214,13 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             ['landlord', 'rent_includes',           'Water'],     // owner_only
             ['landlord', 'security_deposit_amount', '1500'],      // restricted
             ['landlord', 'rental_price',            '2000'],      // restricted (not in map)
-            ['seller',   'flood_zone_code',         'AE'],        // restricted
+            // flood_zone_code was here as "restricted" and has MOVED: it is a public
+            // seller/landlord fact as of Batch 2e (owner decision). The three flood fields
+            // that stayed restricted are probed instead, so this case still covers the
+            // category it was written for.
+            ['seller',   'flood_zone_designation',  'Zone AE'],   // restricted
+            ['seller',   'flood_zone_description',  'High risk'], // restricted
+            ['seller',   'is_in_flood_zone',        'Yes'],       // restricted
             ['seller',   'sale_provision',          'Short Sale'],// owner_only
             ['seller',   'offered_financing',       'Cash'],      // owner_only
         ];
@@ -519,6 +528,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_roof_type'          => 'Roof type listed for this property: Shingle.',
             'seller_leasing_restrictions' => 'The listing indicates there are leasing restrictions.',
             'seller_offered_financing'  => 'The seller has indicated they will consider the following financing types: Conventional, FHA, VA and Cash.',
+            'seller_flood_zone'         => 'This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.',
         ];
         $this->assertSame($expected, $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta()));
 
@@ -535,6 +545,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'landlord_roof_type'             => 'Roof types listed for this property: Tile, Metal.',
             'landlord_leasing_restrictions'  => 'The listing indicates there are no leasing restrictions.',
             'landlord_association_amenities' => 'Community amenities listed for this property: Clubhouse, Fitness Center.',
+            'landlord_flood_zone'            => 'This property is in FEMA Flood Zone VE, a coastal high-hazard Special Flood Hazard Area.',
         ], $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta()));
     }
 
