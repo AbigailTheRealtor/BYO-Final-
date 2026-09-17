@@ -543,7 +543,14 @@ class MlsListingImportService
             '/Flood\s+Zone\s+Code[\s:\*]+([A-Za-z0-9\-\/]{1,15})/i',
             '/Flood\s+Zone\s*:[\s:\*]*([A-Za-z0-9\-\/]{1,15})/i',
         ])) {
-            $data['flood_zone_code'] = MlsNormalizer::normalize('flood_zone_code', $v);
+            // A value the extractor matched but the normalizer does not recognise as a FEMA
+            // designation — "N/A", "Unknown", or the "Flood Insurance Required" phrase that
+            // used to be stored here as the literal string `yes` — sets nothing at all,
+            // rather than writing an empty zone code over whatever the listing already had.
+            $floodZone = MlsNormalizer::normalize('flood_zone_code', $v);
+            if ($floodZone !== '') {
+                $data['flood_zone_code'] = $floodZone;
+            }
         }
 
         // ─── Flood Zone Date ──────────────────────────────────────────────────

@@ -9,7 +9,9 @@
     "prod": "npm run production",
     "production": "mix --production",
     "test:browser": "playwright test",
-    "test:browser:headed": "playwright test --headed"
+    "test:browser:headed": "playwright test --headed",
+    "test:browser:app": "playwright test --config=playwright.app.config.js",
+    "test:browser:app:headed": "playwright test --config=playwright.app.config.js --headed"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",

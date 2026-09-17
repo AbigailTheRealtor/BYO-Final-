@@ -81,21 +81,6 @@ class AskAiViewerAuthorizationService
     ];
 
     /**
-     * Tenant applicant FAQ answer keys that may be summarized ONLY for the owner or an
-     * authorized landlord/agent (Part J.3). Redacted for the 'public' scope.
-     */
-    private const APPLICANT_SENSITIVE_FAQ_KEYS = [
-        'faq_q12', // chance of breaking the lease early
-        'faq_q15', // most recent tenancy length / why moving
-        'faq_q17', // landlord/employer references available
-        'faq_q18', // source and stability of income
-        'faq_q20', // biggest concern / hesitation
-        'tenant_prior_conduct',  // disclosed prior rental conduct (Phase C addition)
-        'tenant_cosigner',       // co-signer / guarantor availability (Phase C addition)
-        'tenant_application_readiness',
-    ];
-
-    /**
      * Native listing keys that carry applicant financial detail. Redacted for 'public';
      * available to owner and authorized viewers (Part J.3 — disclosed income source/amount).
      */
@@ -193,9 +178,11 @@ class AskAiViewerAuthorizationService
     }
 
     /**
-     * Redact confidential applicant fields from the assembled context per scope.
-     * Only tenant listings carry applicant data today; other roles pass through unchanged
-     * (buyer-side sensitivity is a documented future extension — Part J note).
+     * Redact confidential fields from the assembled context per scope.
+     * Every non-owner loses the compliance-restricted listing fields, the consumer avatar
+     * sections and the whole faq_answers Knowledge Base, for every role. Only tenant
+     * listings carry native applicant data beyond that (buyer-side sensitivity is a
+     * documented future extension — Part J note).
      *
      * @param  array  $context      The context array from AskAiContextBuilderService.
      * @param  string $listingType  Canonical or aliased listing type.
@@ -233,6 +220,23 @@ class AskAiViewerAuthorizationService
             }
         }
 
+        // Batch 0 — the owner-authored AI Knowledge Base. faq_answers holds every answer
+        // the owner typed into the listing's Knowledge Base, and those answers are
+        // owner-only (decision D3). This was reachable by non-owners: the early return
+        // below skipped every role but tenant, and the tenant branch only stripped the
+        // applicant-sensitive subset, so a seller's, landlord's or buyer's complete
+        // Knowledge Base — and the remainder of a tenant's — reached a non-owner context
+        // and, on a snapshot miss, the model prompt.
+        //
+        // Removed wholesale, for every non-owner scope and every role, BEFORE either
+        // early return can apply. Any scope that is not exactly SCOPE_OWNER — public,
+        // authorized, or an unrecognised value — is a non-owner, so this fails closed.
+        // A future public surface selects approved keys from the stored answers itself;
+        // it must never be served from this collection.
+        if ($scope !== self::SCOPE_OWNER) {
+            unset($context['faq_answers']);
+        }
+
         if ($role !== 'tenant') {
             return $context;
         }
@@ -252,13 +256,6 @@ class AskAiViewerAuthorizationService
 
         if (isset($context['listing']) && is_array($context['listing'])) {
             $context['listing'] = $this->stripKeys($context['listing'], $stripKeys);
-        }
-
-        // FAQ applicant answers: never-expose tier is dropped for all non-owners;
-        // the authorized-only tier is dropped only for the public scope.
-        $faqStrip = ($scope === self::SCOPE_AUTHORIZED) ? [] : self::APPLICANT_SENSITIVE_FAQ_KEYS;
-        if (! empty($faqStrip) && isset($context['faq_answers']) && is_array($context['faq_answers'])) {
-            $context['faq_answers'] = $this->stripKeys($context['faq_answers'], $faqStrip);
         }
 
         return $context;

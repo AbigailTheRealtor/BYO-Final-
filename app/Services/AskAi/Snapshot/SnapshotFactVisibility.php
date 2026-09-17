@@ -90,7 +90,18 @@ class SnapshotFactVisibility
      */
     private const RESTRICTED_KEYS = [
         // Flood zone / environmental compliance
-        'flood_zone_code',
+        //
+        // `flood_zone_code` was here and is NOT any more — it is a public seller/landlord
+        // fact (owner decision), and it is the ONLY member of this group that moved. It is
+        // the FEMA designation the seller or landlord selected on their own form and which
+        // both public listing pages already render as "Flood Zone Code"; keeping it
+        // restricted meant the AI layer withheld a fact the page beside it published.
+        //
+        // The other three stay restricted, deliberately and for different reasons than each
+        // other: `flood_zone_designation` and `flood_zone_description` are free-text
+        // narrative fields with no controlled vocabulary, and `is_in_flood_zone` is a
+        // BOOLEAN — publishing it invites exactly the "not in a flood zone" statement that
+        // no stored value in this application can support.
         'flood_zone_designation',
         'flood_zone_description',
         'is_in_flood_zone',
@@ -196,6 +207,19 @@ class SnapshotFactVisibility
         // Taxes
         'annual_property_taxes',
         'tax_year',
+
+        // Flood zone designation (owner decision, Batch 2e). SHARED, not per-role, because
+        // SHARED_PUBLIC_KEYS is merged into exactly the two public-eligible roles — seller
+        // and landlord — and publicKeysForRole() returns [] for every other role, so this
+        // grants nothing to buyer or tenant. It is the FEMA code the owner chose on their
+        // own form and that both public listing pages already print.
+        //
+        // ONLY the code. `flood_zone_designation`, `flood_zone_description` and
+        // `is_in_flood_zone` remain in RESTRICTED_KEYS, and `flood_insurance_required` keeps
+        // whatever classification it already had — a lender/insurance requirement is a
+        // different claim from a map designation, and this change makes no statement about
+        // it.
+        'flood_zone_code',
     ];
 
     /**

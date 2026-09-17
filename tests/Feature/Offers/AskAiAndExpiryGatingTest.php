@@ -107,7 +107,13 @@ class AskAiAndExpiryGatingTest extends TestCase
         $this->assertStringContainsString('isOwner       = true', $response->getContent());
     }
 
-    public function test_non_owner_view_marks_isOwner_false(): void
+    /**
+     * Batch 2a made this stricter. A non-owner used to receive the owner-only Ask AI script
+     * with isOwner = false, which kept them off the 403 path at click time. They now receive
+     * no owner Ask AI script or endpoint at all — the shopper Ask AI card holds only the
+     * verified, precomputed property questions (see AskAiPropertyCardShopperExperienceTest).
+     */
+    public function test_non_owner_view_carries_no_owner_ask_ai_path(): void
     {
         $owner   = User::factory()->create();
         $other   = User::factory()->create();
@@ -117,7 +123,11 @@ class AskAiAndExpiryGatingTest extends TestCase
             ->get(route('offer.listing.seller.view', $listing->id));
 
         $response->assertStatus(200);
-        $this->assertStringContainsString('isOwner       = false', $response->getContent());
+        $html = $response->getContent();
+        $this->assertStringNotContainsString('isOwner       = true', $html);
+        $this->assertStringNotContainsString('isOwner       = false', $html);
+        $this->assertStringNotContainsString('/ask-ai/listing-question', $html);
+        $this->assertStringNotContainsString('id="solAiModal"', $html);
     }
 
     // ── C2: 'Expired' lifecycle signal used by the bid-submit guards ────────

@@ -187,6 +187,21 @@ class AskAiFaqConfigService
     }
 
     /**
+     * The raw config array for one knowledge base.
+     *
+     * A read-only passthrough to the same container-optional loader every other accessor
+     * here uses, exposed for callers that need the `groups`/`gating` shape itself rather
+     * than one of the flattened views — the public-question service reads it to verify
+     * that an allowlisted key still sits in the group it was approved under.
+     *
+     * @return array
+     */
+    public static function rawConfig(string $configKey): array
+    {
+        return static::loadConfig($configKey);
+    }
+
+    /**
      * Load the raw config array, using config() when the container is booted and falling
      * back to a direct require otherwise (e.g. pure-PHPUnit runs without a booted app).
      *

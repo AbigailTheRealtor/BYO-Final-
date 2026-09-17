@@ -582,8 +582,14 @@ class AskAiSnapshotBuilderTest extends TestCase
         // --- Part 1: SnapshotFactVisibility::classify() unit assertions ---
 
         $restrictedKeys = [
-            'flood_zone_code',
+            // flood_zone_code left this list in Batch 2e: it is a PUBLIC seller/landlord
+            // fact by owner decision — the designation the owner selected on their own form,
+            // which both public listing pages already print. It is asserted as public below.
+            // The other three flood fields stayed restricted and are covered here and in
+            // PublicFloodZoneQuestionBatch2eTest.
             'flood_zone_designation',
+            'flood_zone_description',
+            'is_in_flood_zone',
             'security_deposit',
             'income_requirement',
             'hoa_monthly_fee',
@@ -596,6 +602,14 @@ class AskAiSnapshotBuilderTest extends TestCase
             // Restricted is role-independent — a compliance key is restricted everywhere.
             $this->assertEquals('restricted', SnapshotFactVisibility::classify($key, 'landlord'),
                 "Key '{$key}' should be classified as 'restricted'.");
+        }
+
+        // The one key that moved, and only for the two public property roles.
+        foreach (['seller', 'landlord'] as $publicRole) {
+            $this->assertEquals('public_allowed', SnapshotFactVisibility::classify('flood_zone_code', $publicRole));
+        }
+        foreach (['buyer', 'tenant'] as $criteriaRole) {
+            $this->assertNotEquals('public_allowed', SnapshotFactVisibility::classify('flood_zone_code', $criteriaRole));
         }
 
         // P0 — visibility is now an explicit allow-list, and the ROLE is part of the

@@ -102,5 +102,28 @@ class RouteServiceProvider extends ServiceProvider
                 Limit::perHour(200)->by('ldna-lookup-hr:' . $by),
             ];
         });
+
+        /*
+         | Save / Maybe / Pass writes.
+         |
+         | A LIGHTWEIGHT LOCAL ACTION, NOT A PROVIDER CALL. Nothing here reaches
+         | a third party, so this ceiling is not about spend — it is the same
+         | kind of backstop as `address-lookup`'s per-minute limit: a person
+         | pressing Save, opening the reason tray and pressing Done produces a
+         | handful of writes, and anything past sixty a minute is a stuck
+         | button, a double-submit loop or a script.
+         |
+         | Keyed by user id, with the IP branch only as the fallback for a
+         | session that expired mid-interaction — the routes require
+         | authentication, so the normal path is always the id.
+         */
+        RateLimiter::for('listing-preference-write', function (Request $request) {
+            $by = optional($request->user())->id ?: $request->ip();
+
+            return [
+                Limit::perMinute(60)->by('listing-pref-min:' . $by),
+                Limit::perHour(600)->by('listing-pref-hr:' . $by),
+            ];
+        });
     }
 }

@@ -1104,18 +1104,49 @@ code change after a licensing decision.
 and playground are owner-describable but not seeker-selectable; `pets_allowed` carries the
 assistance-animal notice; proximity is Location DNA; ranges and terms stay structured criteria.
 
-### Listing preferences — Save | Maybe | Pass (Phase 1, inert)
+### Listing preferences — Save | Maybe | Pass (Phase 2, behind a default-off flag)
 
 **Customer terminology is Save | Maybe | Pass.** Earlier planning notes said "Love/Maybe/Pass";
 that wording is superseded. Governance is
 `docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md`.
 
-**Phase 1 ships inert and that is the point.** Three tables, one governed vocabulary, two pure
-boundaries and a resolver — and **no route, controller, UI, write path or learner**. An
-architecture test fails the build if anything under `routes/`, `resources/views/`, `resources/js/`,
-`public/js/` or `app/Http/` references the subsystem, and if any `app/` code writes through the
-models. Merging it changes no customer-visible behaviour, which is what keeps the customer-facing
-phase a separate reviewable decision.
+**Phase 2 wires capture; `LISTING_PREFERENCES_ENABLED` still ships `false`.** Authenticated Buyers
+and Tenants can Save / Maybe / Pass, give optional reasons and undo, from the BidYourOffer
+Seller/Landlord detail pages. **Off means the routes 404 AND no control renders** — both halves are
+tested together, because a rendered control whose endpoint 404s is worse than no control.
+
+**`ListingPreferenceWriter` is the only thing that persists a preference**, and a guard test asserts
+it: controllers, Blade and JavaScript describe intent, the service performs the current-state +
+reasons + history mutation in **one transaction**. `setState()` / `updateReasons()` / `clear()` each
+append exactly **one** event — selecting chips is browsing, pressing Done is the decision, so four
+chips are not four history rows. A state change **replaces** the reason set rather than merging it:
+"Too expensive" is not an answer to *What do you like about this property?*
+
+**Undo needed one additive schema change.** Phase 1 modelled the three transitions INTO a state and
+never the one out of all of them — `to_state` was `NOT NULL`, so "the customer withdrew their
+choice" was unwritable. `2026_09_17_000001_allow_null_to_state_on_listing_preference_events` makes
+it nullable, where NULL means exactly *no current preference after this transition*: **no fourth
+state, and `pass` is not overloaded** ("I passed on this house" and "I withdrew my opinion" are
+different facts). Its `down()` **refuses** while clear events exist rather than inventing a
+preference for them or deleting append-only history, and restores `NOT NULL` normally on a database
+that has none. Clearing deletes the current row (reasons cascade) and appends the clear event, in
+one transaction; clearing nothing writes no event.
+
+**Nothing is trusted from the browser.** `subject_key`, `seeker_role` and `user_id` are never
+accepted from a request — all three are resolved server-side — `listing_type` is validated against
+`SmartTagListingType`, and reasons are re-projected through the policy. Routes sit behind `web`
+(CSRF + session), `auth`, the feature gate and a per-user rate limit. **Guests get no route at all**:
+the control renders and sends them through the existing login flow, and no anonymous row exists.
+
+**Phase 2's context obligation is met by `ListingPreferenceContextResolver`**, which resolves the
+listing's real property type (Bridge column, or the native `property_type` meta) and delegates the
+mapping to `SmartTagContextResolver` rather than restating it. The null-context fallback is reached
+only when the listing genuinely cannot answer, and `isSeekerSelectable()` still applies there — only
+*applicability* is relaxed. Both branches are tested.
+
+**Capture only.** A guard test asserts nothing under `app/Services/{Stellar,AskAi,Dna,Matching}` or
+`app/Helpers` references the subsystem, so no ranking, Ask AI or learning consumption exists; a
+second asserts no template or script hard-codes a reason key.
 
 **One current state, plus an append-only history, and the split is load-bearing.**
 `listing_preferences` holds exactly one row per `(user_id, seeker_role, subject_key)` — the unique
@@ -1184,13 +1215,19 @@ selects**. Preference will apply as a post-score re-rank; **Pass is a display de
 never deletes, hides or alters listing or MLS data.
 
 **Flags** live in `config/listing_preferences.php`, all default `false`, parsed fail-closed
-(`LISTING_PREFERENCES_ENABLED` is ON only for `true`/`1`/`on`/`yes`). Phase 1 **does not read them to
-decide anything** — there is no write path to gate — and a test asserts enabling them starts nothing.
+(`LISTING_PREFERENCES_ENABLED` is ON only for `true`/`1`/`on`/`yes`). Phase 2 reads **exactly one of
+them**, `enabled`, and reads it only through `ListingPreferenceAvailability` — which the route
+middleware and the Blade control both ask, so the endpoint and the surface can never disagree about
+whether the feature exists. The other two still decide nothing and a test asserts that flipping
+either starts nothing: `guest_capture_enabled` is a decided product position rather than a dial (no
+anonymous row is creatable however it is set), and `learning_enabled` stays gated on the governance
+revision behavioural learning requires.
 **None is in `config/required_production_flags.php` and none may be added**: that contract may never
 name a safety switch.
 
-**The Virtual Drive is untouched.** `VirtualDriveListingActions` still reports Save as unavailable
-("No Save / Favorite feature exists anywhere in this application"), and a test pins that string.
+**The Virtual Drive is still untouched in Phase 2.** `VirtualDriveListingActions` continues to report
+Save as unavailable ("No Save / Favorite feature exists anywhere in this application"), and a test
+pins both that string and the absence of any listing-preference reference in the Virtual Drive files.
 Phase 3 replaces that one array entry with a delegation to the shared service, so the card gains no
 business logic.
 
@@ -1415,6 +1452,71 @@ asking a landlord to pre-declare a policy invites a blanket answer to an individ
 **Deferred, deliberately:** `custom_pet_policy_requirement` (its parent is a multi-select, so the
 unlocking value is ambiguous and guessing it would drop stored text), the lease/commercial prose
 set, and any historical remediation command.
+
+**The steering category now covers FAMILIAL-STATUS steering, and that is a SHARED change.** The
+rules caught the exclusionary half (*"this area is not for children"*) and the young-professional
+half, but not the welcoming half — *"Perfect family neighborhood"*, *"family-friendly
+neighborhood"*, *"perfect for families"* — and a welcoming steer is still a steer about a protected
+class. The new patterns live in `config/landlord_provider_text.php`, so they govern the three Phase
+3 landlord prose fields **and** the Batch 4 public knowledge-base surface from one definition.
+They match **a claim about a place or an audience, never the word "family"**: a suitability
+adjective plus a PLACE noun, `... for families`, `family-friendly <place>`, `<place> for families`,
+`great for kids`, `full of families`. *"Family room"*, *"great family room off the kitchen"*,
+*"bedrooms"* and a children's pool carry no place noun and no suitability-for construction, so none
+of them can reach these rules — a vocabulary filter on "family" would have deleted the floor plan.
+
+### Ask AI public knowledge-base answers (Batch 4) — opt-in per listing
+
+**The Listing AI Knowledge Base is owner-only and stays owner-only.** Snapshot rows are
+`OWNER_ONLY` and the non-owner redaction strips the whole `faq_answers` structure; none of that is
+relaxed. Batch 4 opens **one narrow, key-by-key admission** for **one surface** — the deterministic
+public "Questions About This Property" card. Full reasoning:
+`docs/ask-ai/ASK_AI_KNOWLEDGE_BASE_V1.md` §10.
+
+**Seller and Landlord only, 38 curated keys. Buyer and Tenant have ZERO public-KB keys** — no
+allowlist entry exists for them, so their knowledge bases produce no public candidate by
+construction. Motivation and negotiating posture, disclosure and defect history, anything
+describing *who* the property suits, other people's data (tenant lease terms, rent roll, every
+`business_*` key) and the whole `insight` category are excluded by decision, and an
+allowlist-integrity test asserts it.
+
+**The allowlist does not bypass property-type gating** — it is an additional, narrower gate on top
+of `AskAiFaqConfigService::gatedKeys()`, plus a declared-group check, so a key moved between config
+groups becomes unpublishable rather than quietly public for a different property type.
+
+**Nothing publishes without the owner's acknowledgement.** One listing-level flag —
+`listing_ai_faq_public_ack`, an ordinary sibling meta key of `listing_ai_faq`, **no migration and no
+schema change** — default NOT confirmed, parsed fail-closed (`1`/`true`/`on`/`yes` only) by the one
+reader `AskAiPublicPropertyQuestionService::kbPublicationConfirmed()`. **Legacy listings carry no
+such row and therefore publish nothing**: merging this does not make one previously private answer
+public. Revoking stops every KB-derived answer at the next render. **MLS quick-import listings
+arrive unconfirmed** and stay so until their owner edits the listing. Confirmation is never inferred
+from a past save, from stored answers, or from the listing being published.
+
+**An admitted answer still passes every screen, and every gate hides rather than rewrites.** Fair
+Housing (`PublicProviderTextPolicy`, role-neutral, sharing the Phase 3 vocabulary rather than
+copying it); PII (`PublicAnswerPiiScreen` — e-mail, phone, URL, street address, demanding
+STRUCTURE not digits, so "2 blocks from Central Avenue" and "Parcel number 1234567890" publish
+while "123 Oak Lane" and "Call me at 727-555-0147" do not); the listing's **own withheld address**,
+where **address visibility must be explicitly decided** or the answer is refused as
+`kb_address_visibility_unknown` — an absent decision, or a withheld address with nothing to screen
+against, both refuse, and non-KB questions are unaffected by its absence. Over **1,200 characters is
+withheld whole, never truncated**. Placeholder-equivalents and the config's own example text are
+suppressed — but **`No` and `None` are meaningful answers and publish**, deliberately, because
+hiding them would favour listings whose answer happens to be yes.
+
+**Published answers are attributed**: `According to the seller:` / `According to the landlord:` —
+statements by the owner, not facts the platform verified — and sort below the field-sourced catalog
+so verified structured facts lead the card.
+
+**MLS `PublicRemarks` is unrelated and unaffected**: still licence-RESTRICTED, still not processed
+or persisted, neither read nor changed here. The owner's own authored text is the only source
+admitted.
+
+**The form gains disclosure, not control**: a per-question eligibility marker and the single
+acknowledgement checkbox. No per-question toggle, no other stored value, and nothing rendered for
+Buyer/Tenant — their components do not declare the property, and a `wire:model` on an undeclared
+property would be a runtime error, so the role check in the shared blade is load-bearing.
 
 ### Manual QA / debug entry points refuse the production database
 

@@ -287,6 +287,46 @@ return [
                 '/\b(?:perfect|ideal|great)\s+for\s+(?:young\s+professionals?|singles?|childless|couples?\s+without\s+children|mature\s+adults?)\b/i',
                 '/\bneighbou?rhood\s+is\s+(?:mostly|mainly|predominantly|largely)\s+(?:young|old|white|black|hispanic|asian|christian|jewish|families|professionals?|students?|retirees?)\b/i',
                 '/\bthis\s+(?:area|building|community)\s+is\s+(?:not\s+)?(?:for|suited\s+to)\s+(?:families|children|students?|seniors?)\b/i',
+
+                /*
+                 * FAMILIAL-STATUS STEERING.
+                 *
+                 * Familial status is protected, and "perfect for families" / "family-friendly
+                 * neighborhood" is the most common way it is expressed — it tells a reader who
+                 * the area is meant for, which is the same statement as saying who it is not.
+                 * The rules above caught the exclusionary half ("this area is not for
+                 * children") and the young-professional half, but not the welcoming half, and a
+                 * welcoming steer is still a steer.
+                 *
+                 * THESE MATCH A CLAIM ABOUT A PLACE OR AN AUDIENCE, NEVER THE WORD "FAMILY".
+                 * "Family room", "large family room with fireplace", "bedrooms", a children's
+                 * pool and every other objective amenity have no place-noun and no
+                 * suitability-for construction, so none of them can reach these rules. That
+                 * distinction is the same exclusion-STRUCTURE principle the header describes:
+                 * a vocabulary filter on the word "family" would delete the floor plan.
+                 */
+
+                // "perfect for families", "ideal for a growing family", "great for families".
+                '/\b(?:perfect|ideal|great|excellent|best|wonderful|lovely|terrific|fantastic|suitable|suited|well[\s-]suited)\s+for\s+(?:a\s+|the\s+)?(?:young\s+|growing\s+|large\s+|new\s+)?famil(?:y|ies)\b/i',
+
+                // "perfect family neighborhood", "great family community" — a suitability
+                // adjective, "family", and a word naming a PLACE. "great family room" cannot
+                // match: "room" is not a place noun here, by design.
+                '/\b(?:perfect|ideal|great|excellent|best|wonderful|lovely|nice|quiet|safe|charming)\s+famil(?:y|ies)[\s-]*(?:friendly\s+)?(?:neighbou?rhood|community|area|district|street|block|complex|building|development|subdivision|enclave|location|setting)\b/i',
+
+                // "family-friendly neighborhood" / "family friendly community".
+                '/\bfamily[\s-]friendly\s+(?:neighbou?rhood|community|area|district|street|block|complex|building|development|subdivision|enclave|location|setting)\b/i',
+
+                // "neighborhood for young families", "community for families".
+                '/\b(?:neighbou?rhood|community|area|district|complex|building|development|subdivision|street|block)\s+for\s+(?:young\s+|growing\s+|large\s+|new\s+)?famil(?:y|ies)\b/i',
+
+                // "great for kids", "perfect for children" — the same steer, said about the
+                // children rather than the family.
+                '/\b(?:perfect|ideal|great|excellent|best|wonderful|suitable|suited)\s+for\s+(?:young\s+)?(?:kids|children|childrens|toddlers|babies)\b/i',
+
+                // "full of families", "lots of families", "plenty of young families" — a claim
+                // about who lives there, which is the demographic half of the same statement.
+                '/\b(?:full|lots|plenty|loads|tons)\s+of\s+(?:young\s+|growing\s+)?famil(?:y|ies)\b/i',
             ],
         ],
     ],
