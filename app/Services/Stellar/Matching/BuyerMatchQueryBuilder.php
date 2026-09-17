@@ -4,6 +4,7 @@ namespace App\Services\Stellar\Matching;
 
 use App\Models\BridgeProperty;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
+use App\Support\Matching\MonthlyEquivalent;
 use Illuminate\Database\Eloquent\Builder;
 
 class BuyerMatchQueryBuilder
@@ -37,9 +38,33 @@ class BuyerMatchQueryBuilder
         // Step 3: Price ceiling (only when max_price is set).
         // list_price IS NULL is allowed through — Section 6.4 covers null list_price
         // in scoring; exclusion for null+ceiling is handled in the scorer.
+        //
+        // ON A LEASE SEARCH THIS IS A PRE-FILTER, NOT THE CEILING.
+        // --------------------------------------------------------
+        // For a sale, `list_price` and the buyer's budget are the same kind of
+        // number and this clause IS the ceiling, unchanged.
+        //
+        // For a lease it is not: `list_price` carries the periodic rent and the
+        // period lives in raw_json.LeaseAmountFrequency, which SQL cannot see. A
+        // raw `list_price <= max_price` therefore let a weekly $2,500 rental pass
+        // a $3,000/month budget as though it cost $2,500 a month. Widening the
+        // clause by the largest period-to-month multiplier keeps every listing
+        // whose TRUE monthly rent is within budget in the candidate set (an
+        // annually quoted rental is twelve times the monthly figure), and
+        // BuyerMatchScorer then does the exact monthly-equivalent comparison
+        // where the frequency is readable.
+        //
+        // Widening a coarse pre-filter is safe; narrowing it is what loses
+        // inventory. The multiplier is derived from the conversion table rather
+        // than written here, so a frequency added there cannot leave this clause
+        // too tight.
         if ($criteria->maxPrice !== null) {
-            $query->where(function (Builder $q) use ($criteria) {
-                $q->where('list_price', '<=', $criteria->maxPrice)
+            $ceiling = $criteria->isLeaseSearch()
+                ? (int) ceil($criteria->maxPrice * MonthlyEquivalent::widestLeaseCeilingMultiplier())
+                : $criteria->maxPrice;
+
+            $query->where(function (Builder $q) use ($ceiling) {
+                $q->where('list_price', '<=', $ceiling)
                   ->orWhereNull('list_price');
             });
         }

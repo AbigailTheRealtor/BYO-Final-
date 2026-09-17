@@ -29,7 +29,8 @@ use Illuminate\Support\Facades\DB;
  *   hoa_acceptance        → hoa_preference       (string passthrough)
  *   hoa_max_monthly_fee   → max_monthly_hoa      (positive int)
  *   leasing_55_plus       → is_55_plus_eligible  (bool)
- *   condition_prop_buyer  → property_sub_types   (JSON decode)
+ *   condition_prop_buyer  → property_conditions  (JSON decode; NOT property_sub_types —
+ *                                                 see the note at that assignment)
  *   property_type (scalar)→ property_types       (single-element array)
  *   min_acreage (acres)   → min_lot_sqft         (acres × 43560)
  *   total_acreage (acres) → max_lot_sqft         (acres × 43560)
@@ -182,9 +183,33 @@ class BuyerOfferListingCriteriaLoader
         $maxPrice = $this->positiveIntOrNull($this->stripCommas($get('maximum_budget')));
 
         // -----------------------------------------------------------------------
-        // Property sub-types
+        // Property CONDITION — its own concept, not a sub-type.
+        //
+        // `condition_prop_buyer` is the form's "Acceptable Property Conditions"
+        // multi-select: Updated/Renovated, Partially Updated, Older but Clean,
+        // No Preference. It used to be loaded as `property_sub_types`, which
+        // BuyerMatchScorer compares against bridge_properties.property_sub_type
+        // (RESO PropertySubType: "Single Family Residence", "Condominium",
+        // "Townhouse"). No condition value can equal a sub-type, so a seeker who
+        // answered this question scored 0 of 5 sub-type points while a seeker who
+        // skipped it scored the neutral 2 — answering made every listing worse.
+        //
+        // The preference is preserved under its own key and is NOT scored: the
+        // feed's PropertyCondition carries construction status, not renovation
+        // state. See BuyerCriteriaPayload::$propertyConditions for the evidence
+        // and for why Smart Tags is the canonical destination.
         // -----------------------------------------------------------------------
-        $propertySubTypes = $this->decodeJsonMeta($get('condition_prop_buyer'));
+        $propertyConditions = $this->decodeJsonMeta($get('condition_prop_buyer'));
+
+        // -----------------------------------------------------------------------
+        // Property sub-types — deliberately empty.
+        //
+        // The Buyer Offer Listing form collects no PropertySubType preference, so
+        // there is nothing honest to put here. Leaving it empty is what makes the
+        // scorer take its neutral branch instead of comparing condition words to
+        // sub-type words.
+        // -----------------------------------------------------------------------
+        $propertySubTypes = [];
 
         // -----------------------------------------------------------------------
         // Size — bedrooms / bathrooms / sq ft / lot
@@ -263,6 +288,7 @@ class BuyerOfferListingCriteriaLoader
             'ideal_price'                 => null,
 
             'property_sub_types'          => $propertySubTypes,
+            'property_conditions'         => $propertyConditions,
 
             'min_bedrooms'                => $minBedrooms,
             'min_bathrooms'               => $minBathrooms,
