@@ -24,10 +24,12 @@ use GuzzleHttp\ClientInterface;
  * service constructor still reaches the outbound call. A null client falls through to
  * the container binding inside the adapter (telemetry + BlocksGooglePlacesHttpClient).
  *
- * BYTE-IDENTICAL TODAY: only `google_places` is an enabled `poi.default` provider, so
- * `effectiveBase('poi.default')` resolves to it and — combined with the whole-run
- * kill-switch / key guards in the service that fire before any fetch — `make()` returns
- * exactly the `GooglePlacesPoiAdapter` the hard-code produced.
+ * WHAT IT RETURNS NOW. `overture_corpus` is the declared `base` for `poi.default`; when
+ * its routing gate is on and the corpus is readable, `make()` returns the corpus adapter.
+ * When the gate is off no base resolves at all — `google_places` is declared `overlay` and
+ * `effectiveBase()` will not promote it — and `make()` returns the inert stub. Google is
+ * constructed only when it is the declared `base`, which the shipped `poi.default` map
+ * does not do.
  */
 class NearbyPoiFetcherFactory
 {
@@ -52,6 +54,7 @@ class NearbyPoiFetcherFactory
         $registry = new LocationProviderRegistry($this->config);
         $base     = $registry->effectiveBase(self::POI_DEFAULT_KEY);
         $provider = $base['provider'] ?? null;
+        $role     = $base['role'] ?? null;
 
         // Local corpus. Checked FIRST because it is the base when enabled, and because a
         // corpus that is selected but unreadable must land on the stub rather than on
@@ -68,13 +71,27 @@ class NearbyPoiFetcherFactory
             return $adapter->isAvailable() ? $adapter : new StubNearbyPoiFetcher();
         }
 
+        // GOOGLE IS CONSTRUCTED ONLY WHEN IT IS THE DECLARED `base`, NEVER MERELY WHEN IT
+        // IS WHAT IS LEFT. The role check is the second of the two independent barriers
+        // (the first is `effectiveBase()` refusing to promote an overlay); together they
+        // mean the billable existence provider can only be reached by a capability map
+        // that names it `base` for poi.default on purpose, in a diff somebody reads.
+        //
+        // Belt and braces on purpose: these two barriers live in different files and fail
+        // for different reasons, so restoring the old behaviour by accident takes two
+        // mistakes rather than one.
         if (
             $provider === 'google_places'
+            && $role === LocationProviderRegistry::ROLE_BASE
             && ! blank(config('services.google.places_key'))
         ) {
             return new GooglePlacesPoiAdapter($client);
         }
 
+        // No provider resolved, a provider with no fetcher, or Google in a non-base role.
+        // The inert fetcher is the safe landing: it returns no candidates and sends
+        // nothing. `LocationDnaPoiDistanceService` refuses the whole run before reaching
+        // here when no provider is selected, so this is a backstop, not the reporting path.
         return new StubNearbyPoiFetcher();
     }
 }

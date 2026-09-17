@@ -57,6 +57,21 @@ class LocationDnaPoiDistanceService
     private const EARTH_RADIUS_MILES = 3958.8;
 
     /**
+     * The resolved-provider sentinel for "the capability map selected nobody".
+     *
+     * A run in this state is REFUSED and writes no rows. It is not a provider and must
+     * never reach `provenance_json` on a persisted row: a row stamped `none` would be a
+     * row claiming an origin that does not exist. Before this existed the code defaulted
+     * an unresolved base to the string 'google_places', which then tripped the Google
+     * kill-switch guard and reported `google_places_disabled` — an error naming a provider
+     * the run had not selected and would not have called.
+     */
+    private const PROVIDER_NONE = 'none';
+
+    /** Provider id of the local Overture corpus — see config/location_providers.php. */
+    private const PROVIDER_OVERTURE_CORPUS = OvertureCorpusPoiAdapter::PROVIDER_ID;
+
+    /**
      * Maximum number of raw API results to collect per category.
      * Google Nearby Search returns up to 20 results per page; we cap at 10 for storage.
      */
@@ -351,10 +366,11 @@ class LocationDnaPoiDistanceService
      * content — only provider/method/raw_ref(place_id)/license/contributors (spec §8).
      */
     private ?\Illuminate\Support\Carbon $currentRunTimestamp = null;
-    private string $currentProvenanceProvider = 'google_places';
+    private string $currentProvenanceProvider = self::PROVIDER_NONE;
     private string $currentProvenanceLicense  = 'unknown';
+    private string $currentProvenanceMethod   = CanonicalField::METHOD_API;
     /** @var list<string> */
-    private array $currentProvenanceContributors = ['google_places'];
+    private array $currentProvenanceContributors = [];
 
     /**
      * Read-only view of the inputs that define the SCORING version
@@ -693,11 +709,68 @@ class LocationDnaPoiDistanceService
             // the guard, the fetcher and the provenance can never disagree about which
             // provider this run belongs to.
             //
-            // TODAY THIS CHANGES NOTHING. `overture_corpus` ships disabled, so
-            // effectiveBase('poi.default') still resolves to google_places and both guards
-            // run exactly as before, in the same order, returning the same two error
-            // strings. That equivalence is asserted rather than asserted-in-a-comment: see
-            // PoiRunProviderGuardTest::the_google_guards_still_fire_on_the_shipped_config().
+            // ── No provider selected at all ─────────────────────────────────────
+            //
+            // `poi.default` resolved to nothing: every declared base is disabled, and an
+            // `overlay` is not promoted to fill the gap. Refuse the run and write NOTHING.
+            //
+            // Writing per-category `not_found` rows here would be the tempting shortcut and
+            // it would be a lie with a long half-life: `not_found` is the answer "we asked a
+            // provider and there is no grocery store near this property", it is persisted,
+            // it is served from cache on later runs, and it renders as an empty Nearby
+            // panel on a public listing page. "We asked nobody" has to look different from
+            // "we asked and the answer was none", or the two become indistinguishable
+            // exactly when somebody is trying to work out why a page is blank.
+            if ($this->currentProvenanceProvider === self::PROVIDER_NONE) {
+                $output = $this->failedOutput(
+                    $listingType,
+                    $listingId,
+                    $sourceLat,
+                    $sourceLng,
+                    'no_poi_provider_selected',
+                );
+                $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
+                return $output;
+            }
+
+            // ── The local corpus is selected but cannot be read ──────────────────
+            //
+            // The corpus counterpart of the Google kill switch below, and it exists for the
+            // same reason: a provider that cannot answer must refuse the run, not answer
+            // "nothing". Gate off, version unpinned, cluster unreachable, table missing —
+            // `isAvailable()` covers all four, cheaply and locally, and the factory would
+            // otherwise hand back the inert stub, which would record 19 categories of
+            // `not_found` and cache a corpus outage as this property's nearby places.
+            //
+            // A category the corpus genuinely has no rows for is a DIFFERENT case and is
+            // left alone: `CorpusPoiCategoryMap` returns null for it, the adapter returns
+            // `[]`, and the run records `not_found` for that one category — the honest
+            // answer, since we did ask a provider that is working.
+            //
+            // Skipped when a fetcher was injected: the caller has supplied the provider, so
+            // the corpus's own readiness is not what decides this run.
+            if (
+                $this->currentProvenanceProvider === self::PROVIDER_OVERTURE_CORPUS
+                && $this->nearbyFetcher === null
+                && ! (new OvertureCorpusPoiAdapter())->isAvailable()
+            ) {
+                $output = $this->failedOutput(
+                    $listingType,
+                    $listingId,
+                    $sourceLat,
+                    $sourceLng,
+                    'overture_corpus_unavailable',
+                );
+                $this->audit($listingType, $listingId, $output);
+                $this->setLastRunStats($listingType, $listingId, null);
+                return $output;
+            }
+
+            // THE GOOGLE GUARDS RUN ONLY WHEN GOOGLE IS THE SELECTED PROVIDER, which the
+            // shipped `poi.default` map does not do — Google is declared `overlay` there and
+            // `effectiveBase()` will not promote an overlay. Reaching this branch means a
+            // capability map deliberately named `google_places` as the `base`.
             if ($this->currentProvenanceProvider === 'google_places') {
                 // Phase 0 / S2 — master kill switch. Short-circuits before any HTTP
                 // call, and after the cache-return paths above so cached rows still serve.
@@ -948,21 +1021,36 @@ class LocationDnaPoiDistanceService
     /**
      * Resolve the POI provenance base for this run from the provider registry — the SAME
      * base CanonicalPoiAssembler resolves (poi.default effective base), so the persisted
-     * provenance and the assembled candidate agree on their origin. With only google_places
-     * enabled today this is provider=google_places, license=google-tos,
-     * contributors=[google_places]. Never puts Place content in provenance (spec §8): a row
-     * carries provider/method/raw_ref(place_id)/license/contributors only.
+     * provenance and the assembled candidate agree on their origin. Never puts Place
+     * content in provenance (spec §8): a row carries
+     * provider/method/raw_ref(place_id)/license/contributors only.
+     *
+     * NO DEFAULT PROVIDER. An unresolved base yields PROVIDER_NONE and the run is refused
+     * by `guardProviderOrFail()` before anything is fetched or written. It used to default
+     * to the literal 'google_places', which meant a capability map selecting nobody
+     * produced a run guarded as Google, reported as `google_places_disabled`, and — had the
+     * kill switch been on — would have reached for a credential to spend. "Nobody was
+     * selected" is a different fact from "Google was selected and is switched off", and
+     * only one of them is true here.
+     *
+     * METHOD IS PART OF THE ORIGIN, NOT DECORATION. A corpus read issues no request, so it
+     * is stamped METHOD_CORPUS; everything else is a network provider and keeps METHOD_API.
+     * Resolved here, from the same `$provider`, for the same reason the license is: one
+     * lookup per run, so provider / license / method cannot disagree on a single row.
      */
     private function resolveProvenanceBase(): void
     {
         $registry = new LocationProviderRegistry((array) config('location_providers', []));
         $base     = $registry->effectiveBase('poi.default');
 
-        $provider = $base['provider'] ?? 'google_places';
+        $provider = $base['provider'] ?? self::PROVIDER_NONE;
 
         $this->currentProvenanceProvider     = $provider;
         $this->currentProvenanceLicense      = $base['descriptor']['license'] ?? 'unknown';
-        $this->currentProvenanceContributors = [$provider];
+        $this->currentProvenanceContributors = $provider === self::PROVIDER_NONE ? [] : [$provider];
+        $this->currentProvenanceMethod       = $provider === self::PROVIDER_OVERTURE_CORPUS
+            ? CanonicalField::METHOD_CORPUS
+            : CanonicalField::METHOD_API;
     }
 
     /**
@@ -1138,7 +1226,14 @@ class LocationDnaPoiDistanceService
                     sourceLng:   $sourceLng,
                     rank:        1,
                     status:      'not_found',
-                    error:       'Google Places returned zero results for this category',
+                    // Names the provider that was actually asked. The literal
+                    // 'Google Places returned zero results for this category' predates a
+                    // second provider existing, and on a corpus run it was simply false:
+                    // no Google adapter was constructed and nothing was sent. This string
+                    // is persisted on the row and surfaces in ldna:audit-listing, so a
+                    // false one sends whoever is debugging an empty category to the wrong
+                    // provider.
+                    error:       $this->currentProvenanceProvider . ' returned zero results for this category',
                 );
                 return [[$row->toArray()], []];
             }
@@ -1271,6 +1366,12 @@ class LocationDnaPoiDistanceService
                     rankingScore:         $scoring['ranking_score'] ?? null,
                     rankingReasons:       $scoring['ranking_reasons_json'] ?? null,
                     rawRef:               $place['place_id'] ?? null,
+                    // Present only on rows from a provider that states its own existence
+                    // confidence (the Overture corpus does; Google does not). Absent →
+                    // the rating-derived scorer decides, exactly as before.
+                    providerConfidence:   isset($place['_corpus_confidence']) && is_numeric($place['_corpus_confidence'])
+                        ? (float) $place['_corpus_confidence']
+                        : null,
                 );
 
                 $persistedRows[] = $row->toArray();
@@ -1468,18 +1569,34 @@ class LocationDnaPoiDistanceService
         ?float  $rankingScore        = null,
         ?array  $rankingReasons      = null,
         ?string $rawRef              = null,
+        ?float  $providerConfidence  = null,
     ): PropertyLocationPoi {
         // Canonical-field envelope (Batch 3; docs/canonical-field-mapping-spec.md §1–§4).
         // Confidence is a FOUND-row signal only: not_found / error rows persist a null
         // confidence alongside full provenance (owner decision). raw_ref carries the opaque
         // place_id for found rows and null otherwise — never any Place content (spec §8).
-        $confidence = $status === 'found'
-            ? ($this->confidenceScorer ?? new PoiConfidenceScorer())->score($rating, $userRatingsTotal ?? 0)
-            : null;
+        //
+        // A PROVIDER THAT STATES ITS OWN CONFIDENCE IS BELIEVED, AND ONLY THEN IS THE
+        // SCORER CONSULTED. `PoiConfidenceScorer` derives confidence from a RATING signal;
+        // with no rating it returns 0.5, the "structural existence, no quality signal"
+        // constant. That is the right answer for an unrated Google result and the wrong one
+        // for an Overture corpus row, which carries a real measured existence confidence
+        // (0.90–1.00, floored at 0.90 by the import) that the adapter already hands us.
+        // Writing 0.5 over a stated 0.99 discards a measurement and replaces it with a
+        // constant meaning "we don't know" — and does it silently, on every corpus row.
+        //
+        // Scoped to found rows for the same reason as before: confidence is a found-row
+        // signal, and not_found / error rows persist null alongside full provenance.
+        $confidence = null;
+
+        if ($status === 'found') {
+            $confidence = $providerConfidence
+                ?? ($this->confidenceScorer ?? new PoiConfidenceScorer())->score($rating, $userRatingsTotal ?? 0);
+        }
 
         $provenance = CanonicalField::provenance(
             provider:     $this->currentProvenanceProvider,
-            method:       CanonicalField::METHOD_API,
+            method:       $this->currentProvenanceMethod,
             license:      $this->currentProvenanceLicense,
             rawRef:       $status === 'found' ? $rawRef : null,
             contributors: $this->currentProvenanceContributors,

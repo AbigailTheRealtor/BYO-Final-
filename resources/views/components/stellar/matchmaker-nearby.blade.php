@@ -85,6 +85,21 @@
         'nearest_shopping_center_miles' => 'Shopping Center',
     ];
 
+    // A SECTION IS EMPTY WHEN EVERY DISTANCE IN IT IS NULL, NOT WHEN IT HAS NO KEYS.
+    //
+    // This filter counted KEYS. `$summary['coastal']` is a fixed-shape array —
+    // ['nearest_beach_miles' => null, 'nearest_beach_access_miles' => null, ...] — so a
+    // block in which nothing was found still has four keys, passed `count() > 0`, and
+    // rendered its heading. The row loop below then skips every entry on `$miles !== null`,
+    // leaving a bare "Coastal" / "Parks & Recreation" / "Education" heading with nothing
+    // underneath it.
+    //
+    // It was invisible while no listing had POI rows at all, because the whole component
+    // fell to the "not yet available" branch. It becomes visible the moment a provider
+    // answers SOME categories and not others — which is the normal state for the Overture
+    // corpus, whose seven categories are a subset of the nineteen this pipeline asks for.
+    // An orphan heading on a public listing page reads as a section we meant to fill and
+    // failed to, which is worse than not drawing it.
     $sections = array_filter([
         'Coastal'            => $coastal,
         'Daily Convenience'  => $convenience,
@@ -93,7 +108,7 @@
         'Education'          => $education,
         'Health & Fitness'   => $health,
         'Shopping'           => $shopping,
-    ], fn($s) => count($s) > 0);
+    ], fn($s) => count(array_filter($s, fn($miles) => $miles !== null)) > 0);
 
     // Get POI name from nearest_by_category for a given key
     // e.g. 'nearest_beach_miles' → poi_category 'beach'

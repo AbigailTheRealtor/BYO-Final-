@@ -16,7 +16,7 @@ use Tests\TestCase;
  */
 class NearbyPoiFetcherFactoryTest extends TestCase
 {
-    /** poi.default resolves to google_places (the only enabled provider). */
+    /** poi.default declares google_places as the BASE (see the overlay test below). */
     private function config(): array
     {
         return [
@@ -37,11 +37,42 @@ class NearbyPoiFetcherFactoryTest extends TestCase
             'capabilities' => [
                 'poi.default' => [
                     ['provider' => 'osm_overpass',  'role' => 'base'],
-                    ['provider' => 'google_places', 'role' => 'overlay'],
+                    ['provider' => 'google_places', 'role' => 'base'],
                 ],
             ],
             'regional_overrides' => [],
         ];
+    }
+
+    /**
+     * The same fixture with Google back in its real shipped role. Nothing else differs.
+     */
+    private function configWithGoogleAsOverlay(): array
+    {
+        $config = $this->config();
+        $config['capabilities']['poi.default'] = [
+            ['provider' => 'osm_overpass',  'role' => 'base'],
+            ['provider' => 'google_places', 'role' => 'overlay'],
+        ];
+
+        return $config;
+    }
+
+    /**
+     * THE REGRESSION THIS PHASE EXISTS TO PREVENT.
+     *
+     * Enabled provider, valid key, and the only binding left standing — and still no
+     * Google adapter, because its declared role is `overlay`. Before this change the
+     * factory constructed Google here, which is how a capability map that named it a
+     * rating overlay ended up making it the billable existence provider by elimination.
+     */
+    public function test_google_declared_as_an_overlay_is_never_constructed(): void
+    {
+        config(['services.google.places_key' => 'fake-test-key']);
+
+        $fetcher = (new NearbyPoiFetcherFactory($this->configWithGoogleAsOverlay()))->make();
+
+        $this->assertInstanceOf(StubNearbyPoiFetcher::class, $fetcher);
     }
 
     public function test_resolves_google_adapter_when_key_present(): void

@@ -254,6 +254,51 @@ abstract class TestCase extends BaseTestCase
      *
      * @throws RuntimeException when a live key is detected under APP_ENV=testing
      */
+    /**
+     * Declare the `poi.default` capability binding list for this test.
+     *
+     * TWO TRAPS, BOTH SILENT, WHICH IS WHY THIS IS A HELPER RATHER THAN THREE LINES
+     * COPIED AROUND:
+     *
+     * 1. The key `poi.default` LITERALLY CONTAINS A DOT. `config(['location_providers'
+     *    . '.capabilities.poi.default' => ...])` therefore does not set it — Arr::set
+     *    splits on dots and creates a nested `poi => default` that the registry never
+     *    reads, leaving the real binding list in place. The test then passes or fails for
+     *    a reason unrelated to what it claims to assert. The whole-array write below is
+     *    the only form that works.
+     *
+     * 2. Enabling a provider is no longer the same as selecting it.
+     *    `LocationProviderRegistry::effectiveBase()` will not promote an `overlay`, and
+     *    `google_places` is declared `overlay` for `poi.default` in the shipped map. A
+     *    test that wants the Google POI path must name Google the `base`, exactly as an
+     *    operator would have to.
+     *
+     * @param  array<int, array{provider:string, role:string}>  $bindings
+     */
+    protected function declarePoiDefaultBindings(array $bindings): void
+    {
+        $capabilities                = (array) config('location_providers.capabilities', []);
+        $capabilities['poi.default'] = $bindings;
+
+        config(['location_providers.capabilities' => $capabilities]);
+    }
+
+    /**
+     * Select `google_places` as the POI existence provider for this test.
+     *
+     * For the provider-mocked tests that deliberately exercise the Google Nearby Search
+     * path. Every other test stays on the shipped map, where no base is enabled and the
+     * run is refused with `no_poi_provider_selected`.
+     */
+    protected function selectGooglePlacesAsPoiBase(): void
+    {
+        config(['location_providers.providers.google_places.enabled' => true]);
+
+        $this->declarePoiDefaultBindings([
+            ['provider' => 'google_places', 'role' => 'base'],
+        ]);
+    }
+
     protected function guardAgainstLiveGooglePlacesKey(): void
     {
         if (config('app.env') !== 'testing') {

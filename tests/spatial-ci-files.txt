@@ -76,6 +76,7 @@ tests/Feature/LocationDna/BuyerTenantPrecedenceParityTest.php
 tests/Feature/LocationDna/CensusCriteriaGeographyRepositoryTest.php
 tests/Feature/LocationDna/CensusCriteriaNeighborhoodRepositoryTest.php
 tests/Feature/LocationDna/CensusEloquentParityTest.php
+tests/Feature/LocationDna/CorpusPoiEndToEndRenderTest.php
 tests/Feature/LocationDna/CreateTenantGeographySurfaceTest.php
 tests/Feature/LocationDna/CreateTenantGeographyWiringTest.php
 tests/Feature/LocationDna/CreateTenantLegacyGeographyBackfillTest.php

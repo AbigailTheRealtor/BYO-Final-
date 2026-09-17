@@ -78,9 +78,29 @@ class LocationProviderRegistry
     /**
      * The single provider that should supply the primary value for a category.
      *
-     * The first binding explicitly marked `base` wins; if the configured base is
-     * disabled (and thus filtered out), the highest-priority remaining enabled
-     * binding is promoted to effective base (proposal §3). Null if none enabled.
+     * The first binding explicitly marked `base` wins. If no enabled `base` exists, a
+     * `fallback` is promoted — that is what `fallback` means, and it is the proposal's
+     * own rule (§3).
+     *
+     * AN `overlay` IS NEVER PROMOTED, AND THAT IS THE POINT OF THIS METHOD.
+     * ---------------------------------------------------------------------
+     * The three roles are not a priority list, they are three different jobs. A `base`
+     * supplies the primary value — for `poi.default` that is EXISTENCE: which places are
+     * near this coordinate. An `overlay` merges extra attributes onto a base that already
+     * answered (rating, review count); it never claims it can answer the primary question.
+     *
+     * This method used to end `return $resolved[0]` — "promote highest-priority survivor" —
+     * which promoted an overlay whenever every declared base was disabled. On the shipped
+     * `poi.default` map that is exactly what happened: `overture_corpus` and `osm_overpass`
+     * are the declared bases, both were off, `geoapify` (fallback) was off, and the only
+     * survivor was `google_places`, declared `overlay`. So a capability map that named
+     * Google as a rating overlay silently made Google the existence provider — the billable
+     * one — by elimination. Nobody wrote that down anywhere; it fell out of an `?? $first`.
+     *
+     * Declining to promote an overlay means a category whose bases are all disabled
+     * resolves to NULL, and the callers treat null as "no provider selected" and refuse the
+     * run. That is the fail-closed direction: no provider is a state we can see and report,
+     * whereas the wrong provider is a bill.
      *
      * @return array{provider:string, role:string, descriptor:array}|null
      */
@@ -97,7 +117,14 @@ class LocationProviderRegistry
             }
         }
 
-        return $resolved[0]; // promote highest-priority survivor
+        // No enabled base. A fallback may stand in for one; an overlay may not.
+        foreach ($resolved as $binding) {
+            if ($binding['role'] === self::ROLE_FALLBACK) {
+                return $binding;
+            }
+        }
+
+        return null;
     }
 
     /** Adapter FQCNs for the enabled bindings, in role order (for a later wiring stage). */

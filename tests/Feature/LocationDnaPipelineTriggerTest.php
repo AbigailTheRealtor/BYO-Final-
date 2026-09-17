@@ -82,6 +82,21 @@ class LocationDnaPipelineTriggerTest extends TestCase
         // explicit. It grants no network access: both Guzzle clients are mocked below.
         config(['services.google.places_key' => 'fake-test-key']);
 
+        // …and Google must be SELECTED, not merely switched on. This suite characterises
+        // the pipeline over the legacy Google path, and the switch plus the credential no
+        // longer choose a provider: `google_places` is declared `overlay` for
+        // `poi.default`, and `LocationProviderRegistry::effectiveBase()` does not promote
+        // an overlay into a base. Without this the POI step resolves to NO provider, is
+        // refused with `no_poi_provider_selected`, writes no rows, and the runner reports
+        // 'partial' — the honest answer for a run nobody was asked to perform, and not the
+        // branch these cases were written for.
+        //
+        // The same one line appears in every sibling suite that opts into the Google POI
+        // path; see Tests\TestCase::selectGooglePlacesAsPoiBase(). The refusal itself is
+        // asserted where it belongs, in CorpusPoiFailurePostureTest and
+        // PoiRunProviderGuardTest.
+        $this->selectGooglePlacesAsPoiBase();
+
         $this->bindMockedServices();
     }
 

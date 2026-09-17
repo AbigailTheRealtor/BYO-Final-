@@ -5,6 +5,8 @@ namespace Tests\Feature\LocationDna;
 use App\Models\PropertyLocationDna;
 use App\Models\PropertyLocationPoi;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
+use App\Services\LocationDna\Providers\CanonicalField;
+use App\Services\LocationDna\StubNearbyPoiFetcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use ReflectionClass;
 use Tests\TestCase;
@@ -62,15 +64,62 @@ class PoiRunProviderGuardTest extends TestCase
         ]);
     }
 
-    // ── the shipped config is unchanged ─────────────────────────────────────
+    // ── the shipped config selects NOBODY ───────────────────────────────────
 
     /**
-     * The regression this phase must not cause. Shipped config resolves poi.default to
-     * google_places, so the kill switch still refuses the run with the exact error string
-     * the 1,127 existing audit rows carry.
+     * The posture this phase creates. `poi.default` declares `overture_corpus` as its base
+     * and `google_places` only as an `overlay`; with the corpus routing gate off, no base
+     * is enabled and an overlay is never promoted — so the run is refused for having no
+     * provider, before Google's kill switch is reached.
+     *
+     * This replaces `test_the_google_guards_still_fire_on_the_shipped_config`, which
+     * asserted the opposite and was accurate about the code as it then stood: Google was
+     * the effective base by elimination, so the kill switch was the first guard to speak.
+     * The error string is the visible half of the fix — it now names what actually
+     * happened — and the invisible half is that no credential is consulted at all.
      */
-    public function test_the_google_guards_still_fire_on_the_shipped_config(): void
+    public function test_the_shipped_config_is_refused_for_having_no_provider(): void
     {
+        $result = (new LocationDnaPoiDistanceService())->calculateForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+        );
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('no_poi_provider_selected', $result['error']);
+    }
+
+    /** …and it is refused the same way with a Google key and the kill switch ON. */
+    public function test_the_shipped_config_is_refused_even_with_google_fully_available(): void
+    {
+        config([
+            'google_places.enabled'      => true,
+            'services.google.places_key' => 'a-real-looking-key',
+        ]);
+
+        $result = (new LocationDnaPoiDistanceService())->calculateForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+        );
+
+        $this->assertSame(
+            'no_poi_provider_selected',
+            $result['error'],
+            'A usable Google credential must not be able to select Google for POI existence.'
+        );
+        $this->assertSame(0, PropertyLocationPoi::count());
+    }
+
+    // ── the Google guards, when Google is DELIBERATELY the base ─────────────
+
+    /**
+     * The guards themselves are unchanged; what changed is that reaching them requires a
+     * capability map that names Google the `base` on purpose. These three tests state that
+     * selection explicitly, which is what an operator would have to do too.
+     */
+    public function test_the_google_kill_switch_fires_when_google_is_the_declared_base(): void
+    {
+        $this->selectGoogleAsBase();
         config(['google_places.enabled' => false]);
 
         $result = (new LocationDnaPoiDistanceService())->calculateForListing(
@@ -83,8 +132,9 @@ class PoiRunProviderGuardTest extends TestCase
     }
 
     /** And the key guard still fires when the switch is on but the credential is absent. */
-    public function test_the_google_key_guard_still_fires_on_the_shipped_config(): void
+    public function test_the_google_key_guard_fires_when_google_is_the_declared_base(): void
     {
+        $this->selectGoogleAsBase();
         config([
             'google_places.enabled'      => true,
             'services.google.places_key' => null,
@@ -102,6 +152,7 @@ class PoiRunProviderGuardTest extends TestCase
     /** Order is preserved: the kill switch is checked before the key. */
     public function test_the_kill_switch_is_still_checked_before_the_key(): void
     {
+        $this->selectGoogleAsBase();
         config([
             'google_places.enabled'      => false,
             'services.google.places_key' => null,
@@ -122,6 +173,7 @@ class PoiRunProviderGuardTest extends TestCase
     /** No rows are written when a guard refuses — the pre-existing posture. */
     public function test_a_refused_run_persists_no_poi_rows(): void
     {
+        $this->selectGoogleAsBase();
         config(['google_places.enabled' => false]);
 
         (new LocationDnaPoiDistanceService())->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
@@ -129,28 +181,28 @@ class PoiRunProviderGuardTest extends TestCase
         $this->assertSame(0, PropertyLocationPoi::count());
     }
 
-    // ── a non-Google base is not subject to Google's guards ─────────────────
+    // ── a corpus base is not subject to Google's guards ─────────────────────
 
     /**
-     * With a non-Google provider selected, a disabled Google and a blank Google key are
-     * facts about a provider this run does not use. The run must proceed past them.
+     * With the corpus selected, a disabled Google and a blank Google key are facts about a
+     * provider this run does not use. The run must proceed past them.
      *
-     * It then reaches the fetcher, which is the stub here (the corpus adapter cannot see a
-     * cluster in CI), so every category records `not_found` — the honest outcome for a
-     * provider that returned nothing. What matters is that the run got there at all.
+     * A fetcher is INJECTED here, which also exercises the one documented exemption in the
+     * corpus-readiness guard: the caller supplied the provider, so the corpus's own
+     * connection readiness is not what decides this run. That matters in CI, where
+     * `tests/bootstrap.php` blanks every SPATIAL_* variable on purpose and the cluster is
+     * unreachable by design.
      */
-    public function test_a_non_google_base_is_not_refused_by_the_google_guards(): void
+    public function test_a_corpus_base_is_not_refused_by_the_google_guards(): void
     {
+        $this->selectCorpusAsBase();
         config([
-            'location_providers.providers.overture_corpus.enabled' => true,
-            'google_places.enabled'                                => false,
-            'services.google.places_key'                           => null,
+            'google_places.enabled'      => false,
+            'services.google.places_key' => null,
         ]);
 
-        $result = (new LocationDnaPoiDistanceService())->calculateForListing(
-            self::LISTING_TYPE,
-            self::LISTING_ID,
-        );
+        $result = (new LocationDnaPoiDistanceService(nearbyFetcher: new StubNearbyPoiFetcher()))
+            ->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
 
         $this->assertNotSame(
             'google_places_disabled',
@@ -170,24 +222,78 @@ class PoiRunProviderGuardTest extends TestCase
         );
     }
 
-    /** Provenance on those rows names the corpus, not Google — one resolved provider. */
-    public function test_a_non_google_run_stamps_the_corpus_provider_into_provenance(): void
+    /**
+     * A SELECTED BUT UNREADABLE CORPUS REFUSES THE RUN — it does not answer "nothing".
+     *
+     * No fetcher is injected, so the adapter's own `isAvailable()` decides, and in CI it is
+     * false (SPATIAL_* blanked, no pinned version). Without this guard the factory hands
+     * back the inert stub and all 19 categories persist as `not_found`, which is a cluster
+     * outage cached as this property's nearby places and rendered as an empty panel.
+     */
+    public function test_a_selected_but_unreadable_corpus_refuses_the_run(): void
     {
-        config([
-            'location_providers.providers.overture_corpus.enabled' => true,
-            'google_places.enabled'                                => false,
-        ]);
+        $this->selectCorpusAsBase();
 
-        (new LocationDnaPoiDistanceService())->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+        $result = (new LocationDnaPoiDistanceService())->calculateForListing(
+            self::LISTING_TYPE,
+            self::LISTING_ID,
+        );
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('overture_corpus_unavailable', $result['error']);
+        $this->assertSame(0, PropertyLocationPoi::count(), 'An outage must not be persisted as not_found.');
+    }
+
+    /** Provenance on corpus rows names the corpus, not Google — one resolved provider. */
+    public function test_a_corpus_run_stamps_the_corpus_provider_into_provenance(): void
+    {
+        $this->selectCorpusAsBase();
+        config(['google_places.enabled' => false]);
+
+        (new LocationDnaPoiDistanceService(nearbyFetcher: new StubNearbyPoiFetcher()))
+            ->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
 
         $row = PropertyLocationPoi::where('listing_type', self::LISTING_TYPE)->firstOrFail();
 
         $this->assertSame('overture_corpus', $row->provenance_json['provider'] ?? null);
+        $this->assertSame('overture_corpus', $row->data_source);
         $this->assertSame(
             'cdla-permissive-2.0+apache-2.0+cc0-1.0',
             $row->provenance_json['license'] ?? null,
             'Overture Places is NOT ODbL — see CorpusPoiLicenseProvenanceTest.'
         );
+        $this->assertSame(
+            CanonicalField::METHOD_CORPUS,
+            $row->provenance_json['method'] ?? null,
+            'A local corpus read issues no request and must not be recorded as an API call.'
+        );
+    }
+
+    // ── selection helpers ───────────────────────────────────────────────────
+
+    /**
+     * Name Google the base for poi.default, as an operator would have to.
+     *
+     * Enabling the provider is deliberately NOT enough any more: on the shipped map it is
+     * an `overlay`, and overlays are never promoted.
+     */
+    private function selectGoogleAsBase(): void
+    {
+        config(['location_providers.providers.google_places.enabled' => true]);
+
+        // Whole-array write. `config(['...capabilities.poi.default' => ...])` silently
+        // creates a nested `poi => default` key instead, because Arr::set splits on dots
+        // and this capability key contains one — the real binding list would be untouched
+        // and the test would pass for the wrong reason.
+        $capabilities                = (array) config('location_providers.capabilities');
+        $capabilities['poi.default'] = [['provider' => 'google_places', 'role' => 'base']];
+        config(['location_providers.capabilities' => $capabilities]);
+    }
+
+    /** Open the corpus ROUTING gate. The adapter's own gate is a separate decision. */
+    private function selectCorpusAsBase(): void
+    {
+        config(['location_providers.providers.overture_corpus.enabled' => true]);
     }
 
     // ── the guard and the provenance read one value ─────────────────────────
