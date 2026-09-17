@@ -56,6 +56,12 @@ const MOUNTS = [
      */
     { prefix: '/virtual-drive-js/', dir: path.join(ROOT, 'public/js/virtual-drive') },
     { prefix: '/virtual-drive-css/', dir: path.join(ROOT, 'public/css/virtual-drive') },
+    /*
+     | The Ask AI typed-question matcher, as written. Same reasoning as the Virtual Drive
+     | assets above: a static file with no build step, so the spec exercises the exact file
+     | the listing pages load rather than a copy that could drift from it.
+     */
+    { prefix: '/ask-ai-js/', dir: path.join(ROOT, 'public/js/ask-ai') },
     { prefix: '/', dir: path.join(__dirname, '../fixtures') },
 ];
 

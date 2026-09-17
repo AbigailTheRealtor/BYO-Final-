@@ -128,6 +128,32 @@ class LandlordProviderTextPolicy
         return is_array($f) ? $f : [];
     }
 
+    /**
+     * The Fair Housing category definitions — patterns and operator messages — as DATA.
+     *
+     * Exposed so a second provider-text surface can evaluate against this same
+     * vocabulary instead of growing its own. Two independently maintained copies of
+     * "which sentence structures are an exclusion" is how one surface comes to refuse a
+     * phrase the other publishes, and the config header is explicit that these rules
+     * match an exclusion STRUCTURE rather than a word — a property that is expensive to
+     * get right once and impossible to keep right twice.
+     *
+     * This does NOT create a "moderate an arbitrary string" entry point on this class.
+     * Every verdict method here still takes a FIELD KEY and only landlord provider
+     * fields are named, so pointing this policy at consumer text still does nothing.
+     * The caller receives the rules and must decide, under its own authorship rules,
+     * what to apply them to.
+     *
+     * @see \App\Support\OfferListing\PublicProviderTextPolicy
+     * @return array<string,array> category name => definition
+     */
+    public static function categoryDefinitions(): array
+    {
+        $categories = self::conf()['categories'] ?? [];
+
+        return is_array($categories) ? $categories : [];
+    }
+
     /** Is this field key landlord-authored prose that Phase 3 governs? */
     public static function isGovernedField(string $key): bool
     {

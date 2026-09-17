@@ -390,6 +390,8 @@ class AskAiContextBuilderService
             'association_fee_amount'         => 'association_fee_amount',
             'association_fee_frequency'      => 'association_fee_frequency',
             'association_amenities'          => 'association_amenities',
+            // Same meta key and decoding as the seller context (Batch 2c HOA coverage).
+            'association_fee_includes'       => 'association_fee_includes',
             // ── Lease Terms ───────────────────────────────────────────────────
             'annual_property_taxes'          => 'annual_property_taxes',
             'leasing_restrictions'           => 'leasing_restrictions',
@@ -1501,6 +1503,7 @@ class AskAiContextBuilderService
 
             // ── decodeJsonField: HOA ──────────────────────────────────────────
             'association_amenities'     => $this->decodeJsonField($infoGet('association_amenities')),
+            'association_fee_includes'  => $this->decodeJsonField($infoGet('association_fee_includes')),
 
             // ── complex: lease_length ─────────────────────────────────────────
             // lease_length: 'min_lease_period' may be "Other"; resolve to the free-text

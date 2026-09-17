@@ -12,6 +12,7 @@ use App\Services\LocationDna\SchoolDistrictLookupService;
 use App\Services\Offers\BiddingWindowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Support\OfferListing\CriteriaPrivacyPolicy;
 
 class BuyerOfferListingController extends Controller
 {
@@ -103,7 +104,36 @@ class BuyerOfferListingController extends Controller
                 : $row->meta_value;
         }
 
+        /* Fair Housing / privacy — the consumer's private criteria never leave here.
+         *
+         * This route has no auth middleware; the two checks above gate only archived
+         * and draft listings. Everything below is rendered to the open internet, so a
+         * non-owner's $meta is redacted BEFORE the view sees it. Every meta read on
+         * that page closes over this one array — $str/$arr/$val, each section's own
+         * has…Content guard, the hero, the badges and the sidebar — which is why the
+         * gate is here and not on ~20 individual $row() calls.
+         * config/offer_listing_private_criteria.php states the reasoning per key. */
+        $buyerViewerIsOwner = CriteriaPrivacyPolicy::viewerIsOwner(auth()->id(), $auction->user_id);
+        $meta = CriteriaPrivacyPolicy::redactForViewer('buyer', $meta, $buyerViewerIsOwner);
+
         $askAiChipContext = app(AskAiContextBuilderService::class)->buildChipContext($auction, 'buyer');
+
+        /* Questions About This Buyer's Criteria (Batch 2d) — precomputed, deterministic
+         * answers. No request, no classifier, no model, no generated text. Only the keys in
+         * AskAiPublicPropertyQuestionService::PUBLIC_BUYER_CRITERIA are readable: the
+         * buyer's pre-approval status and amount, cash budget, down payment, credit score,
+         * occupant count and current address are all in this listing's context and none is
+         * in that catalog.
+         *
+         * $meta is already redacted for a non-owner, so the guards and multi-select
+         * companions below read the same array the page does. */
+        $propertyQuestions = app(\App\Services\AskAi\AskAiPublicPropertyQuestionService::class)
+            ->forListing('buyer', $askAiChipContext, $meta);
+
+        /* Who gets the free-text Ask AI modal. Its endpoint is owner-scoped, so a shopper
+         * gets the deterministic questions above and never a text box that can only answer
+         * "owner only". The criteria questions themselves are the same for both. */
+        $askAiViewerIsOwner = $buyerViewerIsOwner;
 
         $agentAiV2      = config('ask_ai.agent_ai_v2_enabled', false);
         $agentAiAgentId = (int) ($meta['hired_agent_id'] ?? 0);
@@ -151,6 +181,7 @@ class BuyerOfferListingController extends Controller
 
         return view('offer-listing.buyer.view', compact(
             'auction', 'meta', 'askAiChipContext', 'biddingWindow',
+            'propertyQuestions', 'askAiViewerIsOwner',
             'locationDnaPreferences', 'legacyLocation', 'importantPlaces', 'importantPlacesExact',
             'boundaryData', 'floodZoneData', 'schoolDistrictData',
             'locationIntelligenceSummary',

@@ -325,12 +325,6 @@
 .lol-view-page .lol-interaction-activity-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; padding: 0.18rem 0; border-bottom: 1px solid #f1f5f9; }
 .lol-view-page .lol-interaction-activity-row:last-child { border-bottom: none; }
 .lol-view-page .lol-interaction-activity-val { font-weight: 700; color: #94a3b8; font-size: 0.72rem; }
-.lol-view-page .lol-interaction-ai-chips { display: flex; flex-direction: column; gap: 0.28rem; margin-bottom: 0.35rem; }
-.lol-view-page .lol-interaction-ai-chip {
-    font-size: 0.69rem; color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4;
-    border-radius: 20px; padding: 0.2rem 0.5rem; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; max-width: 100%; cursor: default;
-}
 
 /* ---- Ask AI Suggestion Chips ---- */
 .ask-ai-chip {
@@ -776,27 +770,14 @@
                 </button>
             </div>
 
-            {{-- 3. Ask AI --}}
-            <div class="lol-interaction-card">
-                <div class="lol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
-                <div class="lol-interaction-card-label">Ask AI</div>
-                <div class="lol-interaction-ai-chips">
-                    <span class="lol-interaction-ai-chip">What utilities are included?</span>
-                    <span class="lol-interaction-ai-chip">Are pets allowed?</span>
-                    <span class="lol-interaction-ai-chip">What is the lease term?</span>
-                    <span class="lol-interaction-ai-chip">What are the move-in costs?</span>
-                    <span class="lol-interaction-ai-chip">Is parking available?</span>
-                </div>
-                <input type="text" class="form-control form-control-sm"
-                       placeholder="Ask a question about this property…"
-                       aria-label="AI question input" disabled
-                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
-                <button type="button" class="lol-interaction-cta lol-interaction-cta-outline"
-                        data-bs-toggle="modal" data-bs-target="#lolAiModal"
-                        aria-label="Ask AI a question about this property">
-                    <i class="fa-solid fa-robot"></i>Ask AI
-                </button>
-            </div>
+            {{-- 3. Ask AI — Questions About This Property (verified, precomputed) --}}
+            @include('offer-listing.partials._ask-ai-property-card', [
+                'questions'     => $propertyQuestions ?? [],
+                'role'          => 'landlord',
+                'prefix'        => 'lol',
+                'viewerIsOwner' => $askAiViewerIsOwner ?? false,
+                'modalId'       => 'lolAiModal',
+            ])
 
             {{-- 4. Share Listing --}}
             <div class="lol-interaction-card">
@@ -1363,11 +1344,6 @@
         'mlsNumber'  => ($mlsDetails ?? null)?->mlsNumber,
         'labelStyle' => $mlsLabelStyle,
         'valueStyle' => $mlsValueStyle,
-    ])
-
-    @include('offer-listing.partials._property-questions', [
-        'questions' => $propertyQuestions ?? [],
-        'role'      => 'landlord',
     ])
 
     {{-- ================================================================
@@ -2162,9 +2138,15 @@
             </a>
             @endauth
             {{-- Option A: Ask AI added to sidebar to match Seller view --}}
+            @if($askAiViewerIsOwner ?? false)
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolAiModal">
                 <i class="fa-solid fa-robot"></i>Ask AI About Property
             </button>
+            @else
+            <a href="#lol-ask-ai-card" class="lol-action-btn lol-action-outline">
+                <i class="fa-solid fa-robot"></i>Ask AI About Property
+            </a>
+            @endif
             <button type="button" class="lol-action-btn lol-action-outline lol-action-hire"
                     data-bs-toggle="modal" data-bs-target="#lolHireAgentModal">
                 <i class="fa-solid fa-user-tie"></i>Hire an Agent
@@ -2351,7 +2333,10 @@
         </div>
     </div>
 
-    {{-- Modal: Ask AI About This Property --}}
+    {{-- Modal: Ask AI About This Property — OWNER ONLY. Its endpoint is owner-scoped, so a
+         shopper would only ever reach the "available to the listing owner" notice; shoppers
+         get the verified questions in the Ask AI card instead. --}}
+    @if($askAiViewerIsOwner ?? false)
     <div class="modal fade" id="lolAiModal" tabindex="-1" aria-labelledby="lolAiModalLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
@@ -2454,6 +2439,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 </div>{{-- /container --}}
 
@@ -2471,9 +2457,15 @@
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
         <i class="fa-solid fa-calendar-days"></i><span>Showing</span>
     </button>
+    @if($askAiViewerIsOwner ?? false)
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolAiModal">
         <i class="fa-solid fa-robot"></i><span>Ask AI</span>
     </button>
+    @else
+    <a href="#lol-ask-ai-card" class="lol-mobile-bar-btn">
+        <i class="fa-solid fa-robot"></i><span>Ask AI</span>
+    </a>
+    @endif
     @if(auth()->check() && auth()->id() == $auction->user_id)
     <a href="{{ route('offer.listing.landlord.edit', ['auctionId' => $auction->id]) }}" class="lol-mobile-bar-btn">
         <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
@@ -2579,6 +2571,8 @@
 
     /* ── Interaction Hub ── */
     (function () {
+        @if($askAiViewerIsOwner ?? false)
+        /* AI modal example questions rotation (owner modal only) */
         var lolAiExamples = [
             'What utilities are included in the rent?',
             'Are pets allowed at this property?',
@@ -2598,10 +2592,12 @@
                 lolAiIdx++;
             });
         }
+        @endif
         var lolHubNativeBtn = document.getElementById('lolHubNativeShareBtn');
         if (navigator.share && lolHubNativeBtn) { lolHubNativeBtn.style.display = ''; }
         /* Copy Link — goes directly to clipboard regardless of native share availability */
-        /* ---- Ask AI modal — V2-aware submit + session management ---- */
+        @if($askAiViewerIsOwner ?? false)
+        /* ---- Ask AI modal — V2-aware submit + session management (owner modal only) ---- */
         (function () {
             var submitBtn = document.getElementById('lolAiSubmitBtn');
             var textarea  = document.getElementById('lolAiTextarea');
@@ -2917,6 +2913,7 @@
                 });
             }
         }());
+        @endif
 
         var lolHubCopyBtn = document.getElementById('lolHubCopyBtn');
         if (lolHubCopyBtn) {

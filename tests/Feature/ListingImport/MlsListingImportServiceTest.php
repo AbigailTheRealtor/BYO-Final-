@@ -490,8 +490,15 @@ class MlsListingImportServiceTest extends TestCase
         $this->assertEquals('X', MlsNormalizer::normalize('flood_zone_code', 'X'));
         $this->assertEquals('AE', MlsNormalizer::normalize('flood_zone_code', 'ae'));
         $this->assertEquals('VE', MlsNormalizer::normalize('flood_zone_code', 've'));
-        $this->assertEquals('yes', MlsNormalizer::normalize('flood_zone_code', 'Flood Insurance Required'));
-        $this->assertEquals('yes', MlsNormalizer::normalize('flood_zone_code', 'Insurance Required'));
+        // SUPERSEDED: these two pinned a defect. `flood_zone_code` holds a FEMA ZONE
+        // DESIGNATION, and the normalizer used to answer the literal string `yes` for any
+        // source text mentioning flood insurance — a boolean answer about INSURANCE stored
+        // as the property's ZONE, indistinguishable to every later reader from a real
+        // designation. The insurance signal is not lost: the importer reads the MLS's own
+        // "Flood Insurance Reqd" field into `flood_insurance_required` separately, which is
+        // where a boolean belongs.
+        $this->assertSame('', MlsNormalizer::normalize('flood_zone_code', 'Flood Insurance Required'));
+        $this->assertSame('', MlsNormalizer::normalize('flood_zone_code', 'Insurance Required'));
     }
 
     public function test_normalizer_hoa_fee_frequency(): void
