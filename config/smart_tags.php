@@ -88,7 +88,7 @@ $native = ['native_derivable' => true];
 
 return [
 
-    'version' => '2026-09-16.1',
+    'version' => '2026-09-17.1',
 
     'categories' => [
         'kitchen'        => ['label' => 'Kitchen',                    'display_order' => 10],
@@ -241,6 +241,16 @@ return [
         'intracoastal_access'  => $tag('Intracoastal Access', 'water', $ALL, $both),
         'canal_frontage'       => $tag('Canal Frontage', 'water', $ALL, $both),
         'lake_access'          => $tag('Lake Access', 'water', $ALL, $both),
+        // Added 2026-09-17. The structured water-access field named THIS body of water for this
+        // listing. Never proximity: "near the beach", "a short walk to the river" and any Location
+        // DNA distance are a different concept and must never reach these keys. They carry no
+        // description-derived rule for that reason — see config/smart_tag_sources.php.
+        'bay_or_harbor_access' => $tag('Bay / Harbor Access', 'water', $ALL, $both + ['description' => 'The listing\'s stated water access is a bay or harbor. Never proximity to one.']),
+        'bayou_access'         => $tag('Bayou Access', 'water', $ALL, $both + ['description' => 'The listing\'s stated water access is a bayou. Never proximity to one.']),
+        'beach_access'         => $tag('Beach Access', 'water', $ALL, $both + ['description' => 'The listing\'s stated water access is a beach. NEVER "near the beach" — proximity is Location DNA.']),
+        'creek_access'         => $tag('Creek Access', 'water', $ALL, $both + ['description' => 'The listing\'s stated water access is a creek. Never proximity to one.']),
+        'pond_access'          => $tag('Pond Access', 'water', $ALL, $both + ['description' => 'The listing\'s stated water access is a pond. Never proximity to one.']),
+        'river_access'         => $tag('River Access', 'water', $ALL, $both + ['description' => 'The listing\'s stated water access is a river. Never proximity to one.']),
         'dock'                 => $tag('Dock', 'water', $ALL, $both + ['negatable' => true, 'description' => 'A boat dock. Never a loading dock (see loading_dock).']),
         'boat_lift'            => $tag('Boat Lift', 'water', $ALL, $both),
         'seawall'              => $tag('Seawall', 'water', $ALL, $both),
