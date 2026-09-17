@@ -3,6 +3,7 @@
 namespace App\Services\Bridge;
 
 use App\Models\BridgeProperty;
+use App\Support\Listing\MlsProvider;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -33,6 +34,13 @@ class BridgePropertyNormalizer
 
         return [
             'listing_key' => $listingKey,
+
+            // Which MLS issued this record. This normalizer reads the Bridge
+            // Data Output shape and nothing else, so the answer is constant
+            // here — a second provider gets its own normalizer, not a branch in
+            // this one. Stamped on every upsert so a row's origin is recorded
+            // at the moment it is written rather than inferred later.
+            'provider'                => MlsProvider::current()->value,
 
             'listing_id'              => $record['ListingId'] ?? null,
             'standard_status'         => $record['StandardStatus'] ?? null,

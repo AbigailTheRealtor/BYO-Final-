@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Listing\MlsProvider;
 use Illuminate\Database\Eloquent\Model;
 
 class BridgeProperty extends Model
@@ -9,6 +10,11 @@ class BridgeProperty extends Model
     protected $table = 'bridge_properties';
 
     protected $fillable = [
+        // Which MLS issued this record. Distinct from `listing_key`, which is
+        // the identifier that provider minted — unique within its own system
+        // and not across systems. See App\Support\Listing\MlsProvider.
+        'provider',
+
         'listing_key',
         'listing_id',
         'standard_status',
@@ -111,6 +117,27 @@ class BridgeProperty extends Model
     public function scopeNonPermanent(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('is_permanent', false);
+    }
+
+    /**
+     * Which MLS issued this record, as a governed value rather than a string.
+     *
+     * Returns null when the column is empty or holds something this application
+     * does not recognise — {@see MlsProvider::fromStored()} is fail-closed, and
+     * a caller must NOT substitute {@see MlsProvider::current()} for a null. A
+     * record whose origin we cannot name is not a record from the provider we
+     * happen to have; treating it as one is how a cross-provider mix-up would
+     * arrive looking like success.
+     *
+     * Named `mlsProvider()` rather than `provider()` so it can never be mistaken
+     * for — or shadowed by — an Eloquent relation on the `provider` attribute.
+     *
+     * Nothing reads this yet. It is the foundation the provider-scoped lookups
+     * and composite uniqueness are built on, in later, separate changes.
+     */
+    public function mlsProvider(): ?MlsProvider
+    {
+        return MlsProvider::fromStored($this->provider);
     }
 
     protected static function boot(): void
