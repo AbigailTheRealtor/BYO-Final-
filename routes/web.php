@@ -1429,6 +1429,32 @@ Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev
 });
 
 // ===========================================================================
+// Listing preferences — Save | Maybe | Pass
+//
+// Gated by `listing-preferences` (config/listing_preferences.php, default OFF
+// → every route 404s, so an off deployment does not advertise an endpoint that
+// refuses). AUTHENTICATED ONLY: `auth` is a second, independent gate, and there
+// is deliberately NO guest route — a signed-out visitor is sent through the
+// existing login flow and no anonymous row is ever created.
+//
+// Nothing here accepts a subject key, a seeker role or a user id: all three are
+// resolved server-side. See ListingPreferenceController.
+//
+// `web` middleware (applied by RouteServiceProvider to this file) carries CSRF
+// and the session, so these writes are protected exactly as every other
+// authenticated POST in this application.
+// ===========================================================================
+Route::middleware(['listing-preferences', 'auth', 'throttle:listing-preference-write'])
+    ->prefix('listing-preferences')
+    ->name('listing-preferences.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\ListingPreferenceController::class, 'show'])->name('show');
+        Route::post('/', [\App\Http\Controllers\ListingPreferenceController::class, 'store'])->name('store');
+        Route::post('/reasons', [\App\Http\Controllers\ListingPreferenceController::class, 'reasons'])->name('reasons');
+        Route::delete('/', [\App\Http\Controllers\ListingPreferenceController::class, 'destroy'])->name('destroy');
+    });
+
+// ===========================================================================
 // LAYER 2 DEV-ONLY — OfferListing duplication test routes
 // These routes are DEVELOPMENT-ONLY. Do NOT use in production.
 // Purpose: smoke-test the duplicated OfferListing Livewire components.

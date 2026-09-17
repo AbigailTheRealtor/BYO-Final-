@@ -52,12 +52,51 @@ module.exports = defineConfig({
     workers: process.env.CI ? 2 : undefined,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
 
-    webServer: {
-        command: 'node tests/browser/support/static-server.js',
-        url: 'http://127.0.0.1:8931/health',
-        reuseExistingServer: !process.env.CI,
-        timeout: 20_000,
-    },
+    /*
+     | TWO SERVERS, BECAUSE THERE ARE TWO KINDS OF RISK.
+     |
+     | 8931 serves STATIC fixtures for the Location DNA renderer, where the risk
+     | is in the JavaScript and a booted Laravel would be pure overhead.
+     |
+     | 8932 serves the REAL application for the listing-preference specs, where
+     | the risk is the opposite shape: persistence, authentication, CSRF and the
+     | feature flag, none of which a static fixture can have. It builds its own
+     | isolated SQLite environment — see tests/browser/support/app-server.js —
+     | and never touches a developer's .env or any shared database.
+     |
+     | Its timeout is generous because it migrates the full chain before serving.
+     */
+    webServer: [
+        {
+            command: 'node tests/browser/support/static-server.js',
+            url: 'http://127.0.0.1:8931/health',
+            reuseExistingServer: !process.env.CI,
+            timeout: 20_000,
+        },
+        {
+            command: 'node tests/browser/support/app-server.js',
+            url: 'http://127.0.0.1:8932/login',
+            reuseExistingServer: !process.env.CI,
+            timeout: 180_000,
+        },
+        /*
+         | The same application with the feature flag OFF, on its own port and
+         | its own database. A real server rather than a config poke, because
+         | what is being proven is that a deployment which sets nothing serves no
+         | control and no endpoint.
+         */
+        {
+            command: 'node tests/browser/support/app-server.js',
+            url: 'http://127.0.0.1:8933/login',
+            // ...process.env is REQUIRED: Playwright REPLACES the child
+            // environment with this object rather than merging it, so without
+            // the spread the server started with no PATH and exited 1 before
+            // printing a single line.
+            env: { ...process.env, LP_APP_PORT: '8933', LP_FEATURE_ENABLED: 'false' },
+            reuseExistingServer: !process.env.CI,
+            timeout: 180_000,
+        },
+    ],
 
     use: {
         baseURL: 'http://127.0.0.1:8931',
@@ -67,8 +106,25 @@ module.exports = defineConfig({
     },
 
     projects: [
+        /*
+         | The real-application specs. Separate project rather than a different
+         | baseURL inside one, so a spec cannot accidentally drive the wrong
+         | origin and so `--project=app` runs them alone.
+         */
+        {
+            name: 'app',
+            testMatch: /listing-preference\.spec\.js/,
+            use: {
+                ...devices['Desktop Chrome'],
+                baseURL: 'http://127.0.0.1:8932',
+                launchOptions: {
+                    ...(chromiumExecutable ? { executablePath: chromiumExecutable } : {}),
+                },
+            },
+        },
         {
             name: 'chromium',
+            testIgnore: /listing-preference\.spec\.js/,
             use: {
                 ...devices['Desktop Chrome'],
                 launchOptions: {

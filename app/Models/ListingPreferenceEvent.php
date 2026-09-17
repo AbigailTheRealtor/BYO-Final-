@@ -13,7 +13,21 @@ use LogicException;
  * decay, undo and Fair Housing auditability all read; a mutable history answers
  * none of those questions honestly.
  *
- * Nothing writes to this model in Phase 1.
+ * THE THREE SHAPES A ROW MAY TAKE (Phase 2):
+ *
+ *   from_state = null,            to_state = save|maybe|pass  first preference
+ *   from_state = save|maybe|pass, to_state = save|maybe|pass  state change
+ *   from_state = save|maybe|pass, to_state = null             CLEARED
+ *
+ * A NULL `to_state` means exactly one thing: no current preference after this
+ * transition. It is never a fourth state and never a synonym for `pass` — "I
+ * passed on this house" and "I withdrew my opinion" are different facts.
+ *
+ * `to_state` carries NO cast, deliberately: a cast to string would turn the
+ * null into '' and quietly destroy that distinction on the way in or out. It is
+ * written as a nullable string and read back as null or one of the three
+ * values. `wasCleared()` is the one reading of that, so no caller has to
+ * remember which comparison is the safe one.
  */
 class ListingPreferenceEvent extends Model
 {
@@ -45,6 +59,18 @@ class ListingPreferenceEvent extends Model
         'reasons_json' => 'array',
         'created_at'   => 'datetime',
     ];
+
+    /**
+     * Did this transition leave the customer with no current preference?
+     *
+     * The one reading of a null `to_state`, so no caller invents its own
+     * comparison — `=== null` and `=== ''` would disagree the moment a cast or
+     * a form submission turned one into the other.
+     */
+    public function wasCleared(): bool
+    {
+        return $this->to_state === null;
+    }
 
     protected static function boot(): void
     {

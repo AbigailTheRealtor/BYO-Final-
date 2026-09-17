@@ -2717,9 +2717,12 @@
                         data-bs-toggle="modal" data-bs-target="#solHireAgentModal">
                     <i class="fa-solid fa-user-tie"></i>Hire an Agent
                 </button>
-                <button class="sol-action-btn sol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
-                    <i class="fa-regular fa-bookmark"></i>Save Listing
-                </button>
+                {{-- Save | Maybe | Pass. Replaces the dead bookmark placeholder
+                     that used to sit here. Renders nothing when the feature is off, and
+                     nothing for an account that is not a Buyer in this market;
+                     a signed-out visitor gets the control and the existing
+                     login flow. --}}
+                <x-listing-preference.control listing-type="seller_agent" :listing-id="$auction->id" />
                 <button class="sol-action-btn sol-action-outline" id="solShareBtn" type="button">
                     <i class="fa-solid fa-share-nodes"></i>Share Listing
                 </button>
