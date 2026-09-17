@@ -277,6 +277,11 @@ class ExploreInventoryService
                 beforeProviderRequest: fn (): ?string => $this->budget->acquire($actorKey),
                 // No Location DNA from Explore — see the class note.
                 dispatchDna: false,
+                // No Smart Tags from Explore either, and for the same shape of
+                // reason: one pass can upsert 500 rows inside a request made as
+                // somebody moves a camera, and Explore renders no Smart Tags.
+                // Those rows are tagged later by `smart-tags:derive --only-stale`.
+                deriveSmartTags: false,
             );
         } catch (\Throwable $e) {
             // Discovery must never take the surface down with it. A provider

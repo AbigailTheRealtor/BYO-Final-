@@ -59,8 +59,18 @@ class SmartTagPurgerAndInertnessTest extends TestCase
         $this->assertSame(1, SmartTagManualEvent::query()->where('listing_id', $a->id)->count(), 'The audit trail is kept');
     }
 
-    /** @test */
-    public function the_existing_bridge_import_writes_no_smart_tags(): void
+    /**
+     * The normalizer is still a PERSISTENCE PRIMITIVE.
+     *
+     * Phase 2 wired Smart Tags into the lookup service and the lazy importer,
+     * deliberately NOT into BridgePropertyNormalizer::upsert(). This test is what
+     * keeps that true: derivation inside the normalizer would fire for every
+     * caller including the candidate adapter's normalize()-only use, and would
+     * leave the bulk importers no way to opt out.
+     *
+     * @test
+     */
+    public function the_bridge_normalizer_itself_writes_no_smart_tags(): void
     {
         $raw = json_decode((string) file_get_contents(base_path('tests/fixtures/mls/bridge/residential_lease.json')), true);
         $raw['ListingKey'] = 'SMARTTAG-INERT-1';
@@ -73,8 +83,17 @@ class SmartTagPurgerAndInertnessTest extends TestCase
         $this->assertSame(0, SmartTagDerivationState::query()->count());
     }
 
-    /** @test */
-    public function saving_a_native_offer_listing_writes_no_smart_tags(): void
+    /**
+     * Creating a listing ROW does not tag it; publishing through the wizard does.
+     *
+     * Phase 2 hooks the wizards' publish methods, not the models. A row written
+     * straight to the database — a factory, a seeder, a fixture, a future admin
+     * tool — therefore has no Smart Tags until something derives them, which is
+     * what makes the backfill command meaningful rather than redundant.
+     *
+     * @test
+     */
+    public function creating_a_native_listing_row_directly_writes_no_smart_tags(): void
     {
         $this->sellerListing($this->makeOwner(), [
             'property_type' => 'Residential',

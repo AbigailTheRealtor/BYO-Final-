@@ -3965,6 +3965,13 @@ class SellerOfferListingEdit extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
+            // Smart Tags — see the note in SellerOfferListing::store(). This is the
+            // publish path; the draft paths above deliberately do not derive.
+            \App\Services\SmartTags\SmartTagLifecycle::tryDeriveNative(
+                $auction,
+                \App\Services\SmartTags\SmartTagTelemetry::ENTRY_SELLER_PUBLISH,
+            );
+
             app(WizardEventService::class)->record(
                 (string) $this->user_type,
                 $this->listingId ? (int) $this->listingId : null,

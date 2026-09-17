@@ -3,7 +3,8 @@
 namespace App\Support\SmartTags;
 
 /**
- * The one reader of config/smart_tags.php and config/smart_tag_sources.php.
+ * The one reader of config/smart_tags.php, config/smart_tag_sources.php and
+ * config/smart_tags_wiring.php.
  *
  * WHY NOT JUST `config()`. The Smart Tag taxonomy is consulted by pure classes —
  * the selection policy, the derivers, the description parser — that are unit
@@ -20,6 +21,9 @@ final class SmartTagConfig
     public const TAXONOMY = 'smart_tags';
 
     public const SOURCES = 'smart_tag_sources';
+
+    /** Phase 2 activation gates. {@see SmartTagWiring} is the only class that interprets them. */
+    public const WIRING = 'smart_tags_wiring';
 
     /** @var array<string, array<string, mixed>> */
     private static array $fileConfig = [];
@@ -38,6 +42,21 @@ final class SmartTagConfig
     public static function sources(): array
     {
         return self::load(self::SOURCES);
+    }
+
+    /**
+     * The Phase 2 activation gates, raw. Interpreted only by {@see SmartTagWiring}.
+     *
+     * Unlike the taxonomy and the source rules, an EMPTY result here is a real
+     * answer rather than a reason to fall back to the file: a config that did not
+     * load must read as "no gates are open", and SmartTagWiring treats a missing
+     * key as off. See load()'s note on why it can return the file copy.
+     *
+     * @return array<string, mixed>
+     */
+    public static function wiring(): array
+    {
+        return self::load(self::WIRING);
     }
 
     /** Test hook: forget any file-loaded copy. */

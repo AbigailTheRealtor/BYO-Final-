@@ -26,28 +26,46 @@ final class NativeListingDescriptionReader
 {
     public function read(SmartTagListingType $type, NativeMetaValueReader $meta): ?string
     {
+        return $this->describe($type, $meta)->text;
+    }
+
+    /**
+     * The same decision as read(), keeping WHY there is no text.
+     *
+     * Phase 2 needs the distinction for one log line only — a listing with no
+     * description and a listing whose description the policy withholds are both
+     * "nothing to parse", but only the second is a suppression an operator may
+     * want to see. Derivation itself still treats them identically.
+     */
+    public function describe(SmartTagListingType $type, NativeMetaValueReader $meta): NativeDescription
+    {
         if (! $type->isNative()) {
-            return null;
+            return NativeDescription::absent();
         }
 
         $field = SmartTagSourceRules::descriptionField($type);
         $key = (string) ($field['meta_key'] ?? '');
 
         if ($key === '' || SmartTagSourceRules::isForbiddenKey($key)) {
-            return null;
+            return NativeDescription::absent();
         }
 
         $raw = $meta->raw($key);
         if (! is_string($raw) || trim($raw) === '') {
-            return null;
+            return NativeDescription::absent();
         }
 
         if (($field['gate'] ?? null) === 'landlord_provider_text') {
             $shown = LandlordProviderTextPolicy::displayValue($key, $raw);
 
-            return ($shown === null || trim($shown) === '') ? null : $shown;
+            // Stored prose the public page does not publish. Smart Tags parses
+            // exactly what the page shows, so this is a suppression, not an
+            // absence — and it is still null to every caller that reads text.
+            return ($shown === null || trim($shown) === '')
+                ? NativeDescription::suppressed()
+                : NativeDescription::published($shown);
         }
 
-        return trim($raw);
+        return NativeDescription::published(trim($raw));
     }
 }

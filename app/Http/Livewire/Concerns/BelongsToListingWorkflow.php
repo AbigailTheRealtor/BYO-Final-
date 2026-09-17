@@ -265,10 +265,28 @@ trait BelongsToListingWorkflow
         $metaTable = $relation->getRelated()->getTable();
         $foreignKey = $relation->getForeignKeyName();
 
-        return DB::transaction(function () use ($modelClass, $ids, $metaTable, $foreignKey) {
+        $deleted = DB::transaction(function () use ($modelClass, $ids, $metaTable, $foreignKey) {
             DB::table($metaTable)->whereIn($foreignKey, $ids)->delete();
 
             return $modelClass::query()->whereIn('id', $ids)->delete();
         });
+
+        // Smart Tag rows are addressed by (listing_type, listing_id) with no foreign
+        // key, by the house convention for multi-source tables, and the delete above
+        // is a query-builder mass delete that fires no model events — so there is no
+        // observer that could do this and it has to be an explicit call.
+        //
+        // AFTER the transaction, deliberately. The purger opens its own transaction,
+        // and running it inside this one would let a Smart Tag failure roll back a
+        // deletion the user asked for. Orphaned tag rows are inert — nothing reads
+        // them and the resolver ignores rows it cannot parse — while a draft that
+        // reappears because its tags could not be cleaned up is a real defect.
+        //
+        // Buyer, Tenant and Hire model classes are skipped inside purgeSilently():
+        // this trait serves all four roles and both products, and Smart Tags attach
+        // to Seller and Landlord Offer Listings only.
+        \App\Services\SmartTags\SmartTagLifecycle::tryPurge($modelClass, $ids);
+
+        return $deleted;
     }
 }

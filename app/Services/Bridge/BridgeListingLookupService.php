@@ -309,7 +309,39 @@ class BridgeListingLookupService
             ComputeLocationDna::dispatch('bridge', $result->model->id);
         }
 
+        $this->deriveSmartTags($result);
+
         return $result->model;
+    }
+
+    /**
+     * Smart Tags for one just-upserted MLS row. Secondary; never fails the upsert.
+     *
+     * THIS SEAM ONLY. The normalizer stays a persistence primitive — putting this
+     * inside upsert() would make it impossible for the bulk importers to opt out
+     * without threading a parameter through it, and would also fire during the
+     * candidate adapter's normalize()-only use, which writes nothing.
+     *
+     * Every caller of this seam handles one record at a time, or at most the 25 an
+     * address search returns, on an explicit user action. The multi-hundred-record
+     * paths — Explore discovery, criteria search — go through
+     * LazyBridgeImportService and opt out there.
+     *
+     * `raw_json` is the change test rather than wasChanged() over everything,
+     * because `imported_at` is rewritten on EVERY upsert: a plain wasChanged()
+     * would be true for a byte-identical record and the skip would never fire. If
+     * the feed's payload is unchanged there is nothing new to read, so the row is
+     * left alone before any model hydration, state lookup or hash work. A row
+     * whose payload DID change still reaches the derivation service's own hashes,
+     * which decide whether the fields the rules actually read moved at all.
+     */
+    private function deriveSmartTags(UpsertResult $result): void
+    {
+        if (! $result->isNew && ! $result->model->wasChanged('raw_json')) {
+            return;
+        }
+
+        \App\Services\SmartTags\SmartTagLifecycle::tryDeriveBridge($result->model);
     }
 
     /**

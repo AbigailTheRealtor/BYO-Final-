@@ -98,20 +98,109 @@ final class BridgeRecordAccessor implements StructuredValueAccessor
         return null; // Bridge records carry no JSON-object flags.
     }
 
+    /**
+     * The inputs a set of rules reads, AS THOSE RULES INTERPRET THEM.
+     *
+     * WHY NOT THE RAW VALUES. This used to record `$this->columns[$column]`
+     * directly, which made the hash answer "was this model written or read?" as
+     * well as "did the data change?". `bridge_properties.waterfront_yn` and
+     * `pool_private_yn` are booleans: immediately after `updateOrCreate()` the
+     * attribute is PHP `true`, and after the row is read back it is `1`. Those are
+     * different canonical JSON, so the same unchanged listing produced two
+     * different SHA-256 hashes depending on which code path had looked at it —
+     * and a caller deriving from a freshly written model re-derived every row a
+     * caller reading fresh rows had already done, and vice versa.
+     *
+     * Every value here is therefore taken through the SAME accessor method the
+     * rule engine will use for that rule's kind, so the hash and the derivation
+     * agree on what a value means. `true`, `1`, `"1"`, `"Y"` and `"yes"` all
+     * become boolean `true` because {@see self::toBool()} says so — this class
+     * invents no second vocabulary, it just stops hashing before interpretation.
+     *
+     * KEYED BY READING, NOT BY KIND. Two rules may read one field with different
+     * kinds — `Vegetation` is read by both `any` and `vocab`, `ParkingFeatures` by
+     * both `vocab` and `prefix`. Keying by the field alone would let the later
+     * rule's interpretation silently overwrite the earlier one; keying by the
+     * ACCESSOR METHOD keeps every distinct interpretation and collapses the ones
+     * that are genuinely identical (all four of those kinds read `values()`).
+     *
+     * An unrecognised kind falls back to the raw value rather than being dropped:
+     * change detection that silently stops watching a field is worse than change
+     * detection that is occasionally too sensitive.
+     */
     public function inputsFor(array $rules): array
     {
         $inputs = [];
+
         foreach ($rules as $rule) {
-            if (isset($rule['column'])) {
-                $inputs['column:' . $rule['column']] = $this->columns[$rule['column']] ?? null;
-            } elseif (isset($rule['field'])) {
-                $inputs['field:' . $rule['field']] = $this->raw[$rule['field']] ?? null;
+            $target = self::targetKey($rule);
+
+            if ($target === null) {
+                continue;
             }
+
+            [$reading, $value] = $this->interpret($rule);
+
+            $inputs[$target . '#' . $reading] = $value;
         }
+
+        // The property type is not a rule input — it selects the CONTEXT, and a
+        // context change must make a listing stale on its own.
         $inputs['column:property_type'] = $this->columns['property_type'] ?? ($this->raw['PropertyType'] ?? null);
         ksort($inputs);
 
         return $inputs;
+    }
+
+    /**
+     * Which accessor method the rule engine uses for each rule kind.
+     *
+     * This mirrors the switch in {@see StructuredRuleEngine::evaluateRule()} and
+     * exists so the hash cannot drift from it: a kind added there without an entry
+     * here falls back to the raw value, which is safe but visibly coarse.
+     *
+     * @var array<string, string>
+     */
+    private const READINGS = [
+        'boolean'   => 'boolean',
+        'equals'    => 'scalar',
+        'any'       => 'values',
+        'prefix'    => 'values',
+        'nonempty'  => 'values',
+        'vocab'     => 'values',
+        'number_gt' => 'number',
+        'flag'      => 'flag',
+    ];
+
+    /**
+     * @param array<string, mixed> $rule
+     * @return array{0: string, 1: mixed} the reading used, and the interpreted value
+     */
+    private function interpret(array $rule): array
+    {
+        $reading = self::READINGS[(string) ($rule['kind'] ?? '')] ?? null;
+
+        if ($reading === null) {
+            return ['raw', $this->read($rule)];
+        }
+
+        return [$reading, match ($reading) {
+            'boolean' => $this->boolean($rule),
+            'scalar'  => $this->scalar($rule),
+            'values'  => $this->values($rule),
+            'number'  => $this->number($rule),
+            'flag'    => $this->flag($rule),
+        }];
+    }
+
+    /** @param array<string, mixed> $rule */
+    private static function targetKey(array $rule): ?string
+    {
+        if (isset($rule['column'])) {
+            return 'column:' . $rule['column'];
+        }
+
+        return isset($rule['field']) ? 'field:' . $rule['field'] : null;
     }
 
     /** @param array<string, mixed> $rule */

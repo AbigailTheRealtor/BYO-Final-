@@ -4153,6 +4153,14 @@ class LandlordOfferListing extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 
+            // Smart Tags — see the note in SellerOfferListing::store(). The public
+            // description is read through LandlordProviderTextPolicy::displayValue(),
+            // so prose the policy withholds from the page is never parsed here.
+            \App\Services\SmartTags\SmartTagLifecycle::tryDeriveNative(
+                $auction,
+                \App\Services\SmartTags\SmartTagTelemetry::ENTRY_LANDLORD_PUBLISH,
+            );
+
             \Log::info('[LANDLORD LISTING SUBMITTED]', [
                 'record_id' => $auction->id,
                 'listing_id' => $auction->listing_id ?? 'N/A',

@@ -139,12 +139,37 @@ description and the tagger version (taxonomy + rules + engine version). A source
 when its own input, the tagger version or the listing's context changes; unchanged prose is never
 reparsed. Derivation is local CPU only — no provider calls at import, save, search or render.
 
-## 11. Explicitly out of scope for Phase 1
+**Structured hashes are taken over INTERPRETED values, not raw stored ones.** An accessor's
+`inputsFor()` must give equal output for two records the rules would read identically, whatever shape
+the store handed back. `BridgeRecordAccessor` therefore reads each rule through the same accessor
+method the rule engine will use for that rule's kind — `boolean`, `scalar`, `values`, `number`,
+`flag` — and keys each entry by that reading, so one field read two ways keeps both interpretations
+and kinds that share a reading collapse to one.
 
-Import / sync / save hooks, backfill, production remarks or description processing, any picker UI,
-search and ranking, cards and detail pages, Explore, Matching V2, Location DNA,
-Virtual Drive, Taste DNA, Find More Like This, natural-language search, image or
-vision analysis. Behavioural learning additionally requires its own governance revision.
+This is not tidiness. `bridge_properties.waterfront_yn` and `pool_private_yn` are boolean columns that
+come back as PHP `true` from a just-written model and as `1` from a re-read row. Hashing the raw value
+made the same unchanged listing produce two different hashes depending on which code path had looked
+at it, so a caller deriving from a freshly written model and a caller reading rows fresh each
+re-derived what the other had already done. The tags were never wrong — re-derivation is idempotent —
+but "unchanged input skips re-derivation" was not true across those paths.
+
+`true`, `1`, `"1"`, `"true"`, `"Y"` and `"yes"` all canonicalise to the same hash because
+`BridgeRecordAccessor::toBool()` already says they mean the same thing; this changes no vocabulary,
+it stops hashing before interpretation. An unrecognised value canonicalises to UNKNOWN and never to
+YES. A rule kind with no declared reading falls back to the raw value rather than being dropped,
+because change detection that silently stops watching a field is the worse failure.
+
+## 11. Explicitly out of scope
+
+Production remarks processing, any picker UI, search and ranking, cards and detail pages, Explore
+presentation, Matching V2, Location DNA, Virtual Drive, Taste DNA, Find More Like This,
+natural-language search, image or vision analysis. Behavioural learning additionally requires its
+own governance revision.
+
+**Update, 2026-09-16 — save hooks and the backfill are no longer out of scope.** Phase 2 wired
+derivation into the native publish paths, the single-record Bridge lookup and a `smart-tags:derive`
+command; §12 governs it. Everything else in the list above is still out of scope, and Phase 2 added
+no UI, no ranking and no search behaviour. MLS **sync** remains unwired — see §12.
 
 **Update, 2026-09-16 — Buyer/Tenant preferences.** What this section called
 `smart_tag_preferences` and "Love/Maybe/Pass" now exists as a separate subsystem:
@@ -155,7 +180,7 @@ Three points matter here:
 * **Customer terminology is Save | Maybe | Pass.** "Love" is superseded and must not reappear.
 * **It is not a second vocabulary and not a Smart Tag table.** Preference reasons live in
   `config/listing_preference_reasons.php` and *link* to canonical tag keys; a reason about a
-  property characteristic with no canonical tag is a taxonomy change made here, under §12, never an
+  property characteristic with no canonical tag is a taxonomy change made here, under §13, never an
   edit there. Price, size and proximity stay out of this taxonomy, as §9 already requires — the
   reason vocabulary carries them in its own `criteria` and `location` dimensions.
 * **`seeker_selectable` is now load-bearing.** It was inert; it is the gate that keeps
@@ -168,12 +193,99 @@ user-to-user similarity learning, collaborative neighbourhood or location learni
 demographic inference, geographic clustering of preference outcomes and protected-class preference
 inference. A learner additionally needs its decay model, retention policy and audit surface reviewed.
 
-## 12. Changing the taxonomy
+## 12. Phase 2 — lifecycle wiring
+
+Phase 2 activated derivation for published native Offer Listings and single-record Bridge lookups.
+It added no taxonomy, no rules, no tables, no migration and no UI.
+
+**Two gates, both default `false`, both fail-closed** (`true`/`1`/`on`/`yes` only; unset, empty,
+`false`/`0`/`off`/`no` and anything malformed are OFF): `SMART_TAGS_DERIVATION_ENABLED` is the master
+and `SMART_TAGS_BRIDGE_ENABLED` is an **additional** gate for `bridge` rows, never a replacement —
+enabling tagging for our own listing forms must not also start tagging a licensed MLS feed.
+`App\Support\SmartTags\SmartTagWiring::enabledFor($type)` is the only gate. Neither flag may be
+named in the deploy-time production flag contract: that contract may never name a safety switch.
+
+**One seam.** `SmartTagLifecycle` is the only class application code may call, through the static,
+non-throwing `tryDeriveNative()` / `tryDeriveBridge()` / `tryPurge()`. No call site touches the
+derivation service, evidence writer, resolver, projector or purger; a guard test asserts it, and a
+second guard names every file permitted to reference Smart Tags at all. Listing Preferences (§11) is
+a taxonomy READER and is held to the same no-internals rule.
+
+**Failure isolation is the contract.** Smart Tags are secondary derived data; the listing or property
+save is primary. A Smart Tag failure may never fail or roll back a listing save, a publish, a Bridge
+upsert or a deletion. Every call therefore happens *after* the primary write has committed, never
+inside its transaction — the draft purge calls the lifecycle after `DB::transaction()` returns — and
+the static shim additionally swallows a failure to RESOLVE the lifecycle from the container, which an
+instance method cannot.
+
+**Derived on publish, never on a draft.** The Create and Edit wizards set `SAVE_AS_NEW_DRAFT = true`,
+so every draft save inserts a NEW listing row and leaves the previous one; deriving there would mint
+evidence for unpublished versions that nothing reads. A listing acquires Smart Tags when it becomes a
+listing. This is the rule Location DNA already applies to the same wizards.
+
+**Where derivation runs.** Inline, after persistence — the queue connection is `sync` on this
+deployment, so a job would be inline with extra indirection, and a listing save must never depend on
+a worker that does not run.
+
+| Path | Derives? |
+|---|---|
+| Seller and Landlord Offer Listing publish (`store()`, `update()`) | yes |
+| MLS quick-import publish | yes |
+| Bridge single-record lookup (`BridgeListingLookupService`) | yes |
+| Every draft save | **no** |
+| Explore viewport discovery, Buyer/Tenant criteria search | **no** — `deriveSmartTags: false` |
+| `bridge:import-properties` | **no**, unless `--derive-smart-tags`, and the gates still apply |
+
+**Deferring is not suppressing.** The high-volume Bridge paths can upsert hundreds of rows inside a
+request somebody is waiting on, and none of them renders Smart Tags, so they opt out and
+`php artisan smart-tags:derive --only-stale` catches those rows up. `smart_tag_derivation_states` IS
+the staleness ledger: a row with no state has simply never been derived. Tagging belongs to the
+listing lifecycle and to backfill — never to search, a card, a detail page or a map movement.
+
+**Bridge structured hashes use canonical INTERPRETED rule values**, as §10 describes. That is what
+makes "unchanged input skips re-derivation" true for a Bridge row whichever code path read it.
+
+**The backfill command** is idempotent, resumable (`--from-id`, ordered by primary key, `chunkById`)
+and batch-oriented; one failing listing is counted and the batch continues; `--dry-run` reaches no
+writer at all rather than checking a flag inside one. **A production write requires a real
+interactive terminal** — both an interactive input and a TTY on STDIN — so a cron entry, CI step,
+queued job or agent invocation ABORTS rather than proceeding. There is no override token.
+
+**Manual evidence is never touched by automatic derivation.** `replaceDerived()` deletes only the one
+source being rewritten, so `manual_listing_owner` rows are outside every automatic delete, and the
+purger keeps the append-only manual event audit. §5's precedence still decides what an owner's
+selection means against an authoritative structured "No".
+
+**Native descriptions follow §8 unchanged.** The Seller description is meta `additional_details`; the
+Landlord description is the same key read ONLY through `LandlordProviderTextPolicy::displayValue()`,
+so prose the policy withholds from the public page is never parsed. Removing a description removes
+its evidence and re-resolves the listing.
+
+**MLS PublicRemarks remains hard-disabled.** `MLS_REMARKS_PROCESSING_APPROVED` and
+`MLS_REMARKS_PERSISTENCE_APPROVED` are both still `false`, Phase 2 changed neither, and tests assert
+both the constants and the writer's refusal.
+
+**Telemetry** is one structured `smart_tags` line per decision: outcome, listing type and id, context,
+entry point, which sources ran, tag and conflict counts, an abbreviated tagger version, duration, and
+an exception CLASS on failure. **No prose ever** — the description is reported as a boolean, and a
+test seeds distinctive sentences and asserts no fragment reaches a log. Backfills log per batch.
+
+**`MlsListingSyncService` is deliberately NOT wired.** Its three flags are off, so nothing drifts
+today — but a sync writes native structured facts, and **Smart Tags would go stale if MLS sync were
+activated without lifecycle integration**. Wire it before that activation; until then `--only-stale`
+is sufficient.
+
+**Still not built:** no Buyer/Tenant or owner Smart Tag picker, no Must Have / Prefer UI, no Smart Tag
+search filtering, ranking or match percentages, no listing-card or detail-page Smart Tag UI, and no
+cross-source deduplication between a Bridge row and the native listing that was imported from it.
+Each source keeps its own evidence.
+
+## 13. Changing the taxonomy
 
 1. Add or edit the tag in `config/smart_tags.php`; add rules in `config/smart_tag_sources.php`.
 2. Run `php artisan test tests/Unit/SmartTags tests/Feature/SmartTags tests/Feature/FairHousing/SmartTagTaxonomyComplianceTest.php`.
-3. A change to either file changes the tagger version, which marks every listing stale for re-derivation
-   once derivation is wired.
+3. A change to either file changes the tagger version, which marks every listing stale. Re-derive
+   with `php artisan smart-tags:derive --only-stale` (dry-run first); see §12.
 4. A new sensitive concept needs `compliance.status` other than `approved`, with a note, and review.
 5. A tag that is `seeker_selectable` becomes eligible to back a preference reason chip. Confirm that
    is intended: the chip is customer-facing on public pages.

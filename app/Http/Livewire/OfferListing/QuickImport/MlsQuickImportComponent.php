@@ -761,6 +761,21 @@ abstract class MlsQuickImportComponent extends Component
 
         $this->enrichLocation($auction);
 
+        // Smart Tags — the third native publish path. persistAnswers() above has
+        // written this wizard's answers, and MlsQuickImportDraftWriter wrote the
+        // workflow stamp, the property type and the MLS facts when the draft was
+        // materialised, so every governed value is in the database by now.
+        //
+        // The listing derives its OWN evidence from its OWN native meta. Nothing
+        // is copied across from the bridge_properties row this listing was
+        // imported from, even though it carries that row's listing key: the two
+        // records keep separate evidence and cross-source matching is a later
+        // phase. @see SmartTagLifecycle
+        \App\Services\SmartTags\SmartTagLifecycle::tryDeriveNative(
+            $auction,
+            \App\Services\SmartTags\SmartTagTelemetry::ENTRY_QUICK_IMPORT_PUBLISH,
+        );
+
         return redirect()->route(
             $this->role() === 'seller' ? 'offer.listing.seller.view' : 'offer.listing.landlord.view',
             ['id' => $auction->id],
