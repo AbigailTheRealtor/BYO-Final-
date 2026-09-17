@@ -15,11 +15,15 @@
 | Contract: docs/canonical-field-mapping-spec.md
 | Structure rationale: docs/location-provider-capability-map-proposal.md
 |
-| STAGE A (this file) is INERT. Nothing in the runtime path reads it yet.
-| The existing Google pipeline remains the sole ACTIVE production provider:
-| every non-Google/-authoritative provider below is `enabled => false`, so
-| once the registry is wired (a later stage) POI resolution still falls
-| through to `google_places` — byte-identical to today's behavior.
+| THIS FILE IS LIVE. `LocationProviderRegistry` reads it to decide which
+| provider answers `poi.default`, and `NearbyPoiFetcherFactory` plus the
+| `PoiLookupAdapterInterface` binding construct only what it resolves.
+|
+| For POI EXISTENCE the intended base is now the local Overture corpus, gated
+| by `OVERTURE_CORPUS_POI_ROUTING_ENABLED` (default OFF). With that gate off
+| `poi.default` resolves to NO provider at all and the run refuses — it does
+| NOT fall through to `google_places`, which is declared `overlay` and can no
+| longer be promoted. See the note on the `poi.default` capability below.
 |
 */
 
@@ -72,10 +76,11 @@ return [
         | a substitute. `CorpusPoiCategoryMap` holds that claim and derives it from the
         | corpus taxonomy.
         |
-        | ENABLED => FALSE, DELIBERATELY. Activation is a separate, reviewed step: it
-        | needs the corpus verified in the target environment and OVERTURE_CORPUS_POI_*
-        | set there. Both this flag and `config/overture_corpus_poi.php` must agree — see
-        | the two-gates note in that file.
+        | DEFAULT OFF, DELIBERATELY. Activation is a separate, reviewed step per
+        | environment: it needs the corpus verified on the cluster that environment points
+        | at, and BOTH gates set there — this one (`OVERTURE_CORPUS_POI_ROUTING_ENABLED`)
+        | and `config/overture_corpus_poi.php`'s `OVERTURE_CORPUS_POI_ENABLED`. See the
+        | two-gates note in that file, and the note on this descriptor's `enabled` key.
         */
         /*
         | LICENSE — READ THIS BEFORE CHANGING IT.
@@ -115,11 +120,14 @@ return [
         | teaching the importer to retain `sources[].dataset` and re-importing. Out of
         | scope here, and deliberately not faked in the meantime.
         |
-        | ATTRIBUTION IS STILL OWED AND IS NOT YET RENDERED ANYWHERE. CDLA-Permissive-2.0
-        | and Apache-2.0 both require it. Nothing in this phase displays a POI, so nothing
-        | is yet published without it — but surfacing corpus-backed places to users must
-        | carry Overture attribution, and that is a prerequisite of activation, not of
-        | this merge.
+        | ATTRIBUTION IS OWED AND IS NOW RENDERED. CDLA-Permissive-2.0 and Apache-2.0 both
+        | require it. `partials/location-dna/_data-attribution` resolves the notice from
+        | each persisted row's own `provenance_json.provider` — never from this file, since
+        | a row outlives the switch that fetched it — and is included by every surface that
+        | publishes a place name: `x-stellar.matchmaker-nearby`, the shared
+        | `partials/location-dna-agent-panel` (seller + landlord + hire) and the admin DNA
+        | page. `LocationDnaAttributionSurfaceTest` and `CorpusPoiAttributionSurfaceTest`
+        | pin that.
         */
         'overture_corpus' => [
             'tier'         => 'free',
@@ -129,7 +137,35 @@ return [
             'cache_policy' => 'cacheable',
             'license'      => 'cdla-permissive-2.0+apache-2.0+cc0-1.0',
             'serves'       => ['existence', 'geometry'],
-            'enabled'      => false,
+
+            /*
+            | THE ROUTING GATE. Its own environment variable, deliberately NOT the one
+            | `config/overture_corpus_poi.php` reads.
+            |
+            | The two gates answer different questions and the comment block in that file
+            | explains why they are separate: `overture_corpus_poi.enabled` is a CAPABILITY
+            | ("may this adapter read the corpus at all"), this one is a ROUTING decision
+            | ("is this provider the base for poi.default"). Pointing both at one variable
+            | would collapse them into a single gate wearing two names, and silencing the
+            | adapter during cluster maintenance would then also silently re-route the
+            | pipeline — which, before `effectiveBase()` stopped promoting overlays, meant
+            | re-routing it to the billable provider.
+            |
+            | Parsed fail-closed, exactly like `GOOGLE_PLACES_ENABLED` and for the same
+            | reason: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no`
+            | and any malformed value are OFF. A plain `(bool)` cast reads `off` and `no` as
+            | ON, which is the wrong answer for a switch an operator reaches for in a hurry.
+            |
+            | Default OFF. Activation is a separate, reviewed step per environment: the
+            | corpus must be present and verified on the cluster that environment points at,
+            | and BOTH gates must be set there. `OvertureActivationReadinessTest` asserts the
+            | shipped defaults are off.
+            */
+            'enabled'      => filter_var(
+                env('OVERTURE_CORPUS_POI_ROUTING_ENABLED', false),
+                FILTER_VALIDATE_BOOLEAN,
+                FILTER_NULL_ON_FAILURE
+            ) === true,
         ],
 
         'osm_overpass' => [
@@ -230,14 +266,25 @@ return [
 
         // Declared FIRST and as `base`, so that enabling the corpus makes it the effective
         // base outright rather than leaving the choice to which other providers happen to
-        // be on. While it is disabled the registry filters it out entirely and resolution
-        // is byte-identical to before it was listed.
+        // be on.
         //
-        // Note what this ordering guarantees at activation: `effectiveBase('poi.default')`
-        // returns the corpus, and NearbyPoiFetcherFactory constructs only the effective
-        // base — so a corpus miss is a miss, never a silent fall-through to Google. Google
-        // stays declared as `overlay` (its historical role for rating/reviews) and is not
-        // a fallback for existence.
+        // GOOGLE CANNOT BECOME THE EXISTENCE PROVIDER FOR THIS CATEGORY, BY THREE
+        // INDEPENDENT MECHANISMS, AND THE REDUNDANCY IS DELIBERATE:
+        //
+        //   1. It is declared `overlay` here — its historical role, rating/reviews on top
+        //      of a base that already answered — and never `base` or `fallback`.
+        //   2. `LocationProviderRegistry::effectiveBase()` refuses to promote an overlay,
+        //      so "every base is disabled" resolves to NULL rather than to Google. This is
+        //      the mechanism that was missing: the method used to return the highest-
+        //      priority survivor, which on this exact map was Google.
+        //   3. `NearbyPoiFetcherFactory::make()` and the `PoiLookupAdapterInterface`
+        //      binding construct `GooglePlacesPoiAdapter` only when the resolved binding's
+        //      ROLE is `base` — so even a future edit that listed Google as a fallback here
+        //      would not put it back on the existence path without also being deliberate
+        //      about the role.
+        //
+        // A corpus miss is therefore a miss, and a corpus that is switched off is a run
+        // with no provider — never a silent fall-through to a billable one.
         'poi.default' => [
             ['provider' => 'overture_corpus', 'role' => 'base'],     // local corpus, $0, US-FL only
             ['provider' => 'osm_overpass',  'role' => 'base'],     // free existence/geometry

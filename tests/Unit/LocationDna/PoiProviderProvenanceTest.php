@@ -104,7 +104,15 @@ class PoiProviderProvenanceTest extends TestCase
         ]);
     }
 
-    /** Point it back at Google, with the credential guards satisfied. */
+    /**
+     * Point it back at Google, with the credential guards satisfied.
+     *
+     * The capability override is now REQUIRED, not decoration: on the shipped map
+     * `google_places` is declared `overlay` for poi.default, and an overlay is never
+     * promoted to effective base. Enabling the provider is no longer enough to select it —
+     * which is the whole point of this phase — so a test that wants a Google-backed run has
+     * to say so, in the same place an operator would.
+     */
     private function selectGoogleProvider(): void
     {
         config([
@@ -113,6 +121,14 @@ class PoiProviderProvenanceTest extends TestCase
             'google_places.enabled'                                => true,
             'services.google.places_key'                           => 'test-poi-api-key',
         ]);
+
+        // NOTE the whole-array write. `config(['...capabilities.poi.default' => ...])`
+        // does NOT work: Arr::set splits on dots, and this capability key literally
+        // contains one, so that form creates a nested `poi => default` the registry never
+        // reads — leaving the real `poi.default` untouched and the test asserting nothing.
+        $capabilities                = (array) config('location_providers.capabilities');
+        $capabilities['poi.default'] = [['provider' => 'google_places', 'role' => 'base']];
+        config(['location_providers.capabilities' => $capabilities]);
     }
 
     private function runPipeline(NearbyPoiFetcherInterface $fetcher): void

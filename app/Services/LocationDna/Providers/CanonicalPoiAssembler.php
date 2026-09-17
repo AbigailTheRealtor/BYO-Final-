@@ -59,10 +59,20 @@ class CanonicalPoiAssembler
             return [];
         }
 
+        // No default provider: an unresolved base is 'none', the same sentinel
+        // LocationDnaPoiDistanceService uses, so a contribution can never be labelled with
+        // a provider the registry did not choose. In the production path this is
+        // unreachable — the service refuses a no-provider run before any fetch returns —
+        // but the two classes must agree about the answer, not rely on call order.
         $base       = $this->registry->effectiveBase(self::POI_DEFAULT_KEY);
-        $providerId = $base['provider'] ?? 'google_places';
+        $providerId = $base['provider'] ?? 'none';
         $role       = $base['role'] ?? LocationProviderRegistry::ROLE_BASE;
         $license    = $base['descriptor']['license'] ?? 'unknown';
+
+        // A corpus read made no request; see CanonicalField::METHOD_CORPUS.
+        $method = $providerId === \App\Services\LocationDna\OvertureCorpusPoiAdapter::PROVIDER_ID
+            ? CanonicalField::METHOD_CORPUS
+            : CanonicalField::METHOD_API;
 
         $assembled = [];
         foreach ($rawCandidates as $row) {
@@ -70,7 +80,7 @@ class CanonicalPoiAssembler
                 'value'          => $row,
                 'source'         => $providerId,
                 'role'           => $role,
-                'method'         => CanonicalField::METHOD_API,
+                'method'         => $method,
                 'license'        => $license,
                 'raw_ref'        => is_array($row) ? ($row['place_id'] ?? null) : null,
                 // Confidence and freshness are Batch 3 (persistence); null here keeps the

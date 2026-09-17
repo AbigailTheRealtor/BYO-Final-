@@ -151,6 +151,14 @@ return [
             'Boat Slip/Marina'              => 'boat_slip_marina',
         ],
 
+        // Read by native.water_access (meta `water_access`) and bridge.water_access
+        // (`STELLAR_WaterAccess`) — the same option vocabulary on both sides.
+        //
+        // NOT the water VIEW vocabulary. `STELLAR_WaterView` and the wizard's `water_view` field
+        // carry their own strings ("Gulf/Ocean - Full", "Bay/Harbor - Partial", "Creek/Stream"),
+        // and the live residential_lease fixture holds WaterAccess ['Beach','Gulf/Ocean'] beside
+        // WaterView ['Beach','Gulf/Ocean - Full'] on one record. A view is not access, so a view
+        // string must never be given an access tag here.
         'water_access' => [
             'Gulf/Ocean'            => 'gulf_or_ocean_access',
             'Gulf/Ocean to Bay'     => 'gulf_or_ocean_access',
@@ -158,6 +166,14 @@ return [
             'Canal - Freshwater'    => 'canal_frontage',
             'Canal - Saltwater'     => 'canal_frontage',
             'Lake'                  => 'lake_access',
+            'Bay/Harbor'            => 'bay_or_harbor_access',
+            'Bayou'                 => 'bayou_access',
+            'Beach'                 => 'beach_access',
+            'Creek'                 => 'creek_access',
+            'Pond'                  => 'pond_access',
+            'River'                 => 'river_access',
+            // 'Other' is deliberately unmapped: the generic water_access tag still fires from
+            // native.water_access.any, and inventing a body of water would be a false claim.
         ],
 
         'building_features' => [
@@ -267,14 +283,21 @@ return [
             'Wooded'           => 'wooded_land',
         ],
 
+        // Brick and Chip And Seal are real wizard options that mapped to NOTHING — unlike
+        // water_access there is no `nonempty` fallback rule here, so they produced no tag at all.
+        // Both are sealed, improved surfaces (a brick street is paved; chip seal is a bituminous
+        // surface treatment over a prepared base), which is the line these two tags draw against
+        // the loose aggregate of Dirt / Gravel / Limerock. 'Other' stays unmapped.
         'road_surface' => [
-            'Paved'      => 'paved_road_access',
-            'Asphalt'    => 'paved_road_access',
-            'Concrete'   => 'paved_road_access',
-            'Dirt'       => 'unpaved_road_access',
-            'Gravel'     => 'unpaved_road_access',
-            'Unimproved' => 'unpaved_road_access',
-            'Limerock'   => 'unpaved_road_access',
+            'Paved'         => 'paved_road_access',
+            'Asphalt'       => 'paved_road_access',
+            'Concrete'      => 'paved_road_access',
+            'Brick'         => 'paved_road_access',
+            'Chip And Seal' => 'paved_road_access',
+            'Dirt'          => 'unpaved_road_access',
+            'Gravel'        => 'unpaved_road_access',
+            'Unimproved'    => 'unpaved_road_access',
+            'Limerock'      => 'unpaved_road_access',
         ],
 
         'road_frontage' => [

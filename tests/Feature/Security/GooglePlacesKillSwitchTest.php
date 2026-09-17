@@ -66,6 +66,12 @@ class GooglePlacesKillSwitchTest extends TestCase
     /** @test */
     public function path_a_location_dna_poi_distance_service_short_circuits_when_the_switch_is_off(): void
     {
+        // Google must be the SELECTED provider for its own kill switch to be the thing
+        // under test; the shipped capability map declares it `overlay` for poi.default and
+        // an overlay is never promoted, so without this the run is refused earlier and for
+        // a different reason. That earlier refusal is asserted separately below.
+        $this->selectGooglePlacesAsPoiBase();
+
         config(['google_places.enabled' => false]);
         config(['services.google.places_key' => 'a-real-looking-key']);
 
@@ -85,10 +91,39 @@ class GooglePlacesKillSwitchTest extends TestCase
         $this->assertSame('google_places_disabled', $output['error']);
     }
 
+    /**
+     * AND THE OUTER GUARD: on the shipped capability map, a valid key and the kill switch
+     * ON still cannot start a Nearby Search, because Google is not the selected POI
+     * provider at all. This is a stronger statement than the kill switch — the switch stops
+     * a provider that was chosen; this stops it being chosen.
+     *
+     * @test
+     */
+    public function the_shipped_capability_map_refuses_a_poi_run_before_the_kill_switch_matters(): void
+    {
+        config(['google_places.enabled' => true]);
+        config(['services.google.places_key' => 'a-real-looking-key']);
+
+        PropertyLocationDna::create([
+            'listing_type'   => self::LISTING_TYPE,
+            'listing_id'     => self::LISTING_ID,
+            'geocode_status' => 'geocoded',
+            'geocoded_lat'   => 27.7676,
+            'geocoded_lng'   => -82.6403,
+        ]);
+
+        $output = app(LocationDnaPoiDistanceService::class)
+            ->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $this->assertFalse($output['success']);
+        $this->assertSame('no_poi_provider_selected', $output['error']);
+    }
+
     /** @test */
     public function the_api_key_guard_still_fires_when_the_switch_is_on_but_the_key_is_absent(): void
     {
         // The two guards are independent. Removing one must not silently disable the other.
+        $this->selectGooglePlacesAsPoiBase();
         config(['google_places.enabled' => true]);
         config(['services.google.places_key' => '']);
 

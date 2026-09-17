@@ -104,14 +104,24 @@ class CorpusPoiFailurePostureTest extends TestCase
         }
     }
 
-    /** No Location DNA POI rows are created when the shipped guard refuses the run. */
+    /**
+     * No Location DNA POI rows are created when the shipped guard refuses the run.
+     *
+     * The refusal REASON changed with the provider-selection fix and the new string is the
+     * accurate one: `poi.default` now resolves to no provider at all, so the run is refused
+     * before Google's kill switch is even consulted. It used to report
+     * `google_places_disabled` — an error naming a provider the run had not selected, only
+     * inherited by elimination. What has NOT changed, and is the half that matters, is that
+     * zero rows are written: a refused run must never leave `not_found` behind, because a
+     * persisted `not_found` reads as "we asked and there is nothing there".
+     */
     public function test_the_shipped_config_creates_no_poi_rows(): void
     {
         config(['google_places.enabled' => false]);
 
         $result = (new LocationDnaPoiDistanceService())->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
 
-        $this->assertSame('google_places_disabled', $result['error']);
+        $this->assertSame('no_poi_provider_selected', $result['error']);
         $this->assertSame(0, PropertyLocationPoi::count());
     }
 

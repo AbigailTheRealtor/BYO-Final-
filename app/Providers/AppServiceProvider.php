@@ -267,17 +267,19 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // POI Distance Lookup — Buyer/Tenant search-area geometry (Phase 3C)
-        // Stage E: the active POI adapter is now selected via the provider registry
+        // Stage E: the active POI adapter is selected via the provider registry
         // (config/location_providers.php), which supersedes the legacy
-        // location_dna.poi.provider flag (kept but no longer read). With the current
-        // config only google_places is enabled, so effectiveBase('poi.default')
-        // resolves to google_places → GooglePlacesPoiAdapter when the Places key is
-        // present, else StubPoiLookupAdapter — behaviourally identical to before.
-        // Bound (not singleton) so config changes in tests always produce a fresh instance.
+        // location_dna.poi.provider flag (kept but no longer read).
+        //
+        // Mirrors NearbyPoiFetcherFactory::make() exactly, including the Google role
+        // check, because these are the two construction sites for POI existence and a
+        // rule enforced at only one of them is not a rule. Bound (not singleton) so
+        // config changes in tests always produce a fresh instance.
         $this->app->bind(PoiLookupAdapterInterface::class, function ($app) {
             $registry = new LocationProviderRegistry((array) config('location_providers', []));
             $base     = $registry->effectiveBase('poi.default');
             $provider = $base['provider'] ?? null;
+            $role     = $base['role'] ?? null;
 
             // Local corpus, checked first for the same reasons as in
             // NearbyPoiFetcherFactory::make(): it is the base when enabled, and a corpus
@@ -290,8 +292,11 @@ class AppServiceProvider extends ServiceProvider
                 return $adapter->isAvailable() ? $adapter : new StubPoiLookupAdapter();
             }
 
+            // Only when Google is the DECLARED base — never because it is the last
+            // enabled binding standing. See the barrier note in NearbyPoiFetcherFactory.
             if (
                 $provider === 'google_places'
+                && $role === LocationProviderRegistry::ROLE_BASE
                 && !blank(config('services.google.places_key'))
             ) {
                 return new GooglePlacesPoiAdapter();

@@ -25,6 +25,17 @@ class CanonicalField
     public const METHOD_MERGED  = 'merged';
 
     /**
+     * Read from a corpus we host and pinned to a version — no request left this process.
+     *
+     * Distinct from METHOD_API because the honest answer to "how was this obtained" is
+     * what the audit trail is for, and `api` on a row nothing asked an API for is simply
+     * false. It is also the one field that survives to tell a later reader whether a
+     * value cost anything to obtain. Distinct from METHOD_CACHE too: a cache holds a
+     * remembered API answer and expires, a corpus is a dataset we imported.
+     */
+    public const METHOD_CORPUS  = 'corpus';
+
+    /**
      * @param  mixed        $value              Normalized value (scalar | assoc struct | geometry). null = unknown.
      * @param  string       $source             Winning provider id (matches config/location_providers.php ids).
      * @param  float|null   $confidence         0.0–1.0. null only for provider-free / derivation-pending fields.

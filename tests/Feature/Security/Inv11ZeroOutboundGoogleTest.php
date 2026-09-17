@@ -83,7 +83,13 @@ class Inv11ZeroOutboundGoogleTest extends TestCase
             ->calculateForListing('seller_agent_auction', 77001);
 
         $this->assertFalse($output['success']);
-        $this->assertSame('google_places_disabled', $output['error']);
+
+        // The refusal reason is now `no_poi_provider_selected`, and it is a STRONGER
+        // statement than the old `google_places_disabled`: on the shipped capability map
+        // Google is not the selected POI provider at all, so the run stops before its kill
+        // switch is consulted. The invariant this file exists for — zero outbound Google
+        // requests from the enrichment path — is asserted below and is unchanged.
+        $this->assertSame('no_poi_provider_selected', $output['error']);
 
         $this->assertSame(
             0,

@@ -67,16 +67,42 @@ class LocationProviderRegistryTest extends TestCase
         );
     }
 
-    public function test_effective_base_promotes_survivor_when_configured_base_disabled(): void
+    /**
+     * An OVERLAY IS NEVER PROMOTED TO BASE, even when it is the only binding left.
+     *
+     * This replaces `test_effective_base_promotes_survivor_when_configured_base_disabled`,
+     * which asserted the opposite and described the defect this method now prevents: on the
+     * real `poi.default` map, every declared base was disabled and `google_places` — listed
+     * as a rating OVERLAY — became the existence provider by elimination. An overlay merges
+     * attributes onto a base that already answered; it does not claim it can answer.
+     */
+    public function test_effective_base_does_not_promote_an_overlay(): void
     {
         $registry = new LocationProviderRegistry($this->config());
 
-        // Configured base (osm) is disabled; google (overlay) is the only survivor
-        // and is promoted to effective base.
-        $base = $registry->effectiveBase('poi.schools');
+        // Configured base (osm) is disabled and geoapify (fallback) is disabled, so the
+        // only survivor is the google OVERLAY. That must not become the base.
+        $resolved = $registry->resolve('poi.schools');
+        $this->assertCount(1, $resolved, 'fixture sanity: the overlay is the only survivor');
+        $this->assertSame('overlay', $resolved[0]['role']);
+
+        $this->assertNull(
+            $registry->effectiveBase('poi.schools'),
+            'An overlay must never be promoted to effective base.'
+        );
+    }
+
+    /** A FALLBACK, by contrast, is exactly what may stand in for a disabled base. */
+    public function test_effective_base_promotes_an_enabled_fallback(): void
+    {
+        $config = $this->config();
+        $config['providers']['geoapify']['enabled'] = true;
+
+        $base = (new LocationProviderRegistry($config))->effectiveBase('poi.schools');
 
         $this->assertNotNull($base);
-        $this->assertSame('google_places', $base['provider']);
+        $this->assertSame('geoapify', $base['provider']);
+        $this->assertSame('fallback', $base['role']);
     }
 
     public function test_regional_override_replaces_binding_list(): void
