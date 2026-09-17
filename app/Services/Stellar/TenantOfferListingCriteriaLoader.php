@@ -26,9 +26,14 @@ use Illuminate\Support\Facades\DB;
  *     'Residential Rental'/'Rental' return nothing and 'Residential' is the FOR-SALE
  *     type. The prior mapping to 'Residential' matched for-sale inventory.
  *
- * Price note: for BOTH lease PropertyTypes Bridge populates list_price with the monthly
- * rent amount, so the BuyerMatchQueryBuilder price ceiling (list_price <= max_price) is
- * correct and the tenant's monthly budget is emitted as max_price (not bypassed).
+ * Price note: the tenant's MONTHLY budget is emitted as max_price. On a lease record
+ * `ListPrice` is the periodic rent and the period is `LeaseAmountFrequency` — it is NOT
+ * always monthly (the live cache carries Seasonal, Annually, Weekly and Daily alongside
+ * Monthly). An earlier version of this note claimed the raw `list_price <= max_price`
+ * ceiling was therefore correct; it is not, and that assumption was the defect. The
+ * comparison is now frequency-aware: BuyerMatchQueryBuilder widens the SQL pre-filter for
+ * a lease search and BuyerMatchScorer does the exact monthly-equivalent comparison, via
+ * {@see \App\Support\Matching\MonthlyEquivalent}.
  *
  * Senior community gate: is_55_plus_eligible=false is safe for commercial lease tenants.
  * Commercial lease listings do not carry the senior_community_yn flag, so the gate
@@ -50,7 +55,8 @@ use Illuminate\Support\Facades\DB;
  *   garage_needed         → wants_garage           (tristate bool)
  *   view_preference       → wants_water_view + wants_any_view
  *   leasing_55_plus       → is_55_plus_eligible    (bool)
- *   condition_prop_buyer  → property_sub_types     (JSON decode)
+ *   condition_prop_buyer  → property_conditions    (JSON decode; NOT property_sub_types —
+ *                                                   see the note at that assignment)
  *   property_type (scalar)→ property_types         (single-element array, normalised above)
  *   location_dna blob     → preferred_cities, radius_searches, polygons
  *   desired_lease_length  → preferred_lease_terms  (JSON decode; used for scoring only)
@@ -231,9 +237,27 @@ class TenantOfferListingCriteriaLoader
         $maxPrice     = $this->positiveIntOrNull($this->stripCommas($maxBudgetRaw ?? $budgetRaw));
 
         // -----------------------------------------------------------------------
-        // Property sub-types
+        // Property CONDITION — its own concept, not a sub-type.
+        //
+        // Identical correction to the Buyer loader, for the identical defect:
+        // `condition_prop_buyer` holds "Acceptable Property Conditions"
+        // (Updated/Renovated, Partially Updated, Older but Clean), and loading it
+        // as `property_sub_types` made BuyerMatchScorer compare those words to
+        // bridge_properties.property_sub_type. It can never match, so answering
+        // the question cost 2 of the 5 property-type points.
+        //
+        // Preserved under its own key, deliberately not scored — the feed's
+        // PropertyCondition is construction status, not renovation state. See
+        // BuyerCriteriaPayload::$propertyConditions.
         // -----------------------------------------------------------------------
-        $propertySubTypes = $this->decodeJsonMeta($get('condition_prop_buyer'));
+        $propertyConditions = $this->decodeJsonMeta($get('condition_prop_buyer'));
+
+        // -----------------------------------------------------------------------
+        // Property sub-types — deliberately empty; the Tenant Offer Listing form
+        // collects no PropertySubType preference, so the scorer's neutral branch
+        // is the correct one.
+        // -----------------------------------------------------------------------
+        $propertySubTypes = [];
 
         // -----------------------------------------------------------------------
         // Bedrooms / bathrooms — handle 'custom' value
@@ -297,6 +321,7 @@ class TenantOfferListingCriteriaLoader
             'ideal_price'                 => null,
 
             'property_sub_types'          => $propertySubTypes,
+            'property_conditions'         => $propertyConditions,
 
             'min_bedrooms'                => $minBedrooms,
             'min_bathrooms'               => $minBathrooms,

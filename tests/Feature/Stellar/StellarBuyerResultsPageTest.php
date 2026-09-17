@@ -62,35 +62,45 @@ class StellarBuyerResultsPageTest extends TestCase
     }
 
     /**
-     * Insert a BuyerCriteriaAuction + required EAV meta so the criteria loader
+     * Insert a matchable BUYER criteria profile + EAV meta so the criteria loader
      * produces a valid payload for the matcher.
+     *
+     * Creates a Buyer OFFER LISTING (buyer_agent_auctions + workflow_type meta) rather
+     * than a legacy buyer_criteria_auctions row: the legacy type was retired from live
+     * selection because it cannot produce a match, so a fixture built on it would be
+     * testing a path no user can reach. See CriteriaListingResolver::LEGACY_TYPES.
+     *
+     * The meta keys below are the ones the Buyer Offer Listing form actually writes,
+     * which the previous fixture's hand-written `property_types` / `preferred_cities`
+     * were not — that mismatch is precisely the defect this branch fixes.
      */
     private function makeCriteria(int $userId, array $metaOverrides = []): int
     {
-        $criteriaId = DB::table('buyer_criteria_auctions')->insertGetId([
-            'user_id'     => $userId,
-            'buyer_id'    => $userId,
-            'title'       => 'Test Criteria',
-            'max_price'   => 600000,
-            'bedrooms'    => 2,
-            'bathrooms'   => 1,
-            'is_approved' => true,
-            'is_sold'     => false,
-            'created_at'  => now(),
-            'updated_at'  => now(),
+        $criteriaId = DB::table('buyer_agent_auctions')->insertGetId([
+            'user_id'         => $userId,
+            'title'           => 'Test Criteria',
+            'is_approved'     => 'true',
+            'is_sold'         => 'false',
+            'is_paid'         => '0',
+            'is_draft'        => false,
+            'referral_locked' => false,
+            'created_at'      => now(),
+            'updated_at'      => now(),
         ]);
 
+        $auction = \App\Models\BuyerAgentAuction::findOrFail($criteriaId);
+        $auction->saveMeta('workflow_type', 'offer_listing');
+
         $meta = array_merge([
-            'property_types'    => json_encode(['Residential']),
-            'preferred_cities'  => json_encode(['Orlando']),
+            'property_type'    => 'residential',
+            'preferred_cities' => json_encode(['Orlando']),
+            'maximum_budget'   => '600000',
+            'bedrooms'         => '2',
+            'bathrooms'        => '1',
         ], $metaOverrides);
 
         foreach ($meta as $key => $value) {
-            DB::table('buyer_criteria_auction_metas')->insert([
-                'buyer_criteria_auction_id' => $criteriaId,
-                'meta_key'                  => $key,
-                'meta_value'                => $value,
-            ]);
+            $auction->saveMeta($key, $value);
         }
 
         return $criteriaId;
@@ -121,7 +131,7 @@ class StellarBuyerResultsPageTest extends TestCase
 
     private function skipIfTablesMissing(): void
     {
-        foreach (['bridge_properties', 'buyer_criteria_auctions', 'buyer_criteria_auction_metas'] as $table) {
+        foreach (['bridge_properties', 'buyer_agent_auctions', 'buyer_agent_auction_metas'] as $table) {
             if (!Schema::hasTable($table)) {
                 $this->markTestSkipped("Table {$table} does not exist in this environment.");
             }
@@ -213,21 +223,11 @@ class StellarBuyerResultsPageTest extends TestCase
         $this->insertListing();
 
         $user = $this->makeUser();
-        // Criteria with property_types but no city/ZIP/county/radius
-        $criteriaId = DB::table('buyer_criteria_auctions')->insertGetId([
-            'user_id'     => $user['id'],
-            'buyer_id'    => $user['id'],
-            'title'       => 'Test Criteria',
-            'max_price'   => 600000,
-            'is_approved' => true,
-            'is_sold'     => false,
-            'created_at'  => now(),
-            'updated_at'  => now(),
-        ]);
-        DB::table('buyer_criteria_auction_metas')->insert([
-            'buyer_criteria_auction_id' => $criteriaId,
-            'meta_key'   => 'property_types',
-            'meta_value' => json_encode(['Residential']),
+        // A profile with a property type but no city / ZIP / county / radius.
+        // preferred_cities is explicitly blanked so the shared fixture's default
+        // city cannot supply the geography this test needs absent.
+        $this->makeCriteria($user['id'], [
+            'preferred_cities' => json_encode([]),
         ]);
 
         $this->actingAsDbUser($user['id']);
@@ -430,9 +430,8 @@ class StellarBuyerResultsPageTest extends TestCase
 
         $user = $this->makeUser();
         $this->makeCriteria($user['id'], [
-            'property_types'      => json_encode(['Residential']),
-            'preferred_cities'    => json_encode(['Orlando']),
-            'is_55_plus_eligible' => '1',
+            'preferred_cities' => json_encode(['Orlando']),
+            'leasing_55_plus'  => 'Yes',
         ]);
         $this->actingAsDbUser($user['id']);
 

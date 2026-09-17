@@ -2,6 +2,7 @@
 
 namespace App\Services\Stellar\Matching\DTO;
 
+use App\Services\Explore\ExploreTransactionType;
 use App\Services\Offers\ImportantPlacesService;
 use App\Support\Location\UsStateCode;
 
@@ -35,7 +36,59 @@ class BuyerCriteriaPayload
     public readonly ?int $idealPrice;
 
     public readonly array $propertyTypes;
+    /**
+     * Requested RESO PropertySubType values — "Condominium", "Townhouse",
+     * "Single Family Residence".
+     *
+     * A SEPARATE CONCEPT FROM {@see $propertyConditions}, and the separation is
+     * the fix. Both offer-listing loaders used to pour the Acceptable Property
+     * Conditions answer (`condition_prop_buyer`: "Updated/Renovated",
+     * "Partially Updated", "Older but Clean") into this field, and
+     * BuyerMatchScorer compares it to `bridge_properties.property_sub_type`. No
+     * condition value can ever equal a sub-type, so a seeker who stated a
+     * condition preference scored 0 of the 5 sub-type points where a seeker who
+     * stated nothing scored the neutral 2 — stating a preference lowered every
+     * listing.
+     *
+     * Nothing populates this today: no Buyer or Tenant form collects a
+     * PropertySubType preference. It stays declared, and stays empty, so the
+     * scorer's neutral branch is what runs and the slot is ready for the real
+     * criterion rather than occupied by the wrong one.
+     */
     public readonly array $propertySubTypes;
+
+    /**
+     * Acceptable property CONDITION, in the seeker's own vocabulary
+     * ("Updated/Renovated", "Partially Updated", "Older but Clean").
+     *
+     * CAPTURED, CARRIED, AND DELIBERATELY NOT SCORED AGAINST THE FEED.
+     * ----------------------------------------------------------------
+     * RESO has a PropertyCondition field and Bridge populates it, but not with
+     * this concept: across all seven per-type fixtures in
+     * tests/fixtures/mls/bridge/ its only non-empty value is "Completed", and the
+     * only other values this application has ever established a meaning for are
+     * "Under Construction" and "To Be Built". The feed's PropertyCondition
+     * describes CONSTRUCTION STATUS. It is not a renovation state, so comparing a
+     * renovation preference to it would be the same category error one field to
+     * the left.
+     *
+     * So the honest position is: keep the preference, and keep it out of the
+     * score until something can compare it to a like concept. Where that belongs
+     * is a product decision, recorded in
+     * docs/audits/byo-reso-match-field-audit.md — this class deliberately does
+     * not name another subsystem, because an architecture guard keeps that
+     * coupling out of files like this one.
+     *
+     * ONE THING THE NEXT IMPLEMENTER MUST KNOW: the seeker and owner condition
+     * vocabularies are NOT the same strings, so whatever consumes them will need
+     * a translation rather than an equality test. The seller form stores
+     * "No updates needed: Completely updated", "Semi-updated: Needs minor
+     * updates", …; the landlord form stores "Updated / Renovated" and "Older but
+     * Well Maintained"; the seeker form stores "Updated/Renovated" (no spaces)
+     * and "Older but Clean". Only "Partially Updated" is common to all three.
+     * Assuming the strings match would silently match nothing.
+     */
+    public readonly array $propertyConditions;
 
     public readonly ?int $minBedrooms;
     public readonly ?int $minBathrooms;
@@ -135,7 +188,8 @@ class BuyerCriteriaPayload
         $this->maxPrice   = $maxPrice !== null ? (int) $maxPrice : null;
         $this->idealPrice = $idealPrice !== null ? (int) $idealPrice : null;
 
-        $this->propertySubTypes = $data['property_sub_types'] ?? [];
+        $this->propertySubTypes  = $data['property_sub_types'] ?? [];
+        $this->propertyConditions = $data['property_conditions'] ?? [];
 
         $this->minBedrooms  = isset($data['min_bedrooms'])  ? (int) $data['min_bedrooms']  : null;
         $this->minBathrooms = isset($data['min_bathrooms']) ? (int) $data['min_bathrooms'] : null;
@@ -169,5 +223,43 @@ class BuyerCriteriaPayload
         // Normalised here, like the state, so every producer of this payload hands the matcher the
         // same canonical row shape the wizards save.
         $this->importantPlaces = (new ImportantPlacesService())->normalize($data['important_places'] ?? []);
+    }
+
+    /**
+     * Is this a search for RENTAL inventory?
+     *
+     * WHY THE ANSWER MATTERS: on a lease record `ListPrice` is the periodic rent
+     * and the period is `LeaseAmountFrequency`, so a price ceiling means something
+     * different here than it does on a sale. Everything frequency-aware in the
+     * engine branches on this.
+     *
+     * The classification is {@see ExploreTransactionType::fromPropertyType()} —
+     * an exact-match allowlist held in config/explore.php, which already answers
+     * "sale or rent" for this exact PropertyType vocabulary and returns null for a
+     * value nobody has classified. Reusing it is deliberate: a second lease-type
+     * list written here is precisely the duplicate vocabulary that lets two parts
+     * of the system disagree about whether a listing is a rental. Note it is NOT
+     * PropertyTypeVocabulary, whose substring matching reads 'Residential Lease'
+     * as 'Residential' and turns a rental into a sale.
+     *
+     * EVERY requested type must be a rental for this to be true. A payload with no
+     * types, or a mixed or unclassified set, answers false — which leaves the
+     * pre-existing sale behaviour in place rather than applying a rent conversion
+     * to something that may be a purchase price.
+     */
+    public function isLeaseSearch(): bool
+    {
+        if ($this->propertyTypes === []) {
+            return false;
+        }
+
+        foreach ($this->propertyTypes as $type) {
+            if (ExploreTransactionType::fromPropertyType(is_string($type) ? $type : null)
+                !== ExploreTransactionType::RENT) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

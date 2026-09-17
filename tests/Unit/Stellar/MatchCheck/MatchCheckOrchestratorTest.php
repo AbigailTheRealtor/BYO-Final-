@@ -157,7 +157,7 @@ class MatchCheckOrchestratorTest extends TestCase
     {
         config()->set('mls_match_check.enabled', true);
 
-        $record = ['id' => 7, 'type' => 'buyer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
+        $record = ['id' => 7, 'type' => 'buyer_offer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
         $listing = $this->listing('Commercial Sale');
         $user = $this->consumer();
 
@@ -285,7 +285,7 @@ class MatchCheckOrchestratorTest extends TestCase
             'property_types'      => ['Commercial Sale'],
             'is_55_plus_eligible' => false,
         ]);
-        $record = ['id' => 3, 'type' => 'buyer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
+        $record = ['id' => 3, 'type' => 'buyer_offer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
 
         [$gate, $detector, $resolver] = $this->mocks();
         $gate->shouldReceive('decide')->once()->andReturn(VisibilityDecision::visible('idx_true'));
@@ -316,7 +316,7 @@ class MatchCheckOrchestratorTest extends TestCase
         // loader instead of a bare null.
         config()->set('mls_match_check.enabled', true);
 
-        $record = ['id' => 4, 'type' => 'tenant', 'label' => 'T', 'created_at' => Carbon::parse('2026-05-01')];
+        $record = ['id' => 4, 'type' => 'tenant_offer', 'label' => 'T', 'created_at' => Carbon::parse('2026-05-01')];
 
         [$gate, $detector, $resolver] = $this->mocks();
         $gate->shouldReceive('decide')->once()->andReturn(VisibilityDecision::visible('idx_true'));
@@ -324,7 +324,7 @@ class MatchCheckOrchestratorTest extends TestCase
         $resolver->shouldReceive('resolvePreferred')->once()->andReturn($record);
 
         // Loader is consulted (type 'tenant') but yields no payload → CRITERIA_NOT_LOADED.
-        $loader = $this->loaderReturning('tenant', null);
+        $loader = $this->loaderReturning('tenant_offer', null);
 
         $engine = Mockery::mock(BuyerMatchScorer::class);
         $engine->shouldNotReceive('score');
@@ -352,7 +352,7 @@ class MatchCheckOrchestratorTest extends TestCase
             'property_types'      => ['Commercial Sale'],
             'is_55_plus_eligible' => false,
         ]);
-        $record = ['id' => 3, 'type' => 'buyer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
+        $record = ['id' => 3, 'type' => 'buyer_offer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
 
         [$gate, $detector, $resolver] = $this->mocks();
         $gate->shouldReceive('decide')->once()->andReturn(VisibilityDecision::visible('idx_true'));
@@ -362,7 +362,7 @@ class MatchCheckOrchestratorTest extends TestCase
         // The loader produces the payload evaluate() did not receive → seam closed → SCORED.
         // (The real loader builds its own BuyerCriteriaPayload from the flat array, so the engine
         // is matched on payload type rather than object identity.)
-        $loader = $this->loaderReturning('buyer', [
+        $loader = $this->loaderReturning('buyer_offer', [
             'property_types'      => ['Commercial Sale'],
             'is_55_plus_eligible' => false,
         ]);
@@ -393,7 +393,7 @@ class MatchCheckOrchestratorTest extends TestCase
             'property_types'      => ['Commercial Sale'],
             'is_55_plus_eligible' => false,
         ]);
-        $record = ['id' => 5, 'type' => 'buyer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
+        $record = ['id' => 5, 'type' => 'buyer_offer', 'label' => 'B', 'created_at' => Carbon::parse('2026-05-01')];
 
         [$gate, $detector, $resolver] = $this->mocks();
         $gate->shouldReceive('decide')->once()->andReturn(VisibilityDecision::visible('idx_true'));

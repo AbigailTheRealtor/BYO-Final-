@@ -274,16 +274,21 @@ class ImportantPlaceMlsMatchingTest extends TestCase
             'preferred_cities' => ['Orlando'], 'important_places' => [self::work(3)],
         ];
 
-        $buyerLoader = $this->createMock(BuyerCriteriaLoader::class);
-        $buyerLoader->method('loadById')->willReturn($data);
+        // The criteria type here is 'buyer_offer', not the retired legacy 'buyer'.
+        // This test is about Important Place ROWS, and the legacy type is now refused
+        // outright by PropertyMatchContextService — see
+        // CriteriaListingResolver::LEGACY_TYPES — so the stub must sit on the
+        // offer-listing loader, which is the type a live request can carry.
+        $buyerOfferLoader = $this->createMock(BuyerOfferListingCriteriaLoader::class);
+        $buyerOfferLoader->method('loadById')->willReturn($data);
         $context = (new PropertyMatchContextService(
-            $buyerLoader,
+            $this->createMock(BuyerCriteriaLoader::class),
             $this->createMock(TenantCriteriaLoader::class),
-            $this->createMock(BuyerOfferListingCriteriaLoader::class),
+            $buyerOfferLoader,
             $this->createMock(TenantOfferListingCriteriaLoader::class),
             new BuyerMatchScorer(),
             new BuyerResultViewMapper(),
-        ))->resolve($listing, 'buyer', 1, User::factory()->make(['id' => 1]));
+        ))->resolve($listing, 'buyer_offer', 1, User::factory()->make(['id' => 1]));
 
         $this->assertSame('within 3 mi', $context['important_places'][0]['required_display']);
 

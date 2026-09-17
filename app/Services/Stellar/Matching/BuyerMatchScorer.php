@@ -6,6 +6,7 @@ use App\Models\BridgeProperty;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Support\Geo\GreatCircleDistance;
+use App\Support\Matching\MonthlyEquivalent;
 
 class BuyerMatchScorer
 {
@@ -55,11 +56,11 @@ class BuyerMatchScorer
         );
 
         $locationScore        = $this->scoreLocation($listing, $criteria, $importantPlaceMatches);
-        $priceScore           = $this->scorePrice($listing, $criteria);
+        $priceScore           = $this->scorePrice($listing, $criteria, $rawJson);
         $sizeScore            = $this->scoreSize($listing, $criteria);
         $propertyTypeScore    = $this->scorePropertyType($listing, $criteria);
         $amenityScore         = $this->scoreAmenities($listing, $criteria);
-        $financialScore       = $this->scoreFinancial($listing, $criteria);
+        $financialScore       = $this->scoreFinancial($listing, $criteria, $rawJson);
         $lifestyleScore       = $this->scoreLifestyle($listing, $criteria, $rawJson);
         $nonResidentialScore  = $this->scoreNonResidential($listing, $criteria, $rawJson);
 
@@ -199,12 +200,42 @@ class BuyerMatchScorer
     // Category 2: Price (25 pts)
     // =========================================================================
 
-    private function scorePrice(BridgeProperty $listing, BuyerCriteriaPayload $criteria): array
+    private function scorePrice(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $rawJson = []): array
     {
         $listPrice = $listing->list_price !== null ? (float) $listing->list_price : null;
 
         if ($listPrice === null) {
             return ['score' => 0.0];
+        }
+
+        // On a LEASE record `list_price` is the periodic rent and the period is
+        // LeaseAmountFrequency. The seeker's budget is monthly, so the listing
+        // must be expressed per month before the two are comparable.
+        //
+        // A period we cannot establish earns NOTHING rather than being assumed
+        // monthly. That is the same rule ImportantPlaceMatcher already applies to
+        // a distance it cannot measure — "never a match, and no credit" — and it
+        // is the whole point of the fix: an unverified rent must not be presented
+        // as though it had been checked against a budget. The listing is not
+        // dropped (a feed omission is not evidence that a rental is unaffordable);
+        // it simply cannot earn price points, and BuyerMatchResultBuilder says so.
+        // Only when there is actually a figure to compare against. A seeker who named
+        // no budget has nothing that could be misjudged, so the dimension keeps its
+        // existing "no preference" answer below rather than being penalised for a
+        // period the feed happened to omit.
+        $hasPricePreference = $criteria->idealPrice !== null || $criteria->maxPrice !== null;
+
+        if ($criteria->isLeaseSearch() && $hasPricePreference) {
+            $monthly = MonthlyEquivalent::lease(
+                $listPrice,
+                ListingPeriodFacts::leaseFrequency($rawJson)
+            );
+
+            if ($monthly === null) {
+                return ['score' => 0.0];
+            }
+
+            $listPrice = $monthly;
         }
 
         $proximityScore = 0.0;
@@ -421,13 +452,40 @@ class BuyerMatchScorer
     // Category 6: Financial / Fees (5 pts)
     // =========================================================================
 
-    private function scoreFinancial(BridgeProperty $listing, BuyerCriteriaPayload $criteria): array
+    private function scoreFinancial(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $rawJson = []): array
     {
         if ($criteria->maxMonthlyTotalBurden === null) {
             return ['score' => 5.0];
         }
 
-        $hoaMonthly    = $listing->association_fee !== null ? (float) $listing->association_fee : 0.0;
+        // `bridge_properties.association_fee` is AssociationFee stored verbatim;
+        // AssociationFeeFrequency stays in raw_json. Reading the column as a
+        // monthly figure made an annually billed $2,400 fee and a monthly $2,400
+        // fee the same number, and the ceiling this is scored against is
+        // explicitly a MONTHLY one.
+        //
+        // A fee whose period cannot be established is NOT assumed monthly and is
+        // NOT silently counted as zero — either would be a fabricated figure. The
+        // dimension instead returns its neutral score, the same answer a seeker
+        // who expressed no ceiling receives, because the codebase's established
+        // rule is that missing feed data never penalises a listing. The gap is
+        // reported to the seeker through BuyerMatchResultBuilder's missing-data
+        // block rather than buried in a number.
+        $feeAmount = $listing->association_fee !== null ? (float) $listing->association_fee : null;
+
+        if ($feeAmount === null || $feeAmount == 0.0) {
+            $hoaMonthly = 0.0;
+        } else {
+            $hoaMonthly = MonthlyEquivalent::associationFee(
+                $feeAmount,
+                ListingPeriodFacts::associationFeeFrequency($rawJson)
+            );
+
+            if ($hoaMonthly === null) {
+                return ['score' => 5.0];
+            }
+        }
+
         $taxAnnual     = $listing->tax_annual_amount !== null ? (float) $listing->tax_annual_amount : 0.0;
         $taxMonthly    = $taxAnnual / 12.0;
         $totalBurden   = $hoaMonthly + $taxMonthly;
