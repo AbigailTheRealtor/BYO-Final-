@@ -12,6 +12,13 @@ final class DerivationOutcome
     public const MLS_REMARKS_NOT_APPROVED = 'mls_remarks_processing_not_approved';
 
     /**
+     * Prose was stored and LandlordProviderTextPolicy withholds it from the public
+     * page, so nothing was parsed. Distinct from "there was no description":
+     * derivation treats both the same, telemetry does not.
+     */
+    public const DESCRIPTION_SUPPRESSED = 'native_description_suppressed_by_policy';
+
+    /**
      * @param string[] $notes
      */
     public function __construct(

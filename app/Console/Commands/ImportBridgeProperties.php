@@ -17,7 +17,8 @@ class ImportBridgeProperties extends Command
                             {--target=0 : Import until this many total rows are in bridge_properties (paginated mode; 0 = disabled)}
                             {--page-size=200 : Records per API page in paginated mode}
                             {--status= : OData StandardStatus filter (e.g. Active)}
-                            {--property-type= : OData PropertyType filter (e.g. Residential)}';
+                            {--property-type= : OData PropertyType filter (e.g. Residential)}
+                            {--derive-smart-tags : Also derive Smart Tags for each imported row (off by default; still requires the Smart Tag activation flags)}';
 
     protected $description = 'Fetch properties from the Bridge OData API and upsert into bridge_properties';
 
@@ -164,6 +165,17 @@ class ImportBridgeProperties extends Command
                 'listing_key'        => $result->model->listing_key,
                 'reason'             => $result->isNew ? 'new_record' : 'address_changed',
             ]);
+        }
+
+        // Smart Tags are OFF here unless the operator asks, because this command
+        // is the bulk importer — a --target run walks the whole feed. Asking is
+        // not permission on its own: the activation flags are still checked, so
+        // the option can add work only where Smart Tags are already enabled.
+        if ($this->option('derive-smart-tags') && ($result->isNew || $result->model->wasChanged('raw_json'))) {
+            \App\Services\SmartTags\SmartTagLifecycle::tryDeriveBridge(
+                $result->model,
+                \App\Services\SmartTags\SmartTagTelemetry::ENTRY_BRIDGE_CLI,
+            );
         }
 
         return true;
