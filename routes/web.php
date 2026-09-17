@@ -1395,6 +1395,40 @@ Route::middleware(['auth', 'offerPlayoffAccess'])->group(function () {
 // ===========================================================================
 
 // ===========================================================================
+// Virtual Drive provider proof — Apple Look Around vs Google Street View.
+// INTERNAL, DEVELOPMENT ONLY. Registered unconditionally so the gate itself is
+// testable; every route 404s wherever VirtualDriveProofGate refuses — any
+// environment outside local/development/testing (production first), and
+// anywhere the fail-closed VIRTUAL_DRIVE_PROOF_ENABLED is not on. Reads stored
+// MLS rows only and sends no Bridge request; see config/virtual_drive.php.
+// ===========================================================================
+Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev.virtual-drive.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'compare'])->name('compare');
+    Route::get('/apple',[\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'apple'])->name('apple');
+    Route::get('/google', [\App\Http\Controllers\Dev\VirtualDriveProofController::class, 'google'])->name('google');
+    Route::get('/api/listings', [\App\Http\Controllers\Dev\VirtualDriveListingController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.listings');
+
+    // The Google launch claim. POST because it spends one of the day's launches,
+    // and because a GET that costs money is one a link preview can spend. It is
+    // also the ONLY response that ever carries the Maps JavaScript browser key —
+    // see VirtualDriveGoogleLaunchController. Throttled well below the daily
+    // ceiling it guards, so a loop cannot even reach the refusal in bulk.
+    Route::post('/api/google-launch', [\App\Http\Controllers\Dev\VirtualDriveGoogleLaunchController::class, 'claim'])
+        ->middleware('throttle:20,1')
+        ->name('api.google-launch');
+
+    // Google rejected the browser key. Recording it BLOCKS every later launch
+    // claim until `php artisan virtual-drive:google-auth-block --reset` — there
+    // is deliberately no route that clears it. It can only stop spend, never
+    // start any; see VirtualDriveGoogleAuthFailureController.
+    Route::post('/api/google-auth-failure', [\App\Http\Controllers\Dev\VirtualDriveGoogleAuthFailureController::class, 'report'])
+        ->middleware('throttle:10,1')
+        ->name('api.google-auth-failure');
+});
+
+// ===========================================================================
 // LAYER 2 DEV-ONLY — OfferListing duplication test routes
 // These routes are DEVELOPMENT-ONLY. Do NOT use in production.
 // Purpose: smoke-test the duplicated OfferListing Livewire components.

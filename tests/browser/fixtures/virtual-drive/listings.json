@@ -1,0 +1,510 @@
+{
+    "mode": "test_set",
+    "center": null,
+    "radius_m": 400,
+    "source": "fixture",
+    "provider_requests": 0,
+    "count": 7,
+    "unavailable_keys": [],
+    "attribution": "FIXTURE DATA for the Virtual Drive launch-guard specs. Coordinates mirror the proof's real test homes; nothing else here describes a real listing.",
+    "listings": [
+        {
+            "id": "FX-SALE-STONES",
+            "transaction_type": "sale",
+            "sign_label": "FOR SALE",
+            "latitude": 27.788945,
+            "longitude": -82.735144,
+            "effective_status": "Active",
+            "display_price": "$184,900",
+            "address": "6817 FIXTURE Stones Throw sale #17208",
+            "city": "St Petersburg",
+            "state": "FL",
+            "beds": 2,
+            "baths": 2,
+            "living_area": 775,
+            "property_subtype": "Condominium",
+            "photo_urls": [
+                "/virtual-drive/photo.svg",
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": true,
+                    "url": "/virtual-drive/tour/FX-SALE-STONES",
+                    "reason": null
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": true,
+                    "url": "/virtual-drive/listing/FX-SALE-STONES",
+                    "reason": null
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": true,
+                    "url": "/virtual-drive/listing/FX-SALE-STONES",
+                    "reason": null
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": true,
+                    "url": "/virtual-drive/listing/FX-SALE-STONES",
+                    "reason": null
+                }
+            ]
+        },
+        {
+            "id": "FX-RENT-STONES",
+            "transaction_type": "rent",
+            "sign_label": "FOR RENT",
+            "latitude": 27.790155,
+            "longitude": -82.735682,
+            "effective_status": "Active",
+            "display_price": "$1,950/mo",
+            "address": "6931 FIXTURE Stones Throw rent #5208",
+            "city": "St Petersburg",
+            "state": "FL",
+            "beds": 2,
+            "baths": 2,
+            "living_area": null,
+            "property_subtype": "Condominium",
+            "photo_urls": [
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no tour."
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                }
+            ]
+        },
+        {
+            "id": "FX-RENT-MANASOTA-A",
+            "transaction_type": "rent",
+            "sign_label": "FOR RENT",
+            "latitude": 26.960258,
+            "longitude": -82.38292,
+            "effective_status": "Active",
+            "display_price": "$14,000/mo",
+            "address": "6590 FIXTURE Manasota Key A",
+            "city": "Englewood",
+            "state": "FL",
+            "beds": 2,
+            "baths": 2,
+            "living_area": null,
+            "property_subtype": "Single Family Residence",
+            "photo_urls": [
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": true,
+                    "url": "/virtual-drive/tour/FX-RENT-MANASOTA-A",
+                    "reason": null
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                }
+            ]
+        },
+        {
+            "id": "FX-RENT-MANASOTA-B",
+            "transaction_type": "rent",
+            "sign_label": "FOR RENT",
+            "latitude": 26.959994,
+            "longitude": -82.382761,
+            "effective_status": "Active",
+            "display_price": "$14,000/mo",
+            "address": "6580 FIXTURE Manasota Key B",
+            "city": "Englewood",
+            "state": "FL",
+            "beds": 2,
+            "baths": 3,
+            "living_area": null,
+            "property_subtype": "Single Family Residence",
+            "photo_urls": [
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": true,
+                    "url": "/virtual-drive/tour/FX-RENT-MANASOTA-B",
+                    "reason": null
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                }
+            ]
+        },
+        {
+            "id": "FX-CONDO-1",
+            "transaction_type": "rent",
+            "sign_label": "FOR RENT",
+            "latitude": 27.266702,
+            "longitude": -82.542635,
+            "effective_status": "Active",
+            "display_price": "$9,300/mo",
+            "address": "1226 FIXTURE Siesta Bayside unit 1 #1226-C",
+            "city": "Sarasota",
+            "state": "FL",
+            "beds": 2,
+            "baths": 2,
+            "living_area": null,
+            "property_subtype": "Condominium",
+            "photo_urls": [
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no tour."
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                }
+            ]
+        },
+        {
+            "id": "FX-CONDO-2",
+            "transaction_type": "rent",
+            "sign_label": "FOR RENT",
+            "latitude": 27.266702,
+            "longitude": -82.542635,
+            "effective_status": "Active",
+            "display_price": "$6,300/mo",
+            "address": "1269 FIXTURE Siesta Bayside unit 2 #1269-C",
+            "city": "Sarasota",
+            "state": "FL",
+            "beds": 2,
+            "baths": 2,
+            "living_area": null,
+            "property_subtype": "Condominium",
+            "photo_urls": [
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no tour."
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                }
+            ]
+        },
+        {
+            "id": "FX-CONDO-3",
+            "transaction_type": "rent",
+            "sign_label": "FOR RENT",
+            "latitude": 27.266702,
+            "longitude": -82.542635,
+            "effective_status": "Active",
+            "display_price": "$7,400/mo",
+            "address": "1360 FIXTURE Siesta Bayside unit 3 #1360-D",
+            "city": "Sarasota",
+            "state": "FL",
+            "beds": 2,
+            "baths": 2,
+            "living_area": null,
+            "property_subtype": "Condominium",
+            "photo_urls": [
+                "/virtual-drive/photo.svg"
+            ],
+            "distance_m": null,
+            "actions": [
+                {
+                    "key": "photos",
+                    "label": "Photos",
+                    "available": true,
+                    "url": null,
+                    "reason": null
+                },
+                {
+                    "key": "video",
+                    "label": "Video",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no video."
+                },
+                {
+                    "key": "tour",
+                    "label": "3D Tour",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no tour."
+                },
+                {
+                    "key": "details",
+                    "label": "Details",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "ask",
+                    "label": "Ask a Question",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                },
+                {
+                    "key": "save",
+                    "label": "Save",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no Save feature."
+                },
+                {
+                    "key": "showing",
+                    "label": "Schedule Showing",
+                    "available": false,
+                    "url": null,
+                    "reason": "Fixture: no listing page."
+                }
+            ]
+        }
+    ]
+}

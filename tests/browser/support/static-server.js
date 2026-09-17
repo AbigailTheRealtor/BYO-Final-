@@ -49,6 +49,13 @@ const MOUNTS = [
      */
     { prefix: '/dist/', dir: path.join(ROOT, 'public/js/spatial') },
     { prefix: '/vendor/', dir: path.join(ROOT, 'node_modules') },
+    /*
+     | The Virtual Drive proof's shell, providers and stylesheet, as written. They are
+     | static assets with no build step, so the launch-guard specs run the exact
+     | files the proof pages load — against a fake Maps API and a fake MapKit JS.
+     */
+    { prefix: '/virtual-drive-js/', dir: path.join(ROOT, 'public/js/virtual-drive') },
+    { prefix: '/virtual-drive-css/', dir: path.join(ROOT, 'public/css/virtual-drive') },
     { prefix: '/', dir: path.join(__dirname, '../fixtures') },
 ];
 

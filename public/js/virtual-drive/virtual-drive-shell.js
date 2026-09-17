@@ -1,0 +1,1680 @@
+/*
+ * Virtual Drive provider proof — shared shell.
+ *
+ * INTERNAL, DEVELOPMENT ONLY. Served only when VirtualDriveProofGate allows it
+ * (local / development / testing AND VIRTUAL_DRIVE_PROOF_ENABLED).
+ *
+ * WHO OWNS WHAT
+ * -------------
+ * The shell owns everything that is ours: the listing data (from our own
+ * endpoint, never from Apple or Google), the listing card, Previous / Next, the
+ * action buttons, the launch button and the instrumentation. A provider owns
+ * only the street-level pixels and whatever camera information it chooses to
+ * expose. The shell never branches on WHICH provider is loaded — only on the
+ * capabilities it declares — so both halves of the comparison get the same UI.
+ *
+ * NOTHING STREET-LEVEL LOADS UNTIL THE LAUNCH BUTTON IS PRESSED
+ * -------------------------------------------------------------
+ * Opening the page, choosing a home, opening its card, its photos or its tour
+ * never touches the provider: there is no provider to touch until launch() has
+ * run. launch() is the ONLY caller of provider.load(), it runs only from the
+ * launch button, and it is locked from the first click:
+ *
+ *     loading → idle ──click──▶ opening ──▶ open
+ *                                  │
+ *                                  └──▶ retry (no imagery here; press again)
+ *                                  └──▶ locked (library failed, key rejected,
+ *                                               or a STOP from the provider)
+ *
+ * A click while `opening` or `open` does nothing. Nothing retries by itself: a
+ * library that failed to load is never requested again from this page, and a
+ * home with no imagery waits for another deliberate press. The URL carries the
+ * selected home (`?listing=`) and never a launch, so reloading the page can
+ * never start a session.
+ *
+ * A SWITCHED-OFF PROVIDER NEVER LEAVES `locked`
+ * --------------------------------------------
+ * `data-provider-enabled="0"` means the server has refused this provider for the
+ * whole environment. The page then starts locked and stays locked, with the
+ * server's own reason left in the launch note — and the provider script was not
+ * included at all, so there is nothing here to load even if this were bypassed.
+ *
+ * AND A DAILY CEILING IS CLAIMED BEFORE THE LIBRARY IS REQUESTED
+ * -------------------------------------------------------------
+ * When `data-launch-claim-endpoint` is set, the FIRST launch on this page must
+ * first claim one of the day's launches from the server (which counts them
+ * across the whole proof environment, not in this browser). A refusal locks the
+ * button with the server's message and nothing is loaded. A grant carries the
+ * provider credential, which is the only way this page can ever hold one — so
+ * the ceiling withholds the means rather than asking politely.
+ *
+ * ONE CLAIM PER PAGE, MATCHING WHAT IS BILLED. A provider constructs at most one
+ * panorama per page, so the allowance is spent once: pressing "Try again" after
+ * a home with no imagery, changing homes and clicking signs all reuse the
+ * already-claimed launch. A reload is a new page and a new claim.
+ *
+ * PROVIDER CONTRACT (both provider files implement exactly this)
+ * -------------------------------------------------------------
+ *   id                               'apple' | 'google'
+ *   capabilities.geoAnchoredMarkers  can a sign be pinned to a coordinate in the imagery?
+ *   capabilities.cameraState         does the provider expose camera position / heading?
+ *   load(cfg, hooks)   -> Promise    load the vendor library; reject on failure
+ *   mount(element)                   take ownership of the imagery element
+ *   setListings(list)                every listing known so far
+ *   select(listing)                  mark a listing selected without moving the camera
+ *   show(listing)      -> Promise<{coverage: boolean, note: string, superseded?: boolean}>
+ *
+ * MOVEMENT NEVER REACHES BRIDGE
+ * -----------------------------
+ * A camera move can cause at most one request to OUR listings endpoint, and
+ * only once the camera has travelled most of a query radius from the last
+ * query. That endpoint reads stored rows and holds no provider client.
+ *
+ * Listing values are only ever written as text (textContent), never parsed as
+ * markup, and every URL is checked for an http(s) scheme before it becomes an
+ * href or a src.
+ */
+(function () {
+    'use strict';
+
+    var shell = document.getElementById('vd-shell');
+
+    if (!shell) {
+        return;
+    }
+
+    var cfg = {
+        provider:        shell.getAttribute('data-provider'),
+        credential:      shell.getAttribute('data-credential') || '',
+        credentialName:  shell.getAttribute('data-credential-name') || '',
+        // Is this provider permitted here at all? Absent reads as permitted, for
+        // a fixture page; `0` is the server saying no.
+        providerEnabled: shell.getAttribute('data-provider-enabled') !== '0',
+        // A credential EXISTS. Not the credential — a claimed launch may deliver
+        // one that was never in this markup.
+        credentialReady: shell.getAttribute('data-credential-available') === '1'
+            || (shell.getAttribute('data-credential') || '') !== '',
+        claimEndpoint:   shell.getAttribute('data-launch-claim-endpoint') || '',
+        dailyLimit:      parseInt(shell.getAttribute('data-daily-launch-limit'), 10) || 0,
+        // Where a rejected key is reported, and a block the server already holds.
+        // A block present here means the page starts locked and never claims.
+        authFailureEndpoint: shell.getAttribute('data-google-auth-failure-endpoint') || '',
+        authBlock:       authBlockFromPage(shell.getAttribute('data-google-auth-block')),
+        csrfToken:       shell.getAttribute('data-csrf-token') || '',
+        libraryUrl:      shell.getAttribute('data-library-url') || '',
+        apiVersion:      shell.getAttribute('data-api-version') || '',
+        endpoint:        shell.getAttribute('data-listings-endpoint'),
+        nearbyRadius:    parseInt(shell.getAttribute('data-nearby-radius'), 10) || 400,
+        selectedListing: shell.getAttribute('data-selected-listing') || '',
+        launchLabel:     shell.getAttribute('data-launch-label') || 'Start',
+        defaultListing:  shell.getAttribute('data-default-listing') || '',
+        requeryFraction: positive(shell.getAttribute('data-nearby-requery')) || 0.6,
+        viewMode:        viewMode(),
+        // Sign sizing and grouping. Missing values fall back to VirtualDriveSigns.DEFAULTS.
+        signs: {
+            maxDistance:   positive(shell.getAttribute('data-sign-max-distance')),
+            minDistance:   positive(shell.getAttribute('data-sign-min-distance')),
+            nearWidth:     positive(shell.getAttribute('data-sign-near-width')),
+            farWidth:      positive(shell.getAttribute('data-sign-far-width')),
+            groupRadius:   positive(shell.getAttribute('data-sign-group-radius')),
+            closeCoverage: positive(shell.getAttribute('data-close-coverage'))
+        }
+    };
+
+    function positive(value) {
+        var n = parseFloat(value);
+
+        return isFinite(n) && n > 0 ? n : undefined;
+    }
+
+    // Empty means no block. Anything else is a block — including a value that
+    // does not parse, because a block we cannot read is still a block.
+    function authBlockFromPage(value) {
+        if (!value) {
+            return null;
+        }
+
+        try {
+            var parsed = JSON.parse(value);
+
+            return parsed && typeof parsed === 'object' ? parsed : { message: 'Launches are blocked by a recorded Google auth failure.' };
+        } catch (e) {
+            return { message: 'Launches are blocked by a recorded Google auth failure.' };
+        }
+    }
+
+    // The page decides the view. A page that does not (a static fixture) may take
+    // it from ?view=. Either way it only changes what is shown, never what loads.
+    function viewMode() {
+        var attr = shell.getAttribute('data-view-mode');
+
+        if (attr === 'customer' || attr === 'dev') {
+            return attr;
+        }
+
+        try {
+            return new URL(window.location.href).searchParams.get('view') === 'customer' ? 'customer' : 'dev';
+        } catch (e) {
+            return 'dev';
+        }
+    }
+
+    document.body.classList.add('vd-view-' + cfg.viewMode);
+
+    // Read-only counters for the browser specs and for a live session. Nothing
+    // reads them back to make a decision.
+    var diagnostics = window.VirtualDriveDiagnostics = window.VirtualDriveDiagnostics || {};
+
+    diagnostics.shell = {
+        launchClicks: 0,
+        launchesStarted: 0,
+        launchState: 'loading',
+        providerLoaded: false,
+        providerEnabled: cfg.providerEnabled,
+        // The daily ceiling, as this page experienced it. Read-only; nothing
+        // reads them back to make a decision.
+        allowanceClaims: 0,
+        allowanceGranted: 0,
+        allowanceRefused: 0,
+        allowanceReason: null,
+        allowanceRemaining: null,
+        // A rejected key: what was captured (never the key), and how many times
+        // this page told the server. The latter must never exceed one.
+        authFailure: null,
+        authReportsSent: 0,
+        authReportState: null
+    };
+
+    var state = {
+        registered: null,
+        provider: null,
+        walk: [],            // Previous / Next order: the curated test set
+        known: {},           // every listing we have been told about, by id
+        coverage: {},        // listing id -> true / false, once the provider has answered
+        selectedId: null,
+        position: null,      // camera position, only when the provider exposes it
+        lastQueryCenter: null,
+        queryInFlight: false,
+        counters: {},
+        lightbox: null,
+        launch: 'loading',   // loading | idle | opening | open | retry | locked
+        lockLabel: null,     // what the button says once locked, when 'Unavailable' is too vague
+        claimed: false,      // this page holds a granted launch allowance
+        loadFailed: false,
+        fatal: null,
+        authFailure: null,   // the rejected-key detail shown in the launch panel
+        authReport: null,    // null | 'pending' | 'recorded' | 'failed' | 'skipped' — one report per page
+        launchStartedAt: null,
+        firstImageryLogged: false,
+        attribution: '',
+        coverageNotes: {},   // listing id -> "imagery is nearby, not at the home" (shopper wording)
+        // listing id -> the provider's answer when that home was OPENED. A snapshot
+        // of the initial panorama match; camera movement never refreshes it.
+        imagery: {},
+        imageryBase: null,   // { kind, text } while loading, with no coverage, or after a failure
+        relative: null,      // the live camera → selected-listing reading, when the provider exposes one
+        shopper: null        // { listingId, building: [ids] | null, photo, choosing }
+    };
+
+    function $(id) {
+        return document.getElementById(id);
+    }
+
+    function now() {
+        return window.performance && performance.now ? performance.now() : Date.now();
+    }
+
+    function emit(name, detail) {
+        try {
+            document.dispatchEvent(new CustomEvent(name, { detail: detail }));
+        } catch (e) {
+            // An observer failing must never take the shell with it.
+        }
+    }
+
+    // ------------------------------------------------------------ instrumentation
+
+    function renderCounters() {
+        var list = $('vd-counters');
+
+        list.textContent = '';
+
+        Object.keys(state.counters).forEach(function (name) {
+            list.appendChild(node('dt', null, name));
+            list.appendChild(node('dd', null, String(state.counters[name])));
+        });
+    }
+
+    function count(name, by) {
+        state.counters[name] = (state.counters[name] || 0) + (by === undefined ? 1 : by);
+        renderCounters();
+    }
+
+    function setCounter(name, value) {
+        state.counters[name] = value;
+        renderCounters();
+    }
+
+    function log(event, detail) {
+        var line = new Date().toISOString().slice(11, 23) + '  ' + event + (detail ? ' — ' + detail : '');
+        var list = $('vd-events');
+        var item = node('li', null, line);
+
+        list.insertBefore(item, list.firstChild);
+
+        while (list.children.length > 250) {
+            list.removeChild(list.lastChild);
+        }
+
+        if (window.console && console.info) {
+            console.info('[virtual-drive] ' + line);
+        }
+    }
+
+    // A measured fact about one home on this provider, for the observation sheet.
+    function fact(listingId, label, value) {
+        log('Measured', label + ': ' + value + ' (' + listingId + ')');
+        emit('virtual-drive:fact', { provider: cfg.provider, listingId: listingId, label: label, value: String(value) });
+    }
+
+    // ------------------------------------------------------------ helpers
+
+    function node(tag, className, text) {
+        var el = document.createElement(tag);
+
+        if (className) {
+            el.className = className;
+        }
+
+        if (text !== undefined && text !== null) {
+            el.textContent = text;
+        }
+
+        return el;
+    }
+
+    function safeUrl(value) {
+        if (typeof value !== 'string' || value === '') {
+            return null;
+        }
+
+        try {
+            var parsed = new URL(value, window.location.href);
+
+            return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function meters(a, b) {
+        var rad = Math.PI / 180;
+        var dLat = (b.lat - a.lat) * rad;
+        var dLng = (b.lng - a.lng) * rad;
+        var h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+            + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+        return 2 * 6371008.8 * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+
+    function point(listing) {
+        return { lat: listing.latitude, lng: listing.longitude };
+    }
+
+    function knownList() {
+        return Object.keys(state.known).map(function (id) { return state.known[id]; });
+    }
+
+    function selected() {
+        return state.selectedId ? state.known[state.selectedId] || null : null;
+    }
+
+    function walkIndex(id) {
+        for (var i = 0; i < state.walk.length; i++) {
+            if (state.walk[i].id === id) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function describe(listing) {
+        return listing.sign_label + ' · ' + (listing.display_price || 'price not published') + ' · '
+            + (listing.address || listing.city || 'address withheld');
+    }
+
+    // The selected home is part of the URL so a link or a reload lands on it.
+    // A LAUNCH never is: nothing in the URL can start a session.
+    function rememberSelectionInUrl(id) {
+        try {
+            var url = new URL(window.location.href);
+
+            url.searchParams.set('listing', id);
+            window.history.replaceState(null, '', url.href);
+        } catch (e) {
+            // A sandboxed frame without history access loses the convenience, nothing else.
+        }
+    }
+
+    // ------------------------------------------------------------ data
+
+    function fetchListings(params) {
+        var url = new URL(cfg.endpoint, window.location.href);
+
+        Object.keys(params).forEach(function (key) {
+            url.searchParams.set(key, params[key]);
+        });
+
+        count('Listing API calls (our stored MLS data)');
+
+        return fetch(url.href, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('listing endpoint answered HTTP ' + response.status);
+                }
+
+                return response.json();
+            })
+            .then(function (data) {
+                count('Bridge/Stellar requests caused', data.provider_requests || 0);
+
+                return data;
+            });
+    }
+
+    function remember(listings) {
+        listings.forEach(function (listing) {
+            state.known[listing.id] = listing;
+        });
+
+        if (state.provider) {
+            state.provider.setListings(knownList());
+        }
+
+        renderNearby();
+    }
+
+    // Movement -> at most one query to OUR endpoint per ~radius travelled.
+    function maybeQueryNearby(center, reason) {
+        if (state.queryInFlight) {
+            return;
+        }
+
+        if (state.lastQueryCenter && meters(state.lastQueryCenter, center) < cfg.nearbyRadius * cfg.requeryFraction) {
+            return;
+        }
+
+        state.queryInFlight = true;
+        state.lastQueryCenter = center;
+
+        fetchListings({ lat: center.lat.toFixed(6), lng: center.lng.toFixed(6), radius: cfg.nearbyRadius })
+            .then(function (data) {
+                log('Nearby query (' + reason + ')', data.count + ' eligible listing(s) within '
+                    + data.radius_m + ' m — stored data, no provider request');
+                remember(data.listings);
+            })
+            .catch(function (err) {
+                log('Nearby query failed', err.message);
+            })
+            .then(function () {
+                state.queryInFlight = false;
+            });
+    }
+
+    // ------------------------------------------------------------ listing card
+
+    function renderCard(listing) {
+        var body = $('vd-card-body');
+
+        body.textContent = '';
+
+        var head = node('div', 'vd-card-head');
+        head.appendChild(node('span', 'vd-badge vd-badge-' + listing.transaction_type, listing.sign_label));
+        head.appendChild(node('span', 'vd-price', listing.display_price || 'Price not published'));
+        body.appendChild(head);
+
+        var facts = [];
+
+        if (listing.beds !== null) { facts.push(listing.beds + ' Bed'); }
+        if (listing.baths !== null) { facts.push(listing.baths + ' Bath'); }
+        if (listing.living_area !== null) { facts.push(Number(listing.living_area).toLocaleString() + ' sq ft'); }
+        if (listing.property_subtype) { facts.push(listing.property_subtype); }
+
+        if (facts.length) {
+            body.appendChild(node('p', 'vd-facts', facts.join(' · ')));
+        }
+
+        var place = [listing.city, listing.state].filter(Boolean).join(', ');
+
+        body.appendChild(node('p', 'vd-address', listing.address
+            ? listing.address + (place ? ', ' + place : '')
+            : 'Street address withheld at the listing broker\'s request' + (place ? ' — ' + place : '')));
+
+        body.appendChild(node('p', 'vd-status', 'Status: ' + (listing.effective_status || 'unknown')));
+
+        var photos = Array.isArray(listing.photo_urls) ? listing.photo_urls : [];
+
+        if (photos.length) {
+            var strip = node('div', 'vd-photo-strip');
+
+            photos.slice(0, 4).forEach(function (url, i) {
+                var src = safeUrl(url);
+
+                if (!src) {
+                    return;
+                }
+
+                var button = node('button', 'vd-thumb');
+                var img = node('img');
+
+                button.type = 'button';
+                button.setAttribute('aria-label', 'Open photo ' + (i + 1));
+                img.src = src;
+                img.alt = '';
+                img.loading = 'lazy';
+                button.appendChild(img);
+                button.addEventListener('click', function () { openLightbox(listing, i); });
+                strip.appendChild(button);
+            });
+
+            body.appendChild(strip);
+        }
+
+        // Development verification: the proof's claim is "this card is THAT listing".
+        body.appendChild(node('p', 'vd-verify', 'Listing key ' + listing.id + ' · MLS coordinate '
+            + listing.latitude.toFixed(6) + ', ' + listing.longitude.toFixed(6)
+            + (state.coverage[listing.id] === false ? ' · no street-level coverage' : '')));
+
+        renderActions(listing);
+
+        var index = walkIndex(listing.id);
+
+        $('vd-position').textContent = index >= 0 ? (index + 1) + ' of ' + state.walk.length : 'nearby listing';
+    }
+
+    function renderActions(listing) {
+        var box = $('vd-actions');
+        var gaps = $('vd-unavailable-actions');
+
+        box.textContent = '';
+        gaps.textContent = '';
+
+        (listing.actions || []).forEach(function (action) {
+            var button = node('button', 'vd-action vd-action-' + action.key, action.label);
+
+            button.type = 'button';
+
+            if (!action.available) {
+                button.disabled = true;
+                button.title = action.reason || 'Unavailable';
+                gaps.appendChild(node('li', null, action.label + ': ' + (action.reason || 'unavailable')));
+            } else {
+                button.addEventListener('click', function () { runAction(listing, action); });
+            }
+
+            box.appendChild(button);
+        });
+    }
+
+    function runAction(listing, action) {
+        log('Action "' + action.label + '"', 'listing ' + listing.id);
+
+        if (action.key === 'photos') {
+            openLightbox(listing, 0);
+
+            return;
+        }
+
+        var href = safeUrl(action.url);
+
+        if (!href) {
+            log('Action refused', 'no safe URL for ' + action.key);
+
+            return;
+        }
+
+        window.open(href, '_blank', 'noopener');
+    }
+
+    // ------------------------------------------------------------ the screen-fixed sign
+
+    function renderSign(listing) {
+        var sign = $('vd-sign');
+        var anchored = state.provider && state.provider.capabilities.geoAnchoredMarkers;
+
+        if (!listing || !state.provider || anchored || state.fatal || state.coverage[listing.id] !== true) {
+            sign.hidden = true;
+
+            return;
+        }
+
+        sign.className = 'vd-sign vd-sign-' + listing.transaction_type;
+        $('vd-sign-label').textContent = listing.sign_label;
+        $('vd-sign-price').textContent = listing.display_price || '';
+        $('vd-sign-caveat').textContent = 'Screen-fixed overlay. It is not attached to the house — '
+            + 'it stays here whatever the camera does.';
+        sign.hidden = false;
+    }
+
+    // ------------------------------------------------------------ nearby list
+
+    function renderNearby() {
+        var list = $('vd-nearby');
+        var origin = state.position || (selected() ? point(selected()) : null);
+
+        list.textContent = '';
+
+        var rows = knownList().map(function (listing) {
+            return { listing: listing, distance: origin ? meters(origin, point(listing)) : null };
+        });
+
+        rows.sort(function (a, b) { return (a.distance || 0) - (b.distance || 0); });
+
+        rows.slice(0, 12).forEach(function (row) {
+            var item = node('li', row.listing.id === state.selectedId ? 'is-selected' : null);
+            var button = node('button', 'vd-nearby-item', describe(row.listing)
+                + (row.distance !== null ? ' · ' + Math.round(row.distance) + ' m' : ''));
+
+            button.type = 'button';
+            button.addEventListener('click', function () { selectById(row.listing.id, 'nearby list'); });
+            item.appendChild(button);
+            list.appendChild(item);
+        });
+
+        $('vd-nearby-note').textContent = state.position ? '(distance from the camera)' : '(distance from the selected home)';
+    }
+
+    // ------------------------------------------------------------ selection
+
+    function selectById(id, via, options) {
+        var listing = state.known[id];
+        var move = !options || options.move !== false;
+
+        if (!listing) {
+            log('Selection refused', 'unknown listing ' + id);
+
+            return;
+        }
+
+        state.selectedId = id;
+        rememberSelectionInUrl(id);
+        log('Selected ' + listing.sign_label, id + ' via ' + via);
+        emit('virtual-drive:selected', { provider: cfg.provider, listing: listing });
+
+        renderCard(listing);
+        renderSign(listing);
+        renderNearby();
+        renderLaunch();
+        maybeQueryNearby(point(listing), 'selected home');
+        openShopper(id, options && options.building ? options.building : null);
+
+        // Before launch there is no provider to talk to — and that is the point.
+        if (!state.provider || state.fatal) {
+            return;
+        }
+
+        if (move) {
+            showInProvider(listing).catch(function () {
+                // Already reported by showInProvider.
+            });
+        } else {
+            state.provider.select(listing);
+            renderImageryStatus();
+        }
+    }
+
+    function step(delta) {
+        if (!state.walk.length) {
+            return;
+        }
+
+        var i = walkIndex(state.selectedId);
+
+        i = i < 0 ? 0 : (i + delta + state.walk.length) % state.walk.length;
+        selectById(state.walk[i].id, delta > 0 ? 'Next Home' : 'Previous Home');
+    }
+
+    // A transient status (loading, no coverage, failure). It stands until a
+    // coverage answer for the selected listing replaces it.
+    function setImageryStatus(kind, text) {
+        state.imageryBase = { kind: kind, text: text || '' };
+        renderImageryStatus();
+    }
+
+    function degrees(value) {
+        return Math.round(((value % 360) + 360) % 360) + '°';
+    }
+
+    /*
+     * The status line under the HUD, worded per view.
+     *
+     * Two distances exist and they are NOT the same measurement:
+     *   • the INITIAL match — how far the panorama Google found when the home was
+     *     opened is from the MLS coordinate. Taken once; walking never changes it.
+     *   • the CURRENT distance — panorama.getPosition() → the MLS coordinate, live
+     *     on position_changed / pov_changed. The HUD shows it to everyone.
+     * Shown side by side unlabelled, the first reads as a stale contradiction of
+     * the second (a live session saw "116 m away" beside "imagery is 35 m from the
+     * home"). So the customer preview never shows the initial figure or any
+     * heading, and the developer view names both for what they are.
+     */
+    function renderImageryStatus() {
+        var status = $('vd-imagery-status');
+        var listing = selected();
+        // A stopped provider's reason outranks any coverage answer.
+        var result = listing && !state.fatal ? state.imagery[listing.id] : null;
+        var customer = cfg.viewMode === 'customer';
+        var kind;
+        var lines = [];
+
+        if (result) {
+            kind = result.near === false ? 'far' : 'ok';
+            lines.push(customer ? (result.customerNote !== undefined ? result.customerNote : result.note) : result.note);
+        } else if (state.imageryBase) {
+            kind = state.imageryBase.kind;
+            lines.push(state.imageryBase.text);
+        } else {
+            kind = 'ok';
+
+            if (!customer && listing && state.relative) {
+                lines.push('Initial Street View match: not measured for this listing — the camera was not moved to it.');
+            }
+        }
+
+        if (!customer && state.relative && (result || !state.imageryBase)) {
+            var r = state.relative;
+
+            lines.push('Current panorama distance: ' + Math.round(r.distance) + ' m from selected listing.'
+                + (typeof r.cameraHeading === 'number'
+                    ? ' Heading: camera ' + degrees(r.cameraHeading)
+                        + ', bearing to listing ' + degrees(r.bearing)
+                        + (typeof r.requestedHeading === 'number' ? ', last requested ' + degrees(r.requestedHeading) : '')
+                        + '.'
+                    : ''));
+        }
+
+        status.className = 'vd-imagery-status is-' + kind;
+        status.textContent = '';
+
+        lines.filter(Boolean).forEach(function (text, index) {
+            var line = node('div', 'vd-imagery-line', text);
+
+            // The live line changes with every turn of the camera; announcing
+            // each change would drown out the status it sits under.
+            if (index > 0) {
+                line.setAttribute('aria-live', 'off');
+            }
+
+            status.appendChild(line);
+        });
+    }
+
+    function showInProvider(listing) {
+        delete state.imagery[listing.id];
+        setImageryStatus('loading', 'Loading street-level imagery at the MLS coordinate…');
+
+        return state.provider.show(listing).then(function (result) {
+            // A newer selection overtook this one; its answer is not about coverage.
+            if (result.superseded) {
+                return result;
+            }
+
+            state.coverage[listing.id] = result.coverage;
+
+            // Imagery that exists only some way off is reported as exactly that —
+            // to a shopper without the initial-match figure, which goes stale.
+            if (result.coverage && result.near === false) {
+                state.coverageNotes[listing.id] = result.customerNote !== undefined ? result.customerNote : result.note;
+            } else {
+                delete state.coverageNotes[listing.id];
+            }
+            setCounter('Listings with coverage', Object.keys(state.coverage).filter(function (k) { return state.coverage[k]; }).length);
+            setCounter('Listings without coverage', Object.keys(state.coverage).filter(function (k) { return !state.coverage[k]; }).length);
+            log(result.coverage ? 'Coverage YES' : 'Coverage NO', listing.id + (result.note ? ' — ' + result.note : ''));
+
+            if (result.coverage && !state.firstImageryLogged && state.launchStartedAt !== null) {
+                state.firstImageryLogged = true;
+                setCounter('Launch press → provider ready (ms)', Math.round(now() - state.launchStartedAt));
+            }
+
+            if (result.coverage) {
+                state.imagery[listing.id] = result;
+                state.imageryBase = null;
+                renderImageryStatus();
+            } else {
+                setImageryStatus('none', 'No street-level imagery for this home. ' + (result.note || '') + ' The listing stays fully available.');
+            }
+
+            if (state.selectedId === listing.id) {
+                renderCard(listing);
+                renderSign(listing);
+                renderShopper();
+            }
+
+            return result;
+        }, function (err) {
+            log('Provider show failed', err.message);
+            setImageryStatus('none', 'Street-level imagery failed: ' + err.message + ' The listing stays fully available.');
+
+            throw err;
+        });
+    }
+
+    // ------------------------------------------------------------ launch (the billing boundary)
+
+    function renderLaunch() {
+        var button = $('vd-launch');
+        var listing = selected();
+
+        diagnostics.shell.launchState = state.launch;
+        $('vd-launch-panel').hidden = state.launch === 'open';
+        // A refusal should not look like a button you have not pressed yet.
+        $('vd-launch-panel').classList.toggle('is-refused', state.launch === 'locked');
+        $('vd-launch-home').textContent = listing ? describe(listing) : '';
+
+        if (state.launch === 'idle') {
+            button.disabled = false;
+            button.textContent = cfg.launchLabel;
+        } else if (state.launch === 'retry') {
+            button.disabled = false;
+            button.textContent = 'Try again';
+        } else if (state.launch === 'opening') {
+            button.disabled = true;
+            button.textContent = 'Opening Virtual Drive…';
+        } else if (state.launch === 'locked') {
+            button.disabled = true;
+            button.textContent = state.lockLabel || 'Unavailable';
+        } else {
+            button.disabled = true;
+            button.textContent = 'Loading listings…';
+        }
+    }
+
+    // A terminal refusal. `message` null keeps whatever the server already wrote
+    // into the note — the reason for a switched-off provider is the server's to
+    // word, not ours. `label` replaces the vague 'Unavailable' on the button.
+    function lock(message, label) {
+        state.launch = 'locked';
+        state.lockLabel = label || null;
+
+        if (message) {
+            $('vd-launch-note').textContent = message;
+        }
+
+        renderLaunch();
+    }
+
+    // ------------------------------------------------------------ a rejected key (the stop-loss)
+    //
+    // Google rejecting the browser key is not a problem with this press — every
+    // later press, on any page, would be rejected the same way and still spend a
+    // launch. So the first rejection:
+    //
+    //   1. stops this page (nothing retries, the button locks);
+    //   2. shows Google's own error code and the origin to compare with the key's
+    //      website restrictions — never the key;
+    //   3. is reported to the server ONCE, which then refuses every launch claim
+    //      until a developer runs the reset command. A reload cannot clear it.
+    //
+    // The report waits a moment after the first signal, because Google may send
+    // gm_authFailure and its console message in either order and the message is
+    // the part worth recording. It is sent once whatever happens next.
+
+    var AUTH_BLOCKED_LABEL = 'Blocked: key rejected';
+    var AUTH_REPORT_SETTLE_MS = 400;
+    var RESET_COMMAND = 'php artisan virtual-drive:google-auth-block --reset';
+
+    // The page's own facts, for comparison with the key's restrictions. The
+    // Referer the browser sends with the provider's script request is decided by
+    // the referrer policy; with none declared the browser default is
+    // strict-origin-when-cross-origin, which sends the origin alone.
+    function pageReferrerFacts() {
+        var meta = document.querySelector('meta[name="referrer"]');
+        var policy = meta && meta.getAttribute('content') ? meta.getAttribute('content').trim().toLowerCase() : 'browser-default';
+        var origin = window.location.origin;
+        var sent;
+
+        if (policy === 'no-referrer' || policy === 'same-origin') {
+            sent = null;
+        } else if (policy === 'unsafe-url' || policy === 'no-referrer-when-downgrade') {
+            sent = origin + window.location.pathname;
+        } else {
+            sent = origin + '/';
+        }
+
+        return { page_origin: origin, referrer_policy: policy, referrer_sent: sent };
+    }
+
+    // One shape for the three sources: the provider's capture, a claim refusal,
+    // and a block rendered into the page. Later values fill gaps, never overwrite.
+    function mergeAuthFailure(update) {
+        var current = state.authFailure || {};
+        var fields = ['code', 'message', 'authorized_url', 'source', 'page_origin', 'referrer_policy', 'referrer_sent',
+            'request_origin', 'reported_at', 'ledger_used', 'ledger_limit'];
+
+        fields.forEach(function (field) {
+            var value = update ? update[field] : null;
+            var empty = current[field] === undefined || current[field] === null;
+
+            // `source` is the provider's running summary of every signal seen, so
+            // its latest value is the complete one.
+            if ((empty || field === 'source') && value !== undefined && value !== null && value !== '') {
+                current[field] = value;
+            }
+        });
+
+        state.authFailure = current;
+        diagnostics.shell.authFailure = JSON.parse(JSON.stringify(current));
+
+        return current;
+    }
+
+    function renderAuthFailure() {
+        var box = $('vd-auth-failure');
+        var f = state.authFailure;
+
+        if (!box) {
+            return;
+        }
+
+        box.textContent = '';
+
+        if (!f) {
+            box.hidden = true;
+
+            return;
+        }
+
+        box.appendChild(node('h3', null, 'Google rejected the browser key'));
+
+        var list = node('dl');
+        var row = function (label, value) {
+            list.appendChild(node('dt', null, label));
+            list.appendChild(node('dd', null, value));
+        };
+
+        row('Google error code', f.code || 'not captured — Google printed no Maps error to this page\'s console');
+
+        if (f.message) {
+            row('Google message', f.message);
+        }
+
+        if (f.authorized_url) {
+            row('Site URL Google asked to authorize', f.authorized_url);
+        }
+
+        row('This page\'s origin', f.page_origin || window.location.origin);
+
+        if (f.request_origin) {
+            row('Origin the server received', f.request_origin);
+        }
+
+        row('Referrer policy', f.referrer_policy || 'browser-default');
+        row('Referrer sent to Google', f.referrer_sent || 'none');
+        row('Restriction entry that matches this page', (f.page_origin || window.location.origin) + '/*');
+
+        if (f.reported_at) {
+            row('Recorded', f.reported_at);
+        }
+
+        if (typeof f.ledger_used === 'number') {
+            row('Launches used when it failed', f.ledger_used + (typeof f.ledger_limit === 'number' ? ' of ' + f.ledger_limit : ''));
+        }
+
+        row('Launches', 'blocked until: ' + RESET_COMMAND);
+        box.appendChild(list);
+        box.hidden = false;
+    }
+
+    // Stop the page on a rejected key. Idempotent: the first call stops, later
+    // calls only add detail to what is shown.
+    function stopForAuthFailure(detail) {
+        mergeAuthFailure(detail);
+        renderAuthFailure();
+
+        if (state.fatal) {
+            return;
+        }
+
+        var f = state.authFailure;
+        var reason = 'Google rejected the browser key' + (f.code ? ' (' + f.code + ')' : '')
+            + '. Nothing will be retried, and further Google launches are blocked until the block is cleared ('
+            + RESET_COMMAND + ').';
+
+        state.fatal = reason;
+        log('STOPPED', reason);
+        setImageryStatus('none', reason);
+        lock(reason, AUTH_BLOCKED_LABEL);
+        renderSign(selected());
+    }
+
+    function scheduleAuthReport() {
+        if (state.authReport !== null) {
+            return;
+        }
+
+        if (!cfg.authFailureEndpoint) {
+            state.authReport = 'skipped';
+            diagnostics.shell.authReportState = 'skipped';
+
+            return;
+        }
+
+        state.authReport = 'pending';
+        diagnostics.shell.authReportState = 'pending';
+        setTimeout(sendAuthReport, AUTH_REPORT_SETTLE_MS);
+    }
+
+    // Sent once. A failure is stated, never retried: the page is already stopped.
+    function sendAuthReport() {
+        var f = state.authFailure || {};
+        var headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+
+        if (cfg.csrfToken) {
+            headers['X-CSRF-TOKEN'] = cfg.csrfToken;
+        }
+
+        diagnostics.shell.authReportsSent++;
+        count('Auth-failure reports sent');
+
+        fetch(cfg.authFailureEndpoint, {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                code: f.code || null,
+                message: f.message || null,
+                authorized_url: f.authorized_url || null,
+                source: f.source || null,
+                page_origin: f.page_origin || null,
+                referrer_policy: f.referrer_policy || null,
+                referrer_sent: f.referrer_sent || null
+            })
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                return { ok: response.ok, status: response.status, body: body || {} };
+            }, function () {
+                return { ok: false, status: response.status, body: {} };
+            });
+        }).then(function (answer) {
+            if (answer.ok && answer.body.blocked === true) {
+                state.authReport = 'recorded';
+                mergeAuthFailure(answer.body.auth_failure || null);
+                renderAuthFailure();
+
+                if (answer.body.message) {
+                    $('vd-launch-note').textContent = answer.body.message;
+                }
+
+                log('Auth failure recorded', 'Google launches are blocked for this proof environment until reset');
+            } else {
+                authReportFailed(answer.body.message || 'HTTP ' + answer.status);
+            }
+
+            diagnostics.shell.authReportState = state.authReport;
+        }, function (err) {
+            authReportFailed(err.message);
+            diagnostics.shell.authReportState = state.authReport;
+        });
+    }
+
+    function authReportFailed(why) {
+        state.authReport = 'failed';
+        log('Auth failure NOT recorded', why);
+        $('vd-launch-note').textContent = (state.fatal || 'Google rejected the browser key.')
+            + ' The block could not be recorded on the server (' + why + '), so other pages are not yet '
+            + 'blocked: do not launch again until the key is fixed.';
+    }
+
+    // ------------------------------------------------------------ the daily ceiling
+    //
+    // Claimed from OUR server, once per page, before any provider library is
+    // requested. The server counts the day's launches across the whole proof
+    // environment — not in this browser, where a cleared profile would reset them
+    // — and a grant is also the only delivery of the provider credential.
+    //
+    // One attempt per press. A refusal and a failed request both reject, both
+    // lock the button, and neither is retried: a ceiling that retries itself is
+    // not a ceiling.
+    function claimDailyAllowance() {
+        var headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+
+        if (cfg.csrfToken) {
+            headers['X-CSRF-TOKEN'] = cfg.csrfToken;
+        }
+
+        diagnostics.shell.allowanceClaims++;
+        count('Daily launch allowance claims');
+
+        return fetch(cfg.claimEndpoint, {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: '{}'
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                return { ok: response.ok, status: response.status, body: body || {} };
+            }, function () {
+                return { ok: false, status: response.status, body: {} };
+            });
+        }).then(function (answer) {
+            var body = answer.body;
+
+            diagnostics.shell.allowanceRemaining = typeof body.remaining === 'number' ? body.remaining : null;
+
+            if (answer.ok && body.granted === true) {
+                diagnostics.shell.allowanceGranted++;
+                state.claimed = true;
+                setCounter('Daily launches used', body.used + ' of ' + body.limit + ' (' + body.day + ')');
+                log('Daily launch allowance granted', body.message || '');
+
+                return body;
+            }
+
+            diagnostics.shell.allowanceRefused++;
+            diagnostics.shell.allowanceReason = body.reason || ('http_' + answer.status);
+            count('Launches refused before anything was loaded');
+
+            var refusal = new Error(body.message
+                || 'The daily launch allowance could not be claimed (HTTP ' + answer.status + ').');
+
+            refusal.refused = true;
+            refusal.reason = diagnostics.shell.allowanceReason;
+            refusal.authFailure = body.auth_failure || null;
+
+            throw refusal;
+        }, function (err) {
+            diagnostics.shell.allowanceRefused++;
+            diagnostics.shell.allowanceReason = 'request_failed';
+
+            var refusal = new Error('The daily launch allowance could not be claimed (' + err.message
+                + '), so nothing was loaded.');
+
+            refusal.refused = true;
+            refusal.reason = 'request_failed';
+
+            throw refusal;
+        });
+    }
+
+    function launch() {
+        diagnostics.shell.launchClicks++;
+
+        // THE LOCK. Only an idle page, or one waiting on a deliberate retry, may start.
+        if (state.launch !== 'idle' && state.launch !== 'retry') {
+            count('Launch presses ignored (already opening, open or locked)');
+
+            return;
+        }
+
+        var provider = state.registered;
+        var listing = selected();
+
+        if (!provider || !listing || !cfg.credentialReady || !cfg.providerEnabled || state.fatal) {
+            return;
+        }
+
+        state.launch = 'opening';
+        renderLaunch();
+
+        diagnostics.shell.launchesStarted++;
+        count('Deliberate launches');
+        state.launchStartedAt = now();
+        log('Launch pressed', provider.id + ' · listing ' + listing.id);
+
+        // THE DAILY CEILING, and the credential with it. Claimed once per page,
+        // before anything is requested from the provider — and skipped on a later
+        // press, because this page's one billable panorama is already paid for.
+        var allowed = (state.provider || state.claimed || !cfg.claimEndpoint)
+            ? Promise.resolve(null)
+            : claimDailyAllowance().then(function (granted) {
+                if (typeof granted.credential === 'string' && granted.credential !== '') {
+                    cfg.credential = granted.credential;
+                }
+
+                return granted;
+            });
+
+        var ready = allowed.then(function () {
+            if (state.provider) {
+                return null;
+            }
+
+            return provider.load(cfg, hooks).then(function () {
+                if (state.fatal) {
+                    throw new Error(state.fatal);
+                }
+
+                provider.mount($('vd-street'));
+                state.provider = provider;
+                diagnostics.shell.providerLoaded = true;
+                provider.setListings(knownList());
+            }, function (err) {
+                state.loadFailed = true;
+
+                throw err;
+            });
+        });
+
+        ready.then(function () {
+            return showInProvider(listing);
+        }).then(function (result) {
+            if (state.fatal) {
+                return;
+            }
+
+            state.launch = result && result.coverage ? 'open' : 'retry';
+            renderLaunch();
+            renderSign(selected());
+
+            if (state.launch === 'open' && selected()) {
+                openShopper(selected().id, null);
+            }
+        }, function (err) {
+            log('Launch failed', err.message);
+
+            if (state.fatal) {
+                return;
+            }
+
+            // A refused allowance: nothing was loaded, nothing was requested from
+            // the provider, and pressing again must not try. The button says which
+            // refusal it was so 'Unavailable' is not the whole story.
+            if (err.refused) {
+                // Blocked by an earlier rejected key: show the recorded cause, the
+                // same way the page that hit it did. Nothing was loaded or claimed.
+                if (err.reason === 'auth_failure_blocked') {
+                    mergeAuthFailure(err.authFailure);
+                    mergeAuthFailure(pageReferrerFacts());
+                    renderAuthFailure();
+                    lock(err.message, AUTH_BLOCKED_LABEL);
+
+                    return;
+                }
+
+                lock(err.message, err.reason === 'daily_limit_reached' ? 'Daily limit reached' : 'Unavailable');
+
+                return;
+            }
+
+            if (state.loadFailed) {
+                // Never requested again from this page — a reload is the deliberate retry.
+                lock('The ' + provider.id + ' library could not be loaded (' + err.message + '). Nothing will be retried; reload the page to try again.');
+
+                return;
+            }
+
+            state.launch = 'retry';
+            renderLaunch();
+        });
+    }
+
+    // ------------------------------------------------------------ the shopper card
+    //
+    // What a sign click opens, floating over the imagery. It is ours and pure
+    // DOM: opening it, switching it to another sign's listing, paging photos or
+    // choosing a unit in a building never asks the provider for anything, so the
+    // one panorama is never rebuilt. Only actions that exist are offered.
+
+    function openShopper(listingId, building) {
+        if (!state.provider || state.fatal || !state.known[listingId]) {
+            return;
+        }
+
+        state.shopper = { listingId: listingId, building: building || null, photo: 0, choosing: false };
+        renderShopper();
+    }
+
+    function openChooser(ids) {
+        if (!state.provider || state.fatal) {
+            return;
+        }
+
+        var known = ids.filter(function (id) { return !!state.known[id]; });
+
+        if (!known.length) {
+            return;
+        }
+
+        state.shopper = { listingId: null, building: known, photo: 0, choosing: true };
+        renderShopper();
+    }
+
+    function closeShopper() {
+        state.shopper = null;
+        renderShopper();
+    }
+
+    function shopperButton(className, text, onClick) {
+        var button = node('button', className, text);
+
+        button.type = 'button';
+        button.addEventListener('click', onClick);
+
+        return button;
+    }
+
+    function facts(listing) {
+        var out = [];
+
+        if (listing.beds !== null && listing.beds !== undefined) { out.push(listing.beds + ' bd'); }
+        if (listing.baths !== null && listing.baths !== undefined) { out.push(listing.baths + ' ba'); }
+        if (listing.living_area !== null && listing.living_area !== undefined) { out.push(Number(listing.living_area).toLocaleString() + ' sq ft'); }
+        if (listing.property_subtype) { out.push(listing.property_subtype); }
+
+        return out.join(' · ');
+    }
+
+    function addressLine(listing) {
+        var place = [listing.city, listing.state].filter(Boolean).join(', ');
+
+        return listing.address
+            ? listing.address + (place ? ', ' + place : '')
+            : 'Street address withheld at the listing broker\'s request' + (place ? ' — ' + place : '');
+    }
+
+    function renderShopper() {
+        var box = $('vd-shopper');
+        var s = state.shopper;
+
+        box.textContent = '';
+
+        if (!s) {
+            box.hidden = true;
+
+            return;
+        }
+
+        var close = shopperButton('vd-shopper-close', '×', closeShopper);
+
+        close.setAttribute('aria-label', 'Close listing card');
+        box.appendChild(close);
+
+        if (s.choosing) {
+            renderChooser(box, s.building);
+        } else {
+            renderListingCard(box, s);
+        }
+
+        if (state.attribution) {
+            box.appendChild(node('p', 'vd-shopper-attribution', state.attribution));
+        }
+
+        box.hidden = false;
+    }
+
+    function renderListingCard(box, s) {
+        var listing = state.known[s.listingId];
+
+        if (!listing) {
+            box.hidden = true;
+
+            return;
+        }
+
+        box.setAttribute('data-listing', listing.id);
+
+        if (s.building) {
+            box.appendChild(shopperButton('vd-shopper-back', '‹ All ' + s.building.length + ' units here', function () { openChooser(s.building); }));
+        }
+
+        var photos = (listing.photo_urls || []).map(safeUrl).filter(Boolean);
+
+        if (photos.length) {
+            var index = ((s.photo % photos.length) + photos.length) % photos.length;
+            var figure = node('div', 'vd-shopper-photo');
+            var img = node('img');
+
+            img.src = photos[index];
+            img.alt = 'Photo ' + (index + 1) + ' of ' + photos.length;
+            figure.appendChild(img);
+
+            if (photos.length > 1) {
+                var prev = shopperButton('vd-shopper-photo-step vd-shopper-photo-prev', '‹', function () { s.photo = index - 1; renderShopper(); });
+                var next = shopperButton('vd-shopper-photo-step vd-shopper-photo-next', '›', function () { s.photo = index + 1; renderShopper(); });
+
+                prev.setAttribute('aria-label', 'Previous photo');
+                next.setAttribute('aria-label', 'Next photo');
+                figure.appendChild(prev);
+                figure.appendChild(next);
+            }
+
+            figure.appendChild(node('span', 'vd-shopper-count', (index + 1) + ' / ' + photos.length));
+            box.appendChild(figure);
+        }
+
+        var head = node('div', 'vd-shopper-head');
+
+        head.appendChild(node('span', 'vd-badge vd-badge-' + listing.transaction_type, listing.sign_label));
+        head.appendChild(node('span', 'vd-shopper-price', listing.display_price || 'Price not published'));
+        box.appendChild(head);
+        box.appendChild(node('p', 'vd-shopper-address', addressLine(listing)));
+
+        var line = facts(listing);
+
+        if (line) {
+            box.appendChild(node('p', 'vd-shopper-facts', line));
+        }
+
+        if (state.coverageNotes[listing.id]) {
+            box.appendChild(node('p', 'vd-shopper-coverage', state.coverageNotes[listing.id]));
+        }
+
+        var actions = node('div', 'vd-shopper-actions');
+
+        if (photos.length) {
+            actions.appendChild(shopperButton('vd-shopper-action vd-shopper-action-photos', 'View photos (' + photos.length + ')', function () {
+                openLightbox(listing, ((s.photo % photos.length) + photos.length) % photos.length);
+            }));
+        }
+
+        // Only what exists. The developer panel still lists the rest with reasons.
+        (listing.actions || []).forEach(function (action) {
+            if (!action.available || action.key === 'photos') {
+                return;
+            }
+
+            actions.appendChild(shopperButton('vd-shopper-action vd-shopper-action-' + action.key, action.label, function () {
+                runAction(listing, action);
+            }));
+        });
+
+        box.appendChild(actions);
+    }
+
+    function renderChooser(box, ids) {
+        var list = ids.map(function (id) { return state.known[id]; }).filter(Boolean);
+        var sale = list.some(function (l) { return l.transaction_type === 'sale'; });
+        var rent = list.some(function (l) { return l.transaction_type === 'rent'; });
+
+        box.removeAttribute('data-listing');
+        box.appendChild(node('p', 'vd-shopper-kicker', sale && rent ? 'FOR SALE & RENT' : (sale ? 'FOR SALE' : 'FOR RENT')));
+        box.appendChild(node('h2', 'vd-shopper-title', list.length + ' units in this building'));
+        box.appendChild(node('p', 'vd-shopper-hint', 'Choose a unit to see its listing.'));
+
+        var menu = node('ul', 'vd-shopper-units');
+
+        list.forEach(function (listing) {
+            var unitNo = window.VirtualDriveSigns ? window.VirtualDriveSigns.unit(listing) : null;
+            var item = node('li');
+            var label = (unitNo ? 'Unit ' + unitNo : (listing.address || 'Address withheld'))
+                + ' · ' + (listing.display_price || 'price not published')
+                + (facts(listing) ? ' · ' + facts(listing) : '');
+            var button = shopperButton('vd-shopper-unit', label, function () {
+                selectById(listing.id, 'building chooser', { move: false, building: ids });
+            });
+
+            button.setAttribute('data-listing', listing.id);
+            item.appendChild(button);
+            menu.appendChild(item);
+        });
+
+        box.appendChild(menu);
+    }
+
+    // ------------------------------------------------------------ photos
+
+    function openLightbox(listing, index) {
+        var photos = (listing.photo_urls || []).map(safeUrl).filter(Boolean);
+
+        if (!photos.length) {
+            return;
+        }
+
+        state.lightbox = { listing: listing, photos: photos, index: Math.max(0, Math.min(index, photos.length - 1)) };
+        renderLightbox();
+        $('vd-lightbox').hidden = false;
+        log('Photos opened', 'listing ' + listing.id);
+    }
+
+    function renderLightbox() {
+        var box = state.lightbox;
+
+        $('vd-lightbox-img').src = box.photos[box.index];
+        $('vd-lightbox-caption').textContent = (box.index + 1) + ' / ' + box.photos.length + ' · '
+            + (box.listing.address || box.listing.city || '');
+    }
+
+    function stepLightbox(delta) {
+        var box = state.lightbox;
+
+        if (!box) {
+            return;
+        }
+
+        box.index = (box.index + delta + box.photos.length) % box.photos.length;
+        renderLightbox();
+    }
+
+    function closeLightbox() {
+        $('vd-lightbox').hidden = true;
+        state.lightbox = null;
+    }
+
+    function wireLightbox() {
+        $('vd-lightbox-close').addEventListener('click', closeLightbox);
+        $('vd-lightbox-prev').addEventListener('click', function () { stepLightbox(-1); });
+        $('vd-lightbox-next').addEventListener('click', function () { stepLightbox(1); });
+        document.addEventListener('keydown', function (event) {
+            if (!state.lightbox) {
+                return;
+            }
+
+            if (event.key === 'Escape') { closeLightbox(); }
+            if (event.key === 'ArrowLeft') { stepLightbox(-1); }
+            if (event.key === 'ArrowRight') { stepLightbox(1); }
+        });
+    }
+
+    // ------------------------------------------------------------ provider hooks
+
+    var hooks = {
+        log: log,
+        count: count,
+        setCounter: setCounter,
+        fact: fact,
+        selectedListing: selected,
+        sinceLaunch: function () {
+            return state.launchStartedAt === null ? null : Math.round(now() - state.launchStartedAt);
+        },
+        addControl: function (el) { $('vd-provider-controls').appendChild(el); },
+        reshow: function () {
+            var listing = selected();
+
+            if (listing && state.provider && !state.fatal) {
+                showInProvider(listing).catch(function () {});
+            }
+        },
+        // The provider says stop: a rejected credential, or a refused second session.
+        fatal: function (reason) {
+            if (state.fatal) {
+                return;
+            }
+
+            state.fatal = reason;
+            log('STOPPED', reason);
+            setImageryStatus('none', reason);
+            lock(reason);
+            renderSign(selected());
+        },
+        // Google rejected the key. `detail` is the provider's capture — error code,
+        // Google's message and the URL it asked to authorize, key already removed.
+        // Called again as more detail arrives; stops once, reports once.
+        authFailure: function (detail) {
+            stopForAuthFailure(detail);
+            mergeAuthFailure(pageReferrerFacts());
+            renderAuthFailure();
+            scheduleAuthReport();
+        },
+        onSelect: function (id, via) {
+            selectById(id, via, { move: false });
+        },
+        // A building sign: several listings share one point. Offer the units;
+        // nothing moves and nothing is loaded.
+        onChooseBuilding: function (ids, via) {
+            log('Building sign', ids.length + ' units via ' + via);
+            openChooser(ids);
+        },
+        onMoved: function (position) {
+            state.position = position;
+            renderNearby();
+            maybeQueryNearby(position, 'camera moved');
+        },
+        // Live: panorama.getPosition() → the selected listing's MLS coordinate,
+        // on every position_changed / pov_changed. The one distance a shopper sees.
+        onRelative: function (info) {
+            var hud = $('vd-hud');
+
+            state.relative = info || null;
+
+            if (cfg.viewMode !== 'customer') {
+                renderImageryStatus();
+            }
+
+            if (!info) {
+                hud.hidden = true;
+
+                return;
+            }
+
+            var angle = Math.round(Math.abs(info.relativeHeading));
+            var side = angle < 10 ? 'straight ahead' : angle + '° to your ' + (info.relativeHeading > 0 ? 'right' : 'left');
+
+            hud.textContent = 'Selected home: ' + Math.round(info.distance) + ' m away, ' + side + '.';
+            hud.hidden = false;
+        },
+        onSceneChanged: function () {
+            var sign = $('vd-sign');
+
+            if (sign.hidden) {
+                return;
+            }
+
+            sign.classList.add('is-stale');
+            $('vd-sign-caveat').textContent = 'The view changed. This sign cannot tell whether the house is '
+                + 'still in frame — the provider does not expose where the camera is.';
+        }
+    };
+
+    window.VirtualDrive = {
+        register: function (provider) {
+            if (state.registered) {
+                log('Second provider refused', provider.id);
+
+                return;
+            }
+
+            state.registered = provider;
+        },
+        // The launch button's handler, exposed so the browser specs can prove the
+        // lock holds even when the button's disabled state is bypassed.
+        launch: launch
+    };
+
+    // ------------------------------------------------------------ start
+
+    function start() {
+        $('vd-prev').addEventListener('click', function () { step(-1); });
+        $('vd-next').addEventListener('click', function () { step(1); });
+        $('vd-launch').addEventListener('click', launch);
+        $('vd-sign-cta').addEventListener('click', function () {
+            var listing = selected();
+
+            if (listing) {
+                log('Sign clicked', 'listing ' + listing.id);
+            }
+
+            $('vd-card').scrollIntoView({ behavior: 'smooth' });
+        });
+        wireLightbox();
+        renderLaunch();
+
+        fetchListings({ set: 'test' }).then(function (data) {
+            state.walk = data.listings;
+            state.attribution = data.attribution || '';
+            $('vd-attribution').textContent = state.attribution;
+
+            if (data.unavailable_keys && data.unavailable_keys.length) {
+                log('Test keys not published', data.unavailable_keys.length
+                    + ' key(s) missing from stored data or ineligible: ' + data.unavailable_keys.join(', '));
+            }
+
+            if (!state.walk.length) {
+                $('vd-card-body').textContent = 'No eligible listings.';
+                lock('No eligible test listings exist in the stored MLS data here.');
+
+                return;
+            }
+
+            remember(state.walk);
+
+            var requested = cfg.selectedListing && state.known[cfg.selectedListing] ? cfg.selectedListing : null;
+
+            if (cfg.selectedListing && !requested) {
+                log('Requested listing is not in the test set', cfg.selectedListing);
+            }
+
+            // No ?listing=: start where the imagery is close to the home, if configured.
+            var fallback = !requested && cfg.defaultListing && state.known[cfg.defaultListing] ? cfg.defaultListing : null;
+
+            selectById(requested || fallback || state.walk[0].id, requested ? 'link' : (fallback ? 'default start' : 'initial'));
+
+            // Switched off for this environment. Checked before "is a provider
+            // registered?", because with the provider script omitted the honest
+            // answer is the server's reason, not "none is registered".
+            if (!cfg.providerEnabled) {
+                log('Provider switched off', 'no library was loaded and none can be');
+                setCounter('Provider', 'switched off');
+                lock(null, 'Switched off');
+
+                return;
+            }
+
+            // A key Google already rejected: start locked, say why, claim nothing.
+            // The server refuses the claim regardless; this is so a reload shows
+            // the recorded error instead of offering a button that cannot work.
+            if (cfg.authBlock) {
+                mergeAuthFailure(cfg.authBlock);
+                mergeAuthFailure(pageReferrerFacts());
+                renderAuthFailure();
+                log('Google launches blocked', 'a rejected key is recorded for this proof environment — ' + RESET_COMMAND);
+                setCounter('Provider', 'blocked (key rejected)');
+                lock(null, AUTH_BLOCKED_LABEL);
+
+                return;
+            }
+
+            if (!state.registered) {
+                lock('No street-level provider is registered on this page.');
+
+                return;
+            }
+
+            setCounter('Provider', state.registered.id);
+
+            if (!cfg.credentialReady) {
+                log('Provider not loaded', cfg.credentialName + ' is not configured — no request sent to ' + state.registered.id);
+                lock('Street-level imagery is unavailable because ' + cfg.credentialName
+                    + ' is not configured. No request was sent to the provider.');
+
+                return;
+            }
+
+            if (cfg.claimEndpoint && cfg.dailyLimit > 0) {
+                setCounter('Daily launch ceiling', cfg.dailyLimit + ' across this proof environment');
+            }
+
+            state.launch = 'idle';
+            renderLaunch();
+        }).catch(function (err) {
+            lock('Listing data could not be loaded (' + err.message + ').');
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        setTimeout(start, 0);
+    }
+})();

@@ -971,6 +971,167 @@ absent from the shipped renderer. The renderer is a **static asset**, not a Mix 
 part of `app.js`: it has no imports, so compiling it would buy nothing and couple `/explore`
 to a build.
 
+### Smart Tags (Phase 1 foundation — inert)
+
+**One governed taxonomy of property characteristics, shared by every listing source.** Bridge rows,
+native Seller and Landlord Offer Listings, and (later) Buyer/Tenant preferences all use the same
+canonical keys (`private_pool`, `quartz_countertops`, `loading_dock`, `cleared_land`, …). There is no
+MLS, Seller, Landlord, Buyer or Tenant vocabulary. **One key, one meaning**: a phrase that means
+different things by property type becomes separate keys with disjoint contexts (`turnkey_home` /
+`turnkey_business`, `fenced_yard` / `fenced_lot`). Governance: `docs/smart-tags/SMART_TAGS_GOVERNANCE.md`.
+
+**Nothing calls it yet.** No import, sync or save hook, no command, no UI, no search change.
+`SmartTagArchitectureGuardTest` asserts that nothing outside `app/{Services,Support}/SmartTags` references
+the derivation, writer or purger services, and that Bridge import, ListingImport, Stellar matching,
+Explore, Location DNA, DNA and Livewire code do not mention Smart Tags.
+
+**Config is the taxonomy, read only through `SmartTagConfig`.** `config/smart_tags.php` declares each
+tag's contexts, surfaces (`mls_derivable`, `native_derivable`, `owner_selectable`, `seeker_selectable`,
+`public_display`, `negatable`), conflicts and compliance status; `config/smart_tag_sources.php` holds the
+source rules, shared value dictionaries, description phrases and forbidden source keys. Rules can only
+emit declared keys, and the derivability flags must match the rules (tested). The prohibited-concept
+patterns live in code (`SmartTagComplianceGuard`) so a config edit cannot relax them. The pure classes
+(taxonomy, policy, derivers, parser) answer without a booted container, like `LandlordScreeningPolicy`.
+
+**Seven contexts, resolved exactly and fail-closed** (`SmartTagContextResolver`): `residential.sale`,
+`income.sale`, `commercial.sale`, `business.sale`, `land.sale`, `residential.lease`, `commercial.lease`.
+Native transactions come from the ROLE — never `PropertyTypeVocabulary`, whose `classifySource()` reads
+`Residential Property` as a sale. An unknown property type has no context and receives no tags.
+
+**Storage is shared, `(listing_type, listing_id)`, from one registry.** `SmartTagListingType` is the only
+producer of `bridge` (= `bridge_properties.id`), `seller_agent`, `landlord_agent` — never `seller` /
+`landlord`, which already mean different tables in different subsystems. Native rows are Offer Listings
+only. `smart_tag_evidence` holds one row per listing × tag × **source**; `smart_tag_assignments` holds the
+**one** resolved row per listing × tag that matching will read; `smart_tag_derivation_states` holds
+change-detection hashes; `smart_tag_manual_events` is append-only. `smart_tag_preferences` is reserved
+for the Buyer/Tenant phase and not created.
+
+**A structured hash is taken over INTERPRETED values, never raw stored ones.**
+`BridgeRecordAccessor::inputsFor()` reads each rule through the same accessor method the rule engine
+uses for that rule's kind (`boolean`, `scalar`, `values`, `number`, `flag`) and keys each entry by
+that reading, so the hash and the derivation agree on what a value means. It hashed raw attributes
+before, and `bridge_properties.waterfront_yn` / `pool_private_yn` read back as PHP `true` from a
+just-written model and as `1` from a re-read row — so one unchanged listing had two hashes depending
+on which path looked at it, and a caller deriving from a written model re-derived everything a caller
+reading fresh rows had already done. `true`, `1`, `"1"`, `"Y"`, `"yes"` now hash alike because
+`toBool()` already says they mean the same thing; an unrecognised value hashes as UNKNOWN, never YES;
+an unknown rule kind falls back to the raw value rather than being dropped.
+
+**Sources and precedence**: `structured_mls` > `structured_native_listing` > `manual_listing_owner` >
+`mls_remarks` / `native_listing_description`. **Unknown is the absence of a row.** Only a structured source
+reading an explicit "No" on a negatable tag records `absent`; a description, an unmentioned feature, a
+checklist omission, or an owner deselection never does. Re-deriving one source replaces only that
+source's evidence, so it can never erase an owner's selections.
+
+**Manual owner tags** go through `ManualSmartTagWriter`: owner of a non-archived Offer Listing only
+(`HireAgentProposalAccess::isListingOwner` + `ListingWorkflowResolver`), context from the STORED property
+type, projected by `SmartTagSelectionPolicy` (canonical, applicable, owner-selectable, not pending review).
+A tag the listing's own authoritative Yes/No field already answers is refused — the owner edits Property
+Details. Deselection means unknown.
+
+**Descriptions are parsed deterministically, never by AI.** The native description is meta
+`additional_details` for both roles; Landlord prose is read only through
+`LandlordProviderTextPolicy::displayValue()`. Screening, approval, pet/breed, clientele, compatibility,
+broker and `other_*` / `custom_*` fields are forbidden sources. **MLS PublicRemarks is licence-RESTRICTED
+and not processed**: `SmartTagDerivationService::MLS_REMARKS_PROCESSING_APPROVED` and
+`SmartTagEvidenceWriter::MLS_REMARKS_PERSISTENCE_APPROVED` are `false`, and flipping either is a reviewed
+code change after a licensing decision.
+
+**Fair Housing**: no tag describes people, protected classes, demographics or neighbourhood quality;
+55+/62+ stays a compliance gate (`leasing_55_plus` and `SeniorCommunityYN` are not sources); accessibility
+and playground are owner-describable but not seeker-selectable; `pets_allowed` carries the
+assistance-animal notice; proximity is Location DNA; ranges and terms stay structured criteria.
+
+### Listing preferences — Save | Maybe | Pass (Phase 1, inert)
+
+**Customer terminology is Save | Maybe | Pass.** Earlier planning notes said "Love/Maybe/Pass";
+that wording is superseded. Governance is
+`docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md`.
+
+**Phase 1 ships inert and that is the point.** Three tables, one governed vocabulary, two pure
+boundaries and a resolver — and **no route, controller, UI, write path or learner**. An
+architecture test fails the build if anything under `routes/`, `resources/views/`, `resources/js/`,
+`public/js/` or `app/Http/` references the subsystem, and if any `app/` code writes through the
+models. Merging it changes no customer-visible behaviour, which is what keeps the customer-facing
+phase a separate reviewable decision.
+
+**One current state, plus an append-only history, and the split is load-bearing.**
+`listing_preferences` holds exactly one row per `(user_id, seeker_role, subject_key)` — the unique
+index is what makes Save → Maybe → Pass an *update* rather than a pile of contradictions, rather
+than leaving it to application discipline. `listing_preference_events` records every transition and
+**refuses updates and deletes** (the `SmartTagManualEvent` pattern). Current state alone cannot
+answer "repeated patterns grow stronger" or "one Pass must not permanently define a customer" —
+both are statements about **time** — nor undo, nor Fair Housing auditability. Reasons cascade from
+the current state; **events deliberately do not**, because deleting a state must never erase the
+record that it existed.
+
+**Two identities are stored, and the second one prevents a live collision.** The acted-on
+`(listing_type, listing_id)` is audit truth, produced only by `SmartTagListingType`. `subject_key`
+decides uniqueness: `mls:<listing_key>` for a Bridge row **and** for a native listing carrying
+`mls_listing_key` provenance, `byo:<listing_type>:<id>` otherwise. Without it, one house is both
+`bridge:12345` and `seller_agent:678` — `ExploreCanonicalListingResolver` already links them — so a
+Pass on the map would not suppress the same property in results. Keying Bridge subjects on the
+listing_key **string** also survives the surrogate-id churn `bridge_properties.id` is only
+conditionally safe from. `ListingPreferenceSubjectResolver` is the only reader of provenance for
+this purpose; it is read-only, batches one query per listing type, and returns **null** for a Bridge
+row with no listing key rather than inventing an identity. **No parcel, address or coordinate
+grouping** — `ExplorePropertyIdentity` answers a different question, and adopting it here would
+merge two listings a customer may feel differently about.
+
+**`seeker_role` is stored, never derived.** `users.user_type` is single-valued and can change;
+deriving the role would retroactively reinterpret every preference a customer ever expressed, and a
+Pass on a rental must not suppress a purchase. It is part of the uniqueness key.
+
+**The reason vocabulary is not a second taxonomy.** `config/listing_preference_reasons.php` is the
+SSOT with one reader (`ListingPreferenceConfig`, the container-or-file pattern, test-asserted).
+Reasons carry a **dimension**: `smart_tag` (links to a canonical key), `criteria` (price, size,
+fees — which the Smart Tag taxonomy excludes **by name**), `location` (Location DNA's territory) and
+`unspecified`. Forcing all four into tags would be the duplicate vocabulary governance forbids.
+**`unspecified` is captured and never learned** — there is nothing structured to learn it against.
+A reason also declares which states may offer it, because the three prompts ask different questions:
+"Too expensive" is not an answer to *What do you like about this property?*
+
+**Fair Housing is inherited, not restated.** `ListingPreferenceReasonPolicy` is an intersection
+(the `SmartTagSelectionPolicy` rule) and re-validates tag-backed reasons through that policy on
+`SURFACE_SEEKER`. `seeker_selectable` — inert until now — is the gate, so `accessible_features` and
+`playground` can never become chips and there is no second exclusion list. Reason keys and labels are
+scanned by the **same** `SmartTagComplianceGuard`, which lives in code so config cannot relax it.
+Where no context is available the policy relaxes only *applicability*, never `isSeekerSelectable()`.
+**The governance doc §6 prohibits, for any future learner: user-to-user similarity, collaborative
+neighbourhood or location learning, neighbourhood demographic inference, geographic clustering of
+preference outcomes and protected-class inference.** That is the exposure the compliance guard cannot
+see — collaborative filtering reproduces redlining with no prohibited word written down — so it is
+prohibited in prose and is a condition of building a learner at all. Location learning may use only
+the customer's **own** stated Important Places and commute anchors.
+
+**`natural_light` was added to the Smart Tag taxonomy** (version `2026-09-16.1`) so the chip links to
+a canonical key rather than minting a parallel one. It ships with **no derivation rule** — both
+derivable flags `false`, which `SmartTagSourceRulesTest` enforces in both directions — because
+daylight is claimed in prose far more than it is recorded structurally. Generic **Style** was
+rejected for V1: no well-defined taxonomy exists, and a vague style tag is exactly the duplicate
+vocabulary being avoided.
+
+**Guests: authenticated only in Phases 1–2.** No anonymous or session records. The controls may
+later be visible to a signed-out visitor, but using one prompts authentication. The data model is
+shaped so capture-and-claim is additive later (a claim step rewriting `user_id`), never a redesign.
+
+**Ranking is untouched, and a learner may not change that carelessly.** `config/match_scoring.php`
+requires enabled weights to sum to 100 and `BuyerMatchScorer` has fixed caps, so preference must
+never become a scoring category. The precedent is `ImportantPlaceMatcher`: it **scores, it never
+selects**. Preference will apply as a post-score re-rank; **Pass is a display decision only** and
+never deletes, hides or alters listing or MLS data.
+
+**Flags** live in `config/listing_preferences.php`, all default `false`, parsed fail-closed
+(`LISTING_PREFERENCES_ENABLED` is ON only for `true`/`1`/`on`/`yes`). Phase 1 **does not read them to
+decide anything** — there is no write path to gate — and a test asserts enabling them starts nothing.
+**None is in `config/required_production_flags.php` and none may be added**: that contract may never
+name a safety switch.
+
+**The Virtual Drive is untouched.** `VirtualDriveListingActions` still reports Save as unavailable
+("No Save / Favorite feature exists anywhere in this application"), and a test pins that string.
+Phase 3 replaces that one array entry with a delegation to the shared service, so the card gains no
+business logic.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.
@@ -1296,6 +1457,8 @@ Beyond standard Laravel keys, this app requires:
 | `ADDRESS_POINT_CORPUS_MAX_MATCHES` | How many corpus rows one lookup line may pull back (default 25). Rows sharing a normalized line are units of one building; a handful settles whether they agree on a point. A zero or negative value falls back to the default rather than silencing the rung. |
 | `OVERTURE_CORPUS_POI_ENABLED` | Master gate for `OvertureCorpusPoiAdapter`, the local Overture Places corpus. Default `false`. The **licensing** prerequisite is now met — the verbatim Foursquare NOTICE, the Apache-2.0 text and our notice of changes are committed and served — but that cleared one blocker, not the gate: activation is a separate, reviewed decision and this ships off. Both this and the registry's `location_providers.providers.overture_corpus.enabled` must agree — two gates, two files, neither redundant. `OvertureActivationReadinessTest` asserts both are off **and** that satisfying the NOTICE did not move either. Changing this alongside `OVERTURE_CORPUS_POI_VERSION` rotates the POI tile keys and every row's `pois_fetch_version` (see `CorpusSurface`). |
 | `OVERTURE_CORPUS_POI_VERSION` | Which `corpus_version` the adapter reads, pinned explicitly rather than following the activation ledger — two corpus versions coexisting is what lets a new import be verified before it is trusted. Default unpinned; an enabled adapter with no version reports itself unavailable rather than guessing. **Changing this rotates every POI tile cache key** (`LocationDnaPoiTileCache::$corpusToken`), which is the point: before that token existed, re-pinning served the previous corpus's cached candidates under the new pin for the tile TTL. |
+| `VIRTUAL_DRIVE_GOOGLE_ENABLED` | Development-only kill switch for Google Street View inside the Virtual Drive provider proof. Default `false`. **Off does not rely on the browser behaving**: `/dev/virtual-drive/google` then omits `google-streetview-provider.js` entirely — the only file that can construct a `StreetViewPanorama` — emits no browser key, and the launch-claim endpoint refuses. Parsed fail-closed like `VIRTUAL_DRIVE_PROOF_ENABLED` (ON only for `true`/`1`/`on`/`yes`; `off`/`no`/malformed are OFF). Read only via `VirtualDriveGoogleGate`. It sits **under** `VIRTUAL_DRIVE_PROOF_ENABLED` and the environment allow-list, so `true` on a production host still reaches a 404. Separate from the proof flag on purpose: Apple Look Around can be reviewed with Google incapable of starting. Apple is unaffected. |
+| `VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT` | How many intentional Virtual Drive launches the whole proof environment may start per calendar day (app timezone). **Default 0 = refuse; there is no "unlimited" value** — absent, non-numeric, negative, fractional and zero all mean no launches, and the refusal names this variable, because an operator who switched Google on without choosing a ceiling has not authorised an unbounded day. One launch = one page permitted to construct its **one billable panorama**: pressing "Try again" after a home with no imagery, changing homes and clicking signs spend nothing more; a reload and a fresh press spend another. `VirtualDriveGoogleLaunchLedger` keeps the tally **server-side** in the configured cache, one key per day, under a cache lock — `localStorage` would be per-browser and resettable, which is not "across the proof environment". Every write is **read back**: a store that cannot hold the tally (`CACHE_DRIVER=null`) would make every launch look like the first of the day with no error anywhere, so an unreadable ledger is a refusal (503). The claim is taken **before** the Maps JavaScript API is requested, and a granted claim is the **only** place `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY` is ever emitted — so the ceiling withholds the means rather than asking the browser to comply. See `docs/virtual-drive-provider-audit-2026-09-11.md` §17. |
 | `LOCATION_DNA_FLOOD_ZONE_MAX_AREA` | FEMA API bounding-box threshold in sq-degrees |
 | `CRITERIA_LDNA_GEOGRAPHY_SOURCE` | Which `CriteriaGeographyRepository` backs the geography cascade. **Exactly three values are accepted** — `eloquent` (default; the `us_*` reference tables), `census` (the `census_*` corpus from `census:import-geography`), `fake` (in-memory fixture, local/demo only). **Anything else throws at container resolution.** That is deliberate: the binding used to fall through to `eloquent`, so a typo silently served legacy data and looked exactly like success. Selecting `census` requires the corpus to be present — run `php artisan census:verify-geography` first, and in the deploy sequence of any environment using it, or every tier enumerates empty with no error. |
 | `CRITERIA_LDNA_PREVIEW_ENABLED` | Geography preview surface. Default `false`. |

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!--
+    FIXTURE — Virtual Drive Apple launch-guard page.
+
+    Mirrors resources/views/dev/virtual-drive/show.blade.php; the element ids and
+    data attributes are kept in step by VirtualDriveBrowserFixtureParityTest.
+
+    The credential below is NOT a credential. fake-mapkit.js puts a fake
+    `mapkit` on the page first and the provider adopts it, so nothing is ever
+    requested from Apple.
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Virtual Drive · Apple launch-guard fixture</title>
+    <link rel="stylesheet" href="/virtual-drive-css/virtual-drive.css">
+</head>
+<body class="vd-body">
+<div class="vd-shell" id="vd-shell"
+     data-provider="apple"
+     data-credential="FIXTURE-NOT-A-CREDENTIAL"
+     data-credential-available="1"
+     data-provider-enabled="1"
+     data-launch-claim-endpoint=""
+     data-daily-launch-limit="0"
+     data-google-auth-failure-endpoint=""
+     data-google-auth-block=""
+     data-csrf-token="FIXTURE-NOT-A-TOKEN"
+     data-credential-name="VIRTUAL_DRIVE_MAPKIT_JS_TOKEN"
+     data-library-url="https://cdn.apple-mapkit.com/mk/6/mapkit.core.js"
+     data-api-version=""
+     data-listings-endpoint="/virtual-drive/listings.json"
+     data-nearby-radius="400"
+     data-nearby-requery="0.4"
+     data-selected-listing=""
+     data-default-listing=""
+     data-view-mode=""
+     data-sign-max-distance=""
+     data-sign-min-distance=""
+     data-sign-near-width=""
+     data-sign-far-width=""
+     data-sign-group-radius=""
+     data-close-coverage=""
+     data-launch-label="Open Look Around">
+
+    <header class="vd-topbar">
+        <div class="vd-topbar-title"><span class="vd-internal">Fixture</span><strong>Apple Look Around</strong></div>
+    </header>
+
+    <main class="vd-stage">
+        <div class="vd-street" id="vd-street" aria-label="Street-level imagery"></div>
+        <div class="vd-launch-panel" id="vd-launch-panel">
+            <p class="vd-launch-home" id="vd-launch-home"></p>
+            <button type="button" class="vd-launch" id="vd-launch" disabled>Loading listings…</button>
+            <p class="vd-launch-note" id="vd-launch-note">Fixture launch note.</p>
+            <div class="vd-auth-failure" id="vd-auth-failure" hidden></div>
+            <p class="vd-launch-fallback">Listings stay fully usable without street-level imagery.</p>
+        </div>
+        <div class="vd-sign" id="vd-sign" hidden>
+            <div class="vd-sign-board">
+                <span class="vd-sign-label" id="vd-sign-label"></span>
+                <span class="vd-sign-price" id="vd-sign-price"></span>
+                <button type="button" class="vd-sign-cta" id="vd-sign-cta">View Home</button>
+            </div>
+            <p class="vd-sign-caveat" id="vd-sign-caveat"></p>
+        </div>
+        <div class="vd-hud" id="vd-hud" hidden></div>
+        <div class="vd-provider-controls" id="vd-provider-controls"></div>
+        <div class="vd-imagery-status" id="vd-imagery-status" role="status" aria-live="polite"></div>
+        <aside class="vd-shopper" id="vd-shopper" hidden aria-label="Selected listing" aria-live="polite"></aside>
+    </main>
+
+    <section class="vd-card" id="vd-card" aria-label="Selected listing">
+        <div class="vd-card-nav">
+            <button type="button" id="vd-prev">&lsaquo; Previous Home</button>
+            <span id="vd-position"></span>
+            <button type="button" id="vd-next">Next Home &rsaquo;</button>
+        </div>
+        <div class="vd-card-body" id="vd-card-body"></div>
+        <div class="vd-actions" id="vd-actions"></div>
+        <ul class="vd-unavailable-actions" id="vd-unavailable-actions"></ul>
+        <div class="vd-nearby"><h3>Nearby listings <small id="vd-nearby-note"></small></h3><ol id="vd-nearby"></ol></div>
+        <p class="vd-attribution" id="vd-attribution"></p>
+        <section class="vd-observations" id="vd-observations" data-mode="sheet" aria-label="Observation sheet"></section>
+    </section>
+
+    <aside class="vd-log" aria-label="Instrumentation">
+        <details open><summary>Instrumentation</summary><dl id="vd-counters"></dl><ol class="vd-events" id="vd-events"></ol></details>
+    </aside>
+
+    <div class="vd-lightbox" id="vd-lightbox" hidden role="dialog" aria-modal="true" aria-label="Listing photos">
+        <button type="button" class="vd-lightbox-close" id="vd-lightbox-close" aria-label="Close photos">&times;</button>
+        <button type="button" class="vd-lightbox-step" id="vd-lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
+        <img id="vd-lightbox-img" alt="">
+        <button type="button" class="vd-lightbox-step" id="vd-lightbox-next" aria-label="Next photo">&rsaquo;</button>
+        <p class="vd-lightbox-caption" id="vd-lightbox-caption"></p>
+    </div>
+</div>
+
+<script>
+    window.__opened = [];
+    window.open = function (url) { window.__opened.push(url); return null; };
+</script>
+<script src="/virtual-drive/fake-mapkit.js"></script>
+<script src="/virtual-drive-js/virtual-drive-signs.js"></script>
+<script src="/virtual-drive-js/virtual-drive-shell.js"></script>
+<script src="/virtual-drive-js/virtual-drive-observations.js"></script>
+<script src="/virtual-drive-js/apple-lookaround-provider.js"></script>
+</body>
+</html>

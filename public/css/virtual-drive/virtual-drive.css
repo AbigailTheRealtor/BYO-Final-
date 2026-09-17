@@ -1,0 +1,246 @@
+/* Virtual Drive provider proof — INTERNAL, DEVELOPMENT ONLY. Styling is not the point of the proof. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.vd-body {
+    margin: 0;
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #111827;
+    background: #f3f4f6;
+}
+
+.vd-shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: "top" "stage" "card" "log";
+    min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+    .vd-shell {
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas: "top top" "stage card" "log card";
+        height: 100vh;
+    }
+}
+
+.vd-topbar {
+    grid-area: top;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #111827;
+    color: #f9fafb;
+}
+
+.vd-topbar-title { display: flex; flex-direction: column; }
+.vd-internal { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #fbbf24; }
+.vd-provider-nav { display: flex; gap: 8px; }
+.vd-provider-nav a { color: #d1d5db; text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid #374151; }
+.vd-provider-nav a.is-active { background: #f9fafb; color: #111827; }
+
+.vd-stage { grid-area: stage; position: relative; min-height: 58vh; background: #1f2937; }
+/* The provider's own layers (Google's panorama sets large z-indexes on its
+   internal elements) must stay INSIDE this box. z-index: 0 makes it a stacking
+   context, so nothing the provider draws can paint over our overlays below —
+   which is what hid the HUD and "Face the selected home" in the live session. */
+.vd-street { position: absolute; inset: 0; z-index: 0; }
+.vd-street.is-fallback { display: flex; align-items: center; justify-content: center; padding: 24px; }
+
+.vd-fallback { max-width: 520px; background: #fff; border-radius: 10px; padding: 20px; }
+.vd-fallback h2 { margin: 0 0 8px; font-size: 18px; }
+
+.vd-sign {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+}
+.vd-sign-board {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 3px solid #fff;
+    background: #b91c1c;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    pointer-events: auto;
+}
+.vd-sign-rent .vd-sign-board { background: #1d4ed8; }
+.vd-sign-label { font-weight: 800; font-size: 18px; letter-spacing: .04em; }
+.vd-sign-price { font-size: 16px; }
+.vd-sign-cta { margin-top: 4px; border: 0; border-radius: 6px; padding: 3px 10px; background: #fff; color: #111827; font-weight: 600; cursor: pointer; }
+.vd-sign-caveat { max-width: 340px; margin: 6px auto 0; padding: 4px 8px; border-radius: 6px; background: rgba(17, 24, 39, .8); color: #fde68a; font-size: 12px; }
+.vd-sign.is-stale .vd-sign-board { opacity: .45; }
+
+/* Everything we draw over the imagery stays OFF the bottom edge. Both providers
+   put their logo and legal links there, and obscuring them breaches both sets
+   of terms — so the controls sit top-left and our status and HUD top-right. */
+.vd-provider-controls, .vd-hud, .vd-imagery-status, .vd-sign { z-index: 1; }
+.vd-provider-controls { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; max-width: calc(50% - 18px); }
+.vd-control { display: inline-block; padding: 6px 10px; border-radius: 6px; border: 0; background: rgba(255, 255, 255, .95); color: #111827; font: inherit; }
+.vd-control-note { margin: 0; font-size: 12px; background: rgba(254, 243, 199, .95); }
+button.vd-control { cursor: pointer; font-weight: 600; }
+.vd-hud { position: absolute; right: 12px; top: 12px; max-width: calc(50% - 18px); padding: 6px 10px; border-radius: 6px; background: rgba(17, 24, 39, .85); color: #fff; }
+.vd-imagery-status { position: absolute; right: 12px; top: 52px; max-width: calc(50% - 18px); padding: 4px 8px; border-radius: 6px; background: rgba(17, 24, 39, .8); color: #e5e7eb; font-size: 12px; }
+.vd-imagery-status:empty { display: none; }
+.vd-imagery-status.is-none { color: #fecaca; }
+
+.vd-card { grid-area: card; overflow-y: auto; padding: 12px 16px 16px; background: #fff; border-left: 1px solid #e5e7eb; }
+.vd-card-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.vd-card-nav button { border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.vd-card-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.vd-badge { font-weight: 800; font-size: 12px; letter-spacing: .06em; padding: 3px 8px; border-radius: 4px; color: #fff; background: #b91c1c; }
+.vd-badge-rent { background: #1d4ed8; }
+.vd-price { font-size: 22px; font-weight: 700; }
+.vd-facts, .vd-address, .vd-status { margin: 4px 0; }
+.vd-verify { margin: 6px 0; font-size: 11px; color: #6b7280; word-break: break-all; }
+.vd-muted { color: #6b7280; }
+
+.vd-photo-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 8px 0; }
+.vd-thumb { padding: 0; border: 0; background: #e5e7eb; aspect-ratio: 4 / 3; cursor: pointer; overflow: hidden; border-radius: 4px; }
+.vd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.vd-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+.vd-action { border: 1px solid #111827; background: #111827; color: #fff; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-weight: 600; }
+.vd-action:disabled { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; cursor: not-allowed; }
+.vd-unavailable-actions { margin: 0 0 8px; padding-left: 18px; font-size: 12px; color: #6b7280; }
+
+.vd-nearby h3 { margin: 12px 0 4px; font-size: 14px; }
+.vd-nearby small { font-weight: 400; color: #6b7280; }
+.vd-nearby ol { margin: 0; padding-left: 20px; }
+.vd-nearby-item { border: 0; background: none; padding: 2px 0; text-align: left; cursor: pointer; color: #1d4ed8; font: inherit; }
+.vd-nearby li.is-selected .vd-nearby-item { font-weight: 700; color: #111827; }
+.vd-attribution { margin-top: 12px; font-size: 11px; color: #6b7280; }
+
+.vd-log { grid-area: log; padding: 8px 16px; background: #111827; color: #e5e7eb; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; max-height: 32vh; overflow-y: auto; }
+.vd-log summary { cursor: pointer; font-weight: 700; }
+.vd-log dl { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin: 6px 0; }
+.vd-log dt { color: #9ca3af; }
+.vd-log dd { margin: 0; color: #fde68a; }
+.vd-events { margin: 0; padding-left: 18px; }
+
+.vd-lightbox { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(0, 0, 0, .9); padding: 16px; }
+.vd-lightbox[hidden] { display: none; }
+.vd-lightbox img { max-width: calc(100% - 96px); max-height: 80vh; }
+.vd-lightbox-close { position: absolute; top: 8px; right: 12px; font-size: 32px; color: #fff; background: none; border: 0; cursor: pointer; }
+.vd-lightbox-step { font-size: 40px; color: #fff; background: none; border: 0; cursor: pointer; }
+.vd-lightbox-caption { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; color: #e5e7eb; }
+
+/* ---------- launch panel: the billing boundary ---------- */
+.vd-launch-panel { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 16px; text-align: center; background: #1f2937; color: #f9fafb; }
+.vd-launch-panel[hidden] { display: none; }
+.vd-launch-home { margin: 0; max-width: 460px; font-weight: 600; }
+.vd-launch { border: 0; border-radius: 8px; padding: 12px 22px; background: #facc15; color: #111827; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.vd-launch:disabled { background: #4b5563; color: #d1d5db; cursor: not-allowed; }
+.vd-launch:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.vd-launch-note { margin: 0; max-width: 460px; font-size: 13px; color: #d1d5db; }
+.vd-launch-fallback { margin: 0; max-width: 460px; font-size: 12px; color: #9ca3af; }
+/* A refusal — switched off, or the day's launches spent. Stated, not hidden. */
+.vd-launch-panel.is-refused { background: #3f2020; }
+.vd-launch-panel.is-refused .vd-launch-note { color: #fecaca; font-weight: 600; }
+/* A rejected key, in Google's own words, beside the origin to compare it with. */
+.vd-auth-failure { max-width: 560px; width: 100%; max-height: 45%; overflow: auto; text-align: left; font-size: 12px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; padding: 10px 12px; }
+.vd-auth-failure[hidden] { display: none; }
+.vd-auth-failure h3 { margin: 0 0 6px; font-size: 13px; color: #fde68a; }
+.vd-auth-failure dl { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 3px 10px; margin: 0; }
+.vd-auth-failure dt { color: #d1d5db; }
+.vd-auth-failure dd { margin: 0; color: #f9fafb; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.vd-compare-refused { border-left: 4px solid #f87171; padding-left: 12px; color: #7f1d1d; font-weight: 600; }
+
+/* ---------- observation sheet ---------- */
+.vd-observations { margin-top: 14px; }
+.vd-obs { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; background: #f9fafb; }
+.vd-obs summary { cursor: pointer; font-weight: 700; }
+.vd-obs-body { display: grid; gap: 10px; margin-top: 8px; }
+.vd-obs-home { margin: 0; font-weight: 600; }
+.vd-obs-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; margin: 0; font-size: 12px; }
+.vd-obs-facts dt { color: #6b7280; }
+.vd-obs-facts dd { margin: 0; }
+.vd-obs-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+.vd-obs-select { font: inherit; padding: 2px 4px; }
+.vd-obs-label { font-size: 13px; }
+.vd-obs-notes, .vd-obs-output { width: 100%; font: inherit; font-size: 13px; }
+.vd-obs-output { min-height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.vd-obs-export { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vd-obs-button { border: 1px solid #111827; border-radius: 6px; padding: 6px 10px; background: #111827; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.vd-obs-button-quiet { background: #fff; color: #111827; }
+.vd-obs-status, .vd-obs-summary { margin: 0; font-size: 12px; color: #6b7280; }
+
+/* ---------- comparison page ---------- */
+.vd-compare { min-height: 100vh; }
+.vd-compare-main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 16px; }
+.vd-compare-main h1 { margin: 0; font-size: 26px; }
+.vd-compare-lede, .vd-compare-note { margin: 0; max-width: 70ch; }
+.vd-table-scroll { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
+.vd-compare-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.vd-compare-table th, .vd-compare-table td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
+.vd-compare-table th { background: #f9fafb; color: #6b7280; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.vd-compare-address { display: block; font-weight: 600; }
+.vd-compare-city { display: block; color: #6b7280; font-size: 13px; }
+.vd-compare-flag { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 4px; background: #fef3c7; color: #92400e; font-size: 12px; }
+.vd-compare-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.vd-compare-link { display: inline-block; padding: 5px 10px; border: 1px solid #111827; border-radius: 6px; color: #111827; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.vd-compare-link:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.vd-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vd-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+/* ---------- imagery that is only NEAR the home ---------- */
+.vd-imagery-status.is-far { color: #fde68a; background: rgba(120, 53, 15, .92); font-size: 13px; }
+
+/* ---------- shopper card: what a sign click opens ----------
+   Over the imagery, inside the stage's stacking context, and never over the
+   bottom 48px where the provider draws its logo, terms and report links. */
+.vd-shopper { position: absolute; left: 12px; top: 56px; z-index: 1; width: min(360px, calc(100% - 24px)); max-height: calc(100% - 104px); overflow-y: auto; padding: 12px 14px; border-radius: 12px; background: #fff; color: #111827; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+.vd-shopper[hidden] { display: none; }
+.vd-shopper-close { position: absolute; top: 6px; right: 8px; z-index: 1; width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(17, 24, 39, .75); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+.vd-shopper-photo { position: relative; margin: -12px -14px 10px; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 12px 12px 0 0; background: #e5e7eb; }
+.vd-shopper-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.vd-shopper-photo-step { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .92); font-size: 22px; line-height: 1; cursor: pointer; }
+.vd-shopper-photo-prev { left: 8px; }
+.vd-shopper-photo-next { right: 8px; }
+.vd-shopper-count { position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 10px; background: rgba(17, 24, 39, .75); color: #fff; font-size: 12px; }
+.vd-shopper-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vd-shopper-price { font-size: 22px; font-weight: 800; }
+.vd-shopper-address { margin: 4px 0 2px; font-weight: 600; }
+.vd-shopper-facts { margin: 0 0 8px; color: #4b5563; }
+.vd-shopper-coverage { margin: 0 0 8px; padding: 6px 8px; border-radius: 6px; background: #fef3c7; color: #92400e; font-size: 12px; }
+.vd-shopper-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.vd-shopper-action { min-height: 40px; padding: 8px 12px; border: 1px solid #111827; border-radius: 8px; background: #111827; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.vd-shopper-action-photos { background: #fff; color: #111827; }
+.vd-shopper-back { padding: 0 0 6px; border: 0; background: none; color: #1d4ed8; font: inherit; cursor: pointer; }
+.vd-shopper-kicker { margin: 0; color: #1d4ed8; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+.vd-shopper-title { margin: 2px 0; font-size: 18px; }
+.vd-shopper-hint { margin: 0 0 8px; color: #6b7280; font-size: 13px; }
+.vd-shopper-units { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vd-shopper-unit { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font: inherit; text-align: left; cursor: pointer; }
+.vd-shopper-unit:hover, .vd-shopper-unit:focus-visible { border-color: #111827; }
+.vd-shopper-attribution { margin: 10px 0 0; color: #6b7280; font-size: 11px; }
+
+@media (max-width: 640px) {
+    .vd-shopper { left: 8px; right: 8px; top: 52px; width: auto; max-height: calc(62% - 52px); }
+}
+
+/* ---------- customer preview: the experience, not the instrumentation ----------
+   The counters, event log and observation sheet keep running; they are only
+   not shown. The Stellar attribution and Previous / Next stay visible. */
+.vd-view-customer .vd-log,
+.vd-view-customer .vd-observations,
+.vd-view-customer .vd-card-body,
+.vd-view-customer .vd-actions,
+.vd-view-customer .vd-unavailable-actions,
+.vd-view-customer .vd-nearby { display: none; }
+.vd-view-customer .vd-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; grid-template-areas: "top" "stage" "card"; height: 100vh; }
+.vd-view-customer .vd-stage { min-height: 0; }
+.vd-view-customer .vd-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 8px 16px; overflow: visible; border-left: 0; border-top: 1px solid #e5e7eb; }
+.vd-view-customer .vd-card-nav { gap: 12px; margin: 0; }
+.vd-view-customer .vd-attribution { margin: 0; }

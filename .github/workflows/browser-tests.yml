@@ -38,6 +38,10 @@ on:
       - 'resources/views/partials/location-dna/**'
       - 'resources/views/components/location-dna-map.blade.php'
       - 'tests/browser/**'
+      # The Virtual Drive proof's launch guard (tests/browser/virtual-drive-launch-guard.spec.js)
+      # runs these files as written, against a fake Maps API and a fake MapKit JS.
+      - 'public/js/virtual-drive/**'
+      - 'public/css/virtual-drive/**'
       - 'playwright.config.js'
       - 'package.json'
       - 'package-lock.json'
