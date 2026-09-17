@@ -2,6 +2,8 @@
 
 namespace App\Services\ListingImport;
 
+use App\Support\Listing\FloodZoneCode;
+
 class MlsNormalizer
 {
     /**
@@ -232,20 +234,31 @@ class MlsNormalizer
     // ─── Flood Zone ──────────────────────────────────────────────────────────
 
     /**
-     * Normalize flood zone code strings.
-     * Common FEMA zone codes are returned uppercased; "Flood Insurance Required"
-     * signals zone AE/VE territory and is normalized to "yes" (has_flood_insurance).
+     * Normalize a flood ZONE DESIGNATION, or return nothing.
+     *
+     * TWO DEFECTS ARE FIXED HERE, and they pulled in opposite directions.
+     *
+     * The first: a source value containing "Flood Insurance Required" returned the literal
+     * string `yes`, and the caller writes this result into `flood_zone_code`. A boolean
+     * answer about INSURANCE was being stored as the property's FEMA ZONE, where every
+     * later reader would take it for a designation. The docblock described this as intended
+     * ("normalized to 'yes' (has_flood_insurance)") — it was, for a boolean field, and the
+     * dispatch sends it somewhere else. That signal is NOT re-routed here: the importer
+     * already reads the MLS's own "Flood Insurance Reqd" field into
+     * `flood_insurance_required` through normalizeBoolean(), so it arrives from its proper
+     * source, and writing a second field out of a zone-code source would be the same class
+     * of error facing the other way.
+     *
+     * The second: everything else was passed through `strtoupper()` with no validation, so
+     * "Zone AE", "N/A", "Unknown" and "AE - high risk" all became flood zone codes.
+     *
+     * Recognition, not extraction: "Zone AE" does not yield "AE". A value is a designation
+     * or it is not, and anything that is not returns '' — the falsy empty the callers and
+     * the listing views already treat as absent.
      */
     public static function normalizeFloodZone(string $value): string
     {
-        $lower = strtolower(trim($value));
-
-        if (str_contains($lower, 'insurance required') || str_contains($lower, 'flood insurance')) {
-            return 'yes';
-        }
-
-        // Zone codes like X, AE, VE, A, V, AH, AO — return uppercased
-        return strtoupper(trim($value));
+        return FloodZoneCode::canonical($value) ?? '';
     }
 
     // ─── HOA Fee Frequency ───────────────────────────────────────────────────

@@ -354,9 +354,13 @@ class AskAiRefactorParityTest extends TestCase
         // remains in this set. `employment_requirement` was also retired but was a
         // plain CANONICAL_SOURCE_MAP entry, not a manual override, so it does not
         // count here — the map itself went 431 -> 429 for the two together.
-        $this->assertCount(38, $result,
+        //
+        // 38 -> 39: Batch 2c added `association_fee_includes` to the landlord context — the
+        // same JSON multiselect decode the seller context already performs — so the public
+        // "HOA fees & what do they cover?" composite can read it for landlord listings.
+        $this->assertCount(39, $result,
             '§30C: Landlord override count changed — '
-            . 'update only if intentional. All 38 keys require JSON decode, '
+            . 'update only if intentional. All 39 keys require JSON decode, '
             . 'resolveOtherValue(), or field-alias transformation.');
     }
 

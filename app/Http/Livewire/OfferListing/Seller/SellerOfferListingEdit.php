@@ -215,6 +215,21 @@ class SellerOfferListingEdit extends Component
     public $video_link = '';
     public array $listing_ai_faq = [];
 
+    /**
+     * Batch 4 — the owner's acknowledgement that selected knowledge-base answers may be
+     * restated publicly through Ask AI.
+     *
+     * ONE listing-level flag, defaulting to FALSE. A listing saved before this existed has
+     * no such meta row and reads as not confirmed, so merging Batch 4 publishes nothing
+     * retroactively. Unticking it stops every KB-derived public answer at the next render.
+     *
+     * It is stored as an ordinary sibling meta key of `listing_ai_faq` — no schema change,
+     * no migration, the same saveMeta() path. Read back through
+     * AskAiPublicPropertyQuestionService::kbPublicationConfirmed(), which is the only
+     * definition of what a stored acknowledgement looks like.
+     */
+    public bool $listing_ai_faq_public_ack = false;
+
 
     // location and meeting details
     public $person_meeting;
@@ -2004,6 +2019,7 @@ class SellerOfferListingEdit extends Component
             'current_status'                  => $this->current_status,
             'video_link'                      => $this->video_link,
             'listing_ai_faq'                  => json_encode($this->listing_ai_faq ?: []),
+            'listing_ai_faq_public_ack'       => $this->listing_ai_faq_public_ack ? '1' : '0',
             'photo'                           => is_string($this->photo) ? $this->photo : '',
             'video_tour_url'                  => $this->videoTourUrl ?? '',
             'virtual_tour_url'                => $this->virtualTourUrl ?? '',
@@ -2438,6 +2454,9 @@ class SellerOfferListingEdit extends Component
             $this->agent_nar_member_id = $auction->get->agent_nar_member_id ?? '';
             $this->video_link = $auction->get->video_link;
             $this->listing_ai_faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
+            $this->listing_ai_faq_public_ack = \App\Services\AskAi\AskAiPublicPropertyQuestionService::kbPublicationConfirmed(
+                ['listing_ai_faq_public_ack' => $auction->info('listing_ai_faq_public_ack')]
+            );
             $this->photo = $auction->get->photo ?? null;
             $this->video = $auction->get->video ?? null;
 
@@ -3800,6 +3819,7 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
+        $auction->saveMeta('listing_ai_faq_public_ack', $this->listing_ai_faq_public_ack ? '1' : '0');
 
         // HI-04 (M1) — validate photo/video content and size before any public-disk write.
         $this->validateMediaUploads();

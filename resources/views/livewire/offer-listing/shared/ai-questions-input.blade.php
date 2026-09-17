@@ -42,6 +42,20 @@
                     'placeholder' => $entry['placeholder'] ?? $genericPlaceholder,
                     'tooltip'     => $entry['tooltip'] ?? '',
                     'category'    => $category,
+                    // Batch 4 — is this one of the curated questions whose answer MAY be
+                    // restated on the public listing page? The allowlist is the single
+                    // source (AskAiPublicPropertyQuestionService), asked per key, so the
+                    // form cannot develop its own idea of what is publishable. Buyer and
+                    // Tenant have no allowlist at all, so every one of their questions
+                    // answers false here and no marker is ever drawn on their forms.
+                    //
+                    // It marks ELIGIBILITY, not a promise: the answer must still be filled
+                    // in, meaningful, and pass the Fair Housing and PII screens. The label
+                    // says "may appear" for exactly that reason. There is no toggle, no
+                    // consent field and nothing stored — this is disclosure, not a control.
+                    'public_safe' => \App\Services\AskAi\AskAiPublicPropertyQuestionService::isPublicSafeKbKey(
+                        (string) $user_type, (string) $key
+                    ),
                 ];
                 if (($entry['category_type'] ?? 'common') === 'insight') {
                     $insightQuestions[$category][$key] = $row;
@@ -67,6 +81,40 @@
     @else
         @if (empty($commonQuestions) && empty($insightQuestions))
             <p class="text-muted">No AI knowledge base questions are configured for this property type.</p>
+        @endif
+
+        {{--
+            Batch 4 — the owner's publication acknowledgement.
+
+            ONE listing-level confirmation, not 38 toggles. Rendered for the PROPERTY roles
+            only: buyer and tenant have no public-KB allowlist, their components do not
+            declare this property, and a wire:model pointing at a property that does not
+            exist is an error — so the role check is load-bearing, not cosmetic.
+
+            Default is unticked and nothing is inferred from a previous save. Until it is
+            ticked, every KB-derived public answer is refused as
+            'kb_owner_publication_not_confirmed'; unticking it stops them again at the next
+            render. Ticking it does NOT make the knowledge base public — the 38-key
+            allowlist, property-type gating, the Fair Housing policy and the PII screen all
+            still apply afterwards.
+        --}}
+        @if (in_array($user_type, ['seller', 'landlord'], true))
+            <div class="ai-faq-public-ack border rounded p-3 mb-4 bg-light">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="listing_ai_faq_public_ack"
+                           wire:model.defer="listing_ai_faq_public_ack"
+                           data-ai-faq-public-ack="1">
+                    <label class="form-check-label" for="listing_ai_faq_public_ack">
+                        Selected answers from your AI Knowledge Base may appear publicly on your
+                        listing through Ask AI. Private, sensitive, Fair Housing-restricted, and
+                        personally identifying information will not be shown.
+                    </label>
+                </div>
+                <p class="text-muted small mb-0 mt-2">
+                    Optional. Leave this unticked and none of your answers will be shown publicly.
+                    Only the questions marked below are ever eligible.
+                </p>
+            </div>
         @endif
 
         @if (! empty($commonQuestions))

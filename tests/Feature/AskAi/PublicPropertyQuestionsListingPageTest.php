@@ -109,14 +109,19 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         return $this->get(route('offer.listing.landlord.view', ['id' => $listing->id]))->assertStatus(200)->getContent();
     }
 
-    /** Only the Questions About This Property card, so values printed elsewhere on the page cannot satisfy an assertion. */
+    /**
+     * Only the Ask AI card (Batch 2a: the one home of Questions About This Property), so
+     * values printed elsewhere on the page cannot satisfy an assertion. The card ends where
+     * the next quick-actions card begins.
+     */
     private function section(string $html, string $role): string
     {
-        $start = strpos($html, 'data-property-questions="' . $role . '"');
+        $start = strpos($html, 'data-ask-ai-property-questions="' . $role . '"');
         if ($start === false) {
             return '';
         }
-        $next = strpos($html, 'class="card section-card"', $start);
+        $prefix = $role === 'landlord' ? 'lol' : 'sol';
+        $next   = strpos($html, 'class="' . $prefix . '-interaction-card"', $start);
 
         return substr($html, $start, $next === false ? null : $next - $start);
     }
@@ -179,11 +184,15 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         $this->assertArrayHasKey('seller_bedrooms', $questions);
     }
 
-    public function test_seller_listing_with_no_answerable_facts_renders_no_section(): void
+    public function test_seller_listing_with_no_answerable_facts_renders_an_honest_empty_state(): void
     {
-        $html = $this->sellerPage($this->sellerListing(['auction_type' => 'Traditional']));
+        $html    = $this->sellerPage($this->sellerListing(['auction_type' => 'Traditional']));
+        $section = $this->section($html, 'seller');
 
-        $this->assertStringNotContainsString('data-property-questions', $html);
+        // The Ask AI card is still there, says plainly that nothing is verified yet, and
+        // offers no invented question in its place.
+        $this->assertStringContainsString('No verified property questions are available yet.', $section);
+        $this->assertStringNotContainsString('data-property-question=', $html);
         $this->assertStringNotContainsString('Questions About This Property', $html);
     }
 
@@ -281,26 +290,67 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
             $section = $this->section($this->sellerPage($listing), 'seller');
 
             $this->assertNotSame('', $section);
-            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Seller Financing', 'Short Sale', 'flood', '6.125'] as $leak) {
+            // Batch 2b: the offered financing TYPE is now published deliberately
+            // ("Seller Financing" may appear); its TERMS — here the interest rate — never are.
+            //
+            // Batch 2e: 'flood' left this list. The FEMA designation is a public
+            // seller/landlord fact by owner decision and is answered below; what must never
+            // appear is a risk or insurance CONCLUSION drawn from it, which is asserted
+            // straight after rather than by banning the word.
+            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Short Sale', '6.125', 'interest'] as $leak) {
                 $this->assertStringNotContainsStringIgnoringCase($leak, $section, "'{$leak}' must never appear in the public questions.");
+            }
+            $this->assertStringContainsString('The seller has indicated they will consider the following financing type: Seller Financing.', $section);
+
+            $this->assertStringContainsString('This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.', $section);
+            foreach ([
+                'not in a flood zone', 'no flood risk', 'cannot flood',
+                'flood insurance is not required', 'insurance is not required', 'safe from flooding',
+            ] as $forbidden) {
+                $this->assertStringNotContainsStringIgnoringCase($forbidden, $section, "'{$forbidden}' must never be said.");
             }
         }
     }
 
-    // ── 7. Buyer and tenant criteria pages carry no public question surface ─
+    // ── 7. Buyer and tenant pages carry the CRITERIA surface, never this one ─
 
-    public function test_buyer_and_tenant_pages_do_not_include_the_surface(): void
+    /**
+     * SUPERSEDED AND REPLACED, deliberately.
+     *
+     * This assertion used to be "the buyer and tenant pages do not reference
+     * AskAiPublicPropertyQuestionService at all". Batch 2d gives those two pages their own
+     * deterministic card, so that form of the test is now false by design — but the thing it
+     * was protecting is not, and deleting it outright would have dropped the guarantee along
+     * with the stale wording.
+     *
+     * What still must hold is sharper than a file-level absence: a criteria page may render
+     * the shared card, and must never render a PROPERTY question through it. Seller and
+     * landlord catalog entries are unreachable for those roles, and the property heading
+     * never appears on their pages.
+     */
+    public function test_buyer_and_tenant_pages_never_render_a_property_question(): void
     {
-        foreach ([
-            'resources/views/offer-listing/buyer/view.blade.php',
-            'resources/views/offer-listing/tenant/view.blade.php',
-            'app/Http/Controllers/BuyerOfferListingController.php',
-            'app/Http/Controllers/TenantOfferListingController.php',
-        ] as $file) {
-            $source = file_get_contents(base_path($file));
-            $this->assertStringNotContainsString('_property-questions', $source, $file);
-            $this->assertStringNotContainsString('AskAiPublicPropertyQuestionService', $source, $file);
-            $this->assertStringNotContainsString('propertyQuestions', $source, $file);
+        $registry = \App\Services\AskAi\AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry();
+        $service  = new \App\Services\AskAi\AskAiPublicPropertyQuestionService();
+
+        // A property role's own catalog entry, evaluated for a criteria role, is refused —
+        // by role membership first, and by the criteria allowlist behind it.
+        foreach (['seller_asking_price', 'seller_bedrooms', 'landlord_pets_allowed'] as $id) {
+            if (!isset($registry[$id])) {
+                continue;
+            }
+            foreach (['buyer', 'tenant'] as $role) {
+                $result = $service->evaluate($registry[$id], $role, ['listing' => ['asking_price' => '500000', 'bedrooms' => '3', 'pets_allowed' => 'Yes']], []);
+                $this->assertFalse($result['available'], "{$id} became available for {$role}.");
+            }
+        }
+
+        // And no criteria question is ever worded as a fact about a property.
+        foreach ($registry as $id => $entry) {
+            if (!in_array($entry['role'] ?? '', ['buyer', 'tenant'], true)) {
+                continue;
+            }
+            $this->assertStringNotContainsStringIgnoringCase('this property has', (string) ($entry['question'] ?? ''), $id);
         }
     }
 

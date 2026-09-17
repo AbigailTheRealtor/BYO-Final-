@@ -223,8 +223,14 @@ class AskAiFaqAdmissionBoundaryTest extends TestCase
     // Pre-existing protections still work
     // =====================================================================
 
-    /** @test */
-    public function tenant_applicant_sensitive_faq_stripping_still_applies_to_public_viewers(): void
+    /**
+     * Batch 0 made this stricter. The applicant-sensitive answer is still unreachable for a
+     * public viewer — and so is every other Knowledge Base answer, because the whole
+     * faq_answers collection is now owner-only in context. `some_other_key` used to survive.
+     *
+     * @test
+     */
+    public function tenant_knowledge_base_including_applicant_sensitive_answers_is_removed_for_public_viewers(): void
     {
         $context = ['faq_answers' => [
             'faq_q20'          => ['config_key' => 'faq_q20', 'answer_text' => 'Sensitive.'],
@@ -234,12 +240,19 @@ class AskAiFaqAdmissionBoundaryTest extends TestCase
         $redacted = app(AskAiViewerAuthorizationService::class)
             ->redactContext($context, 'tenant', AskAiViewerAuthorizationService::SCOPE_PUBLIC);
 
-        $this->assertArrayNotHasKey('faq_q20', $redacted['faq_answers']);
-        $this->assertArrayHasKey('some_other_key', $redacted['faq_answers']);
+        $this->assertArrayNotHasKey('faq_answers', $redacted);
     }
 
-    /** @test */
-    public function tenant_applicant_sensitive_faq_survives_for_an_authorized_viewer(): void
+    /**
+     * Batch 0 — a deliberate expectation change. An authorized viewer (a landlord or agent
+     * with an accepted deal on the tenant listing) used to keep the tenant's applicant FAQ
+     * answers. That viewer is still not the listing's owner, and the Knowledge Base is
+     * owner-only, so the collection is removed for them as well. Their native authorized
+     * subset (e.g. monthly_income) is unchanged — see AskAiViewerAuthorizationServiceTest.
+     *
+     * @test
+     */
+    public function tenant_knowledge_base_is_removed_for_an_authorized_viewer(): void
     {
         $context = ['faq_answers' => [
             'faq_q20' => ['config_key' => 'faq_q20', 'answer_text' => 'Sensitive.'],
@@ -248,7 +261,11 @@ class AskAiFaqAdmissionBoundaryTest extends TestCase
         $redacted = app(AskAiViewerAuthorizationService::class)
             ->redactContext($context, 'tenant', AskAiViewerAuthorizationService::SCOPE_AUTHORIZED);
 
-        $this->assertArrayHasKey('faq_q20', $redacted['faq_answers']);
+        $this->assertArrayNotHasKey('faq_answers', $redacted);
+
+        $owner = app(AskAiViewerAuthorizationService::class)
+            ->redactContext($context, 'tenant', AskAiViewerAuthorizationService::SCOPE_OWNER);
+        $this->assertSame($context, $owner, 'The tenant owner still receives their own answers in full');
     }
 
     /** @test */

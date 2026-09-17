@@ -649,10 +649,20 @@ class MlsLiveImportAuditTest extends TestCase
         }
     }
 
-    public function test_normalizer_flood_zone_code_flood_insurance_phrase_normalises_to_yes(): void
+    /**
+     * SUPERSEDED: this pinned a defect, and it is the second place that did.
+     *
+     * `flood_zone_code` holds a FEMA ZONE DESIGNATION. The normalizer answered the literal
+     * string `yes` for any source text mentioning flood insurance, so a boolean answer about
+     * INSURANCE was stored as the property's ZONE — indistinguishable, to every later reader,
+     * from a real designation. The insurance signal is not lost: the importer reads the MLS's
+     * own "Flood Insurance Reqd" field into `flood_insurance_required` through
+     * normalizeBoolean(), which is where a boolean belongs.
+     */
+    public function test_normalizer_flood_zone_code_refuses_a_flood_insurance_phrase(): void
     {
-        $this->assertSame('yes', MlsNormalizer::normalize('flood_zone_code', 'Flood Insurance Required'));
-        $this->assertSame('yes', MlsNormalizer::normalize('flood_zone_code', 'flood insurance area'));
+        $this->assertSame('', MlsNormalizer::normalize('flood_zone_code', 'Flood Insurance Required'));
+        $this->assertSame('', MlsNormalizer::normalize('flood_zone_code', 'flood insurance area'));
     }
 
     public function test_normalizer_association_fee_frequency_monthly(): void

@@ -38,10 +38,12 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         return ['listing' => $listing, 'faq_answers' => []];
     }
 
-    /** A seller listing whose every Batch 1 question is answerable. */
+    /** A seller listing whose every catalog question (Batch 1 + 2b) is answerable. */
     private function fullSellerContext(): array
     {
         return $this->context([
+            // Batch 2e: a complete listing now carries a FEMA designation too.
+            'flood_zone_code'       => 'AE',
             'asking_price'          => '500000',
             'bedrooms'              => '3',
             'bathrooms'             => '2.5',
@@ -55,23 +57,79 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'total_acreage'         => '1/4 to less than 1/2 acre',
             'appliances'            => 'Dishwasher, Range, Refrigerator',
             'utilities'             => 'Electricity Connected, Water Available',
+            // Batch 2b
+            'pets_allowed'          => 'Yes',
+            'pool'                  => 'Yes',
+            'garage'                => 'No',
+            'zoning'                => 'RS-60',
+            'roof_type'             => 'Shingle',
+            'rental_restrictions'   => 'Yes',
+            'offered_financing'     => 'Conventional, FHA, VA, Cash',
+            // Batch 2c
+            'association_fee_includes' => 'Water, Trash',
+            'has_cdd'               => 'Yes',
+            'annual_cdd_fee'        => '1200',
         ]);
     }
 
     private function fullSellerMeta(): array
     {
-        return ['bedrooms' => '3', 'bathrooms' => '2.5', 'auction_type' => 'Traditional'];
+        return [
+            'bedrooms'                  => '3',
+            'bathrooms'                 => '2.5',
+            'auction_type'              => 'Traditional',
+            'association_fee_frequency' => 'Monthly',
+            'roof_type'                 => json_encode(['Shingle']),
+            'offered_financing'         => json_encode(['Conventional', 'FHA', 'VA', 'Cash']),
+            'association_fee_includes'  => json_encode(['Water', 'Trash']),
+        ];
     }
 
     private function fullLandlordContext(): array
     {
         return $this->context([
+            'flood_zone_code' => 'VE',
             'bedrooms'    => '2',
             'bathrooms'   => '1',
             'square_feet' => '950',
             'appliances'  => 'Washer, Dryer',
             'pet_policy'  => 'No',
+            // Batch 2b
+            'year_built'                => '2004',
+            'annual_property_taxes'     => '3120',
+            'tax_year'                  => '2024',
+            'has_hoa'                   => 'Yes',
+            'association_fee_amount'    => '175',
+            'association_fee_frequency' => 'Quarterly',
+            'zoning'                    => 'RM-15',
+            'roof_type'                 => 'Tile, Metal',
+            'leasing_restrictions'      => 'No',
+            'association_amenities'     => 'Clubhouse, Fitness Center',
+            'association_fee_includes'  => 'Grounds Maintenance',
         ]);
+    }
+
+    private function fullLandlordMeta(): array
+    {
+        return [
+            'association_fee_frequency' => 'Quarterly',
+            'roof_type'                 => json_encode(['Tile', 'Metal']),
+            'association_amenities'     => json_encode(['Clubhouse', 'Fitness Center']),
+            'association_fee_includes'  => json_encode(['Grounds Maintenance']),
+        ];
+    }
+
+    /** Catalog ids for a role, in display order. */
+    private function catalogIds(string $role): array
+    {
+        $catalog = array_filter(
+            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
+            fn (array $e) => $e['role'] === $role
+        );
+        $ids = array_keys($catalog);
+        usort($ids, fn ($a, $b) => $catalog[$a]['order'] <=> $catalog[$b]['order']);
+
+        return $ids;
     }
 
     /** @return array<string,string> id => answer */
@@ -99,19 +157,19 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
     public function test_every_catalog_question_is_answerable_from_a_complete_listing(): void
     {
-        $seller = $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta());
-        $sellerCatalog = array_keys(array_filter(
+        // Batch 2c: a composite and its narrower fallback never render together, so a listing
+        // complete enough for every composite answers every question EXCEPT the narrower
+        // entries those composites replace.
+        $narrower = array_keys(array_filter(
             AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            fn (array $e) => $e['role'] === 'seller'
+            fn (array $e) => isset($e['narrower_of'])
         ));
-        $this->assertSame($sellerCatalog, array_keys($seller));
 
-        $landlord = $this->answers('landlord', $this->fullLandlordContext(), []);
-        $landlordCatalog = array_keys(array_filter(
-            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            fn (array $e) => $e['role'] === 'landlord'
-        ));
-        $this->assertSame($landlordCatalog, array_keys($landlord));
+        $seller = $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta());
+        $this->assertSame(array_values(array_diff($this->catalogIds('seller'), $narrower)), array_keys($seller));
+
+        $landlord = $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta());
+        $this->assertSame(array_values(array_diff($this->catalogIds('landlord'), $narrower)), array_keys($landlord));
     }
 
     // ── 2 + 3. Null and blank values hide the question ──────────────────────
@@ -156,7 +214,13 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             ['landlord', 'rent_includes',           'Water'],     // owner_only
             ['landlord', 'security_deposit_amount', '1500'],      // restricted
             ['landlord', 'rental_price',            '2000'],      // restricted (not in map)
-            ['seller',   'flood_zone_code',         'AE'],        // restricted
+            // flood_zone_code was here as "restricted" and has MOVED: it is a public
+            // seller/landlord fact as of Batch 2e (owner decision). The three flood fields
+            // that stayed restricted are probed instead, so this case still covers the
+            // category it was written for.
+            ['seller',   'flood_zone_designation',  'Zone AE'],   // restricted
+            ['seller',   'flood_zone_description',  'High risk'], // restricted
+            ['seller',   'is_in_flood_zone',        'Yes'],       // restricted
             ['seller',   'sale_provision',          'Short Sale'],// owner_only
             ['seller',   'offered_financing',       'Cash'],      // owner_only
         ];
@@ -258,14 +322,66 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         $catalog = AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry();
         $this->assertNotEmpty($catalog);
 
-        foreach ($catalog as $id => $entry) {
-            $this->assertContains($entry['role'], ['seller', 'landlord'], $id);
+        $admissions = AskAiPublicPropertyQuestionService::publicQuestionAdmissions();
 
-            foreach (array_merge([$entry['source_path']], $entry['supporting_paths']) as $path) {
+        $criteria = AskAiPublicPropertyQuestionService::publicCriteria();
+
+        foreach ($catalog as $id => $entry) {
+            $this->assertContains($entry['role'], ['seller', 'landlord', 'buyer', 'tenant'], $id);
+            $this->assertContains($entry['source_kind'], ['listing', 'admitted_listing', 'criteria_meta'], $id);
+
+            // Batch 2d — the CRITERIA roles are governed by their own explicit catalogs
+            // instead of SnapshotFactVisibility's public tier, because D2 gives them no
+            // public tier at all. They have two admissions and no others: the context-key
+            // catalog, and the narrow page-meta allowlist for criteria the shared context
+            // does not carry. The property roles' mechanism is not available to them, and
+            // theirs is not available to the property roles.
+            $isCriteria = isset($criteria[$entry['role']]);
+            if ($isCriteria) {
+                $this->assertContains($entry['source_kind'], ['listing', 'criteria_meta'],
+                    "{$id}: a criteria entry may not use admitted_listing.");
+            } else {
+                $this->assertNotSame('criteria_meta', $entry['source_kind'],
+                    "{$id}: the page-meta mechanism belongs to the criteria roles.");
+            }
+
+            // A page-meta source is checked against its own allowlist; every key it reads is
+            // re-verified as public-and-unrestricted at read time by the service itself.
+            if ($entry['source_kind'] === 'criteria_meta') {
+                $sources = AskAiPublicPropertyQuestionService::publicCriteriaMetaSources()[$entry['role']] ?? [];
+                $this->assertMatchesRegularExpression('/^criteria_meta\.[a-z0-9_]+$/', $entry['source_path'], $id);
+                $this->assertArrayHasKey(str_replace('criteria_meta.', '', $entry['source_path']), $sources, $id);
+                // Supporting paths remain ordinary context keys, checked by the loop below.
+                foreach ($entry['supporting_paths'] as $path) {
+                    $key = substr($path, strlen('listing.'));
+                    $this->assertArrayHasKey($key, $criteria[$entry['role']], "{$id}: {$path}");
+                }
+                continue;
+            }
+
+            foreach (array_merge([$entry['source_path']], $entry['supporting_paths']) as $i => $path) {
                 $this->assertMatchesRegularExpression('/^listing\.[a-z0-9_]+$/', $path, $id);
                 $key = substr($path, strlen('listing.'));
 
+                if ($isCriteria) {
+                    $this->assertArrayHasKey($key, $criteria[$entry['role']],
+                        "{$id}: {$path} is not in PUBLIC_" . strtoupper($entry['role']) . '_CRITERIA.');
+                    $this->assertNotSame(SnapshotFactVisibility::RESTRICTED, SnapshotFactVisibility::classify($key, $entry['role']),
+                        "{$id}: {$path} is compliance-restricted and must never be read.");
+                    continue;
+                }
+
                 $this->assertArrayHasKey($key, AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$entry['role']], "{$id}: {$path}");
+
+                // Batch 2b: an admitted SOURCE is owner_only for the AI context (never
+                // restricted) and named in the public question layer's admission list.
+                // Supporting paths are never admitted.
+                if ($i === 0 && $entry['source_kind'] === 'admitted_listing') {
+                    $this->assertArrayHasKey($key, $admissions[$entry['role']] ?? [], "{$id}: {$path} must be explicitly admitted.");
+                    $this->assertSame(SnapshotFactVisibility::OWNER_ONLY, SnapshotFactVisibility::classify($key, $entry['role']), "{$id}: {$path}");
+                    continue;
+                }
+
                 $this->assertSame(
                     SnapshotFactVisibility::PUBLIC_ALLOWED,
                     SnapshotFactVisibility::classify($key, $entry['role']),
@@ -273,6 +389,9 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
                 );
             }
         }
+
+        // The admission list stays exactly as narrow as decided.
+        $this->assertSame(['seller' => ['offered_financing']], array_map('array_keys', $admissions));
     }
 
     // ── 6. Seller minimums never create public questions ────────────────────
@@ -306,16 +425,33 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         }
 
         foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
-            $paths = implode(' ', array_merge([$entry['source_path']], $entry['supporting_paths']));
+            $paths = implode(' ', array_merge(
+                [$entry['source_path']],
+                $entry['supporting_paths'],
+                array_values($entry['other_companion'] ?? [])
+            ));
             foreach (['minimum', 'cap_rate', 'noi', 'net_income', 'walk_away', 'reserve'] as $needle) {
                 $this->assertStringNotContainsString($needle, $paths, "{$id} must not read {$needle}.");
             }
         }
     }
 
-    // ── 7. Buyer and tenant criteria never appear publicly ──────────────────
+    // ── 7. Only an approved criteria key is readable for a criteria role ────
 
-    public function test_buyer_and_tenant_criteria_never_appear_publicly(): void
+    /**
+     * SUPERSEDED AND REPLACED by Batch 2d.
+     *
+     * This was "buyer and tenant produce no public questions at all", which was the right
+     * rule while those roles had no approved surface. They have one now, so the blanket
+     * emptiness claim is false by design — but the reason it existed is not, and it is
+     * restated here in the stronger form the new design actually supports:
+     *
+     *   - a role name that is not exactly 'buyer' or 'tenant' still produces nothing, so an
+     *     alias, a casing variant or an empty string cannot reach the surface sideways;
+     *   - for the two real criteria roles, only a key named in their own catalog resolves;
+     *   - a qualification key is refused even when the listing carries a value for it.
+     */
+    public function test_only_an_approved_criteria_key_is_readable_for_a_criteria_role(): void
     {
         $criteria = $this->context([
             'bedrooms'    => '3',
@@ -326,17 +462,36 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'appliances'  => 'Washer, Dryer',
         ]);
 
-        foreach (['buyer', 'tenant', 'buyer_agent_auction', 'tenant_criteria_auction', 'BUYER', '', 'agent_profile'] as $role) {
+        // An ALIAS role name answers nothing. forListing() has lowercased its argument since
+        // Batch 1, so 'BUYER' does resolve to 'buyer' — casing is normalised, identity is
+        // not, and a listing-type alias is not a role.
+        foreach (['buyer_agent_auction', 'tenant_criteria_auction', '', 'agent_profile', 'buyer_criteria'] as $role) {
             $this->assertSame([], $this->service->forListing($role, $criteria, []), "'{$role}' must produce no public questions.");
-
-            foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $entry) {
-                $entry['role'] = $role;
-                $this->assertFalse($this->service->evaluate($entry, $role, $criteria, [])['available'], "'{$role}'");
-            }
         }
+        // Casing tolerance must not become key tolerance: the uppercase spelling reaches the
+        // same catalog, never a wider one.
+        $this->assertSame(
+            $this->service->forListing('buyer', $criteria, []),
+            $this->service->forListing('BUYER', $criteria, [])
+        );
 
-        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
-            $this->assertNotContains($entry['role'], ['buyer', 'tenant'], $id);
+        // For the two real criteria roles, the catalog is the whole permission.
+        $catalogs = AskAiPublicPropertyQuestionService::publicCriteria();
+        foreach (['buyer', 'tenant'] as $role) {
+            foreach ($this->service->forListing($role, $criteria, []) as $question) {
+                $key = substr($question['source_path'], strlen('listing.'));
+                $this->assertArrayHasKey($key, $catalogs[$role], "{$question['id']} read an unapproved key.");
+            }
+
+            // A qualification key present on the listing is still refused.
+            $probe = $role === 'tenant' ? 'monthly_income' : 'pre_approval_amount';
+            $entry = [
+                'role' => $role, 'question' => 'probe', 'source_kind' => 'listing',
+                'source_path' => 'listing.' . $probe, 'supporting_paths' => [],
+                'formatter' => 'criteria_property_type', 'guards' => [],
+            ];
+            $result = $this->service->evaluate($entry, $role, $this->context([$probe => '99999']), []);
+            $this->assertFalse($result['available'], "{$role}.{$probe} became available.");
         }
     }
 
@@ -361,20 +516,37 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_heated_square_feet' => 'The heated square footage is 1,850 square feet.',
             'seller_year_built'         => 'This property was built in 1998.',
             'seller_property_taxes'     => 'Annual property taxes are $1,856 for tax year 2025.',
-            'seller_hoa_fee'            => 'The HOA fee is $250 per month.',
+            'seller_hoa_fee_coverage'   => 'The HOA fee is $250 per month and includes water and trash.',
+            'seller_cdd_fee'            => 'The annual CDD fee is $1,200.',
             'seller_total_acreage'      => 'The total acreage is 1/4 to less than 1/2 acre.',
             'seller_appliances'         => 'Appliances listed for this property: Dishwasher, Range, Refrigerator.',
             'seller_utilities'          => 'Utilities listed for this property: Electricity Connected, Water Available.',
+            'seller_pets_allowed'       => 'Pets are allowed at this property.',
+            'seller_pool'               => 'This property has a pool.',
+            'seller_garage'             => 'This property does not have a garage.',
+            'seller_zoning'             => 'The zoning is listed as RS-60.',
+            'seller_roof_type'          => 'Roof type listed for this property: Shingle.',
+            'seller_leasing_restrictions' => 'The listing indicates there are leasing restrictions.',
+            'seller_offered_financing'  => 'The seller has indicated they will consider the following financing types: Conventional, FHA, VA and Cash.',
+            'seller_flood_zone'         => 'This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.',
         ];
         $this->assertSame($expected, $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta()));
 
         $this->assertSame([
-            'landlord_bedrooms'           => 'This property has 2 bedrooms.',
-            'landlord_bathrooms'          => 'This property has 1 bathroom.',
-            'landlord_heated_square_feet' => 'The heated square footage is 950 square feet.',
-            'landlord_appliances'         => 'Appliances listed for this property: Washer, Dryer.',
-            'landlord_pets_allowed'       => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
-        ], $this->answers('landlord', $this->fullLandlordContext(), []));
+            'landlord_bedrooms'              => 'This property has 2 bedrooms.',
+            'landlord_bathrooms'             => 'This property has 1 bathroom.',
+            'landlord_heated_square_feet'    => 'The heated square footage is 950 square feet.',
+            'landlord_year_built'            => 'This property was built in 2004.',
+            'landlord_property_taxes'        => 'Annual property taxes are $3,120 for tax year 2024.',
+            'landlord_hoa_fee_coverage'      => 'The HOA fee is $175 per quarter and includes grounds maintenance.',
+            'landlord_appliances'            => 'Appliances listed for this property: Washer, Dryer.',
+            'landlord_pets_allowed'          => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
+            'landlord_zoning'                => 'The zoning is listed as RM-15.',
+            'landlord_roof_type'             => 'Roof types listed for this property: Tile, Metal.',
+            'landlord_leasing_restrictions'  => 'The listing indicates there are no leasing restrictions.',
+            'landlord_association_amenities' => 'Community amenities listed for this property: Clubhouse, Fitness Center.',
+            'landlord_flood_zone'            => 'This property is in FEMA Flood Zone VE, a coastal high-hazard Special Flood Hazard Area.',
+        ], $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta()));
     }
 
     public function test_formatter_output_is_deterministic(): void
@@ -486,7 +658,13 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     public function test_surface_has_no_path_to_a_language_model_or_network_call(): void
     {
         $service = file_get_contents(base_path('app/Services/AskAi/AskAiPublicPropertyQuestionService.php'));
-        $partial = file_get_contents(base_path('resources/views/offer-listing/partials/_property-questions.blade.php'));
+        // Batch 2a moved the surface into the Ask AI card; Blade comments are documentation,
+        // not markup, so they are removed before the scan.
+        $partial = preg_replace(
+            '/\{\{--.*?--\}\}/s',
+            '',
+            file_get_contents(base_path('resources/views/offer-listing/partials/_ask-ai-property-card.blade.php'))
+        );
 
         foreach ([$service, $partial] as $source) {
             foreach ([
@@ -502,9 +680,32 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         $reflection = new \ReflectionClass(AskAiPublicPropertyQuestionService::class);
         $this->assertNull($reflection->getConstructor(), 'The service must have no injected dependencies.');
 
-        // The partial is inert markup: no script, no form, no Livewire, no Ask AI textbox.
-        foreach (['<script', '<form', 'wire:', 'fetch(', 'solAi', 'lolAi', 'textarea'] as $forbidden) {
+        // SUPERSEDED IN PART BY BATCH 3. The partial is no longer pure inert markup — it
+        // carries a typed-question box, so an <input> is expected, and it pushes one static
+        // <script> to the layout's stack. Both are deliberate, and what replaced the blanket
+        // rule is narrower and stronger:
+        //
+        //   - still no form, no Livewire, no inline handler and no request API, so revealing
+        //     an answer still cannot become a request;
+        //   - the ONLY script is the external matcher asset, pushed OUTSIDE the card, so the
+        //     card region itself remains script-free (its own tests assert that);
+        //   - the input carries no `name`, so even a hypothetical surrounding form could not
+        //     carry the typed text anywhere.
+        foreach (['<form', 'wire:', 'fetch(', 'XMLHttpRequest', 'textarea', 'href=', 'onclick',
+                  '/ask-ai/listing-question', '/api/ask-ai', '/agent-ai/'] as $forbidden) {
             $this->assertStringNotContainsStringIgnoringCase($forbidden, $partial, "Partial contains '{$forbidden}'.");
         }
+
+        // Exactly one script, and it is the external static matcher — never inline code.
+        preg_match_all('/<script\b[^>]*>/i', $partial, $scripts);
+        $this->assertCount(1, $scripts[0], 'The partial must carry exactly one script tag.');
+        $this->assertStringContainsString('js/ask-ai/deterministic-question-matcher.js', $scripts[0][0]);
+        $this->assertDoesNotMatchRegularExpression('/<script(?![^>]*\bsrc=)/i', $partial,
+            'Every script in the partial must be an external asset, never inline.');
+
+        // The typed input exists and is unsubmittable.
+        $this->assertStringContainsString('data-ask-ai-ask-input', $partial);
+        $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $partial,
+            'The typed-question input must carry no name attribute.');
     }
 }

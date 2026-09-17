@@ -1536,6 +1536,57 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Http/Controllers/UserController.php',
             'app/Services/Stellar/BuyerOfferListingCriteriaLoader.php',
             'app/Services/Stellar/CriteriaListingResolver.php',
+
+            // ── Ask AI public deterministic questions, Batches 2c–2e and 3 (2026-09-15/16) ──
+            //
+            // Approved, committed work on this branch. The four Offer Listing controllers,
+            // AskAiContextBuilderService and the four role detail views are permitted above;
+            // these are the remaining paths those batches touched.
+            //
+            //   2c/2d — public PROPERTY and CRITERIA question catalogs, and the privacy
+            //     boundary under them: CriteriaPrivacyPolicy + its config decide which buyer
+            //     and tenant criteria a public page may restate at all. The shared Ask AI card
+            //     and the question partial are the two render surfaces.
+            //   2e — the public flood-zone question. FloodZoneCode is the designation
+            //     vocabulary; SnapshotFactVisibility is where `flood_zone_code` moved from
+            //     RESTRICTED_KEYS to SHARED_PUBLIC_KEYS by owner decision; MlsNormalizer
+            //     carries the import-side normalisation fix for the same field.
+            //   3 — deterministic typed question matching, plus AskAiViewerAuthorizationService
+            //     for the non-owner redaction the typed path must not bypass.
+            'app/Services/AskAi/AskAiPublicPropertyQuestionService.php',
+            'app/Services/AskAi/AskAiViewerAuthorizationService.php',
+            'app/Services/AskAi/Snapshot/SnapshotFactVisibility.php',
+            'app/Services/ListingImport/MlsNormalizer.php',
+            'app/Support/Listing/FloodZoneCode.php',
+            'app/Support/OfferListing/CriteriaPrivacyPolicy.php',
+            'config/offer_listing_private_criteria.php',
+            'resources/views/offer-listing/partials/_ask-ai-property-card.blade.php',
+            'resources/views/offer-listing/partials/_property-questions.blade.php',
+
+            // ── Ask AI Batch 4 — curated public knowledge-base answers (2026-09-17) ──
+            //
+            // OPT-IN PER LISTING. A Seller/Landlord owner may acknowledge that answers to 38
+            // named, factual knowledge-base questions may be restated publicly. The knowledge
+            // base itself stays owner-only; nothing is published without the acknowledgement,
+            // and the acknowledgement rides on an existing meta key — no migration, and no
+            // schema path is touched, which is why none appears in this block.
+            //
+            //   PublicAnswerPiiScreen — contact/address screen for owner-written answers.
+            //   PublicProviderTextPolicy — the surface-scoped Fair Housing counterpart to the
+            //     Phase 3 field-scoped LandlordProviderTextPolicy, sharing its vocabulary
+            //     rather than copying it (that policy and config/landlord_provider_text.php,
+            //     which gains the familial-status steering patterns, are permitted above).
+            //   AskAiFaqConfigService — one added read-only `rawConfig()` passthrough, used to
+            //     verify an allowlisted key still sits in the group it was approved under.
+            //   The two shared knowledge-base form blades carry the per-question eligibility
+            //     marker and the single listing-level acknowledgement control. The four
+            //     Seller/Landlord create+edit components that persist it, and the two listing
+            //     controllers that pass viewer context, are all permitted above.
+            'app/Services/AskAi/AskAiFaqConfigService.php',
+            'app/Support/AskAi/PublicAnswerPiiScreen.php',
+            'app/Support/OfferListing/PublicProviderTextPolicy.php',
+            'resources/views/livewire/offer-listing/shared/ai-questions-input.blade.php',
+            'resources/views/livewire/offer-listing/shared/partials/ai-question-field.blade.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);
