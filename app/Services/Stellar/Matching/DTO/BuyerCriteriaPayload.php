@@ -64,32 +64,29 @@ class BuyerCriteriaPayload
      * CAPTURED, CARRIED, AND DELIBERATELY NOT SCORED AGAINST THE FEED.
      * ----------------------------------------------------------------
      * RESO has a PropertyCondition field and Bridge populates it, but not with
-     * this concept: in every per-type fixture in tests/fixtures/mls/bridge/ its
-     * only non-empty value is "Completed", and the Smart Tag bridge vocabulary
-     * (config/smart_tag_sources.php, `bridge_condition`) recognises exactly two
-     * source values — "Under Construction" and "To Be Built". The feed's
-     * PropertyCondition describes CONSTRUCTION STATUS. It is not a renovation
-     * state, so comparing a renovation preference to it would be the same
-     * category error one field to the left.
+     * this concept: across all seven per-type fixtures in
+     * tests/fixtures/mls/bridge/ its only non-empty value is "Completed", and the
+     * only other values this application has ever established a meaning for are
+     * "Under Construction" and "To Be Built". The feed's PropertyCondition
+     * describes CONSTRUCTION STATUS. It is not a renovation state, so comparing a
+     * renovation preference to it would be the same category error one field to
+     * the left.
      *
-     * The mechanism that DOES model this concept is Smart Tags: the native
-     * `condition` vocabulary already maps "Updated / Renovated" =>
-     * `fully_updated`, "Partially Updated" => `partially_updated` and
-     * "Older but Well Maintained" => `older_well_maintained`. Those tags are
-     * derived from the seller/landlord side today, both derivation gates ship
-     * off, and the seeker-side store (`smart_tag_preferences`) is reserved and
-     * not created. So the honest position is: keep the preference, keep it out
-     * of the score, and wire it to tags when tag matching exists.
+     * So the honest position is: keep the preference, and keep it out of the
+     * score until something can compare it to a like concept. Where that belongs
+     * is a product decision, recorded in
+     * docs/audits/byo-reso-match-field-audit.md — this class deliberately does
+     * not name another subsystem, because an architecture guard keeps that
+     * coupling out of files like this one.
      *
-     * ONE THING TO FIX FIRST, WHEN THAT WIRING HAPPENS: the seeker and owner
-     * vocabularies are NOT the same strings. The supply side stores values the
-     * Smart Tag `condition` vocabulary recognises — seller: "No updates needed:
-     * Completely updated", "Semi-updated: Needs minor updates", … ; landlord:
-     * "Updated / Renovated", "Older but Well Maintained". The seeker side stores
-     * "Updated/Renovated" (no spaces) and "Older but Clean", and only
-     * "Partially Updated" is common to both. Mapping this preference onto tags is
-     * therefore a translation, not an identity, and doing it by assuming the
-     * strings match would silently derive nothing.
+     * ONE THING THE NEXT IMPLEMENTER MUST KNOW: the seeker and owner condition
+     * vocabularies are NOT the same strings, so whatever consumes them will need
+     * a translation rather than an equality test. The seller form stores
+     * "No updates needed: Completely updated", "Semi-updated: Needs minor
+     * updates", …; the landlord form stores "Updated / Renovated" and "Older but
+     * Well Maintained"; the seeker form stores "Updated/Renovated" (no spaces)
+     * and "Older but Clean". Only "Partially Updated" is common to all three.
+     * Assuming the strings match would silently match nothing.
      */
     public readonly array $propertyConditions;
 

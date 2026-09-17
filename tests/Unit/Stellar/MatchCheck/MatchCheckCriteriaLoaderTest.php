@@ -100,36 +100,40 @@ class MatchCheckCriteriaLoaderTest extends TestCase
         $this->assertNull($result);
     }
 
-    /** @test */
-    public function buyer_type_dispatches_to_buyer_loader_and_builds_payload(): void
+    /**
+     * The two LEGACY descriptor types are refused, and no loader is consulted.
+     *
+     * These two cases used to assert the opposite — that 'buyer' dispatched to
+     * BuyerCriteriaLoader and 'tenant' to TenantCriteriaLoader. Both legacy flows
+     * were retired from live selection because neither can produce a correct match
+     * (see CriteriaListingResolver::LEGACY_TYPES for the evidence), so dispatching
+     * to them is precisely what must no longer happen. Selection and loading have
+     * to agree in every reader, and this adapter is one of them.
+     *
+     * @test
+     * @dataProvider retiredLegacyTypeProvider
+     */
+    public function a_retired_legacy_type_is_refused_without_consulting_any_loader(string $type): void
     {
         $mocks = $this->mocks();
         $mocks[4]->shouldReceive('resolveAllowedUserIds')->once()->andReturn([42]);
-        $mocks[0]->shouldReceive('loadById')->once()->with(7, [42])->andReturn($this->validFlatArray());
-        // The other three loaders must never be consulted.
-        $mocks[1]->shouldNotReceive('loadById');
-        $mocks[2]->shouldNotReceive('loadById');
-        $mocks[3]->shouldNotReceive('loadById');
 
-        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer')), $this->consumer());
+        // NONE of the four loaders may be reached for a retired type.
+        foreach ([0, 1, 2, 3] as $i) {
+            $mocks[$i]->shouldNotReceive('loadById');
+        }
 
-        $this->assertInstanceOf(BuyerCriteriaPayload::class, $result);
-        $this->assertSame(['Residential'], $result->propertyTypes);
+        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor($type)), $this->consumer());
+
+        $this->assertNull($result);
     }
 
-    /** @test */
-    public function tenant_type_dispatches_to_tenant_loader(): void
+    public function retiredLegacyTypeProvider(): array
     {
-        $mocks = $this->mocks();
-        $mocks[4]->shouldReceive('resolveAllowedUserIds')->once()->andReturn([42]);
-        $mocks[1]->shouldReceive('loadById')->once()->with(7, [42])->andReturn($this->validFlatArray());
-        $mocks[0]->shouldNotReceive('loadById');
-        $mocks[2]->shouldNotReceive('loadById');
-        $mocks[3]->shouldNotReceive('loadById');
-
-        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('tenant')), $this->consumer());
-
-        $this->assertInstanceOf(BuyerCriteriaPayload::class, $result);
+        return [
+            'legacy buyer criteria'  => ['buyer'],
+            'legacy tenant criteria' => ['tenant'],
+        ];
     }
 
     /** @test */
@@ -198,9 +202,9 @@ class MatchCheckCriteriaLoaderTest extends TestCase
         $mocks = $this->mocks();
         $mocks[4]->shouldReceive('resolveAllowedUserIds')->once()->andReturn([42]);
         // Record gone / not accessible / unresolvable property_types.
-        $mocks[0]->shouldReceive('loadById')->once()->with(7, [42])->andReturnNull();
+        $mocks[2]->shouldReceive('loadById')->once()->with(7, [42])->andReturnNull();
 
-        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer')), $this->consumer());
+        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer_offer')), $this->consumer());
 
         $this->assertNull($result);
     }
@@ -212,9 +216,9 @@ class MatchCheckCriteriaLoaderTest extends TestCase
         $mocks[4]->shouldReceive('resolveAllowedUserIds')->once()->andReturn([42]);
         // Empty property_types makes the real BuyerCriteriaPayload throw InvalidArgumentException;
         // the adapter must catch it and fail closed rather than let it escape.
-        $mocks[0]->shouldReceive('loadById')->once()->with(7, [42])->andReturn(['property_types' => []]);
+        $mocks[2]->shouldReceive('loadById')->once()->with(7, [42])->andReturn(['property_types' => []]);
 
-        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer')), $this->consumer());
+        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer_offer')), $this->consumer());
 
         $this->assertNull($result);
     }
@@ -226,9 +230,9 @@ class MatchCheckCriteriaLoaderTest extends TestCase
         // Agent scope: self + client ids. Whatever the resolver returns must be the exact
         // allowedUserIds handed to loadById().
         $mocks[4]->shouldReceive('resolveAllowedUserIds')->once()->andReturn([42, 100, 101]);
-        $mocks[0]->shouldReceive('loadById')->once()->with(7, [42, 100, 101])->andReturn($this->validFlatArray());
+        $mocks[2]->shouldReceive('loadById')->once()->with(7, [42, 100, 101])->andReturn($this->validFlatArray());
 
-        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer')), $this->consumer());
+        $result = $this->make($mocks)->load($this->readyPrep($this->descriptor('buyer_offer')), $this->consumer());
 
         $this->assertInstanceOf(BuyerCriteriaPayload::class, $result);
     }
