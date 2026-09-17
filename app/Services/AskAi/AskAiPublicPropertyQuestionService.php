@@ -309,10 +309,83 @@ class AskAiPublicPropertyQuestionService
                 'question'    => (string) $entry['question'],
                 'answer'      => $answer,
                 'source_path' => (string) $entry['source_path'],
+                // Batch 3: the typed-question matcher's vocabulary for THIS question.
+                //
+                // Emitted here, inside the loop that already decided the question is
+                // available, and nowhere else — so a question that did not pass evaluation
+                // has no aliases to ship. That is the security boundary as a structural
+                // property rather than a rule someone has to remember: there is no separate
+                // catalog for the browser to receive, and no code path that could hand it
+                // the vocabulary of a question this listing cannot answer.
+                'aliases'     => $this->aliases($entry),
             ];
         }
 
         return $questions;
+    }
+
+    /**
+     * A question's typed-input vocabulary, cleaned the same way the browser cleans a query.
+     *
+     * Normalised HERE as well as in the browser so the two sides cannot drift: a stored
+     * alias with stray case, padding or punctuation would otherwise be unmatchable by an
+     * input that had been normalised. Blank entries are dropped and duplicates collapse, so
+     * "move in" and "Move-In" cannot both occupy the list.
+     *
+     * @return list<string>
+     */
+    private function aliases(array $entry): array
+    {
+        $aliases = $entry['aliases'] ?? [];
+        if (!is_array($aliases)) {
+            return [];
+        }
+
+        $clean = [];
+        foreach ($aliases as $alias) {
+            if (!is_string($alias)) {
+                continue;
+            }
+            $normalised = self::normalizeQuery($alias);
+            if ($normalised !== '') {
+                $clean[] = $normalised;
+            }
+        }
+
+        return array_values(array_unique($clean));
+    }
+
+    /**
+     * The one definition of how a typed question is cleaned before it is compared.
+     *
+     * PUBLIC AND STATIC because it is a CONTRACT, not a helper: the browser implements the
+     * same steps in JavaScript, and a test drives this method with the same inputs to prove
+     * the two agree. Deliberately tiny — lower-case, collapse whitespace, straighten quotes,
+     * treat a hyphen as a space, and drop sentence punctuation. No stemming, no fuzzy
+     * distance, no typo correction, no library: every one of those turns "did not match"
+     * into "matched something else", which is the failure this surface exists to avoid.
+     */
+    public static function normalizeQuery(string $text): string
+    {
+        // Curly quotes and the dashes people actually type, flattened first so the
+        // punctuation rules below see one spelling of each.
+        $text = strtr($text, [
+            "\u{2019}" => "'", "\u{2018}" => "'", "\u{02BC}" => "'",
+            "\u{201C}" => '"', "\u{201D}" => '"',
+            "\u{2010}" => '-', "\u{2011}" => '-', "\u{2012}" => '-',
+            "\u{2013}" => '-', "\u{2014}" => '-', "\u{2015}" => '-',
+        ]);
+
+        $text = mb_strtolower($text, 'UTF-8');
+
+        // A hyphen is a space: "move-in date" and "move in date" are one question.
+        $text = str_replace(['-', '_', '/'], ' ', $text);
+
+        // Sentence punctuation only. Apostrophes stay, so "the buyer's budget" keeps its
+        // shape and the displayed question remains matchable exactly as written.
+        $text = str_replace(['?', '!', '.', ',', ':', ';', '"'], ' ', $text);
+
+        return trim(preg_replace('/\s+/u', ' ', $text) ?? '');
     }
 
     /**

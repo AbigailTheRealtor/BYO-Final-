@@ -283,7 +283,7 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
         $card = $this->card($html, $role);
 
         // The card is inert markup.
-        foreach (['<script', '<form', '<input', '<textarea', '<a ', 'href=', 'wire:', 'data-bs-toggle', 'fetch', 'XMLHttpRequest'] as $forbidden) {
+        foreach (['<script', '<form', 'action=', '<textarea', 'href=', 'wire:', 'data-bs-toggle', 'fetch', 'XMLHttpRequest'] as $forbidden) {
             $this->assertStringNotContainsStringIgnoringCase($forbidden, $card, "Card must not contain '{$forbidden}'.");
         }
         $this->assertDoesNotMatchRegularExpression('#\son[a-z]+\s*=#i', $card, 'Card must carry no inline event handler.');
@@ -304,9 +304,25 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
             file_get_contents(base_path('resources/views/offer-listing/partials/_ask-ai-property-card.blade.php'))
         );
 
-        foreach (['<script', 'fetch', 'XMLHttpRequest', 'axios', '$.ajax', '$.post', '/ask-ai', '/agent-ai', 'href=', '<form', 'wire:', 'onclick'] as $forbidden) {
+        // SUPERSEDED IN PART BY BATCH 3. The partial now pushes one external script — the
+        // typed-question matcher — and carries an <input>. What must still hold, and is
+        // asserted below, is that neither can become a request: no inline code, no form, no
+        // request API, no handler attribute, and no Ask AI endpoint. '/ask-ai' also left this
+        // list because it now matches the ASSET path js/ask-ai/…, which is a static file
+        // rather than a route; the endpoints themselves are still forbidden by name.
+        foreach (['fetch', 'XMLHttpRequest', 'axios', '$.ajax', '$.post',
+                  '/ask-ai/listing-question', '/api/ask-ai', '/agent-ai/',
+                  'href=', '<form', 'wire:', 'onclick'] as $forbidden) {
             $this->assertStringNotContainsStringIgnoringCase($forbidden, $source, "Card partial contains '{$forbidden}'.");
         }
+
+        preg_match_all('/<script\b[^>]*>/i', $source, $scripts);
+        $this->assertCount(1, $scripts[0], 'The card partial must carry exactly one script tag.');
+        $this->assertStringContainsString('js/ask-ai/deterministic-question-matcher.js', $scripts[0][0]);
+        $this->assertDoesNotMatchRegularExpression('/<script(?![^>]*\bsrc=)/i', $source,
+            'Every script in the card partial must be an external asset, never inline.');
+        $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $source,
+            'The typed-question input must carry no name attribute.');
     }
 
     // ── 11–13. No language model, normaliser, classifier or search ────────────

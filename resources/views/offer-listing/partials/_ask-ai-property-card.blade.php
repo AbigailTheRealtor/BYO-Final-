@@ -40,8 +40,19 @@
         default  => 'Questions About This Property',
     };
     $askAiPqEmpty = $emptyText ?? "No verified {$askAiPqSubject} questions are available yet.";
+
+    /* One neutral placeholder for all four roles: it describes what the box does, and a
+       role-specific wording would have to be re-checked every time a role's noun changes. */
+    $askAiPqAskPlaceholder = 'Type a question about this listing…';
+    $askAiPqAskLabel       = 'Type a question about this listing';
 @endphp
 @once
+@push('scripts')
+{{-- A plain static asset: no imports, no build step, and nothing on this page depends on a
+     bundle. Pushed to the layout's script stack so the card markup itself stays free of
+     <script>, which the card's structural tests continue to assert. --}}
+<script src="{{ asset('js/ask-ai/deterministic-question-matcher.js') }}" defer></script>
+@endpush
 @push('styles')
 <style>
 .ask-ai-pq-heading { font-size: .72rem; font-weight: 600; color: #475569; margin-top: -.15rem; }
@@ -78,6 +89,37 @@
 .ask-ai-pq-question:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; border-radius: .5rem; }
 .ask-ai-pq-answer { font-size: .72rem; color: #1e293b; line-height: 1.45; margin: 0; padding: 0 .55rem .45rem; }
 .ask-ai-pq-note { font-size: .66rem; color: #64748b; line-height: 1.4; }
+
+/* Typed question row. Full width of the card, wraps on narrow screens, and never
+   introduces its own scroll area. */
+.ask-ai-pq-ask { margin-top: .55rem; }
+.ask-ai-pq-ask-label {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.ask-ai-pq-ask-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: stretch; }
+.ask-ai-pq-ask-input {
+    flex: 1 1 12rem; min-width: 0; font-size: .74rem; line-height: 1.3;
+    padding: .34rem .55rem; border: 1px solid #cbd5e1; border-radius: .5rem;
+    background: #fff; color: #1e293b;
+}
+.ask-ai-pq-ask-input:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.ask-ai-pq-ask-button {
+    flex: 0 0 auto; font-size: .72rem; font-weight: 700; padding: .34rem .7rem;
+    border-radius: .5rem; border: 1px solid #2563eb; background: #eff6ff; color: #1d4ed8;
+    cursor: pointer; white-space: nowrap;
+}
+.ask-ai-pq-ask-button:hover { background: #dbeafe; }
+.ask-ai-pq-ask-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ask-ai-pq-ask-status { font-size: .68rem; color: #475569; line-height: 1.4; margin: .3rem 0 0; }
+.ask-ai-pq-ask-status:empty { margin: 0; }
+/* Landlord and tenant carry the teal accent their cards already use. */
+.lol-view-page .ask-ai-pq-ask-button,
+.tcl-view-page .ask-ai-pq-ask-button { border-color: #0f766e; background: #f0fdfa; color: #0f766e; }
+.lol-view-page .ask-ai-pq-ask-button:hover,
+.tcl-view-page .ask-ai-pq-ask-button:hover { background: #ccfbf1; }
+.lol-view-page .ask-ai-pq-ask-input:focus-visible,
+.tcl-view-page .ask-ai-pq-ask-input:focus-visible { outline-color: #0f766e; }
 /* Landlord and tenant pages use the teal palette their old Ask AI chips used. Buyer keeps
    the blue default above, which is the buyer page's own accent. */
 .lol-view-page .ask-ai-pq-item,
@@ -106,11 +148,34 @@
         <div class="ask-ai-pq-heading">{{ $askAiPqHeading }}</div>
         <div class="ask-ai-pq-list">
             @foreach($questions as $q)
-            <details class="ask-ai-pq-item" data-property-question="{{ $q['id'] }}">
+            <details class="ask-ai-pq-item" data-property-question="{{ $q['id'] }}"
+                     data-question-aliases="{{ implode('|', $q['aliases'] ?? []) }}">
                 <summary class="ask-ai-pq-question">{{ $q['question'] }}</summary>
                 <p class="ask-ai-pq-answer" data-property-answer="{{ $q['id'] }}">{{ $q['answer'] }}</p>
             </details>
             @endforeach
+        </div>
+        {{-- Typed question (Batch 3). Matching happens in the browser against the questions
+             rendered above and nothing else.
+
+             THERE IS NO <form> AND THE INPUT HAS NO name. That is not tidiness: without a
+             form there is nothing for Enter to submit, and without a name there is nothing
+             a form could carry. The typed text cannot reach Laravel even by accident, which
+             is the property the structural tests assert. --}}
+        <div class="ask-ai-pq-ask">
+            <label class="ask-ai-pq-ask-label" for="{{ $prefix }}-ask-ai-ask-input">{{ $askAiPqAskLabel }}</label>
+            <div class="ask-ai-pq-ask-row">
+                <input type="text"
+                       id="{{ $prefix }}-ask-ai-ask-input"
+                       class="ask-ai-pq-ask-input"
+                       data-ask-ai-ask-input
+                       autocomplete="off"
+                       enterkeyhint="search"
+                       maxlength="200"
+                       placeholder="{{ $askAiPqAskPlaceholder }}">
+                <button type="button" class="ask-ai-pq-ask-button" data-ask-ai-ask-button>Find answer</button>
+            </div>
+            <p class="ask-ai-pq-ask-status" role="status" aria-live="polite" data-ask-ai-ask-status></p>
         </div>
         <div class="ask-ai-pq-note">Answers come directly from this listing's details.</div>
     @else

@@ -3609,7 +3609,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['not_bidding_period', 'mls_price_not_divergent'],
                 'category'         => 'price',
                 'order'            => 10,
-                'aliases'          => ['asking price', 'list price', 'price', 'how much'],
+                'aliases'          => ['asking price', 'list price', 'price', 'how much', 'how much is it', 'what is the price'],
             ],
             'seller_bedrooms' => [
                 'role'             => 'seller',
@@ -3671,7 +3671,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'costs',
                 'order'            => 60,
-                'aliases'          => ['taxes', 'property tax', 'property taxes', 'how much are taxes'],
+                'aliases'          => ['taxes', 'property tax', 'property taxes', 'tax amount', 'how much are taxes', 'how much are the taxes', 'what are the taxes'],
             ],
             'seller_hoa_fee' => [
                 'role'             => 'seller',
@@ -3684,7 +3684,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'hoa',
                 'order'            => 70,
-                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'hoa dues'],
+                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'association fees', 'hoa dues', 'how much is the hoa', 'how much are the hoa fees'],
                 'narrower_of'      => 'seller_hoa_fee_coverage',
             ],
             'seller_hoa_fee_coverage' => [
@@ -3704,7 +3704,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'hoa',
                 'order'            => 69,
-                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'what does the hoa cover', 'what does the hoa fee include', 'hoa includes'],
+                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'association fees', 'hoa dues', 'how much is the hoa', 'how much are the hoa fees', 'what does the hoa cover', 'what does the hoa fee include', 'hoa includes'],
             ],
             'seller_cdd_fee' => [
                 'role'             => 'seller',
@@ -3730,7 +3730,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['acreage_not_overridden'],
                 'category'         => 'size',
                 'order'            => 80,
-                'aliases'          => ['lot size', 'acreage', 'acres', 'how big is the lot'],
+                'aliases'          => ['lot size', 'acreage', 'acres', 'how big is the lot', 'what is the lot size'],
             ],
             'seller_appliances' => [
                 'role'             => 'seller',
@@ -3788,7 +3788,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'features',
                 'order'            => 120,
-                'aliases'          => ['pool', 'swimming pool', 'is there a pool'],
+                'aliases'          => ['pool', 'swimming pool', 'is there a pool', 'does it have a pool'],
             ],
             'seller_garage' => [
                 'role'             => 'seller',
@@ -3802,7 +3802,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'features',
                 'order'            => 130,
-                'aliases'          => ['garage', 'is there a garage'],
+                'aliases'          => ['garage', 'is there a garage', 'does it have a garage'],
             ],
             'seller_zoning' => [
                 'role'             => 'seller',
@@ -3861,7 +3861,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'financing',
                 'order'            => 170,
-                'aliases'          => ['financing', 'financing options', 'cash', 'fha', 'va', 'conventional'],
+                'aliases'          => ['financing', 'financing options', 'cash offer', 'all cash', 'fha', 'va', 'conventional', 'seller financing'],
             ],
 
             // ---- Landlord ----
@@ -3923,7 +3923,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'policies',
                 'order'            => 110,
-                'aliases'          => ['pets', 'pets allowed', 'dogs', 'cats', 'pet policy'],
+                'aliases'          => ['pets', 'pets allowed', 'dogs', 'cats', 'pet policy', 'are pets allowed'],
             ],
 
             // ---- Landlord — Batch 2b ----
@@ -3949,7 +3949,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'costs',
                 'order'            => 60,
-                'aliases'          => ['taxes', 'property tax', 'property taxes', 'how much are taxes'],
+                'aliases'          => ['taxes', 'property tax', 'property taxes', 'tax amount', 'how much are taxes', 'how much are the taxes', 'what are the taxes'],
             ],
             'landlord_hoa_fee' => [
                 'role'             => 'landlord',
@@ -3962,7 +3962,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'hoa',
                 'order'            => 70,
-                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'hoa dues'],
+                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'association fees', 'hoa dues', 'how much is the hoa', 'how much are the hoa fees'],
                 'narrower_of'      => 'landlord_hoa_fee_coverage',
             ],
             'landlord_hoa_fee_coverage' => [
@@ -3979,7 +3979,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'hoa',
                 'order'            => 69,
-                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'what does the hoa cover', 'what does the hoa fee include', 'hoa includes'],
+                'aliases'          => ['hoa', 'hoa fee', 'hoa fees', 'association fee', 'association fees', 'hoa dues', 'how much is the hoa', 'how much are the hoa fees', 'what does the hoa cover', 'what does the hoa fee include', 'hoa includes'],
             ],
             'landlord_zoning' => [
                 'role'             => 'landlord',
@@ -4050,7 +4050,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'property',
                 'order'            => 180,
-                'aliases'          => ['flood zone', 'flood', 'fema', 'flood risk', 'is it in a flood zone'],
+                'aliases'          => ['flood zone', 'flood', 'fema', 'fema zone', 'flood risk', 'what flood zone', 'what flood zone is it in', 'is it in a flood zone'],
             ],
             'landlord_flood_zone' => [
                 'role'             => 'landlord',
@@ -4062,7 +4062,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'property',
                 'order'            => 170,
-                'aliases'          => ['flood zone', 'flood', 'fema', 'flood risk', 'is it in a flood zone'],
+                'aliases'          => ['flood zone', 'flood', 'fema', 'fema zone', 'flood risk', 'what flood zone', 'what flood zone is it in', 'is it in a flood zone'],
             ],
 
             // ================================================================
@@ -4093,7 +4093,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['buyer_budget_not_divergent'],
                 'category'         => 'price',
                 'order'            => 10,
-                'aliases'          => ['budget', 'price range', 'how much can they spend', 'max budget'],
+                'aliases'          => ['budget', 'buyer budget', 'purchase budget', 'price range', 'max budget', 'how much can they spend', 'how much does the buyer want to spend'],
             ],
             'buyer_search_areas' => [
                 'role'             => 'buyer',
@@ -4209,7 +4209,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:garage_needed'],
                 'category'         => 'features',
                 'order'            => 90,
-                'aliases'          => ['garage', 'parking', 'do they want a garage'],
+                'aliases'          => ['garage', 'do they want a garage'],
             ],
             'buyer_timeframe' => [
                 'role'             => 'buyer',
@@ -4221,7 +4221,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'timing',
                 'order'            => 100,
-                'aliases'          => ['timeframe', 'when', 'closing date', 'how soon'],
+                'aliases'          => ['timeframe', 'when', 'closing date', 'how soon', 'what is their timeframe'],
             ],
             'buyer_property_features' => [
                 'role'             => 'buyer',
@@ -4286,7 +4286,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['tenant_rent_not_divergent'],
                 'category'         => 'price',
                 'order'            => 10,
-                'aliases'          => ['rent', 'budget', 'max rent', 'how much rent'],
+                'aliases'          => ['rent', 'budget', 'rent budget', 'tenant budget', 'max rent', 'maximum rent', 'how much rent', 'how much rent can they pay'],
             ],
             'tenant_search_areas' => [
                 'role'             => 'tenant',
@@ -4399,7 +4399,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'timing',
                 'order'            => 90,
-                'aliases'          => ['move in', 'move-in date', 'when can they move', 'availability'],
+                'aliases'          => ['move in', 'move in date', 'when can they move', 'when do they want to move', 'when does the tenant want to move', 'availability'],
             ],
             'tenant_pets' => [
                 'role'             => 'tenant',
@@ -4411,7 +4411,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'features',
                 'order'            => 100,
-                'aliases'          => ['pets', 'pet friendly', 'do they have pets', 'animals'],
+                'aliases'          => ['pets', 'pet friendly', 'do they have pets', 'do they need pets allowed'],
             ],
             'tenant_furnishings' => [
                 'role'             => 'tenant',
@@ -4423,7 +4423,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'features',
                 'order'            => 110,
-                'aliases'          => ['furnished', 'furnishings', 'unfurnished', 'turnkey'],
+                'aliases'          => ['furnished', 'furnishings', 'unfurnished', 'turnkey', 'do they want it furnished'],
             ],
             'tenant_property_features' => [
                 'role'             => 'tenant',

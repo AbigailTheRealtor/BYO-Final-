@@ -680,10 +680,32 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         $reflection = new \ReflectionClass(AskAiPublicPropertyQuestionService::class);
         $this->assertNull($reflection->getConstructor(), 'The service must have no injected dependencies.');
 
-        // The partial is inert markup: no script, no form, no Livewire, no Ask AI textbox,
-        // no link or handler that could turn revealing an answer into a request.
-        foreach (['<script', '<form', 'wire:', 'fetch(', 'XMLHttpRequest', 'solAi', 'lolAi', 'textarea', '<input', 'href=', 'onclick', '/ask-ai', '/agent-ai'] as $forbidden) {
+        // SUPERSEDED IN PART BY BATCH 3. The partial is no longer pure inert markup — it
+        // carries a typed-question box, so an <input> is expected, and it pushes one static
+        // <script> to the layout's stack. Both are deliberate, and what replaced the blanket
+        // rule is narrower and stronger:
+        //
+        //   - still no form, no Livewire, no inline handler and no request API, so revealing
+        //     an answer still cannot become a request;
+        //   - the ONLY script is the external matcher asset, pushed OUTSIDE the card, so the
+        //     card region itself remains script-free (its own tests assert that);
+        //   - the input carries no `name`, so even a hypothetical surrounding form could not
+        //     carry the typed text anywhere.
+        foreach (['<form', 'wire:', 'fetch(', 'XMLHttpRequest', 'textarea', 'href=', 'onclick',
+                  '/ask-ai/listing-question', '/api/ask-ai', '/agent-ai/'] as $forbidden) {
             $this->assertStringNotContainsStringIgnoringCase($forbidden, $partial, "Partial contains '{$forbidden}'.");
         }
+
+        // Exactly one script, and it is the external static matcher — never inline code.
+        preg_match_all('/<script\b[^>]*>/i', $partial, $scripts);
+        $this->assertCount(1, $scripts[0], 'The partial must carry exactly one script tag.');
+        $this->assertStringContainsString('js/ask-ai/deterministic-question-matcher.js', $scripts[0][0]);
+        $this->assertDoesNotMatchRegularExpression('/<script(?![^>]*\bsrc=)/i', $partial,
+            'Every script in the partial must be an external asset, never inline.');
+
+        // The typed input exists and is unsubmittable.
+        $this->assertStringContainsString('data-ask-ai-ask-input', $partial);
+        $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $partial,
+            'The typed-question input must carry no name attribute.');
     }
 }

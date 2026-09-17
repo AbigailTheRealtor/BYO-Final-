@@ -218,9 +218,18 @@ class PublicFloodZoneQuestionListingPageTest extends TestCase
 
         $this->assertStringContainsString('FEMA Flood Zone AE', html_entity_decode($card, ENT_QUOTES));
 
-        foreach (['<script', '<form', '<input', 'fetch(', 'XMLHttpRequest',
+        foreach (['<script', '<form', 'action=', 'fetch(', 'XMLHttpRequest',
                   'ask-ai/listing-question', 'api/ask-ai/ask', 'agent-ai/'] as $forbidden) {
             $this->assertStringNotContainsString($forbidden, $card, "The card contains '{$forbidden}'.");
         }
+                  // Batch 3 SUPERSEDES the "<input" and "<a" clauses of this list. The card now
+                  // carries a typed-question box, so an <input> is expected — and a <button>
+                  // with it. What still must hold is stronger and is asserted instead: no
+                  // <form> and no action for anything to submit to, the input carries no
+                  // `name` so a form could not carry it even if one existed, and no fetch,
+                  // XHR or endpoint string appears anywhere in the card.
+        $this->assertStringContainsString('data-ask-ai-ask-input', $card);
+        $this->assertDoesNotMatchRegularExpression('/<input\\b[^>]*\\bname=/', $card,
+            'The typed-question input must carry no name attribute.');
     }
 }
