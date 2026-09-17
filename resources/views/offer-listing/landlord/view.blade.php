@@ -2151,9 +2151,12 @@
                     data-bs-toggle="modal" data-bs-target="#lolHireAgentModal">
                 <i class="fa-solid fa-user-tie"></i>Hire an Agent
             </button>
-            <button class="lol-action-btn lol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
-                <i class="fa-regular fa-bookmark"></i>Save Listing
-            </button>
+            {{-- Save | Maybe | Pass. Replaces the dead bookmark placeholder
+                 that used to sit here. Renders nothing when the feature is off, and
+                 nothing for an account that is not a Tenant in this market;
+                 a signed-out visitor gets the control and the existing
+                 login flow. --}}
+            <x-listing-preference.control listing-type="landlord_agent" :listing-id="$auction->id" />
             <button class="lol-action-btn lol-action-outline" id="lolShareSidebarBtn" type="button">
                 <i class="fa-solid fa-share-nodes"></i>Share Listing
             </button>

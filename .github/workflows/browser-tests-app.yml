@@ -1,0 +1,199 @@
+name: Browser Tests (Listing Preferences — Laravel app)
+
+# The LARAVEL-BACKED browser gate, and the only browser job with a PHP toolchain.
+#
+# WHY IT IS SEPARATE FROM browser-tests.yml. That job drives STATIC fixtures with a
+# pure-Node server, because the Location DNA and Virtual Drive risk lives in
+# JavaScript; it installs Node and nothing else, deliberately. The Listing
+# Preferences risk is the opposite shape — persistence, authentication, CSRF and the
+# feature flag — so these specs drive `php artisan serve` against a throwaway SQLite
+# database, and need PHP, Composer and vendor/.
+#
+# The two suites were briefly one Playwright configuration, and the consequence was
+# immediate: the Location DNA job inherited the Laravel `webServer` entries and died
+# on `Failed opening required '.../vendor/autoload.php'` before a single browser spec
+# ran. The answer is two configs and two jobs — playwright.config.js here,
+# playwright.app.config.js there — not a PHP toolchain bolted onto a suite that has
+# no use for one. ListingPreferenceArchitectureGuardTest fails the build if they
+# merge again.
+#
+# WHAT IT RUNS. tests/browser/listing-preference.spec.js, and nothing else:
+# playwright.app.config.js sets `testMatch` to exactly that file.
+#
+# NOTHING PRODUCTION IS REACHABLE. tests/browser/support/app-server.js blanks
+# DATABASE_URL / PGHOST / PGDATABASE, forces DB_CONNECTION=sqlite against a fresh
+# throwaway file under storage/, sets APP_ENV=local, and blanks every Google
+# credential. Its seeder refuses independently on any production signal
+# (ProductionDatabaseRefused), so isolation is asserted twice by two mechanisms. The
+# `migrate` it runs is against that throwaway SQLite file — it is not a production
+# migration and reaches no shared database. Ports 8932/8933 are the harness's own.
+#
+# NO BILLABLE CALLS. tests/browser/support/network.js aborts every request leaving
+# the app origin, so the run can reach no Google, Census, R2 or CDN host however the
+# code under test behaves.
+#
+# NOTHING IS SUPPRESSED. No `|| true`, no continue-on-error.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'tests/browser/listing-preference.spec.js'
+      - 'tests/browser/support/**'
+      - 'playwright.app.config.js'
+      - 'playwright.shared.js'
+      - 'app/Http/Controllers/ListingPreferenceController.php'
+      - 'app/Http/Middleware/EnsureListingPreferencesEnabled.php'
+      - 'app/Models/ListingPreference*.php'
+      - 'app/Services/ListingPreferences/**'
+      - 'app/Support/ListingPreferences/**'
+      - 'config/listing_preferences.php'
+      - 'config/listing_preference_reasons.php'
+      - 'database/seeders/ListingPreferenceBrowserTestSeeder.php'
+      - 'resources/views/components/listing-preference/**'
+      - 'routes/web.php'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'composer.json'
+      - 'composer.lock'
+      - '.github/workflows/browser-tests-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-app:
+    name: Playwright — Listing Preferences (Laravel app)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # No `services:` block, deliberately — the same negative guarantee
+    # spatial-location-dna-tests.yml relies on. There is no database here for a
+    # leak to reach even if the harness's own isolation regressed.
+    env:
+      APP_ENV: local
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: file
+      TELESCOPE_ENABLED: false
+      MAIL_MAILER: array
+
+    steps:
+      - name: Checkout the pull request commit
+        uses: actions/checkout@v4
+
+      # The repository's supported version, matching security-tests.yml and
+      # spatial-location-dna-tests.yml. pdo_sqlite/sqlite3 are what the throwaway
+      # database needs; the rest is what booting this application needs.
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo, pdo_sqlite, sqlite3, mbstring, xml, ctype, fileinfo, json, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      # INSTALL, NEVER UPDATE — the committed composer.lock decides the tree, so this
+      # job tests the dependency graph the application actually ships with.
+      #
+      # `--no-scripts` because the post-install scripts run `package:discover`, which
+      # boots the application before an APP_KEY exists. The server harness builds its
+      # own environment anyway and Laravel 8 rebuilds the package manifest on demand,
+      # so nothing here depends on that step having run.
+      #
+      # A normal install into the checkout under test: a symlinked vendor directory
+      # resolves Composer's PSR-4 base path through the symlink, so `App\` could load
+      # from a different tree and the run would report on code that is not under review.
+      - name: Install Composer dependencies from the lockfile
+        run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
+
+      - name: Verify autoload resolves from this checkout
+        run: |
+          php -r '
+            require "vendor/autoload.php";
+            $f = (new ReflectionClass("App\\Services\\ListingPreferences\\ListingPreferenceWriter"))->getFileName();
+            $expected = getcwd() . "/app/Services/ListingPreferences/ListingPreferenceWriter.php";
+            if (realpath($f) !== realpath($expected)) {
+                fwrite(STDERR, "Autoload resolved to $f, expected $expected\n");
+                exit(1);
+            }
+            echo "Autoload verified: $f\n";
+          '
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The TRACKED dependency graph, exactly as browser-tests.yml installs it.
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # No `npm run dev` here. These specs drive server-rendered Blade and the
+      # component's own inline script; they load no Mix bundle, and the Location DNA
+      # job already fails the build if the Mix build breaks.
+      #
+      # The harness writes its SQLite database and fixture JSON under storage/app,
+      # which `composer install` does not create.
+      - name: Prepare writable storage
+        run: mkdir -p storage/app storage/framework/{cache/data,sessions,views} bootstrap/cache
+
+      # ALL THREE REPORTERS MUST BE NAMED, for the reason browser-tests.yml records:
+      # `--reporter` REPLACES the config's list rather than extending it, so omitting
+      # `html` here would leave the upload step below with no report to collect — the
+      # run that failed would be the run with nothing to diagnose it from.
+      - name: Run the Listing Preferences browser suite
+        run: npm run test:browser:app -- --reporter=list,json,html
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
+          PLAYWRIGHT_HTML_OPEN: never
+
+      # A suite that selected NOTHING must not read as success. `testMatch` is a
+      # regex over one filename: rename the spec without updating the config and
+      # Playwright exits 0 having run nothing at all, which is the exact failure this
+      # whole separation exists to make visible rather than silent.
+      - name: Assert the Listing Preferences specs actually ran
+        if: always()
+        run: |
+          node -e '
+            const r = require("./playwright-results.json");
+            const seen = [];
+            const walk = (s) => {
+              (s.specs || []).forEach((spec) => {
+                if ((spec.file || "").includes("listing-preference.spec.js")) {
+                  spec.tests.forEach((t) => seen.push({ title: spec.title, status: t.status }));
+                }
+              });
+              (s.suites || []).forEach(walk);
+            };
+            (r.suites || []).forEach(walk);
+
+            if (seen.length === 0) {
+              console.error("FAIL: listing-preference.spec.js contributed no tests at all.");
+              console.error("Check testMatch in playwright.app.config.js and the spec filename.");
+              process.exit(1);
+            }
+            const skipped = seen.filter((t) => t.status === "skipped");
+            seen.forEach((t) => console.log(`  ${String(t.status).padEnd(10)} ${t.title}`));
+            if (skipped.length) {
+              console.error(`FAIL: ${skipped.length} of ${seen.length} Listing Preferences specs SKIPPED.`);
+              process.exit(1);
+            }
+            console.log(`OK: all ${seen.length} Listing Preferences specs executed.`);
+          '
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-app
+          path: playwright-report/
+          retention-days: 7

@@ -1101,18 +1101,49 @@ code change after a licensing decision.
 and playground are owner-describable but not seeker-selectable; `pets_allowed` carries the
 assistance-animal notice; proximity is Location DNA; ranges and terms stay structured criteria.
 
-### Listing preferences — Save | Maybe | Pass (Phase 1, inert)
+### Listing preferences — Save | Maybe | Pass (Phase 2, behind a default-off flag)
 
 **Customer terminology is Save | Maybe | Pass.** Earlier planning notes said "Love/Maybe/Pass";
 that wording is superseded. Governance is
 `docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md`.
 
-**Phase 1 ships inert and that is the point.** Three tables, one governed vocabulary, two pure
-boundaries and a resolver — and **no route, controller, UI, write path or learner**. An
-architecture test fails the build if anything under `routes/`, `resources/views/`, `resources/js/`,
-`public/js/` or `app/Http/` references the subsystem, and if any `app/` code writes through the
-models. Merging it changes no customer-visible behaviour, which is what keeps the customer-facing
-phase a separate reviewable decision.
+**Phase 2 wires capture; `LISTING_PREFERENCES_ENABLED` still ships `false`.** Authenticated Buyers
+and Tenants can Save / Maybe / Pass, give optional reasons and undo, from the BidYourOffer
+Seller/Landlord detail pages. **Off means the routes 404 AND no control renders** — both halves are
+tested together, because a rendered control whose endpoint 404s is worse than no control.
+
+**`ListingPreferenceWriter` is the only thing that persists a preference**, and a guard test asserts
+it: controllers, Blade and JavaScript describe intent, the service performs the current-state +
+reasons + history mutation in **one transaction**. `setState()` / `updateReasons()` / `clear()` each
+append exactly **one** event — selecting chips is browsing, pressing Done is the decision, so four
+chips are not four history rows. A state change **replaces** the reason set rather than merging it:
+"Too expensive" is not an answer to *What do you like about this property?*
+
+**Undo needed one additive schema change.** Phase 1 modelled the three transitions INTO a state and
+never the one out of all of them — `to_state` was `NOT NULL`, so "the customer withdrew their
+choice" was unwritable. `2026_09_17_000001_allow_null_to_state_on_listing_preference_events` makes
+it nullable, where NULL means exactly *no current preference after this transition*: **no fourth
+state, and `pass` is not overloaded** ("I passed on this house" and "I withdrew my opinion" are
+different facts). Its `down()` **refuses** while clear events exist rather than inventing a
+preference for them or deleting append-only history, and restores `NOT NULL` normally on a database
+that has none. Clearing deletes the current row (reasons cascade) and appends the clear event, in
+one transaction; clearing nothing writes no event.
+
+**Nothing is trusted from the browser.** `subject_key`, `seeker_role` and `user_id` are never
+accepted from a request — all three are resolved server-side — `listing_type` is validated against
+`SmartTagListingType`, and reasons are re-projected through the policy. Routes sit behind `web`
+(CSRF + session), `auth`, the feature gate and a per-user rate limit. **Guests get no route at all**:
+the control renders and sends them through the existing login flow, and no anonymous row exists.
+
+**Phase 2's context obligation is met by `ListingPreferenceContextResolver`**, which resolves the
+listing's real property type (Bridge column, or the native `property_type` meta) and delegates the
+mapping to `SmartTagContextResolver` rather than restating it. The null-context fallback is reached
+only when the listing genuinely cannot answer, and `isSeekerSelectable()` still applies there — only
+*applicability* is relaxed. Both branches are tested.
+
+**Capture only.** A guard test asserts nothing under `app/Services/{Stellar,AskAi,Dna,Matching}` or
+`app/Helpers` references the subsystem, so no ranking, Ask AI or learning consumption exists; a
+second asserts no template or script hard-codes a reason key.
 
 **One current state, plus an append-only history, and the split is load-bearing.**
 `listing_preferences` holds exactly one row per `(user_id, seeker_role, subject_key)` — the unique
@@ -1181,13 +1212,19 @@ selects**. Preference will apply as a post-score re-rank; **Pass is a display de
 never deletes, hides or alters listing or MLS data.
 
 **Flags** live in `config/listing_preferences.php`, all default `false`, parsed fail-closed
-(`LISTING_PREFERENCES_ENABLED` is ON only for `true`/`1`/`on`/`yes`). Phase 1 **does not read them to
-decide anything** — there is no write path to gate — and a test asserts enabling them starts nothing.
+(`LISTING_PREFERENCES_ENABLED` is ON only for `true`/`1`/`on`/`yes`). Phase 2 reads **exactly one of
+them**, `enabled`, and reads it only through `ListingPreferenceAvailability` — which the route
+middleware and the Blade control both ask, so the endpoint and the surface can never disagree about
+whether the feature exists. The other two still decide nothing and a test asserts that flipping
+either starts nothing: `guest_capture_enabled` is a decided product position rather than a dial (no
+anonymous row is creatable however it is set), and `learning_enabled` stays gated on the governance
+revision behavioural learning requires.
 **None is in `config/required_production_flags.php` and none may be added**: that contract may never
 name a safety switch.
 
-**The Virtual Drive is untouched.** `VirtualDriveListingActions` still reports Save as unavailable
-("No Save / Favorite feature exists anywhere in this application"), and a test pins that string.
+**The Virtual Drive is still untouched in Phase 2.** `VirtualDriveListingActions` continues to report
+Save as unavailable ("No Save / Favorite feature exists anywhere in this application"), and a test
+pins both that string and the absence of any listing-preference reference in the Virtual Drive files.
 Phase 3 replaces that one array entry with a delegation to the shared service, so the card gains no
 business logic.
 
