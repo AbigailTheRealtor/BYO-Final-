@@ -112,14 +112,15 @@ class SmartTagDerivationService
 
         $version = SmartTagVersion::taggerVersion();
         $structuredHash = SmartTagVersion::structuredInputsHash($this->nativeDeriver->structuredInputs($listing->type, $meta));
-        $description = $this->descriptionReader->read($listing->type, $meta);
+        $described = $this->descriptionReader->describe($listing->type, $meta);
+        $description = $described->text;
         $descriptionHash = SmartTagVersion::descriptionHash($description);
         $state = $this->state($listing);
 
         $structuredStale = $this->isStale($state, $version, $context, 'structured_inputs_hash', $structuredHash);
         $descriptionStale = $this->isStale($state, $version, $context, 'native_description_hash', $descriptionHash);
 
-        return DB::transaction(function () use ($listing, $meta, $context, $version, $structuredHash, $structuredStale, $description, $descriptionHash, $descriptionStale) {
+        return DB::transaction(function () use ($listing, $meta, $context, $version, $structuredHash, $structuredStale, $description, $descriptionHash, $descriptionStale, $described) {
             if ($structuredStale) {
                 $this->writer->replaceDerived(
                     $listing, $context, SmartTagSource::StructuredNativeListing,
@@ -146,7 +147,9 @@ class SmartTagDerivationService
 
             $resolution = ($structuredStale || $descriptionStale) ? $this->projector->project($listing, $context) : null;
 
-            return new DerivationOutcome(true, null, $context, $structuredStale, $descriptionStale && $descriptionHash !== null, [], $resolution);
+            $notes = $described->suppressedByPolicy ? [DerivationOutcome::DESCRIPTION_SUPPRESSED] : [];
+
+            return new DerivationOutcome(true, null, $context, $structuredStale, $descriptionStale && $descriptionHash !== null, $notes, $resolution);
         });
     }
 

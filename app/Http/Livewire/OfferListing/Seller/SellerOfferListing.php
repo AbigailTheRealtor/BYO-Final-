@@ -4210,6 +4210,17 @@ class SellerOfferListing extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('seller', $this->listingId);
 
+            // Smart Tags — secondary derived data, after every governed meta value
+            // is persisted (saveAllMetadata above writes the workflow stamp, the
+            // property type and additional_details). Never on a draft save: with
+            // SAVE_AS_NEW_DRAFT every draft save is a NEW row, so deriving there
+            // would mint evidence for unpublished versions nobody reads. Gated off
+            // by default and it cannot fail this publish. @see SmartTagLifecycle
+            \App\Services\SmartTags\SmartTagLifecycle::tryDeriveNative(
+                $auction,
+                \App\Services\SmartTags\SmartTagTelemetry::ENTRY_SELLER_PUBLISH,
+            );
+
             \Log::info('[SELLER LISTING SUBMITTED]', [
                 'record_id' => $auction->id,
                 'listing_id' => $auction->listing_id ?? 'N/A',

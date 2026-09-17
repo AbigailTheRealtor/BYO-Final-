@@ -980,10 +980,69 @@ MLS, Seller, Landlord, Buyer or Tenant vocabulary. **One key, one meaning**: a p
 different things by property type becomes separate keys with disjoint contexts (`turnkey_home` /
 `turnkey_business`, `fenced_yard` / `fenced_lot`). Governance: `docs/smart-tags/SMART_TAGS_GOVERNANCE.md`.
 
-**Nothing calls it yet.** No import, sync or save hook, no command, no UI, no search change.
-`SmartTagArchitectureGuardTest` asserts that nothing outside `app/{Services,Support}/SmartTags` references
-the derivation, writer or purger services, and that Bridge import, ListingImport, Stellar matching,
-Explore, Location DNA, DNA and Livewire code do not mention Smart Tags.
+**Phase 2 wired the lifecycle. It still ships OFF.** Phase 1 had no flag at all — its inertness was
+that nothing called it, and wiring the call sites ends that property. Two gates replace it, both
+default `false` and both parsed fail-closed (`true`/`1`/`on`/`yes` only): `SMART_TAGS_DERIVATION_ENABLED`
+is the master, and `SMART_TAGS_BRIDGE_ENABLED` is an **additional** gate for `bridge` rows, never a
+replacement — enabling native tagging must not also start tagging a licensed MLS feed.
+`App\Support\SmartTags\SmartTagWiring` is the only reader; `enabledFor($type)` is the only gate.
+**Neither may be added to `config/required_production_flags.php`** — the deploy contract may never
+name a safety switch.
+
+**`SmartTagLifecycle` is THE seam, and the only one.** No call site touches the derivation service,
+evidence writer, resolver, projector or purger; a guard test asserts it, and a second guard names the
+twelve files allowed to mention Smart Tags at all. Call sites use the **static** `tryDeriveNative()` /
+`tryDeriveBridge()` / `tryPurge()`, which cannot throw: the instance methods catch everything they do,
+and the static shim additionally covers `app()` itself failing to build the lifecycle. That matters
+because the seams' own protection is uneven — the Livewire publish methods catch `\Exception` (an
+`\Error` escapes), `LazyBridgeImportService` catches `\Throwable` but turns it into a FAILED IMPORT,
+and the Bridge lookup, the draft purge and the CLI catch nothing.
+
+**What is wired, and what is deliberately not.** Derivation runs inline (the queue is `sync`; a job
+would be inline with extra indirection) after the primary write has committed:
+
+| Path | Derives? |
+|---|---|
+| `SellerOfferListing::store()`, `SellerOfferListingEdit::update()` | yes |
+| `LandlordOfferListing::store()`, `LandlordOfferListingEdit::update()` | yes |
+| `MlsQuickImportComponent::publish()` | yes |
+| `BridgeListingLookupService::cacheRecord()` (single record) | yes |
+| **every draft save** (`saveDraft`, `saveDraftOnly`, both roles) | **no** |
+| Explore viewport discovery, Buyer/Tenant criteria search | **no** — `deriveSmartTags: false` |
+| `bridge:import-properties` | **no**, unless `--derive-smart-tags` |
+
+**Drafts are never derived, and that is the same rule Location DNA already follows.**
+`SAVE_AS_NEW_DRAFT = true` means every draft save INSERTS A NEW ROW and leaves the old one, so
+deriving there would mint evidence for unpublished versions nobody reads, once per save. A listing
+gets its tags when it becomes a listing.
+
+**Deferring is not suppressing.** The high-volume paths skip inline work and `smart-tags:derive
+--only-stale` catches those rows up — `smart_tag_derivation_states` IS the staleness ledger, so a row
+with no state has simply never been derived. The command is idempotent, resumable (`--from-id`,
+ordered by primary key, `chunkById`), batch-oriented, and `--dry-run` reaches no writer at all rather
+than checking a flag inside one. **A production write requires an interactive human confirmation**;
+a non-interactive invocation ABORTS rather than proceeding, so a cron, CI job or agent cannot write.
+There is no `--i-know-this-is-production` and no override token.
+
+**Deletion is explicit, because the purge fires no model events.**
+`BelongsToListingWorkflow::purgeListingRows()` is the single physical deletion point for native
+listings; the Smart Tag purge runs **after** that transaction commits, so a purge failure can never
+resurrect a deleted draft. Buyer, Tenant and Hire model classes resolve to no listing type and are
+skipped. Archiving is not deletion and does not purge.
+
+**Telemetry is one `smart_tags` line per decision** (`SmartTagTelemetry`): outcome, listing type and
+id, context, entry point, which sources ran, tag and conflict counts, an abbreviated tagger version,
+duration, and an exception CLASS on failure. **No prose, ever** — the description is reported as a
+boolean, and a test seeds distinctive sentences and asserts no fragment reaches a log. Backfills log
+per batch, not per listing.
+
+**KNOWN, REPORTED, NOT FIXED HERE:** `BridgeRecordAccessor::inputsFor()` hashes raw attribute values,
+so `waterfront_yn` / `pool_private_yn` hash as `true` right after a write and `1` after a re-read.
+The same unchanged Bridge row therefore gets two different structured hashes depending on which code
+path looked at it, and the lookup seam and the backfill each re-derive rows the other tagged, once.
+Tags stay correct (re-derivation is idempotent); the cost is wasted work. Native listings are
+unaffected — meta is always text. `identical_bridge_input_skips_rederivation()` is marked incomplete
+against it.
 
 **Config is the taxonomy, read only through `SmartTagConfig`.** `config/smart_tags.php` declares each
 tag's contexts, surfaces (`mls_derivable`, `native_derivable`, `owner_selectable`, `seeker_selectable`,

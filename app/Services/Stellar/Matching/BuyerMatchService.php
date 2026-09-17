@@ -43,7 +43,12 @@ class BuyerMatchService
         $this->lastImportResult = null;
 
         // Pre-match lazy import: ensure local bridge_properties cache is fresh.
-        $importResult = $this->lazyImport->importForCriteria($criteria, $role);
+        //
+        // No Smart Tag derivation here. This runs on a results page the user is
+        // waiting on and can upsert up to 2,000 rows in one pass, and nothing on
+        // that page reads Smart Tags — search filtering and ranking are a later
+        // phase. Those rows are tagged by `smart-tags:derive --only-stale`.
+        $importResult = $this->lazyImport->importForCriteria($criteria, $role, deriveSmartTags: false);
         $this->lastImportResult = $importResult;
 
         if ($importResult->isFailed()) {

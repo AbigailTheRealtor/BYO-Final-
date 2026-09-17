@@ -40,6 +40,35 @@ enum SmartTagListingType: string
         };
     }
 
+    /**
+     * The type for a model CLASS NAME, or null when Smart Tags do not attach to it.
+     *
+     * The reverse of modelClass(), for the one caller that has a class-string and
+     * no instance: the shared draft purge, which deletes rows for all four roles
+     * and both products through one query builder. Buyer, Tenant and every other
+     * model must answer null there, and null must mean "skip", never "guess" —
+     * SmartTagListingRef::fromModel() throws for an unknown model, which is right
+     * for a derivation call and wrong for a purge that must not care.
+     *
+     * Exact class match, never instanceof: a subclass of SellerAgentAuction is not
+     * automatically a Smart Tag listing, and deciding that it is belongs in a
+     * reviewed change rather than in an inheritance edge.
+     *
+     * @param class-string|string $modelClass
+     */
+    public static function forModelClass(string $modelClass): ?self
+    {
+        $modelClass = ltrim($modelClass, '\\');
+
+        foreach (self::cases() as $case) {
+            if ($case->modelClass() === $modelClass) {
+                return $case;
+            }
+        }
+
+        return null;
+    }
+
     /** A first-party BidYourOffer listing (as opposed to an MLS row). */
     public function isNative(): bool
     {
