@@ -76,6 +76,17 @@ class LazyBridgeImportService
      *   mirroring the option BridgeListingLookupService already has. For a
      *   caller that does not use Location DNA and must not start its provider
      *   work (Google Places, through the POI step) as a side effect.
+     * - $deriveSmartTags = false upserts without deriving Smart Tags. THIS
+     *   PATH IS BULK: one pass can upsert hundreds of records inside a request
+     *   somebody is waiting on — a results page, or a camera moving over a map —
+     *   so a caller that renders no Smart Tags passes false and the rows are
+     *   picked up later by `smart-tags:derive --only-stale`. Deferring is not
+     *   suppressing: smart_tag_derivation_states is the staleness ledger and an
+     *   untagged row is simply one with no state row yet.
+     *
+     *   The default is true so the option is additive, but BOTH current callers
+     *   pass false. It stays true because a future single-record or small-batch
+     *   caller should get the ordinary behaviour without knowing to ask.
      *
      * @param  (callable(): ?string)|null  $beforeProviderRequest
      * @throws \InvalidArgumentException  For unsupported role values.
@@ -87,6 +98,7 @@ class LazyBridgeImportService
         ?int $maxRecordsOverride = null,
         ?callable $beforeProviderRequest = null,
         bool $dispatchDna = true,
+        bool $deriveSmartTags = true,
     ): LazyImportResult {
         $role = strtolower(trim($role));
 
@@ -215,6 +227,14 @@ class LazyBridgeImportService
                         $upsertResult = $this->normalizer->upsert($record);
                         if ($upsertResult === null) {
                             continue;
+                        }
+
+                        // Smart Tags, for a caller that did not opt out. Both of
+                        // today's callers do — see the $deriveSmartTags note on
+                        // this method — so in practice this loop derives nothing
+                        // and the rows wait for the stale backfill.
+                        if ($deriveSmartTags && ($upsertResult->isNew || $upsertResult->model->wasChanged('raw_json'))) {
+                            \App\Services\SmartTags\SmartTagLifecycle::tryDeriveBridge($upsertResult->model);
                         }
 
                         // Dispatch DNA for a new record, an address/coordinate

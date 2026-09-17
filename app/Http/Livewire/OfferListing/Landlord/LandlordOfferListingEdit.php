@@ -3855,6 +3855,13 @@ class LandlordOfferListingEdit extends Component
 
             app(\App\Services\AskAi\AskAiKnowledgeSnapshotBuilderService::class)->buildSilently('landlord', $this->listingId);
 
+            // Smart Tags — see the note in LandlordOfferListing::store(). This is
+            // the publish path; the draft paths above deliberately do not derive.
+            \App\Services\SmartTags\SmartTagLifecycle::tryDeriveNative(
+                $auction,
+                \App\Services\SmartTags\SmartTagTelemetry::ENTRY_LANDLORD_PUBLISH,
+            );
+
             app(WizardEventService::class)->record(
                 (string) $this->user_type,
                 $this->listingId ? (int) $this->listingId : null,
