@@ -702,6 +702,44 @@ class MatchCorrectnessP0Test extends TestCase
         );
     }
 
+    /**
+     * The user-facing consequence of the retirement: a seeker holding ONLY legacy
+     * records is shown the ordinary "create your criteria" empty state, pointed at
+     * the modern Offer Listing flows — not an error, and not a results page built
+     * from a profile that cannot match.
+     *
+     * @test
+     */
+    public function a_user_with_only_legacy_criteria_is_prompted_to_create_a_modern_profile(): void
+    {
+        $this->skipUnless('bridge_properties', 'buyer_criteria_auctions');
+
+        // Inventory must exist or the page short-circuits before criteria are read.
+        $this->bridgeListing();
+
+        $userId = $this->makeUser('buyer');
+        DB::table('buyer_criteria_auctions')->insert([
+            'user_id'     => $userId,
+            'buyer_id'    => $userId,
+            'title'       => 'Legacy buyer criteria',
+            'max_price'   => 400000,
+            'is_approved' => true,
+            'is_sold'     => false,
+            'is_paid'     => false,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        $user     = \App\Models\User::findOrFail($userId);
+        $response = $this->actingAs($user)->get('/stellar/buyer/results');
+
+        $response->assertOk();
+        $response->assertViewHas('results', null);
+        $response->assertViewHas('criteriaList', []);
+        // The prompt points at the modern flow, which is the only one that can match.
+        $response->assertViewHas('buyerCriteriaAddUrl', url('/offer-listing/buyer'));
+    }
+
     /** @test */
     public function the_results_page_refuses_a_hand_typed_legacy_criteria_type(): void
     {
