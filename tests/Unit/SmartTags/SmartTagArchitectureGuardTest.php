@@ -131,6 +131,18 @@ class SmartTagArchitectureGuardTest extends TestCase
      * docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md and in §11 of the
      * Smart Tags governance.
      *
+     * Its write surface and its Blade control are in this list for a NARROWER
+     * reason still: they name SmartTagListingType and SmartTagListingRef, which
+     * are listing IDENTITY types, not taxonomy at all. The controller validates
+     * `listing_type` against SmartTagListingType::cases() precisely so a browser
+     * cannot invent one, and both build a SmartTagListingRef to hand to the
+     * preference services. Neither reads a tag, a rule or an evidence row.
+     *
+     * These two entries were added when Listing Preferences Phase 2 merged: the
+     * prefixes above were written against Phase 1, which had no controller and no
+     * component, so the list described the subsystem's file layout at that moment
+     * rather than the subsystem.
+     *
      * KEPT SEPARATE FROM WIRED_CALL_SITES ON PURPOSE. A reader consults the
      * taxonomy, the contexts and the compliance guard; a CALLER derives, writes or
      * purges evidence. Only the second is what SmartTagLifecycle exists to gate,
@@ -144,6 +156,8 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Models/ListingPreference',
         'app/Services/ListingPreferences/',
         'app/Support/ListingPreferences/',
+        'app/Http/Controllers/ListingPreferenceController.php',
+        'resources/views/components/listing-preference/',
         'config/listing_preference',
     ];
 
