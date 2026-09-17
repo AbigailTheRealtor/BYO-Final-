@@ -44,7 +44,7 @@ class ListingPreferenceSubjectResolverTest extends TestCase
         );
 
         $this->assertNotNull($subject);
-        $this->assertSame('mls:RESOLVER-MFR-1', $subject->subjectKey);
+        $this->assertSame('mls:stellar_bridge:RESOLVER-MFR-1', $subject->subjectKey);
         $this->assertSame($bridge->id, $subject->listingId());
     }
 
@@ -112,7 +112,7 @@ class ListingPreferenceSubjectResolverTest extends TestCase
         $this->assertNotNull($fromBridge);
         $this->assertNotNull($fromNative);
         $this->assertTrue($fromBridge->sameSubjectAs($fromNative));
-        $this->assertSame('mls:RESOLVER-MFR-SHARED', $fromNative->subjectKey);
+        $this->assertSame('mls:stellar_bridge:RESOLVER-MFR-SHARED', $fromNative->subjectKey);
 
         // The acted-on listing is still recorded distinctly.
         $this->assertSame(SmartTagListingType::SellerAgent, $fromNative->listingType());
@@ -149,8 +149,8 @@ class ListingPreferenceSubjectResolverTest extends TestCase
 
         $this->assertLessThanOrEqual(2, count($queries), 'one query per listing type, not per listing');
 
-        $this->assertSame('mls:RESOLVER-BATCH-A', $resolved["bridge:{$bridgeA->id}"]->subjectKey);
-        $this->assertSame('mls:RESOLVER-BATCH-B', $resolved["bridge:{$bridgeB->id}"]->subjectKey);
+        $this->assertSame('mls:stellar_bridge:RESOLVER-BATCH-A', $resolved["bridge:{$bridgeA->id}"]->subjectKey);
+        $this->assertSame('mls:stellar_bridge:RESOLVER-BATCH-B', $resolved["bridge:{$bridgeB->id}"]->subjectKey);
         $this->assertSame("byo:seller_agent:{$auction->id}", $resolved["seller_agent:{$auction->id}"]->subjectKey);
 
         // The keyless Bridge row is omitted rather than given an invented key.

@@ -6,6 +6,7 @@ use App\Models\BridgeProperty;
 use App\Models\LandlordAgentAuctionMeta;
 use App\Models\SellerAgentAuctionMeta;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
+use App\Support\Listing\MlsProvider;
 use App\Support\ListingPreferences\ListingPreferenceSubjectRef;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
@@ -78,24 +79,38 @@ class ListingPreferenceSubjectResolver
             $type = SmartTagListingType::from($typeValue);
             $ids  = array_values($ids);
 
-            $keys = $type === SmartTagListingType::Bridge
-                ? $this->bridgeListingKeys($ids)
-                : $this->nativeListingKeys($type, $ids);
+            $isBridge = $type === SmartTagListingType::Bridge;
+
+            // Bridge rows carry (provider, key) on the row itself. Native rows
+            // carry only the key, so their providers are resolved in ONE further
+            // query for the whole batch rather than one per listing.
+            $identities = $isBridge ? $this->bridgeListingKeys($ids) : [];
+            $nativeKeys = $isBridge ? [] : $this->nativeListingKeys($type, $ids);
+            $providers  = $isBridge ? [] : $this->providersForListingKeys(array_values($nativeKeys));
 
             foreach ($ids as $id) {
-                $ref       = new SmartTagListingRef($type, $id);
-                $listingKey = $keys[$id] ?? null;
+                $ref = new SmartTagListingRef($type, $id);
 
-                if (is_string($listingKey) && trim($listingKey) !== '') {
-                    $out["{$typeValue}:{$id}"] = ListingPreferenceSubjectRef::mls($ref, $listingKey);
+                if ($isBridge) {
+                    $identity = $identities[$id] ?? null;
+
+                    if ($identity !== null) {
+                        [$provider, $listingKey] = $identity;
+                        $out["{$typeValue}:{$id}"] = ListingPreferenceSubjectRef::mls($ref, $provider, $listingKey);
+                    }
+
+                    // A Bridge row with no listing key, or none whose provider we
+                    // recognise, has no durable identity at all — it is omitted
+                    // rather than given an invented one.
                     continue;
                 }
 
-                // A Bridge row with no listing key has no durable identity at
-                // all; a native row without one is simply not MLS-linked.
-                if ($type !== SmartTagListingType::Bridge) {
-                    $out["{$typeValue}:{$id}"] = ListingPreferenceSubjectRef::native($ref);
-                }
+                $listingKey = $nativeKeys[$id] ?? null;
+                $provider   = is_string($listingKey) ? ($providers[$listingKey] ?? null) : null;
+
+                $out["{$typeValue}:{$id}"] = ($provider !== null && trim((string) $listingKey) !== '')
+                    ? ListingPreferenceSubjectRef::mls($ref, $provider, $listingKey)
+                    : ListingPreferenceSubjectRef::native($ref);
             }
         }
 
@@ -104,13 +119,15 @@ class ListingPreferenceSubjectResolver
 
     private function resolveBridge(SmartTagListingRef $ref): ?ListingPreferenceSubjectRef
     {
-        $listingKey = $this->bridgeListingKeys([$ref->id])[$ref->id] ?? null;
+        $identity = $this->bridgeListingKeys([$ref->id])[$ref->id] ?? null;
 
-        if (! is_string($listingKey) || trim($listingKey) === '') {
+        if ($identity === null) {
             return null;
         }
 
-        return ListingPreferenceSubjectRef::mls($ref, $listingKey);
+        [$provider, $listingKey] = $identity;
+
+        return ListingPreferenceSubjectRef::mls($ref, $provider, $listingKey);
     }
 
     private function resolveNative(SmartTagListingRef $ref): ListingPreferenceSubjectRef
@@ -118,7 +135,11 @@ class ListingPreferenceSubjectResolver
         $listingKey = $this->nativeListingKeys($ref->type, [$ref->id])[$ref->id] ?? null;
 
         if (is_string($listingKey) && trim($listingKey) !== '') {
-            return ListingPreferenceSubjectRef::mls($ref, $listingKey);
+            $provider = $this->providersForListingKeys([$listingKey])[$listingKey] ?? null;
+
+            if ($provider !== null) {
+                return ListingPreferenceSubjectRef::mls($ref, $provider, $listingKey);
+            }
         }
 
         return ListingPreferenceSubjectRef::native($ref);
@@ -126,7 +147,7 @@ class ListingPreferenceSubjectResolver
 
     /**
      * @param  list<int> $ids
-     * @return array<int, string>
+     * @return array<int, array{0: MlsProvider, 1: string}> id => [provider, listing key]
      */
     private function bridgeListingKeys(array $ids): array
     {
@@ -134,12 +155,88 @@ class ListingPreferenceSubjectResolver
             return [];
         }
 
-        return BridgeProperty::query()
+        $out = [];
+
+        // Both halves of the native identity, read from the row itself. The
+        // provider is a stored column since P0-1; nothing here infers it from
+        // `listing_type`, a route, an attribution string or a display label.
+        BridgeProperty::query()
             ->whereIn('id', $ids)
             ->whereNotNull('listing_key')
-            ->pluck('listing_key', 'id')
-            ->map(static fn ($v): string => (string) $v)
-            ->all();
+            ->get(['id', 'provider', 'listing_key'])
+            ->each(function (BridgeProperty $row) use (&$out): void {
+                $provider = $row->mlsProvider();
+
+                // An unrecognised provider is a row whose origin we cannot name.
+                // It gets no MLS subject rather than being read as Stellar's.
+                if ($provider === null) {
+                    return;
+                }
+
+                $out[$row->id] = [$provider, (string) $row->listing_key];
+            });
+
+        return $out;
+    }
+
+    /**
+     * Which provider issued each of these listing keys, where that is
+     * UNAMBIGUOUS.
+     *
+     * A native BidYourOffer listing stores only `mls_listing_key` — the key, with
+     * no provider beside it — because it was written when one MLS was the only
+     * MLS. Since `UNIQUE(provider, listing_key)` replaced the global unique, that
+     * key alone no longer names one row.
+     *
+     * So the provider is resolved FROM the linked Bridge record, and only when
+     * exactly one row carries the key. Two providers holding it is precisely the
+     * state P0-2 made legal, and picking either one would attach a customer's
+     * preference to a house they may never have seen. Such a key resolves to
+     * nothing here and the listing falls back to its own `byo:` subject — it
+     * simply stops unifying with the MLS row, which is a visible, harmless
+     * limitation rather than a silent mis-attribution.
+     *
+     * THE DURABLE FIX IS NOT HERE: the import writer should stamp the provider
+     * beside the key it already stores, so this lookup becomes unnecessary. That
+     * is a write-path change and belongs with the provider-adapter work.
+     *
+     * @param  list<string> $listingKeys
+     * @return array<string, MlsProvider>
+     */
+    private function providersForListingKeys(array $listingKeys): array
+    {
+        $listingKeys = array_values(array_unique(array_filter($listingKeys, static fn ($k): bool => $k !== '')));
+
+        if ($listingKeys === []) {
+            return [];
+        }
+
+        $seen = [];
+
+        BridgeProperty::query()
+            ->whereIn('listing_key', $listingKeys)
+            ->get(['provider', 'listing_key'])
+            ->each(function (BridgeProperty $row) use (&$seen): void {
+                $seen[(string) $row->listing_key][] = $row->mlsProvider();
+            });
+
+        $out = [];
+
+        foreach ($seen as $key => $providers) {
+            // EXACTLY ONE ROW, and its provider recognised. Ambiguity is counted
+            // in ROWS, not in distinct recognised providers: if a second row also
+            // holds this key, the meta cannot say which one the listing came from,
+            // and discarding the competitor because we happen not to recognise its
+            // provider would resolve the key to Stellar by elimination — the
+            // silent substitution this whole change exists to prevent.
+            if (count($providers) !== 1 || ! $providers[0] instanceof MlsProvider) {
+                continue;
+            }
+
+            $out[$key] = $providers[0];
+        }
+
+        return $out;
     }
 
     /**
