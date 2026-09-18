@@ -104,12 +104,25 @@ class SmartTagArchitectureGuardTest extends TestCase
      * is a deliberate edit here, in the same commit as the wiring, which is the
      * point: an accidental new caller fails this test rather than shipping.
      *
+     * THE OWNER-SELECTION SURFACE added three: the shared wizard concern, which
+     * calls SmartTagLifecycle::ownerPanel() and ::trySaveOwnerSelections(), and
+     * the Blade partial that renders what the first returns. They are call sites
+     * rather than taxonomy readers — one of them WRITES, through the seam — so
+     * they belong here and are held to the one-seam rule below. The four Offer
+     * Listing components that `use` the concern were already listed.
+     *
+     * The two `property-preferences.blade.php` partials that @include the picker
+     * are deliberately absent: they name no Smart Tag symbol, so the guard has
+     * nothing to catch there and listing them would claim a coupling that the
+     * files do not have.
+     *
      * @var string[]
      */
     private const WIRED_CALL_SITES = [
         'app/Console/Commands/DeriveSmartTags.php',
         'app/Console/Commands/ImportBridgeProperties.php',
         'app/Http/Livewire/Concerns/BelongsToListingWorkflow.php',
+        'app/Http/Livewire/Concerns/HasOwnerSmartTags.php',
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php',
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/QuickImport/MlsQuickImportComponent.php',
@@ -119,6 +132,7 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Services/Bridge/LazyBridgeImportService.php',
         'app/Services/Explore/ExploreInventoryService.php',
         'app/Services/Stellar/Matching/BuyerMatchService.php',
+        'resources/views/livewire/offer-listing/shared/_owner-smart-tags.blade.php',
     ];
 
     /**
@@ -167,6 +181,29 @@ class SmartTagArchitectureGuardTest extends TestCase
         'database/seeders/ListingPreferenceBrowserTestSeeder.php',
         'resources/views/components/listing-preference/',
         'config/listing_preference',
+
+        // Seeker Smart Tag preferences — what a Buyer/Tenant ASKS FOR.
+        //
+        // Readers, not call sites, by the distinction below: they consult the
+        // taxonomy, the contexts and SmartTagSelectionPolicy, and write to
+        // `smart_tag_seeker_preferences`. None of them derives, writes or purges
+        // EVIDENCE about a property, which is what SmartTagLifecycle gates — a
+        // seeker preference is a request, not a claim about a listing.
+        //
+        // The two criteria controllers reach the writer and the reader; the
+        // shared picker partial projects the taxonomy for SURFACE_SEEKER and the
+        // Buyer/Tenant edit wizards restore stored selections through the reader.
+        'app/Services/SmartTags/Seeker/',
+        'app/Http/Controllers/BuyerCriteriaAuctionController.php',
+        'app/Http/Controllers/TenantCriteriaAuctionController.php',
+        // Deletion cleanup for the seeker table, and its registration. Neither
+        // derives anything; see the named exception in
+        // the_subsystems_phase_two_promised_not_to_touch_are_untouched().
+        'app/Observers/SmartTagSeekerPreferenceObserver.php',
+        'app/Providers/AppServiceProvider.php',
+        'resources/views/partials/smart-tags/',
+        'resources/views/buyer_criteria/',
+        'resources/views/tenant_criteria/',
     ];
 
     /** @test */
@@ -246,11 +283,154 @@ class SmartTagArchitectureGuardTest extends TestCase
             'app/Jobs', 'app/Observers',
         ];
 
+        // ONE named exception, and the narrowness is the point — a single file,
+        // not the directory.
+        //
+        // The promise this test records is that DERIVATION does not hang off a
+        // model event: an observer that derives would fire on every save of every
+        // listing, which is what `SmartTagLifecycle` exists to keep explicit.
+        // SmartTagSeekerPreferenceObserver derives nothing. It deletes rows from
+        // `smart_tag_seeker_preferences` — a CONSUMER table holding what a Buyer
+        // or Tenant asked for — after their criteria record is deleted, because
+        // that table has no foreign key and nothing else would clean it up.
+        //
+        // It has to be an observer rather than the explicit post-commit call
+        // `BelongsToListingWorkflow::purgeListingRows()` uses, because this
+        // application currently has NO criteria deletion path to put a call in.
+        // If a bulk delete is ever added it must call the writer's purge()
+        // explicitly, since Eloquent events do not fire for query-builder deletes.
+        $allowed = self::OBSERVER_SMART_TAG_EXCEPTIONS;
+
         foreach ($untouched as $dir) {
             foreach ($this->phpFiles($dir) as $path => $source) {
+                if (in_array($path, $allowed, true)) {
+                    continue;
+                }
+
                 $this->assertDoesNotMatchRegularExpression('/SmartTag|smart_tag/i', $source, "{$path} references Smart Tags");
             }
         }
+    }
+
+    /**
+     * The exception is ONE file, and it is exact — never a directory, never a
+     * pattern. A second entry here is a deliberate edit that has to argue for
+     * itself, which is the whole value of the list being this short.
+     *
+     * @var string[]
+     */
+    private const OBSERVER_SMART_TAG_EXCEPTIONS = [
+        'app/Observers/SmartTagSeekerPreferenceObserver.php',
+    ];
+
+    /**
+     * WHAT THE CARVE-OUT ABOVE IS NOT ALLOWED TO BECOME.
+     *
+     * Skipping a file in the observer prohibition only says "this file may name
+     * Smart Tags". On its own that turns a real guarantee into "no Smart Tags in
+     * observers, except one file, which may do anything" — and the thing the
+     * prohibition exists to prevent is derivation and lifecycle work hiding
+     * inside a model event, which is precisely what that one file could grow.
+     *
+     * So the exception is bounded from the inside as well: the observer may
+     * reference the seeker-preference purge surface and nothing else. If someone
+     * later adds a derive call, an evidence write or an assignment write to it,
+     * this fails and names the symbol.
+     *
+     * @test
+     */
+    public function the_observer_exception_may_only_purge_seeker_preferences(): void
+    {
+        $this->assertCount(1, self::OBSERVER_SMART_TAG_EXCEPTIONS,
+            'the observer carve-out is one exact file; widening it is a deliberate, argued edit');
+
+        $path = self::OBSERVER_SMART_TAG_EXCEPTIONS[0];
+
+        // This class is container-free by design, so paths come from its own
+        // root() helper rather than base_path().
+        $observers = $this->phpFiles('app/Observers');
+
+        $this->assertArrayHasKey($path, $observers,
+            'the carved-out observer must exist, or the exception is stale');
+
+        $source = $observers[$path];
+
+        // (1) The only Smart Tag surface it may reach is the seeker-preference
+        // purge path — the writer's purge() and the subject-type registry.
+        $allowedSymbols = [
+            // The namespace segment itself, unavoidable in the `use` lines for
+            // the classes below.
+            'SmartTags',
+            // Its own class name.
+            'SmartTagSeekerPreferenceObserver',
+            // The seeker-preference purge surface, and nothing else.
+            'SmartTagSeekerPreferenceWriter',
+            'SmartTagSeekerSubjectType',
+            'SmartTagSeekerPreferenceGate',
+            'smart_tag_seeker_preferences',
+        ];
+
+        preg_match_all('/\b(SmartTag[A-Za-z]*|smart_tag[a-z_]*)\b/', $source, $m);
+
+        foreach (array_unique($m[1]) as $symbol) {
+            $this->assertContains(
+                $symbol,
+                $allowedSymbols,
+                "{$path} references {$symbol}, which is outside the seeker-preference purge surface"
+            );
+        }
+
+        // (2) Named explicitly, so the failure message says what was smuggled in
+        // rather than only that something was.
+        foreach ([
+            'SmartTagLifecycle',
+            'SmartTagDerivationService',
+            'SmartTagEvidenceWriter',
+            'SmartTagEvidence',
+            'SmartTagAssignment',
+            'SmartTagAssignmentProjector',
+            'NativeListingTagDeriver',
+            'BridgeStructuredTagDeriver',
+            'ListingDescriptionTagParser',
+            'ManualSmartTagWriter',
+            'tryDeriveNative',
+            'tryDeriveBridge',
+            'replaceDerived',
+        ] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $source,
+                "{$path} must never reach {$forbidden}: an observer may purge seeker preferences, never derive or persist tags"
+            );
+        }
+
+        // (3) It must actually be the purge it was carved out for.
+        $this->assertStringContainsString('->purge(', $source,
+            'the carved-out observer should call the seeker-preference purge');
+    }
+
+    /**
+     * The prohibition still bites for every OTHER observer — the carve-out did
+     * not quietly become a directory.
+     *
+     * @test
+     */
+    public function every_other_observer_is_still_prohibited_from_naming_smart_tags(): void
+    {
+        $checked = 0;
+
+        foreach ($this->phpFiles('app/Observers') as $path => $source) {
+            if (in_array($path, self::OBSERVER_SMART_TAG_EXCEPTIONS, true)) {
+                continue;
+            }
+
+            $checked++;
+            $this->assertDoesNotMatchRegularExpression('/SmartTag|smart_tag/i', $source,
+                "{$path} references Smart Tags and is not the one carved-out observer");
+        }
+
+        $this->assertGreaterThan(0, $checked,
+            'the observer directory should contain other observers for this guard to be meaningful');
     }
 
     /** @test */

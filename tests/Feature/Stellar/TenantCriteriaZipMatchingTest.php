@@ -94,6 +94,7 @@ class TenantCriteriaZipMatchingTest extends TestCase
         $key = 'TZIP-' . uniqid();
 
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => 'LID-' . uniqid(),
             'standard_status'         => 'Active',

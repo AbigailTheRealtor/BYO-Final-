@@ -879,7 +879,10 @@ trait HasMlsImport
         }
 
         try {
-            $property = \App\Models\BridgeProperty::where('listing_key', $listingKey)->first();
+            $property = \App\Models\BridgeProperty::forNativeKey(
+                \App\Support\Listing\MlsProvider::current(),
+                $listingKey
+            )->first();
 
             if ($property === null || empty($property->raw_json)) {
                 return;

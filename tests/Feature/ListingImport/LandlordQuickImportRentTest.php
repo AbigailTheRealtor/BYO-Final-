@@ -68,6 +68,7 @@ class LandlordQuickImportRentTest extends TestCase
     private function seedSaleRecord(string $propertyType = 'Residential'): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => self::KEY,
             'listing_id'              => self::MLS,
             'standard_status'         => 'Active',

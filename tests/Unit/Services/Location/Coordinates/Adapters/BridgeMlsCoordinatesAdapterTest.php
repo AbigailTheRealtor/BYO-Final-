@@ -44,6 +44,7 @@ class BridgeMlsCoordinatesAdapterTest extends TestCase
     private function bridgeRecord(array $overrides = []): BridgeProperty
     {
         return BridgeProperty::create(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => self::LISTING_KEY,
             'listing_id'        => 'MFR4471102',
             'standard_status'   => 'Active',

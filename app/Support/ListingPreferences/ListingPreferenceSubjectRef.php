@@ -2,6 +2,7 @@
 
 namespace App\Support\ListingPreferences;
 
+use App\Support\Listing\MlsProvider;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
 use InvalidArgumentException;
@@ -30,9 +31,17 @@ use InvalidArgumentException;
  * and an orphaned Save is a customer-visible bug. So a Bridge subject is keyed
  * on the listing_key STRING, which is the identity the feed itself guarantees.
  *
- *   bridge                                    → mls:<listing_key>
+ *   bridge                                    → mls:<provider>:<listing_key>
  *   seller_agent / landlord_agent, no MLS     → byo:<listing_type>:<id>
- *   seller_agent / landlord_agent, MLS-linked → mls:<listing_key>
+ *   seller_agent / landlord_agent, MLS-linked → mls:<provider>:<listing_key>
+ *
+ * THE PROVIDER SEGMENT IS NOT DECORATION. A `ListingKey` is minted by the MLS
+ * that issued it and is unique only within that system — the same fact that made
+ * `UNIQUE(provider, listing_key)` necessary on `bridge_properties`. Keyed on the
+ * bare key, one customer's Pass on Stellar's 12345 and their Save on another
+ * provider's 12345 would be ONE row under
+ * `unique(user_id, seeker_role, subject_key)`: one would overwrite the other, and
+ * the append-only history would record a transition that never happened.
  *
  * NOT A PROPERTY IDENTITY. Parcel and address grouping is deliberately absent:
  * {@see \App\Services\Explore\ExplorePropertyIdentity} answers a different
@@ -50,13 +59,18 @@ final class ListingPreferenceSubjectRef
 
     public const PREFIX_BYO = 'byo';
 
+    /** `listing_preferences.subject_key` and its event twin are both string(191). */
+    public const MAX_KEY_LENGTH = 191;
+
     public function __construct(
         public readonly SmartTagListingRef $ref,
         public readonly string $subjectKey,
     ) {
         if (! self::isWellFormedKey($subjectKey)) {
             throw new InvalidArgumentException(
-                'A listing preference subject key must be mls:<listing_key> or byo:<listing_type>:<id>.'
+                'A listing preference subject key must be mls:<provider>:<listing_key> '
+                . 'with a recognised provider, or byo:<listing_type>:<id>, and at most '
+                . self::MAX_KEY_LENGTH . ' characters.'
             );
         }
     }
@@ -76,7 +90,7 @@ final class ListingPreferenceSubjectRef
      * or a native listing imported from it. Both produce the SAME key, which is
      * the whole point.
      */
-    public static function mls(SmartTagListingRef $ref, string $listingKey): self
+    public static function mls(SmartTagListingRef $ref, MlsProvider $provider, string $listingKey): self
     {
         $listingKey = trim($listingKey);
 
@@ -84,7 +98,25 @@ final class ListingPreferenceSubjectRef
             throw new InvalidArgumentException('An mls: subject key requires a non-empty listing key.');
         }
 
-        return new self($ref, self::PREFIX_MLS . ':' . $listingKey);
+        return new self($ref, self::PREFIX_MLS . ':' . $provider->value . ':' . $listingKey);
+    }
+
+    /**
+     * The provider that issued this subject's listing, or null for a native-only
+     * subject.
+     *
+     * Parsed from this object's OWN key, which was built from a typed
+     * {@see MlsProvider} moments earlier — never from a string that arrived from
+     * somewhere else. A key whose provider segment is not recognised cannot exist,
+     * because the constructor refuses it.
+     */
+    public function mlsProvider(): ?MlsProvider
+    {
+        if (! $this->isMlsSubject()) {
+            return null;
+        }
+
+        return MlsProvider::fromStored(explode(':', $this->subjectKey, 3)[1] ?? null);
     }
 
     public function isMlsSubject(): bool
@@ -92,12 +124,20 @@ final class ListingPreferenceSubjectRef
         return str_starts_with($this->subjectKey, self::PREFIX_MLS . ':');
     }
 
-    /** The MLS ListingKey this subject is keyed on, or null for a native-only subject. */
+    /**
+     * The MLS ListingKey this subject is keyed on, or null for a native-only
+     * subject.
+     *
+     * Split with a limit of 3 so a key that itself contains a colon survives
+     * intact — only the prefix and the provider are consumed.
+     */
     public function mlsListingKey(): ?string
     {
-        return $this->isMlsSubject()
-            ? substr($this->subjectKey, strlen(self::PREFIX_MLS) + 1)
-            : null;
+        if (! $this->isMlsSubject()) {
+            return null;
+        }
+
+        return explode(':', $this->subjectKey, 3)[2] ?? null;
     }
 
     public function listingType(): SmartTagListingType
@@ -122,8 +162,25 @@ final class ListingPreferenceSubjectRef
 
     private static function isWellFormedKey(string $key): bool
     {
+        // The column is string(191) on both tables. A key that would be
+        // truncated is refused here rather than silently stored as a DIFFERENT
+        // subject than the one the caller asked for — `bridge_properties.listing_key`
+        // is string(255), so an over-long key is expressible even though no real
+        // RESO ListingKey approaches it.
+        if ($key === '' || strlen($key) > self::MAX_KEY_LENGTH) {
+            return false;
+        }
+
         if (str_starts_with($key, self::PREFIX_MLS . ':')) {
-            return trim(substr($key, strlen(self::PREFIX_MLS) + 1)) !== '';
+            $parts = explode(':', $key, 3);
+
+            // mls : <provider> : <listing key>. An unrecognised provider is
+            // REFUSED, never read as the one provider we happen to have — that
+            // substitution is how another MLS's property would quietly inherit
+            // Stellar's preference row.
+            return count($parts) === 3
+                && MlsProvider::recognises($parts[1])
+                && trim($parts[2]) !== '';
         }
 
         foreach (SmartTagListingType::cases() as $type) {

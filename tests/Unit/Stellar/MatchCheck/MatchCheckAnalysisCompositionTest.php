@@ -70,6 +70,7 @@ class MatchCheckAnalysisCompositionTest extends TestCase
     private function seedListing(string $suffix): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'PHPUNIT-C13A-K-' . $suffix,
             'listing_id'        => 'PHPUNIT-C13A-' . $suffix,
             'standard_status'   => 'Active',
@@ -97,6 +98,7 @@ class MatchCheckAnalysisCompositionTest extends TestCase
     private function detachedCandidate(string $key): PropertyCandidate
     {
         $model = new BridgeProperty([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $key,
             'listing_id'  => $key . '-id',
             'city'        => 'PhpunitC13aCity',

@@ -71,6 +71,7 @@ class BridgeLookupOutcomeTest extends TestCase
         Http::fake();
 
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key' => 'PHPUNIT-OUTCOME-LOCAL',
             'listing_id'  => 'PHPUNIT-OUTCOME-LOCAL-id',
             'city'        => self::CITY,

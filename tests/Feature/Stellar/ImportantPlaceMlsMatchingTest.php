@@ -103,6 +103,7 @@ class ImportantPlaceMlsMatchingTest extends TestCase
     private function listing(string $key, string $role, ?float $lat, ?float $lng, array $overrides = []): string
     {
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => 'LID-' . $key,
             'standard_status'         => 'Active',

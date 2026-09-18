@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Explore;
 
 use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
+use App\Support\Listing\MlsProvider;
 use App\Services\Explore\ExploreCanonicalListingResolver;
 use App\Services\Explore\ExploreInventoryService;
 use App\Services\Explore\Guards\ExploreProviderBudget;
@@ -170,7 +171,7 @@ class ExploreListingApiController extends Controller
         // re-decided on whatever came back: a listing that has gone Pending, or
         // lost IDX participation since the marker was drawn, 404s here rather
         // than being presented as available.
-        $stored = BridgeProperty::query()->where('listing_key', trim($listingKey))->first();
+        $stored = BridgeProperty::forNativeKey(MlsProvider::current(), $listingKey)->first();
 
         if ($stored !== null) {
             $this->inventory->refreshRecord($stored, $this->actorKey($request));

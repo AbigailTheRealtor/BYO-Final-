@@ -165,6 +165,7 @@ class CoordinateProvenanceEnrichmentTest extends TestCase
     public function test_a_bridge_coordinate_stores_full_automatic_provenance(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => self::LISTING_KEY,
             'unparsed_address'  => '315 E Madison St',
             'city'              => 'Tampa',
@@ -195,6 +196,7 @@ class CoordinateProvenanceEnrichmentTest extends TestCase
     public function test_the_bridge_listing_key_is_retained_as_the_source_ref(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => self::LISTING_KEY,
             'unparsed_address'  => '315 E Madison St',
             'city'              => 'Tampa',

@@ -216,6 +216,7 @@ class SmartTagDerivationServiceTest extends TestCase
         $raw['PublicRemarks'] = 'Quartz countertops, updated kitchen, move-in ready.';
 
         $property = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'SMARTTAG-TEST-1',
             'property_type'   => 'Residential Lease',
             'standard_status' => 'Active',
@@ -244,6 +245,7 @@ class SmartTagDerivationServiceTest extends TestCase
     public function equivalent_bridge_and_native_listings_resolve_to_the_same_stored_canonical_tags(): void
     {
         $property = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'SMARTTAG-TEST-2',
             'property_type'   => 'Residential',
             'standard_status' => 'Active',

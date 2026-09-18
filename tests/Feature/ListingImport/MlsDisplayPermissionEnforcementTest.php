@@ -65,6 +65,7 @@ class MlsDisplayPermissionEnforcementTest extends TestCase
         ], $flags);
 
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => self::KEY,
             'listing_id'       => self::MLS,
             'standard_status'  => 'Active',

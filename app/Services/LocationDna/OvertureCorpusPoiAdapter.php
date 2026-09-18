@@ -4,6 +4,7 @@ namespace App\Services\LocationDna;
 
 use App\Contracts\NearbyPoiFetcherInterface;
 use App\Contracts\PoiLookupAdapterInterface;
+use App\Contracts\ProviderCategorySupport;
 use App\Services\LocationDna\Providers\CorpusPoiCategoryMap;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -98,7 +99,7 @@ use Throwable;
  * @see \Tests\Unit\Services\LocationDna\OvertureCorpusPoiAdapterTest
  * @see \Tests\Unit\Services\LocationDna\OvertureCorpusPoiSqlManifestTest
  */
-class OvertureCorpusPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetcherInterface
+class OvertureCorpusPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFetcherInterface, ProviderCategorySupport
 {
     /** Provider identity. Matches the key in config/location_providers.php. */
     public const PROVIDER_ID = 'overture_corpus';
@@ -160,6 +161,31 @@ class OvertureCorpusPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFe
         }
     }
 
+    // ── ProviderCategorySupport ─────────────────────────────────────────────
+
+    /**
+     * {@inheritDoc}
+     *
+     * The corpus holds seven of the nineteen categories the pipeline asks for, and
+     * `CorpusPoiCategoryMap` is the single place that claim lives — derived from the
+     * corpus taxonomy rather than restated, so adding a category to the import is what
+     * makes it servable here.
+     *
+     * The same resolution `fetchNearby()` performs, asked one step earlier. That is the
+     * point: `fetchNearby()` can only answer "no rows", and the caller cannot tell that
+     * apart from "no rows NEAR THIS COORDINATE". Answering `false` here lets the caller
+     * skip the category and persist nothing, rather than write a `not_found` row that
+     * reads as a fact about the neighbourhood.
+     *
+     * Coordinate-independent by construction: it reads the descriptor and nothing else.
+     * An out-of-region coordinate is a different matter and stays where it is — the
+     * region gate in the read itself — because that IS a fact about a coordinate.
+     */
+    public function supportsCategory(array $meta): bool
+    {
+        return CorpusPoiCategoryMap::corpusCategoryForDescriptor($meta) !== null;
+    }
+
     // ── NearbyPoiFetcherInterface (production Location DNA path) ─────────────
 
     /**
@@ -193,8 +219,11 @@ class OvertureCorpusPoiAdapter implements PoiLookupAdapterInterface, NearbyPoiFe
         $corpusCategory = CorpusPoiCategoryMap::corpusCategoryForDescriptor($meta);
 
         if ($corpusCategory === null) {
-            // Not an error: the corpus genuinely holds no rows for this category, and
-            // the caller records `not_found`. Raising would report a broken provider.
+            // Not an error: the corpus carries no data for this category at all. Raising
+            // would report a broken provider. In the production path the caller asks
+            // supportsCategory() first and skips the category before reaching here, so
+            // this is now the backstop for a caller that does not — it must still not
+            // pretend to be an answer about this coordinate.
             return [];
         }
 

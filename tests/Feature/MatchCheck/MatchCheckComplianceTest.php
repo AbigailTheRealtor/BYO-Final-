@@ -119,6 +119,7 @@ class MatchCheckComplianceTest extends TestCase
         $key = 'PHPUNIT-C15-K-'.$suffix;
 
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $key,
             'listing_id'        => 'PHPUNIT-C15-'.$suffix,
             'standard_status'   => 'Active',
@@ -143,6 +144,7 @@ class MatchCheckComplianceTest extends TestCase
     {
         $key   = 'PHPUNIT-C15-K-'.$suffix;
         $model = new BridgeProperty([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $key,
             'listing_id'        => 'PHPUNIT-C15-'.$suffix,
             'property_type'     => str_contains($subType, 'Commercial') ? 'Commercial Sale' : 'Residential',

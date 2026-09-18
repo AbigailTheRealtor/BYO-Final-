@@ -46,19 +46,19 @@ class ListingPreferenceClearSchemaTest extends TestCase
         $first = ListingPreferenceEvent::create($this->row([
             'from_state' => null,
             'to_state'   => ListingPreferenceState::Save->value,
-            'subject_key' => 'mls:CLEAR-SHAPES',
+            'subject_key' => 'mls:stellar_bridge:CLEAR-SHAPES',
         ]));
 
         $changed = ListingPreferenceEvent::create($this->row([
             'from_state' => ListingPreferenceState::Save->value,
             'to_state'   => ListingPreferenceState::Pass->value,
-            'subject_key' => 'mls:CLEAR-SHAPES',
+            'subject_key' => 'mls:stellar_bridge:CLEAR-SHAPES',
         ]));
 
         $cleared = ListingPreferenceEvent::create($this->row([
             'from_state' => ListingPreferenceState::Pass->value,
             'to_state'   => null,
-            'subject_key' => 'mls:CLEAR-SHAPES',
+            'subject_key' => 'mls:stellar_bridge:CLEAR-SHAPES',
         ]));
 
         $this->assertNull($first->fresh()->from_state, 'first preference has no prior state');
@@ -69,7 +69,7 @@ class ListingPreferenceClearSchemaTest extends TestCase
         $this->assertNull($cleared->fresh()->to_state, 'a clear has no resulting state');
         $this->assertSame('pass', $cleared->fresh()->from_state, 'and remembers what was cleared');
 
-        $this->assertSame(3, ListingPreferenceEvent::where('subject_key', 'mls:CLEAR-SHAPES')->count());
+        $this->assertSame(3, ListingPreferenceEvent::where('subject_key', 'mls:stellar_bridge:CLEAR-SHAPES')->count());
     }
 
     /**
@@ -213,7 +213,7 @@ class ListingPreferenceClearSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 5501,
-            'subject_key'  => 'mls:CLEAR-TEST',
+            'subject_key'  => 'mls:stellar_bridge:CLEAR-TEST',
             'from_state'   => null,
             'to_state'     => ListingPreferenceState::Save->value,
             'surface'      => ListingPreferenceEvent::SURFACE_DETAIL,

@@ -512,6 +512,7 @@ class ListingPreferenceCardSurfaceTest extends TestCase
         $this->actingAs($this->buyer());
 
         $row = BridgeProperty::create([
+            'provider'      => 'stellar_bridge',
             'listing_key'   => 'STELLAR-CARD-0001',
             'property_type' => 'Residential',
         ]);

@@ -55,7 +55,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99001,
-            'subject_key'  => 'mls:SCHEMA-TEST-1',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-1',
             'state'        => ListingPreferenceState::Save->value,
             'state_set_at' => now(),
         ];
@@ -77,7 +77,7 @@ class ListingPreferenceSchemaTest extends TestCase
         $base = [
             'listing_type' => 'bridge',
             'listing_id'   => 99002,
-            'subject_key'  => 'mls:SCHEMA-TEST-2',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-2',
             'state_set_at' => now(),
         ];
 
@@ -93,7 +93,7 @@ class ListingPreferenceSchemaTest extends TestCase
         ]);
 
         $this->assertNotSame($buyer->id, $tenant->id);
-        $this->assertSame(2, ListingPreference::where('subject_key', 'mls:SCHEMA-TEST-2')->count());
+        $this->assertSame(2, ListingPreference::where('subject_key', 'mls:stellar_bridge:SCHEMA-TEST-2')->count());
     }
 
     /**
@@ -109,7 +109,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99003,
-            'subject_key'  => 'mls:SCHEMA-TEST-3',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-3',
             'state'        => ListingPreferenceState::Pass->value,
             'state_set_at' => now(),
         ]);
@@ -122,7 +122,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'seller_agent',
             'listing_id'   => 555,
-            'subject_key'  => 'mls:SCHEMA-TEST-3',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-3',
             'state'        => ListingPreferenceState::Save->value,
             'state_set_at' => now(),
         ]);
@@ -136,7 +136,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99004,
-            'subject_key'  => 'mls:SCHEMA-TEST-4',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-4',
             'state'        => ListingPreferenceState::Save->value,
             'state_set_at' => now(),
         ]);
@@ -192,7 +192,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99006,
-            'subject_key'  => 'mls:SCHEMA-TEST-6',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-6',
             'from_state'   => ListingPreferenceState::Save->value,
             'to_state'     => ListingPreferenceState::Pass->value,
             'reasons_json' => ['too_expensive'],
@@ -231,7 +231,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99007,
-            'subject_key'  => 'mls:SCHEMA-TEST-7',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-7',
             'surface'      => ListingPreferenceEvent::SURFACE_DETAIL,
         ];
 
@@ -239,7 +239,7 @@ class ListingPreferenceSchemaTest extends TestCase
         ListingPreferenceEvent::create($base + ['from_state' => 'save', 'to_state' => 'maybe', 'created_at' => now()->subDay()]);
         ListingPreferenceEvent::create($base + ['from_state' => 'maybe', 'to_state' => 'pass', 'created_at' => now()]);
 
-        $this->assertSame(3, ListingPreferenceEvent::where('subject_key', 'mls:SCHEMA-TEST-7')->count());
+        $this->assertSame(3, ListingPreferenceEvent::where('subject_key', 'mls:stellar_bridge:SCHEMA-TEST-7')->count());
     }
 
     /**
@@ -255,7 +255,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99008,
-            'subject_key'  => 'mls:SCHEMA-TEST-8',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-8',
             'state'        => ListingPreferenceState::Pass->value,
             'state_set_at' => now(),
         ]);
@@ -272,7 +272,7 @@ class ListingPreferenceSchemaTest extends TestCase
             'seeker_role'  => SeekerRole::Buyer->value,
             'listing_type' => 'bridge',
             'listing_id'   => 99008,
-            'subject_key'  => 'mls:SCHEMA-TEST-8',
+            'subject_key'  => 'mls:stellar_bridge:SCHEMA-TEST-8',
             'from_state'   => null,
             'to_state'     => ListingPreferenceState::Pass->value,
             'created_at'   => now(),
@@ -282,6 +282,6 @@ class ListingPreferenceSchemaTest extends TestCase
         $preference->delete();
 
         $this->assertSame(0, ListingPreferenceReason::where('listing_preference_id', $preferenceId)->count());
-        $this->assertSame(1, ListingPreferenceEvent::where('subject_key', 'mls:SCHEMA-TEST-8')->count());
+        $this->assertSame(1, ListingPreferenceEvent::where('subject_key', 'mls:stellar_bridge:SCHEMA-TEST-8')->count());
     }
 }

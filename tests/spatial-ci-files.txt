@@ -107,6 +107,7 @@ tests/Feature/LocationDna/RadiusSearchAddressResolutionTest.php
 tests/Feature/LocationDna/SearchAreasPreferencesLayoutTest.php
 tests/Feature/LocationDna/SellerLandlordCascadeExclusionTest.php
 tests/Feature/LocationDna/StellarNearbyAmenitiesCategoryCoverageTest.php
+tests/Feature/LocationDna/UnsupportedCategorySemanticsTest.php
 tests/Feature/LocationDna/SupplementalLayerIsolationTest.php
 tests/Feature/LocationDnaAdminPreviewTest.php
 tests/Feature/LocationDnaPipelineTriggerTest.php
@@ -225,6 +226,8 @@ tests/Unit/Services/LocationDna/PoiDistanceLookupServiceRichShapeRegressionTest.
 tests/Unit/Services/LocationDna/PoiDistanceLookupServiceTest.php
 tests/Unit/Services/LocationDna/PoiLookupAdapterInterfaceContractTest.php
 tests/Unit/Services/LocationDna/PropertyLocationPoiVersionColumnsTest.php
+tests/Unit/Services/LocationDna/Providers/CorpusPoiCategoryMapTest.php
+tests/Unit/Services/LocationDna/Providers/LocationDnaCorpusCategoryBoundaryTest.php
 tests/Unit/Services/LocationDna/RadiusSearchShapeConsumersTest.php
 tests/Unit/Services/LocationDna/RankingEnginePersistencePassthroughTest.php
 tests/Unit/Services/LocationDna/RankingGoldenMasterRemediationTest.php
@@ -274,6 +277,7 @@ tests/Unit/Spatial/OvertureImportSqlManifestTest.php
 tests/Unit/Spatial/OverturePlaceNormalizerFlatShapeTest.php
 tests/Unit/Spatial/OverturePlaceNormalizerTest.php
 tests/Unit/Spatial/OverturePlaceNormalizerV117Test.php
+tests/Unit/Spatial/OvertureTaxonomyMapV2Test.php
 tests/Unit/Spatial/PadUsBoundarySourceTest.php
 tests/Unit/Spatial/PlaceAuthorityLinkMaterializerTest.php
 tests/Unit/Spatial/PlaceRowMaterializerTest.php

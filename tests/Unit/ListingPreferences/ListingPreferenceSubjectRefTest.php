@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\ListingPreferences;
 
+use App\Support\Listing\MlsProvider;
 use App\Support\ListingPreferences\ListingPreferenceSubjectRef;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
@@ -18,10 +19,12 @@ class ListingPreferenceSubjectRefTest extends TestCase
     {
         $subject = ListingPreferenceSubjectRef::mls(
             new SmartTagListingRef(SmartTagListingType::Bridge, 12345),
+            MlsProvider::StellarBridge,
             'MFR123456789',
         );
 
-        $this->assertSame('mls:MFR123456789', $subject->subjectKey);
+        $this->assertSame('mls:stellar_bridge:MFR123456789', $subject->subjectKey);
+        $this->assertSame(MlsProvider::StellarBridge, $subject->mlsProvider());
         $this->assertTrue($subject->isMlsSubject());
         $this->assertSame('MFR123456789', $subject->mlsListingKey());
 
@@ -61,10 +64,12 @@ class ListingPreferenceSubjectRefTest extends TestCase
     {
         $bridge = ListingPreferenceSubjectRef::mls(
             new SmartTagListingRef(SmartTagListingType::Bridge, 12345),
+            MlsProvider::StellarBridge,
             'MFR999',
         );
         $native = ListingPreferenceSubjectRef::mls(
             new SmartTagListingRef(SmartTagListingType::SellerAgent, 678),
+            MlsProvider::StellarBridge,
             'MFR999',
         );
 
@@ -79,8 +84,8 @@ class ListingPreferenceSubjectRefTest extends TestCase
     /** @test */
     public function two_different_mls_listings_are_two_subjects(): void
     {
-        $a = ListingPreferenceSubjectRef::mls(new SmartTagListingRef(SmartTagListingType::Bridge, 1), 'MFR1');
-        $b = ListingPreferenceSubjectRef::mls(new SmartTagListingRef(SmartTagListingType::Bridge, 2), 'MFR2');
+        $a = ListingPreferenceSubjectRef::mls(new SmartTagListingRef(SmartTagListingType::Bridge, 1), MlsProvider::StellarBridge, 'MFR1');
+        $b = ListingPreferenceSubjectRef::mls(new SmartTagListingRef(SmartTagListingType::Bridge, 2), MlsProvider::StellarBridge, 'MFR2');
 
         $this->assertFalse($a->sameSubjectAs($b));
     }
@@ -98,13 +103,20 @@ class ListingPreferenceSubjectRefTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        ListingPreferenceSubjectRef::mls(new SmartTagListingRef(SmartTagListingType::Bridge, 1), '   ');
+        ListingPreferenceSubjectRef::mls(new SmartTagListingRef(SmartTagListingType::Bridge, 1), MlsProvider::StellarBridge, '   ');
     }
 
     /** @test */
     public function a_malformed_subject_key_is_refused(): void
     {
-        foreach (['', 'nonsense', 'byo:bridge:1', 'byo:seller_agent:0', 'byo:seller_agent:abc', 'mls:'] as $bad) {
+        foreach ([
+            '', 'nonsense', 'byo:bridge:1', 'byo:seller_agent:0', 'byo:seller_agent:abc',
+            'mls:',
+            'mls:MFR123',                 // the legacy un-namespaced form
+            'mls::MFR123',                // empty provider segment
+            'mls:not_a_provider:MFR123',  // unrecognised provider
+            'mls:stellar_bridge:',        // empty listing key
+        ] as $bad) {
             try {
                 new ListingPreferenceSubjectRef(
                     new SmartTagListingRef(SmartTagListingType::SellerAgent, 1),

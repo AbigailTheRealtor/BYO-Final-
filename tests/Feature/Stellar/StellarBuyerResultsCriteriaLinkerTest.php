@@ -141,6 +141,7 @@ class StellarBuyerResultsCriteriaLinkerTest extends TestCase
     private function insertListing(array $overrides = []): void
     {
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => 'CLTEST-' . uniqid(),
             'listing_id'              => 'CLLID-' . uniqid(),
             'standard_status'         => 'Active',

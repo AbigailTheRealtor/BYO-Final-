@@ -70,6 +70,7 @@ class TenantCriteriaLocationPrecedenceTest extends TestCase
         $key = 'TLOC-' . uniqid();
 
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $key, 'listing_id' => 'LID-' . uniqid(), 'standard_status' => 'Active',
             'property_type' => 'Residential', 'list_price' => 400000,
             'city' => 'Orlando', 'state_or_province' => 'FL', 'postal_code' => '32801', 'county_or_parish' => 'Orange',

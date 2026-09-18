@@ -68,6 +68,7 @@ class BridgeListingLookupServiceTest extends TestCase
     private function seedLocal(array $attributes = []): BridgeProperty
     {
         return BridgeProperty::create(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'PHPUNIT-K-LOCAL',
             'listing_id'        => 'PHPUNIT-MLS-LOCAL',
             'standard_status'   => 'Active',
@@ -115,6 +116,7 @@ class BridgeListingLookupServiceTest extends TestCase
         $this->assertNotNull($candidate);
         $this->assertSame('PHPUNIT-K-API', $candidate->listingKey);
         $this->assertDatabaseHas('bridge_properties', [
+            'provider'                => 'stellar_bridge',
             'listing_key' => 'PHPUNIT-K-API',
             'listing_id'  => 'PHPUNIT-MLS-API',
         ]);

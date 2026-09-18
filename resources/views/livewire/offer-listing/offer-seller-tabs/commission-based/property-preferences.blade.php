@@ -3174,6 +3174,12 @@
     </div>
 
 @endif
+
+{{-- Property Features (owner-selected Smart Tags). Renders only for the four
+     Seller/Landlord Offer Listing wizards and only while the activation gate is
+     open; the partial itself decides, so this include is unconditional. --}}
+@include('livewire.offer-listing.shared._owner-smart-tags')
+
 </div>
 
 <script>

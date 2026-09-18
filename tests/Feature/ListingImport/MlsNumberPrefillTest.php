@@ -77,6 +77,7 @@ class MlsNumberPrefillTest extends TestCase
         ];
 
         return BridgeProperty::create(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => self::KEY,
             'listing_id'              => self::MLS,
             'standard_status'         => 'Active',

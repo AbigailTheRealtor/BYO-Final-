@@ -120,6 +120,7 @@ class MatchCorrectnessP0Test extends TestCase
         unset($overrides['__raw']);
 
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'      => 'stellar_bridge',
             'listing_key'       => $key,
             'listing_id'        => 'P0-LID-' . uniqid(),
             'standard_status'   => 'Active',

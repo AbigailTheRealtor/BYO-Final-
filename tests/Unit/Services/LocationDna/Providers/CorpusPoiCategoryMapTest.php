@@ -46,16 +46,19 @@ class CorpusPoiCategoryMapTest extends TestCase
     }
 
     /**
-     * The supported set is DERIVED from the corpus taxonomy, not restated beside it.
-     * If a later import adds a category to OvertureCategoryMap, this map must follow
-     * without an edit — and if it ever stopped following, this fails.
+     * The supported set is an explicit list, NOT derived from the corpus taxonomy — a corpus
+     * may hold more categories than Location DNA uses, and widening the corpus must never
+     * widen Location DNA. What must still hold is the other direction: every supported key
+     * is one the loaded (v1) corpus can actually carry, or Location DNA would claim a
+     * category no corpus row holds. A new corpus category does NOT belong here.
      */
-    public function test_supported_set_tracks_the_corpus_taxonomy(): void
+    public function test_every_supported_key_is_carried_by_the_loaded_corpus(): void
     {
         $taxonomy = (new OvertureCategoryMap())->canonicalKeys();
-        sort($taxonomy);
 
-        $this->assertSame($taxonomy, CorpusPoiCategoryMap::supportedCanonicalKeys());
+        foreach (CorpusPoiCategoryMap::supportedCanonicalKeys() as $key) {
+            $this->assertContains($key, $taxonomy, $key);
+        }
     }
 
     public function test_every_loaded_category_is_supported_and_maps_to_itself(): void
@@ -139,6 +142,39 @@ class CorpusPoiCategoryMapTest extends TestCase
             CorpusPoiCategoryMap::descriptorPairsAreUnique(),
             'Two pipeline categories share a (google_type, keyword) pair — descriptor '
             . 'recovery and the tile cache key would both become ambiguous.'
+        );
+    }
+
+    /**
+     * The DERIVED descriptor must not collide with any pipeline category either.
+     *
+     * `descriptorPairsAreUnique()` scans `CATEGORIES` against itself, and
+     * `TOP_RATED_DINING_META` is deliberately not in that constant — it is derived from
+     * restaurant candidates by rating rather than fetched. So the existing guard cannot
+     * see it, and a future category declared with BOTH `google_type` and `keyword` null
+     * would silently share its ("", "") pair. The consequence would be quiet and wrong:
+     * `supportsCategory(TOP_RATED_DINING_META)` would start answering with that other
+     * category's coverage, and the tile cache would key them together.
+     *
+     * Today every one of the nineteen carries at least one non-null discriminator, so this
+     * passes — which is exactly when a guard is worth adding.
+     */
+    public function test_the_derived_top_rated_dining_descriptor_collides_with_no_category(): void
+    {
+        $derived = CorpusPoiCategoryMap::descriptorPair(LocationDnaPoiDistanceService::TOP_RATED_DINING_META);
+
+        foreach (LocationDnaPoiDistanceService::CATEGORIES as $key => $meta) {
+            $this->assertNotSame(
+                $derived,
+                CorpusPoiCategoryMap::descriptorPair($meta),
+                "Category '{$key}' shares the derived top_rated_dining descriptor pair; "
+                . 'coverage and tile-cache identity would both become ambiguous.'
+            );
+        }
+
+        $this->assertNull(
+            CorpusPoiCategoryMap::corpusCategoryForDescriptor(LocationDnaPoiDistanceService::TOP_RATED_DINING_META),
+            'The derived descriptor must resolve to no corpus category.'
         );
     }
 

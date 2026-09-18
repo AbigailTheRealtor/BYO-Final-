@@ -124,6 +124,7 @@ class TenantCommercialLeaseMatchingTest extends TestCase
     {
         $key = 'TCLM-' . uniqid();
         DB::table('bridge_properties')->insert(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => 'TCLM-LID-' . uniqid(),
             'standard_status'         => 'Active',
@@ -391,6 +392,7 @@ class TenantCommercialLeaseMatchingTest extends TestCase
             'city'       => 'Tampa',
         ]);
         $overKey = $this->insertBridgeListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => 'TCLM-OVER-' . uniqid(),
             'listing_id'  => 'TCLM-OVER-LID-' . uniqid(),
             'list_price'  => 6000.00,

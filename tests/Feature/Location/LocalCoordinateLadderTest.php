@@ -81,6 +81,7 @@ class LocalCoordinateLadderTest extends TestCase
     private function mlsCoordinate(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => self::LISTING_KEY,
             'unparsed_address'  => '123 Main St',
             'city'              => 'Tampa',
