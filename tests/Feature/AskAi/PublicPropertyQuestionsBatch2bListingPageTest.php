@@ -141,7 +141,9 @@ class PublicPropertyQuestionsBatch2bListingPageTest extends TestCase
         // place — still without a count ('2 car' and 'spaces' stay on the leak list below).
         $this->assertArrayNotHasKey('seller_garage', $answers);
         $this->assertSame('This property has a garage.', $answers['seller_parking']);
-        $this->assertSame('The zoning is listed as RS-60.', $answers['seller_zoning']);
+        // Stored, but the Residential seller form does not collect zoning (SP
+        // property-preferences :2156 / :2537 / :2796), so it is not asked on this listing.
+        $this->assertArrayNotHasKey('seller_zoning', $answers);
         $this->assertSame('Roof types listed for this property: Shingle, Standing seam metal.', $answers['seller_roof_type']);
         $this->assertSame('The listing indicates there are leasing restrictions.', $answers['seller_leasing_restrictions']);
         $this->assertSame(
@@ -163,14 +165,16 @@ class PublicPropertyQuestionsBatch2bListingPageTest extends TestCase
         $this->assertSame('This property was built in 2004.', $answers['landlord_year_built']);
         $this->assertSame('Annual property taxes are $3,120 for tax year 2024.', $answers['landlord_property_taxes']);
         $this->assertSame('The HOA fee is $175 (frequency: Twice a year).', $answers['landlord_hoa_fee']);
-        $this->assertSame('The zoning is listed as RM-15.', $answers['landlord_zoning']);
+        // Stored, but the landlord form collects zoning only for Commercial Property (LP
+        // property-preferences :1336), so it is not asked on this Residential listing.
+        $this->assertArrayNotHasKey('landlord_zoning', $answers);
         $this->assertSame('Roof type listed for this property: Tile.', $answers['landlord_roof_type']);
         $this->assertSame('The listing indicates there are no leasing restrictions.', $answers['landlord_leasing_restrictions']);
         $this->assertSame('Community amenities listed for this property: Clubhouse, Dog Park.', $answers['landlord_association_amenities']);
 
         // Display order: size, construction, costs, hoa, then the rest.
         $this->assertSame(
-            ['landlord_bedrooms', 'landlord_year_built', 'landlord_property_taxes', 'landlord_hoa_fee', 'landlord_zoning', 'landlord_roof_type', 'landlord_leasing_restrictions', 'landlord_association_amenities', 'landlord_association_details'],
+            ['landlord_bedrooms', 'landlord_year_built', 'landlord_property_taxes', 'landlord_hoa_fee', 'landlord_roof_type', 'landlord_leasing_restrictions', 'landlord_association_amenities', 'landlord_association_details'],
             array_keys($answers)
         );
 

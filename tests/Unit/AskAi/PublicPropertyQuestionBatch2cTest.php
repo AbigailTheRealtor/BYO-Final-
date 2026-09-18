@@ -474,6 +474,10 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
             'tenant_search_areas_counties'  => 'tenant_search_areas',
             'tenant_appliances'             => 'tenant_property_features',
             'seller_lot_size'               => 'seller_total_acreage',
+            // Landlord: renewal and pet fee are asked on both forms; each yields to the
+            // composite that also states it wherever that composite renders.
+            'landlord_renewal_option'       => 'landlord_lease_terms',
+            'landlord_pet_fee'              => 'landlord_pets_allowed',
         ], $pairs);
     }
 

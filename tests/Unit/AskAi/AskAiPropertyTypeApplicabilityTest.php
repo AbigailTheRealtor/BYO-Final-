@@ -127,10 +127,24 @@ class AskAiPropertyTypeApplicabilityTest extends TestCase
             ['bedrooms' => '2', 'bathrooms' => '1', 'association_fee_frequency' => 'Monthly']
         );
 
-        foreach (['landlord_bedrooms', 'landlord_bathrooms', 'landlord_hoa_fee', 'landlord_hoa_fee_coverage',
-                  'landlord_appliances', 'landlord_pets_allowed', 'landlord_association_amenities'] as $id) {
+        // What the Commercial form does NOT collect (LP property-preferences :388 bedrooms,
+        // :1757 pets — both inside the Residential block) is never asked.
+        foreach (['landlord_bedrooms', 'landlord_pets_allowed'] as $id) {
             $this->assertArrayNotHasKey($id, $answers, "{$id} leaked onto a Commercial Lease listing");
         }
+
+        // What it DOES collect is answerable: bathrooms (:426, both types), appliances (:569,
+        // no gate) and the HOA block (tax-legal-hoa-disclosures has no property-type gate).
+        // These were withheld by a hand-written Residential-only declaration before
+        // AskAiFieldApplicability tied the catalog to the form.
+        foreach (['landlord_bathrooms', 'landlord_appliances'] as $id) {
+            $this->assertArrayHasKey($id, $answers, "{$id} is collected by the Commercial form and must be answerable");
+        }
+
+        // The HOA fee is a child of has_hoa on every type; with the parent answered it is asked.
+        $withHoa = $this->ask('landlord', 'Commercial Lease',
+            ['has_hoa' => 'Yes', 'association_fee_amount' => '300'], ['association_fee_frequency' => 'Monthly']);
+        $this->assertArrayHasKey('landlord_hoa_fee', $withHoa, 'The Commercial form collects the HOA fee.');
     }
 
     public function test_a_business_opportunity_is_never_asked_house_questions(): void
@@ -142,9 +156,19 @@ class AskAiPropertyTypeApplicabilityTest extends TestCase
             ['bedrooms' => '4', 'bathrooms' => '3']
         );
 
-        foreach (['seller_bedrooms', 'seller_bathrooms', 'seller_pool', 'seller_garage', 'seller_hoa_fee'] as $id) {
+        // Not collected for Business (SP property-preferences :808 bedrooms, :1274 pool, :1049
+        // garage — Residential / Income blocks only): never asked.
+        foreach (['seller_bedrooms', 'seller_pool', 'seller_garage'] as $id) {
             $this->assertArrayNotHasKey($id, $answers, "{$id} leaked onto a Business Opportunity listing");
         }
+
+        // Collected for Business: bathrooms (:841 includes 'Business'); the HOA block has no
+        // property-type gate. seller_hoa_fee itself yields to its coverage composite.
+        $this->assertArrayHasKey('seller_bathrooms', $answers);
+
+        $withHoa = $this->ask('seller', 'Business Opportunity',
+            ['hoa_association' => 'Yes', 'hoa_fee' => '100', 'hoa_payment_schedule' => 'Monthly'], ['association_fee_frequency' => 'Monthly']);
+        $this->assertArrayHasKey('seller_hoa_fee', $withHoa, 'The Business form collects the HOA fee.');
     }
 
     public function test_an_unknown_property_type_fails_closed_but_keeps_universal_questions(): void
@@ -167,12 +191,19 @@ class AskAiPropertyTypeApplicabilityTest extends TestCase
         $answers = $this->ask(
             'seller',
             'Residential Income',
-            ['bedrooms' => '8', 'asking_price' => '1200000'],
+            ['bedrooms' => '8', 'year_built' => '1978', 'asking_price' => '1200000'],
             ['bedrooms' => '8']
         );
 
-        $this->assertArrayHasKey('seller_bedrooms', $answers);
+        // Income resolves to its OWN type rather than to "unknown": year_built is collected
+        // only for typed listings (SP property-preferences :1920 inside the Residential/Income
+        // block), so reaching it proves the type resolved.
+        $this->assertArrayHasKey('seller_year_built', $answers);
         $this->assertArrayHasKey('seller_asking_price', $answers);
+
+        // The Income form has no whole-property bedrooms input — it asks per unit
+        // (unit_type_configurations, :1721) — so a stored bedrooms row is not asked about.
+        $this->assertArrayNotHasKey('seller_bedrooms', $answers);
     }
 
     // ── registry integrity ──────────────────────────────────────────────────

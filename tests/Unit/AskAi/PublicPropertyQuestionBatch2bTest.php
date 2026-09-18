@@ -542,6 +542,8 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
 
         $ids = array_column($this->service->forListing('landlord', $context, []), 'id');
 
-        $this->assertSame(['landlord_bedrooms', 'landlord_year_built', 'landlord_appliances', 'landlord_zoning'], $ids);
+        // Zoning is on the listing but not asked: the landlord form collects it only for
+        // Commercial Property (LP property-preferences :1336).
+        $this->assertSame(['landlord_bedrooms', 'landlord_year_built', 'landlord_appliances'], $ids);
     }
 }

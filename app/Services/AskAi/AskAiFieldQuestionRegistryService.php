@@ -3616,7 +3616,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_bedrooms' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'How many bedrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bedrooms',
@@ -3631,7 +3631,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_bathrooms' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => [PT::RESIDENTIAL, PT::BUSINESS, PT::COMMERCIAL],
                 'question'         => 'How many bathrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bathrooms',
@@ -3644,7 +3644,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_heated_square_feet' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL, PT::BUSINESS, PT::COMMERCIAL],
                 'question'         => 'What is the heated square footage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.square_feet',
@@ -3657,7 +3657,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_year_built' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],
                 'question'         => 'What year was the property built?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.year_built',
@@ -3670,7 +3670,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_property_taxes' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What are the property taxes?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.annual_property_taxes',
@@ -3683,7 +3683,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_hoa_fee' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What are the HOA fees?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.hoa_fee',
@@ -3698,7 +3698,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_hoa_fee_coverage' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'HOA fees & what do they cover?',
                 'source_kind'      => 'listing',
                 // Composite (Batch 2c): the fee statement of seller_hoa_fee plus what the fee
@@ -3718,7 +3718,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_cdd_fee' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is there a CDD fee?',
                 'source_kind'      => 'listing',
                 // has_cdd (Yes / No / Unknown) with the annual amount when one is stated.
@@ -3732,7 +3732,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_total_acreage' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What is the lot size / acreage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.total_acreage',
@@ -3746,7 +3746,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_appliances' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],
                 'question'         => 'What appliances are included?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.appliances',
@@ -3759,7 +3759,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_utilities' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 // The seller field records utilities AVAILABLE or CONNECTED at the property
                 // ("Electricity Connected"), not utilities included in a price, so the
                 // question says what the field holds.
@@ -3816,7 +3816,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_garage' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => [PT::RESIDENTIAL],
                 // Suppressed whenever the parking composite is available, which answers
                 // the same question with the space count and the carport as well.
                 'narrower_of'      => 'seller_parking',
@@ -3834,7 +3834,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_zoning' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => [PT::COMMERCIAL, PT::BUSINESS, PT::VACANT_LAND],
                 'question'         => 'What is the zoning?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.zoning',
@@ -3847,7 +3847,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_roof_type' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],
                 'question'         => 'What type of roof does it have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.roof_type',
@@ -3863,7 +3863,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_leasing_restrictions' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Are there leasing restrictions?',
                 'source_kind'      => 'listing',
                 // context rental_restrictions ← meta 'leasing_restrictions' (Yes / No /
@@ -3912,7 +3912,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_bathrooms' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'How many bathrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bathrooms',
@@ -3925,7 +3925,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_heated_square_feet' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What is the heated square footage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.square_feet',
@@ -3938,7 +3938,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_appliances' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What appliances are included?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.appliances',
@@ -3978,7 +3978,7 @@ class AskAiFieldQuestionRegistryService
             // ---- Landlord — Batch 2b ----
             'landlord_year_built' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What year was the property built?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.year_built',
@@ -3991,7 +3991,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_property_taxes' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What are the property taxes?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.annual_property_taxes',
@@ -4004,7 +4004,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_hoa_fee' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What are the HOA fees?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.association_fee_amount',
@@ -4019,7 +4019,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_hoa_fee_coverage' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'HOA fees & what do they cover?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.association_fee_amount',
@@ -4036,7 +4036,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_zoning' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => [PT::COMMERCIAL],
                 'question'         => 'What is the zoning?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.zoning',
@@ -4049,7 +4049,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_roof_type' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What type of roof does it have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.roof_type',
@@ -4063,7 +4063,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_leasing_restrictions' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 // The HOA's leasing-restriction answer. It is NOT the offered lease term:
                 // min_lease_period and the lease-length cascade are never read here.
                 'question'         => 'Are there leasing restrictions?',
@@ -4078,7 +4078,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_association_amenities' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What community amenities are listed?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.association_amenities',
@@ -4093,7 +4093,7 @@ class AskAiFieldQuestionRegistryService
 
             'seller_flood_zone' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What flood zone is the property in?',
                 'source_kind'      => 'listing',
                 // The canonical stored designation, and the only flood source this surface
@@ -4112,7 +4112,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_flood_zone' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What flood zone is the property in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.flood_zone_code',
@@ -4595,7 +4595,7 @@ class AskAiFieldQuestionRegistryService
                 'role'             => 'seller',
                 // Land and income property can be waterfront too; a business without
                 // real estate cannot.
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is this property on the water?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.waterfront',
@@ -4611,7 +4611,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_parking' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What parking does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.garage',
@@ -4628,7 +4628,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_climate_control' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],
                 'question'         => 'How is this property heated and cooled?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.air_conditioning',
@@ -4643,7 +4643,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_water_and_sewer' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What water and sewer service does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.water',
@@ -4658,7 +4658,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_construction' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],
                 'question'         => 'How is this property built?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.exterior_construction',
@@ -4673,7 +4673,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_interior_features' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What interior features does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.interior_features',
@@ -4688,7 +4688,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_building_features' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::COMMERCIAL],
                 'question'         => 'What building features does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.building_features',
@@ -4702,7 +4702,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_furnished' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => [PT::COMMERCIAL],
                 'question'         => 'Is this property furnished?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.furnished',
@@ -4717,7 +4717,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_home_warranty' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is a home warranty offered?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.home_warranty_offered',
@@ -4731,7 +4731,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_lot_size' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'How big is the lot?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.lot_size',
@@ -4748,7 +4748,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_association_details' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is there an association, and does it have to approve a buyer?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.hoa_association',
@@ -4768,7 +4768,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_special_assessments' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Are there any special assessments?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.has_special_assessments',
@@ -4784,7 +4784,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_occupancy' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],
                 'question'         => 'Is the property occupied?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.occupant_status',
@@ -4829,7 +4829,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_parcel_count' => [
                 'role'             => 'seller',
-                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'How many parcels are included?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.total_parcel_count',
@@ -4901,7 +4901,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_lease_terms' => [
                 'role'             => 'landlord',
-                'property_types'   => PT::ALL_TYPES,
+                'property_types'   => [PT::COMMERCIAL],
                 'question'         => 'What are the lease terms?',
                 'source_kind'      => 'listing',
                 // The landlord's OFFERED terms lead. `listing.lease_length` is deliberately
@@ -4931,6 +4931,45 @@ class AskAiFieldQuestionRegistryService
                 'order'            => 19,
                 'aliases'          => ['smoking', 'is smoking allowed', 'can i smoke', 'smoking policy',
                                        'non smoking'],
+            ],
+            // The renewal option and additional lease terms are asked on BOTH landlord forms,
+            // while the lease-terms composite leads with `terms_of_lease`, which only the
+            // Commercial form collects. This entry answers them where that composite cannot,
+            // and yields to it wherever the composite renders.
+            'landlord_renewal_option' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'Is there a lease renewal option?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.renewal_option',
+                'supporting_paths' => ['listing.additional_lease_terms'],
+                'covers'           => ['listing.renewal_option', 'listing.additional_lease_terms'],
+                'formatter'        => 'renewal_composite',
+                'guards'           => [],
+                'category'         => 'lease',
+                'order'            => 18,
+                'narrower_of'      => 'landlord_lease_terms',
+                'aliases'          => ['renewal', 'can i renew', 'renew the lease', 'renewal option',
+                                       'lease renewal'],
+            ],
+            // Pet fees are asked on BOTH landlord forms; the pet-policy composite that also
+            // states them is Residential-only because the "pets" input is. On a Commercial
+            // lease this is the only question that can reach them. `pet_fee_other` stays
+            // unasked (AskAiFieldDisposition::DELIBERATELY_NOT_ASKED, breed-proxy exposure).
+            'landlord_pet_fee' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'Is there a pet fee?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.pet_fee_type',
+                'supporting_paths' => ['listing.pet_fee_amount'],
+                'covers'           => ['listing.pet_fee_type', 'listing.pet_fee_amount'],
+                'formatter'        => 'pet_fee',
+                'guards'           => [],
+                'category'         => 'policies',
+                'order'            => 111,
+                'narrower_of'      => 'landlord_pets_allowed',
+                'aliases'          => ['pet fee', 'pet deposit', 'how much is the pet fee', 'pet rent'],
             ],
             'landlord_subletting_policy' => [
                 'role'             => 'landlord',
@@ -4963,7 +5002,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_condition' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What condition is the property in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.condition_prop',
@@ -4992,7 +5031,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_interior_features' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What interior features does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.interior_features',
@@ -5006,7 +5045,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_building_features' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => [PT::COMMERCIAL],
                 'question'         => 'What building features does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.building_features',
@@ -5034,7 +5073,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_water_frontage' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is this property on the water?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.waterfront',
@@ -5050,7 +5089,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_climate_control' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'How is this property heated and cooled?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.air_conditioning',
@@ -5065,7 +5104,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_water_and_sewer' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What water and sewer service does this property have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.water',
@@ -5079,7 +5118,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_construction' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'How is this property built?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.exterior_construction',
@@ -5094,7 +5133,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_lot_dimensions' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What are the lot dimensions?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.lot_dimensions',
@@ -5108,7 +5147,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_association_details' => [
                 'role'             => 'landlord',
-                'property_types'   => [PT::RESIDENTIAL],
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is this property in an association?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.has_hoa',

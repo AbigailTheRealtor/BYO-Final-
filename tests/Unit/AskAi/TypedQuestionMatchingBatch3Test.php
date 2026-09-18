@@ -233,6 +233,7 @@ class TypedQuestionMatchingBatch3Test extends TestCase
             'seller_garage / seller_parking',
             'seller_lot_size / seller_total_acreage',
             'landlord_hoa_fee / landlord_hoa_fee_coverage',
+            'landlord_renewal_option / landlord_lease_terms',
             'buyer_search_areas_counties / buyer_search_areas',
             'tenant_search_areas_counties / tenant_search_areas',
             'tenant_appliances / tenant_property_features',

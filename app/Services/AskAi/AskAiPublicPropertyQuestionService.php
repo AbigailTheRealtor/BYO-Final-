@@ -2,6 +2,8 @@
 
 namespace App\Services\AskAi;
 
+use App\Services\Pets\PetFeeNormalizer;
+
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\Listing\ListingPriceDisplay;
 use App\Support\Listing\FloodZoneCode;
@@ -1546,6 +1548,7 @@ class AskAiPublicPropertyQuestionService
             'lease_price', 'available_date', 'lease_terms_composite', 'smoking_policy',
             'subletting_policy', 'parking_terms', 'property_condition', 'unit_details_composite',
             'lot_dimensions_only', 'pet_policy_composite', 'pool_composite',
+            'renewal_composite', 'pet_fee',
         ], true);
     }
 
@@ -1676,6 +1679,8 @@ class AskAiPublicPropertyQuestionService
             'lot_dimensions_only'     => $this->lotDimensionsOnly($text),
             'pet_policy_composite'    => $this->petPolicyComposite($text, $supporting),
             'pool_composite'          => $this->poolComposite($text, $supporting),
+            'renewal_composite'       => $this->renewalComposite($text, $supporting),
+            'pet_fee'                 => $this->petFee($text, $supporting),
 
             default                  => null,
         };
@@ -2840,7 +2845,33 @@ class AskAiPublicPropertyQuestionService
             $parts[] = 'Lease terms offered: ' . $this->sentenceList($terms) . '.';
         }
 
-        $renewal = $this->cleanScalar($supporting['renewal_option'] ?? null);
+        $parts = array_merge($parts, $this->renewalAndAdditionalTerms(
+            $supporting['renewal_option'] ?? null,
+            $supporting['additional_lease_terms'] ?? null
+        ));
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** The renewal option, plus any additional lease terms — both landlord forms ask these. */
+    private function renewalComposite(string $text, array $supporting): ?string
+    {
+        $parts = $this->renewalAndAdditionalTerms($text, $supporting['additional_lease_terms'] ?? null);
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /**
+     * The one wording of renewal + additional terms, shared by both lease answers so they
+     * cannot drift. `additional_lease_terms` is provider-authored prose and is screened
+     * before it joins the sentence; the structured renewal answer publishes either way.
+     *
+     * @return list<string>
+     */
+    private function renewalAndAdditionalTerms(mixed $renewalValue, mixed $additionalValue): array
+    {
+        $parts   = [];
+        $renewal = $this->cleanScalar($renewalValue);
         if ($renewal !== null) {
             $offered = $this->isAffirmative($renewal);
             if ($offered === true) {
@@ -2852,14 +2883,44 @@ class AskAiPublicPropertyQuestionService
             }
         }
 
-        $additional = $this->cleanScalar($supporting['additional_lease_terms'] ?? null);
+        $additional = $this->cleanScalar($additionalValue);
         if ($additional !== null
             && PublicProviderTextPolicy::isPublishable($additional)
             && mb_strlen($additional) <= self::KB_MAX_ANSWER_LENGTH) {
             $parts[] = rtrim($additional, '.') . '.';
         }
 
-        return $parts === [] ? null : implode(' ', $parts);
+        return $parts;
+    }
+
+    /**
+     * The landlord's pet fee on its own — the structured type and amount only, never the
+     * "Other" free-text box beside it (breed-proxy exposure). An "Other" type publishes
+     * NOTHING: cleanScalar() already treats the literal as a placeholder, and rightly — what
+     * the fee is (recurring or one-time) lives in the prose that is not published, so a bare
+     * amount would state half a fact.
+     */
+    private function petFee(string $text, array $supporting): ?string
+    {
+        $type = $this->cleanScalar($text);
+        if ($type === null) {
+            return null;
+        }
+
+        if ($type === PetFeeNormalizer::TYPE_NONE) {
+            return 'There is no pet fee.';
+        }
+
+        $amount = $this->cleanScalar($supporting['pet_fee_amount'] ?? null);
+        $money  = $amount === null ? null : $this->withMoney($amount, static fn (string $m): string => $m);
+
+        if (!in_array($type, [PetFeeNormalizer::TYPE_ONE_TIME_REFUNDABLE, PetFeeNormalizer::TYPE_NON_REFUNDABLE, PetFeeNormalizer::TYPE_MONTHLY], true)) {
+            return null; // an unrecognised stored type is not paraphrased
+        }
+
+        return $money === null
+            ? 'Pet fee type: ' . $type . '.'
+            : 'Pet fee: ' . $money . ' (' . $type . ').';
     }
 
     private function smokingPolicy(string $text): ?string

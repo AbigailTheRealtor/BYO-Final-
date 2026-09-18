@@ -148,7 +148,9 @@ class TypedQuestionCardBatch3Test extends TestCase
         $card  = $this->card($this->page('offer.listing.seller.view', $listing->id), 'seller');
         $vocab = $this->shippedVocabulary($card);
 
-        $this->assertSame(['seller_pool', 'seller_zoning'], array_keys($vocab));
+        // Zoning is stored but not asked: the Residential seller form does not collect it
+        // (SP property-preferences :2156 / :2537 / :2796 — Commercial, Business, Vacant Land).
+        $this->assertSame(['seller_pool'], array_keys($vocab));
 
         $all = array_merge(...array_values($vocab));
         foreach ([
