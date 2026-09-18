@@ -285,27 +285,147 @@ class UnsupportedCategorySemanticsTest extends TestCase
         $this->assertNotContains('grocery_store', $skipped, 'a supported category is never reported as unsupported');
     }
 
-    /** A re-run heals rows an older build wrote, without a data-fix command. */
-    public function test_a_stale_not_found_row_from_an_earlier_build_is_removed_on_the_next_run(): void
+    // ── self-healing on a CACHE-CLEAN run ───────────────────────────────────
+
+    /**
+     * THE CASE THE FIRST VERSION OF THIS TEST DID NOT ACTUALLY EXERCISE.
+     *
+     * Its fixture row carried no `source_lat`/`source_lng` and no `pois_fetch_version`, so
+     * the coordinate and version comparisons both failed and the run took the unrelated
+     * FULL-DELETE branch. The row disappeared, the assertion passed, and the unsupported
+     * sweep never ran — green for the wrong reason, on a listing shaped unlike any the
+     * rule is meant to heal.
+     *
+     * The listings that actually carry stale rows are the ones whose cache is CLEAN:
+     * written by an earlier corpus build, same coordinates, same fetch version. This
+     * fixture is that listing — every supported category populated and valid, plus stale
+     * `not_found` rows for categories the provider does not carry — so the run reaches the
+     * cache path and the sweep is the only thing that can remove them.
+     */
+    public function test_stale_unsupported_rows_are_removed_on_a_fully_cache_valid_run(): void
     {
-        PropertyLocationPoi::create([
-            'listing_type' => self::LISTING_TYPE,
-            'listing_id'   => self::LISTING_ID,
-            'poi_category' => 'beach',
-            'rank'         => 1,
-            'status'       => 'not_found',
-            'error'        => 'overture_corpus returned zero results for this category',
-            'data_source'  => 'overture_corpus',
-            'calculated_at'=> now(),
-        ]);
+        $this->seedCacheValidListing();
+
+        $before = PropertyLocationPoi::where('listing_id', self::LISTING_ID);
+        $this->assertSame(11, (clone $before)->count(), 'fixture sanity: 8 supported + 3 stale unsupported');
+
+        $this->runPipeline();
+
+        foreach (['beach', 'park', 'school'] as $category) {
+            $this->assertSame(
+                0,
+                PropertyLocationPoi::where('poi_category', $category)->count(),
+                "Stale '{$category}' row survived a cache-clean run — the sweep did not reach it."
+            );
+        }
+    }
+
+    /** …and the sweep must not disturb the valid cached rows sitting beside them. */
+    public function test_the_sweep_leaves_valid_supported_cached_rows_untouched(): void
+    {
+        $this->seedCacheValidListing();
+
+        $this->runPipeline();
+
+        foreach (self::SUPPORTED_SEEDED as $category) {
+            $row = PropertyLocationPoi::where('poi_category', $category)->first();
+
+            $this->assertNotNull($row, "Valid cached '{$category}' row was destroyed by the sweep.");
+            $this->assertSame('found', $row->status);
+            $this->assertSame('Cached ' . $category, $row->poi_name, 'The cached row was refetched rather than reused.');
+        }
+    }
+
+    /**
+     * `top_rated_dining` is removed even when `restaurant` is cache-clean.
+     *
+     * Coverage is a property of the provider; it must not become conditional on a cache
+     * outcome. When the question sat second in that `elseif` chain, a clean restaurant
+     * meant it was never asked and the stale row survived and was re-emitted.
+     */
+    public function test_top_rated_dining_is_swept_even_when_restaurant_is_cache_clean(): void
+    {
+        $this->seedCacheValidListing(withTopRatedDining: true);
+
+        $this->assertSame(1, PropertyLocationPoi::where('poi_category', 'top_rated_dining')->count());
 
         $this->runPipeline();
 
         $this->assertSame(
             0,
-            PropertyLocationPoi::where('poi_category', 'beach')->count(),
-            'The stale row must be cleared by the run that now knows better.'
+            PropertyLocationPoi::where('poi_category', 'top_rated_dining')->count(),
+            'A cache-clean restaurant must not shield a category the provider cannot carry.'
         );
+    }
+
+    // ── grouped secondaries, independent of order and cache shape ───────────
+
+    /**
+     * EVERY pair in CATEGORY_GROUPS, not just the one that broke.
+     *
+     * park => waterfront_park : primary unsupported → BOTH skipped, no rows
+     * gym => fitness_center   : primary supported   → BOTH persist rows
+     * beach => beach_access   : primary unsupported → BOTH skipped, no rows
+     */
+    public function test_every_category_group_pair_resolves_correctly(): void
+    {
+        $this->runPipeline($this->groupedFetcher());
+
+        foreach (LocationDnaPoiDistanceService::CATEGORY_GROUPS as $primary => $secondary) {
+            $primaryRows   = PropertyLocationPoi::where('poi_category', $primary)->count();
+            $secondaryRows = PropertyLocationPoi::where('poi_category', $secondary)->count();
+
+            if ($primary === 'gym') {
+                $this->assertGreaterThan(0, $primaryRows, "supported primary '{$primary}' must persist rows");
+                $this->assertGreaterThan(0, $secondaryRows, "secondary '{$secondary}' derives from a supported primary");
+                continue;
+            }
+
+            $this->assertSame(0, $primaryRows, "unsupported primary '{$primary}' must persist no row");
+            $this->assertSame(
+                0,
+                $secondaryRows,
+                "secondary '{$secondary}' must not be fetched independently when its primary is unsupported"
+            );
+        }
+    }
+
+    /**
+     * Correctness must not depend on DECLARATION ORDER.
+     *
+     * The old `$preloaded === null` proxy meant "the primary has not run yet", which is
+     * only equivalent to "we are about to ask the provider" while every primary precedes
+     * its secondary in CATEGORIES. Nothing asserted that. The decision is now precomputed
+     * from CATEGORY_GROUPS, so this asserts the invariant the old code silently needed.
+     */
+    public function test_the_unsupported_decision_does_not_depend_on_category_order(): void
+    {
+        $service = new LocationDnaPoiDistanceService(nearbyFetcher: $this->groupedFetcher());
+
+        $method = new \ReflectionMethod($service, 'unsupportedCategoriesFor');
+        $method->setAccessible(true);
+        $set = $method->invoke($service, $this->groupedFetcher());
+
+        // A secondary is judged by its primary, never by where it happens to be declared.
+        $this->assertArrayNotHasKey('fitness_center', $set, 'gym is supported, so its secondary is derivable');
+        $this->assertArrayHasKey('waterfront_park', $set, 'park is unsupported, so its secondary is too');
+        $this->assertArrayHasKey('beach_access', $set, 'beach is unsupported, so its secondary is too');
+        $this->assertArrayHasKey('top_rated_dining', $set, 'no rating signal means the derived category is uncarried');
+    }
+
+    /** Run metadata names the skipped categories even on a cache-clean run. */
+    public function test_run_metadata_names_skipped_categories_on_a_cached_run(): void
+    {
+        $this->seedCacheValidListing();
+
+        $service = new LocationDnaPoiDistanceService(nearbyFetcher: $this->corpusShapedFetcher());
+        $service->calculateForListing(self::LISTING_TYPE, self::LISTING_ID);
+
+        $skipped = $service->getLastRunStats()['categories_unsupported_by_provider'] ?? [];
+
+        foreach (['beach', 'park', 'school'] as $category) {
+            $this->assertContains($category, $skipped, "a cached run must still report '{$category}' as unsupported");
+        }
     }
 
     // ── the real adapter answers the question correctly ─────────────────────
@@ -338,6 +458,63 @@ class UnsupportedCategorySemanticsTest extends TestCase
     }
 
     // ── fixtures ────────────────────────────────────────────────────────────
+
+    /** The eight categories this fixture seeds as valid, cached, supported rows. */
+    private const SUPPORTED_SEEDED = [
+        'grocery_store', 'pharmacy', 'coffee_shop', 'restaurant',
+        'gym', 'fitness_center', 'gas_station', 'shopping_center',
+    ];
+
+    /**
+     * A listing an EARLIER corpus build fully populated: same coordinates, same fetch
+     * version, every supported category valid — plus stale `not_found` rows for categories
+     * the provider does not carry. This is the shape that reaches the cache path.
+     */
+    private function seedCacheValidListing(bool $withTopRatedDining = false): void
+    {
+        $version = (new \App\Services\LocationDna\LocationDnaVersionService())->fetchVersion();
+        $scoring = (new \App\Services\LocationDna\LocationDnaVersionService())->scoringVersion();
+
+        $base = [
+            'listing_type'         => self::LISTING_TYPE,
+            'listing_id'           => self::LISTING_ID,
+            'rank'                 => 1,
+            'source_lat'           => self::LAT,
+            'source_lng'           => self::LNG,
+            'data_source'          => 'overture_corpus',
+            'pois_fetch_version'   => $version,
+            'pois_scoring_version' => $scoring,
+            'calculated_at'        => now(),
+        ];
+
+        foreach (self::SUPPORTED_SEEDED as $category) {
+            PropertyLocationPoi::create($base + [
+                'poi_category'   => $category,
+                'status'         => 'found',
+                'poi_name'       => 'Cached ' . $category,
+                'poi_lat'        => 27.7930,
+                'poi_lng'        => -82.7401,
+                'distance_miles' => 0.41,
+            ]);
+        }
+
+        // Rows an older build wrote for categories the corpus does not carry.
+        foreach (['beach', 'park', 'school'] as $category) {
+            PropertyLocationPoi::create($base + [
+                'poi_category' => $category,
+                'status'       => 'not_found',
+                'error'        => 'overture_corpus returned zero results for this category',
+            ]);
+        }
+
+        if ($withTopRatedDining) {
+            PropertyLocationPoi::create($base + [
+                'poi_category' => 'top_rated_dining',
+                'status'       => 'not_found',
+                'error'        => 'overture_corpus returned zero results for this category',
+            ]);
+        }
+    }
 
     private function pois()
     {

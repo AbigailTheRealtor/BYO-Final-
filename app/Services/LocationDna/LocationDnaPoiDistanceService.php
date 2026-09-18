@@ -76,7 +76,7 @@ class LocationDnaPoiDistanceService
      * itself, and the provider-support question asked before it. Two literals that must
      * agree forever is how they come to disagree.
      */
-    private const TOP_RATED_DINING_META = [
+    public const TOP_RATED_DINING_META = [
         'label'          => 'Top Rated Dining',
         'query_strategy' => 'derived',
         'google_type'    => null,
@@ -606,6 +606,21 @@ class LocationDnaPoiDistanceService
             $sourceLat = (float) $dnaRecord->geocoded_lat;
             $sourceLng = (float) $dnaRecord->geocoded_lng;
 
+            // (c2) WHICH CATEGORIES THIS PROVIDER DOES NOT CARRY — resolved ONCE, up front.
+            //
+            // Constructed here rather than after the guards because the CACHE CHECK below
+            // needs the answer: a listing whose rows all predate this rule matches on
+            // coordinates and on fetch version, so it takes the `cached` early-return and
+            // the fetch loop never runs. Deciding coverage only inside that loop left the
+            // stale rows in place on exactly the listings the rule exists to clean up.
+            //
+            // Constructing a fetcher sends nothing. The provider guards below are
+            // unchanged and still run before anything is fetched; the cache path already
+            // returned before them long before this change.
+            $fetcher = $this->nearbyFetcher ?? app(NearbyPoiFetcherFactory::class)->make($this->httpClient);
+
+            $unsupportedByProvider = $this->unsupportedCategoriesFor($fetcher);
+
             // (d) Cache check: existing rows with matching source coordinates.
             // When coordinates match, current exclusion rules are re-applied against
             // cached rank-1 rows so that rule improvements made after the initial
@@ -644,6 +659,29 @@ class LocationDnaPoiDistanceService
                     // Only the rank-1 row is inspected — it is the primary result.
                     // Derived categories (e.g. top_rated_dining) are not in CATEGORIES
                     // and are skipped here; they are rebuilt when restaurant is refetched.
+                    // ── FIX A: the unsupported sweep runs BEFORE the cache decision ──
+                    //
+                    // A listing populated by an older build carries rows for categories
+                    // this provider does not carry. Those rows match on coordinates and on
+                    // fetch version, so without this the run takes the `cached` early
+                    // return below and they survive forever — on exactly the listings the
+                    // rule exists to clean up. Sweeping here removes only those rows;
+                    // every supported category's cached rows are untouched and are still
+                    // reused, so no provider fetch is forced.
+                    $swept = $this->sweepUnsupportedCategories($listingType, $listingId, $unsupportedByProvider);
+
+                    if ($swept !== []) {
+                        $this->unsupportedCategories = array_values(array_unique(
+                            array_merge($this->unsupportedCategories, $swept)
+                        ));
+
+                        // Re-read: the rows just deleted must not be re-emitted as this
+                        // run's results, nor counted as "present" by the sweep below.
+                        $existingRows = PropertyLocationPoi::where('listing_type', $listingType)
+                            ->where('listing_id', $listingId)
+                            ->get();
+                    }
+
                     $rowsByCategory  = $existingRows->groupBy('poi_category');
                     $staleCategories = [];
 
@@ -681,8 +719,32 @@ class LocationDnaPoiDistanceService
                     // must be treated as stale so they are re-fetched below.
                     $presentCategories = array_keys($rowsByCategory->toArray());
                     foreach (array_keys(self::CATEGORIES) as $category) {
+                        // An unsupported category legitimately has no rows and never will.
+                        // Treating its absence as staleness would mark it stale on every
+                        // run, so `$staleCategories` could never be empty and the `cached`
+                        // fast path would be unreachable for the whole listing — turning a
+                        // correct skip into a permanent full re-evaluation.
+                        if (isset($unsupportedByProvider[$category])) {
+                            continue;
+                        }
+
                         if (! in_array($category, $presentCategories, true)) {
                             $staleCategories[] = $category;
+                        }
+                    }
+
+                    // A stale SECONDARY needs its PRIMARY's candidates to be derived from.
+                    // If the primary is cache-clean it would never run, and the secondary
+                    // would be fetched from the provider on its own — which for a derived
+                    // category is not what it means. Re-run the primary so the pair stays
+                    // coherent whatever the cache shape.
+                    foreach (self::CATEGORY_GROUPS as $groupPrimary => $groupSecondary) {
+                        if (
+                            in_array($groupSecondary, $staleCategories, true)
+                            && ! in_array($groupPrimary, $staleCategories, true)
+                            && ! isset($unsupportedByProvider[$groupPrimary])
+                        ) {
+                            $staleCategories[] = $groupPrimary;
                         }
                     }
 
@@ -831,13 +893,12 @@ class LocationDnaPoiDistanceService
                 }
             }
 
-            // Phase 1 Batch 2: the raw provider fetch is resolved through the
-            // registry-backed NearbyPoiFetcherFactory (LocationProviderRegistry is now the
-            // single authority for which provider fetches). Batch 1 sub-option 1a is
-            // preserved: $this->httpClient is forwarded so an injected fake/blocking client
-            // still flows through to the outbound call (null → the container binding). An
-            // explicitly injected $nearbyFetcher still wins for tests.
-            $fetcher = $this->nearbyFetcher ?? app(NearbyPoiFetcherFactory::class)->make($this->httpClient);
+            // The fetcher was resolved at (c2), above the cache check, because the cache
+            // check needs to know which categories this provider carries. It is the same
+            // registry-backed NearbyPoiFetcherFactory resolution as before, and Batch 1
+            // sub-option 1a is still preserved: $this->httpClient is forwarded so an
+            // injected fake/blocking client reaches the outbound call, and an explicitly
+            // injected $nearbyFetcher still wins for tests.
             $results = [];
 
             // Capture restaurant raw candidates for Top Rated Dining derivation.
@@ -887,30 +948,32 @@ class LocationDnaPoiDistanceService
                 // Any row a previous run left behind for this category is deleted, so a
                 // listing carrying stale `not_found` rows written before this rule heals
                 // itself on the next run rather than needing a data fix.
-                // Determine if this category has preloaded candidates from a group primary
-                $preloaded = $groupedRawCandidates[$category] ?? null;
-
-                // ONLY when we would actually ask the provider. A CATEGORY_GROUPS
-                // SECONDARY is derived from its primary's candidates and never reaches the
-                // fetcher, so the provider's coverage of the secondary's own descriptor is
-                // not the question — the primary already answered.
+                // ── The selected provider does not carry this category ───────────────
                 //
-                // `fitness_center` is the case that proves it: the corpus crosswalk folds
-                // Overture's `fitness_center` token INTO canonical `gym`, so there is no
-                // `fitness_center` corpus category and `supportsCategory()` says no — yet
-                // the category is perfectly derivable from the ten gym candidates already
-                // in hand, and asking the coverage question here silently deleted all ten
-                // rows. A secondary whose primary WAS skipped has no preloaded candidates
-                // and falls into the branch below, which is correct.
-                if ($preloaded === null && ! $this->providerSupportsCategory($fetcher, $meta)) {
+                // Decided ONCE per run by unsupportedCategoriesFor(), which asks the real
+                // question — "is this independently fetched, and does the provider carry
+                // it?" — instead of the old `$preloaded === null` proxy. A grouped
+                // SECONDARY inherits its primary's answer there, so a derivable category
+                // can never be mistaken for an unsupported one however CATEGORIES is
+                // ordered and whatever the cache shape.
+                //
+                // No fetch and NO ROW. `not_found` means a covering provider was asked and
+                // the neighbourhood has nothing; absence means we do not carry it.
+                if (isset($unsupportedByProvider[$category])) {
                     PropertyLocationPoi::where('listing_type', $listingType)
                         ->where('listing_id', $listingId)
                         ->where('poi_category', $category)
                         ->delete();
 
-                    $this->unsupportedCategories[] = $category;
+                    if (! in_array($category, $this->unsupportedCategories, true)) {
+                        $this->unsupportedCategories[] = $category;
+                    }
+
                     continue;
                 }
+
+                // Determine if this category has preloaded candidates from a group primary
+                $preloaded = $groupedRawCandidates[$category] ?? null;
 
                 if ($preloaded !== null) {
                     // Secondary category: track as grouped (no API call)
@@ -948,16 +1011,14 @@ class LocationDnaPoiDistanceService
             // If restaurant was not re-fetched (it is in cachedCategoriesToSkip), the
             // existing top_rated_dining rows in DB are still valid — include them in the
             // output without re-deriving (no API call was made for restaurant).
-            if (in_array('restaurant', $cachedCategoriesToSkip, true)) {
-                $existingTopRated = PropertyLocationPoi::where('listing_type', $listingType)
-                    ->where('listing_id', $listingId)
-                    ->where('poi_category', 'top_rated_dining')
-                    ->get();
-
-                foreach ($existingTopRated as $row) {
-                    $results[] = $row->toArray();
-                }
-            } elseif (! $this->providerSupportsCategory($fetcher, self::TOP_RATED_DINING_META)) {
+            //
+            // COVERAGE IS ASKED FIRST, BEFORE THE CACHE QUESTION. It is a property of the
+            // selected provider, not of whether `restaurant` happened to be cache-clean on
+            // this pass. When it sat second in this chain, a cache-clean restaurant meant
+            // the question was never asked: a stale top_rated_dining row survived, was
+            // re-emitted into the results, and the category went unrecorded in the run's
+            // unsupported list — on the same run where a cache-miss would have removed it.
+            if (isset($unsupportedByProvider['top_rated_dining'])) {
                 // top_rated_dining is RATING-DERIVED, so a provider that supplies no
                 // rating signal cannot produce it at all — which is a coverage fact, not
                 // a fact about this neighbourhood's restaurants. The Overture corpus has
@@ -971,7 +1032,21 @@ class LocationDnaPoiDistanceService
                     ->where('poi_category', 'top_rated_dining')
                     ->delete();
 
-                $this->unsupportedCategories[] = 'top_rated_dining';
+                if (! in_array('top_rated_dining', $this->unsupportedCategories, true)) {
+                    $this->unsupportedCategories[] = 'top_rated_dining';
+                }
+            } elseif (in_array('restaurant', $cachedCategoriesToSkip, true)) {
+                // Restaurant was not re-fetched, so its derived rows are still valid —
+                // include them without re-deriving. Reached only when the provider DOES
+                // carry the category.
+                $existingTopRated = PropertyLocationPoi::where('listing_type', $listingType)
+                    ->where('listing_id', $listingId)
+                    ->where('poi_category', 'top_rated_dining')
+                    ->get();
+
+                foreach ($existingTopRated as $row) {
+                    $results[] = $row->toArray();
+                }
             } else {
                 $topRatedRows = $this->deriveAndPersistTopRatedDining(
                     listingType:          $listingType,
@@ -1047,7 +1122,17 @@ class LocationDnaPoiDistanceService
                 status:         $output['status'],
                 source:         null,
                 inputSnapshot:  ['listing_type' => $listingType, 'listing_id' => $listingId],
-                outputSnapshot: $output,
+                // The audit snapshot is the RUN's record, and `output_snapshot` is already
+                // a json column — so the reason those categories have no rows survives the
+                // request here, with no migration and no new persisted status.
+                //
+                // Deliberately NOT added to `$output` itself: that is the documented
+                // "Phase C eight-key output contract", named in two places and returned to
+                // every caller. Widening it is a separate, wider decision; enriching the
+                // audit record is not.
+                outputSnapshot: $output + [
+                    'categories_unsupported_by_provider' => $this->unsupportedCategories,
+                ],
                 error:          $output['error'] ?? null,
             );
         } catch (Throwable) {
@@ -1118,6 +1203,96 @@ class LocationDnaPoiDistanceService
         }
 
         return $fetcher->supportsCategory($meta);
+    }
+
+    /** Is this category DERIVED from another category's candidates rather than fetched? */
+    private function isGroupedSecondary(string $category): bool
+    {
+        return in_array($category, self::CATEGORY_GROUPS, true);
+    }
+
+    /**
+     * Every category the selected provider does not carry, decided ONCE per run.
+     *
+     * WHY A PRECOMPUTED SET RATHER THAN A QUESTION ASKED INSIDE THE LOOP.
+     * The first version of this rule asked "is `$preloaded === null`?" at each iteration,
+     * using "the primary has not run yet" as a proxy for "we are about to ask the
+     * provider". The proxy holds only while every primary is declared before its secondary
+     * in {@see self::CATEGORIES} and only while the primary actually runs in this pass —
+     * so reordering that constant, or a cache shape in which the PRIMARY is clean and the
+     * SECONDARY is stale, would silently turn a derivable category into an "unsupported"
+     * one and delete its rows. Nothing asserted either precondition.
+     *
+     * This asks the real question instead, and it is independent of declaration order and
+     * of cache shape:
+     *
+     *   an INDEPENDENTLY FETCHED category is unsupported when the provider says so;
+     *   a GROUPED SECONDARY inherits its primary's answer, because it is derived from the
+     *   primary's candidates and is never fetched on its own.
+     *
+     * The inheritance pass is what stops an unsupported PRIMARY leaking a derived
+     * SECONDARY: `park` is skipped, so `waterfront_park` is skipped too rather than being
+     * fetched independently and recording a `not_found` nobody asked a provider for.
+     *
+     * `top_rated_dining` is included when the provider cannot carry it. It is not in
+     * `CATEGORIES` — it is derived from restaurant candidates by rating — so it is decided
+     * from its own descriptor here, where the answer cannot depend on whether `restaurant`
+     * happened to be cache-clean during this pass. Provider coverage is a property of the
+     * provider, not of a cache outcome.
+     *
+     * @return array<string, true> a set, for O(1) membership
+     */
+    private function unsupportedCategoriesFor(NearbyPoiFetcherInterface $fetcher): array
+    {
+        $unsupported = [];
+
+        foreach (self::CATEGORIES as $category => $meta) {
+            if ($this->isGroupedSecondary($category)) {
+                continue; // decided by its primary, below
+            }
+
+            if (! $this->providerSupportsCategory($fetcher, $meta)) {
+                $unsupported[$category] = true;
+            }
+        }
+
+        foreach (self::CATEGORY_GROUPS as $primary => $secondary) {
+            if (isset($unsupported[$primary])) {
+                $unsupported[$secondary] = true;
+            }
+        }
+
+        if (! $this->providerSupportsCategory($fetcher, self::TOP_RATED_DINING_META)) {
+            $unsupported['top_rated_dining'] = true;
+        }
+
+        return $unsupported;
+    }
+
+    /**
+     * Drop every persisted row for a category this provider does not carry, and record it.
+     *
+     * Called from BOTH the cache path and the fetch loop, so a listing heals whether or
+     * not its cached rows were otherwise valid — which is the whole point: the listings
+     * carrying these rows are precisely the ones whose cache is clean.
+     *
+     * @param  array<string, true> $unsupported
+     * @return list<string> the categories that were swept, in a stable order
+     */
+    private function sweepUnsupportedCategories(string $listingType, int $listingId, array $unsupported): array
+    {
+        $swept = [];
+
+        foreach (array_keys($unsupported) as $category) {
+            PropertyLocationPoi::where('listing_type', $listingType)
+                ->where('listing_id', $listingId)
+                ->where('poi_category', $category)
+                ->delete();
+
+            $swept[] = $category;
+        }
+
+        return $swept;
     }
 
     /**
