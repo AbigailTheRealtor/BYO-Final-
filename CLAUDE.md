@@ -403,6 +403,30 @@ view file needed to change. `config/location_attribution.php` is the SSOT with e
 template edit cannot change an attribution claim. `/data-sources` is public and unauthenticated
 because the pages publishing the data are.
 
+**`not_found` means one thing, and a category the provider does not carry is not it.**
+`not_found` is a statement about the NEIGHBOURHOOD — a provider that covers the category was asked
+and there is no qualifying place nearby. The corpus holds seven of the nineteen categories the
+pipeline asks for, and for the other twelve `CorpusPoiCategoryMap` cannot place the descriptor and
+the adapter returns `[]` — read through the same path that produced a row reading "overture_corpus
+returned zero results for this category", indistinguishable in the database from "there is no park
+near this home" when the truth is "we hold no park data". An empty list cannot carry that
+distinction, so the question is asked BEFORE the fetch: `App\Contracts\ProviderCategorySupport`
+(optional, opt-in) and `OvertureCorpusPoiAdapter::supportsCategory()`, whose answer IS the corpus
+taxonomy rather than a second list. An unsupported category is **skipped entirely — no fetch, NO
+ROW** — and named in `getLastRunStats()['categories_unsupported_by_provider']`, so the distinction
+survives the run with no new status value and **no migration**. Any row an earlier build left behind
+is deleted on the next run, so listings heal without a data-fix command. The run still reports
+`completed`: covering seven of nineteen is the provider doing its whole job.
+
+**Two things are deliberately NOT subject to that question.** A CATEGORY_GROUPS **secondary** is
+derived from its primary's candidates and never reaches the fetcher — `fitness_center` is folded
+into canonical `gym` by the corpus crosswalk, so `supportsCategory()` says no while the rows are
+perfectly derivable from gym's; asking there deleted ten legitimate rows in the first cut of this
+change, and the check is now scoped to `$preloaded === null`. And a fetcher that does not implement
+the interface supports everything, so `GooglePlacesPoiAdapter`, the stub and every test fixture are
+untouched. `top_rated_dining` IS subject to it: it is rating-derived, and a provider with no review
+data cannot produce it at all.
+
 **Corpus identity is one definition, `CorpusSurface`, with two readers.** `capabilityHash()` hashes
 `config/location_providers.php` alone, and the corpus version is pinned in a different file — so
 re-pinning `OVERTURE_CORPUS_POI_VERSION`, the exact operation the two-corpus design exists to make

@@ -146,23 +146,30 @@ class CorpusPoiDownstreamCompatibilityTest extends TestCase
     }
 
     /**
-     * The uningested categories persist `not_found`, not a substitute and not an error.
-     * This is the claim the whole feature rests on being honest about.
+     * The uningested categories persist NOTHING — not a substitute, not an error, and no
+     * longer a `not_found` row either. This is the claim the whole feature rests on being
+     * honest about, and the honest form of it changed.
+     *
+     * It previously asserted `not_found`, which was the wrong half of a real distinction.
+     * `not_found` is a statement about the NEIGHBOURHOOD — a covering provider was asked
+     * and there is nothing nearby. The corpus carries no beach, school, park, hospital or
+     * transit data at all, so a row there said "there is no park near this home" when the
+     * truth was "we hold no park data". Absence of a row is the only record that cannot
+     * be misread, and the run names the skipped categories in its own metadata.
+     *
+     * @see \Tests\Feature\LocationDna\UnsupportedCategorySemanticsTest
      */
-    public function test_uningested_categories_persist_not_found_rather_than_a_substitute(): void
+    public function test_uningested_categories_persist_no_row_at_all(): void
     {
         $this->runPipeline();
 
         foreach (['beach', 'school', 'park', 'hospital', 'transit_station'] as $category) {
-            $row = PropertyLocationPoi::where('poi_category', $category)->where('rank', 1)->first();
-
-            $this->assertNotNull($row, "'{$category}' should still record an outcome");
             $this->assertSame(
-                'not_found',
-                $row->status,
-                "'{$category}' has no corpus rows; it must record not_found, never a substitute or an error."
+                0,
+                PropertyLocationPoi::where('poi_category', $category)->count(),
+                "'{$category}' is not carried by the corpus; it must persist no row, never "
+                . 'a substitute, an error, or a not_found that reads as a fact about this property.'
             );
-            $this->assertNull($row->poi_name);
         }
     }
 
@@ -252,14 +259,23 @@ class CorpusPoiDownstreamCompatibilityTest extends TestCase
         $this->assertNull($summary['health_and_fitness']['nearest_hospital_miles']);
         $this->assertNull($summary['transportation']['nearest_transit_miles']);
 
+        // `missing_categories` is derived from not_found ROWS, and an uningested category
+        // no longer writes one — so it is absent from that list too. The blocks above are
+        // what the UI reads and they are null either way; what changed is that the list of
+        // "a provider looked and found nothing" no longer includes categories no provider
+        // ever looked for.
         foreach (['beach', 'school', 'park', 'hospital', 'transit_station'] as $category) {
-            $this->assertContains($category, $summary['missing_categories']);
+            $this->assertNotContains(
+                $category,
+                $summary['missing_categories'],
+                "'{$category}' was never queried, so it is not a category a provider found nothing in."
+            );
         }
 
         $this->assertSame(
             [],
             $summary['error_categories'],
-            'An uningested category is missing, never an error — the corpus answered correctly.'
+            'An uningested category is skipped, never an error — the corpus answered correctly.'
         );
     }
 
