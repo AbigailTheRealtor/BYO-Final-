@@ -48,6 +48,38 @@ final class SmartTagContextResolver
         'Commercial Property'  => SmartTagContext::CommercialLease,
     ];
 
+    /**
+     * Buyer CRITERIA `property_type` meta — a DIFFERENT vocabulary from the
+     * Offer Listing one above, and that is why this map exists.
+     *
+     * The Buyer Criteria wizard offers 'Residential Property', 'Income Property',
+     * 'Commercial Property', 'Business Opportunity', 'Vacant Land'. SALE_ROLE
+     * expects 'Residential', 'Income', 'Commercial', 'Business'. Only
+     * 'Vacant Land' is spelled the same in both, so reading a criteria row
+     * through SALE_ROLE resolves FOUR of the five property types to null — a
+     * buyer would silently receive no tags at all rather than an error.
+     */
+    public const BUYER_CRITERIA = [
+        'Residential Property' => SmartTagContext::ResidentialSale,
+        'Income Property'      => SmartTagContext::IncomeSale,
+        'Commercial Property'  => SmartTagContext::CommercialSale,
+        'Business Opportunity' => SmartTagContext::BusinessSale,
+        'Vacant Land'          => SmartTagContext::LandSale,
+    ];
+
+    /**
+     * Tenant CRITERIA `property_type` meta. Its two strings happen to match
+     * LEASE_ROLE, but it is written out rather than aliased: the two flows are
+     * separate forms whose option lists can drift, and an alias would carry that
+     * drift silently. Note 'Residential Property' and 'Commercial Property'
+     * appear in BUYER_CRITERIA too and mean SALE there — the ROLE picks the map,
+     * which is exactly why one shared map would be wrong.
+     */
+    public const TENANT_CRITERIA = [
+        'Residential Property' => SmartTagContext::ResidentialLease,
+        'Commercial Property'  => SmartTagContext::CommercialLease,
+    ];
+
     public static function forBridge(?string $propertyType): ?SmartTagContext
     {
         return self::lookup(self::BRIDGE, $propertyType);
@@ -70,6 +102,23 @@ final class SmartTagContextResolver
         return match ($role) {
             'buyer'  => self::lookup(self::SALE_ROLE, $propertyType),
             'tenant' => self::lookup(self::LEASE_ROLE, $propertyType),
+            default  => null,
+        };
+    }
+
+    /**
+     * For a Buyer/Tenant CRITERIA record — the seeker preference surface.
+     *
+     * Separate from {@see forSeeker()} because that one reads the Offer Listing
+     * vocabulary. Fail-closed in both directions: an unknown role and an
+     * unrecognised property type both resolve to null, and a null context means
+     * the seeker is offered no tags and can persist none.
+     */
+    public static function forSeekerCriteria(string $role, ?string $propertyType): ?SmartTagContext
+    {
+        return match ($role) {
+            'buyer'  => self::lookup(self::BUYER_CRITERIA, $propertyType),
+            'tenant' => self::lookup(self::TENANT_CRITERIA, $propertyType),
             default  => null,
         };
     }

@@ -18,6 +18,7 @@ use App\Models\BuyerAgentAuction;
 use App\Models\TenantAgentAuction;
 use App\Models\BuyerTenantDnaProfile;
 use App\Models\PropertyDnaProfile;
+use App\Observers\SmartTagSeekerPreferenceObserver;
 use App\Observers\Dna\BuyerCriteriaAuctionDnaObserver;
 use App\Observers\Dna\BuyerTenantDnaProfileCompatibilityObserver;
 use App\Observers\Dna\LandlordAuctionDnaObserver;
@@ -405,6 +406,14 @@ class AppServiceProvider extends ServiceProvider
         LandlordAuction::observe(LandlordAuctionDnaObserver::class);
         BuyerCriteriaAuction::observe(BuyerCriteriaAuctionDnaObserver::class);
         TenantCriteriaAuction::observe(TenantCriteriaAuctionDnaObserver::class);
+
+        // Smart Tag seeker preferences carry no foreign key to these tables, so a
+        // deleted criteria record leaves its selections behind unless something
+        // removes them. Deliberately NOT behind the seeker-preference feature
+        // flag: rows written while it was on must still be cleaned up when the
+        // record is deleted later with it off.
+        BuyerCriteriaAuction::observe(SmartTagSeekerPreferenceObserver::class);
+        TenantCriteriaAuction::observe(SmartTagSeekerPreferenceObserver::class);
 
         // Phase 13 — production dna_scores generation. These observers fire on
         // every save of the four *_agent listing types (the OfferListing flow,

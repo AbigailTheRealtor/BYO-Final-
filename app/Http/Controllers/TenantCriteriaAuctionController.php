@@ -59,6 +59,18 @@ class TenantCriteriaAuctionController extends Controller
             $auction->saveMeta("representation",$request->representation);
             $auction->saveMeta("titleListing",$request->titleListing);
             $auction->saveMeta("property_type",$request->property_type);
+
+            // Smart Tag criteria (seeker side). The writer re-projects every submitted
+            // key through SmartTagSelectionPolicy against the STORED property type, so a
+            // hidden or hand-crafted checkbox cannot introduce a key that is not
+            // canonical, seeker-selectable and applicable to this context.
+            // load('meta') first: `get` reads the eager-loaded relation, which the
+            // saveMeta() above has just made stale.
+            if (\App\Support\SmartTags\SmartTagSeekerPreferenceGate::writesEnabled()) {
+                $auction->load('meta');
+                app(\App\Services\SmartTags\Seeker\SmartTagSeekerPreferenceWriter::class)
+                    ->replaceSelections($auction, (array) $request->input('smart_tags', []), auth()->id());
+            }
             $auction->saveMeta("property_items",json_encode($request->property_items));
             $auction->saveMeta("leaseProp",$request->leaseProp);
             $auction->saveMeta("leasePropOther",$request->leasePropOther);
@@ -374,6 +386,18 @@ class TenantCriteriaAuctionController extends Controller
         $auction->saveMeta("representation",$request->representation);
         $auction->saveMeta("titleListing",$request->titleListing);
         $auction->saveMeta("property_type",$request->property_type);
+
+        // Smart Tag criteria (seeker side). The writer re-projects every submitted
+        // key through SmartTagSelectionPolicy against the STORED property type, so a
+        // hidden or hand-crafted checkbox cannot introduce a key that is not
+        // canonical, seeker-selectable and applicable to this context.
+        // load('meta') first: `get` reads the eager-loaded relation, which the
+        // saveMeta() above has just made stale.
+        if (\App\Support\SmartTags\SmartTagSeekerPreferenceGate::writesEnabled()) {
+            $auction->load('meta');
+            app(\App\Services\SmartTags\Seeker\SmartTagSeekerPreferenceWriter::class)
+                ->replaceSelections($auction, (array) $request->input('smart_tags', []), auth()->id());
+        }
         $auction->saveMeta("property_items",json_encode($request->property_items));
         $auction->saveMeta("leaseProp",$request->leaseProp);
         $auction->saveMeta("leasePropOther",$request->leasePropOther);

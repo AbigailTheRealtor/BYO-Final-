@@ -553,6 +553,11 @@
                     </option>
                   @endforeach
                 </select>
+
+                @include('partials.smart-tags._seeker-picker', [
+                    'stRole' => 'tenant',
+                    'stSelected' => app(\App\Services\SmartTags\Seeker\SmartTagSeekerPreferenceReader::class)->keysFor($auction),
+                ])
               </div>
             </div>
 
