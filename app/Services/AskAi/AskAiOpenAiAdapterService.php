@@ -75,9 +75,12 @@ class AskAiOpenAiAdapterService
      * places — prompt assembly, three fallback branches, outcome categorisation and
      * telemetry. Excising it there would be a large, risky edit across code whose other
      * behaviours (guardrails, compliance, usage logging) the product still depends on.
-     * This class is the ONLY place an Ask AI prompt becomes an outbound model request —
-     * `$this->client->send()` below is the single call — so refusing here makes every
-     * caller unreachable to the provider at once, with one branch instead of a dozen.
+     * Every ANSWERING call in the runner goes through `generate()` below, so refusing here
+     * makes all of them unreachable to the provider at once, with one branch instead of a
+     * dozen. It is NOT the only model client in Ask AI: `AskAiIntentNormalizerService`
+     * holds its own and routes a question on the model's output. It reads this same
+     * constant — one definition, two readers — and
+     * `AskAiZeroLlmArchitectureTest` fails if any other Ask AI class gains a client.
      *
      * The refusal deliberately reuses the EXISTING `status => 'blocked'` shape rather
      * than inventing one. The runner already handles a blocked adapter result (it is what
