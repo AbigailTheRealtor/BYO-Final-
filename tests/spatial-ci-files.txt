@@ -107,6 +107,7 @@ tests/Feature/LocationDna/RadiusSearchAddressResolutionTest.php
 tests/Feature/LocationDna/SearchAreasPreferencesLayoutTest.php
 tests/Feature/LocationDna/SellerLandlordCascadeExclusionTest.php
 tests/Feature/LocationDna/StellarNearbyAmenitiesCategoryCoverageTest.php
+tests/Feature/LocationDna/UnsupportedCategorySemanticsTest.php
 tests/Feature/LocationDna/SupplementalLayerIsolationTest.php
 tests/Feature/LocationDnaAdminPreviewTest.php
 tests/Feature/LocationDnaPipelineTriggerTest.php

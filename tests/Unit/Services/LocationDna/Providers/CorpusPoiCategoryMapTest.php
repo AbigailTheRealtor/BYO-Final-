@@ -142,6 +142,39 @@ class CorpusPoiCategoryMapTest extends TestCase
         );
     }
 
+    /**
+     * The DERIVED descriptor must not collide with any pipeline category either.
+     *
+     * `descriptorPairsAreUnique()` scans `CATEGORIES` against itself, and
+     * `TOP_RATED_DINING_META` is deliberately not in that constant — it is derived from
+     * restaurant candidates by rating rather than fetched. So the existing guard cannot
+     * see it, and a future category declared with BOTH `google_type` and `keyword` null
+     * would silently share its ("", "") pair. The consequence would be quiet and wrong:
+     * `supportsCategory(TOP_RATED_DINING_META)` would start answering with that other
+     * category's coverage, and the tile cache would key them together.
+     *
+     * Today every one of the nineteen carries at least one non-null discriminator, so this
+     * passes — which is exactly when a guard is worth adding.
+     */
+    public function test_the_derived_top_rated_dining_descriptor_collides_with_no_category(): void
+    {
+        $derived = CorpusPoiCategoryMap::descriptorPair(LocationDnaPoiDistanceService::TOP_RATED_DINING_META);
+
+        foreach (LocationDnaPoiDistanceService::CATEGORIES as $key => $meta) {
+            $this->assertNotSame(
+                $derived,
+                CorpusPoiCategoryMap::descriptorPair($meta),
+                "Category '{$key}' shares the derived top_rated_dining descriptor pair; "
+                . 'coverage and tile-cache identity would both become ambiguous.'
+            );
+        }
+
+        $this->assertNull(
+            CorpusPoiCategoryMap::corpusCategoryForDescriptor(LocationDnaPoiDistanceService::TOP_RATED_DINING_META),
+            'The derived descriptor must resolve to no corpus category.'
+        );
+    }
+
     /** Every pipeline category must be recoverable from its own descriptor. */
     public function test_every_pipeline_descriptor_recovers_its_own_category(): void
     {

@@ -217,7 +217,12 @@ final class CorpusPoiCategoryMap
      *
      * @param array<string, mixed> $descriptor
      */
-    private static function descriptorPair(array $descriptor): string
+    /**
+     * Public so the uniqueness guard can also scan descriptors that are NOT in
+     * `CATEGORIES` — `LocationDnaPoiDistanceService::TOP_RATED_DINING_META` is derived
+     * rather than fetched, so `descriptorPairsAreUnique()` cannot see it.
+     */
+    public static function descriptorPair(array $descriptor): string
     {
         return ((string) ($descriptor['google_type'] ?? ''))
             . "\0"
