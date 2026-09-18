@@ -3,6 +3,7 @@
 namespace App\Services\Canonical\Adapters;
 
 use App\Services\Canonical\CanonicalListing;
+use App\Services\Canonical\CanonicalListingVocabulary;
 use App\Services\Pets\PetFeeNormalizer;
 
 /**
@@ -15,8 +16,13 @@ use App\Services\Pets\PetFeeNormalizer;
  *   - Reads EAV via the role model's info() getter (returns the raw meta_value
  *     string, or boolean false when the key is absent).
  *
- * Scope (Wave 1 / Phase 2 slice): only the Pet-Friendliness canonical fields
- * are mapped. The MAP is intentionally structured so additional fields/roles
+ * Scope: the MAP below carries the DNA score inputs (pet, property, demand
+ * extension keys). The P0-4 core listing facts of a Seller/Landlord row —
+ * status, transaction, price, type, beds/baths/area, address, coordinates — are
+ * read by {@see ByoSupplyFacts}, because each one delegates to an existing
+ * governed class rather than to a meta-key lookup. Every key is declared in
+ * {@see \App\Services\Canonical\CanonicalListingVocabulary}.
+ * The MAP is intentionally structured so additional fields/roles
  * are added by extending the arrays, not by changing logic — this is the
  * "formalize, don't duplicate" approach: the four {Role}FieldMap registries
  * remain the source of truth for human-label → meta_key; this adapter adds the
@@ -153,6 +159,20 @@ class ByoListingAdapter
             ];
         }
 
+        // P0-4 core listing facts — supply rows only. A Buyer/Tenant row is a
+        // seeker's criteria and never contributes a property or listing fact.
+        if (CanonicalListingVocabulary::isSupplyListingType($listingType)) {
+            foreach ((new ByoSupplyFacts())->extract($model, $listingType, $listingId) as $key => $fact) {
+                $fields[$key] = $fact['value'];
+                $meta[$key]   = [
+                    'source'             => 'byo:' . $listingType,
+                    'source_field'       => $fact['source_field'],
+                    'source_reliability' => self::SOURCE_RELIABILITY,
+                    'freshness'          => $freshness,
+                ];
+            }
+        }
+
         $this->applyPetFeePrecedence($fields, $meta, $listingType, $freshness);
 
         return new CanonicalListing($listingType, $listingId, $fields, $meta);
@@ -245,7 +265,14 @@ class ByoListingAdapter
             && ($hasAmount || (is_string($otherText) && $otherText !== '')));
     }
 
-    /** @return list<string> canonical keys this adapter can populate for a type. */
+    /**
+     * Canonical keys this adapter can populate for a type.
+     *
+     * `listing.lease_amount_frequency` is declared in the vocabulary but has no
+     * BidYourOffer source, so it is not listed here.
+     *
+     * @return list<string>
+     */
     public function canonicalKeysFor(string $listingType): array
     {
         $keys = array_keys(self::MAP[$listingType] ?? []);
@@ -254,8 +281,34 @@ class ByoListingAdapter
             $keys = array_merge($keys, self::DERIVED_PET_FEE_KEYS);
         }
 
+        if (CanonicalListingVocabulary::isSupplyListingType($listingType)) {
+            $keys = array_merge($keys, self::SUPPLY_CORE_KEYS);
+        }
+
         return $keys;
     }
+
+    /** P0-4 core keys a BYO supply row can populate (see ByoSupplyFacts). */
+    private const SUPPLY_CORE_KEYS = [
+        CanonicalListingVocabulary::LISTING_TRANSACTION_TYPE,
+        CanonicalListingVocabulary::LISTING_STANDARD_STATUS,
+        CanonicalListingVocabulary::LISTING_WORKFLOW,
+        CanonicalListingVocabulary::LISTING_LIST_PRICE,
+        CanonicalListingVocabulary::PROPERTY_TYPE,
+        CanonicalListingVocabulary::PROPERTY_BEDROOMS,
+        CanonicalListingVocabulary::PROPERTY_BATHROOMS,
+        CanonicalListingVocabulary::PROPERTY_LIVING_AREA_SQFT,
+        CanonicalListingVocabulary::PROPERTY_YEAR_BUILT,
+        CanonicalListingVocabulary::PROPERTY_POOL,
+        CanonicalListingVocabulary::PROPERTY_GARAGE,
+        CanonicalListingVocabulary::LOCATION_ADDRESS_LINE,
+        CanonicalListingVocabulary::LOCATION_CITY,
+        CanonicalListingVocabulary::LOCATION_STATE,
+        CanonicalListingVocabulary::LOCATION_POSTAL_CODE,
+        CanonicalListingVocabulary::LOCATION_COUNTY,
+        CanonicalListingVocabulary::LOCATION_LATITUDE,
+        CanonicalListingVocabulary::LOCATION_LONGITUDE,
+    ];
 
     /** @param mixed $raw @return mixed normalized value or null */
     private function normalize($raw, string $type)
