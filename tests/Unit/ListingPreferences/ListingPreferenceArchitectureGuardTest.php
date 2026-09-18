@@ -89,28 +89,32 @@ class ListingPreferenceArchitectureGuardTest extends TestCase
     }
 
     /**
-     * Phase 2 does not touch the Virtual Drive.
+     * Phase 3B wired the Virtual Drive through ONE seam.
+     *
+     * Phase 2 asserted the Virtual Drive was untouched and said a later phase
+     * would replace the Save entry with a delegation — and this assertion with
+     * it. The delegation is `VirtualDrivePreferenceControl`; it is the only
+     * Virtual Drive file that may know listing preferences exist, and the
+     * proof's JavaScript knows nothing at all.
      *
      * @test
      */
-    public function the_virtual_drive_is_untouched(): void
+    public function the_virtual_drive_reaches_preferences_through_one_seam(): void
     {
         $support = (string) file_get_contents(
             $this->root . '/app/Support/VirtualDrive/VirtualDriveListingActions.php'
         );
 
-        // Still reported as unavailable. A later phase replaces this one array
-        // entry with a delegation to the shared service — and this assertion
-        // with it.
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             'No Save / Favorite feature exists anywhere in this application.',
-            $support
+            $support,
+            'the obsolete finding must not survive the delegation'
         );
 
         $this->assertSame(
-            [],
+            ['app/Support/VirtualDrive/VirtualDrivePreferenceControl.php'],
             $this->filesMatching('ListingPreference', ['app/Support/VirtualDrive', 'app/Http/Controllers/Dev', 'public/js/virtual-drive']),
-            'No Virtual Drive file may reference listing preferences in Phase 2'
+            'VirtualDrivePreferenceControl is the only Virtual Drive file that may reference listing preferences'
         );
     }
 

@@ -8,6 +8,7 @@ use App\Services\ListingPreferences\ListingPreferenceReader;
 use App\Services\ListingPreferences\ListingPreferenceSubjectUnresolvable;
 use App\Services\ListingPreferences\ListingPreferenceWriter;
 use App\Support\ListingPreferences\ListingPreferenceAvailability;
+use App\Support\ListingPreferences\ListingPreferenceSurface;
 use App\Support\ListingPreferences\ListingPreferenceState;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
@@ -47,8 +48,28 @@ use InvalidArgumentException;
  */
 class ListingPreferenceController extends Controller
 {
-    /** Phase 2 wires one surface. A later surface gets its own route, not a request field. */
-    private const SURFACE = 'detail';
+    /**
+     * WHICH SURFACE THIS REQUEST IS, TAKEN FROM THE ROUTE.
+     *
+     * Phase 2 fixed one surface in a constant and said a later surface would
+     * get its own route rather than a request field. Phase 3B adds two — the
+     * customer's own management area and the Virtual Drive — so the value now
+     * comes from the matched route's DEFAULTS, which are part of the routing
+     * table and cannot be set by a caller.
+     *
+     * Still not a request field, and the reason is unchanged: these events are
+     * a Fair Housing audit trail, and a shopper must not be able to relabel
+     * where their own choice was made.
+     */
+    private function surface(Request $request): string
+    {
+        return ListingPreferenceSurface::fromRoute(
+            $request->route()?->defaults[self::SURFACE_ROUTE_KEY] ?? null
+        );
+    }
+
+    /** The route-default key each surface's route group sets. */
+    public const SURFACE_ROUTE_KEY = 'preference_surface';
 
     public function __construct(
         private readonly ListingPreferenceWriter $writer,
@@ -71,14 +92,14 @@ class ListingPreferenceController extends Controller
             'reasons.*'  => ['string', 'max:64'],
         ]);
 
-        return $this->guarded($request, $data, function (SmartTagListingRef $ref, int $userId, $role) use ($data) {
+        return $this->guarded($request, $data, function (SmartTagListingRef $ref, int $userId, $role) use ($data, $request) {
             return $this->writer->setState(
                 userId:           $userId,
                 role:             $role,
                 ref:              $ref,
                 state:            ListingPreferenceState::from($data['state']),
                 requestedReasons: $data['reasons'] ?? [],
-                surface:          self::SURFACE,
+                surface:          $this->surface($request),
             );
         });
     }
@@ -102,13 +123,13 @@ class ListingPreferenceController extends Controller
             'reasons.*'  => ['string', 'max:64'],
         ]);
 
-        return $this->guarded($request, $data, function (SmartTagListingRef $ref, int $userId, $role) use ($data) {
+        return $this->guarded($request, $data, function (SmartTagListingRef $ref, int $userId, $role) use ($data, $request) {
             return $this->writer->updateReasons(
                 userId:           $userId,
                 role:             $role,
                 ref:              $ref,
                 requestedReasons: $data['reasons'],
-                surface:          self::SURFACE,
+                surface:          $this->surface($request),
             );
         });
     }
@@ -124,12 +145,12 @@ class ListingPreferenceController extends Controller
             'listing_id' => ['required', 'integer', 'min:1'],
         ]);
 
-        return $this->guarded($request, $data, function (SmartTagListingRef $ref, int $userId, $role) {
+        return $this->guarded($request, $data, function (SmartTagListingRef $ref, int $userId, $role) use ($request) {
             return $this->writer->clear(
                 userId:  $userId,
                 role:    $role,
                 ref:     $ref,
-                surface: self::SURFACE,
+                surface: $this->surface($request),
             );
         });
     }

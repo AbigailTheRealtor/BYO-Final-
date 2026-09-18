@@ -77,6 +77,24 @@ function isolatedEnv(extra = {}) {
         GOOGLE_PLACES_ENABLED: 'false',
         GOOGLE_MAPS_BROWSER_ENABLED: 'false',
         GOOGLE_MAPS_BROWSER_KEY: '',
+        /*
+         | THE VIRTUAL DRIVE PROOF PAGE, WITH GOOGLE OFF.
+         |
+         | The proof is enabled (APP_ENV=local is on its allow-list) so the
+         | Phase 3B spec can drive the real page. Google is switched OFF, keyless
+         | and given a zero daily ceiling — three independent refusals — so this
+         | harness cannot construct a panorama or claim a launch however a spec
+         | behaves. Apple's MapKit token is a worthless placeholder: the spec
+         | fulfils the MapKit script from the repository's fake, and the network
+         | guard aborts anything that would otherwise leave the origin.
+         */
+        VIRTUAL_DRIVE_PROOF_ENABLED: 'true',
+        VIRTUAL_DRIVE_GOOGLE_ENABLED: 'false',
+        VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY: '',
+        VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT: '0',
+        VIRTUAL_DRIVE_MAPKIT_JS_TOKEN: 'harness-placeholder-not-a-token',
+        VIRTUAL_DRIVE_TEST_LISTING_KEYS: 'LP-VD-HOME-A,LP-VD-HOME-B',
+        VIRTUAL_DRIVE_DEFAULT_LISTING_KEY: 'LP-VD-HOME-A',
         LP_FIXTURE_PATH: FIXTURE,
         ...extra,
     };

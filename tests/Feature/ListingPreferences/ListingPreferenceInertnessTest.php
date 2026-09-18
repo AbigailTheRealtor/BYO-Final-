@@ -135,14 +135,17 @@ class ListingPreferenceInertnessTest extends TestCase
      */
     public function every_listing_preference_route_is_feature_gated(): void
     {
-        $found = 0;
+        $found = [];
 
         foreach (Route::getRoutes() as $route) {
-            if (! str_contains((string) $route->getActionName(), 'ListingPreferenceController')) {
+            // Matches ListingPreferenceController AND the Phase 3B
+            // MyListingPreferencesController — the management area is gated too.
+            if (! str_contains((string) $route->getActionName(), 'ListingPreferencesController')
+                && ! str_contains((string) $route->getActionName(), 'ListingPreferenceController')) {
                 continue;
             }
 
-            $found++;
+            $found[] = (string) $route->getName();
             $this->assertContains(
                 'listing-preferences',
                 $route->gatherMiddleware(),
@@ -151,7 +154,22 @@ class ListingPreferenceInertnessTest extends TestCase
             $this->assertContains('auth', $route->gatherMiddleware(), "{$route->uri()} is not authenticated");
         }
 
-        $this->assertSame(4, $found, 'expected exactly the show/store/reasons/destroy routes');
+        sort($found);
+
+        // Phase 3B: the same four endpoints once per SURFACE (the surface is a
+        // route default, never a request field), plus the customer's own
+        // read-only management pages. Nothing else.
+        $expected = [];
+        foreach (['listing-preferences.', 'listing-preferences.account.', 'listing-preferences.virtual-drive.'] as $prefix) {
+            foreach (['show', 'store', 'reasons', 'destroy'] as $action) {
+                $expected[] = $prefix . $action;
+            }
+        }
+        $expected[] = 'listing-preferences.mine.index';
+        $expected[] = 'listing-preferences.mine.history';
+        sort($expected);
+
+        $this->assertSame($expected, $found, 'expected exactly the per-surface endpoints and the management pages');
     }
 
     /**

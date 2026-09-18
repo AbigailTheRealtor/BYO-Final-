@@ -47,6 +47,7 @@ class VirtualDriveListingController extends Controller
     public function __construct(
         private readonly ExploreListingRepository $repository,
         private readonly ExploreListingProjector $projector,
+        private readonly \App\Support\VirtualDrive\VirtualDrivePreferenceControl $preference,
         private readonly ExploreCanonicalListingResolver $canonical,
         private readonly VowAvailability $vow,
     ) {}
@@ -159,7 +160,15 @@ class VirtualDriveListingController extends Controller
 
         $canonicalLinks = $this->canonical->resolveMany($typeByListingKey);
 
-        $listings = $rows->map(function (array $row) use ($request, $tier, $canonicalLinks, $center) {
+        // Save's availability for every row, decided in ONE batch from the
+        // trusted `bridge_properties.id` of each model this method already
+        // holds — never from anything the browser sent, and with nothing
+        // rendered: the control itself is rendered with the page.
+        $saveReasons = $this->preference->reasonsFor(
+            $rows->map(fn (array $row) => (int) ($row['listing']->id ?? 0))->all()
+        );
+
+        $listings = $rows->map(function (array $row) use ($request, $tier, $canonicalLinks, $center, $saveReasons) {
             $key = (string) ($row['listing']->listing_key ?? '');
 
             $projected = $this->projector->project(
@@ -171,6 +180,24 @@ class VirtualDriveListingController extends Controller
                 $this->detailUrl($request, $key),
             )->toArray();
 
+            /*
+             | THE TRUSTED BRIDGE ROW ID, TAKEN FROM THE MODEL WE ALREADY HOLD.
+             |
+             | A preference is stored against `bridge_properties.id`. The
+             | projection publishes the MLS ListingKey and an opaque property
+             | hash and deliberately not this — so rather than widening that
+             | allow-list, the id is read here, where the BridgeProperty is
+             | already in hand. It never travels to the browser as an identity
+             | to be echoed back: the control the customer uses is rendered
+             | server-side with it, and the write endpoint re-validates.
+             */
+            $bridgeRowId = (int) ($row['listing']->id ?? 0);
+
+            // Only the AVAILABILITY answer travels in the payload. The control
+            // itself is rendered with the PAGE and revealed by the shell — the
+            // proof forbids a script building listing markup from a string, and
+            // that rule is worth keeping.
+
             return $projected + [
                 // What the sign says. Decided by ExploreTransactionType — an exact
                 // PropertyType match — so a lease can never be signed FOR SALE.
@@ -181,7 +208,11 @@ class VirtualDriveListingController extends Controller
                     $projected['latitude'],
                     $projected['longitude']
                 )),
-                'actions'    => VirtualDriveListingActions::for($projected),
+                'actions'    => VirtualDriveListingActions::for(
+                    $projected,
+                    $bridgeRowId > 0 ? $bridgeRowId : null,
+                    $bridgeRowId > 0 ? ($saveReasons[$bridgeRowId] ?? null) : null,
+                ),
             ];
         });
 

@@ -1278,6 +1278,15 @@
         var box = $('vd-shopper');
         var s = state.shopper;
 
+        // Put back any server-rendered node the card is showing BEFORE clearing
+        // it. Clearing would otherwise detach that node for good, and the page
+        // renders each one exactly once — the home's slot would be empty on
+        // every later visit. Parked hidden, where the page first put it.
+        Array.prototype.forEach.call(box.querySelectorAll('[data-vd-preference-for]'), function (slot) {
+            slot.hidden = true;
+            document.body.appendChild(slot);
+        });
+
         box.textContent = '';
 
         if (!s) {
@@ -1370,8 +1379,13 @@
         }
 
         // Only what exists. The developer panel still lists the rest with reasons.
+        //
+        // An action with no URL goes nowhere, so it is not a button here — this
+        // keys on the SHAPE, never on which action it is. Photos has its own
+        // button above; an action whose control the server rendered (see the
+        // node revealed below) is shown as that control.
         (listing.actions || []).forEach(function (action) {
-            if (!action.available || action.key === 'photos') {
+            if (!action.available || action.key === 'photos' || !action.url) {
                 return;
             }
 
@@ -1381,6 +1395,23 @@
         });
 
         box.appendChild(actions);
+
+        // SAVE | MAYBE | PASS — a node the SERVER already rendered, revealed here.
+        //
+        // The node is MOVED, never built from a string. A proof harness has no
+        // business parsing server markup into the DOM, and this file has no
+        // business knowing what a preference is. The page renders one hidden
+        // control per listing; this moves the matching one into the card and
+        // shows it. If there is none, nothing happens.
+        //
+        // Same shape as the 'photos' branch above: where a thing goes, never
+        // what it does.
+        var pref = document.querySelector('[data-vd-preference-for="' + String(listing.id).replace(/"/g, '') + '"]');
+
+        if (pref) {
+            pref.hidden = false;
+            box.appendChild(pref);
+        }
     }
 
     function renderChooser(box, ids) {
