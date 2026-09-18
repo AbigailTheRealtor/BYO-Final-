@@ -60,9 +60,98 @@ class ListingPreferenceReader
         ];
     }
 
+    /**
+     * The current state and reasons for one viewer across MANY listings.
+     *
+     * THE POINT IS THE QUERY COUNT, not convenience. `current()` costs a
+     * subject resolution plus a preference read per listing; a results page of
+     * 150 cards calling it per card is 300+ queries for one screen. This is
+     * bounded instead: one subject query per listing TYPE (through the resolver
+     * that already batches), then ONE preference query for the whole page with
+     * its reasons eager-loaded. Adding a card does not add a query.
+     *
+     * Every requested ref is present in the result, including listings the
+     * customer has expressed nothing about and listings with no durable
+     * subject — both as the same empty shape `current()` returns, so a caller
+     * cannot accidentally treat "absent" as "unknown" and re-read per card.
+     *
+     * @param  list<SmartTagListingRef> $refs
+     * @return array<string, array{state: ?string, reasons: list<string>}> keyed "<type>:<id>"
+     */
+    public function currentMany(int $userId, SeekerRole $role, array $refs): array
+    {
+        $empty = ['state' => null, 'reasons' => []];
+
+        /** @var array<string, array{state: ?string, reasons: list<string>}> $out */
+        $out = [];
+
+        foreach ($refs as $ref) {
+            $out["{$ref->type->value}:{$ref->id}"] = $empty;
+        }
+
+        if ($out === []) {
+            return [];
+        }
+
+        $subjects = $this->subjects->resolveMany($refs);
+
+        if ($subjects === []) {
+            return $out;
+        }
+
+        $subjectKeys = [];
+        foreach ($subjects as $subject) {
+            $subjectKeys[$subject->subjectKey] = $subject->subjectKey;
+        }
+
+        // ONE query for the page. `with('reasons')` adds the single eager-load
+        // query rather than one per row.
+        $preferences = ListingPreference::query()
+            ->with('reasons')
+            ->where('user_id', $userId)
+            ->where('seeker_role', $role->value)
+            ->whereIn('subject_key', array_values($subjectKeys))
+            ->get()
+            ->keyBy('subject_key');
+
+        foreach ($subjects as $refKey => $subject) {
+            $preference = $preferences->get($subject->subjectKey);
+
+            if ($preference === null) {
+                continue;
+            }
+
+            // Two refs can share one subject — a Bridge row and the BidYourOffer
+            // listing imported from it are the same property — and both
+            // deliberately receive the SAME state. That is the canonicalisation
+            // working, not a duplicate.
+            $out[$refKey] = [
+                'state'   => (string) $preference->state,
+                'reasons' => $preference->reasons->pluck('reason_key')->values()->all(),
+            ];
+        }
+
+        return $out;
+    }
+
     public function contextFor(SmartTagListingRef $ref): ?SmartTagContext
     {
         return $this->contexts->resolve($ref);
+    }
+
+    /**
+     * Contexts for many listings, one query per listing type.
+     *
+     * Delegates to the resolver's own batched form for the same reason
+     * {@see currentMany()} exists. A ref whose context cannot be resolved is
+     * present with a null value, never missing.
+     *
+     * @param  list<SmartTagListingRef> $refs
+     * @return array<string, ?SmartTagContext> keyed "<type>:<id>"
+     */
+    public function contextForMany(array $refs): array
+    {
+        return $this->contexts->resolveMany($refs);
     }
 
     /**

@@ -218,6 +218,13 @@
              Results grid
         =============================================================== --}}
         <div id="stellar-results-grid">
+            {{-- Resolve this page's preference state and contexts in batch BEFORE the
+                 card loop, keyed on the Bridge ROW id the mapper carries. Renders
+                 nothing; a page that skipped it would still be correct, only slower. --}}
+            <x-listing-preference.prefetch
+                listing-type="bridge"
+                :listing-ids="collect($results)->pluck('bridge_property_id')->filter()->values()" />
+
             <div class="row row-cols-1 row-cols-lg-2 g-3 mb-4">
                 @foreach($results as $index => $card)
                     <div class="col">

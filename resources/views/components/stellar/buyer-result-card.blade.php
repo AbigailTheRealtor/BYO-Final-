@@ -319,9 +319,6 @@
                data-testid="view-details-btn">
                 <i class="fas fa-eye me-1"></i>View Details
             </a>
-            <button class="btn btn-outline-secondary btn-sm" disabled title="Save feature coming soon">
-                <i class="far fa-bookmark me-1"></i>Save
-            </button>
             <button class="btn btn-outline-secondary btn-sm" disabled title="Request Showing feature coming soon">
                 <i class="fas fa-calendar-check me-1"></i>Request Showing
             </button>
@@ -329,6 +326,34 @@
                 <i class="fas fa-comment-dots me-1"></i>Ask a Question
             </button>
         </div>
+
+        {{--
+            Save | Maybe | Pass, the same shared control the BidYourOffer detail
+            pages render — not a Stellar copy of it.
+
+            It replaces a permanently `disabled` "Save feature coming soon"
+            button, which promised a feature that did not exist anywhere.
+
+            ONE WIRING SERVES BUYER AND TENANT. This card renders for both
+            (`criteriaType`), and the control does not need telling which: it
+            reads the viewer's own seeker role and refuses a market mismatch
+            through ListingPreferenceAvailability — a buyer is offered nothing on
+            a lease listing, a tenant nothing on a sale. A `criteriaType`-driven
+            copy here would be a second place that decision could be made, and
+            the two could disagree.
+
+            `bridge_property_id` is our own primary key for this cached row.
+            A card with none (a result mapped before that field existed) simply
+            renders no control rather than guessing an identity.
+        --}}
+        @if(!empty($card['bridge_property_id']))
+            <div class="mt-2">
+                <x-listing-preference.control
+                    listing-type="bridge"
+                    :listing-id="$card['bridge_property_id']"
+                    :compact="true" />
+            </div>
+        @endif
     </div>
 
 </div>{{-- /card --}}
