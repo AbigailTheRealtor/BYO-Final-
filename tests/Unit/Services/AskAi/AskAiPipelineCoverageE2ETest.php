@@ -193,6 +193,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_hvac_age_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -201,7 +203,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'how old is the hvac?');
+        $result = $runner->run('seller', 1, 'how old is the hvac?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -241,6 +243,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_recent_renovations_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -249,7 +253,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'what renovations have been made?');
+        $result = $runner->run('seller', 1, 'what renovations have been made?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -288,6 +292,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_flood_damage_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -296,7 +302,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'has the property flooded?');
+        $result = $runner->run('seller', 1, 'has the property flooded?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -334,6 +340,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_utility_costs_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -342,7 +350,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'what are the average monthly utility costs?');
+        $result = $runner->run('seller', 1, 'what are the average monthly utility costs?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -383,6 +391,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_laundry_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -391,7 +401,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('landlord', 1, 'is there in-unit laundry?');
+        $result = $runner->run('landlord', 1, 'is there in-unit laundry?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -430,6 +440,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_lease_renewal_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -438,7 +450,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('landlord', 1, 'how does lease renewal work?');
+        $result = $runner->run('landlord', 1, 'how does lease renewal work?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -476,6 +488,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_security_features_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -484,7 +498,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('landlord', 1, 'is there a security system?');
+        $result = $runner->run('landlord', 1, 'is there a security system?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -523,6 +537,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_pest_termite_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -531,7 +547,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'have there been termites?');
+        $result = $runner->run('seller', 1, 'have there been termites?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -688,6 +704,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         string $configKey,
         string $phrase
     ): void {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -696,7 +714,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, $phrase);
+        $result = $runner->run('seller', 1, $phrase, ['viewer_scope' => 'owner']);
 
         $this->assertFalse(
             $result['success'],

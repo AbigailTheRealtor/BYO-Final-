@@ -875,6 +875,31 @@ class AskAiContextBuilderService
         return self::TYPE_ALIASES[strtolower($listingType)] ?? $listingType;
     }
 
+    /** The canonical role for an accepted listing-type alias, or null. One reading of TYPE_ALIASES. */
+    public static function canonicalListingType(string $listingType): ?string
+    {
+        return self::TYPE_ALIASES[$listingType] ?? null;
+    }
+
+    /**
+     * The listing's stored `property_type` meta value, or null when the listing, the role or
+     * the value cannot be resolved. Read-only; used to gate Knowledge Base question matching
+     * to the questions this listing's property type is actually asked.
+     */
+    public function listingPropertyType(string $listingType, int $listingId): ?string
+    {
+        $canonical = self::canonicalListingType($listingType);
+        $listing   = $canonical === null ? null : $this->findListing($canonical, $listingId);
+
+        if ($listing === null || !method_exists($listing, 'info')) {
+            return null;
+        }
+
+        $value = $listing->info('property_type');
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
     /**
      * Resolve the primary listing model for the given canonical type and ID.
      * Returns null when no record exists.

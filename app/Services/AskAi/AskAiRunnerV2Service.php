@@ -2,6 +2,7 @@
 
 namespace App\Services\AskAi;
 
+use App\Support\AskAi\AskAiKnowledgeBaseQuestionMatcher;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -3549,6 +3550,34 @@ class AskAiRunnerV2Service
             $classification = $this->classifier->classify($question);
             $questionType   = $classification['question_type'];
 
+            // Step 0 — Knowledge Base question, asked by its own label.
+            //
+            // A question that IS one of this listing's Knowledge Base questions (exact
+            // label, gated by property type) routes to that key and nowhere else. Without
+            // this the keyword classifier sent most such questions to "unsupported" or to a
+            // model-only intent, and first-match substring routing sent one to a different
+            // key's answer. It never overrides a prohibited classification.
+            //
+            // OWNER SCOPE ONLY. Knowledge Base answers are owner-only and are redacted for
+            // every other scope; routing a non-owner here would reach the missing-data guard
+            // and tell them the information "has not been provided" — false whenever the
+            // owner answered. Non-owners keep their existing path, and the public card has
+            // its own acknowledged Knowledge Base admission.
+            if ($questionType !== 'prohibited'
+                && !isset($options['normalized_field_key'])
+                && ($options['viewer_scope'] ?? null) === AskAiViewerAuthorizationService::SCOPE_OWNER) {
+                $kbKey = AskAiKnowledgeBaseQuestionMatcher::forListing($listingType, $listingId, $question);
+                if ($kbKey !== null) {
+                    $questionType                           = 'listing_facts';
+                    $classification['question_type']        = 'listing_facts';
+                    $classification['normalized_field_key'] = 'faq_answers.' . $kbKey;
+                    $options = array_merge($options, [
+                        'normalized_field_key' => 'faq_answers.' . $kbKey,
+                        'kb_label_match'       => $kbKey,
+                    ]);
+                }
+            }
+
             // Determine normalizer_status before building the trace so every
             // exit path (including early returns) carries the correct value.
             // not_applicable — question type is deterministic; normalizer not relevant.
@@ -4143,10 +4172,19 @@ class AskAiRunnerV2Service
                 }
 
                 $faqFieldLabel = $this->deriveFieldLabel($normalizedFieldKey);
+                // Knowledge Base answers are owner-only: for every other scope the whole
+                // faq_answers block is redacted before this guard runs, so "has not been
+                // provided" would be a claim about the owner's answers made from a context
+                // that was never allowed to contain them — false whenever the owner answered.
+                // Non-owners are told the category is owner-only, which is true either way
+                // and says nothing about whether an answer exists.
+                $faqViewerIsOwner = ($options['viewer_scope'] ?? null) === AskAiViewerAuthorizationService::SCOPE_OWNER;
                 $missingFinalResponse = [
                     'success'            => false,
                     'status'             => 'insufficient_context',
-                    'answer'             => $faqFieldLabel . ' has not been provided for this listing.',
+                    'answer'             => $faqViewerIsOwner
+                        ? $faqFieldLabel . ' has not been provided for this listing.'
+                        : $faqFieldLabel . ' is only available to the listing owner.',
                     'disclosures'        => $promptPackage['required_disclosures'] ?? [],
                     'source_attribution' => $promptPackage['source_attribution'] ?? [],
                     'refusal_message'    => null,
