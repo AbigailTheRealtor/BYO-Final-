@@ -2,6 +2,8 @@
 
 namespace App\Services\Canonical;
 
+use App\Services\Canonical\CanonicalListingVocabulary as V;
+
 /**
  * CanonicalListing — a source-neutral, in-memory projection of a listing.
  *
@@ -16,7 +18,29 @@ namespace App\Services\Canonical;
  * can trace every value back to where it came from.
  *
  * Fields are only present when the source actually populated them, so has()/
- * present() are meaningful signals for data-completeness scoring.
+ * present() are meaningful signals for data-completeness scoring. Unknown is
+ * the ABSENCE of a key — never zero, false, '' or 'Other'.
+ *
+ * THE VOCABULARY
+ * --------------
+ * Every key is declared in {@see CanonicalListingVocabulary}, with one type and
+ * one side (supply or demand). The typed accessors below read the core supply
+ * facts; `get()` remains the general reader and is what the DNA score services
+ * use for the extension keys.
+ *
+ * THIS CLASS AND PropertyCandidate ARE DIFFERENT THINGS
+ * -----------------------------------------------------
+ * {@see \App\Services\Property\PropertyCandidate} is an INGESTION DTO: the
+ * normalized shape of one record as a source hands it over (today, a Bridge
+ * record on its way into import, prefill or Match Check). It is provider-shaped
+ * by design — it carries a ListingKey, an MlsStatus, a raw payload.
+ *
+ * CanonicalListing is the CONSUMER-FACING listing: what downstream Matchmaker
+ * code reads regardless of which source produced it, with provenance per field.
+ * A source adapter may use a PropertyCandidate as its input (the planned MLS
+ * adapter will), but the two are not merged merely because their fields
+ * overlap, and nothing downstream should accept a PropertyCandidate where it
+ * means "a listing".
  */
 class CanonicalListing
 {
@@ -52,6 +76,24 @@ class CanonicalListing
         return $this->listingId;
     }
 
+    /**
+     * Does this row describe a property on offer (Seller / Landlord)?
+     *
+     * A Buyer or Tenant row is a seeker's criteria. It carries `demand.*` and
+     * `pet.profile.*` keys and never a supply fact — it is not a listing of a
+     * property, and nothing here pretends it is.
+     */
+    public function isSupply(): bool
+    {
+        return V::isSupplyListingType($this->listingType);
+    }
+
+    /** Does this row describe what a seeker is looking for (Buyer / Tenant)? */
+    public function isDemand(): bool
+    {
+        return V::isDemandListingType($this->listingType);
+    }
+
     /** A canonical key exists (even if its value is null). */
     public function has(string $key): bool
     {
@@ -80,5 +122,139 @@ class CanonicalListing
     public function all(): array
     {
         return $this->fields;
+    }
+
+    // ── Typed core accessors (P0-4). Each returns null when unknown. ─────────
+
+    /** 'sale' | 'lease' | null. */
+    public function transactionType(): ?string
+    {
+        return $this->string(V::LISTING_TRANSACTION_TYPE);
+    }
+
+    /** RESO StandardStatus ('Active', 'Pending', …) or null. */
+    public function standardStatus(): ?string
+    {
+        return $this->string(V::LISTING_STANDARD_STATUS);
+    }
+
+    /** 'offer_listing' | 'hire_agent' | null. */
+    public function workflow(): ?string
+    {
+        return $this->string(V::LISTING_WORKFLOW);
+    }
+
+    /** The price of record (never a Your Terms figure), or null. */
+    public function listPrice(): ?float
+    {
+        return $this->float(V::LISTING_LIST_PRICE);
+    }
+
+    /** The period a lease list price is quoted per, or null when unknown. */
+    public function leaseAmountFrequency(): ?string
+    {
+        return $this->string(V::LISTING_LEASE_AMOUNT_FREQUENCY);
+    }
+
+    /** Residential | Income | Commercial | Business | Vacant Land, or null. */
+    public function propertyType(): ?string
+    {
+        return $this->string(V::PROPERTY_TYPE);
+    }
+
+    public function bedrooms(): ?int
+    {
+        $v = $this->get(V::PROPERTY_BEDROOMS);
+
+        return is_int($v) ? $v : null;
+    }
+
+    public function bathrooms(): ?float
+    {
+        return $this->float(V::PROPERTY_BATHROOMS);
+    }
+
+    public function livingAreaSqft(): ?float
+    {
+        return $this->float(V::PROPERTY_LIVING_AREA_SQFT);
+    }
+
+    public function yearBuilt(): ?int
+    {
+        $v = $this->get(V::PROPERTY_YEAR_BUILT);
+
+        return is_int($v) ? $v : null;
+    }
+
+    public function lotAcreage(): ?float
+    {
+        return $this->float('property.lot_acreage');
+    }
+
+    public function hasPool(): ?bool
+    {
+        $v = $this->get(V::PROPERTY_POOL);
+
+        return is_bool($v) ? $v : null;
+    }
+
+    public function hasGarage(): ?bool
+    {
+        $v = $this->get(V::PROPERTY_GARAGE);
+
+        return is_bool($v) ? $v : null;
+    }
+
+    public function addressLine(): ?string
+    {
+        return $this->string(V::LOCATION_ADDRESS_LINE);
+    }
+
+    public function city(): ?string
+    {
+        return $this->string(V::LOCATION_CITY);
+    }
+
+    public function state(): ?string
+    {
+        return $this->string(V::LOCATION_STATE);
+    }
+
+    public function postalCode(): ?string
+    {
+        return $this->string(V::LOCATION_POSTAL_CODE);
+    }
+
+    public function county(): ?string
+    {
+        return $this->string(V::LOCATION_COUNTY);
+    }
+
+    /**
+     * A measurable coordinate, or null. Both halves or neither: a lone latitude
+     * is not a location.
+     *
+     * @return array{lat: float, lng: float}|null
+     */
+    public function coordinates(): ?array
+    {
+        $lat = $this->float(V::LOCATION_LATITUDE);
+        $lng = $this->float(V::LOCATION_LONGITUDE);
+
+        return ($lat === null || $lng === null) ? null : ['lat' => $lat, 'lng' => $lng];
+    }
+
+    private function string(string $key): ?string
+    {
+        $v = $this->get($key);
+
+        return is_string($v) && trim($v) !== '' ? $v : null;
+    }
+
+    private function float(string $key): ?float
+    {
+        $v = $this->get($key);
+
+        return is_float($v) || is_int($v) ? (float) $v : null;
     }
 }
