@@ -68,13 +68,19 @@ const diagnosticDefaults = {
 };
 
 /*
- | THE ONE FILE THAT SEPARATES THE TWO SUITES, named once.
+ | WHICH SPECS BELONG TO THE LARAVEL-BACKED SUITE, named once.
  |
- | The default config IGNORES it; the app config MATCHES it. Both read this
- | constant, so the two halves of that split cannot drift apart into a spec that
- | runs in neither configuration — or, worse, in both.
+ | The default config IGNORES this pattern; the app config MATCHES it. Both read
+ | this constant, so the two halves of that split cannot drift apart into a spec
+ | that runs in neither configuration — or, worse, in both.
+ |
+ | IT IS A PREFIX, NOT ONE FILENAME. It was exactly `listing-preference.spec.js`
+ | and the first sibling added — `listing-preference-cards.spec.js` — matched
+ | neither half: the app suite would not have run it, and the STATIC suite would
+ | have, driving a Laravel-backed spec against a fixture server with no
+ | application behind it. Any `listing-preference*.spec.js` is app-backed.
  */
-const APP_SPEC = /listing-preference\.spec\.js/;
+const APP_SPEC = /listing-preference[\w-]*\.spec\.js/;
 
 module.exports = {
     APP_SPEC,
