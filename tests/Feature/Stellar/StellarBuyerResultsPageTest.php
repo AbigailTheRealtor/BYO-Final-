@@ -110,6 +110,7 @@ class StellarBuyerResultsPageTest extends TestCase
     private function insertListing(array $overrides = []): void
     {
         $base = [
+            'provider'                => 'stellar_bridge',
             'listing_key'             => 'RTEST-' . uniqid(),
             'listing_id'              => 'RLID-' . uniqid(),
             'standard_status'         => 'Active',

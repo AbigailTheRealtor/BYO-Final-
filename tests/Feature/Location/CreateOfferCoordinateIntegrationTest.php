@@ -207,6 +207,7 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
         Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
 
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'SYNTHETIC-G5-' . $listingId,
             'unparsed_address'  => '315 E Madison St',
             'city'              => 'Tampa',
@@ -238,6 +239,7 @@ class CreateOfferCoordinateIntegrationTest extends TestCase
         // Documents the gap as behaviour rather than prose: without a key the
         // Bridge rung cannot answer, whatever is in bridge_properties.
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'SOME-OTHER-RECORD-' . $listingId,
             'unparsed_address'  => '315 E Madison St',
             'city'              => 'Tampa',

@@ -59,6 +59,7 @@ class BuyerMatchingEngineTest extends TestCase
     private function insertListing(array $overrides = []): int
     {
         $base = [
+            'provider'                => 'stellar_bridge',
             'listing_key'             => 'TEST-' . uniqid(),
             'listing_id'              => 'LID-' . uniqid(),
             'standard_status'         => 'Active',
@@ -205,10 +206,12 @@ class BuyerMatchingEngineTest extends TestCase
         $noIdxKey  = 'TC06-NOIDX-'  . uniqid();
 
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $idxKey,
             'raw_json'    => json_encode(['IDXParticipationYN' => true]),
         ]);
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $noIdxKey,
             'raw_json'    => json_encode(['IDXParticipationYN' => false]),
         ]);
@@ -275,6 +278,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC09-POOL-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $key,
             'pool_private_yn' => true,
         ]);
@@ -297,6 +301,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC10-NOPOOL-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $key,
             'pool_private_yn' => false,
         ]);
@@ -328,6 +333,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC11-NOPREF-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $key,
             'pool_private_yn' => false,
         ]);
@@ -404,6 +410,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC14-HOAFEE-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $key,
             'association_fee' => null,
             'association_yn'  => true,
@@ -432,6 +439,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Near: exactly at center
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $nearKey,
             'latitude'    => 28.35,
             'longitude'   => -81.24,
@@ -439,6 +447,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Far: ~45 miles away (within 50-mile radius)
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $farKey,
             'latitude'    => 28.90,
             'longitude'   => -81.60,
@@ -487,6 +496,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // ~150 miles from center (28.35, -81.24) — clearly outside 50-mile radius
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $outsideKey,
             'latitude'    => 29.50,
             'longitude'   => -80.50,
@@ -514,6 +524,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC17-NOLAT-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $key,
             'latitude'    => null,
             'longitude'   => null,
@@ -550,6 +561,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC18-PRICE-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $key,
             'list_price'  => 380000,
         ]);
@@ -577,6 +589,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC19-MAXSCORE-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'         => $key,
             'list_price'          => 300000,
             'city'                => 'Orlando',
@@ -654,16 +667,19 @@ class BuyerMatchingEngineTest extends TestCase
         $worstKey = 'TC20-WORST-' . uniqid();
 
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $bestKey,
             'list_price'      => 300000,
             'pool_private_yn' => true,
         ]);
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $midKey,
             'list_price'      => 400000,
             'pool_private_yn' => false,
         ]);
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $worstKey,
             'list_price'      => 450000,
             'pool_private_yn' => false,
@@ -701,6 +717,7 @@ class BuyerMatchingEngineTest extends TestCase
         $prefix = 'TC21-CAP-' . uniqid() . '-';
         for ($i = 0; $i < 220; $i++) {
             DB::table('bridge_properties')->insert([
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => $prefix . $i,
                 'listing_id'              => 'LID-' . $prefix . $i,
                 'standard_status'         => 'Active',
@@ -740,6 +757,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC22-WHY-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $key,
             'pool_private_yn' => false,
             'city'            => 'Orlando',
@@ -777,6 +795,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC23-LIFESTYLE-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $key,
             'raw_json'    => json_encode([
                 'IDXParticipationYN' => true,
@@ -805,6 +824,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC24-STALE-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $key,
             'raw_json'    => json_encode([
                 'IDXParticipationYN' => true,
@@ -838,11 +858,13 @@ class BuyerMatchingEngineTest extends TestCase
         $condoKey = 'TC25-CONDO-' . uniqid();
 
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $sfrKey,
             'property_type'     => 'Residential',
             'property_sub_type' => 'Single Family Residence',
         ]);
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $condoKey,
             'property_type'     => 'Residential',
             'property_sub_type' => 'Condominium',
@@ -896,12 +918,14 @@ class BuyerMatchingEngineTest extends TestCase
         $outsideKey = 'TC26-OUTSIDE-' . uniqid();
 
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $insideKey,
             'city'        => 'Sarasota',
             'latitude'    => 27.353,
             'longitude'   => -82.523,
         ]);
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $outsideKey,
             'city'        => 'Orlando',
             'latitude'    => 28.538,
@@ -955,12 +979,14 @@ class BuyerMatchingEngineTest extends TestCase
         $cityOnlyKey    = 'TC27-CITY-' . uniqid();
 
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $polygonOnlyKey,
             'city'        => 'Sarasota',
             'latitude'    => 27.353,
             'longitude'   => -82.523,
         ]);
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key' => $cityOnlyKey,
             'city'        => 'Tampa',
             'latitude'    => 27.947,
@@ -1003,6 +1029,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC28-RES-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $key,
             'property_type' => 'Residential',
         ]);
@@ -1033,6 +1060,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Listing with BuildingAreaTotal inside buyer's sqft range → 10 pts
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $inRangeKey,
             'property_type' => 'Income',
             'raw_json'      => json_encode([
@@ -1044,6 +1072,7 @@ class BuyerMatchingEngineTest extends TestCase
         // Listing with no building area data → 5 pts (reduced neutral).
         // Explicitly null living_area to override the 1800 default set by insertListing().
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $noDataKey,
             'property_type' => 'Income',
             'living_area'   => null,
@@ -1055,6 +1084,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Listing used with no-preference criteria → 10 pts (full neutral)
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $noPrefKey,
             'property_type' => 'Income',
             'raw_json'      => json_encode([
@@ -1107,6 +1137,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // High: BuildingAreaTotal and lot_size_sqft both inside buyer's ranges → 10 pts
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $highKey,
             'property_type' => 'Commercial Sale',
             'lot_size_sqft' => 15000,
@@ -1119,6 +1150,7 @@ class BuyerMatchingEngineTest extends TestCase
         // Low: no building area, no lot data → 3 pts (reduced neutral for size) + 0 pts (lot absent).
         // Explicitly null living_area to override the 1800 default set by insertListing().
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $lowKey,
             'property_type' => 'Commercial Sale',
             'living_area'   => null,
@@ -1167,6 +1199,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC31-COMLEASE-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $key,
             'property_type' => 'Commercial Lease',
             'raw_json'      => json_encode([
@@ -1201,6 +1234,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC32-BIZ-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $key,
             'property_type'     => 'Business Opportunity',
             'property_sub_type' => 'Restaurant',
@@ -1238,6 +1272,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // In-range lot → 10 pts
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $inRangeKey,
             'property_type' => 'Vacant Land',
             'lot_size_sqft' => 87120, // 2 acres — inside [50000, 120000]
@@ -1246,6 +1281,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Out-of-range lot (far outside — deviation >> 20%) → 0 pts
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $outRangeKey,
             'property_type' => 'Vacant Land',
             'lot_size_sqft' => 5000, // well below minimum 50000
@@ -1254,6 +1290,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // No lot preference → 10 pts (full neutral)
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $noPrefKey,
             'property_type' => 'Vacant Land',
             'lot_size_sqft' => 5000, // same tiny lot
@@ -1297,6 +1334,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         $key = 'TC34-INCOME-CAP-' . uniqid();
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $key,
             'property_type' => 'Income',
             'list_price'    => 500000,
@@ -1339,6 +1377,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Far outside range (deviation >> 20%) → 0 pts
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $farKey,
             'property_type' => 'Income',
             'raw_json'      => json_encode([
@@ -1349,6 +1388,7 @@ class BuyerMatchingEngineTest extends TestCase
 
         // Just outside range but ≤20% deviation → 5 pts (partial)
         $this->insertListing([
+            'provider'                => 'stellar_bridge',
             'listing_key'   => $closeKey,
             'property_type' => 'Income',
             'raw_json'      => json_encode([

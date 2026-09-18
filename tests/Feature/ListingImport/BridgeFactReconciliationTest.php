@@ -105,6 +105,7 @@ class BridgeFactReconciliationTest extends TestCase
         ], self::BRIDGE_FACTS, $rawOverrides);
 
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => self::KEY,
             'listing_id'       => self::MLS,
             'standard_status'  => 'Active',

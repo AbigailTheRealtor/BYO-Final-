@@ -92,6 +92,7 @@ class BridgePropertySeeder extends Seeder
 
             // Orlando — mid-range, family home with pool & garage
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-ORL-001',
                 'listing_id'              => 'ORL-001',
                 'standard_status'         => 'Active',
@@ -132,6 +133,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — starter home, no HOA
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-TPA-001',
                 'listing_id'              => 'TPA-001',
                 'standard_status'         => 'Active',
@@ -172,6 +174,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — upscale waterfront townhome
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-TPA-002',
                 'listing_id'              => 'TPA-002',
                 'standard_status'         => 'Active',
@@ -212,6 +215,7 @@ class BridgePropertySeeder extends Seeder
 
             // Sarasota — luxury pool home
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-SRQ-001',
                 'listing_id'              => 'SRQ-001',
                 'standard_status'         => 'Active',
@@ -252,6 +256,7 @@ class BridgePropertySeeder extends Seeder
 
             // Naples — high-end condo, waterfront view
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-NAP-001',
                 'listing_id'              => 'NAP-001',
                 'standard_status'         => 'Active',
@@ -292,6 +297,7 @@ class BridgePropertySeeder extends Seeder
 
             // Jacksonville — affordable new construction
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-JAX-001',
                 'listing_id'              => 'JAX-001',
                 'standard_status'         => 'Active',
@@ -332,6 +338,7 @@ class BridgePropertySeeder extends Seeder
 
             // Fort Lauderdale — mid-range with pool, good for buyer matching
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-FLL-001',
                 'listing_id'              => 'FLL-001',
                 'standard_status'         => 'Active',
@@ -372,6 +379,7 @@ class BridgePropertySeeder extends Seeder
 
             // Boca Raton — 55+ senior community
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-BCA-001',
                 'listing_id'              => 'BCA-001',
                 'standard_status'         => 'Active',
@@ -412,6 +420,7 @@ class BridgePropertySeeder extends Seeder
 
             // Gainesville — college-area budget home
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-GNV-001',
                 'listing_id'              => 'GNV-001',
                 'standard_status'         => 'Active',
@@ -452,6 +461,7 @@ class BridgePropertySeeder extends Seeder
 
             // Clearwater — beach area condo, tenant-rental target
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-CLW-001',
                 'listing_id'              => 'CLW-001',
                 'standard_status'         => 'Active',
@@ -492,6 +502,7 @@ class BridgePropertySeeder extends Seeder
 
             // Ocala — rural / horse country
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-OCA-001',
                 'listing_id'              => 'OCA-001',
                 'standard_status'         => 'Active',
@@ -535,6 +546,7 @@ class BridgePropertySeeder extends Seeder
             // ─────────────────────────────────────────────────────────────────
 
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-TPA-003-PENDING',
                 'listing_id'              => 'TPA-003',
                 'standard_status'         => 'Pending',
@@ -578,6 +590,7 @@ class BridgePropertySeeder extends Seeder
             // ─────────────────────────────────────────────────────────────────
 
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-ORL-002-CLOSED',
                 'listing_id'              => 'ORL-002',
                 'standard_status'         => 'Closed',
@@ -625,6 +638,7 @@ class BridgePropertySeeder extends Seeder
 
             // Clearwater rental-friendly condo (pets, no senior)
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-CLW-002',
                 'listing_id'              => 'CLW-002',
                 'standard_status'         => 'Active',
@@ -673,6 +687,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — office suite, 2-year lease, mid-size
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-COM-TPA-001',
                 'listing_id'              => 'COM-TPA-001',
                 'standard_status'         => 'Active',
@@ -717,6 +732,7 @@ class BridgePropertySeeder extends Seeder
 
             // Orlando — retail space, 1-year lease, smaller unit
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-COM-ORL-001',
                 'listing_id'              => 'COM-ORL-001',
                 'standard_status'         => 'Active',
@@ -761,6 +777,7 @@ class BridgePropertySeeder extends Seeder
 
             // Fort Lauderdale — mixed-use flex space, 3–5 year lease
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-COM-FLL-001',
                 'listing_id'              => 'COM-FLL-001',
                 'standard_status'         => 'Active',
@@ -809,6 +826,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — 4-unit apartment building
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-INC-TPA-001',
                 'listing_id'              => 'INC-TPA-001',
                 'standard_status'         => 'Active',
@@ -859,6 +877,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — retail/office strip
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-CMS-TPA-001',
                 'listing_id'              => 'CMS-TPA-001',
                 'standard_status'         => 'Active',
@@ -907,6 +926,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — established restaurant for sale
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-BIZ-TPA-001',
                 'listing_id'              => 'BIZ-TPA-001',
                 'standard_status'         => 'Active',
@@ -955,6 +975,7 @@ class BridgePropertySeeder extends Seeder
 
             // Tampa — buildable lot near Westchase
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-LND-TPA-001',
                 'listing_id'              => 'LND-TPA-001',
                 'standard_status'         => 'Active',
@@ -999,6 +1020,7 @@ class BridgePropertySeeder extends Seeder
 
             // St. Petersburg — small townhome, tenant-buyer overlap
             [
+                'provider'                => 'stellar_bridge',
                 'listing_key'             => 'SEED-STP-001',
                 'listing_id'              => 'STP-001',
                 'standard_status'         => 'Active',

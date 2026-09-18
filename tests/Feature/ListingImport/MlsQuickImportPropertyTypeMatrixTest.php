@@ -84,6 +84,7 @@ class MlsQuickImportPropertyTypeMatrixTest extends TestCase
     private function seedRecord(string $mls, string $propertyType, array $overrides = []): void
     {
         BridgeProperty::create(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $mls . '-KEY',
             'listing_id'              => $mls,
             'standard_status'         => 'Active',

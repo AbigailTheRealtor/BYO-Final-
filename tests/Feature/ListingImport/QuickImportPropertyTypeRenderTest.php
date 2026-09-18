@@ -97,6 +97,7 @@ class QuickImportPropertyTypeRenderTest extends TestCase
     private function seedRecord(string $mls, string $propertyType): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $mls . '-KEY',
             'listing_id'        => $mls,
             'standard_status'   => 'Active',

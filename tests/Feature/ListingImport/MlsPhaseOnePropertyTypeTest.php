@@ -64,6 +64,7 @@ class MlsPhaseOnePropertyTypeTest extends TestCase
     private function seedBridgeRecord(): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => self::KEY,
             'listing_id'              => self::MLS,
             'standard_status'         => 'Active',

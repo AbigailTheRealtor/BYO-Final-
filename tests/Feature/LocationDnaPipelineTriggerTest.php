@@ -457,6 +457,7 @@ class LocationDnaPipelineTriggerTest extends TestCase
     private function makeBridgeListing(): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'TEST-' . uniqid(),
             'standard_status'   => 'Active',
             'property_type'     => 'Residential',

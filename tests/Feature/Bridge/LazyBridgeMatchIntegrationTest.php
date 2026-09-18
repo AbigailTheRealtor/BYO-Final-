@@ -70,6 +70,7 @@ class LazyBridgeMatchIntegrationTest extends TestCase
     {
         $key = 'LAZY-IT-' . uniqid();
         DB::table('bridge_properties')->insertOrIgnore(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => $key . '-id',
             'standard_status'         => 'Active',

@@ -319,6 +319,7 @@ class CreateOfferCoordinateRerouteTest extends TestCase
         Http::fake([self::CENSUS => Http::response($this->censusMatch())]);
 
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'REROUTE-A-' . $listingId,
             'unparsed_address'  => '315 E Madison St',
             'city'              => 'Tampa',

@@ -115,6 +115,7 @@ class MlsQuickImportFlowTest extends TestCase
         unset($overrides['raw']);
 
         return BridgeProperty::create(array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $key,
             'listing_id'              => $mls,
             'standard_status'         => 'Active',

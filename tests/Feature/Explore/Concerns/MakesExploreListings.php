@@ -66,6 +66,7 @@ trait MakesExploreListings
         $sequence++;
 
         $columns = array_merge([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => 'LK' . str_pad((string) $sequence, 8, '0', STR_PAD_LEFT),
             'listing_id'              => 'MLS' . $sequence,
             'standard_status'         => 'Active',
