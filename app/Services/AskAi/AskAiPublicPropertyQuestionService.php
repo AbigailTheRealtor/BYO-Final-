@@ -225,6 +225,23 @@ class AskAiPublicPropertyQuestionService
     ];
 
     /**
+     * The criteria context keys the public may be told for a Buyer or Tenant listing — the
+     * card's own allowlist, exposed so the free-text path reads the SAME list rather than a
+     * lookalike. Empty for any other role.
+     *
+     * @return list<string>
+     */
+    public static function publicCriteriaKeys(string $role): array
+    {
+        // The allowlists map key => why it is public; the keys are the list.
+        return array_keys(match ($role) {
+            'buyer'  => self::PUBLIC_BUYER_CRITERIA,
+            'tenant' => self::PUBLIC_TENANT_CRITERIA,
+            default  => [],
+        });
+    }
+
+    /**
      * Sources this surface may restate although SnapshotFactVisibility keeps them owner-only
      * for the AI context. Each is already published on the listing page. Used ONLY by
      * entries declaring source_kind 'admitted_listing', and only as the source_path — never
