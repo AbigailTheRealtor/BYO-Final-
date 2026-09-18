@@ -151,6 +151,20 @@
                                 </a>
                             @endif
 
+                            {{-- The signed-in shopper's own Saved / Maybe / Passed. Asks the
+                                 same questions the routes do — feature on, a Buyer/Tenant
+                                 account, and a deployment that serves BidYourOffer (the
+                                 routes are BidYourOffer-only) — so the link never leads
+                                 to a 404 and never appears for an account the feature is
+                                 not for. --}}
+                            @if (\App\Support\ListingPreferences\ListingPreferenceAvailability::featureEnabled()
+                                && \App\Support\ListingPreferences\SeekerRole::forUserType(auth()->user()->user_type) !== null
+                                && \App\Support\Product\ProductContext::servesBidYourOffer())
+                                <a class="dropdown-item" href="{{ route('listing-preferences.mine.index') }}">
+                                    <i class="fa-solid fa-heart me-2 text-black"></i> Saved Properties
+                                </a>
+                            @endif
+
                             <a class="dropdown-item" href="{{ route('password.change') }}">
                                 <i class="fa-solid fa-key me-2 text-black"></i> Change Password
                             </a>

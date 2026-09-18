@@ -212,6 +212,18 @@ class VirtualDriveProofController extends Controller
             'viewMode'         => $request->query('view') === 'customer' ? 'customer' : 'dev',
             'nearbyRequery'    => (float) config('virtual_drive.nearby.requery_fraction', 0.4),
             'signs'            => (array) config('virtual_drive.signs', []),
+            /*
+             | Which listings get a hidden Save | Maybe | Pass control, and the
+             | trusted row id each carries. The page view renders the controls.
+             |
+             | The shell reveals the one matching the selected listing. It is
+             | built here rather than returned by the listings API because a
+             | proof script must not turn server strings into DOM — see
+             | VirtualDriveProviderIsolationTest. Empty while the feature is off
+             | or for a viewer the shared system will not offer it to.
+             */
+            'preferenceControls' => app(\App\Support\VirtualDrive\VirtualDrivePreferenceControl::class)
+                ->pool((array) config('virtual_drive.test_listing_keys', [])),
             'launchLabel'      => $launchLabel,
             'launchNote'       => $launchNote,
         ]);

@@ -199,9 +199,12 @@ class ListingPreferenceCardMarkupTest extends TestCase
         sort($files);
 
         $this->assertSame(
-            ['control.blade.php', 'prefetch.blade.php'],
+            // `assets` is the control's own stylesheet and delegated behaviour,
+            // extracted in Phase 3B so a page that reveals controls after load
+            // can emit it first. It renders no control markup.
+            ['assets.blade.php', 'control.blade.php', 'prefetch.blade.php'],
             $files,
-            'the control and its prefetch helper are the only components; a card variant is a prop, not a file'
+            'the control, its assets and its prefetch helper are the only components; a card variant is a prop, not a file'
         );
     }
 

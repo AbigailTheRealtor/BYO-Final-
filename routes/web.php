@@ -1444,14 +1444,58 @@ Route::middleware('virtual-drive-proof')->prefix('dev/virtual-drive')->name('dev
 // and the session, so these writes are protected exactly as every other
 // authenticated POST in this application.
 // ===========================================================================
-Route::middleware(['listing-preferences', 'auth', 'throttle:listing-preference-write'])
-    ->prefix('listing-preferences')
-    ->name('listing-preferences.')
+//
+// ONE GROUP PER SURFACE, AND THE SURFACE IS A ROUTE DEFAULT.
+//
+// Phase 2 shipped one surface and said the next would get its own route rather
+// than a request field, because these events are a Fair Housing audit trail and
+// a shopper must not be able to relabel where their own choice was made. Phase
+// 3B adds the customer's management area and the Virtual Drive, so each group
+// carries `preference_surface` as a ROUTE DEFAULT — part of the routing table,
+// never read from the request body. Same controller, same validation, same
+// authorization; only the recorded surface differs.
+$listingPreferenceSurfaceKey = \App\Http\Controllers\ListingPreferenceController::SURFACE_ROUTE_KEY;
+
+// `defaults()` lives on the ROUTE in Laravel 8, not on the group registrar, so
+// it is applied per route rather than to the group.
+$listingPreferenceRoutes = function (string $surface) use ($listingPreferenceSurfaceKey): callable {
+    return function () use ($surface, $listingPreferenceSurfaceKey): void {
+        $c = \App\Http\Controllers\ListingPreferenceController::class;
+
+        Route::get('/', [$c, 'show'])->name('show')->defaults($listingPreferenceSurfaceKey, $surface);
+        Route::post('/', [$c, 'store'])->name('store')->defaults($listingPreferenceSurfaceKey, $surface);
+        Route::post('/reasons', [$c, 'reasons'])->name('reasons')->defaults($listingPreferenceSurfaceKey, $surface);
+        Route::delete('/', [$c, 'destroy'])->name('destroy')->defaults($listingPreferenceSurfaceKey, $surface);
+    };
+};
+
+foreach ([
+    // prefix                           => [route-name prefix, surface]
+    'listing-preferences'               => ['listing-preferences.', \App\Support\ListingPreferences\ListingPreferenceSurface::DETAIL],
+    'listing-preferences/account'       => ['listing-preferences.account.', \App\Support\ListingPreferences\ListingPreferenceSurface::ACCOUNT],
+    'listing-preferences/virtual-drive' => ['listing-preferences.virtual-drive.', \App\Support\ListingPreferences\ListingPreferenceSurface::VIRTUAL_DRIVE],
+] as $lpPrefix => [$lpName, $lpSurface]) {
+    Route::middleware(['listing-preferences', 'auth', 'throttle:listing-preference-write'])
+        ->prefix($lpPrefix)
+        ->name($lpName)
+        ->group($listingPreferenceRoutes($lpSurface));
+}
+
+// ===========================================================================
+// THE CUSTOMER'S OWN Saved / Maybe / Passed AREA (Phase 3B)
+//
+// DELIBERATELY NOT ON /author/{id}. That page looks like a "my stuff" area and
+// is not one: it carries only `web` middleware and takes ANY user's id, so it
+// is a PUBLIC profile. Publishing one customer's Save/Maybe/Pass there would
+// expose it to everybody. These routes are `auth`-gated and read the signed-in
+// user; there is no id in the URL to tamper with.
+// ===========================================================================
+Route::middleware(['listing-preferences', 'auth'])
+    ->prefix('my/listing-preferences')
+    ->name('listing-preferences.mine.')
     ->group(function () {
-        Route::get('/', [\App\Http\Controllers\ListingPreferenceController::class, 'show'])->name('show');
-        Route::post('/', [\App\Http\Controllers\ListingPreferenceController::class, 'store'])->name('store');
-        Route::post('/reasons', [\App\Http\Controllers\ListingPreferenceController::class, 'reasons'])->name('reasons');
-        Route::delete('/', [\App\Http\Controllers\ListingPreferenceController::class, 'destroy'])->name('destroy');
+        Route::get('/', [\App\Http\Controllers\MyListingPreferencesController::class, 'index'])->name('index');
+        Route::get('/history', [\App\Http\Controllers\MyListingPreferencesController::class, 'history'])->name('history');
     });
 
 // ===========================================================================

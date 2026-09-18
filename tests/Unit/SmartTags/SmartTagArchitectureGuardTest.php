@@ -157,6 +157,14 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Services/ListingPreferences/',
         'app/Support/ListingPreferences/',
         'app/Http/Controllers/ListingPreferenceController.php',
+        // Phase 3B: both read SmartTagListingType / SmartTagListingRef as the
+        // listing-identity registry, and derive, write and purge nothing.
+        'app/Http/Controllers/MyListingPreferencesController.php',
+        'app/Support/VirtualDrive/VirtualDrivePreferenceControl.php',
+        // The Playwright harness's fixture seeder: writes preferences through
+        // ListingPreferenceWriter using the listing-identity registry. Test
+        // infrastructure; it derives, evidences and purges nothing.
+        'database/seeders/ListingPreferenceBrowserTestSeeder.php',
         'resources/views/components/listing-preference/',
         'config/listing_preference',
     ];

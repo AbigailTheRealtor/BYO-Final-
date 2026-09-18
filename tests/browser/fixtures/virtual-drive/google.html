@@ -150,5 +150,13 @@
 <script src="/virtual-drive-js/virtual-drive-shell.js"></script>
 <script src="/virtual-drive-js/virtual-drive-observations.js"></script>
 <script src="/virtual-drive-js/google-streetview-provider.js"></script>
+    <!--
+        Parity with the proof page: it renders one hidden Save | Maybe | Pass
+        control per listing, and the shell reveals the one matching the selected
+        listing. The fixture carries an empty stand-in so the attribute the shell
+        looks for exists here too — the fixtures drive no real preference and
+        reach no endpoint.
+    -->
+    <div data-vd-preference-for="FIXTURE-LISTING-KEY" hidden></div>
 </body>
 </html>

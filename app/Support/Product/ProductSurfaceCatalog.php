@@ -128,6 +128,17 @@ final class ProductSurfaceCatalog
         //     product decision, and an unclassified route is SERVED here.
         'explore',
         'api/explore/*',
+
+        // --- Listing preferences (Save | Maybe | Pass). A Buyer or Tenant's
+        //     choice about an Offer Listing, a Stellar MLS property or an
+        //     Explore / Virtual Drive home — every one a BidYourOffer surface —
+        //     plus the shopper's own Saved / Maybe / Passed area and history.
+        //     One route group per surface (detail, account, virtual-drive), so
+        //     the whole family is listed rather than each surface's copy.
+        'listing-preferences',
+        'listing-preferences/*',
+        'my/listing-preferences',
+        'my/listing-preferences/*',
     ];
 
     /**

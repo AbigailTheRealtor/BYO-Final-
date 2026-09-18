@@ -163,6 +163,41 @@
     </div>
 </div>
 
+{{--
+    The Listing Preference stylesheet and delegated behaviour, emitted ONCE and
+    BEFORE any control arrives.
+
+    The shopper card's control is rendered server-side, hidden, and MOVED into
+    the card by the shell after load — so the delegated behaviour has to be
+    listening before any control is shown. This is the only Listing Preference
+    line in the Virtual Drive: no state, no endpoints, no reasons.
+--}}
+<x-listing-preference.assets />
+
+{{--
+    One hidden Save | Maybe | Pass control per listing the proof can show.
+
+    The shell reveals the one whose key matches the selected listing and moves
+    it into the shopper card. Rendered here, with the page, because a proof
+    script must not build listing markup from a server string — the control's
+    behaviour is the shared one, already listening thanks to the assets above.
+
+    The KEY is only a selector. What the control carries is the trusted
+    `bridge_properties.id`, resolved server-side by VirtualDrivePreferenceControl::pool().
+--}}
+@foreach(($preferenceControls ?? []) as $lpListingKey => $lpBridgeRowId)
+    {{-- Rendered HERE, in the page's own render pass, so the shared
+         behaviour's @once holds: one delegated listener for the whole page.
+         `surface` selects the Virtual Drive's own write routes. --}}
+    <div data-vd-preference-for="{{ $lpListingKey }}" hidden>
+        <x-listing-preference.control
+            listing-type="bridge"
+            :listing-id="$lpBridgeRowId"
+            :compact="true"
+            :surface="\App\Support\ListingPreferences\ListingPreferenceSurface::VIRTUAL_DRIVE" />
+    </div>
+@endforeach
+
 <script src="/js/virtual-drive/virtual-drive-signs.js"></script>
 <script src="/js/virtual-drive/virtual-drive-shell.js"></script>
 <script src="/js/virtual-drive/virtual-drive-observations.js"></script>

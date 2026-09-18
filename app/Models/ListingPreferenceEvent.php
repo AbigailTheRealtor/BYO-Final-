@@ -36,6 +36,9 @@ class ListingPreferenceEvent extends Model
     public const SURFACE_EXPLORE       = 'explore';
     public const SURFACE_VIRTUAL_DRIVE = 'virtual_drive';
 
+    /** Phase 3B: the customer's own Saved / Maybe / Passed management area. */
+    public const SURFACE_ACCOUNT       = 'account';
+
     public $timestamps = false;
 
     protected $table = 'listing_preference_events';
