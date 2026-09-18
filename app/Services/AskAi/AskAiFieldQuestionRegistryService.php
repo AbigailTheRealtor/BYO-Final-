@@ -2,6 +2,8 @@
 
 namespace App\Services\AskAi;
 
+use App\Support\AskAi\AskAiPropertyTypeResolver as PT;
+
 /**
  * AskAiFieldQuestionRegistryService
  *
@@ -3599,6 +3601,7 @@ class AskAiFieldQuestionRegistryService
             // ---- Seller ----
             'seller_asking_price' => [
                 'role'             => 'seller',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What is the asking price?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.asking_price',
@@ -3613,6 +3616,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_bedrooms' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'How many bedrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bedrooms',
@@ -3627,6 +3631,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_bathrooms' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'How many bathrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bathrooms',
@@ -3639,6 +3644,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_heated_square_feet' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
                 'question'         => 'What is the heated square footage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.square_feet',
@@ -3651,6 +3657,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_year_built' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
                 'question'         => 'What year was the property built?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.year_built',
@@ -3663,6 +3670,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_property_taxes' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
                 'question'         => 'What are the property taxes?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.annual_property_taxes',
@@ -3675,6 +3683,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_hoa_fee' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'What are the HOA fees?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.hoa_fee',
@@ -3689,6 +3698,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_hoa_fee_coverage' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'HOA fees & what do they cover?',
                 'source_kind'      => 'listing',
                 // Composite (Batch 2c): the fee statement of seller_hoa_fee plus what the fee
@@ -3708,6 +3718,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_cdd_fee' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::VACANT_LAND],
                 'question'         => 'Is there a CDD fee?',
                 'source_kind'      => 'listing',
                 // has_cdd (Yes / No / Unknown) with the annual amount when one is stated.
@@ -3721,6 +3732,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_total_acreage' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
                 'question'         => 'What is the lot size / acreage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.total_acreage',
@@ -3734,6 +3746,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_appliances' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'What appliances are included?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.appliances',
@@ -3746,6 +3759,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_utilities' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
                 // The seller field records utilities AVAILABLE or CONNECTED at the property
                 // ("Electricity Connected"), not utilities included in a price, so the
                 // question says what the field holds.
@@ -3763,6 +3777,7 @@ class AskAiFieldQuestionRegistryService
             // ---- Seller — Batch 2b ----
             'seller_pets_allowed' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'Are pets allowed?',
                 'source_kind'      => 'listing',
                 // context pets_allowed ← meta 'pets' (Yes / No). Batch 2c adds the listing's own
@@ -3770,6 +3785,13 @@ class AskAiFieldQuestionRegistryService
                 // Pet types, breeds and restriction text are not read.
                 'source_path'      => 'listing.pets_allowed',
                 'supporting_paths' => ['listing.number_of_pets_allowed', 'listing.max_pet_weight'],
+                // `pet_restrictions` is DELIBERATELY NOT COVERED. The decision predates this
+                // batch (see the note above) and is a Fair Housing one: restriction prose is
+                // where breed limits live, and a breed limit is a recognised proxy. Publishing
+                // it as an Ask AI answer would re-open a surface the product closed. Recorded
+                // as an explicit exclusion in the disposition contract, not left silent.
+                'covers'           => ['listing.pets_allowed', 'listing.number_of_pets_allowed',
+                                       'listing.max_pet_weight'],
                 'formatter'        => 'pets_allowed',
                 'guards'           => [],
                 'category'         => 'policies',
@@ -3778,13 +3800,15 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_pool' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'Does the property have a pool?',
                 'source_kind'      => 'listing',
                 // context pool ← meta 'pool_needed' (Yes / No). pool_type is not read: its
                 // stored object decodes to a bare "1".
                 'source_path'      => 'listing.pool',
-                'supporting_paths' => [],
-                'formatter'        => 'has_pool',
+                'supporting_paths' => ['listing.pool_type'],
+                'covers'           => ['listing.pool', 'listing.pool_type'],
+                'formatter'        => 'pool_composite',
                 'guards'           => [],
                 'category'         => 'features',
                 'order'            => 120,
@@ -3792,6 +3816,10 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_garage' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                // Suppressed whenever the parking composite is available, which answers
+                // the same question with the space count and the carport as well.
+                'narrower_of'      => 'seller_parking',
                 'question'         => 'Does the property have a garage?',
                 'source_kind'      => 'listing',
                 // context garage ← meta 'garage_needed' (Yes / No). Only Yes / No is stated;
@@ -3806,6 +3834,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_zoning' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
                 'question'         => 'What is the zoning?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.zoning',
@@ -3818,6 +3847,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_roof_type' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
                 'question'         => 'What type of roof does it have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.roof_type',
@@ -3833,6 +3863,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_leasing_restrictions' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'Are there leasing restrictions?',
                 'source_kind'      => 'listing',
                 // context rental_restrictions ← meta 'leasing_restrictions' (Yes / No /
@@ -3848,6 +3879,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'seller_offered_financing' => [
                 'role'             => 'seller',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What financing types will the seller consider?',
                 // offered_financing is owner_only for the AI context; this surface restates
                 // it under AskAiPublicPropertyQuestionService::PUBLIC_QUESTION_ADMISSIONS.
@@ -3867,6 +3899,7 @@ class AskAiFieldQuestionRegistryService
             // ---- Landlord ----
             'landlord_bedrooms' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'How many bedrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bedrooms',
@@ -3879,6 +3912,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_bathrooms' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'How many bathrooms are there?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bathrooms',
@@ -3891,6 +3925,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_heated_square_feet' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What is the heated square footage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.square_feet',
@@ -3903,6 +3938,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_appliances' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What appliances are included?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.appliances',
@@ -3915,11 +3951,24 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_pets_allowed' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'Are pets allowed?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.pet_policy',
-                'supporting_paths' => [],
-                'formatter'        => 'pets_allowed',
+                // The whole pet answer in one row. A renter asks "can I bring my dog?" and
+                // needs the species, the weight cap and the money in the same breath; six
+                // separate rows would be the same fact said six times.
+                // SPECIES and the money, never restriction prose: `pet_species_allowed` is
+                // dog/cat, which is an ordinary occupancy limit, while free-text restriction
+                // and "other" fields are where breed limits live and are excluded for the same
+                // Fair Housing reason the seller entry excludes them.
+                'supporting_paths' => ['listing.pet_species_allowed', 'listing.pet_max_weight_lbs',
+                                       'listing.pet_fee_type', 'listing.pet_fee_amount',
+                                       'listing.pet_deposit_fee_rent'],
+                'covers'           => ['listing.pet_policy', 'listing.pet_species_allowed',
+                                       'listing.pet_max_weight_lbs', 'listing.pet_fee_type',
+                                       'listing.pet_fee_amount', 'listing.pet_deposit_fee_rent'],
+                'formatter'        => 'pet_policy_composite',
                 'guards'           => [],
                 'category'         => 'policies',
                 'order'            => 110,
@@ -3929,6 +3978,7 @@ class AskAiFieldQuestionRegistryService
             // ---- Landlord — Batch 2b ----
             'landlord_year_built' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What year was the property built?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.year_built',
@@ -3941,6 +3991,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_property_taxes' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What are the property taxes?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.annual_property_taxes',
@@ -3953,6 +4004,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_hoa_fee' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What are the HOA fees?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.association_fee_amount',
@@ -3967,6 +4019,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_hoa_fee_coverage' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'HOA fees & what do they cover?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.association_fee_amount',
@@ -3983,6 +4036,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_zoning' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What is the zoning?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.zoning',
@@ -3995,6 +4049,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_roof_type' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What type of roof does it have?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.roof_type',
@@ -4008,6 +4063,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_leasing_restrictions' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 // The HOA's leasing-restriction answer. It is NOT the offered lease term:
                 // min_lease_period and the lease-length cascade are never read here.
                 'question'         => 'Are there leasing restrictions?',
@@ -4022,6 +4078,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_association_amenities' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What community amenities are listed?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.association_amenities',
@@ -4036,6 +4093,7 @@ class AskAiFieldQuestionRegistryService
 
             'seller_flood_zone' => [
                 'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
                 'question'         => 'What flood zone is the property in?',
                 'source_kind'      => 'listing',
                 // The canonical stored designation, and the only flood source this surface
@@ -4054,6 +4112,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'landlord_flood_zone' => [
                 'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What flood zone is the property in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.flood_zone_code',
@@ -4082,6 +4141,7 @@ class AskAiFieldQuestionRegistryService
             // ================================================================
             'buyer_budget' => [
                 'role'             => 'buyer',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => "What is the buyer's budget?",
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.max_price',
@@ -4097,6 +4157,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_search_areas' => [
                 'role'             => 'buyer',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What areas is the buyer looking in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.cities',
@@ -4109,6 +4170,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_search_areas_counties' => [
                 'role'             => 'buyer',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What areas is the buyer looking in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.counties',
@@ -4124,6 +4186,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_property_type' => [
                 'role'             => 'buyer',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What property type is the buyer interested in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.property_type',
@@ -4136,6 +4199,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_bedrooms' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'How many bedrooms are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bedrooms',
@@ -4150,6 +4214,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_bathrooms' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'How many bathrooms are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bathrooms',
@@ -4162,6 +4227,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_square_feet' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
                 'question'         => 'What square footage are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.square_feet',
@@ -4174,6 +4240,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_acreage' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
                 'question'         => 'What acreage are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.total_acreage',
@@ -4186,6 +4253,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_pool' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'Do they want a pool?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.pool',
@@ -4198,6 +4266,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_garage' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
                 'question'         => 'Do they want a garage?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.garage',
@@ -4213,6 +4282,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_timeframe' => [
                 'role'             => 'buyer',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => "What is the buyer's timeframe?",
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.closing_date',
@@ -4225,6 +4295,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_property_features' => [
                 'role'             => 'buyer',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What other property features are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.non_negotiable_amenities',
@@ -4242,6 +4313,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'buyer_view_preference' => [
                 'role'             => 'buyer',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::VACANT_LAND],
                 'question'         => 'What other property features are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.water_view',
@@ -4271,6 +4343,7 @@ class AskAiFieldQuestionRegistryService
             // ================================================================
             'tenant_max_rent' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => "What is the tenant's maximum rent?",
                 // criteria_meta, NOT a shared-context key: the rent budget is read from the
                 // page's own meta through PUBLIC_CRITERIA_META_SOURCES, so nothing is widened
@@ -4290,6 +4363,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_search_areas' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What areas are they looking in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.cities',
@@ -4302,6 +4376,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_search_areas_counties' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What areas are they looking in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.counties',
@@ -4315,6 +4390,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_property_type' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What property type are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.property_type',
@@ -4327,6 +4403,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_bedrooms' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'How many bedrooms are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bedrooms',
@@ -4339,6 +4416,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_bathrooms' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'How many bathrooms are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.bathrooms',
@@ -4351,6 +4429,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_square_feet' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
                 'question'         => 'What square footage are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.square_feet',
@@ -4363,6 +4442,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_acreage' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL, PT::VACANT_LAND],
                 'question'         => 'What acreage are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.total_acreage',
@@ -4375,6 +4455,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_lease_term' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What lease term are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.desired_lease_length',
@@ -4391,6 +4472,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_move_in' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'When do they want to move in?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.move_in_date_earliest',
@@ -4403,6 +4485,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_pets' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'Do they need pets allowed?',
                 'source_kind'      => 'criteria_meta',
                 'source_path'      => 'criteria_meta.pets_allowed',
@@ -4415,6 +4498,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_furnishings' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'Do they want the property furnished?',
                 'source_kind'      => 'criteria_meta',
                 'source_path'      => 'criteria_meta.furnishings',
@@ -4427,6 +4511,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_property_features' => [
                 'role'             => 'tenant',
+                'property_types'   => PT::ALL_TYPES,
                 'question'         => 'What amenities and features are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.non_negotiable_amenities',
@@ -4445,6 +4530,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_appliances' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'What amenities and features are they looking for?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.appliances',
@@ -4463,6 +4549,7 @@ class AskAiFieldQuestionRegistryService
             ],
             'tenant_pool' => [
                 'role'             => 'tenant',
+                'property_types'   => [PT::RESIDENTIAL],
                 'question'         => 'Do they want a pool?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.pool',
@@ -4472,6 +4559,567 @@ class AskAiFieldQuestionRegistryService
                 'category'         => 'features',
                 'order'            => 130,
                 'aliases'          => ['pool', 'swimming pool'],
+            ],
+
+            /* ============================================================== *
+             * Batch 5 — Seller property facts.
+             *
+             * COMPOSITES, NOT ONE QUESTION PER COLUMN. A shopper asks "is it on
+             * the water?", never "what is waterfront_feet?". Where several
+             * canonical fields answer one human question they are gathered into a
+             * single entry whose `covers` lists every field it speaks for, so the
+             * coverage harness still sees each column accounted for. `covers` is
+             * documentation AND contract: it is what stops a composite quietly
+             * dropping a field it used to include.
+             * ============================================================== */
+
+            'seller_listing_description' => [
+                'role'             => 'seller',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What does the seller say about this property?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.description',
+                'supporting_paths' => [],
+                'covers'           => ['listing.description'],
+                // Provider-authored prose, so it is screened rather than printed:
+                // the formatter refuses anything PublicProviderTextPolicy will not
+                // publish, and refuses whole rather than truncating.
+                'formatter'        => 'provider_description',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 200,
+                'aliases'          => ['description', 'about the property', 'tell me about this property',
+                                       'property description', 'what does the seller say'],
+            ],
+            'seller_water_frontage' => [
+                'role'             => 'seller',
+                // Land and income property can be waterfront too; a business without
+                // real estate cannot.
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'question'         => 'Is this property on the water?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.waterfront',
+                'supporting_paths' => ['listing.waterfront_feet', 'listing.water_access', 'listing.water_view'],
+                'covers'           => ['listing.waterfront', 'listing.waterfront_feet',
+                                       'listing.water_access', 'listing.water_view'],
+                'formatter'        => 'waterfront_composite',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 210,
+                'aliases'          => ['waterfront', 'is it waterfront', 'on the water', 'water access',
+                                       'water view', 'waterfront feet', 'water frontage', 'canal', 'is it on the water'],
+            ],
+            'seller_parking' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'question'         => 'What parking does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.garage',
+                // No garage COUNT: `listing.garage_spaces` is `garage_parking_spaces`, a Yes/No
+                // control rather than a count, and Batch 2b pins that no size is published.
+                'supporting_paths' => ['listing.carport'],
+                'covers'           => ['listing.garage', 'listing.carport'],
+                'formatter'        => 'parking_composite',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 220,
+                'aliases'          => ['parking', 'garage', 'is there a garage',
+                                       'carport', 'covered parking', 'does it have a garage'],
+            ],
+            'seller_climate_control' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'question'         => 'How is this property heated and cooled?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.air_conditioning',
+                'supporting_paths' => ['listing.heating_and_fuel', 'listing.heating_fuel'],
+                'covers'           => ['listing.air_conditioning', 'listing.heating_and_fuel', 'listing.heating_fuel'],
+                'formatter'        => 'climate_composite',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 230,
+                'aliases'          => ['heating and cooling', 'air conditioning', 'ac', 'a c', 'hvac',
+                                       'heating', 'heat', 'is there central air', 'how is it heated'],
+            ],
+            'seller_water_and_sewer' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'question'         => 'What water and sewer service does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.water',
+                'supporting_paths' => ['listing.water_source', 'listing.sewer'],
+                'covers'           => ['listing.water', 'listing.water_source', 'listing.sewer'],
+                'formatter'        => 'water_sewer_composite',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 240,
+                'aliases'          => ['water and sewer', 'water', 'sewer', 'septic', 'is it on city water',
+                                       'well', 'water source', 'is it on septic'],
+            ],
+            'seller_construction' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'question'         => 'How is this property built?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.exterior_construction',
+                'supporting_paths' => ['listing.foundation'],
+                'covers'           => ['listing.exterior_construction', 'listing.foundation'],
+                'formatter'        => 'construction_composite',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 250,
+                'aliases'          => ['construction', 'exterior', 'what is it made of', 'block or frame',
+                                       'foundation', 'slab', 'building materials'],
+            ],
+            'seller_interior_features' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'question'         => 'What interior features does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.interior_features',
+                'supporting_paths' => [],
+                'covers'           => ['listing.interior_features'],
+                'formatter'        => 'interior_feature_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 260,
+                'aliases'          => ['interior features', 'inside features', 'what features does it have',
+                                       'interior', 'finishes'],
+            ],
+            'seller_building_features' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'question'         => 'What building features does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.building_features',
+                'supporting_paths' => [],
+                'covers'           => ['listing.building_features'],
+                'formatter'        => 'building_feature_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 270,
+                'aliases'          => ['building features', 'building amenities', 'elevator'],
+            ],
+            'seller_furnished' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'question'         => 'Is this property furnished?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.furnished',
+                'supporting_paths' => [],
+                'covers'           => ['listing.furnished'],
+                'formatter'        => 'furnishings',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 280,
+                'aliases'          => ['furnished', 'is it furnished', 'furnishings', 'does it come furnished',
+                                       'unfurnished', 'turnkey'],
+            ],
+            'seller_home_warranty' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'question'         => 'Is a home warranty offered?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.home_warranty_offered',
+                'supporting_paths' => [],
+                'covers'           => ['listing.home_warranty_offered'],
+                'formatter'        => 'home_warranty',
+                'guards'           => [],
+                'category'         => 'financing',
+                'order'            => 290,
+                'aliases'          => ['home warranty', 'warranty', 'is a warranty included'],
+            ],
+            'seller_lot_size' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'question'         => 'How big is the lot?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.lot_size',
+                'supporting_paths' => ['listing.lot_dimensions'],
+                'covers'           => ['listing.lot_size', 'listing.lot_dimensions'],
+                'formatter'        => 'lot_size_composite',
+                // The acreage question already answers "how big is the lot" when the
+                // seller supplied acreage; this is the narrower fallback.
+                'narrower_of'      => 'seller_total_acreage',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 300,
+                'aliases'          => ['lot size', 'how big is the lot', 'lot dimensions', 'lot', 'yard size'],
+            ],
+            'seller_association_details' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME],
+                'question'         => 'Is there an association, and does it have to approve a buyer?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.hoa_association',
+                'supporting_paths' => ['listing.association_name', 'listing.hoa_name',
+                                       'listing.association_approval_required'],
+                'covers'           => ['listing.association_name', 'listing.hoa_name',
+                                       'listing.association_approval_required'],
+                'formatter'        => 'association_details_composite',
+                'guards'           => [],
+                'category'         => 'hoa',
+                'order'            => 310,
+                // 'hoa' itself is the FEE question's word — two questions answering one
+                // typed word is a non-deterministic route, so this entry takes the wordings
+                // that are unambiguously about the association rather than its cost.
+                'aliases'          => ['is there an hoa', 'association', 'association name',
+                                       'hoa approval', 'does the hoa have to approve', 'association approval'],
+            ],
+            'seller_special_assessments' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'question'         => 'Are there any special assessments?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.has_special_assessments',
+                'supporting_paths' => ['listing.special_assessment_amount', 'listing.special_assessment_description'],
+                'covers'           => ['listing.has_special_assessments', 'listing.special_assessment_amount',
+                                       'listing.special_assessment_description'],
+                'formatter'        => 'special_assessment_composite',
+                'guards'           => [],
+                'category'         => 'costs',
+                'order'            => 320,
+                'aliases'          => ['special assessment', 'special assessments', 'assessments',
+                                       'are there assessments', 'any special assessment'],
+            ],
+            'seller_occupancy' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL],
+                'question'         => 'Is the property occupied?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.occupant_status',
+                'supporting_paths' => [],
+                'covers'           => ['listing.occupant_status'],
+                'formatter'        => 'occupant_status',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 330,
+                'aliases'          => ['occupied', 'is it occupied', 'vacant', 'is it vacant',
+                                       'occupancy', 'is anyone living there', 'is it tenant occupied'],
+            ],
+            'seller_target_closing' => [
+                'role'             => 'seller',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'When does the seller want to close?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.closing_date',
+                'supporting_paths' => [],
+                'covers'           => ['listing.closing_date'],
+                'formatter'        => 'target_closing_date',
+                'guards'           => [],
+                'category'         => 'timing',
+                'order'            => 340,
+                'aliases'          => ['closing date', 'when can we close', 'target closing',
+                                       'preferred closing date', 'close by'],
+            ],
+            'seller_included_items' => [
+                'role'             => 'seller',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What is included with the property?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.property_items',
+                'supporting_paths' => [],
+                'covers'           => ['listing.property_items'],
+                'formatter'        => 'included_items_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 350,
+                'aliases'          => ['what is included', 'included items', 'what conveys', 'what comes with it',
+                                       'included with the sale'],
+            ],
+            'seller_parcel_count' => [
+                'role'             => 'seller',
+                'property_types'   => [PT::RESIDENTIAL, PT::INCOME, PT::COMMERCIAL, PT::VACANT_LAND],
+                'question'         => 'How many parcels are included?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.total_parcel_count',
+                'supporting_paths' => ['listing.additional_parcels'],
+                // A COUNT, never an identifier. `parcel_id` and `legal_description`
+                // are deliberately NOT covered here — see the withheld-location note
+                // on AskAiPublicPropertyQuestionService::LOCATION_IDENTIFIER_KEYS.
+                'covers'           => ['listing.total_parcel_count', 'listing.additional_parcels'],
+                'formatter'        => 'parcel_count_composite',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 360,
+                'aliases'          => ['how many parcels', 'parcels', 'additional parcels', 'parcel count'],
+            ],
+
+            /* ============================================================== *
+             * Batch 6 — Landlord property and lease facts.
+             *
+             * The lease-side composites matter more here than on the sale side: a
+             * renter asks "what are the lease terms?" and "can I have a dog?", and
+             * both of those are five or six stored columns. Splitting them would
+             * produce a card of near-duplicate rows.
+             * ============================================================== */
+
+            'landlord_listing_description' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What does the landlord say about this property?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.description',
+                'supporting_paths' => [],
+                'covers'           => ['listing.description'],
+                'formatter'        => 'provider_description',
+                'guards'           => [],
+                'category'         => 'property',
+                'order'            => 200,
+                'aliases'          => ['description', 'about the property', 'tell me about this property',
+                                       'property description', 'what does the landlord say'],
+            ],
+            'landlord_rent' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What is the rent?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.rent_amount',
+                'supporting_paths' => [],
+                'covers'           => ['listing.rent_amount'],
+                'formatter'        => 'lease_price',
+                'guards'           => [],
+                'category'         => 'price',
+                'order'            => 210,
+                'aliases'          => ['rent', 'how much is rent', 'monthly rent', 'what is the rent',
+                                       'price', 'how much', 'cost per month'],
+            ],
+            'landlord_available_date' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'When is it available?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.available_date',
+                'supporting_paths' => [],
+                'covers'           => ['listing.available_date'],
+                'formatter'        => 'available_date',
+                'guards'           => [],
+                'category'         => 'timing',
+                'order'            => 16,
+                'aliases'          => ['available', 'when is it available', 'move in date', 'availability',
+                                       'when can i move in', 'available date'],
+            ],
+            'landlord_lease_terms' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What are the lease terms?',
+                'source_kind'      => 'listing',
+                // The landlord's OFFERED terms lead. `listing.lease_length` is deliberately
+                // not read: it resolves from `min_lease_period`, the HOA minimum lease
+                // period, and Batch 2b pins that it never becomes an offered lease term.
+                'source_path'      => 'listing.lease_terms',
+                'supporting_paths' => ['listing.renewal_option', 'listing.additional_lease_terms'],
+                'covers'           => ['listing.lease_terms', 'listing.renewal_option',
+                                       'listing.additional_lease_terms'],
+                'formatter'        => 'lease_terms_composite',
+                'guards'           => [],
+                'category'         => 'lease',
+                'order'            => 17,
+                'aliases'          => ['lease terms', 'lease', 'term', 'renewal', 'can i renew'],
+            ],
+            'landlord_smoking_policy' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'Is smoking allowed?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.smoking_policy',
+                'supporting_paths' => [],
+                'covers'           => ['listing.smoking_policy'],
+                'formatter'        => 'smoking_policy',
+                'guards'           => [],
+                'category'         => 'policies',
+                'order'            => 19,
+                'aliases'          => ['smoking', 'is smoking allowed', 'can i smoke', 'smoking policy',
+                                       'non smoking'],
+            ],
+            'landlord_subletting_policy' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'Is subletting allowed?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.subletting_policy',
+                'supporting_paths' => [],
+                'covers'           => ['listing.subletting_policy'],
+                'formatter'        => 'subletting_policy',
+                'guards'           => [],
+                'category'         => 'policies',
+                'order'            => 260,
+                'aliases'          => ['subletting', 'sublet', 'can i sublet', 'subleasing', 'airbnb'],
+            ],
+            'landlord_parking_terms' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What parking is available?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.parking_terms',
+                'supporting_paths' => [],
+                'covers'           => ['listing.parking_terms'],
+                'formatter'        => 'parking_terms',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 270,
+                'aliases'          => ['parking', 'is there parking', 'where do i park', 'parking terms',
+                                       'assigned parking', 'garage'],
+            ],
+            'landlord_condition' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'What condition is the property in?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.condition_prop',
+                'supporting_paths' => [],
+                'covers'           => ['listing.condition_prop'],
+                'formatter'        => 'property_condition',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 280,
+                'aliases'          => ['condition', 'what condition', 'is it renovated', 'updated'],
+            ],
+            'landlord_unit_details' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'How big is the unit, and how many units are there?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.unit_size',
+                'supporting_paths' => ['listing.number_of_units'],
+                'covers'           => ['listing.unit_size', 'listing.number_of_units'],
+                'formatter'        => 'unit_details_composite',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 290,
+                'aliases'          => ['unit size', 'how big is the unit', 'how many units', 'unit',
+                                       'square feet of the unit'],
+            ],
+            'landlord_interior_features' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'What interior features does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.interior_features',
+                'supporting_paths' => [],
+                'covers'           => ['listing.interior_features'],
+                'formatter'        => 'interior_feature_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 300,
+                'aliases'          => ['interior features', 'inside features', 'interior', 'finishes'],
+            ],
+            'landlord_building_features' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'What building features does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.building_features',
+                'supporting_paths' => [],
+                'covers'           => ['listing.building_features'],
+                'formatter'        => 'building_feature_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 310,
+                'aliases'          => ['building features', 'building amenities', 'elevator', 'gym'],
+            ],
+            'landlord_included_items' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What is included with the property?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.property_items',
+                'supporting_paths' => [],
+                'covers'           => ['listing.property_items'],
+                'formatter'        => 'included_items_list',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 320,
+                'aliases'          => ['what is included', 'included items', 'what comes with it'],
+            ],
+            'landlord_water_frontage' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'Is this property on the water?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.waterfront',
+                'supporting_paths' => ['listing.water_access', 'listing.water_view', 'listing.view'],
+                'covers'           => ['listing.waterfront', 'listing.water_access',
+                                       'listing.water_view', 'listing.view'],
+                'formatter'        => 'waterfront_composite',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 330,
+                'aliases'          => ['waterfront', 'is it waterfront', 'on the water', 'water access',
+                                       'water view', 'view', 'what is the view'],
+            ],
+            'landlord_climate_control' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'How is this property heated and cooled?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.air_conditioning',
+                'supporting_paths' => ['listing.heating_fuel'],
+                'covers'           => ['listing.air_conditioning', 'listing.heating_fuel'],
+                'formatter'        => 'climate_composite',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 340,
+                'aliases'          => ['air conditioning', 'ac', 'a c', 'hvac', 'heating', 'heat',
+                                       'is there central air', 'heating and cooling'],
+            ],
+            'landlord_water_and_sewer' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'What water and sewer service does this property have?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.water',
+                'supporting_paths' => ['listing.sewer'],
+                'covers'           => ['listing.water', 'listing.sewer'],
+                'formatter'        => 'water_sewer_composite',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 350,
+                'aliases'          => ['water and sewer', 'water', 'sewer', 'septic', 'well'],
+            ],
+            'landlord_construction' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'How is this property built?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.exterior_construction',
+                'supporting_paths' => ['listing.foundation'],
+                'covers'           => ['listing.exterior_construction', 'listing.foundation'],
+                'formatter'        => 'construction_composite',
+                'guards'           => [],
+                'category'         => 'construction',
+                'order'            => 360,
+                'aliases'          => ['construction', 'exterior', 'what is it made of', 'foundation',
+                                       'block or frame'],
+            ],
+            'landlord_lot_dimensions' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL, PT::COMMERCIAL],
+                'question'         => 'What are the lot dimensions?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.lot_dimensions',
+                'supporting_paths' => [],
+                'covers'           => ['listing.lot_dimensions'],
+                'formatter'        => 'lot_dimensions_only',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 370,
+                'aliases'          => ['lot dimensions', 'lot size', 'how big is the lot', 'yard size'],
+            ],
+            'landlord_association_details' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
+                'question'         => 'Is this property in an association?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.has_hoa',
+                'supporting_paths' => ['listing.association_name'],
+                'covers'           => ['listing.has_hoa', 'listing.association_name'],
+                'formatter'        => 'association_details_composite',
+                'guards'           => [],
+                'category'         => 'hoa',
+                'order'            => 380,
+                'aliases'          => ['is there an hoa', 'association', 'association name',
+                                       'condo association'],
             ],
         ];
     }

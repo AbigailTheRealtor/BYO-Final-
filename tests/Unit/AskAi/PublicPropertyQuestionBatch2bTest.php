@@ -39,14 +39,14 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
     {
         $entry = $this->entry($id);
 
-        return $this->service->evaluate($entry, $entry['role'], ['listing' => $listing, 'faq_answers' => []], $meta)['answer'];
+        return $this->service->evaluate($entry, $entry['role'], ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []], $meta)['answer'];
     }
 
     private function reason(string $id, array $listing, array $meta = []): string
     {
         $entry = $this->entry($id);
 
-        return $this->service->evaluate($entry, $entry['role'], ['listing' => $listing, 'faq_answers' => []], $meta)['reason'];
+        return $this->service->evaluate($entry, $entry['role'], ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []], $meta)['reason'];
     }
 
     // =========================================================================
@@ -258,6 +258,44 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
         }
     }
 
+    public function test_no_landlord_question_reads_the_hoa_minimum_lease_period(): void
+    {
+        // `listing.lease_length` resolves from min_lease_period. Published under a lease
+        // question it would read as the term on offer — the lease-terms composite leads with
+        // the landlord's offered terms instead, and lease_length is deliberately not asked.
+        foreach ($this->landlordReads() as $id => $read) {
+            foreach (['listing.lease_length', 'min_lease_period', 'minimum_lease_period'] as $forbidden) {
+                $this->assertNotContains($forbidden, $read, "{$id} must not read {$forbidden}.");
+            }
+        }
+
+        $answer = $this->answer('landlord_lease_terms', ['lease_length' => '12 Months', 'lease_terms' => 'Annual']);
+        $this->assertSame('Lease terms offered: Annual.', $answer);
+        $this->assertNull($this->answer('landlord_lease_terms', ['lease_length' => '12 Months']));
+    }
+
+    public function test_no_landlord_question_reads_the_two_meaning_utilities_cascade(): void
+    {
+        // "Utilities Included in Rent" and the MLS "utilities available" list share this key;
+        // any answer over it could tell a renter that connected utilities come with the rent.
+        foreach ($this->landlordReads() as $id => $read) {
+            $this->assertNotContains('listing.utilities', $read, "{$id} must not read listing.utilities.");
+        }
+    }
+
+    /** @return array<string, list<string>> landlord catalog id => every path it reads */
+    private function landlordReads(): array
+    {
+        $out = [];
+        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $id => $entry) {
+            if (($entry['role'] ?? null) === 'landlord') {
+                $out[$id] = array_merge([$entry['source_path']], (array) ($entry['supporting_paths'] ?? []));
+            }
+        }
+
+        return $out;
+    }
+
     // =========================================================================
     // Landlord structured additions
     // =========================================================================
@@ -382,7 +420,7 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
 
     public function test_the_financing_admission_is_narrow(): void
     {
-        $context = ['listing' => ['offered_financing' => 'Cash', 'flood_zone_code' => 'AE', 'sale_provision' => 'Short Sale'], 'faq_answers' => []];
+        $context = ['listing' => ['property_type' => 'Residential', 'offered_financing' => 'Cash', 'flood_zone_code' => 'AE', 'sale_provision' => 'Short Sale'], 'faq_answers' => []];
         $probe = [
             'role' => 'seller', 'question' => 'Probe?', 'supporting_paths' => [], 'formatter' => 'zoning', 'guards' => [],
         ];
@@ -410,7 +448,7 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
         // A supporting path is never admitted.
         $this->assertSame('supporting_not_public_allowed', $this->service->evaluate(
             array_merge($probe, ['source_kind' => 'listing', 'source_path' => 'listing.zoning', 'supporting_paths' => ['listing.offered_financing']]),
-            'seller', ['listing' => ['zoning' => 'RS-60', 'offered_financing' => 'Cash']], []
+            'seller', ['listing' => ['property_type' => 'Residential', 'zoning' => 'RS-60', 'offered_financing' => 'Cash']], []
         )['reason']);
         // Another role cannot use the seller admission.
         $this->assertFalse($this->service->evaluate(
@@ -418,7 +456,7 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
             'landlord', $context, []
         )['available']);
         // An unknown source kind fails closed.
-        $this->assertSame('source_kind_unknown', $this->service->evaluate($probe + ['source_kind' => 'public', 'source_path' => 'listing.zoning'], 'seller', ['listing' => ['zoning' => 'RS-60']], [])['reason']);
+        $this->assertSame('source_kind_unknown', $this->service->evaluate($probe + ['source_kind' => 'public', 'source_path' => 'listing.zoning'], 'seller', ['listing' => ['property_type' => 'Residential', 'zoning' => 'RS-60']], [])['reason']);
 
         // The AI-context tier is untouched by the admission.
         $this->assertSame(SnapshotFactVisibility::OWNER_ONLY, SnapshotFactVisibility::classify('offered_financing', 'seller'));
@@ -447,7 +485,7 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
             'listing_ai_faq'                  => json_encode(['roof_age_and_condition' => $sentinel]),
         ];
 
-        foreach ($this->service->forListing('seller', ['listing' => $listing, 'faq_answers' => []], $meta) as $q) {
+        foreach ($this->service->forListing('seller', ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []], $meta) as $q) {
             $this->assertStringNotContainsString($sentinel, $q['answer'], $q['id']);
         }
     }
@@ -464,7 +502,7 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
             $entry['other_companion'] = $bad;
             $this->assertSame(
                 'other_companion_invalid',
-                $this->service->evaluate($entry, 'seller', ['listing' => ['roof_type' => 'Tile']], ['roof_type' => '["Tile"]'])['reason'],
+                $this->service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential', 'roof_type' => 'Tile']], ['roof_type' => '["Tile"]'])['reason'],
                 json_encode($bad)
             );
         }
@@ -498,7 +536,7 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
 
     public function test_questions_render_in_display_order(): void
     {
-        $context = ['listing' => [
+        $context = ['listing' => ['property_type' => 'Residential', 
             'bedrooms' => '2', 'year_built' => '2004', 'zoning' => 'RM-15', 'appliances' => 'Washer',
         ], 'faq_answers' => []];
 

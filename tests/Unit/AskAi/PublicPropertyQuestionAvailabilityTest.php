@@ -35,7 +35,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
     private function context(array $listing): array
     {
-        return ['listing' => $listing, 'faq_answers' => []];
+        return ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []];
     }
 
     /** A seller listing whose every catalog question (Batch 1 + 2b) is answerable. */
@@ -69,6 +69,31 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'association_fee_includes' => 'Water, Trash',
             'has_cdd'               => 'Yes',
             'annual_cdd_fee'        => '1200',
+            // Universal-deterministic batches: one value per remaining public field.
+            'description'           => 'Bright corner home with an updated kitchen.',
+            'waterfront'            => 'Yes',
+            'waterfront_feet'       => '80',
+            'water_access'          => 'Canal',
+            'water_view'            => 'Canal',
+            'garage_spaces'         => '0',
+            'carport'               => 'Yes',
+            'air_conditioning'      => 'Central Air',
+            'heating_and_fuel'      => 'Electric',
+            'water'                 => 'Public',
+            'sewer'                 => 'Public Sewer',
+            'exterior_construction' => 'Block, Stucco',
+            'foundation'            => 'Slab',
+            'interior_features'     => 'Ceiling Fans, Walk-In Closet',
+            'building_features'     => 'Storage',
+            'furnished'             => 'Unfurnished',
+            'home_warranty_offered' => 'Yes',
+            'association_name'      => 'Oak Ridge HOA',
+            'has_special_assessments' => 'No',
+            'occupant_status'       => 'Owner',
+            'closing_date'          => '2026-12-15',
+            'property_items'        => 'Refrigerator, Washer',
+            'total_parcel_count'    => '2',
+            'additional_parcels'    => 'Yes',
         ]);
     }
 
@@ -106,6 +131,28 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'leasing_restrictions'      => 'No',
             'association_amenities'     => 'Clubhouse, Fitness Center',
             'association_fee_includes'  => 'Grounds Maintenance',
+            // Universal-deterministic batches: one value per remaining public field.
+            'available_date'        => '2026-10-01',
+            'lease_terms'           => '12 Months',
+            'smoking_policy'        => 'No Smoking',
+            'description'           => 'Second-floor unit with a screened balcony.',
+            'rent_amount'           => '2400',
+            'subletting_policy'     => 'Not Allowed',
+            'parking_terms'         => 'One assigned space',
+            'condition_prop'        => 'Move-In Ready',
+            'unit_size'             => '950',
+            'interior_features'     => 'Ceiling Fans',
+            'building_features'     => 'Elevator',
+            'property_items'        => 'Refrigerator, Microwave',
+            'waterfront'            => 'No',
+            'air_conditioning'      => 'Central Air',
+            'heating_fuel'          => 'Electric',
+            'water'                 => 'Public',
+            'sewer'                 => 'Public Sewer',
+            'exterior_construction' => 'Concrete',
+            'foundation'            => 'Slab',
+            'lot_dimensions'        => '50 x 100',
+            'association_name'      => 'Harbor View Condominium Association',
         ]);
     }
 
@@ -201,7 +248,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     public function test_empty_context_produces_no_questions(): void
     {
         $this->assertSame([], $this->service->forListing('seller', [], []));
-        $this->assertSame([], $this->service->forListing('landlord', ['listing' => []], []));
+        $this->assertSame([], $this->service->forListing('landlord', ['listing' => ['property_type' => 'Residential']], []));
     }
 
     // ── 4. Owner-only and restricted sources never produce public questions ─
@@ -523,16 +570,37 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_utilities'          => 'Utilities listed for this property: Electricity Connected, Water Available.',
             'seller_pets_allowed'       => 'Pets are allowed at this property.',
             'seller_pool'               => 'This property has a pool.',
-            'seller_garage'             => 'This property does not have a garage.',
             'seller_zoning'             => 'The zoning is listed as RS-60.',
             'seller_roof_type'          => 'Roof type listed for this property: Shingle.',
             'seller_leasing_restrictions' => 'The listing indicates there are leasing restrictions.',
             'seller_offered_financing'  => 'The seller has indicated they will consider the following financing types: Conventional, FHA, VA and Cash.',
             'seller_flood_zone'         => 'This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.',
+            // Universal-deterministic batches. seller_garage is now the narrower fallback of
+            // seller_parking, which answers in its place.
+            'seller_listing_description' => 'Bright corner home with an updated kitchen.',
+            'seller_water_frontage'     => 'This property is waterfront. Water frontage: 80 feet. Water access: Canal.',
+            'seller_parking'            => 'This property does not have a garage. It does have a carport.',
+            'seller_climate_control'    => 'Heating: Electric. Cooling: Central Air.',
+            'seller_water_and_sewer'    => 'Water: Public. Sewer: Public Sewer.',
+            'seller_construction'       => 'Exterior construction: Block and Stucco. Foundation: Slab.',
+            'seller_interior_features'  => 'Interior features listed for this property: Ceiling Fans, Walk-In Closet.',
+            'seller_building_features'  => 'Building features listed for this property: Storage.',
+            'seller_furnished'          => 'This property is offered unfurnished.',
+            'seller_home_warranty'      => 'The seller is offering a home warranty.',
+            'seller_association_details' => 'This property is in a homeowners association: Oak Ridge HOA.',
+            'seller_special_assessments' => 'The listing indicates there are no special assessments.',
+            'seller_occupancy'          => 'Occupancy status: Owner.',
+            'seller_target_closing'     => 'The seller would like to close by December 15, 2026.',
+            'seller_included_items'     => 'Included with this property: Refrigerator, Washer.',
+            'seller_parcel_count'       => 'This listing includes 2 parcels.',
         ];
         $this->assertSame($expected, $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta()));
 
         $this->assertSame([
+            // Universal-deterministic batches: the lease-term block leads the landlord card.
+            'landlord_available_date'        => 'This property is available from October 1, 2026.',
+            'landlord_lease_terms'           => 'Lease terms offered: 12 Months.',
+            'landlord_smoking_policy'        => 'Smoking is not allowed.',
             'landlord_bedrooms'              => 'This property has 2 bedrooms.',
             'landlord_bathrooms'             => 'This property has 1 bathroom.',
             'landlord_heated_square_feet'    => 'The heated square footage is 950 square feet.',
@@ -546,6 +614,23 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'landlord_leasing_restrictions'  => 'The listing indicates there are no leasing restrictions.',
             'landlord_association_amenities' => 'Community amenities listed for this property: Clubhouse, Fitness Center.',
             'landlord_flood_zone'            => 'This property is in FEMA Flood Zone VE, a coastal high-hazard Special Flood Hazard Area.',
+            // The lease price states no period: the only field that could supply one is
+            // owner-only, and "/mo" is wrong for a large share of rentals.
+            'landlord_listing_description'   => 'Second-floor unit with a screened balcony.',
+            'landlord_rent'                  => 'The desired lease price is $2,400.',
+            'landlord_subletting_policy'     => 'Subletting policy: Not Allowed.',
+            'landlord_parking_terms'         => 'Parking: One assigned space.',
+            'landlord_condition'             => 'Property condition: Move-In Ready.',
+            'landlord_unit_details'          => 'The unit is 950 square feet.',
+            'landlord_interior_features'     => 'Interior features listed for this property: Ceiling Fans.',
+            'landlord_building_features'     => 'Building features listed for this property: Elevator.',
+            'landlord_included_items'        => 'Included with this property: Refrigerator, Microwave.',
+            'landlord_water_frontage'        => 'This property is not waterfront.',
+            'landlord_climate_control'       => 'Heating: Electric. Cooling: Central Air.',
+            'landlord_water_and_sewer'       => 'Water: Public. Sewer: Public Sewer.',
+            'landlord_construction'          => 'Exterior construction: Concrete. Foundation: Slab.',
+            'landlord_lot_dimensions'        => 'Lot dimensions: 50 x 100.',
+            'landlord_association_details'   => 'This property is in a homeowners association: Harbor View Condominium Association.',
         ], $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta()));
     }
 

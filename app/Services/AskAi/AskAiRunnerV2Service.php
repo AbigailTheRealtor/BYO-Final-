@@ -5598,6 +5598,100 @@ class AskAiRunnerV2Service
             'listing.price_per_sqft'                     => 'Price per square foot information',
             // Listing.* fields — Commercial Sale: Lease
             'listing.existing_lease_type'                => 'Existing lease type information',
+            // Listing.* fields — Association fees (landlord wording)
+            //
+            // Every label below replaces the GENERIC fallback. The fallback is what the
+            // missing-data guard prints when it has to say "I don't have X for this
+            // listing", so a generic label made the refusal read as though the system did
+            // not understand the question rather than that the owner had not supplied the
+            // value. Naming the field is the difference between those two statements.
+            'listing.association_fee_amount'             => 'Association fee information',
+            'listing.association_fee_frequency'          => 'Association fee frequency information',
+            'listing.association_approval_required'      => 'Association approval requirement information',
+            // Listing.* fields — Landlord applicant qualification criteria.
+            // The landlord's stated REQUIREMENTS, never an applicant's own history.
+            'listing.min_credit_score'                   => 'Minimum credit score requirement information',
+            'listing.income_qualification_method'        => 'Income qualification method information',
+            'listing.eviction_history_requirement'       => 'Eviction history policy information',
+            'listing.bankruptcy_requirement'             => 'Bankruptcy policy information',
+            'listing.security_deposit_required'          => 'Security deposit requirement information',
+            // Listing.* fields — Landlord estimated utility costs
+            'listing.est_electric'                       => 'Estimated electric cost information',
+            'listing.est_water_sewer_trash'              => 'Estimated water, sewer and trash cost information',
+            'listing.est_internet'                       => 'Estimated internet cost information',
+            'listing.est_cable'                          => 'Estimated cable cost information',
+            // Listing.* fields — Landlord occupancy and leasing rules
+            'listing.max_leases_per_year'                => 'Maximum leases per year information',
+            'listing.additional_lease_restrictions'      => 'Additional lease restriction information',
+            'listing.guests_allowed'                     => 'Guest policy information',
+            'listing.number_of_occupants'                => 'Occupancy limit information',
+            'listing.common_areas_access'                => 'Common area access information',
+            'listing.bathroom_facilities'                => 'Bathroom facility information',
+            'listing.room_size'                          => 'Room size information',
+            // 55+ is a COMPLIANCE GATE, and the label says so rather than describing an
+            // occupant category. A senior-community designation is a lawful exemption a
+            // community either holds or does not; the label must not read as a preference
+            // about who may live there.
+            'listing.leasing_55_plus'                    => 'Senior community (55+) designation information',
+            // Listing.* fields — Landlord maintenance responsibility
+            'listing.maintenance_by'                     => 'Maintenance responsibility information',
+            'listing.maintenance_response_time'          => 'Maintenance response time information',
+            // Listing.* fields — Seller property facts
+            'listing.waterfront_feet'                    => 'Waterfront frontage information',
+            'listing.home_warranty_offered'              => 'Home warranty information',
+            'listing.non_negotiable_amenities'           => 'Required amenity information',
+            // Listing.* fields — Buyer/Tenant commute criteria. These describe the SEARCHER's
+            // own stated commute anchor, not a calculated drive time (no routing engine
+            // exists; see the retired "within minutes" Important Place option).
+            'listing.commute_destination_zip'            => 'Commute destination information',
+            'listing.max_commute_minutes'                => 'Maximum commute time information',
+            'listing.commute_mode'                       => 'Commute travel mode information',
+            // The seller's DESIRED MINIMUM, not the property's actual figure — the label
+            // says "minimum" for the same reason CLAUDE.md warns against mapping this field
+            // to a cap-rate fact: a listing has no stored actual cap rate, and a label
+            // reading "Cap rate information" would assert one.
+            'listing.minimum_cap_rate'                   => 'Minimum acceptable cap rate information',
+            // Listing.* fields — Seller / landlord remaining
+            'listing.leasing_restrictions'               => 'Leasing restriction information',
+            'listing.pet_species_allowed'                => 'Permitted pet species information',
+            'listing.pet_max_weight_lbs'                 => 'Pet weight limit information',
+            'listing.rental_purpose'                     => 'Rental purpose information',
+            // Listing.* fields — Buyer criteria
+            'listing.purchase_purpose'                   => 'Purchase purpose information',
+            'listing.business_type_preference'           => 'Preferred business type information',
+            'listing.flood_zone_tolerance'               => 'Flood zone tolerance information',
+            'listing.additional_preferences'             => 'Additional preference information',
+            'listing.zip_codes'                          => 'Preferred ZIP code information',
+            // Listing.* fields — Tenant criteria
+            'listing.move_in_date_earliest'              => 'Earliest move-in date information',
+            'listing.move_in_date_latest'                => 'Latest move-in date information',
+            'listing.renewal_option_requested'           => 'Requested renewal option information',
+            'listing.security_deposit_budget'            => 'Security deposit budget information',
+            'listing.smoking_preference'                 => 'Smoking preference information',
+            'listing.maintenance_preference'             => 'Maintenance preference information',
+            'listing.tenant_conditions'                  => 'Tenant-stated condition information',
+            // ── TENANT SELF-DISCLOSURES — PRIVATE, AND THE LABEL IS NOT THE GATE ──
+            //
+            // These four are things an APPLICANT says about THEMSELVES, and three of them
+            // touch protected characteristics directly: a service animal and an emotional
+            // support animal are disability accommodations, accessibility requirements are
+            // a disability disclosure, and a criminal-history answer is the applicant's own
+            // record. Fair Housing Phase 1 already keeps every one of them private, and
+            // CriteriaPrivacyPolicy / SnapshotFactVisibility — not this map — are what
+            // decide they are never published.
+            //
+            // A label is REQUIRED here anyway, and that is not a contradiction. The label is
+            // only ever printed by the missing-data guard on a path the tenant themselves
+            // reached about their own listing, and a specific label is what stops that
+            // message reading as though the system did not understand the question. Leaving
+            // these to the generic fallback would not have made them more private; it would
+            // only have made the tenant's own view less legible. The wording is kept
+            // strictly descriptive of the FIELD and states no fact about any person.
+            'listing.service_animal'                     => 'Service animal information',
+            'listing.emotional_support_animal'           => 'Assistance animal information',
+            'listing.accessibility_requirements'         => 'Accessibility requirement information',
+            'listing.prior_eviction'                     => 'Eviction history information',
+            'listing.prior_felony'                       => 'Criminal history information',
             'listing.lease_expiration'                   => 'Lease expiration information',
             'listing.lease_assignable'                   => 'Lease assignability information',
             // Listing.* fields — Commercial Sale: Utilities

@@ -8,6 +8,7 @@ use App\Support\Listing\FloodZoneCode;
 use App\Support\OfferListing\CriteriaPrivacyPolicy;
 use App\Support\OfferListing\PublicProviderTextPolicy;
 use App\Support\AskAi\PublicAnswerPiiScreen;
+use App\Support\AskAi\AskAiPropertyTypeResolver;
 
 /**
  * AskAiPublicPropertyQuestionService — "Questions About This Property" (Batches 1, 2b)
@@ -454,9 +455,20 @@ class AskAiPublicPropertyQuestionService
             return [];
         }
 
+        // WHAT kind of property this is, resolved once for the whole catalog pass.
+        //
+        // Fail-closed and exact (see AskAiPropertyTypeResolver): an absent, unrecognised
+        // or role-inapplicable property type is null, and null admits only the questions
+        // that declare every type. Role says who is listing; this says what, and until it
+        // existed a Vacant Land listing with a stray `bedrooms` meta row advertised
+        // "How many bedrooms are there?".
+        $propertyTypes = AskAiPropertyTypeResolver::forListing($role, $meta, $context);
+
         $catalog = array_filter(
             AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            static fn ($entry): bool => is_array($entry) && ($entry['role'] ?? null) === $role
+            static fn ($entry): bool => is_array($entry)
+                && ($entry['role'] ?? null) === $role
+                && AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)
         );
 
         // Batch 4 — the curated knowledge-base questions, built from the canonical KB
@@ -974,6 +986,16 @@ class AskAiPublicPropertyQuestionService
 
                 $catalog['kb_' . $role . '_' . $key] = [
                     'role'        => $role,
+                    // UNIVERSAL, and deliberately so. A knowledge-base entry is a question
+                    // the OWNER chose to answer about THIS listing: its applicability was
+                    // already decided by a human who was looking at the property, and the
+                    // canonical KB config it is read from carries no property-type scoping
+                    // to derive anything narrower from. Declaring every type is therefore
+                    // the honest statement, not a shortcut — and it is declared rather than
+                    // left absent because an absent declaration is refused outright, so a
+                    // future property-type-scoped KB config fails loudly here instead of
+                    // silently publishing a commercial answer on a house.
+                    'property_types' => AskAiPropertyTypeResolver::ALL_TYPES,
                     // The canonical question text, read from the config the owner answered
                     // under. Never a second copy: a divergent label would ask the public a
                     // subtly different question from the one the owner was answering.
@@ -1512,6 +1534,18 @@ class AskAiPublicPropertyQuestionService
             'criteria_feature_list',
             // Batch 2e
             'flood_zone',
+            // Batch 5 — seller property facts. Several are COMPOSITES: one question
+            // answering from a source path plus its supporting paths, because a shopper
+            // asks "is it on the water?" and never "what is waterfront_feet?".
+            'provider_description', 'waterfront_composite', 'parking_composite',
+            'climate_composite', 'water_sewer_composite', 'construction_composite',
+            'interior_feature_list', 'building_feature_list', 'furnishings', 'home_warranty',
+            'lot_size_composite', 'association_details_composite', 'special_assessment_composite',
+            'occupant_status', 'target_closing_date', 'included_items_list', 'parcel_count_composite',
+            // Batch 6 — landlord property and lease facts.
+            'lease_price', 'available_date', 'lease_terms_composite', 'smoking_policy',
+            'subletting_policy', 'parking_terms', 'property_condition', 'unit_details_composite',
+            'lot_dimensions_only', 'pet_policy_composite', 'pool_composite',
         ], true);
     }
 
@@ -1608,6 +1642,40 @@ class AskAiPublicPropertyQuestionService
 
             // ---- Batch 2e: FEMA flood zone (seller / landlord) ----
             'flood_zone'                   => $this->floodZone($text),
+
+
+            // ---- Batch 5: seller property facts (composites) ----
+            'provider_description'          => $this->providerDescription($text),
+            'waterfront_composite'          => $this->waterfrontComposite($text, $supporting),
+            'parking_composite'             => $this->parkingComposite($text, $supporting),
+            'climate_composite'             => $this->climateComposite($text, $supporting),
+            'water_sewer_composite'         => $this->waterSewerComposite($text, $supporting),
+            'construction_composite'        => $this->constructionComposite($text, $supporting),
+            'interior_feature_list'         => $this->list($text, 'Interior features listed for this property'),
+            'building_feature_list'         => $this->list($text, 'Building features listed for this property'),
+            'furnishings'                   => $this->furnishings($text),
+            'home_warranty'                 => $this->yesNo($text, 'The seller is offering a home warranty.', 'The seller is not offering a home warranty.'),
+            'lot_size_composite'            => $this->lotSizeComposite($text, $supporting),
+            'association_details_composite' => $this->associationDetailsComposite($text, $supporting),
+            'special_assessment_composite'  => $this->specialAssessmentComposite($text, $supporting),
+            'occupant_status'               => $this->occupantStatus($text),
+            'target_closing_date'           => $this->targetClosingDate($text),
+            'included_items_list'           => $this->list($text, 'Included with this property'),
+            'parcel_count_composite'        => $this->parcelCountComposite($text, $supporting),
+
+
+            // ---- Batch 6: landlord property and lease facts ----
+            'lease_price'             => $this->leasePrice($text),
+            'available_date'          => $this->availableDate($text),
+            'lease_terms_composite'   => $this->leaseTermsComposite($text, $supporting),
+            'smoking_policy'          => $this->smokingPolicy($text),
+            'subletting_policy'       => $this->sublettingPolicy($text),
+            'parking_terms'           => $this->parkingTerms($text),
+            'property_condition'      => $this->propertyCondition($text),
+            'unit_details_composite'  => $this->unitDetailsComposite($text, $supporting),
+            'lot_dimensions_only'     => $this->lotDimensionsOnly($text),
+            'pet_policy_composite'    => $this->petPolicyComposite($text, $supporting),
+            'pool_composite'          => $this->poolComposite($text, $supporting),
 
             default                  => null,
         };
@@ -2268,6 +2336,688 @@ class AskAiPublicPropertyQuestionService
     // =========================================================================
 
     /** @param callable(string): string $sentence */
+    /* ====================================================================== *
+     * Batch 5 — seller property-fact formatters.
+     *
+     * Every one of these is a pure string transform over already-screened values.
+     * None reads the database, the container or the clock, and none calls a model.
+     * ====================================================================== */
+
+    /**
+     * The seller's own prose about the property.
+     *
+     * Provider-authored text, so it is SCREENED rather than printed. Two refusals,
+     * both whole-answer:
+     *   • PublicProviderTextPolicy — the same Fair Housing rules the listing page
+     *     and the knowledge base already apply. A description that steers is
+     *     withheld, never edited: `decide()` returns a verdict, not a cleaned
+     *     string, and there is no redaction path in this product.
+     *   • Length — over the knowledge-base ceiling it is withheld rather than
+     *     truncated, because a half-sentence of a seller's description is a
+     *     statement they did not make.
+     */
+    private function providerDescription(string $text): ?string
+    {
+        if ($text === '' || !PublicProviderTextPolicy::isPublishable($text)) {
+            return null;
+        }
+
+        if (mb_strlen($text) > self::KB_MAX_ANSWER_LENGTH) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    /**
+     * Waterfront, frontage, access and view as ONE answer.
+     *
+     * A shopper asks "is it on the water?". Answering that from `waterfront` alone
+     * and leaving frontage, access and view to three further questions would be
+     * four rows describing one fact. The negative is still stated — "not
+     * waterfront" is information a buyer acts on — but the supporting details are
+     * only added when the property IS on the water, because "Not waterfront. Water
+     * view: Yes" reads as a contradiction.
+     */
+    private function waterfrontComposite(string $text, array $supporting): ?string
+    {
+        $isWaterfront = $this->isAffirmative($text);
+
+        if ($isWaterfront === null) {
+            return null;
+        }
+
+        if (!$isWaterfront) {
+            // A view without frontage is a real and separate fact, so it survives.
+            $view = $this->cleanScalar($supporting['water_view'] ?? null);
+
+            return ($view !== null && $this->isAffirmative($view) === true)
+                ? 'This property is not waterfront, but the listing indicates it has a water view.'
+                : 'This property is not waterfront.';
+        }
+
+        $parts = ['This property is waterfront.'];
+
+        $feet = $this->cleanScalar($supporting['waterfront_feet'] ?? null);
+        if ($feet !== null && is_numeric(str_replace([',', ' '], '', $feet))) {
+            $n = (float) str_replace([',', ' '], '', $feet);
+            if ($n > 0) {
+                $parts[] = 'Water frontage: ' . number_format($n) . ' feet.';
+            }
+        }
+
+        $access = $this->cleanScalar($supporting['water_access'] ?? null);
+        if ($access !== null) {
+            $affirmative = $this->isAffirmative($access);
+            $parts[] = $affirmative === true
+                ? 'The listing indicates water access.'
+                : ($affirmative === false ? '' : 'Water access: ' . $access . '.');
+        }
+
+        $view = $this->cleanScalar($supporting['water_view'] ?? null);
+        if ($view !== null && $this->isAffirmative($view) === true) {
+            $parts[] = 'The listing indicates a water view.';
+        }
+
+        return trim(implode(' ', array_filter($parts)));
+    }
+
+    /**
+     * Garage, garage spaces and carport as one parking answer.
+     *
+     * `garage_spaces` is a COUNT and `garage` is a Yes/No control — the two are
+     * different questions the form asks separately, and a count with no garage is
+     * a contradiction we decline to publish rather than reconcile.
+     */
+    private function parkingComposite(string $text, array $supporting): ?string
+    {
+        $hasGarage = $this->isAffirmative($text);
+        $carport   = $this->cleanScalar($supporting['carport'] ?? null);
+        $hasCarport = $carport === null ? null : $this->isAffirmative($carport);
+
+        if ($hasGarage === null && $hasCarport === null) {
+            return null;
+        }
+
+        $parts = [];
+
+        if ($hasGarage === true) {
+            // Never a size: the only "spaces" field is a Yes/No control, not a count.
+            $parts[] = 'This property has a garage.';
+        } elseif ($hasGarage === false) {
+            $parts[] = 'This property does not have a garage.';
+        }
+
+        if ($hasCarport === true) {
+            // "also" only follows a garage; after "does not have a garage" it would read
+            // as a contradiction, and with no garage answer there is nothing to add to.
+            $parts[] = match ($hasGarage) {
+                true    => 'It also has a carport.',
+                false   => 'It does have a carport.',
+                default => 'This property has a carport.',
+            };
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Heating and cooling as one answer; either half alone still answers. */
+    private function climateComposite(string $text, array $supporting): ?string
+    {
+        $cooling = $this->cleanScalar($text);
+        // Two heating keys exist for historical reasons and only one is ever populated.
+        $heating = $this->cleanScalar($supporting['heating_and_fuel'] ?? null)
+            ?? $this->cleanScalar($supporting['heating_fuel'] ?? null);
+
+        $parts = [];
+
+        if ($heating !== null) {
+            $parts[] = 'Heating: ' . $this->sentenceList($heating) . '.';
+        }
+
+        if ($cooling !== null) {
+            $affirmative = $this->isAffirmative($cooling);
+            $parts[] = $affirmative === true
+                ? 'The property has air conditioning.'
+                : ($affirmative === false
+                    ? 'The listing indicates no air conditioning.'
+                    : 'Cooling: ' . $this->sentenceList($cooling) . '.');
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Water supply and sewer/septic as one answer. */
+    private function waterSewerComposite(string $text, array $supporting): ?string
+    {
+        $water = $this->cleanScalar($text) ?? $this->cleanScalar($supporting['water_source'] ?? null);
+        $sewer = $this->cleanScalar($supporting['sewer'] ?? null);
+
+        $parts = [];
+        if ($water !== null) { $parts[] = 'Water: ' . $this->sentenceList($water) . '.'; }
+        if ($sewer !== null) { $parts[] = 'Sewer: ' . $this->sentenceList($sewer) . '.'; }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Exterior construction and foundation as one answer. */
+    private function constructionComposite(string $text, array $supporting): ?string
+    {
+        $exterior   = $this->cleanScalar($text);
+        $foundation = $this->cleanScalar($supporting['foundation'] ?? null);
+
+        $parts = [];
+        if ($exterior !== null)   { $parts[] = 'Exterior construction: ' . $this->sentenceList($exterior) . '.'; }
+        if ($foundation !== null) { $parts[] = 'Foundation: ' . $this->sentenceList($foundation) . '.'; }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Furnishings, stated as the seller's own vocabulary rather than a yes/no. */
+    private function furnishings(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        // The stored vocabulary is Furnished / Unfurnished / Turnkey, which is NOT a
+        // yes/no: "Turnkey" means furnished and move-in ready, and reading it through a
+        // boolean would lose that. Each recognised value gets its own sentence and an
+        // unrecognised one is printed as the seller wrote it.
+        return match (strtolower($value)) {
+            'furnished'   => 'This property is offered furnished.',
+            'unfurnished' => 'This property is offered unfurnished.',
+            'turnkey'     => 'This property is offered turnkey — furnished and move-in ready.',
+            'partially furnished', 'partly furnished' => 'This property is offered partially furnished.',
+            default       => 'Furnishings: ' . $value . '.',
+        };
+    }
+
+    /** Lot size with dimensions when both are present. */
+    private function lotSizeComposite(string $text, array $supporting): ?string
+    {
+        $size = $this->cleanScalar($text);
+        $dims = $this->cleanScalar($supporting['lot_dimensions'] ?? null);
+
+        $parts = [];
+
+        if ($size !== null) {
+            $numeric = str_replace([',', ' '], '', $size);
+            $parts[] = is_numeric($numeric)
+                ? 'The lot is ' . number_format((float) $numeric) . ' square feet.'
+                : 'Lot size: ' . $size . '.';
+        }
+
+        if ($dims !== null) {
+            $parts[] = 'Lot dimensions: ' . $dims . '.';
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /**
+     * Whether there is an association, its name, and whether it approves buyers.
+     *
+     * Gated on the association existing: a name or an approval requirement left
+     * behind by a listing that is no longer in an HOA must not re-announce one.
+     */
+    private function associationDetailsComposite(string $text, array $supporting): ?string
+    {
+        $hasHoa = $this->isAffirmative($text);
+
+        if ($hasHoa === null) {
+            return null;
+        }
+
+        if (!$hasHoa) {
+            return 'This property is not in a homeowners association.';
+        }
+
+        $name = $this->cleanScalar($supporting['association_name'] ?? null)
+            ?? $this->cleanScalar($supporting['hoa_name'] ?? null);
+
+        $parts = [$name !== null
+            ? 'This property is in a homeowners association: ' . $name . '.'
+            : 'This property is in a homeowners association.'];
+
+        $approval = $this->cleanScalar($supporting['association_approval_required'] ?? null);
+        if ($approval !== null) {
+            $needs = $this->isAffirmative($approval);
+            if ($needs === true) {
+                $parts[] = 'The association must approve a buyer.';
+            } elseif ($needs === false) {
+                $parts[] = 'The association does not require buyer approval.';
+            }
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /** Special assessments: the yes/no leads, amount and description follow. */
+    private function specialAssessmentComposite(string $text, array $supporting): ?string
+    {
+        $has = $this->isAffirmative($text);
+
+        if ($has === null) {
+            return null;
+        }
+
+        if (!$has) {
+            return 'The listing indicates there are no special assessments.';
+        }
+
+        $parts  = ['The listing indicates there is a special assessment.'];
+        $amount = $this->cleanScalar($supporting['special_assessment_amount'] ?? null);
+
+        if ($amount !== null) {
+            $money = $this->withMoney($amount, static fn (string $m): string => $m);
+            if ($money !== null) {
+                $parts[] = 'Amount: ' . $money . '.';
+            }
+        }
+
+        $description = $this->cleanScalar($supporting['special_assessment_description'] ?? null);
+        if ($description !== null && PublicProviderTextPolicy::isPublishable($description)
+            && mb_strlen($description) <= self::MAX_VERBATIM_LENGTH * 4) {
+            $parts[] = rtrim($description, '.') . '.';
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * Occupancy, in the seller's own stored vocabulary.
+     *
+     * States the PROPERTY's status and never anything about who occupies it —
+     * "tenant occupied" is a fact about the transaction a buyer inherits; the
+     * occupants themselves are nobody's business here.
+     */
+    private function occupantStatus(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        return match (strtolower($value)) {
+            'vacant'          => 'The property is vacant.',
+            'owner occupied', 'owner-occupied' => 'The property is owner occupied.',
+            'tenant occupied', 'tenant-occupied' => 'The property is tenant occupied.',
+            default           => 'Occupancy status: ' . $value . '.',
+        };
+    }
+
+    /** A seller's preferred closing date, rendered as a human date. */
+    private function targetClosingDate(string $text): ?string
+    {
+        $date = $this->humanDate($text);
+
+        return $date === null ? null : 'The seller would like to close by ' . $date . '.';
+    }
+
+    /** Parcel COUNT — never a parcel identifier. */
+    private function parcelCountComposite(string $text, array $supporting): ?string
+    {
+        $count = $this->cleanScalar($text);
+        $n     = ($count !== null && is_numeric($count)) ? (int) $count : null;
+
+        if ($n !== null && $n > 0) {
+            return $n === 1
+                ? 'This listing includes one parcel.'
+                : 'This listing includes ' . $n . ' parcels.';
+        }
+
+        $additional = $this->cleanScalar($supporting['additional_parcels'] ?? null);
+        if ($additional !== null) {
+            $has = $this->isAffirmative($additional);
+            if ($has === true)  { return 'This listing includes additional parcels.'; }
+            if ($has === false) { return 'This listing does not include additional parcels.'; }
+        }
+
+        return null;
+    }
+
+    /* ---- shared primitives for the formatters above ---- */
+
+    /** A trimmed, non-placeholder scalar, or null. */
+    private function cleanScalar(mixed $value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+
+        if ($text === '' || in_array(strtolower($text), self::PLACEHOLDER_VALUES, true)) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    /**
+     * Yes / no / neither.
+     *
+     * Returns null for anything that is not recognisably affirmative or negative,
+     * so a stored vocabulary value ("Central", "Well") falls through to being
+     * printed as itself rather than being read as a boolean.
+     */
+    private function isAffirmative(mixed $value): ?bool
+    {
+        $text = $this->cleanScalar($value);
+
+        if ($text === null) {
+            return null;
+        }
+
+        $normalized = strtolower($text);
+
+        if (in_array($normalized, ['yes', 'y', 'true', '1', 'available', 'included'], true)) {
+            return true;
+        }
+
+        if (in_array($normalized, ['no', 'n', 'false', '0', 'none', 'not available'], true)) {
+            return false;
+        }
+
+        return null;
+    }
+
+    /**
+     * A stored multi-value string as readable prose.
+     *
+     * JSON arrays and comma/pipe separated lists both occur in this schema; both
+     * become "A, B and C". Never exposes brackets, quotes or a raw JSON blob.
+     */
+    private function sentenceList(string $text): string
+    {
+        $items = [];
+
+        if (str_starts_with(trim($text), '[')) {
+            $decoded = json_decode($text, true);
+            if (is_array($decoded)) {
+                $items = array_values(array_filter(array_map(
+                    fn ($v) => $this->cleanScalar($v),
+                    $decoded
+                )));
+            }
+        }
+
+        if ($items === []) {
+            $items = array_values(array_filter(array_map(
+                fn ($v) => $this->cleanScalar($v),
+                preg_split('/\s*[,|;]\s*/', $text) ?: [$text]
+            )));
+        }
+
+        if ($items === []) {
+            return $text;
+        }
+
+        if (count($items) === 1) {
+            return $items[0];
+        }
+
+        $last = array_pop($items);
+
+        return implode(', ', $items) . ' and ' . $last;
+    }
+
+    /** A stored date as a human date, or null when it cannot be read as one. */
+    private function humanDate(mixed $value): ?string
+    {
+        $text = $this->cleanScalar($value);
+
+        if ($text === null) {
+            return null;
+        }
+
+        $timestamp = strtotime($text);
+
+        if ($timestamp === false) {
+            return null;
+        }
+
+        return date('F j, Y', $timestamp);
+    }
+
+    /* ---- Batch 6: landlord formatters ---- */
+
+    /**
+     * The landlord's asking rent, with NO period.
+     *
+     * The form labels this figure "Desired Rental Amount" and the listing page prints it
+     * as "Desired Lease Price" — neither states a period, the value resolves from auction
+     * keys as well (`starting_rent`, `lease_now_price`), and it serves commercial leases
+     * too. The only field that could supply a period, `lease_amount_frequency`, is
+     * OWNER_ONLY in SnapshotFactVisibility and cannot reach a public answer. So no suffix
+     * is stated rather than one assumed: "/mo" is wrong for about a quarter of the rental
+     * inventory, and a seasonal rate published as a monthly one is a false claim.
+     */
+    private function leasePrice(string $text): ?string
+    {
+        return $this->withMoney($text, static fn (string $m): string => "The desired lease price is {$m}.");
+    }
+
+    /** Availability — a date when it reads as one, otherwise the landlord's own words. */
+    private function availableDate(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        // "Now" / "Immediately" are real answers the form accepts and are not dates.
+        if (in_array(strtolower($value), ['now', 'immediate', 'immediately', 'available now'], true)) {
+            return 'This property is available now.';
+        }
+
+        $date = $this->humanDate($value);
+
+        return $date === null
+            ? 'Availability: ' . $value . '.'
+            : 'This property is available from ' . $date . '.';
+    }
+
+    /**
+     * Lease length, accepted terms, renewal and any additional terms as one answer.
+     *
+     * `additional_lease_terms` is provider-authored prose and is screened before it
+     * joins the sentence; the structured parts publish either way.
+     */
+    private function leaseTermsComposite(string $text, array $supporting): ?string
+    {
+        // `$text` is the landlord's offered lease terms. The HOA minimum lease period is
+        // never an input here — see the registry entry.
+        $terms = $this->cleanScalar($text);
+        $parts = [];
+
+        if ($terms !== null) {
+            $parts[] = 'Lease terms offered: ' . $this->sentenceList($terms) . '.';
+        }
+
+        $renewal = $this->cleanScalar($supporting['renewal_option'] ?? null);
+        if ($renewal !== null) {
+            $offered = $this->isAffirmative($renewal);
+            if ($offered === true) {
+                $parts[] = 'A renewal option is offered.';
+            } elseif ($offered === false) {
+                $parts[] = 'No renewal option is offered.';
+            } else {
+                $parts[] = 'Renewal: ' . $renewal . '.';
+            }
+        }
+
+        $additional = $this->cleanScalar($supporting['additional_lease_terms'] ?? null);
+        if ($additional !== null
+            && PublicProviderTextPolicy::isPublishable($additional)
+            && mb_strlen($additional) <= self::KB_MAX_ANSWER_LENGTH) {
+            $parts[] = rtrim($additional, '.') . '.';
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    private function smokingPolicy(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        return match (strtolower($value)) {
+            'no', 'no smoking', 'non-smoking', 'not allowed', 'prohibited'
+                => 'Smoking is not allowed.',
+            'yes', 'allowed', 'smoking allowed'
+                => 'Smoking is allowed.',
+            'outside only', 'outdoors only', 'outside'
+                => 'Smoking is allowed outside only.',
+            default => 'Smoking policy: ' . $value . '.',
+        };
+    }
+
+    private function sublettingPolicy(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        $allowed = $this->isAffirmative($value);
+
+        if ($allowed === true)  { return 'Subletting is allowed.'; }
+        if ($allowed === false) { return 'Subletting is not allowed.'; }
+
+        return 'Subletting policy: ' . $value . '.';
+    }
+
+    private function parkingTerms(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        return $value === null ? null : 'Parking: ' . $this->sentenceList($value) . '.';
+    }
+
+    private function propertyCondition(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        return $value === null ? null : 'Property condition: ' . $this->sentenceList($value) . '.';
+    }
+
+    /** Unit size and unit count — two different facts about "the unit". */
+    private function unitDetailsComposite(string $text, array $supporting): ?string
+    {
+        $size  = $this->cleanScalar($text);
+        $count = $this->cleanScalar($supporting['number_of_units'] ?? null);
+        $parts = [];
+
+        if ($size !== null) {
+            $numeric = str_replace([',', ' '], '', $size);
+            $parts[] = is_numeric($numeric)
+                ? 'The unit is ' . number_format((float) $numeric) . ' square feet.'
+                : 'Unit size: ' . $size . '.';
+        }
+
+        if ($count !== null && is_numeric($count) && (int) $count > 0) {
+            $n = (int) $count;
+            $parts[] = $n === 1
+                ? 'The property has one unit.'
+                : 'The property has ' . $n . ' units.';
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    private function lotDimensionsOnly(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        return $value === null ? null : 'Lot dimensions: ' . $value . '.';
+    }
+
+    /**
+     * The landlord's whole pet answer in one row.
+     *
+     * Structured facts only — species, weight cap, and the money. Restriction prose and
+     * the "other" free-text box are excluded: that is where breed limits live, and a
+     * breed limit is a recognised Fair Housing proxy.
+     *
+     * The LEAD SENTENCE IS NOT THIS METHOD'S TO WORD. It is {@see petsAllowed()}'s, which
+     * the seller entry also uses and Batch 2c pins: "No" keeps its assistance-animal
+     * sentence verbatim, so a refusal can never read as though it covered a service or
+     * support animal; and a policy value that is not a plain Yes/No publishes nothing
+     * rather than being paraphrased. Only a "Yes" gains the structured detail below.
+     */
+    private function petPolicyComposite(string $text, array $supporting): ?string
+    {
+        $policy = $this->cleanScalar($text);
+        $lead   = $policy === null ? null : $this->petsAllowed($policy);
+
+        if ($lead === null || strtolower($policy) !== 'yes') {
+            return $lead;
+        }
+
+        $parts = [$lead];
+
+        $species = $this->cleanScalar($supporting['pet_species_allowed'] ?? null);
+        if ($species !== null) {
+            $parts[] = 'Accepted: ' . $this->sentenceList($species) . '.';
+        }
+
+        $weight = $this->cleanScalar($supporting['pet_max_weight_lbs'] ?? null);
+        if ($weight !== null && is_numeric(str_replace([',', ' '], '', $weight))) {
+            $parts[] = 'Weight limit: ' . number_format((float) str_replace([',', ' '], '', $weight)) . ' lbs.';
+        }
+
+        $amount = $this->cleanScalar($supporting['pet_fee_amount'] ?? null);
+        if ($amount !== null) {
+            $money = $this->withMoney($amount, static fn (string $m): string => $m);
+            if ($money !== null) {
+                $type    = $this->cleanScalar($supporting['pet_fee_type'] ?? null);
+                $parts[] = $type !== null
+                    ? 'Pet fee: ' . $money . ' (' . $type . ').'
+                    : 'Pet fee: ' . $money . '.';
+            }
+        }
+
+        $deposit = $this->cleanScalar($supporting['pet_deposit_fee_rent'] ?? null);
+        if ($deposit !== null) {
+            $money = $this->withMoney($deposit, static fn (string $m): string => $m);
+            if ($money !== null) {
+                $parts[] = 'Pet deposit: ' . $money . '.';
+            }
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /** Pool, with its type when the seller recorded one. */
+    private function poolComposite(string $text, array $supporting): ?string
+    {
+        // Delegates the yes/no to the EXISTING yesNo() rather than the looser
+        // isAffirmative(): 'Optional', 'Community' and a bare '1' must still answer
+        // nothing, which is behaviour Batch 2b established deliberately and this
+        // composite must not quietly widen.
+        $base = $this->yesNo($text, 'This property has a pool.', 'This property does not have a pool.');
+
+        if ($base === null || $base !== 'This property has a pool.') {
+            return $base;
+        }
+
+        $type = $this->cleanScalar($supporting['pool_type'] ?? null);
+
+        return $type === null
+            ? $base
+            : $base . ' Pool type: ' . $this->sentenceList($type) . '.';
+    }
+
     private function withMoney(string $text, callable $sentence): ?string
     {
         // Read the sign before stripping currency characters, or "-5000" becomes "5000".

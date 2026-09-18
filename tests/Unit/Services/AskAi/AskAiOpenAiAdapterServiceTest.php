@@ -13,12 +13,11 @@ use PHPUnit\Framework\TestCase;
  * OpenAiClientService is mocked via getMockBuilder.
  *
  * Test coverage (cases A–G):
- *   A. prompt_ready calls send() once and returns status='generated'
+ *   A. prompt_ready NEVER calls send(): LLM_ANSWERING_APPROVED is false, status='blocked'
  *   B. blocked status does not call send(), returns status='blocked'
  *   C. insufficient_context does not call send(), returns status='blocked'
  *   D. unsupported does not call send(), returns status='blocked'
- *   E. Exception from send() (simulating missing/empty API key) returns status='failed'
- *   F. Any exception from send() returns status='failed' with error message
+ *   E/F. send() failures are unreachable behind the hard gate; the refusal names the gate
  *   G. Governance static grep: no hardcoded API keys, no DB writes, no routes in service file
  */
 class AskAiOpenAiAdapterServiceTest extends TestCase
@@ -96,24 +95,24 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
     // Case A — prompt_ready calls send() once and returns status='generated'
     // =========================================================================
 
-    public function test_case_A_prompt_ready_calls_send_once(): void
+    public function test_case_A_prompt_ready_never_calls_send(): void
     {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
         $clientMock = $this->makeClientMock();
         $service    = new AskAiOpenAiAdapterService($clientMock);
-        $package    = $this->makePromptReadyPackage();
 
-        $clientMock->expects($this->once())
-            ->method('send')
-            ->with($package)
-            ->willReturn($this->makeSendResult());
+        $clientMock->expects($this->never())->method('send');
 
-        $result = $service->generate($package);
+        $result = $service->generate($this->makePromptReadyPackage());
 
-        $this->assertSame('generated', $result['status']);
+        $this->assertSame('blocked', $result['status']);
     }
 
-    public function test_case_A_prompt_ready_returns_success_true(): void
+    public function test_case_A_prompt_ready_returns_success_false(): void
     {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
         $clientMock = $this->makeClientMock();
         $service    = new AskAiOpenAiAdapterService($clientMock);
 
@@ -121,7 +120,7 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
 
         $result = $service->generate($this->makePromptReadyPackage());
 
-        $this->assertTrue($result['success']);
+        $this->assertFalse($result['success']);
     }
 
     public function test_case_A_prompt_ready_returns_all_five_required_keys(): void
@@ -138,37 +137,10 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
         }
     }
 
-    public function test_case_A_prompt_ready_raw_response_is_json_string(): void
+    public function test_case_A_prompt_ready_raw_response_is_null(): void
     {
-        $clientMock = $this->makeClientMock();
-        $service    = new AskAiOpenAiAdapterService($clientMock);
-
-        $data = ['answer' => 'This property has a pool and a garage.'];
-        $clientMock->method('send')->willReturn($this->makeSendResult(['data' => $data]));
-
-        $result = $service->generate($this->makePromptReadyPackage());
-
-        $this->assertIsString($result['raw_response']);
-        $this->assertSame(
-            json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            $result['raw_response']
-        );
-    }
-
-    public function test_case_A_prompt_ready_model_is_populated(): void
-    {
-        $clientMock = $this->makeClientMock();
-        $service    = new AskAiOpenAiAdapterService($clientMock);
-
-        $clientMock->method('send')->willReturn($this->makeSendResult(['model' => 'gpt-5-2025-11-01']));
-
-        $result = $service->generate($this->makePromptReadyPackage());
-
-        $this->assertSame('gpt-5-2025-11-01', $result['model']);
-    }
-
-    public function test_case_A_prompt_ready_error_is_null(): void
-    {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
         $clientMock = $this->makeClientMock();
         $service    = new AskAiOpenAiAdapterService($clientMock);
 
@@ -176,7 +148,35 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
 
         $result = $service->generate($this->makePromptReadyPackage());
 
-        $this->assertNull($result['error']);
+        $this->assertNull($result['raw_response']);
+    }
+
+    public function test_case_A_prompt_ready_model_is_null(): void
+    {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
+        $clientMock = $this->makeClientMock();
+        $service    = new AskAiOpenAiAdapterService($clientMock);
+
+        $clientMock->method('send')->willReturn($this->makeSendResult(['model' => 'gpt-5-2025-11-01']));
+
+        $result = $service->generate($this->makePromptReadyPackage());
+
+        $this->assertNull($result['model']);
+    }
+
+    public function test_case_A_prompt_ready_error_names_the_gate(): void
+    {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
+        $clientMock = $this->makeClientMock();
+        $service    = new AskAiOpenAiAdapterService($clientMock);
+
+        $clientMock->method('send')->willReturn($this->makeSendResult());
+
+        $result = $service->generate($this->makePromptReadyPackage());
+
+        $this->assertSame('llm_answering_not_approved', $result['error']);
     }
 
     // =========================================================================
@@ -300,19 +300,18 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
     //           returns status='failed' safely without re-throwing
     // =========================================================================
 
-    public function test_case_E_send_exception_on_missing_api_key_returns_failed(): void
+    public function test_case_E_missing_api_key_path_is_never_reached(): void
     {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
         $clientMock = $this->makeClientMock();
         $service    = new AskAiOpenAiAdapterService($clientMock);
 
-        $clientMock->method('send')
-            ->willThrowException(
-                new \Exception('OpenAI API key is not configured. Set the OPENAI_API_KEY environment variable.')
-            );
+        $clientMock->expects($this->never())->method('send');
 
         $result = $service->generate($this->makePromptReadyPackage());
 
-        $this->assertSame('failed', $result['status']);
+        $this->assertSame('blocked', $result['status']);
         $this->assertFalse($result['success']);
     }
 
@@ -349,22 +348,25 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
     // Case F — any exception from send() returns status='failed' with error message
     // =========================================================================
 
-    public function test_case_F_exception_from_send_returns_failed_status(): void
+    public function test_case_F_send_exception_is_unreachable(): void
     {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
         $clientMock = $this->makeClientMock();
         $service    = new AskAiOpenAiAdapterService($clientMock);
 
-        $clientMock->method('send')
-            ->willThrowException(new \RuntimeException('Network timeout after 90 seconds'));
+        $clientMock->expects($this->never())->method('send');
 
         $result = $service->generate($this->makePromptReadyPackage());
 
-        $this->assertSame('failed', $result['status']);
+        $this->assertSame('blocked', $result['status']);
         $this->assertFalse($result['success']);
     }
 
-    public function test_case_F_exception_message_is_in_error_key(): void
+    public function test_case_F_error_names_the_gate_not_a_provider_message(): void
     {
+        // LLM_ANSWERING_APPROVED is false: generate() refuses before the client is touched,
+        // so the send() behaviour this case used to cover is unreachable by design.
         $clientMock = $this->makeClientMock();
         $service    = new AskAiOpenAiAdapterService($clientMock);
 
@@ -373,7 +375,7 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
 
         $result = $service->generate($this->makePromptReadyPackage());
 
-        $this->assertSame('Network timeout after 90 seconds', $result['error']);
+        $this->assertSame('llm_answering_not_approved', $result['error']);
     }
 
     public function test_case_F_exception_returns_all_five_required_keys(): void
@@ -403,6 +405,16 @@ class AskAiOpenAiAdapterServiceTest extends TestCase
 
         $this->assertNull($result['raw_response']);
         $this->assertNull($result['model']);
+    }
+
+    // =========================================================================
+    // Gate — Ask AI never reaches a language model
+    // =========================================================================
+
+    public function test_llm_answering_is_hard_disabled_in_code(): void
+    {
+        // A code constant, not config: flipping it is a reviewed product decision.
+        $this->assertFalse(AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED);
     }
 
     // =========================================================================
