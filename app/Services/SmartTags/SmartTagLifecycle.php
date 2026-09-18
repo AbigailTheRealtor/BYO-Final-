@@ -3,6 +3,8 @@
 namespace App\Services\SmartTags;
 
 use App\Models\BridgeProperty;
+use App\Models\User;
+use App\Support\SmartTags\OwnerSmartTagPanel;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
 use App\Support\SmartTags\SmartTagWiring;
@@ -47,6 +49,7 @@ class SmartTagLifecycle
     public function __construct(
         private readonly SmartTagDerivationService $derivation,
         private readonly SmartTagAssignmentPurger $purger,
+        private readonly ManualSmartTagWriter $manual,
     ) {
     }
 
@@ -98,6 +101,59 @@ class SmartTagLifecycle
             app(self::class)->purgeSilently($modelClass, $ids);
         } catch (Throwable $e) {
             self::reportShimFailure(SmartTagTelemetry::ENTRY_PURGE, $e);
+        }
+    }
+
+    /**
+     * Persist a listing owner's manual Smart Tag selections. Never throws.
+     *
+     * The Seller/Landlord "Property Features" picker's write, and the first
+     * production caller ManualSmartTagWriter has ever had. Called at PUBLISH,
+     * after the listing's own save has committed and after derivation, so the
+     * structured answers the writer prunes against are the ones the owner just
+     * submitted rather than the previous version's.
+     *
+     * NEVER ON A DRAFT SAVE, for the reason derivation is not: `SAVE_AS_NEW_DRAFT`
+     * makes every draft save a new row, so a draft's evidence would belong to a
+     * version nobody reads. The owner's ticks survive a draft as ordinary listing
+     * meta ({@see \App\Support\SmartTags\OwnerSmartTagSelection}) and become
+     * evidence when the listing becomes a listing.
+     */
+    public static function trySaveOwnerSelections(Model $listing, array $keys, ?User $actor, string $entryPoint): ?ManualSelectionResult
+    {
+        try {
+            return app(self::class)->saveOwnerSelectionsSilently($listing, $keys, $actor, $entryPoint);
+        } catch (Throwable $e) {
+            self::reportShimFailure($entryPoint, $e);
+
+            return null;
+        }
+    }
+
+    /**
+     * What the Seller/Landlord picker renders. Never throws, and writes nothing.
+     *
+     * Withheld entirely when the activation gate is closed, so the control and
+     * the write agree about whether the feature exists — a rendered checkbox
+     * whose save silently does nothing is worse than no checkbox, the same rule
+     * {@see \App\Support\ListingPreferences\ListingPreferenceAvailability}
+     * applies to its own surface.
+     *
+     * @param string[] $selected
+     */
+    public static function ownerPanel(SmartTagListingType $type, ?string $propertyType, ?int $listingId, array $selected): OwnerSmartTagPanel
+    {
+        try {
+            if (! SmartTagWiring::enabledFor($type)) {
+                return OwnerSmartTagPanel::unavailable(OwnerSmartTagPanel::REASON_DISABLED);
+            }
+
+            return app(OwnerSmartTagPanelBuilder::class)->build($type, $propertyType, $listingId, $selected);
+        } catch (Throwable $e) {
+            self::reportShimFailure(SmartTagTelemetry::ownerTagsEntryPoint($type), $e);
+
+            // A half-built picker would offer a set of tags nobody projected.
+            return OwnerSmartTagPanel::unavailable(OwnerSmartTagPanel::REASON_ERROR);
         }
     }
 
@@ -224,6 +280,72 @@ class SmartTagLifecycle
                     error: $e,
                 );
             }
+        }
+    }
+
+    /**
+     * Hand one listing's manual selections to the writer. Never throws.
+     *
+     * The gate is checked here as well as at the picker: the two are asked at
+     * different moments, and a gate that closed between render and publish must
+     * stop the write, not merely have stopped the render.
+     *
+     * A REFUSAL IS NOT A FAILURE. The writer refuses an intruder, a Hire Agent
+     * row, an archived listing and a listing with no supported property type, and
+     * each of those is the system working. Only a throw is logged as `failed`.
+     *
+     * @param array<int, mixed> $keys
+     */
+    public function saveOwnerSelectionsSilently(Model $listing, array $keys, ?User $actor, string $entryPoint): ?ManualSelectionResult
+    {
+        $type = SmartTagListingType::forModelClass(get_class($listing));
+
+        if ($type === null || ! $type->isNative() || ! SmartTagWiring::enabledFor($type)) {
+            return null;
+        }
+
+        $ref = $this->refFor($listing);
+
+        if ($ref === null) {
+            return null;
+        }
+
+        $startedAt = microtime(true);
+
+        try {
+            $result = $this->manual->replaceSelections($ref, $keys, $actor);
+
+            SmartTagTelemetry::record(
+                $result->saved ? SmartTagTelemetry::OWNER_TAGS_SAVED : SmartTagTelemetry::OWNER_TAGS_REFUSED,
+                $entryPoint,
+                $ref,
+                null,
+                (microtime(true) - $startedAt) * 1000,
+                extra: [
+                    // Counts and a refusal reason from a closed list. No tag key,
+                    // because a key is a property characteristic and the taxonomy
+                    // version already explains what the counts mean.
+                    'refusal'        => $result->refusal,
+                    'selected'       => count($result->selected),
+                    'added'          => count($result->added),
+                    'removed'        => count($result->removed),
+                    'rejected'       => count($result->rejected),
+                    'tagger_version' => SmartTagVersion::taggerVersion(),
+                ],
+            );
+
+            return $result;
+        } catch (Throwable $e) {
+            SmartTagTelemetry::record(
+                SmartTagTelemetry::FAILED,
+                $entryPoint,
+                $ref,
+                null,
+                (microtime(true) - $startedAt) * 1000,
+                $e,
+            );
+
+            return null;
         }
     }
 

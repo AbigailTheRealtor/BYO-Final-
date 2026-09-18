@@ -59,6 +59,19 @@ class LandlordOfferListingEdit extends Component
     use HandlesResolvedPropertyAddress; // Phase 1: the one fillFromResolvedAddress()
     use HasCanonicalPetFee;         // #2 Part B: canonical pet fee (create + edit)
     use LandlordLeasingTerms;      // canonical Leasing Terms field set (create + edit + quick import)
+    use \App\Http\Livewire\Concerns\HasOwnerSmartTags; // Property Features: the owner's manual Smart Tag picker
+
+    /**
+     * Which Smart Tag listing type this wizard writes.
+     *
+     * Stated rather than inferred: the same enum decides the evidence rows'
+     * `listing_type`, and a wizard guessing its own identity from a role string
+     * is how `seller` came to mean two different tables elsewhere.
+     */
+    protected function ownerSmartTagListingType(): \App\Support\SmartTags\SmartTagListingType
+    {
+        return \App\Support\SmartTags\SmartTagListingType::LandlordAgent;
+    }
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1682,6 +1695,7 @@ class LandlordOfferListingEdit extends Component
             'property_state'                  => $this->property_state,
             'property_zip'                    => $this->property_zip,
             'property_type'                   => $this->property_type,
+            'smart_tag_owner_selections'      => $this->ownerSmartTagSelectionsForStorage(),
             'property_items'                  => json_encode($this->ensureArray($this->property_items)),
             'leasing_space'                   => $this->leasing_space,
             'other_property_items'            => $this->other_property_items,
@@ -2385,6 +2399,7 @@ class LandlordOfferListingEdit extends Component
             $this->property_type = $rawPt === null
                 ? null
                 : PropertyTypeVocabulary::forRole((string) $rawPt, 'landlord');
+            $this->restoreOwnerSmartTagSelections($auction);
             $raw = $auction->get->cities ?? null;
             $this->cities = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
 
@@ -3149,6 +3164,7 @@ class LandlordOfferListingEdit extends Component
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
+        $auction->saveMeta(\App\Support\SmartTags\OwnerSmartTagSelection::META_KEY, $this->ownerSmartTagSelectionsForStorage());
         $auction->saveMeta('property_items', json_encode($this->property_items));
         $auction->saveMeta('leasing_space', $this->leasing_space);
         $auction->saveMeta('other_property_items', $this->other_property_items);
@@ -3881,6 +3897,14 @@ class LandlordOfferListingEdit extends Component
                 $auction,
                 \App\Services\SmartTags\SmartTagTelemetry::ENTRY_LANDLORD_PUBLISH,
             );
+
+            // The owner's own Property Features ticks, turned into manual evidence.
+            // AFTER derivation, deliberately: the writer prunes anything the
+            // listing's structured fields answer and re-projects the listing's
+            // assignments last, so manual evidence is never overwritten by a
+            // derivation that ran after it. Gated off by default, and it cannot
+            // fail this publish. @see SmartTagLifecycle::trySaveOwnerSelections
+            $this->persistOwnerSmartTags($auction);
 
             app(WizardEventService::class)->record(
                 (string) $this->user_type,

@@ -56,6 +56,19 @@ class SellerOfferListingEdit extends Component
     use GuidesPublishValidation; // publish gate + guided correction (parity with create)
     use ValidatesPropertyAddress; // Phase 0: ZIP autofill + ZIP-in-street recovery
     use HandlesResolvedPropertyAddress; // Phase 1: the one fillFromResolvedAddress()
+    use \App\Http\Livewire\Concerns\HasOwnerSmartTags; // Property Features: the owner's manual Smart Tag picker
+
+    /**
+     * Which Smart Tag listing type this wizard writes.
+     *
+     * Stated rather than inferred: the same enum decides the evidence rows'
+     * `listing_type`, and a wizard guessing its own identity from a role string
+     * is how `seller` came to mean two different tables elsewhere.
+     */
+    protected function ownerSmartTagListingType(): \App\Support\SmartTags\SmartTagListingType
+    {
+        return \App\Support\SmartTags\SmartTagListingType::SellerAgent;
+    }
 
     protected $listeners = [
         'setActiveTab' => 'setActiveTab',
@@ -1584,6 +1597,7 @@ class SellerOfferListingEdit extends Component
             'property_state'                  => $this->property_state,
             'property_zip'                    => $this->property_zip,
             'property_type'                   => $this->property_type,
+            'smart_tag_owner_selections'      => $this->ownerSmartTagSelectionsForStorage(),
             'property_items'                  => json_encode($this->property_items),
             'leasing_space'                   => $this->leasing_space,
             'other_property_items'            => $this->other_property_items,
@@ -2233,6 +2247,7 @@ class SellerOfferListingEdit extends Component
 
             $this->state = $auction->get->state;
             $this->property_type = $auction->get->property_type;
+            $this->restoreOwnerSmartTagSelections($auction);
             $this->cities = is_string($auction->get->cities) ? json_decode($auction->get->cities, true) ?? [] : (array)$auction->get->cities;
 
             $this->counties = is_string($auction->get->counties) ? json_decode($auction->get->counties, true) ?? [] : (array)$auction->get->counties;
@@ -3345,6 +3360,7 @@ class SellerOfferListingEdit extends Component
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
+        $auction->saveMeta(\App\Support\SmartTags\OwnerSmartTagSelection::META_KEY, $this->ownerSmartTagSelectionsForStorage());
         $auction->saveMeta('property_items', json_encode($this->property_items));
         $auction->saveMeta('leasing_space', $this->leasing_space);
         $auction->saveMeta('other_property_items', $this->other_property_items);
@@ -3991,6 +4007,14 @@ class SellerOfferListingEdit extends Component
                 $auction,
                 \App\Services\SmartTags\SmartTagTelemetry::ENTRY_SELLER_PUBLISH,
             );
+
+            // The owner's own Property Features ticks, turned into manual evidence.
+            // AFTER derivation, deliberately: the writer prunes anything the
+            // listing's structured fields answer and re-projects the listing's
+            // assignments last, so manual evidence is never overwritten by a
+            // derivation that ran after it. Gated off by default, and it cannot
+            // fail this publish. @see SmartTagLifecycle::trySaveOwnerSelections
+            $this->persistOwnerSmartTags($auction);
 
             app(WizardEventService::class)->record(
                 (string) $this->user_type,
