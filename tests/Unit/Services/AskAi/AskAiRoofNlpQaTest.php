@@ -913,9 +913,11 @@ class AskAiRoofNlpQaTest extends TestCase
     {
         $content = file_get_contents($this->runnerFilePath());
         $this->assertStringContainsString(
-            "questionType === 'listing_facts' && !isset(\$options['normalized_field_key'])",
+            // Step 1b now also runs for UNSUPPORTED questions — the deterministic replacement
+            // for the model normaliser that used to route them (LLM_ANSWERING_APPROVED false).
+            "(\$questionType === 'listing_facts' || \$wasUnsupported) && !isset(\$options['normalized_field_key'])",
             $content,
-            'Runner must include the step 1b listing_facts deterministic detector guard.'
+            'Runner must include the step 1b deterministic detector guard for listing_facts and unsupported questions.'
         );
     }
 

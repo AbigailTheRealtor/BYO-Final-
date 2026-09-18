@@ -2,6 +2,7 @@
 
 namespace App\Services\AskAi;
 
+use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\AskAi\AskAiKnowledgeBaseQuestionMatcher;
 use Illuminate\Support\Facades\Log;
 
@@ -1241,6 +1242,9 @@ class AskAiRunnerV2Service
             'quadplex',
             'multifamily type',
             'property type mix',
+            // With the most specific phrase winning, "what property type" (property_type)
+            // outranked "property type mix"; the unit-mix question carries the same stem.
+            'what property type mix',
         ],
         // ---- Property Type ----
         'listing.property_type' => [
@@ -3458,6 +3462,13 @@ class AskAiRunnerV2Service
     private bool $enableDescriptionFallback;
     private AskAiListingDescriptionRepository $descriptionRepository;
 
+    /**
+     * The fail-closed answer for a question Ask AI cannot answer from stored listing data
+     * while the model path is disabled. Permanent and true — never "try again".
+     */
+    public const DETERMINISTIC_UNANSWERABLE =
+        "Ask AI answers from this listing's own information, and this question can't be answered that way.";
+
     public function __construct(
         AskAiQuestionClassifierService $classifier,
         AskAiInternalRunnerService $internalRunner,
@@ -3861,8 +3872,27 @@ class AskAiRunnerV2Service
             // package is narrowed to that field alone, and the missing-data guard
             // below fires correctly when the listing has no answer for that key.
             // ----------------------------------------------------------------
-            if ($questionType === 'listing_facts' && !isset($options['normalized_field_key'])) {
-                $detectedKey = $this->detectFaqFieldKey($question);
+            // An UNSUPPORTED question gets the same deterministic look. Step 1a used to send
+            // it to the model normaliser to find a field; with that path hard-disabled, the
+            // role-validated keyword maps are the deterministic replacement. A question is
+            // promoted to listing_facts only when a key is actually found — otherwise it
+            // stays unsupported and is refused exactly as before. Prohibited never enters.
+            $wasUnsupported = $questionType === 'unsupported';
+            if (($questionType === 'listing_facts' || $wasUnsupported) && !isset($options['normalized_field_key'])) {
+                $detectionRole = AskAiContextBuilderService::canonicalListingType($listingType);
+                $detectedKey   = $this->detectFaqFieldKey($question, $detectionRole);
+                if ($detectedKey === null && $wasUnsupported) {
+                    $unsupportedListingKey = $this->detectListingFieldKey($question, $detectionRole);
+                    if ($unsupportedListingKey !== null) {
+                        $questionType                    = 'listing_facts';
+                        $classification['question_type'] = 'listing_facts';
+                        $trace['promoted_from_unsupported'] = true;
+                    }
+                } elseif ($detectedKey !== null && $wasUnsupported) {
+                    $questionType                    = 'listing_facts';
+                    $classification['question_type'] = 'listing_facts';
+                    $trace['promoted_from_unsupported'] = true;
+                }
                 if ($detectedKey !== null) {
                     $trace['faq_key_detected']        = $detectedKey;
                     $trace['deterministic_field_key'] = $detectedKey;
@@ -3870,7 +3900,7 @@ class AskAiRunnerV2Service
                     $classification['normalized_field_key'] = $detectedKey;
                     $options = array_merge($options, ['normalized_field_key' => $detectedKey]);
                 } else {
-                    $detectedListingKey = $this->detectListingFieldKey($question);
+                    $detectedListingKey = $this->detectListingFieldKey($question, $detectionRole);
                     if ($detectedListingKey !== null) {
                         // ── Role-aware key remapping ──────────────────────────────────────
                         // Landlord listings extract pet data under 'pet_policy' (via the
@@ -4228,6 +4258,35 @@ class AskAiRunnerV2Service
                     && array_key_exists($listingField, $listingData)
                     && ($listingData[$listingField] === null || $listingData[$listingField] === '');
 
+                // OWNER'S OWN VALUE, DROPPED ONLY BY THE CONTRACT FILTER.
+                //
+                // allowed_context is the listing_facts contract's filter over the context,
+                // not the context itself, so a field the owner filled in can be "absent"
+                // here while present in their own (unredacted) context — and the guard
+                // below then told the owner their own value "was not provided". For the
+                // OWNER only, the stored value is stated with its label instead. RESTRICTED
+                // fields stay refused, and other scopes keep this guard unchanged: their
+                // context is redacted, and the contract filter is not proven to be only a
+                // citation list rather than a privacy layer for them.
+                if (($fieldAbsent || $fieldBlank)
+                    && ($options['viewer_scope'] ?? null) === AskAiViewerAuthorizationService::SCOPE_OWNER
+                ) {
+                    $ownerValue = $context['listing'][$listingField] ?? null;
+                    $ownerRole  = AskAiContextBuilderService::canonicalListingType($listingType);
+                    if ($this->hasStatableValue($ownerValue) && $ownerRole !== null) {
+                        if (SnapshotFactVisibility::classify($listingField, $ownerRole) !== SnapshotFactVisibility::RESTRICTED) {
+                            return $this->statedFactResult(
+                                $normalizedFieldKey, $ownerValue, 'owner_context_fact',
+                                $classification, $context, $contract, $promptPackage, $trace
+                            );
+                        }
+                        // RESTRICTED stays refused — but the owner did provide it, so the
+                        // refusal must not say otherwise.
+                        $restrictedLabel = preg_replace('/\s+information$/i', '', $this->deriveFieldLabel($normalizedFieldKey)) ?: 'This detail';
+                        $options['restricted_owner_answer'] = $restrictedLabel . ' is not available through Ask AI.';
+                    }
+                }
+
                 if ($fieldAbsent || $fieldBlank) {
                     // ----------------------------------------------------------------
                     // Description fallback (feature-flagged).
@@ -4314,7 +4373,7 @@ class AskAiRunnerV2Service
                     // keep the original structured-data miss message.
                     $missAnswer  = $descFallbackAttempted
                         ? 'This information was not provided in the listing description.'
-                        : 'This information was not provided in the listing.';
+                        : ($options['restricted_owner_answer'] ?? 'This information was not provided in the listing.');
                     $missSource  = $descFallbackAttempted ? 'description_fallback_miss' : 'openai';
 
                     $missingListingResponse = [
@@ -4668,6 +4727,19 @@ class AskAiRunnerV2Service
                     if ($synthesisGateFired) {
                         $trace['synthesis_gate_fired'] = true;
                         $trace['synthesis_gate_key']   = $normalizedFieldKey;
+
+                        // The gate exists because a bare value is not a REASONED answer
+                        // ("6 Months, 12 Months" does not answer "will they take 4 months?").
+                        // It used to fall through to "This information was not provided in
+                        // the listing." — which is FALSE: the value is right here. With no
+                        // model to reason, the deterministic answer is the stored value
+                        // stated with its label. It claims nothing beyond the listing.
+                        if (AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED !== true) {
+                            return $this->statedFactResult(
+                                $normalizedFieldKey, $listingFieldValue, 'stated_listing_fact',
+                                $classification, $context, $contract, $promptPackage, $trace
+                            );
+                        }
                         // Fall through to insufficient_context response below.
                     } else {
                         $trace['synthesis_gate_fired'] = false;
@@ -4906,9 +4978,14 @@ class AskAiRunnerV2Service
                 !($adapterResult['success'] ?? false)
                 && ($promptPackage['status'] ?? '') === 'prompt_ready'
             ) {
+                // "Try again shortly" described a transient model outage. With the model
+                // path hard-disabled nothing is transient — retrying can never help — so the
+                // closed-gate wording states the permanent, deterministic reason instead.
                 $unavailableFallbackAnswer = ($normalizedFieldKey !== null && str_starts_with($normalizedFieldKey, 'listing.'))
                     ? 'This information was not provided in the listing.'
-                    : 'A response could not be generated right now. Please try again shortly.';
+                    : (AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED === true
+                        ? 'A response could not be generated right now. Please try again shortly.'
+                        : self::DETERMINISTIC_UNANSWERABLE);
                 $unavailableFallbackResponse = [
                     'success'            => false,
                     'status'             => 'insufficient_context',
@@ -5231,19 +5308,36 @@ class AskAiRunnerV2Service
      * @param  string $question  Raw user question string.
      * @return string|null       Canonical faq_answers.* path, or null.
      */
-    private function detectFaqFieldKey(string $question): ?string
+    private function detectFaqFieldKey(string $question, ?string $role = null): ?string
     {
         $lower = mb_strtolower(trim($question));
 
+        // A key this role's Knowledge Base config does not define can never hold an answer
+        // (the context builder admits only configured keys), so routing to it produced a
+        // false "has not been provided" — and, being first-match, it also stole the
+        // question from the listing field that could answer it. With a role, such keys are
+        // skipped and the next match gets its chance.
+        $configured = $role === null ? null : AskAiFaqEnrichmentService::buildConfigIndex($role);
+
+        // MOST SPECIFIC PHRASE WINS: the longest matching keyword, map order breaking ties.
+        // First-match ordering let a broad earlier phrase take a question worded for a
+        // narrower key ("special assessment description" -> has_special_assessments).
+        $best = null;
+        $bestLength = 0;
         foreach (self::FAQ_KEY_KEYWORD_MAP as $faqKey => $keywords) {
+            if ($configured !== null && !array_key_exists(substr($faqKey, strlen('faq_answers.')), $configured)) {
+                continue;
+            }
             foreach ($keywords as $keyword) {
-                if (str_contains($lower, mb_strtolower($keyword))) {
-                    return $faqKey;
+                $needle = mb_strtolower($keyword);
+                if (mb_strlen($needle) > $bestLength && str_contains($lower, $needle)) {
+                    $best       = $faqKey;
+                    $bestLength = mb_strlen($needle);
                 }
             }
         }
 
-        return null;
+        return $best;
     }
 
     /**
@@ -5418,27 +5512,69 @@ class AskAiRunnerV2Service
     }
 
     /**
-     * Detect a canonical listing.* field path from the question text.
+     * listing.* keys that belong to ANOTHER role's context and never to this one: declared
+     * in some other role's CANONICAL_SOURCE_MAP, and not in this role's map, its base keys,
+     * or the remap sources run() rewrites to this role's key. Resolving one of these can only
+     * ever read "not provided" (listing.hoa_name on a landlord listing). A key NO map declares
+     * is never excluded — the context builder also emits undeclared keys from its manual
+     * extractors (tenant pet_information), and a positive allowlist would drop them.
      *
-     * Iterates LISTING_KEY_KEYWORD_MAP in order and returns the FIRST match,
-     * or null when no unambiguous listing field is identified.
-     *
-     * @param  string $question  The user's raw question text.
-     * @return string|null  e.g. 'listing.bedrooms', 'listing.annual_property_taxes'
+     * @return array<string, true>
      */
-    private function detectListingFieldKey(string $question): ?string
+    private function listingKeysForeignToRole(string $role): array
     {
-        $lower = mb_strtolower(trim($question));
+        $own = array_merge(
+            array_keys(AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role] ?? []),
+            ['listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
+             'property_type', 'listing_status', 'created_at', 'updated_at'],
+            match ($role) {
+                'landlord' => ['pets_allowed', 'heating_and_fuel', 'hoa_fee', 'hoa_payment_schedule'],
+                'tenant'   => ['available_date'],
+                default    => [],
+            }
+        );
 
-        foreach (self::LISTING_KEY_KEYWORD_MAP as $listingKey => $keywords) {
-            foreach ($keywords as $keyword) {
-                if (str_contains($lower, mb_strtolower($keyword))) {
-                    return $listingKey;
+        $foreign = [];
+        foreach (AskAiContextBuilderService::CANONICAL_SOURCE_MAP as $otherRole => $fields) {
+            if ($otherRole === $role) {
+                continue;
+            }
+            foreach (array_keys($fields) as $field) {
+                if (!in_array($field, $own, true)) {
+                    $foreign['listing.' . $field] = true;
                 }
             }
         }
 
-        return null;
+        return $foreign;
+    }
+
+    private function detectListingFieldKey(string $question, ?string $role = null): ?string
+    {
+        $lower = mb_strtolower(trim($question));
+
+        // Same rule as detectFaqFieldKey(): a listing key that belongs only to another
+        // role's context is skipped, so it cannot answer "not provided" for a value this
+        // role stores under its own key. See listingKeysForeignToRole().
+        $foreign = $role === null ? [] : $this->listingKeysForeignToRole($role);
+
+        // Most specific phrase wins — see detectFaqFieldKey().
+        $best = null;
+        $bestLength = 0;
+        foreach (self::LISTING_KEY_KEYWORD_MAP as $listingKey => $keywords) {
+            if (isset($foreign[$listingKey])) {
+                continue;
+            }
+            foreach ($keywords as $keyword) {
+                $needle = mb_strtolower($keyword);
+                if (mb_strlen($needle) > $bestLength && str_contains($lower, $needle)) {
+                    $best       = $listingKey;
+                    $bestLength = mb_strlen($needle);
+                }
+            }
+        }
+
+        return $best;
     }
 
     /**
@@ -5495,6 +5631,80 @@ class AskAiRunnerV2Service
         }
 
         return null;
+    }
+
+    /** A value worth stating: not null, not blank, not an empty list. */
+    private function hasStatableValue(mixed $value): bool
+    {
+        if (is_array($value)) {
+            return array_filter($value, static fn ($v) => $v !== null && trim((string) $v) !== '') !== [];
+        }
+
+        return $value !== null && trim((string) (is_bool($value) ? ($value ? 'Yes' : 'No') : $value)) !== '';
+    }
+
+    /**
+     * "Roof type: Shingle, Metal." — the stored value under its field label, and nothing else.
+     * Deterministic by construction: no model, no reasoning, no claim beyond the listing.
+     */
+    private function statedFact(string $normalizedFieldKey, mixed $value): string
+    {
+        $label = preg_replace('/\s+information$/i', '', $this->deriveFieldLabel($normalizedFieldKey)) ?? '';
+        if ($label === '' || stripos($label, 'the requested') === 0) {
+            $field = preg_replace('/^[a-z_]+\./', '', $normalizedFieldKey) ?? $normalizedFieldKey;
+            $label = ucfirst(str_replace('_', ' ', $field));
+        }
+
+        if (is_array($value)) {
+            $value = implode(', ', array_map('strval', array_filter($value, static fn ($v) => $v !== null && trim((string) $v) !== '')));
+        } elseif (is_bool($value)) {
+            $value = $value ? 'Yes' : 'No';
+        }
+
+        return $label . ': ' . rtrim(trim((string) $value), '.') . '.';
+    }
+
+    /** A 'ready' result carrying statedFact(), with the runner's usual envelope. */
+    private function statedFactResult(
+        string $normalizedFieldKey,
+        mixed $value,
+        string $answerSource,
+        array $classification,
+        ?array $context,
+        ?array $contract,
+        ?array $promptPackage,
+        array $trace
+    ): array {
+        $response = [
+            'success'            => true,
+            'status'             => 'ready',
+            'answer'             => $this->statedFact($normalizedFieldKey, $value),
+            'disclosures'        => $promptPackage['required_disclosures'] ?? [],
+            'source_attribution' => $promptPackage['source_attribution'] ?? [],
+            'refusal_message'    => null,
+            'error'              => null,
+            'source'             => ['answer_source' => $answerSource, 'snapshot_id' => null, 'canonical_key' => $normalizedFieldKey, 'match_type' => 'stated_fact', 'snapshot_version' => null],
+        ];
+        $response['follow_up_questions'] = $this->followUpService->forResult($response, $classification);
+
+        $trace['contract_form']      = 'stated_fact';
+        $trace['final_status']       = 'ready';
+        $trace['source_attribution'] = $response['source_attribution'];
+        $this->emitTrace($trace);
+
+        return [
+            'success'          => true,
+            'status'           => 'ready',
+            'classification'   => $classification,
+            'context'          => $context,
+            'contract'         => $contract,
+            'prompt_package'   => $promptPackage,
+            'adapter_result'   => null,
+            'final_response'   => $response,
+            'error'            => null,
+            'trace'            => $trace,
+            'outcome_category' => $answerSource,
+        ];
     }
 
     /**

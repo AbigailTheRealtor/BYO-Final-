@@ -335,7 +335,10 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
             ],
             'pet_deposit_fee_rent' => [
                 'listing.pet_deposit_fee_rent',
-                'How much is the pet deposit?',
+                // "How much is the pet deposit?" is listing.pet_deposit_amount's own keyword;
+                // with the most specific phrase winning it (correctly) routes there. This key
+                // is the pet FEE / RENT, so it is asked as one.
+                'How much is the monthly pet rent?',
                 'What is the pet fee amount?',
                 '500',
                 'Pet deposit and fee information',
@@ -703,6 +706,24 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
     }
 
     /**
+     * The role whose context carries this canonical key. Key detection only resolves keys a
+     * listing's own role can hold — a buyer's listing.max_price on a SELLER listing can never
+     * have a value, and resolving to it produced a false "not provided" — so each key is
+     * asked on a listing of its own role.
+     */
+    private function roleFor(string $canonicalKey): string
+    {
+        $field = substr($canonicalKey, strlen('listing.'));
+        foreach (['seller', 'landlord', 'buyer', 'tenant'] as $role) {
+            if (isset(\App\Services\AskAi\AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role][$field])) {
+                return $role;
+            }
+        }
+
+        return 'seller';
+    }
+
+    /**
      * Mock internalRunner: field IS present with null value (Guard B WILL fire).
      */
     private function makeRunnerWithNullListingField(string $field): AskAiInternalRunnerService
@@ -778,7 +799,7 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
         ]);
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, $questionA);
+        $result = $runner->run($this->roleFor($canonicalKey), 1, $questionA);
 
         $this->assertSame(
             $canonicalKey,
@@ -827,8 +848,8 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
         ]);
 
         $runner  = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $resultA = $runner->run('seller', 1, $questionA);
-        $resultB = $runner->run('seller', 1, $questionB);
+        $resultA = $runner->run($this->roleFor($canonicalKey), 1, $questionA);
+        $resultB = $runner->run($this->roleFor($canonicalKey), 1, $questionB);
 
         $keyA = $resultA['classification']['normalized_field_key'] ?? null;
         $keyB = $resultB['classification']['normalized_field_key'] ?? null;
@@ -874,7 +895,7 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, $questionA);
+        $result = $runner->run($this->roleFor($canonicalKey), 1, $questionA);
 
         $this->assertSame(
             'insufficient_context',
@@ -924,7 +945,7 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, $questionA);
+        $result = $runner->run($this->roleFor($canonicalKey), 1, $questionA);
 
         $this->assertTrue(
             $result['success'],
