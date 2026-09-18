@@ -4,7 +4,6 @@ namespace App\Services\LocationDna\Providers;
 
 use App\Services\LocationDna\CanonicalCategoryRegistry;
 use App\Services\LocationDna\LocationDnaPoiDistanceService;
-use App\Services\Spatial\OvertureCategoryMap;
 
 /**
  * CorpusPoiCategoryMap — which canonical categories the loaded Overture corpus can
@@ -20,14 +19,21 @@ use App\Services\Spatial\OvertureCategoryMap;
  * object is what lets a test assert it against both the corpus taxonomy and the
  * pipeline's own category table, rather than against a comment.
  *
- * THE SUPPORTED SET IS THE OVERTURE FIRST SLICE, AND NOTHING ELSE
- * ---------------------------------------------------------------
+ * THE SUPPORTED SET IS AN EXPLICIT LIST OF SEVEN, AND NOTHING ELSE
+ * -----------------------------------------------------------------
  * {@see \App\Services\Spatial\OvertureCategoryMap} defines the crosswalk the loaded
  * corpus was built from: 8 Overture primary tokens collapsing to 7 canonical keys.
- * Those 7 are the `place_categories` rows the import seeded, so they are exactly the
- * `category_key` values a corpus row can carry. This class derives its supported set
- * from that map rather than restating it, so the two cannot drift: adding a category
- * to the corpus taxonomy is what makes it servable here, not editing a list.
+ * Those 7 are the `place_categories` rows the v1 import seeded, so they are exactly the
+ * `category_key` values a v1 corpus row can carry.
+ *
+ * The set is written out in {@see self::LOCATION_DNA_KEYS} rather than derived from any
+ * corpus taxonomy, and that is a boundary, not a restatement. A corpus may hold more
+ * categories than Location DNA uses — corpus v2
+ * ({@see \App\Services\Spatial\OvertureTaxonomyMapV2}) adds nine for brand search — and a
+ * set derived from the corpus would widen Location DNA the moment the corpus widened.
+ * Adding a Location DNA category is an explicit edit here, never a side effect of an
+ * import. Tests pin the list to exactly these seven and prove every one of them is still
+ * a key the v1 and v2 crosswalks can produce.
  *
  * Everything else — beach, beach_access, school, park, hospital, transit_station,
  * boat_ramp, marina, waterfront_park, dog_park, golf_course, airport, urgent_care,
@@ -91,20 +97,28 @@ final class CorpusPoiCategoryMap
     ];
 
     /**
-     * The canonical keys the loaded corpus can answer, in a stable order.
-     *
-     * Derived from the corpus taxonomy, not restated. `OvertureCategoryMap::CANONICAL`
-     * is the registry the import seeded `place_categories` from, so its keys are exactly
-     * the `category_key` values a corpus row can carry.
+     * The canonical categories Location DNA may answer from the corpus. Exactly seven,
+     * sorted. Explicit on purpose — see the class docblock. Never derive this from a corpus
+     * taxonomy, the canonical registry or database rows.
+     */
+    public const LOCATION_DNA_KEYS = [
+        'coffee_shop',
+        'gas_station',
+        'grocery_store',
+        'gym',
+        'pharmacy',
+        'restaurant',
+        'shopping_center',
+    ];
+
+    /**
+     * The canonical keys the loaded corpus can answer for Location DNA, in a stable order.
      *
      * @return list<string>
      */
     public static function supportedCanonicalKeys(): array
     {
-        $keys = array_values(array_unique((new OvertureCategoryMap())->canonicalKeys()));
-        sort($keys);
-
-        return $keys;
+        return self::LOCATION_DNA_KEYS;
     }
 
     /** Is this canonical key (or registry alias) one the corpus holds rows for? */

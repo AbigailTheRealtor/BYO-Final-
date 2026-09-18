@@ -411,9 +411,12 @@ the adapter returns `[]` — read through the same path that produced a row read
 returned zero results for this category", indistinguishable in the database from "there is no park
 near this home" when the truth is "we hold no park data". An empty list cannot carry that
 distinction, so the question is asked BEFORE the fetch: `App\Contracts\ProviderCategorySupport`
-(optional, opt-in) and `OvertureCorpusPoiAdapter::supportsCategory()`, whose answer IS the corpus
-taxonomy rather than a second list. An unsupported category is **skipped entirely — no fetch, NO
-ROW** — and named in `getLastRunStats()['categories_unsupported_by_provider']`, so the distinction
+(optional, opt-in) and `OvertureCorpusPoiAdapter::supportsCategory()`, whose answer is
+`CorpusPoiCategoryMap::LOCATION_DNA_KEYS` — the seven corpus categories Location DNA may use, an
+explicit list deliberately NOT derived from any corpus taxonomy, so a wider corpus (v2 adds nine
+brand-search categories via `OvertureTaxonomyMapV2`) can never widen Location DNA by itself. An
+unsupported category is **skipped entirely — no fetch, NO ROW** — and named in
+`getLastRunStats()['categories_unsupported_by_provider']`, so the distinction
 survives the run with no new status value and **no migration**. Any row an earlier build left behind
 is deleted on the next run, so listings heal without a data-fix command. The run still reports
 `completed`: covering seven of nineteen is the provider doing its whole job.
