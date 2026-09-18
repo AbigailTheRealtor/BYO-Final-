@@ -104,12 +104,25 @@ class SmartTagArchitectureGuardTest extends TestCase
      * is a deliberate edit here, in the same commit as the wiring, which is the
      * point: an accidental new caller fails this test rather than shipping.
      *
+     * THE OWNER-SELECTION SURFACE added three: the shared wizard concern, which
+     * calls SmartTagLifecycle::ownerPanel() and ::trySaveOwnerSelections(), and
+     * the Blade partial that renders what the first returns. They are call sites
+     * rather than taxonomy readers — one of them WRITES, through the seam — so
+     * they belong here and are held to the one-seam rule below. The four Offer
+     * Listing components that `use` the concern were already listed.
+     *
+     * The two `property-preferences.blade.php` partials that @include the picker
+     * are deliberately absent: they name no Smart Tag symbol, so the guard has
+     * nothing to catch there and listing them would claim a coupling that the
+     * files do not have.
+     *
      * @var string[]
      */
     private const WIRED_CALL_SITES = [
         'app/Console/Commands/DeriveSmartTags.php',
         'app/Console/Commands/ImportBridgeProperties.php',
         'app/Http/Livewire/Concerns/BelongsToListingWorkflow.php',
+        'app/Http/Livewire/Concerns/HasOwnerSmartTags.php',
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php',
         'app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php',
         'app/Http/Livewire/OfferListing/QuickImport/MlsQuickImportComponent.php',
@@ -119,6 +132,7 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Services/Bridge/LazyBridgeImportService.php',
         'app/Services/Explore/ExploreInventoryService.php',
         'app/Services/Stellar/Matching/BuyerMatchService.php',
+        'resources/views/livewire/offer-listing/shared/_owner-smart-tags.blade.php',
     ];
 
     /**

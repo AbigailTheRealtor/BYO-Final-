@@ -3,6 +3,7 @@
 namespace App\Services\SmartTags;
 
 use App\Support\SmartTags\SmartTagListingRef;
+use App\Support\SmartTags\SmartTagListingType;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -44,6 +45,12 @@ final class SmartTagTelemetry
     public const DISABLED = 'disabled';
     public const PURGED = 'purged';
 
+    // Owner selection. `refused` is the authorizer or the context check saying no
+    // — a real answer, not a fault; `failed` remains the only outcome that means
+    // something broke.
+    public const OWNER_TAGS_SAVED = 'owner_tags_saved';
+    public const OWNER_TAGS_REFUSED = 'owner_tags_refused';
+
     // Entry points, so a line says which surface produced it.
     public const ENTRY_SELLER_PUBLISH = 'seller_publish';
     public const ENTRY_LANDLORD_PUBLISH = 'landlord_publish';
@@ -52,6 +59,16 @@ final class SmartTagTelemetry
     public const ENTRY_BRIDGE_CLI = 'bridge_cli';
     public const ENTRY_BACKFILL = 'backfill';
     public const ENTRY_PURGE = 'purge';
+    public const ENTRY_SELLER_OWNER_TAGS = 'seller_owner_tags';
+    public const ENTRY_LANDLORD_OWNER_TAGS = 'landlord_owner_tags';
+
+    /** Which owner-selection surface a listing type's picker is. */
+    public static function ownerTagsEntryPoint(SmartTagListingType $type): string
+    {
+        return $type === SmartTagListingType::LandlordAgent
+            ? self::ENTRY_LANDLORD_OWNER_TAGS
+            : self::ENTRY_SELLER_OWNER_TAGS;
+    }
 
     /**
      * One derivation decision.
