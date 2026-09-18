@@ -544,6 +544,11 @@
                     </option>
                   @endforeach
                 </select>
+
+                @include('partials.smart-tags._seeker-picker', [
+                    'stRole' => 'tenant',
+                    'stSelected' => [],
+                ])
               </div>
             </div>
 

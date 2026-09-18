@@ -730,6 +730,11 @@
                                     </option>
                                 @endforeach
                             </select>
+
+                            @include('partials.smart-tags._seeker-picker', [
+                                'stRole' => 'buyer',
+                                'stSelected' => [],
+                            ])
                             <div class="form-group businessOther d-none">
                                 <label class="fw-bold">Business Type:</label>
                                 <input type="text" name="businessOther" id="" class="form-control has-icon"
