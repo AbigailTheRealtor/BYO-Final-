@@ -289,6 +289,7 @@ class MyListingPreferencesTest extends TestCase
                 $this->setState($user, $this->sellerListing("{$i} Count Lane"), ListingPreferenceState::Save, [$reason]);
 
                 $bridge = BridgeProperty::create([
+                    'provider'         => 'stellar_bridge',
                     'listing_key'      => "COUNT-{$i}",
                     'property_type'    => 'Residential',
                     'unparsed_address' => "{$i} Count Court",
@@ -374,6 +375,7 @@ class MyListingPreferencesTest extends TestCase
         $this->setState($user, $seller, ListingPreferenceState::Save);
 
         $bridge = BridgeProperty::create([
+            'provider'         => 'stellar_bridge',
             'listing_key'      => 'HYDRATE-1',
             'property_type'    => 'Residential',
             'unparsed_address' => '12 Bridge Boulevard',
@@ -400,6 +402,40 @@ class MyListingPreferencesTest extends TestCase
     }
 
     /**
+     * The Stellar detail route resolves a key within the CURRENT provider, so a
+     * Bridge row issued by another MLS is never linked there — its key would
+     * open a different property.
+     *
+     * @test
+     */
+    public function only_a_current_provider_bridge_row_links_to_the_stellar_page(): void
+    {
+        $ours = BridgeProperty::create([
+            'provider'      => 'stellar_bridge',
+            'listing_key'   => 'LINK-SHARED',
+            'property_type' => 'Residential',
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+        $foreign = BridgeProperty::create([
+            'provider'      => 'another_mls',
+            'listing_key'   => 'LINK-SHARED',
+            'property_type' => 'Residential',
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+
+        $cards = app(\App\Services\ListingPreferences\ListingPreferenceListingHydrator::class)->hydrate([
+            new SmartTagListingRef(SmartTagListingType::Bridge, (int) $ours->id),
+            new SmartTagListingRef(SmartTagListingType::Bridge, (int) $foreign->id),
+        ]);
+
+        $this->assertSame(
+            route('stellar.property.show', ['listingKey' => 'LINK-SHARED']),
+            $cards['bridge:' . $ours->id]->url,
+        );
+        $this->assertNull($cards['bridge:' . $foreign->id]->url);
+    }
+
+    /**
      * A Bridge listing the feed refuses to publish is NOT shown, even to the
      * customer who saved it — and their preference survives.
      *
@@ -410,6 +446,7 @@ class MyListingPreferencesTest extends TestCase
         $user = $this->buyer();
 
         $bridge = BridgeProperty::create([
+            'provider'         => 'stellar_bridge',
             'listing_key'      => 'HYDRATE-REFUSED',
             'property_type'    => 'Residential',
             'unparsed_address' => '13 Forbidden Way',
@@ -443,6 +480,7 @@ class MyListingPreferencesTest extends TestCase
         $user = $this->buyer();
 
         $bridge = BridgeProperty::create([
+            'provider'          => 'stellar_bridge',
             'listing_key'       => 'HYDRATE-NOADDR',
             'property_type'     => 'Residential',
             'unparsed_address'  => '14 Hidden Street',
@@ -559,6 +597,7 @@ class MyListingPreferencesTest extends TestCase
         $key  = 'CANON-MINE-1';
 
         $bridge = BridgeProperty::create([
+            'provider'      => 'stellar_bridge',
             'listing_key'   => $key,
             'property_type' => 'Residential',
             'raw_json'      => json_encode(['IDXParticipationYN' => true]),

@@ -3,6 +3,7 @@
 namespace App\Support\VirtualDrive;
 
 use App\Services\ListingPreferences\ListingPreferenceReader;
+use App\Support\Listing\MlsProvider;
 use App\Support\ListingPreferences\ListingPreferenceAvailability;
 use App\Support\ListingPreferences\ListingPreferencePrefetch;
 use App\Support\ListingPreferences\ListingPreferenceSurface;
@@ -182,8 +183,11 @@ class VirtualDrivePreferenceControl
         }
 
         try {
-            // One query for the whole pool.
+            // One query for the whole pool. A listing key is unique only within
+            // the MLS that minted it, so the pool is read within the provider
+            // the proof's configured keys belong to — never across providers.
             $rows = \App\Models\BridgeProperty::query()
+                ->forProvider(MlsProvider::current())
                 ->whereIn('listing_key', $keys)
                 ->get(['id', 'listing_key']);
 

@@ -10,6 +10,7 @@ use App\Models\SellerAgentAuctionMeta;
 use App\Models\User;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
 use App\Services\ListingPreferences\ListingPreferenceWriter;
+use App\Support\Listing\MlsProvider;
 use App\Support\ListingPreferences\ListingPreferenceReasonCatalog;
 use App\Support\ListingPreferences\ListingPreferenceState;
 use App\Support\ListingPreferences\SeekerRole;
@@ -315,9 +316,10 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
     /** An Explore-eligible Bridge row — the same shape the Explore test suite builds. */
     private function bridgeListing(string $key, string $street, float $lat, float $lng): BridgeProperty
     {
-        BridgeProperty::where('listing_key', $key)->delete();
+        BridgeProperty::forNativeKey(MlsProvider::current(), $key)->delete();
 
         return BridgeProperty::create([
+            'provider'                => MlsProvider::current()->value,
             'listing_key'             => $key,
             'listing_id'              => 'MLS-' . $key,
             'standard_status'         => 'Active',

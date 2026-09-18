@@ -178,6 +178,39 @@ class VirtualDriveListingPreferenceTest extends TestCase
     }
 
     /**
+     * A LISTING KEY IS UNIQUE ONLY WITHIN ITS PROVIDER.
+     *
+     * Another MLS may mint the same key. The pool resolves each key within the
+     * current provider, so the control carries that provider's row and never
+     * the other MLS's property.
+     *
+     * @test
+     */
+    public function the_pool_resolves_keys_within_the_current_provider_only(): void
+    {
+        $this->actingAs($this->buyer());
+
+        BridgeProperty::create([
+            'provider'      => 'another_mls',
+            'listing_key'   => 'VD-SHARED-KEY',
+            'property_type' => 'Residential',
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+        $ours = $this->saleListing('VD-SHARED-KEY');
+
+        BridgeProperty::create([
+            'provider'      => 'another_mls',
+            'listing_key'   => 'VD-FOREIGN-ONLY',
+            'property_type' => 'Residential',
+            'raw_json'      => json_encode(['IDXParticipationYN' => true]),
+        ]);
+
+        $pool = app(VirtualDrivePreferenceControl::class)->pool(['VD-SHARED-KEY', 'VD-FOREIGN-ONLY']);
+
+        $this->assertSame(['VD-SHARED-KEY' => (int) $ours->id], $pool);
+    }
+
+    /**
      * THE TRUSTED ID IS THE ROW ID, NOT THE MLS KEY.
      *
      * The pool is KEYED by listing key because that is the selector the shell
@@ -520,6 +553,7 @@ class VirtualDriveListingPreferenceTest extends TestCase
     private function saleListing(string $key = 'VD-DEFAULT'): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'      => 'stellar_bridge',
             'listing_key'   => $key,
             'property_type' => 'Residential',
             'raw_json'      => json_encode(['IDXParticipationYN' => true]),

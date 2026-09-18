@@ -7,6 +7,7 @@ use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuction;
 use App\Services\ListingImport\Mls\MlsDisplayPermissions;
 use App\Services\ListingImport\Mls\MlsListingDetailsReader;
+use App\Support\Listing\MlsProvider;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
 
@@ -143,7 +144,11 @@ class ListingPreferenceListingHydrator
                 ? ($row->unparsed_address ?: null)
                 : null;
 
-            $listingKey = is_string($row->listing_key) && trim($row->listing_key) !== ''
+            // The Stellar detail route resolves its key within the current
+            // provider, so only a row that provider issued may link there — a
+            // key from another MLS would open a different property.
+            $listingKey = $row->mlsProvider() === MlsProvider::current()
+                && is_string($row->listing_key) && trim($row->listing_key) !== ''
                 ? trim($row->listing_key)
                 : null;
 

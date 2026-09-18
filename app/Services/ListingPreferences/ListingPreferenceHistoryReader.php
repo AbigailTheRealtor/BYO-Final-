@@ -25,7 +25,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  *
  * NOTHING INTERNAL REACHES THE PAGE.
  * ----------------------------------
- * The stored row carries `subject_key` (`mls:STELLAR-123`), a `listing_type`,
+ * The stored row carries `subject_key` (`mls:stellar_bridge:STELLAR-123`), a `listing_type`,
  * a numeric `listing_id`, and a NULL `to_state` for a withdrawal. None of that
  * is language. {@see present()} turns a row into a sentence a person can read —
  * "Preference removed", "Changed from Maybe to Saved" — and carries the listing
