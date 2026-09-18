@@ -49,13 +49,127 @@ class ListingPreferenceContextResolver
         return SmartTagContextResolver::forListingType($ref->type, $this->nativePropertyType($ref));
     }
 
-    private function nativePropertyType(SmartTagListingRef $ref): ?string
+    /**
+     * Resolve many refs with ONE query per listing type.
+     *
+     * The mirror of {@see ListingPreferenceSubjectResolver::resolveMany()}, and
+     * it exists for the same reason: a result page asks about a page of
+     * listings at once, and `resolve()` per card is an N+1 against
+     * `bridge_properties` or a meta table. The mapping itself is untouched —
+     * every answer still comes from SmartTagContextResolver, so a batched read
+     * and a single read cannot disagree about what a property type means.
+     *
+     * A ref whose context cannot be resolved is present in the result with a
+     * NULL value, never absent. Absent would be indistinguishable from "not
+     * asked", and the caller must be able to tell an unresolvable listing from
+     * one it forgot to include.
+     *
+     * @param  list<SmartTagListingRef> $refs
+     * @return array<string, ?SmartTagContext> keyed "<type>:<id>"
+     */
+    public function resolveMany(array $refs): array
     {
-        [$metaClass, $foreignKey] = match ($ref->type) {
+        /** @var array<string, array<int,int>> $idsByType */
+        $idsByType = [];
+
+        foreach ($refs as $ref) {
+            $idsByType[$ref->type->value][$ref->id] = $ref->id;
+        }
+
+        $out = [];
+
+        foreach ($idsByType as $typeValue => $ids) {
+            $type = SmartTagListingType::from($typeValue);
+            $ids  = array_values($ids);
+
+            $propertyTypes = $type === SmartTagListingType::Bridge
+                ? $this->bridgePropertyTypes($ids)
+                : $this->nativePropertyTypes($type, $ids);
+
+            foreach ($ids as $id) {
+                $raw = $propertyTypes[$id] ?? null;
+                $raw = is_string($raw) ? $raw : null;
+
+                $out["{$typeValue}:{$id}"] = $type === SmartTagListingType::Bridge
+                    ? SmartTagContextResolver::forBridge($raw)
+                    : SmartTagContextResolver::forListingType($type, $raw);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  list<int> $ids
+     * @return array<int, string>
+     */
+    private function bridgePropertyTypes(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return BridgeProperty::query()
+            ->whereIn('id', $ids)
+            ->whereNotNull('property_type')
+            ->pluck('property_type', 'id')
+            ->map(static fn ($v): string => (string) $v)
+            ->all();
+    }
+
+    /**
+     * @param  list<int> $ids
+     * @return array<int, string>
+     */
+    private function nativePropertyTypes(SmartTagListingType $type, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        [$metaClass, $foreignKey] = $this->metaTarget($type);
+
+        if ($metaClass === null) {
+            return [];
+        }
+
+        $out = [];
+
+        // Grouped rather than plucked: NativeMetaValueReader is the one reading
+        // of a meta value, and a raw pluck would be a second one that could
+        // interpret a stored value differently from the single-ref path.
+        foreach (
+            $metaClass::query()
+                ->whereIn($foreignKey, $ids)
+                ->where('meta_key', SmartTagSourceRules::nativePropertyTypeField())
+                ->get([$foreignKey, 'meta_key', 'meta_value'])
+                ->groupBy($foreignKey)
+            as $listingId => $rows
+        ) {
+            $value = NativeMetaValueReader::fromMetaRows($rows)
+                ->scalar(SmartTagSourceRules::nativePropertyTypeField());
+
+            if (is_string($value)) {
+                $out[(int) $listingId] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return array{0: ?class-string, 1: ?string} */
+    private function metaTarget(SmartTagListingType $type): array
+    {
+        return match ($type) {
             SmartTagListingType::SellerAgent   => [SellerAgentAuctionMeta::class, 'seller_agent_auction_id'],
             SmartTagListingType::LandlordAgent => [LandlordAgentAuctionMeta::class, 'landlord_agent_auction_id'],
             default                            => [null, null],
         };
+    }
+
+    private function nativePropertyType(SmartTagListingRef $ref): ?string
+    {
+        [$metaClass, $foreignKey] = $this->metaTarget($ref->type);
 
         if ($metaClass === null) {
             return null;

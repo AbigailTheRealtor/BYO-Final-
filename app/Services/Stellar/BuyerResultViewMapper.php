@@ -14,6 +14,10 @@ use Illuminate\Support\Collection;
  *  - No Tier 6 field (agent PII, brokerage info, lockbox, showing instructions) is
  *    included in the output array.
  *  - fields_used and dimension machine keys are stripped from all explanation entries.
+ *  - bridge_property_id is our OWN primary key for this cached row, carried so shared
+ *    subsystems that address a listing as (listing_type, listing_id) can do so without the
+ *    browser inventing an identity. It reveals nothing about the MLS record, and this file
+ *    consumes nothing from those subsystems in return.
  *  - listing_key is included as an internal key for future detail page linking but
  *    MUST NOT be rendered as visible text in the Blade view.
  *  - Category scores are clamped to [0, weight_max] for progress-bar width calculations.
@@ -68,7 +72,7 @@ class BuyerResultViewMapper
      * Map a single BuyerMatchResult to a Blade-safe array.
      *
      * The allowlisted fields are:
-     *   listing_key, score_display, total_score, category_bars,
+     *   listing_key, bridge_property_id, score_display, total_score, category_bars,
      *   price_display, address, city_state_zip, beds, baths, sqft,
      *   property_type, property_sub_type,
      *   why_this_matches, tradeoffs, caution_flags, missing_data, important_places
@@ -159,6 +163,25 @@ class BuyerResultViewMapper
 
         return [
             'listing_key'       => $result->listingKey,
+            /*
+             | The Bridge ROW id — `bridge_properties.id` — and nothing derived
+             | from it.
+             |
+             | WHY IT IS HERE AND WHAT IT IS NOT. `listing_key` is the MLS
+             | ListingKey. The shared subsystems that address a listing take a
+             | (listing_type, listing_id) pair against our OWN tables, and this
+             | is the id half of that pair for a cached Bridge row. A card
+             | holding only the MLS key would force the browser to submit one as
+             | an identity, which those subsystems deliberately refuse —
+             | identity is resolved server-side.
+             |
+             | THIS IS AN IDENTITY FIELD, NOT STATE. It carries no preference,
+             | no score and no MLS content; it is the same id this row already
+             | has in our own database. Nothing in app/Services/Stellar consumes
+             | it, and two guard tests assert that this file names neither the
+             | preference subsystem nor the tag one.
+             */
+            'bridge_property_id' => $listing->id !== null ? (int) $listing->id : null,
             'total_score'       => $totalScore,
             'score_display'     => $scoreDisplay,
             'category_bars'     => $categoryBars,

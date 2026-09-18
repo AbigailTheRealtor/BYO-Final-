@@ -17,8 +17,9 @@ name: Browser Tests (Listing Preferences — Laravel app)
 # no use for one. ListingPreferenceArchitectureGuardTest fails the build if they
 # merge again.
 #
-# WHAT IT RUNS. tests/browser/listing-preference.spec.js, and nothing else:
-# playwright.app.config.js sets `testMatch` to exactly that file.
+# WHAT IT RUNS. The listing-preference specs, and nothing else:
+# playwright.app.config.js sets `testMatch` to the shared APP_SPEC pattern in
+# playwright.shared.js, which the default config ignores by the same constant.
 #
 # NOTHING PRODUCTION IS REACHABLE. tests/browser/support/app-server.js blanks
 # DATABASE_URL / PGHOST / PGDATABASE, forces DB_CONNECTION=sqlite against a fresh
@@ -39,7 +40,7 @@ on:
     branches: [main]
   pull_request:
     paths:
-      - 'tests/browser/listing-preference.spec.js'
+      - 'tests/browser/listing-preference*.spec.js'
       - 'tests/browser/support/**'
       - 'playwright.app.config.js'
       - 'playwright.shared.js'
@@ -158,24 +159,39 @@ jobs:
           PLAYWRIGHT_HTML_OPEN: never
 
       # A suite that selected NOTHING must not read as success. `testMatch` is a
-      # regex over one filename: rename the spec without updating the config and
-      # Playwright exits 0 having run nothing at all, which is the exact failure this
-      # whole separation exists to make visible rather than silent.
+      # regex over filenames: rename or add a spec without updating the shared
+      # pattern and Playwright exits 0 having run nothing at all, which is the exact
+      # failure this whole separation exists to make visible rather than silent.
+      #
+      # Counted across EVERY listing-preference spec, and the expected file list is
+      # named, so a spec that stops being selected is a red build rather than a
+      # quietly smaller run.
       - name: Assert the Listing Preferences specs actually ran
         if: always()
         run: |
           node -e '
             const r = require("./playwright-results.json");
             const seen = [];
+            const files = new Set();
             const walk = (s) => {
               (s.specs || []).forEach((spec) => {
-                if ((spec.file || "").includes("listing-preference.spec.js")) {
+                const file = spec.file || "";
+                if (/listing-preference[\w-]*\.spec\.js/.test(file)) {
+                  files.add(file);
                   spec.tests.forEach((t) => seen.push({ title: spec.title, status: t.status }));
                 }
               });
               (s.suites || []).forEach(walk);
             };
             (r.suites || []).forEach(walk);
+
+            const required = ["listing-preference.spec.js", "listing-preference-cards.spec.js"];
+            const missing = required.filter((f) => ![...files].some((seenFile) => seenFile.endsWith(f)));
+            if (missing.length) {
+              console.error("FAIL: these specs contributed no tests: " + missing.join(", "));
+              console.error("Check testMatch/APP_SPEC in playwright.shared.js and the spec filenames.");
+              process.exit(1);
+            }
 
             if (seen.length === 0) {
               console.error("FAIL: listing-preference.spec.js contributed no tests at all.");

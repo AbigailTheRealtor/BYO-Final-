@@ -94,6 +94,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // Listing Preferences — the per-request store that lets a results page
+        // batch its preference reads once and have every shared control on that
+        // page find the answer already waiting.
+        //
+        // A SINGLETON BECAUSE IT MUST BE ONE PER REQUEST. Priming would be
+        // pointless against a fresh instance per resolve: the page would fill
+        // one object and every card would read an empty one, silently falling
+        // back to the per-card queries this exists to remove. Laravel 8 has no
+        // `scoped()`; a singleton in a non-Octane process IS request-scoped.
+        // It is a memo, never a cache: nothing here survives the response.
+        $this->app->singleton(\App\Support\ListingPreferences\ListingPreferencePrefetch::class);
+
+        // Same lifetime, same reason: "this chip payload is already in the
+        // document" is a fact about one response, and a fresh instance per
+        // resolve would re-emit the whole catalog on every card.
+        $this->app->singleton(\App\Support\ListingPreferences\ListingPreferenceChipCatalog::class);
+
         // Matching V2 — candidate discovery (consumption slice 2). The default
         // candidate source resolves the provider-agnostic universe from the unified
         // dna_scores layer. Bound behind the interface so future DNA-enabled sources
