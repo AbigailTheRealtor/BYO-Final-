@@ -95,6 +95,7 @@ class MlsReimportBehaviourTest extends TestCase
         BridgeProperty::where('listing_key', self::KEY)->delete();
 
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => self::KEY,
             'listing_id'       => self::MLS,
             'standard_status'  => 'Active',

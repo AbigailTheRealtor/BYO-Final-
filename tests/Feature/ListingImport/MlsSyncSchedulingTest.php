@@ -101,6 +101,7 @@ class MlsSyncSchedulingTest extends TestCase
         BridgeProperty::where('listing_key', $raw['ListingKey'])->delete();
 
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'            => $raw['ListingKey'],
             'listing_id'             => $raw['ListingId'],
             'standard_status'        => $raw['StandardStatus'],

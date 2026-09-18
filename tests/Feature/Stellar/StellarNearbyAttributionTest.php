@@ -57,6 +57,7 @@ class StellarNearbyAttributionTest extends TestCase
     private function seedListing(string $key = self::KEY, string $mls = self::MLS): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => $key,
             'listing_id'        => $mls,
             'standard_status'   => 'Active',

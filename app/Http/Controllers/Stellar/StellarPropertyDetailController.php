@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Stellar;
 
 use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
+use App\Support\Listing\MlsProvider;
 use App\Models\PropertyDnaProfile;
 use App\Models\PropertyLocationPoi;
 use App\Services\Dna\PropertyPersonalityService;
@@ -31,7 +32,7 @@ class StellarPropertyDetailController extends Controller
 
     public function show(Request $request, string $listingKey): \Illuminate\View\View
     {
-        $listing = BridgeProperty::where('listing_key', $listingKey)
+        $listing = BridgeProperty::forNativeKey(MlsProvider::current(), $listingKey)
             ->where('standard_status', 'Active')
             ->firstOrFail();
 

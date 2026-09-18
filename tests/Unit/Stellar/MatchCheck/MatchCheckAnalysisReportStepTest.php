@@ -68,6 +68,7 @@ class MatchCheckAnalysisReportStepTest extends TestCase
     private function seedListing(string $suffix): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'       => 'PHPUNIT-C13B-K-' . $suffix,
             'listing_id'        => 'PHPUNIT-C13B-' . $suffix,
             'standard_status'   => 'Active',

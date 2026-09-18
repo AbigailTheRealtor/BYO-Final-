@@ -55,6 +55,7 @@ class MlsPropertyTypeCoverageTest extends TestCase
         $raw = $this->fixture($slug);
 
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'             => $raw['ListingKey'],
             'listing_id'              => $raw['ListingId'],
             'standard_status'         => $raw['StandardStatus'] ?? 'Active',

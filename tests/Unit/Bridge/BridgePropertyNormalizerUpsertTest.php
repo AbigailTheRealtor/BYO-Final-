@@ -77,6 +77,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
         $this->normalizer()->upsert($this->apiRecord('NEW-002'));
 
         $this->assertDatabaseHas('bridge_properties', [
+            'provider'                => 'stellar_bridge',
             'listing_key' => 'NEW-002',
             'city'        => 'Tampa',
         ]);
@@ -134,6 +135,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     {
         // Insert row with no address
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'ADDR-002',
             'standard_status' => 'Active',
             'imported_at'     => now(),
@@ -169,6 +171,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     {
         // Insert row with original coordinates
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => 'COORD-001',
             'standard_status'  => 'Active',
             'unparsed_address' => '100 Oak Ave',
@@ -194,6 +197,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     public function test_longitude_change_triggers_address_changed(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => 'COORD-002',
             'standard_status'  => 'Active',
             'unparsed_address' => '200 Elm St',
@@ -251,6 +255,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     public function test_deleting_non_permanent_record_succeeds(): void
     {
         $property = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'PERM-001',
             'standard_status' => 'Active',
             'is_permanent'    => false,
@@ -265,6 +270,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     public function test_deleting_permanent_record_throws_runtime_exception(): void
     {
         $property = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'PERM-002',
             'standard_status' => 'Active',
             'is_permanent'    => true,
@@ -286,12 +292,14 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     public function test_non_permanent_scope_excludes_permanent_records(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'SCOPE-001',
             'standard_status' => 'Active',
             'is_permanent'    => true,
             'imported_at'     => now(),
         ]);
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => 'SCOPE-002',
             'standard_status' => 'Active',
             'is_permanent'    => false,
@@ -356,6 +364,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     {
         // Pre-create the row with the same address as the incoming record.
         $row = BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => 'DNA-002',
             'standard_status'  => 'Active',
             'unparsed_address' => '100 Oak Ave',
@@ -397,6 +406,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
         // Location DNA has ever been requested for its address. A normal import
         // must not leave it that way forever.
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => 'DNA-002B',
             'standard_status'  => 'Active',
             'unparsed_address' => '100 Oak Ave',
@@ -420,6 +430,7 @@ class BridgePropertyNormalizerUpsertTest extends TestCase
     public function test_address_changed_dispatches_compute_location_dna(): void
     {
         BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'      => 'DNA-003',
             'standard_status'  => 'Active',
             'unparsed_address' => '100 Oak Ave',

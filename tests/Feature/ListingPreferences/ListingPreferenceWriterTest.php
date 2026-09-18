@@ -144,7 +144,7 @@ class ListingPreferenceWriterTest extends TestCase
         $b = $this->writer->setState(self::USER, SeekerRole::Buyer, $byoRef, ListingPreferenceState::Save);
 
         $this->assertSame($a->subject->subjectKey, $b->subject->subjectKey);
-        $this->assertSame('mls:WRITER-SHARED', $b->subject->subjectKey);
+        $this->assertSame('mls:stellar_bridge:WRITER-SHARED', $b->subject->subjectKey);
 
         $rows = ListingPreference::where('user_id', self::USER)->get();
         $this->assertCount(1, $rows, 'one property must not yield two current preferences');
@@ -159,6 +159,7 @@ class ListingPreferenceWriterTest extends TestCase
     public function a_listing_with_no_durable_identity_is_refused(): void
     {
         $bridge = BridgeProperty::create([
+            'provider'        => 'stellar_bridge',
             'listing_id' => 'NOKEY', 'standard_status' => 'Active', 'property_type' => 'Residential',
         ]);
 
@@ -478,6 +479,7 @@ class ListingPreferenceWriterTest extends TestCase
     private function bridgeListing(string $listingKey): BridgeProperty
     {
         return BridgeProperty::create([
+            'provider'                => 'stellar_bridge',
             'listing_key'     => $listingKey,
             'listing_id'      => $listingKey,
             'standard_status' => 'Active',
