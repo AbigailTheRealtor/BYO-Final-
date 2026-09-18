@@ -61,4 +61,34 @@ return [
 
     'bridge_enabled' => filter_var(env('SMART_TAGS_BRIDGE_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Buyer/Tenant seeker preferences — a CONSUMER surface, gated on its own
+    |--------------------------------------------------------------------------
+    |
+    | Whether a Buyer or Tenant may choose canonical Smart Tags as criteria on
+    | their own criteria record, and whether that picker renders at all.
+    |
+    | DELIBERATELY INDEPENDENT OF THE TWO GATES ABOVE. Those govern DERIVATION —
+    | reading a listing or an MLS feed and writing evidence ABOUT A PROPERTY.
+    | This governs a CONSUMER CONTROL on a form, writing what a PERSON asked for.
+    | They are different blast radii and different decisions: tagging the
+    | listing inventory must not require shipping a new control to customers,
+    | and putting a feature picker in front of seekers must not start tagging a
+    | licensed MLS feed. Reusing SMART_TAGS_DERIVATION_ENABLED for both would
+    | make each of those the price of the other.
+    |
+    | OFF MEANS THE WRITE PATH IS SKIPPED, NOT CLEARED. A criteria save while
+    | this is off leaves any previously stored selection exactly as it was — the
+    | feature going dark must never be what deletes a customer's data. Deletion
+    | CLEANUP is separate and runs regardless (see SmartTagSeekerPreferenceGate).
+    |
+    | Parsed strictly and fail-closed, exactly like the gates above. Also a
+    | safety switch, and therefore also excluded from the production flag
+    | contract.
+    |
+    */
+
+    'seeker_preferences_enabled' => filter_var(env('SMART_TAGS_SEEKER_PREFERENCES_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
 ];
