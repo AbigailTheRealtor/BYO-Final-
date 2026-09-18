@@ -5071,14 +5071,64 @@ class AskAiFieldQuestionRegistryService
                 'order'            => 320,
                 'aliases'          => ['what is included', 'included items', 'what comes with it'],
             ],
+            // Landlord pool, garage/carport and acreage: form inputs (LP property-preferences
+            // :865 / :661 / :626 Residential Property, :549 both types) that Ask AI never read.
+            // Same formatters as the seller entries, so the two roles cannot word one fact two ways.
+            'landlord_pool' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
+                'question'         => 'Does the property have a pool?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.pool',
+                'supporting_paths' => [],
+                'covers'           => ['listing.pool'],
+                'formatter'        => 'pool_composite',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 225,
+                'aliases'          => ['pool', 'swimming pool', 'is there a pool', 'does it have a pool'],
+            ],
+            'landlord_garage_carport' => [
+                'role'             => 'landlord',
+                'property_types'   => [PT::RESIDENTIAL],
+                'question'         => 'Is there a garage or carport?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.garage',
+                'supporting_paths' => ['listing.carport'],
+                'covers'           => ['listing.garage', 'listing.carport'],
+                'formatter'        => 'parking_composite',
+                'guards'           => [],
+                'category'         => 'features',
+                'order'            => 272,
+                // Not the bare 'garage': landlord_parking_terms already answers to it on the
+                // same listings, and one typed word must reach one question.
+                'aliases'          => ['is there a garage', 'carport', 'covered parking'],
+            ],
+            'landlord_total_acreage' => [
+                'role'             => 'landlord',
+                'property_types'   => PT::ALL_TYPES,
+                'question'         => 'What is the lot size / acreage?',
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.total_acreage',
+                'supporting_paths' => [],
+                'covers'           => ['listing.total_acreage'],
+                'formatter'        => 'acreage_band',
+                'guards'           => [],
+                'category'         => 'size',
+                'order'            => 365,
+                // 'lot size' / 'how big is the lot' belong to landlord_lot_dimensions.
+                'aliases'          => ['acreage', 'total acreage', 'how many acres'],
+            ],
             'landlord_water_frontage' => [
                 'role'             => 'landlord',
                 'property_types'   => PT::ALL_TYPES,
                 'question'         => 'Is this property on the water?',
                 'source_kind'      => 'listing',
                 'source_path'      => 'listing.waterfront',
-                'supporting_paths' => ['listing.water_access', 'listing.water_view', 'listing.view'],
-                'covers'           => ['listing.waterfront', 'listing.water_access',
+                // waterfront_feet is a landlord form input (LP property-preferences :822) the
+                // context never read until the MLS-import completeness audit.
+                'supporting_paths' => ['listing.waterfront_feet', 'listing.water_access', 'listing.water_view', 'listing.view'],
+                'covers'           => ['listing.waterfront', 'listing.waterfront_feet', 'listing.water_access',
                                        'listing.water_view', 'listing.view'],
                 'formatter'        => 'waterfront_composite',
                 'guards'           => [],

@@ -153,6 +153,11 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'foundation'            => 'Slab',
             'lot_dimensions'        => '50 x 100',
             'association_name'      => 'Harbor View Condominium Association',
+            // Landlord form fields added by the MLS-import completeness audit.
+            'pool'                  => 'Yes',
+            'garage'                => 'Yes',
+            'carport'               => 'No',
+            'total_acreage'         => '1/4 to less than 1/2 acre',
         ]);
     }
 
@@ -621,8 +626,10 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             // owner-only, and "/mo" is wrong for a large share of rentals.
             'landlord_listing_description'   => 'Second-floor unit with a screened balcony.',
             'landlord_rent'                  => 'The desired lease price is $2,400.',
+            'landlord_pool'                  => 'This property has a pool.',
             'landlord_subletting_policy'     => 'Subletting policy: Not Allowed.',
             'landlord_parking_terms'         => 'Parking: One assigned space.',
+            'landlord_garage_carport'        => 'This property has a garage.',
             'landlord_condition'             => 'Property condition: Move-In Ready.',
             'landlord_unit_details'          => 'The unit is 950 square feet.',
             'landlord_interior_features'     => 'Interior features listed for this property: Ceiling Fans.',
@@ -631,6 +638,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'landlord_climate_control'       => 'Heating: Electric. Cooling: Central Air.',
             'landlord_water_and_sewer'       => 'Water: Public. Sewer: Public Sewer.',
             'landlord_construction'          => 'Exterior construction: Concrete. Foundation: Slab.',
+            'landlord_total_acreage'         => 'The total acreage is 1/4 to less than 1/2 acre.',
             'landlord_lot_dimensions'        => 'Lot dimensions: 50 x 100.',
             'landlord_association_details'   => 'This property is in a homeowners association: Harbor View Condominium Association.',
         ], $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta()));

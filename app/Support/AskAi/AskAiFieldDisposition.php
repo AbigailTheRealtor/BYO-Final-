@@ -110,6 +110,58 @@ final class AskAiFieldDisposition
     ];
 
     /**
+     * Meta keys MLS quick import can write that the Ask AI context deliberately does not read,
+     * and why. A bare key holds for both Seller and Landlord; `role.key` for one role only. The other half of the four-way contract (form ↔ import ↔ context ↔ question):
+     * AskAiMlsImportCoverageContractTest fails, naming the key, when import can write a key that
+     * is neither read nor listed here — the silent-drop failure, one layer down.
+     *
+     * @var array<string, string>
+     */
+    public const IMPORT_META_NOT_READ = [
+        // Location identifiers — the same decision as seller.address / landlord.property_zip.
+        'address'                 => 'Address visibility is the listing page\'s and the PII screen\'s decision; the context carries the native address only.',
+        'property_city'           => 'Part of the address; location identifiers are not asked.',
+        'property_state'          => 'Part of the address; location identifiers are not asked.',
+        'seller.property_zip'     => 'Part of the address; withheld wherever the address line is withheld. (The landlord context reads it and dispositions it NOT_APPLICABLE.)',
+        'property_county'         => 'Part of the address; location identifiers are not asked.',
+        'property_lat'            => 'A coordinate locates the property exactly, and carries no precision (CoordinatePrecision) — never an Ask AI answer.',
+        'property_lng'            => 'Same reason as property_lat.',
+        'seller.sqft_heated_source' => 'Where a square-footage figure came from (e.g. Public Records) — metadata about a fact, not a property fact. (The landlord context reads it as owner-only.)',
+        // Provenance and sync bookkeeping — facts about the import, not the property.
+        'mls_listing_key'                  => 'Import provenance (linkage identity).',
+        'mls_number'                       => 'Import provenance (linkage identity).',
+        'mls_provider'                     => 'Import provenance.',
+        'mls_imported_at'                  => 'Import provenance timestamp.',
+        'mls_refreshed_at'                 => 'Import provenance timestamp.',
+        'mls_source_status'                => 'Feed status string recorded at import; ListingStatusDisplay owns MLS-linked status presentation.',
+        'mls_source_property_type'         => 'The feed\'s property type at import, used for price-sync safety; the listing\'s own property_type is read.',
+        'mls_quick_import'                 => 'Import provenance flag.',
+        'property_photos_order_customized' => 'Gallery ordering state, not a property fact.',
+        'mls_standard_status'              => 'Written by sync, not import; ListingStatusDisplay owns MLS-linked status presentation.',
+        'mls_status_unrecognised'          => 'Sync bookkeeping.',
+        'mls_source_modified_at'           => 'Sync change marker.',
+        'mls_source_status_changed_at'     => 'Sync change marker.',
+        'mls_source_price_changed_at'      => 'Sync change marker.',
+        'mls_source_photos_changed_at'     => 'Sync change marker.',
+        'mls_sync_attempted_at'            => 'Sync bookkeeping.',
+        'mls_synced_at'                    => 'Sync bookkeeping.',
+        'mls_sync_error'                   => 'Sync bookkeeping.',
+        'mls_sync_overwritten'             => 'Sync bookkeeping.',
+        'mls_display_permissions'          => 'The feed\'s display permissions — a gate applied to what is shown, not a fact to answer.',
+    ];
+
+    /**
+     * Import-written meta keys Ask AI reads OUTSIDE CANONICAL_SOURCE_MAP, and where.
+     *
+     * @var array<string, string>
+     */
+    public const IMPORT_META_READ_ELSEWHERE = [
+        'property_type'        => 'AskAiContextBuilderService base block (listing.property_type).',
+        'mls_list_price'       => 'AskAiPublicPropertyQuestionService mls_price_not_divergent guard (via ListingPriceDisplay).',
+        'mls_property_details' => 'AskAiMlsDetailsQuestionMatcher — the owner\'s MLS Details facts, by label.',
+    ];
+
+    /**
      * Every canonical field for a role, with its disposition.
      *
      * @return array<string, string> field => disposition

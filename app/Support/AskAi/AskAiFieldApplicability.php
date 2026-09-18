@@ -162,6 +162,13 @@ final class AskAiFieldApplicability
             'lot_dimensions'           => [PT::RESIDENTIAL],                      // :1020 inside :994
             'zoning'                   => [PT::COMMERCIAL],                       // :1336 inside :1310
             'waterfront'               => self::ALL_LANDLORD,                     // :740
+            'waterfront_feet'          => self::ALL_LANDLORD,                     // :822
+            'total_acreage'            => self::ALL_LANDLORD,                     // :549
+            'pool'                     => [PT::RESIDENTIAL],                      // :865
+            'garage'                   => [PT::RESIDENTIAL],                      // :661
+            'carport'                  => [PT::RESIDENTIAL],                      // :626
+            'floor_covering'           => [PT::RESIDENTIAL],                      // :1264
+            'lease_available_date'     => self::ALL_LANDLORD,                     // LP lease-terms :1200
             'water_access'             => self::ALL_LANDLORD,                     // :757
             'roof_type'                => [PT::RESIDENTIAL],                      // :1034 inside :994
             'exterior_construction'    => [PT::RESIDENTIAL],                      // :1059

@@ -4,6 +4,7 @@ namespace App\Services\AskAi;
 
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\AskAi\AskAiKnowledgeBaseQuestionMatcher;
+use App\Support\AskAi\AskAiMlsDetailsQuestionMatcher;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -3629,6 +3630,36 @@ class AskAiRunnerV2Service
                 'source_attribution'          => null,
             ];
 
+            // Step 0b — an MLS Details fact, asked by the OWNER by its own label.
+            //
+            // Tier-2 facts from MLS quick import live in the supplemental details blob
+            // that the listing page renders under "MLS Details"; nothing in Ask AI read it.
+            // Owner scope only (publishing Tier-2 rows to shoppers here is a display
+            // decision not taken), never over a prohibited classification, and only when
+            // no Knowledge Base question already claimed the wording.
+            if ($questionType !== 'prohibited'
+                && !isset($options['normalized_field_key'])
+                && ($options['viewer_scope'] ?? null) === AskAiViewerAuthorizationService::SCOPE_OWNER
+            ) {
+                $mlsRow = AskAiMlsDetailsQuestionMatcher::forListing($listingType, $listingId, $question);
+                if ($mlsRow !== null) {
+                    $trace['mls_details_label'] = $mlsRow['label'];
+                    $classification['question_type'] = 'listing_facts';
+
+                    return $this->statedFactResult(
+                        'mls_details.' . $mlsRow['label'],
+                        $mlsRow['value'],
+                        'mls_details_fact',
+                        $classification,
+                        null,
+                        null,
+                        ['required_disclosures' => [], 'source_attribution' => ['required_sources' => ['mls_details']]],
+                        $trace,
+                        $mlsRow['label']
+                    );
+                }
+            }
+
             // ----------------------------------------------------------------
             // Step 1a — Optional intent normalization (feature-flagged).
             // Fires only when:
@@ -5647,9 +5678,9 @@ class AskAiRunnerV2Service
      * "Roof type: Shingle, Metal." — the stored value under its field label, and nothing else.
      * Deterministic by construction: no model, no reasoning, no claim beyond the listing.
      */
-    private function statedFact(string $normalizedFieldKey, mixed $value): string
+    private function statedFact(string $normalizedFieldKey, mixed $value, ?string $label = null): string
     {
-        $label = preg_replace('/\s+information$/i', '', $this->deriveFieldLabel($normalizedFieldKey)) ?? '';
+        $label ??= preg_replace('/\s+information$/i', '', $this->deriveFieldLabel($normalizedFieldKey)) ?? '';
         if ($label === '' || stripos($label, 'the requested') === 0) {
             $field = preg_replace('/^[a-z_]+\./', '', $normalizedFieldKey) ?? $normalizedFieldKey;
             $label = ucfirst(str_replace('_', ' ', $field));
@@ -5673,12 +5704,13 @@ class AskAiRunnerV2Service
         ?array $context,
         ?array $contract,
         ?array $promptPackage,
-        array $trace
+        array $trace,
+        ?string $label = null
     ): array {
         $response = [
             'success'            => true,
             'status'             => 'ready',
-            'answer'             => $this->statedFact($normalizedFieldKey, $value),
+            'answer'             => $this->statedFact($normalizedFieldKey, $value, $label),
             'disclosures'        => $promptPackage['required_disclosures'] ?? [],
             'source_attribution' => $promptPackage['source_attribution'] ?? [],
             'refusal_message'    => null,

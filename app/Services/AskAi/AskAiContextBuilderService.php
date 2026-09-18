@@ -415,6 +415,18 @@ class AskAiContextBuilderService
             'zoning'                         => 'zoning',
             'waterfront'                     => 'waterfront',
             'water_access'                   => 'water_access',
+            // Landlord form inputs Ask AI never read (MLS quick import writes them too):
+            // LP property-preferences pool :865 / garage :661 / carport :626 / floor covering
+            // :1264 (Residential Property), total acreage :549 and waterfront feet :822 (both
+            // types), lease-terms lease available date :1200 (both types). Visibility is still
+            // SnapshotFactVisibility's per-key decision, unchanged by listing them here.
+            'pool'                           => 'pool_needed',
+            'garage'                         => 'garage_needed',
+            'carport'                        => 'carport_needed',
+            'total_acreage'                  => 'total_acreage',
+            'waterfront_feet'                => 'waterfront_feet',
+            'floor_covering'                 => 'floor_covering',
+            'lease_available_date'           => 'lease_available_date',
             'roof_type'                      => 'roof_type',
             'exterior_construction'          => 'exterior_construction',
             'foundation'                     => 'foundation',
@@ -888,6 +900,17 @@ class AskAiContextBuilderService
      */
     public function listingPropertyType(string $listingType, int $listingId): ?string
     {
+        $value = $this->listingMeta($listingType, $listingId, 'property_type');
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /**
+     * One stored meta value of a listing, read through the same model lookup the context
+     * uses, or null. Read-only.
+     */
+    public function listingMeta(string $listingType, int $listingId, string $metaKey): mixed
+    {
         $canonical = self::canonicalListingType($listingType);
         $listing   = $canonical === null ? null : $this->findListing($canonical, $listingId);
 
@@ -895,9 +918,9 @@ class AskAiContextBuilderService
             return null;
         }
 
-        $value = $listing->info('property_type');
+        $value = $listing->info($metaKey);
 
-        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+        return $value === false ? null : $value;
     }
 
     /**
