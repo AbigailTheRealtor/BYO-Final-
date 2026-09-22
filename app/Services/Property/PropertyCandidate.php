@@ -2,6 +2,8 @@
 
 namespace App\Services\Property;
 
+use App\Support\Listing\MlsProvider;
+
 /**
  * PropertyCandidate — the provider-agnostic, normalized representation of a
  * single property, decoupled from wherever it originated (Bridge/Stellar API,
@@ -180,6 +182,19 @@ class PropertyCandidate
         public readonly ?int $annualOperatingExpenses = null,
         /** @var list<string>|null */
         public readonly ?array $businessType = null,
+
+        // ── Provider-neutral facts for the canonical listing (P0-5) ─────────
+        //
+        // The governed MLS provider that issued this record, so a consumer can
+        // name it (provider, listingKey) without reading a source table. Null
+        // when the source is not an MLS or its stored provider is unrecognised —
+        // never defaulted to the current provider.
+        public readonly ?MlsProvider $mlsProvider = null,
+
+        // RESO BathroomsTotalDecimal (1.5 = one full and one half). `$bathrooms`
+        // above is the feed's BathroomsTotalInteger — a ROUNDED count, 2 where
+        // this is 1.5 — and keeps its meaning for the consumers that read it.
+        public readonly ?float $bathroomsTotalDecimal = null,
     ) {}
 
     /**
@@ -241,6 +256,8 @@ class PropertyCandidate
             'gross_annual_income'    => $this->grossAnnualIncome,
             'annual_operating_expenses' => $this->annualOperatingExpenses,
             'business_type'          => $this->businessType,
+            'mls_provider'           => $this->mlsProvider?->value,
+            'bathrooms_total_decimal' => $this->bathroomsTotalDecimal,
         ];
 
         if ($includeRaw) {
