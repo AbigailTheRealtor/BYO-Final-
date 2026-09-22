@@ -287,6 +287,16 @@ trait BelongsToListingWorkflow
         // to Seller and Landlord Offer Listings only.
         \App\Services\SmartTags\SmartTagLifecycle::tryPurge($modelClass, $ids);
 
+        // Seeker Smart Tag preferences — what a Buyer/Tenant Offer Listing ASKED FOR —
+        // are addressed the same way and need the same explicit cleanup, for the same
+        // reason: this mass delete fires no model events. A separate call, not part of
+        // the lifecycle purge above, because that one is gated by the DERIVATION flags
+        // and this one must not be: preferences written while the seeker feature was on
+        // must still be removed when their draft is deleted with it off. Seller and
+        // Landlord classes resolve to no seeker subject and are skipped inside. Never
+        // throws, and runs after the transaction for the reason given above.
+        \App\Services\SmartTags\Seeker\SmartTagSeekerPreferenceWriter::tryPurgeDeleted($modelClass, $ids);
+
         return $deleted;
     }
 }

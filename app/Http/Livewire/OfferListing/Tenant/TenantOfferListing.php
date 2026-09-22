@@ -53,6 +53,7 @@ class TenantOfferListing extends Component
     use ResolvesOwnedAuction;
     use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use HasImportantPlaces;
+    use \App\Http\Livewire\Concerns\HasSeekerSmartTags; // Property Features You Want: canonical seeker Smart Tag preferences
     // Phase 9D Search Areas plumbing, shared with the four Hire Agent components. Adopted here
     // in place of a private hydrateDiscreteLocationFromBlob() copy; loadSearchAreas() and
     // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
@@ -80,6 +81,12 @@ class TenantOfferListing extends Component
     protected function geographyCascadeWorkflow(): ?string
     {
         return $this->user_type === 'tenant' ? 'create_tenant' : null;
+    }
+
+    /** This wizard's seeker Smart Tag preferences belong to the Tenant Offer Listing it saves. */
+    protected function seekerSmartTagSubjectType(): \App\Support\SmartTags\SmartTagSeekerSubjectType
+    {
+        return \App\Support\SmartTags\SmartTagSeekerSubjectType::TenantOfferListing;
     }
 
     // TODO: set to false before production launch
@@ -3153,6 +3160,10 @@ class TenantOfferListing extends Component
             'listing_title'       => $this->listing_title,
         ];
 
+        if (($seekerSmartTagsDraft = $this->seekerSmartTagsForDraftPayload()) !== null) {
+            $data['seeker_smart_tags'] = $seekerSmartTagsDraft;
+        }
+
         if ($isAgent) {
             $data['referral_percentage']   = $this->referral_percentage;
             $data['agent_brokerage']       = $this->agent_brokerage;
@@ -3607,6 +3618,7 @@ class TenantOfferListing extends Component
             $this->commute_mode = $auction->get->commute_mode ?? '';
             // 9C: Important Places (additive; separate meta key — commute fields above untouched)
             $this->loadImportantPlaces($auction);
+            $this->restoreSeekerSmartTags($auction);
             $this->credit_score_range = $auction->get->credit_score_range ?? '';
             // Phase D Tenant Tier 2 & Tier 3 EAV keys
             $this->rental_purpose = $auction->get->rental_purpose ?? '';
@@ -5046,6 +5058,10 @@ class TenantOfferListing extends Component
         }
 
         $this->saveSnapshotMeta($auction);
+
+        // Seeker Smart Tag preferences — last, so the writer reads this save's stored
+        // property_type and workflow stamp. Draft and publish alike; never throws.
+        $this->persistSeekerSmartTags($auction);
     }
 
     public function store()

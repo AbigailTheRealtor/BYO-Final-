@@ -11,6 +11,7 @@ use App\Support\SmartTags\SmartTagSelectionPolicy;
 use App\Support\SmartTags\SmartTagSelectionResult;
 use App\Support\SmartTags\SmartTagTaxonomy;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * THE write path for seeker Smart Tag preferences. There is no other.
@@ -42,7 +43,8 @@ use Illuminate\Support\Facades\DB;
 class SmartTagSeekerPreferenceWriter
 {
     /**
-     * Replace this criteria record's entire seeker tag selection.
+     * Replace this seeker record's entire tag selection — a Buyer/Tenant criteria
+     * record or a Buyer/Tenant Offer Listing.
      *
      * @param array<int, mixed> $requested raw values from the request
      */
@@ -155,14 +157,16 @@ class SmartTagSeekerPreferenceWriter
     {
         $propertyType = null;
 
-        // Criteria records store property_type as EAV meta, read through the
-        // model's own accessor exactly as every other consumer reads it.
+        // Every seeker subject — criteria record or Offer Listing — stores
+        // property_type as EAV meta, read through the model's own accessor exactly
+        // as every other consumer reads it. The SUBJECT TYPE chooses the
+        // vocabulary, because the four forms spell property types differently.
         if (isset($subject->get->property_type)) {
             $propertyType = $subject->get->property_type;
         }
 
-        return SmartTagContextResolver::forSeekerCriteria(
-            $type->role()->value,
+        return SmartTagContextResolver::forSeekerSubject(
+            $type,
             is_string($propertyType) ? $propertyType : null,
         );
     }
@@ -187,5 +191,53 @@ class SmartTagSeekerPreferenceWriter
             ->where('subject_type', $type->value)
             ->where('subject_id', $subjectId)
             ->delete();
+    }
+
+    /**
+     * Purge the preferences of rows a caller has just deleted, by model CLASS.
+     * Never throws.
+     *
+     * For deletion paths that fire no model events — the shared Offer Listing
+     * draft purge in {@see \App\Http\Livewire\Concerns\BelongsToListingWorkflow}
+     * is a query-builder mass delete, so the observer cannot see it. The class
+     * is resolved with {@see SmartTagSeekerSubjectType::forModelClass()}, not
+     * forModel(): the rows are gone, and removing a deleted row's preferences is
+     * correct whichever product it belonged to. A class that is not a seeker
+     * subject (Seller, Landlord) is a no-op.
+     *
+     * NOT GATED, like {@see purge()}. A failure is logged with no subject data
+     * beyond the type and a count and swallowed: a draft the user deleted must
+     * never reappear because its preference rows could not be cleaned up, and
+     * orphaned preference rows are inert.
+     *
+     * @param class-string|string $modelClass
+     * @param array<int, mixed>   $ids
+     */
+    public static function tryPurgeDeleted(string $modelClass, array $ids): void
+    {
+        try {
+            $type = SmartTagSeekerSubjectType::forModelClass($modelClass);
+
+            if ($type === null) {
+                return;
+            }
+
+            $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+
+            if ($ids === []) {
+                return;
+            }
+
+            SmartTagSeekerPreference::query()
+                ->where('subject_type', $type->value)
+                ->whereIn('subject_id', $ids)
+                ->delete();
+        } catch (\Throwable $e) {
+            Log::warning('smart_tag_seeker_preferences purge failed', [
+                'subject_type' => isset($type) ? $type->value : null,
+                'id_count'     => count($ids),
+                'exception'    => $e::class,
+            ]);
+        }
     }
 }

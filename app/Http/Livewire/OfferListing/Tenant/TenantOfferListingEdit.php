@@ -45,6 +45,7 @@ class TenantOfferListingEdit extends Component
     use ResolvesOwnedAuction;
     use \App\Http\Livewire\Concerns\DeletesOwnedListingMedia; // S5: record-derived, validated media deletion target
     use HasImportantPlaces;
+    use \App\Http\Livewire\Concerns\HasSeekerSmartTags; // Property Features You Want: canonical seeker Smart Tag preferences
     // Phase 9D Search Areas plumbing, shared with the four Hire Agent components. Adopted here
     // in place of a private hydrateDiscreteLocationFromBlob() copy; loadSearchAreas() and
     // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
@@ -66,6 +67,12 @@ class TenantOfferListingEdit extends Component
     protected function geographyCascadeWorkflow(): ?string
     {
         return $this->user_type === 'tenant' ? 'create_tenant' : null;
+    }
+
+    /** This wizard's seeker Smart Tag preferences belong to the Tenant Offer Listing it saves. */
+    protected function seekerSmartTagSubjectType(): \App\Support\SmartTags\SmartTagSeekerSubjectType
+    {
+        return \App\Support\SmartTags\SmartTagSeekerSubjectType::TenantOfferListing;
     }
 
     public $isLoadingData = false;
@@ -2759,6 +2766,7 @@ class TenantOfferListingEdit extends Component
         $this->commute_mode = $auction->info('commute_mode') ?? '';
         // 9C: Important Places (additive; separate meta key — commute fields above untouched)
         $this->loadImportantPlaces($auction);
+        $this->restoreSeekerSmartTags($auction);
         $this->credit_score_range = $auction->info('credit_score_range') ?? '';
         // Phase D Tenant Tier 2 & Tier 3 EAV keys
         $this->rental_purpose = $auction->info('rental_purpose') ?? '';
@@ -3370,6 +3378,11 @@ class TenantOfferListingEdit extends Component
 
             // Property Details
             $auction->saveMeta('property_type', $this->property_type);
+
+            // Seeker Smart Tag preferences, after property_type so the writer reads the
+            // type this request stored. update() is this component's only persist seam —
+            // saveDraftOnly() and saveDraft() both go through it. Never throws.
+            $this->persistSeekerSmartTags($auction);
             $auction->saveMeta('zip_code', $this->zip_code);
 
             if ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
@@ -4166,6 +4179,11 @@ class TenantOfferListingEdit extends Component
 
         $newDraft->saveMeta('draft_version',   $previousVersion + 1);
         $newDraft->saveMeta('parent_draft_id', $source->id);
+
+        // The meta clone above carries every other answer to the new version; seeker
+        // Smart Tag preferences live in their own table, so the new row gets its own
+        // write. Never throws.
+        $this->persistSeekerSmartTags($newDraft);
         $newDraft->deleteMeta('draft_payload_hash'); // stale on new record; recomputed on next edit
 
         $this->auctionId = $newDraft->id;
