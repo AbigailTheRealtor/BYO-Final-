@@ -1258,6 +1258,44 @@ pins both that string and the absence of any listing-preference reference in the
 Phase 3 replaces that one array entry with a delegation to the shared service, so the card gains no
 business logic.
 
+### Listing preferences Phase 4 — Taste DNA ("Your Home Taste"), behind a default-off flag
+
+**Learns and explains; changes nothing a customer is shown.** `/my/listing-preferences/taste` shows a
+Buyer or Tenant patterns in their OWN Save / Maybe / Pass history. It is not read by Match DNA, the
+100-point score, Stellar/BYO ordering, filtering, re-ranking, recommendations or Ask AI —
+`TasteDnaArchitectureGuardTest` holds an allowlist of the only files that may reference it. Letting it
+act is Phase 5, behind `listing_preferences.learning_enabled` (hard-coded `false`, no reader).
+Governance: `LISTING_PREFERENCE_GOVERNANCE.md` §13.
+
+**Derived on demand, never stored** — no table, no migration, no job. `TasteDnaService` reads
+`listing_preference_events` for one `(user_id, seeker_role)` (`TasteEvidenceReader`), collapses them
+into choices (`TasteChoiceTimeline`), batch-reads governed facts for those homes
+(`TasteListingFactsReader`: present `smart_tag_assignments`, beds, baths, living area, lot size, sub-type
+— an allowlist of columns, no location field), and derives signals in the pure, clock-free
+`TasteDnaDeriver`. Same history → identical profile.
+
+**Rules:** Save positive, Pass negative, Maybe only uncertain (never half a Save). Stated reason 1.0,
+listing characteristic 0.5, counted once per choice. Per home per direction the MAX, so repetition
+counts only across homes. A changed or cleared choice is superseded (0.25): kept, outweighed, never
+read as a Pass. No wall-clock decay. Tiers not percentages; one choice is never shown. Only
+`smart_tag` and `criteria` reasons are learned — `unspecified` never, and **location reasons not in
+Phase 4** (no structural link to the customer's Important Places yet). Tags must be
+`isSeekerSelectable()` whether stated or observed, so `accessible_features` / `playground` never enter.
+
+**Historical reasons, current facts.** A stated reason is the event's own snapshot and survives the
+listing being archived, feed-refused or deleted. An observed characteristic is a correlation against
+what the platform publishes for that listing NOW — it follows a corrected listing, and an unavailable
+listing or blank fact is omitted, never guessed. Nothing is snapshotted and history is never rewritten.
+The page words them apart ("Based on reasons you picked." vs "Seen across homes you Saved, from details
+those homes currently list — not a reason you picked."). Homes are grouped by `subject_key` only, so a
+Bridge row and its MLS-linked BYO listing are one home. **A truncated history derives nothing**:
+`TasteEvidenceReader::MAX_EVENTS` is a safety ceiling detected by reading one row past it, and when it
+binds the profile is `incomplete` and the page says so rather than showing patterns from part of it.
+
+**Flags:** `LISTING_PREFERENCE_TASTE_DNA_ENABLED` (default `false`, fail-closed) AND
+`LISTING_PREFERENCES_ENABLED`, read only through `TasteDnaAvailability`. Base Save / Maybe / Pass runs
+with it off. Never in `config/required_production_flags.php`.
+
 ### AI DNA profiles (separate from Location DNA)
 
 `PropertyDnaGenerator` and `BuyerTenantDnaGenerator` (in `app/Services/Dna/`) produce AI-generated personality/marketing profiles via the OpenAI client. These are unrelated to the geospatial Location DNA system despite the similar naming.

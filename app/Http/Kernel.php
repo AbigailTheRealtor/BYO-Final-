@@ -121,6 +121,7 @@ class Kernel extends HttpKernel
         'match-check' => \App\Http\Middleware\CheckMatchCheckEnabled::class,
         'explore' => \App\Http\Middleware\CheckExploreEnabled::class,
         'listing-preferences' => \App\Http\Middleware\EnsureListingPreferencesEnabled::class,
+        'listing-preference-taste' => \App\Http\Middleware\EnsureTasteDnaEnabled::class,
         'virtual-drive-proof' => \App\Http\Middleware\CheckVirtualDriveProofEnabled::class,
     ];
 }
