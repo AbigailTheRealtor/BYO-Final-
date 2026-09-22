@@ -37,7 +37,9 @@
                     Choose a property type above to see the features you can ask for.
                 </p>
             @else
-                <div x-data="{ byoSeekerQuery: '' }" class="mt-2">
+                {{-- byoSeekerTotal mirrors the per-group badge counts: the boxes are wire:model.defer,
+                     so no round trip re-renders the server-side count while the seeker is ticking. --}}
+                <div x-data="{ byoSeekerQuery: '', byoSeekerTotal: {{ $byoSeekerPanel['selectedCount'] }} }" class="mt-2">
                     <div class="input-cover mb-3">
                         <input type="text" class="form-control has-icon"
                             data-icon="fa-solid fa-magnifying-glass"
@@ -47,14 +49,21 @@
 
                     <p class="text-muted small">
                         Optional — {{ $byoSeekerPanel['optionCount'] }} features available for this property type,
-                        {{ $byoSeekerPanel['selectedCount'] }} selected.
+                        <span x-text="byoSeekerTotal">{{ $byoSeekerPanel['selectedCount'] }}</span> selected.
                     </p>
 
                     @foreach ($byoSeekerPanel['groups'] as $byoSeekerSlug => $byoSeekerGroup)
                         @php($byoSeekerHaystack = \Illuminate\Support\Str::lower(implode(' ', array_column($byoSeekerGroup['options'], 'label'))))
                         @php($byoSeekerGroupSelected = count(array_filter($byoSeekerGroup['options'], fn ($o) => $o['selected'])))
+                        {{-- The CONTEXT is part of every key below, the checkbox's included (without
+                             a wire:key Livewire keys it by its id, which must stay context-free for
+                             the label). Livewire's morph matches keyed nodes, so a group both
+                             contexts share (Interior, Water, Parking, …) was reused across a
+                             property-type change with its Alpine bindings still tied to the
+                             discarded scope — search stopped filtering it and ticking a box no
+                             longer moved its count badge. --}}
                         <div class="mb-2 rounded" style="border:1px solid #e3e7ec;"
-                            wire:key="seeker-smart-tag-group-{{ $byoSeekerSlug }}"
+                            wire:key="seeker-smart-tag-group-{{ $byoSeekerPanel['context'] }}-{{ $byoSeekerSlug }}"
                             data-seeker-tag-group="{{ $byoSeekerSlug }}"
                             data-seeker-tag-labels="{{ $byoSeekerHaystack }}"
                             x-show="byoSeekerQuery === '' || $el.dataset.seekerTagLabels.includes(byoSeekerQuery.toLowerCase())">
@@ -79,7 +88,7 @@
                                     <div class="row">
                                         @foreach ($byoSeekerGroup['options'] as $byoSeekerOption)
                                             <div class="col-12 col-md-6 col-lg-4 mb-2"
-                                                wire:key="seeker-smart-tag-{{ $byoSeekerOption['key'] }}"
+                                                wire:key="seeker-smart-tag-option-{{ $byoSeekerPanel['context'] }}-{{ $byoSeekerOption['key'] }}"
                                                 data-seeker-tag-label="{{ \Illuminate\Support\Str::lower($byoSeekerOption['label']) }}"
                                                 x-show="byoSeekerQuery === '' || $el.dataset.seekerTagLabel.includes(byoSeekerQuery.toLowerCase())">
                                                 {{-- `checked` is rendered server-side deliberately: Livewire does not
@@ -87,9 +96,10 @@
                                                      every pick restored on Edit would come back empty. --}}
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox"
+                                                        wire:key="seeker-smart-tag-input-{{ $byoSeekerPanel['context'] }}-{{ $byoSeekerOption['key'] }}"
                                                         id="seeker-smart-tag-{{ $byoSeekerOption['key'] }}"
                                                         value="{{ $byoSeekerOption['key'] }}" {{ $byoSeekerOption['selected'] ? 'checked' : '' }}
-                                                        @change="byoSeekerCount += $event.target.checked ? 1 : -1"
+                                                        @change="byoSeekerCount += $event.target.checked ? 1 : -1; byoSeekerTotal += $event.target.checked ? 1 : -1"
                                                         wire:model.defer="seeker_smart_tags">
                                                     <label class="form-check-label"
                                                         for="seeker-smart-tag-{{ $byoSeekerOption['key'] }}"
