@@ -118,4 +118,28 @@ enum MlsProvider: string
     {
         return self::fromStored($value) !== null;
     }
+
+    /**
+     * The provider-scoped native identity of one of this provider's listings:
+     * `mls:<provider>:<listing_key>`.
+     *
+     * The ONE producer of that string. The Listing Preference subject key and a
+     * canonical listing's native reference both come from here, so the two can
+     * never spell the same record differently. A ListingKey is only unique
+     * within its provider (`UNIQUE(provider, listing_key)`), which is why the
+     * provider is part of the identity rather than a label beside it.
+     *
+     * @throws \InvalidArgumentException for a blank listing key — a key-less
+     *         identity would name no record at all.
+     */
+    public function nativeIdentity(string $listingKey): string
+    {
+        $listingKey = trim($listingKey);
+
+        if ($listingKey === '') {
+            throw new \InvalidArgumentException('A native MLS identity requires a non-empty listing key.');
+        }
+
+        return 'mls:' . $this->value . ':' . $listingKey;
+    }
 }

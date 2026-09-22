@@ -98,7 +98,9 @@ final class ListingPreferenceSubjectRef
             throw new InvalidArgumentException('An mls: subject key requires a non-empty listing key.');
         }
 
-        return new self($ref, self::PREFIX_MLS . ':' . $provider->value . ':' . $listingKey);
+        // MlsProvider::nativeIdentity() is the one producer of `mls:<provider>:<key>`;
+        // its prefix is PREFIX_MLS, which a test pins.
+        return new self($ref, $provider->nativeIdentity($listingKey));
     }
 
     /**
