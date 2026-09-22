@@ -3,6 +3,8 @@
 namespace App\Services\Canonical;
 
 use App\Services\Canonical\CanonicalListingVocabulary as V;
+use App\Support\Listing\MlsProvider;
+use InvalidArgumentException;
 
 /**
  * CanonicalListing — a source-neutral, in-memory projection of a listing.
@@ -37,10 +39,13 @@ use App\Services\Canonical\CanonicalListingVocabulary as V;
  *
  * CanonicalListing is the CONSUMER-FACING listing: what downstream Matchmaker
  * code reads regardless of which source produced it, with provenance per field.
- * A source adapter may use a PropertyCandidate as its input (the planned MLS
- * adapter will), but the two are not merged merely because their fields
+ * A source adapter may use a PropertyCandidate as its input — the MLS adapter
+ * ({@see Adapters\MlsListingAdapter}, P0-5) does, and is the only canonical
+ * class allowed to — but the two are not merged merely because their fields
  * overlap, and nothing downstream should accept a PropertyCandidate where it
- * means "a listing".
+ * means "a listing". MLS records are resolved through
+ * {@see \App\Services\Bridge\MlsCanonicalListingResolver}, never through
+ * CanonicalListingResolver, whose supports() gates the DNA-score chain.
  */
 class CanonicalListing
 {
@@ -55,15 +60,46 @@ class CanonicalListing
     private int $listingId;
 
     /**
+     * The MLS that issued this listing, when it is an MLS record (P0-5).
+     *
+     * With {@see $mlsListingKey}, the provider-scoped NATIVE identity — never the
+     * ListingKey alone, which is unique only within its provider. It is not a
+     * canonical field (it is identity, not a fact about the property, and it has
+     * no provenance to carry) and it is not a persisted canonical id. Null on
+     * every BYO row, including an MLS-linked one: that row stores a ListingKey
+     * with no governed provider beside it.
+     */
+    private ?MlsProvider $mlsProvider;
+
+    private ?string $mlsListingKey;
+
+    /**
      * @param array<string,mixed> $fields
      * @param array<string,array<string,mixed>> $meta
      */
-    public function __construct(string $listingType, int $listingId, array $fields = [], array $meta = [])
-    {
-        $this->listingType = $listingType;
-        $this->listingId   = $listingId;
-        $this->fields      = $fields;
-        $this->meta        = $meta;
+    public function __construct(
+        string $listingType,
+        int $listingId,
+        array $fields = [],
+        array $meta = [],
+        ?MlsProvider $mlsProvider = null,
+        ?string $mlsListingKey = null,
+    ) {
+        $mlsListingKey = $mlsListingKey === null ? null : trim($mlsListingKey);
+
+        // Both halves or neither: a provider with no key names no record, and a
+        // key with no provider is exactly the global-ListingKey identity this
+        // reference exists to replace.
+        if (($mlsProvider === null) !== ($mlsListingKey === null || $mlsListingKey === '')) {
+            throw new InvalidArgumentException('A native MLS reference needs both a provider and a non-empty listing key.');
+        }
+
+        $this->listingType   = $listingType;
+        $this->listingId     = $listingId;
+        $this->fields        = $fields;
+        $this->meta          = $meta;
+        $this->mlsProvider   = $mlsProvider;
+        $this->mlsListingKey = $mlsProvider === null ? null : $mlsListingKey;
     }
 
     public function listingType(): string
@@ -86,6 +122,27 @@ class CanonicalListing
     public function isSupply(): bool
     {
         return V::isSupplyListingType($this->listingType);
+    }
+
+    /** The MLS that issued this listing, or null when it is not an MLS record. */
+    public function mlsProvider(): ?MlsProvider
+    {
+        return $this->mlsProvider;
+    }
+
+    /** The ListingKey within {@see mlsProvider()}, or null. Never read it alone. */
+    public function mlsListingKey(): ?string
+    {
+        return $this->mlsListingKey;
+    }
+
+    /**
+     * `mls:<provider>:<listing_key>` — the same string the Listing Preference
+     * subject key uses for this record — or null when not an MLS record.
+     */
+    public function mlsNativeIdentity(): ?string
+    {
+        return $this->mlsProvider?->nativeIdentity((string) $this->mlsListingKey);
     }
 
     /** Does this row describe what a seeker is looking for (Buyer / Tenant)? */
