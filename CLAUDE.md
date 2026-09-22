@@ -20,9 +20,7 @@ php artisan migrate:status    # check what has run before touching anything
 php artisan migrate --pretend # dry-run SQL before executing
 php artisan migrate           # run pending
 
-# Key artisan commands
-# The command is location-dna:generate, NOT ldna:generate — this line said the latter
-# for a long time and no such command exists.
+# Key artisan commands (there is no ldna:generate)
 php artisan location-dna:generate {seller|landlord|bridge} {listing_id}   # one listing, one run
 php artisan location-dna:generate bridge {id} --canary --dry-run          # canary posture, writes nothing
 php artisan ldna:refresh-all             # re-run pipeline for all listings
@@ -71,7 +69,7 @@ atomic, lock-serialised admission Explore uses) immediately before it is sent. A
 never handed to the transport and never reaches telemetry, because it never went out.
 
 **One unit = one outbound Nearby Search HTTP request.** `GOOGLE_PLACES_HOURLY_LIMIT` /
-`GOOGLE_PLACES_DAILY_LIMIT` (25 / 100, unchanged) are those ceilings: request 26 in a UTC clock hour
+`GOOGLE_PLACES_DAILY_LIMIT` (25 / 100) are those ceilings: request 26 in a UTC clock hour
 and 101 in a UTC day are refused. A cache hit sends nothing and costs nothing; a retry is a new
 request and is admitted again; a request that was sent and failed still cost its unit. A zero,
 negative or malformed limit is a ceiling of zero — it blocks rather than unleashes. The middleware
@@ -81,8 +79,8 @@ cannot be decided (lock timeout, cache fault): **fail closed**.
 **A refusal is `GoogleProviderRequestRefused`, never an empty result.** Nothing reached Google, so
 nothing may read it as "no POIs here". `GooglePlacesPoiAdapter::search()` still swallows provider
 errors into `[]` but lets a refusal through; `PoiDistanceLookupService` reports it as the provider
-being unavailable and **does not cache it** (the old catch-all cached errors for the full TTL, which
-would keep answering "unavailable" long after the window reopened). In Location DNA a refusal
+being unavailable and **does not cache it** (a cached refusal would keep answering "unavailable"
+after the window reopened). In Location DNA a refusal
 **aborts the whole POI run** instead of being recorded per category: an error row would pass the
 next run's cache check and leave a half-fetched listing presented as complete. Aborted, the run
 reports failure, the pipeline stops before summarising, the categories it never reached have no rows
@@ -91,7 +89,7 @@ the job returns normally) — no retry storm.
 
 **`GOOGLE_PLACES_ENABLED` parses fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty,
 `false`/`0`/`off`/`no` and any malformed value are OFF, and the middleware admits only a real
-boolean `true`. It was `(bool) env(...)`, under which `off` and `no` switched the billable API ON.
+boolean `true`. Never `(bool) env(...)`, which reads `off` and `no` as ON.
 
 **The five bare `new \GuzzleHttp\Client()` constructions in the frozen `TenantAgentAuction` /
 `TenantAgentAuctionEdit` now resolve the container client** — the only change to either component
@@ -123,9 +121,8 @@ refusal or a timeout crashed the Livewire request.
 
 **No Google exception message is ever logged, stored raw, or shown.** Guzzle writes the request URI
 into its exception messages and redacts only user-info, never the query string — which is where
-every server-side Google key travels. `Log::error('…' . $e->getMessage())` was in every Tenant
-geocode and autocomplete catch and two Buyer ones, and wrote the key into the log on the first
-4xx/5xx or timeout. `GoogleProviderFailure::log()` records provider, family, operation, a safe
+every server-side Google key travels, so `$e->getMessage()` from a Google call must never reach a
+log. `GoogleProviderFailure::log()` records provider, family, operation, a safe
 category, the HTTP status, the exception class and a refusal's reason, and nothing from the request;
 `GoogleProviderFailure::redact()` strips every URL's query string where a message must be kept (the
 `geocode_error` on a Location DNA row). `GoogleCredentialLogRedactionTest` fails with a fake key.
@@ -138,12 +135,10 @@ in its `BUDGETED` map plus config keys, never a second counter system.
 ### Browser-side Google — a separate credential, behind its own switch
 
 **The browser gets `GOOGLE_MAPS_BROWSER_KEY`, never `GOOGLE_PLACES_API_KEY`.** The server key
-authenticates our own Places and Geocoding calls behind the admission budgets — and it was also
-printed into every page that loads the Maps SDK, the Location DNA map injector and the Stellar
-Maps Embed iframe, including the **public** Offer Listing detail pages. A key in page source can
-be copied and spent against our account, and no server-side ceiling can see those requests: they
-never pass through this process. A key used from both places also cannot be referrer-restricted,
-which is the one protection a browser key has.
+authenticates our own Places and Geocoding calls behind the admission budgets. Pages that load the
+Maps SDK, the Location DNA map injector and the Stellar Maps Embed iframe include the **public**
+Offer Listing detail pages; a key in page source can be copied and spent against our account where
+no server-side ceiling sees it, and a key used from both places cannot be referrer-restricted.
 
 `App\Support\Google\GoogleBrowserMaps` is the only reader, and it **never reads the server key** —
 there is no fallback. `GOOGLE_MAPS_BROWSER_ENABLED` (default **off**, parsed fail-closed like the
@@ -161,7 +156,9 @@ configured by this change**, and the server key is not rotated yet — that happ
 split is deployed and no page depends on the old key.
 
 **Not yet done, deliberately (later PRs):** Autocomplete field masks, the duplicate-SDK-load guard,
-the geocode-on-blur dedupe, bounded SDK polls, one shared memoized loader, focus-triggered
+the geocode-on-blur dedupe, bounded SDK polls on the remaining surfaces (only `map-input`'s
+`ldnaTryInit` is bounded — see *Location DNA map rendering*; `components/location-dna-map` still
+re-arms every 200 ms), one shared memoized loader (Explore's renderer has its own), focus-triggered
 Autocomplete and click-to-load public maps.
 
 **The same single-host boundary as Explore.** The counters and the admission lock live in the
@@ -175,11 +172,9 @@ needs them in shared atomic storage (Redis or the database) before that guarante
 Maps, in `partials/location-dna/map-input.blade.php` (the eight Buyer/Tenant Search Areas
 create/edit surfaces) and `components/location-dna-map.blade.php` (the read-only detail
 surface for all four roles). The replacement is the MapLibre + PMTiles renderer in
-`resources/js/spatial/`, which Phase 1 merged **wired to nothing** — `config/spatial_basemap.php`
-had no PHP reader at all, so its two flags governed nothing and no Blade template emitted it.
+`resources/js/spatial/`, configured by `config/spatial_basemap.php`.
 
-`App\Support\Spatial\LdnaBasemapSurface` is that reader, and it is the **only** one — a test
-asserts it. `enabledFor($surface)` is the only gate; `enabled()` answers the master switch
+`App\Support\Spatial\LdnaBasemapSurface` is that config's **only** reader — a test asserts it. `enabledFor($surface)` is the only gate; `enabled()` answers the master switch
 alone and nothing may render from it. It fails closed three ways: an absent config reads as
 off, an unrecognised surface key can never be enabled however it is spelled in the
 environment, and **both** `LOCATION_DNA_MAPLIBRE_ENABLED` and `LOCATION_DNA_MAPLIBRE_SURFACES`
@@ -194,13 +189,10 @@ MapLibre the authority flag is the renderer's own `isHydrated()` — the exact c
 `ldnaOverlaysAuthoritative`, and a missing or unhydrated renderer lands in the same safe branch,
 leaving the server-seeded values untouched.
 
-**The Google poll is bounded now, and it was not.** `ldnaTryInit` re-armed itself every 200 ms
-forever whenever `google` was undefined. With the SDK absent — blank credential, rejected key,
-referrer refusal — `ldnaInitMap()` was never reached, the absolutely-positioned placeholder was
-never hidden, and the panel stayed a grey 420 px box reading "Loading map…" for the life of the
-page, taking both draw tools, all three autocompletes, every boundary overlay, the Important
-Places pins and the saved-geometry `fitBounds` with it, silently. Twelve seconds is now the
-ceiling, after which the panel says what happened and says the stored geometry is safe.
+**The `map-input` Google poll is bounded.** `ldnaTryInit` gives up after twelve seconds when
+`google` is undefined (blank credential, rejected key, referrer refusal), and the panel then says
+what happened and that the stored geometry is safe — instead of a permanent grey "Loading map…" box
+that silently took the draw tools, autocompletes, overlays, pins and `fitBounds` with it.
 
 **Geometry paints even when the basemap does not, and the renderer binds to `style.load`
 because of it.** `load` waits for every declared source to resolve; when the PMTiles archive
@@ -217,10 +209,9 @@ The display panel is handed an empty geometry set alongside the pin, and nothing
 circle or a bounding shape around it. Buyer and Tenant carry the real polygons, radii,
 boundaries and Important Places.
 
-**Important Places are now read on the detail pages.** They have been stored in
-`important_places_json` since 9C and were read by nothing on the listing page — the wizard wrote
-them and the listing never showed them. Both Buyer and Tenant controllers normalise them through
-`ImportantPlacesService` so the page cannot develop its own idea of the row shape.
+**Important Places (`important_places_json`) are read on the detail pages.** Both Buyer and Tenant
+controllers normalise them through `ImportantPlacesService` so the page cannot develop its own idea
+of the row shape.
 
 **Flood-zone and school-district overlays remain Google-only.** They are styled per FEMA
 designation, which needs a styled multi-layer source the renderer does not have yet; their
@@ -229,11 +220,10 @@ dropped.
 
 **A radius row has two stored shapes, and `RadiusSearchRow` is the one reading of both.** The
 widget writes flat `{address|label, lat, lng, radius_miles}`; older rows are nested
-`{center: {lat, lng}, radius_miles}`. The matchers always read both, but the Google detail map,
-`FloodZoneLookupService`, `SchoolDistrictLookupService` and `LocationDnaEnrichmentRunner` read only
-`center` — so every radius saved by the current UI drew no Google circle and derived no flood,
-school or POI geometry. All four now go through `App\Support\LocationDna\RadiusSearchRow` (flat
-first, then `center`, the matchers' order). It is read-only: no row is ever rewritten.
+`{center: {lat, lng}, radius_miles}`. The matchers read both; the Google detail map,
+`FloodZoneLookupService`, `SchoolDistrictLookupService` and `LocationDnaEnrichmentRunner` read
+through `App\Support\LocationDna\RadiusSearchRow` (flat first, then `center`, the matchers'
+order) — reading only `center` silently drops every radius the current UI saves. It is read-only: no row is ever rewritten.
 
 **The detail map says in words what it draws.** `LocationDnaCriteriaDisplay` turns the same stored
 rows into radius addresses and miles, Important Place type/address/miles, and a custom-area count,
@@ -260,10 +250,9 @@ the same set today. Stored rows, save paths and matchers keep the exact address 
 Places, named areas, custom areas, flexibility and notes are what the client asked for, not calculated
 Location DNA about a property. The Buyer/Tenant detail pages carry a "Search Areas & Location
 Preferences" heading (opt-in `showHeading`, because Seller/Landlord render the same component), and
-the Hire section is titled the same for Buyer/Tenant. `LocationPreferenceAnalyzer` no longer emits
-"Searching within a defined radius from a preferred location." or rule (b)'s "within commuting
-distance": both sat under "Location Intelligence" reading as findings, and neither was true as
-written. The criteria summary states each radius exactly.
+the Hire section is titled the same for Buyer/Tenant. `LocationPreferenceAnalyzer` must not present
+preferences as findings (it no longer emits the generic "defined radius" or "within commuting
+distance" lines); the criteria summary states each radius exactly.
 
 **Important Places are miles only; the "Commute Preferences" block is retired.** Neither "within
 minutes", Travel Mode, nor the Buyer/Tenant commute ZIP/minutes/mode fields had a consumer — no
@@ -316,14 +305,13 @@ listing with the address.
 **Buyer/Tenant Criteria carry Important Places, and their Edit pages edit.** Same miles-only widget,
 same `ImportantPlacesService`, same `important_places_json` meta. Incomplete rows are kept rather
 than rejected: these are plain multi-step POST forms that repopulate nothing from `old()`, so a
-rejection would discard the wizard. Both Edit forms used to post to the ADD route (every save made
-a new listing), and the update methods checked no owner — Tenant's even reassigned `user_id` to the
-poster. Edit and update are owner-only now; the Buyer check sits before the `try`, whose `catch`
-turns any exception into a 200.
+rejection would discard the wizard. Edit forms post to the UPDATE route, and edit/update are
+owner-only (never reassign `user_id`); the Buyer check sits before the `try`, whose `catch` turns
+any exception into a 200.
 
-**`TenantCriteriaLoader` sends ZIPs, and map cities/counties as a fallback.** It hard-coded
-`preferred_zip_codes => []` while the tenant form's only ZIP input (the Location DNA widget) stores
-them in the blob; it reads `zip_codes` now, with the Buyer loader's key-presence semantics. Cities
+**`TenantCriteriaLoader` sends ZIPs, and map cities/counties as a fallback.** ZIPs come from the
+blob's `zip_codes` (the tenant form's only ZIP input is the Location DNA widget), with the Buyer
+loader's key-presence semantics. Cities
 and counties follow a different, deliberate rule: the form's EXPLICIT `cities` / `counties` field
 when it holds anything, otherwise the blob's list (`CriteriaLocationValues::explicitElseMap()`).
 Never a union — two representations must not widen matching — and never an override. Both sides
@@ -380,14 +368,11 @@ yesterday's Google rows are still there. Provider config says what will be fetch
 license obligation is about what is on the screen *now*. So `LocationDataAttribution::forPois()`
 reads each row's own `provenance_json.provider`.
 
-**`data_source` used to lie, and now does not.** It was written as the literal `'google_places'` on
-every row regardless of which adapter answered — it predates the provider registry — so activating
-the corpus would have stored rows claiming Foursquare/Overture places came from Google, contradicting
-`provenance_json` on the same row. It now takes `$currentProvenanceProvider`, the **same** identity
-`provenance_json` is built from, deliberately rather than a second lookup: two independent
-source-selection mechanisms on one row is how they come to disagree. Attribution still reads
-`provenance_json` — it is the richer record, and any row written before the fix still carries the old
-literal. `PoiProviderProvenanceTest` pins both values and the no-contradiction invariant.
+**`data_source` takes `$currentProvenanceProvider`**, the **same** identity `provenance_json` is
+built from — never a literal and never a second lookup, because two source-selection mechanisms on
+one row come to disagree. Attribution still reads `provenance_json`: it is the richer record, and
+older rows carry a legacy literal `'google_places'` in `data_source`. `PoiProviderProvenanceTest`
+pins both values and the no-contradiction invariant.
 
 **Two attribution blocks on one page, kept apart deliberately.**
 `offer-listing/partials/_mls_attribution.blade.php` states where the *listing* came from under the
@@ -404,15 +389,12 @@ template edit cannot change an attribution claim. `/data-sources` is public and 
 because the pages publishing the data are.
 
 **Corpus identity is one definition, `CorpusSurface`, with two readers.** `capabilityHash()` hashes
-`config/location_providers.php` alone, and the corpus version is pinned in a different file — so
-re-pinning `OVERTURE_CORPUS_POI_VERSION`, the exact operation the two-corpus design exists to make
-possible, was invisible to **both** things that depend on it: the tile key (the previous corpus's raw
-candidates kept being served for the tile TTL) *and* `LocationDnaVersionService::fetchVersion()`, the
-stamp on every row's `pois_fetch_version` (already-persisted rows from the previous import read as
-current and were never refetched). Same defect, two layers. Fixing them separately would have left
-two definitions that must agree forever, so both read `CorpusSurface::token()`. **`fetchVersion` only
-— never `scoringVersion`**: a re-pin requires a refetch but is not a scoring change, and the two
-stamps are independent on purpose.
+`config/location_providers.php` alone, but the corpus version is pinned elsewhere, so re-pinning
+`OVERTURE_CORPUS_POI_VERSION` must reach both the POI tile key and
+`LocationDnaVersionService::fetchVersion()` (every row's `pois_fetch_version`); both read
+`CorpusSurface::token()`, so there is one definition rather than two that must agree.
+**`fetchVersion` only — never `scoringVersion`**: a re-pin requires a refetch but is not a scoring
+change.
 
 **The Bridge canary.** `location-dna:generate` accepts `bridge` (the pipeline runner always could;
 only the command refused). It requires `--canary` — a canary you can start by typing the wrong word
@@ -433,7 +415,7 @@ Three types carry the design and are worth reading before touching anything here
 - **`CoordinatePrecision`** decides via `isExact()` whether a point may drive distance, commute and flood-boundary work. A ZIP centroid and a rooftop are both "a latitude and a longitude"; this enum is what stops the first being measured from.
 - **`PropertyCoordinateResult`** is the single immutable return type. Consumers should reach for `exactCoordinates()`, not `->latitude` — the accessor enforces the gate, the property bypasses it.
 
-Built in phases: G1 the contracts, G2 the two local rungs (`ExistingCoordinatesAdapter`, `BridgeMlsCoordinatesAdapter`, assembled by `LocalCoordinateLadder`), G3 the first network rung (`CensusGeocoderAdapter`), G4 operational safety. **Nothing here is wired into a listing flow yet** — `PropertyCoordinateResolverInterface` is deliberately bound to nothing, so no component can inject a resolver by accident. Integration is G5, and Seller/Landlord Location DNA dispatch stays separately gated regardless.
+Built in phases: G1 the contracts, G2 the two local rungs (`ExistingCoordinatesAdapter`, `BridgeMlsCoordinatesAdapter`, assembled by `LocalCoordinateLadder`), G3 the first network rung (`CensusGeocoderAdapter`), G4 operational safety. `StandardCoordinateLadder` (Existing → Bridge MLS → address point → Census) **is** used by listing saves, through `PropertyCoordinatePersistenceService` (`ResolvesPropertyCoordinates` on the Seller/Landlord Offer Listing and Hire components, and MLS quick import). `PropertyCoordinateResolverInterface` is still deliberately bound to nothing in the container, so no component can inject a resolver by accident, and Seller/Landlord Location DNA dispatch stays separately gated regardless.
 
 A rung that is *broken* raises `CoordinateProviderUnavailable`; a rung that simply *cannot match the address* returns an unresolved result. Keep that distinction when adding a rung — the first must never be cached, the second should be.
 
@@ -524,9 +506,8 @@ overwritten. Supplemental MLS details: the **feed wins, wholesale** — the blob
 the MLS retracted disappears rather than lingering. Photographs: the feed owns MLS entries, the user
 owns their uploads, their cover choice and their ordering.
 
-`mls_media.max_images` was **50 and is now 250**: the old ceiling mirrored the manual uploader's,
-which is about bytes *we* store, and MLS media is referenced not copied — it truncated 186 of 1,202
-cached listings. **Both `MLS_MEDIA_IMPORT_ENABLED` and `MLS_MEDIA_LICENSE_ACKNOWLEDGED` now default
+`mls_media.max_images` is **250**, not the manual uploader's 50: that ceiling is about bytes *we*
+store, and MLS media is referenced, not copied. **Both `MLS_MEDIA_IMPORT_ENABLED` and `MLS_MEDIA_LICENSE_ACKNOWLEDGED` now default
 true**, by an **owner decision of 2026-09-04** that explicitly superseded the photo clause of the
 locked 2026-07-05 policy. A licence audit taken immediately before it found **no written Stellar
 approval in this repository** for public imported-listing photo use — the decision rests on owner
@@ -538,12 +519,10 @@ per-listing or per-media controls. MLS-sourced listings carry a Stellar/Bridge a
 
 ### Imported-listing presentation, and the Your Terms follow-ups
 
-**One property fact, one presentation.** An imported listing used to carry TWO descriptions of the
-same house: its own Property Details card, and directly beneath it a dense block titled *MLS
-Property Details* in its own typography. No **field** was duplicated — `MlsPropertyDetailsPresenter`
-already suppresses a Tier-1 fact that reached an editable field at import time — but a reader met
-two competing presentations and had to decide which to believe. The duplication was structural, not
-field-level, and that is what `MlsDetailLayout` (`app/Services/ListingImport/Mls/`) fixes.
+**One property fact, one presentation.** `MlsPropertyDetailsPresenter` suppresses a Tier-1 fact
+that reached an editable field at import time, and `MlsDetailLayout` (`app/Services/ListingImport/Mls/`)
+places the imported sections into the page's own cards rather than a second, competing *MLS Property
+Details* block.
 
 **Every stored section gets a SLOT, and an unknown title is placed rather than dropped.**
 `Property Details` merges into the page's own card under an *MLS Property Details* sub-heading;
@@ -563,38 +542,32 @@ row onto the page rather than sampling labels, since a section landing in no slo
 spot-checks miss.
 
 **Related-resource rows that repeat a contacts VALUE are dropped at READ time.**
-`MlsRelatedResources::rowsFrom()` compares label **and** value, and the two presenters deliberately
-label the same fact differently (`Agent Phone` vs `Direct Phone`), so one phone number reached the
-page three times. Read time, not write time, because the duplicates are already in every stored blob.
+`MlsRelatedResources::rowsFrom()` compares label **and** value, because the two presenters label the
+same fact differently (`Agent Phone` vs `Direct Phone`). Read time, not write time, because the
+duplicates are already in every stored blob.
 Contacts rows are **never** deduplicated against each other: an agent phone and a brokerage phone that
 happen to match are two facts.
 
-**Attribution is last on the page and sits with the MLS contact and bookkeeping cards.** It used to
-sit directly under the old block, two thirds of the way up, reading as a footnote to that block alone
-rather than to the imported facts now spread across the cards above it.
+**Attribution is last on the page and sits with the MLS contact and bookkeeping cards**, so it reads
+as covering every imported fact above it.
 
 **`auction_type` renders as "Listing Method"** on both pages — the name every screen that *asks* the
-question uses. "Auction Type" named the storage key, and on a Traditional listing announced an auction
-that is not happening.
+question uses; "Auction Type" announces an auction on a Traditional listing.
 
 **Your Terms conditionals: the PARENT decides whether a branch is published.**
 `ConditionalTerms` (`app/Support/OfferListing/`) holds the rule, and it is display logic only — no
-stored value changes. A gate used to read `$hasAssumable || $str('assumable_loan_type') || …`, so any
-child value left behind by a financing type the seller had since **deselected** re-opened its whole
-section: a cash-only listing kept advertising an assumable mortgage. Now the branch asks only what is
-currently offered, and the child decides its own row. `amount()` formats by the `$` / `%` control
-beside the figure — a 3% initial deposit used to publish as `$3`.
+stored value changes. A branch asks only what is currently offered — never
+`$hasAssumable || $str('assumable_loan_type') || …`, under which a child value left behind by a
+**deselected** financing type re-opens the section — and the child decides its own row. `amount()`
+formats by the `$` / `%` control beside the figure.
 
-**Six follow-up answers were stored by every entry path and rendered by none**, and are now shown:
-`exchange_item` (only its "Other" box was printed, so a traded vehicle showed nothing),
-`exchange_liens_disclosure` (read under `exchange_liens`, a key no flow writes),
-`assumption_fee_responsibility`, `prepayment_penalty` (only its amount was printed), and the landlord
-"Other" boxes `other_lease_term` (the row substituted the legacy `other_lease_for`), `custom_lease_term`,
-`other_rent_include`, `other_tenant_pays`, `other_owner_pays`, plus the commercial single-unit storage
-pair and `space_features` / `neighboring_tenants`. `value_determination` and
-`assumable_occupancy_requirement` moved out of the Property Details card, where the second was rendered
-a **second** time. `Association Fee` no longer publishes the literal row `/ monthly` when a frequency
-arrives with no amount.
+**Follow-up answers that must render:** `exchange_item`, `exchange_liens_disclosure` (not the unwritten
+`exchange_liens`), `assumption_fee_responsibility`, `prepayment_penalty`, and the landlord "Other" boxes
+`other_lease_term` (not the legacy `other_lease_for`), `custom_lease_term`, `other_rent_include`,
+`other_tenant_pays`, `other_owner_pays`, plus the commercial single-unit storage pair and
+`space_features` / `neighboring_tenants`. `value_determination` and `assumable_occupancy_requirement`
+are not in the Property Details card (the second must render once). `Association Fee` publishes no
+`/ monthly` row without an amount.
 
 ### MLS live sync — keeping an imported listing current
 
@@ -635,7 +608,7 @@ consulted — a closed BidYourOffer transaction is not something an MLS status s
 Price, landlord rent terms, starting/reserve/buy-now prices and the rest of Your Terms stay
 **BYO-owned and are never overwritten by a price move in the feed**. The payment calculator *may
 consume* `mls_list_price` — it leads the Seller controller's fallback chain, which is why an imported
-listing no longer opens the Estimated Monthly Payment panel at $0 — and a what-if inside that
+listing does not open the Estimated Monthly Payment panel at $0 — and a what-if inside that
 calculator is browser-side only and writes nothing back.
 
 **Fact sync shares one mapping with import, and differs only in precedence.** `MlsFactProjection` is
@@ -671,8 +644,8 @@ Location DNA pipeline.
 | `MLS_SYNC_SCHEDULE_ENABLED` | `false` | the unattended sweep and the daily reconcile |
 | `MLS_SYNC_LAZY_REFRESH_ENABLED` | `false` | the stale-on-access refresh |
 
-None of the three is in `config/required_production_flags.php`, and must not be added — **the deploy
-contract may never name a safety switch.**
+None of the three may be added to `config/required_production_flags.php` (see *Deployment &
+migrations*).
 
 **When explicitly enabled**, the operating parameters are: normal sweep every **15 minutes**, live
 freshness window **60 minutes**, daily reconcile at **03:20**, terminal/non-live freshness **1440
@@ -822,10 +795,9 @@ when the row is already inside the window. Eligibility is then re-decided, so a 
 went Pending or lost IDX participation since the marker was drawn **404s** rather than being
 presented as available.
 
-**Discovery ships OFF** (`EXPLORE_DISCOVERY_ENABLED`), for the same reason `MLS_SYNC_ENABLED`
-does: deploying code must not by itself begin unattended traffic to a third-party provider.
-With it off Explore is cache-only **and says so** in the response, because a cache-only answer
-must not be mistaken for a complete one.
+**Discovery ships OFF** (`EXPLORE_DISCOVERY_ENABLED`): deploying code must not by itself begin
+unattended traffic to a third-party provider. Off, Explore is cache-only **and says so**
+(`discovery.status = "disabled"`), so a cache-only answer is never mistaken for a complete one.
 
 **Explore being current is only half of what a consumer experiences, and the other half is
 somebody else's flag.** The canonical Seller/Landlord pages do NOT read `bridge_properties` —
@@ -840,11 +812,9 @@ sync closes it. **A coherent launch therefore needs `MLS_SYNC_ENABLED` + `MLS_SY
 alongside the Explore flags** — the schedule specifically, because a non-owner view sends nothing
 and only records demand, so a public visitor's page is current only if a sweep already made it so.
 
-**Provider spend is bounded by a HARD ceiling, and the throttle was never what bounded it.**
-`throttle:120,1` limits REQUESTS; one unfiltered viewport request costs up to five provider pages
-per transaction type, so a caller inside that throttle could reach ~72,000 Bridge requests an hour
-by traversing distinct cold tiles. Tile snapping and the fetch cache make REPEAT visits free;
-nothing made DISTINCT ones bounded. `ExploreProviderBudget` (`app/Services/Explore/Guards/`)
+**Provider spend is bounded by a HARD ceiling, not by the throttle.** `throttle:120,1` limits
+REQUESTS, and one viewport request can cost up to five provider pages per transaction type; tile
+snapping and the fetch cache make REPEAT visits free but not DISTINCT ones. `ExploreProviderBudget` (`app/Services/Explore/Guards/`)
 closes it, and it is a **composer, not an implementation** — every counter, key, window, TTL and
 lock belongs to the existing `ProviderRequestBudget`, asked at two scopes. A test asserts the
 guard contains no `Cache::`, no `increment(`, no `gmdate(`: two mechanisms counting "a request"
@@ -857,10 +827,9 @@ ceilings together, under one cache lock (`flock` on the file driver this deploym
 A configured 60 admits exactly 60 with any number of PHP processes — a test races real processes
 against the real file store. A pass that runs out between page 3 and page 4 never sends page 4,
 keeps the rows it did fetch, writes **no** fetch-cache row (a truncated tile must not later be
-served as a warm, complete one) and reports `budget_limited`. The earlier shape — one check before
-a pass, its pages charged afterwards — let 59/60 finish at 69/60 and let two racing workers both
-take the last unit, which is why it was replaced. Admission that cannot be decided (lock timeout,
-cache fault) is a refusal. The panel lookup is admitted the same way, as one unit.
+served as a warm, complete one) and reports `budget_limited`. Never check once per pass and charge
+afterwards — that overshoots and lets racing workers share the last unit. Admission that cannot be
+decided (lock timeout, cache fault) is a refusal. The panel lookup is admitted the same way, as one unit.
 `ExploreProviderBudget::blockedReason()` survives only as a read-only fast path that lets an
 already-spent request skip the importer; it is not the ceiling. The Census rung still uses the
 older check-then-charge pair and is unaffected.
@@ -868,8 +837,7 @@ older check-then-charge pair and is unaffected.
 **The two scopes fail in opposite directions.** The ACTOR ceiling (`user id, else IP` — the
 identity every throttled route already uses, hashed before it becomes a cache key; nothing new is
 fingerprinted) stops one browser traversing unlimited tiles. The GLOBAL ceiling stops what the
-actor ceiling cannot see — many actors, or one rotating addresses — and is the one that would
-have caught the ~16,000-request incident this work exists because of. The defaults are
+actor ceiling cannot see — many actors, or one rotating addresses. The defaults are
 deliberately conservative for a controlled launch — **actor 60/hour and 300/day, global 300/hour
 and 2,000/day** — and are application-side ceilings, not a statement of Stellar's allowance, which
 is not known here. **There is no way to configure "unlimited"**: a zero, negative or non-numeric
@@ -893,13 +861,11 @@ stays on the map) and `degraded = true` (so the surface says "temporarily unavai
 about somebody's neighbourhood would be a false claim.
 
 **Explore never starts Location DNA, and therefore never reaches Google Places through it.** The
-importer dispatches `ComputeLocationDna` for every new or re-addressed row, and that job's POI step
-can call Google Places. Nearby Search is capped app-wide (see *Google Places request budget*), but
-Explore renders no Location DNA and has no business spending that budget either. A discovery pass can upsert
-500 rows, inline, because the queue runs `sync`. Explore renders no Location DNA, so both entry
-points opt out: discovery passes `dispatchDna: false` to `importForCriteria()` (a
-backward-compatible option, default `true`) and the panel passes it to `refreshByListingKey()` (an
-option that already existed). Every other caller keeps its dispatch.
+importer dispatches `ComputeLocationDna` for every new or re-addressed row (inline — the queue is
+`sync` — and a pass can upsert 500 rows), and that job's POI step can call Google Places. Explore
+renders no Location DNA, so both entry points opt out: discovery passes `dispatchDna: false` to
+`importForCriteria()` (default `true`) and the panel passes it to `refreshByListingKey()`. Every
+other caller keeps its dispatch.
 
 **Deferring is not suppressing.** A row Explore imported first is no longer NEW when a normal
 import reaches it, so on the normalizer's rule alone it would never get DNA. The importer and the
@@ -931,8 +897,7 @@ needs `EXPLORE_ENABLED`, this switch AND `EXPLORE_GOOGLE_MAPS_BROWSER_KEY`. Off 
 withholds it unless `isReady()`, because printing a live billable key into a page that is
 deliberately not using it leaves it there for anyone to lift. Not "load Google and then hide the
 map": the expensive provider stays untouched, or the switch protects nothing. It is also the
-emergency stop — Explore keeps serving listings with no key deletion. Before it existed, deleting
-the key was the only way to stop Google.
+emergency stop — Explore keeps serving listings with no key deletion.
 
 **The provider switches parse fail-safe, not with `(bool)`, which reads `off` and `no` as ON.**
 `EXPLORE_GOOGLE_3D_ENABLED` and `EXPLORE_DISCOVERY_ENABLED` are ON only for `true`/`1`/`on`/`yes`;
@@ -964,17 +929,16 @@ Eligibility still needs `raw_json` decoded per row (permissions and lease freque
 there), so the repository overfetches, filters, then slices under a hard read ceiling — a bare
 SQL `LIMIT` would silently shrink a page and look like a thinner neighbourhood.
 
-**The Google credential is its own, permanently.** `GOOGLE_PLACES_API_KEY` is a SERVER key and
-must never become a fallback — emitting it would publish a server credential to every visitor.
-`EXPLORE_GOOGLE_MAPS_BROWSER_KEY` is absent by default, which is a **third state**: Explore on
-with no map credential serves the page, answers the API, and states why the map is empty,
-because a blank grey rectangle is indistinguishable from a bug and no PHP test can see one.
-Only `maps3d` is requested; Places, Routes, Roads, Directions and Geocoding are asserted
+**The Google credential is its own, permanently** — `EXPLORE_GOOGLE_MAPS_BROWSER_KEY`, never
+`GOOGLE_PLACES_API_KEY` as a fallback (see *Browser-side Google*). Absent by default, which is a
+**third state**: Explore on with no map credential serves the page, answers the API, issues zero
+Google requests and states why the map is empty, because a blank grey rectangle is
+indistinguishable from a bug. Only `maps3d` is requested; Places, Routes, Roads, Directions and Geocoding are asserted
 absent from the shipped renderer. The renderer is a **static asset**, not a Mix bundle and not
 part of `app.js`: it has no imports, so compiling it would buy nothing and couple `/explore`
 to a build.
 
-### Smart Tags (Phase 1 foundation — inert)
+### Smart Tags (lifecycle wired, ships OFF)
 
 **One governed taxonomy of property characteristics, shared by every listing source.** Bridge rows,
 native Seller and Landlord Offer Listings, and (later) Buyer/Tenant preferences all use the same
@@ -983,14 +947,12 @@ MLS, Seller, Landlord, Buyer or Tenant vocabulary. **One key, one meaning**: a p
 different things by property type becomes separate keys with disjoint contexts (`turnkey_home` /
 `turnkey_business`, `fenced_yard` / `fenced_lot`). Governance: `docs/smart-tags/SMART_TAGS_GOVERNANCE.md`.
 
-**Phase 2 wired the lifecycle. It still ships OFF.** Phase 1 had no flag at all — its inertness was
-that nothing called it, and wiring the call sites ends that property. Two gates replace it, both
-default `false` and both parsed fail-closed (`true`/`1`/`on`/`yes` only): `SMART_TAGS_DERIVATION_ENABLED`
+**The lifecycle is wired and ships OFF** behind two gates, both default `false` and both parsed
+fail-closed (`true`/`1`/`on`/`yes` only): `SMART_TAGS_DERIVATION_ENABLED`
 is the master, and `SMART_TAGS_BRIDGE_ENABLED` is an **additional** gate for `bridge` rows, never a
 replacement — enabling native tagging must not also start tagging a licensed MLS feed.
 `App\Support\SmartTags\SmartTagWiring` is the only reader; `enabledFor($type)` is the only gate.
-**Neither may be added to `config/required_production_flags.php`** — the deploy contract may never
-name a safety switch.
+**Neither may be added to `config/required_production_flags.php`** (see *Deployment & migrations*).
 
 **`SmartTagLifecycle` is THE seam, and the only one.** No call site touches the derivation service,
 evidence writer, resolver, projector or purger; a guard test asserts it, and a second guard names the
@@ -1039,14 +1001,6 @@ duration, and an exception CLASS on failure. **No prose, ever** — the descript
 boolean, and a test seeds distinctive sentences and asserts no fragment reaches a log. Backfills log
 per batch, not per listing.
 
-**KNOWN, REPORTED, NOT FIXED HERE:** `BridgeRecordAccessor::inputsFor()` hashes raw attribute values,
-so `waterfront_yn` / `pool_private_yn` hash as `true` right after a write and `1` after a re-read.
-The same unchanged Bridge row therefore gets two different structured hashes depending on which code
-path looked at it, and the lookup seam and the backfill each re-derive rows the other tagged, once.
-Tags stay correct (re-derivation is idempotent); the cost is wasted work. Native listings are
-unaffected — meta is always text. `identical_bridge_input_skips_rederivation()` is marked incomplete
-against it.
-
 **Config is the taxonomy, read only through `SmartTagConfig`.** `config/smart_tags.php` declares each
 tag's contexts, surfaces (`mls_derivable`, `native_derivable`, `owner_selectable`, `seeker_selectable`,
 `public_display`, `negatable`), conflicts and compliance status; `config/smart_tag_sources.php` holds the
@@ -1071,11 +1025,10 @@ for the Buyer/Tenant phase and not created.
 **A structured hash is taken over INTERPRETED values, never raw stored ones.**
 `BridgeRecordAccessor::inputsFor()` reads each rule through the same accessor method the rule engine
 uses for that rule's kind (`boolean`, `scalar`, `values`, `number`, `flag`) and keys each entry by
-that reading, so the hash and the derivation agree on what a value means. It hashed raw attributes
-before, and `bridge_properties.waterfront_yn` / `pool_private_yn` read back as PHP `true` from a
-just-written model and as `1` from a re-read row — so one unchanged listing had two hashes depending
-on which path looked at it, and a caller deriving from a written model re-derived everything a caller
-reading fresh rows had already done. `true`, `1`, `"1"`, `"Y"`, `"yes"` now hash alike because
+that reading, so the hash and the derivation agree on what a value means. Raw attributes must not
+be hashed: `waterfront_yn` / `pool_private_yn` read back as PHP `true` from a just-written model and
+`1` from a re-read row, which gave one unchanged row two hashes (`identical_bridge_input_skips_rederivation()`
+pins the fix). `true`, `1`, `"1"`, `"Y"`, `"yes"` hash alike because
 `toBool()` already says they mean the same thing; an unrecognised value hashes as UNKNOWN, never YES;
 an unknown rule kind falls back to the raw value rather than being dropped.
 
@@ -1106,8 +1059,7 @@ assistance-animal notice; proximity is Location DNA; ranges and terms stay struc
 
 ### Listing preferences — Save | Maybe | Pass (Phase 2, behind a default-off flag)
 
-**Customer terminology is Save | Maybe | Pass.** Earlier planning notes said "Love/Maybe/Pass";
-that wording is superseded. Governance is
+**Customer terminology is Save | Maybe | Pass** (not "Love"). Governance is
 `docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md`.
 
 **Phase 2 wires capture; `LISTING_PREFERENCES_ENABLED` still ships `false`.** Authenticated Buyers
@@ -1119,13 +1071,11 @@ tested together, because a rendered control whose endpoint 404s is worse than no
 it: controllers, Blade and JavaScript describe intent, the service performs the current-state +
 reasons + history mutation in **one transaction**. `setState()` / `updateReasons()` / `clear()` each
 append exactly **one** event — selecting chips is browsing, pressing Done is the decision, so four
-chips are not four history rows. A state change **replaces** the reason set rather than merging it:
-"Too expensive" is not an answer to *What do you like about this property?*
+chips are not four history rows. A state change **replaces** the reason set rather than merging it
+(reasons are state-specific — see the reason vocabulary below).
 
-**Undo needed one additive schema change.** Phase 1 modelled the three transitions INTO a state and
-never the one out of all of them — `to_state` was `NOT NULL`, so "the customer withdrew their
-choice" was unwritable. `2026_09_17_000001_allow_null_to_state_on_listing_preference_events` makes
-it nullable, where NULL means exactly *no current preference after this transition*: **no fourth
+**Undo is a nullable `to_state`**
+(`2026_09_17_000001_allow_null_to_state_on_listing_preference_events`), where NULL means exactly *no current preference after this transition*: **no fourth
 state, and `pass` is not overloaded** ("I passed on this house" and "I withdrew my opinion" are
 different facts). Its `down()` **refuses** while clear events exist rather than inventing a
 preference for them or deleting append-only history, and restores `NOT NULL` normally on a database
@@ -1141,8 +1091,8 @@ the control renders and sends them through the existing login flow, and no anony
 **Phase 2's context obligation is met by `ListingPreferenceContextResolver`**, which resolves the
 listing's real property type (Bridge column, or the native `property_type` meta) and delegates the
 mapping to `SmartTagContextResolver` rather than restating it. The null-context fallback is reached
-only when the listing genuinely cannot answer, and `isSeekerSelectable()` still applies there — only
-*applicability* is relaxed. Both branches are tested.
+only when the listing genuinely cannot answer (relaxation rule under *Fair Housing is inherited*).
+Both branches are tested.
 
 **Capture only.** A guard test asserts nothing under `app/Services/{Stellar,AskAi,Dna,Matching}` or
 `app/Helpers` references the subsystem, so no ranking, Ask AI or learning consumption exists; a
@@ -1204,9 +1154,8 @@ daylight is claimed in prose far more than it is recorded structurally. Generic 
 rejected for V1: no well-defined taxonomy exists, and a vague style tag is exactly the duplicate
 vocabulary being avoided.
 
-**Guests: authenticated only in Phases 1–2.** No anonymous or session records. The controls may
-later be visible to a signed-out visitor, but using one prompts authentication. The data model is
-shaped so capture-and-claim is additive later (a claim step rewriting `user_id`), never a redesign.
+**Guests: authenticated only** (see *Nothing is trusted from the browser*). The data model is shaped
+so capture-and-claim is additive later (a claim step rewriting `user_id`), never a redesign.
 
 **Ranking is untouched, and a learner may not change that carelessly.** `config/match_scoring.php`
 requires enabled weights to sum to 100 and `BuyerMatchScorer` has fixed caps, so preference must
@@ -1222,8 +1171,7 @@ whether the feature exists. The other two still decide nothing and a test assert
 either starts nothing: `guest_capture_enabled` is a decided product position rather than a dial (no
 anonymous row is creatable however it is set), and `learning_enabled` stays gated on the governance
 revision behavioural learning requires.
-**None is in `config/required_production_flags.php` and none may be added**: that contract may never
-name a safety switch.
+**None may be added to `config/required_production_flags.php`** (see *Deployment & migrations*).
 
 **The Virtual Drive is still untouched in Phase 2.** `VirtualDriveListingActions` continues to report
 Save as unavailable ("No Save / Favorite feature exists anywhere in this application"), and a test
@@ -1258,7 +1206,7 @@ goes through `CompatibilityPreferencePolicy::project()`** (`app/Support/HireAgen
 the sub-array from the allowlist in `config/hire_agent_compatibility_keys.php` — that config has one
 reader and a test asserts it.
 
-**Validation cannot do this job, and assuming it could is what made the policy necessary.**
+**Validation cannot do this job.**
 `$compatibility_preferences` is a public Livewire property, so a client can set any nested path;
 `validate()` checks the keys named in `rules()` and leaves the rest on the property; the persist then
 wrote the sub-array verbatim. A `prohibited` rule narrows only the paths that reach full validation,
@@ -1298,9 +1246,8 @@ verification aborts with `FAILURE` having performed zero remediation writes.
 
 **The rollback record lives in the database, not the filesystem** — one row per listing in
 `landlord_agent_auction_metas` under `fair_housing_backup_compatibility_preferences`, holding the
-original bytes, a SHA-256 over them and the run id. `storage/app` was the wrong home: the Replit
-container is rebuilt from the image on deploy and on restart, `storage/` has no persistent mount and
-the file is not in git, so the undo evaporated while the deletion stayed. **Nothing at runtime
+original bytes, a SHA-256 over them and the run id. Never `storage/app`: the Replit container is
+rebuilt on deploy and restart and `storage/` has no persistent mount. **Nothing at runtime
 resolves that key** — every meta consumer reads a named key, `$auction->get->namedKey`, or an
 explicit field whitelist (`LandlordFieldMap::sections()`, Ask AI's `CANONICAL_SOURCE_MAP`), so the
 row is inert to the application. It is **written once per listing and never overwritten**, so the
@@ -1326,9 +1273,8 @@ from them whenever that owner also holds an agent account.
 ### Landlord applicant screening — the second write boundary (Fair Housing Phase 2)
 
 The landlord **Applicant Requirements** tab has its own allowlist, separate from the Hire Agent
-one and for the same reason. Every screening key is a public Livewire property that `saveMeta()`
-wrote verbatim, and the audit found **no validation rule referencing any of them** — so deleting
-an `<option>` changed the form and nothing else.
+one and for the same reason: every screening key is a public Livewire property, and deleting an
+`<option>` changes the form and nothing else.
 
 `config/landlord_screening_options.php` is the SSOT. It has exactly two readers: the Blade
 partial that renders the options and `LandlordScreeningPolicy` (`app/Support/OfferListing/`)
@@ -1357,7 +1303,7 @@ objective question, and the income block carries fixed copy stating that all law
 income counts. Do not add an "accepted income sources" checklist: a landlord who ticks everything
 except benefit letters has rebuilt source-of-income exclusion inside a field that looks neutral.
 
-**Stale values are suppressed or normalized, and the difference is deliberate.** A blanket
+**Stale values are suppressed or normalized, deliberately.** A blanket
 `No criminal background` is **suppressed** — rendering it as `Individualized review of
 convictions` would credit a listing with a process it never had. `Case-by-case review` is
 **normalized** forward, because the meaning survives the rename. `Compensating factors
@@ -1384,8 +1330,7 @@ custom-text inputs the audit found with the same shape and none of the protectio
 
 `config/landlord_provider_text.php` is the SSOT and `LandlordProviderTextPolicy`
 (`app/Support/OfferListing/`) is the boundary. Three landlord fields are governed:
-`landlord_approval_conditions`, `pet_restrictions`, `additional_details` — all three were
-written verbatim by `saveMeta()` with **no validation rule anywhere**, and all three render on
+`landlord_approval_conditions`, `pet_restrictions`, `additional_details` — all three render on
 two routes with no auth middleware and reach Ask AI.
 
 **Patterns match an exclusion STRUCTURE, never a word, and that is the whole design.** The same
@@ -1419,27 +1364,24 @@ uses, rather than at each call site. That is deliberate: editing call sites is h
 review page ended up scoring applicants against a criterion the listing page had stopped showing.
 **Historical prose becomes inert with no remediation pass and no changed bytes.**
 
-**Five custom inputs had no parent gate at all** (`custom_credit_score_requirement`,
-`custom_income_requirement`, `custom_smoking_policy_requirement`, `custom_reference_requirement`,
-`custom_preferred_move_in_timeframe`), plus `min_monthly_income_fixed`. They were rendered under
-an Alpine `x-show`, which is a CSS decision in the browser and not a write boundary. They now go
-through `LandlordScreeningPolicy::projectCustomFields()` against `custom_fields` in
+**Five custom inputs and `min_monthly_income_fixed` are parent-gated on the write**
+(`custom_credit_score_requirement`, `custom_income_requirement`, `custom_smoking_policy_requirement`,
+`custom_reference_requirement`, `custom_preferred_move_in_timeframe`) — an Alpine `x-show` is a CSS
+decision in the browser, not a write boundary. They go through `LandlordScreeningPolicy::projectCustomFields()` against `custom_fields` in
 `config/landlord_screening_options.php`. **The trigger is read from config, never assumed to be
 `Other`** — `min_monthly_income_fixed` unlocks on `Fixed Monthly Income`, and hard-coding `Other`
 would have silently discarded every landlord's fixed income amount on the next save.
 
-**The tenant "Additional Information" section was a deny-list** — "any populated key not in this
-list will appear" — on a route with no auth middleware, so PUBLIC was the default disposition of
-every tenant meta key and staying private depended on someone remembering to add it to a
-200-entry Blade array. It is now an allowlist, `config/tenant_public_overflow_keys.php`, which
-**ships empty**: the section was never a designed surface, everything the page means to show has
+**The tenant "Additional Information" section is an allowlist**, on a route with no auth
+middleware — never a deny-list, under which PUBLIC is every tenant meta key's default.
+`config/tenant_public_overflow_keys.php` **ships empty**: the section was never a designed surface, everything the page means to show has
 a named section above it, and seeding a list by guessing which consumer answers are safe to
 broadcast is the mistake being fixed. Adding a key is a reviewable edit plus a test.
 
-**`tenant_require` holds a FURNISHINGS value** ("Furnished", "Unfurnished", "Turnkey"). The
-landlord public view published it as **"Tenant Type Required"** and the agent view as "Tenant
-Requirements" — announcing an occupant-category requirement the listing never made, which is the
-concept Phase 1 retired as `tenant_type_preference`. Both are relabelled **"Furnishings"**. The
+**`tenant_require` holds a FURNISHINGS value** ("Furnished", "Unfurnished", "Turnkey") and is
+labelled **"Furnishings"** in the landlord public and agent views — never "Tenant Type Required" /
+"Tenant Requirements", which announce the occupant-category requirement retired as
+`tenant_type_preference`. The
 meta key is deliberately **not** renamed: that would be a data migration for a copy defect. The
 tenant view's own "Tenant Requirements" row is a different key on a different table and is
 correct as-is.
@@ -1453,11 +1395,10 @@ asking a landlord to pre-declare a policy invites a blanket answer to an individ
 unlocking value is ambiguous and guessing it would drop stored text), the lease/commercial prose
 set, and any historical remediation command.
 
-**The steering category now covers FAMILIAL-STATUS steering, and that is a SHARED change.** The
-rules caught the exclusionary half (*"this area is not for children"*) and the young-professional
-half, but not the welcoming half — *"Perfect family neighborhood"*, *"family-friendly
-neighborhood"*, *"perfect for families"* — and a welcoming steer is still a steer about a protected
-class. The new patterns live in `config/landlord_provider_text.php`, so they govern the three Phase
+**The steering category covers FAMILIAL-STATUS steering, and that is a SHARED rule.** It catches the
+exclusionary half (*"this area is not for children"*), the young-professional half, and the
+welcoming half — *"Perfect family neighborhood"*, *"family-friendly neighborhood"*, *"perfect for
+families"* — because a welcoming steer is still a steer about a protected class. The patterns live in `config/landlord_provider_text.php`, so they govern the three Phase
 3 landlord prose fields **and** the Batch 4 public knowledge-base surface from one definition.
 They match **a claim about a place or an audience, never the word "family"**: a suitability
 adjective plus a PLACE noun, `... for families`, `family-friendly <place>`, `<place> for families`,
@@ -1556,15 +1497,15 @@ Audit, remaining risks and the proposed `qa:fixture` command: `docs/manual-qa-da
 
 Nothing else may migrate: not `deploy/scheduler.sh`, not the build phase, not a second web process. This app is on **Laravel 8, which has no `migrate --isolated`**, so there is no migration lock and concurrency safety rests entirely on single ownership. `DeploymentMigrationReadinessTest` asserts all of it.
 
-`scripts/post-merge.sh` also migrates, but it is the Replit **workspace** `[postMerge]` hook — it does not fire on deploy or on a GitHub merge. Do not treat it as the deployment's migration step; that assumption is exactly how G4's migration reached `main` and never reached a schema.
+`scripts/post-merge.sh` also migrates, but it is the Replit **workspace** `[postMerge]` hook — it does not fire on deploy or on a GitHub merge. Do not treat it as the deployment's migration step.
 
 Two CI gates: `migration-tests.yml` (`migrate:fresh`, empty DB) and `incremental-migration-tests.yml` (previous-release schema, populated, migrated forward — the operation a deploy actually performs).
 
 **`deploy/start-production.sh` also gates on the required product flags, and that gate can fail a deploy.** `php artisan deploy:require-flags` runs after `deploy:preflight` and **before `migrate`** — with no `|| true`, so `set -euo pipefail` stops the deploy before any schema change and long before a port is bound. The contract is `config/required_production_flags.php`: the Hire Agent hero and detail redesigns enabled for all four roles, and both MLS direct-import surfaces enabled.
 
-**The defaults and the gate solve different halves of the same problem.** The shipped config defaults (now `true` / all four roles) cover the **absent** variable — an environment that supplies nothing serves the modern platform. The gate covers the variable that is **present and wrong**: a stale secret, a typo, a value left behind by a finished pilot. That failure is the invisible one — the app boots, answers 200, passes its health check, and serves the superseded surface until somebody notices. It is exactly what happened when these six values lived only in a machine-local `.env` that a container rebuild discarded.
+**The defaults and the gate solve different halves of the same problem.** The shipped config defaults (now `true` / all four roles) cover the **absent** variable — an environment that supplies nothing serves the modern platform. The gate covers the variable that is **present and wrong**: a stale secret, a typo, a value left behind by a finished pilot. That failure is the invisible one — the app boots, answers 200, passes its health check, and serves the superseded surface until somebody notices (as when these six values lived only in a machine-local `.env` that a container rebuild discarded).
 
-**The contract may never name a safety switch.** BYA compatibility (kill switch and GA), every Location DNA gate, the Census geocoder, the address-point corpus, MLS Match Check, DNA score generation, Matching V2 persistence and the Bridge credentials are all excluded, and `RequiredProductionFlagsTest` asserts the exclusion rather than leaving it to reviewer memory — otherwise the gate would become a deploy-time mechanism for enabling a consumer-facing or spend-incurring feature, decided in a file nobody reads during a rollout conversation. The command is **read-only in both directions**: it compares and reports, so a wrong value stops a deploy and is never silently corrected.
+**The contract may never name a safety switch** — this is the one statement of that rule, and every section that says a flag "may not be added to `config/required_production_flags.php`" refers here. BYA compatibility (kill switch and GA), every Location DNA gate, the Census geocoder, the address-point corpus, MLS Match Check, DNA score generation, Matching V2 persistence and the Bridge credentials are all excluded, and `RequiredProductionFlagsTest` asserts the exclusion rather than leaving it to reviewer memory — otherwise the gate would become a deploy-time mechanism for enabling a consumer-facing or spend-incurring feature, decided in a file nobody reads during a rollout conversation. The command is **read-only in both directions**: it compares and reports, so a wrong value stops a deploy and is never silently corrected. The same rule excludes the three MLS sync gates, the two Smart Tags gates and the listing-preferences flags (the last two are also asserted by `SmartTagArchitectureGuardTest` and `ListingPreferenceInertnessTest`).
 
 Role lists are compared as a **subset**, so adding a fifth role later cannot fail a deployment for being extra. An **empty or unreadable contract fails closed** — a config file that did not load is indistinguishable from one that requires nothing, and that ambiguity is not safe to resolve as "pass". `REQUIRED_PRODUCTION_FLAGS_ENFORCED=false` downgrades it to a loud warning.
 
@@ -1574,7 +1515,7 @@ Version-controlled defaults are proven by `RequiredProductionDefaultsTest`, whic
 
 `ProvenanceSchemaReadiness` is the runtime backstop: when the provenance columns are absent, coordinate writes proceed and provenance is skipped with `schema_not_ready` rather than raising `SQLSTATE[42703]` inside a listing save. See `deploy/DEPLOYMENT.md`, which also documents an **open question about `APP_DEBUG` in deployments**.
 
-**`PHP_INI_SCAN_DIR` must be added to, never assigned.** All three entrypoints (`start-production.sh`, `start-serving.sh`, `scheduler.sh`) apply `deploy/php/uploads.ini` through `configure_php_ini_scan_dir` in `deploy/lib/php-runtime.sh`, which resolves the interpreter's own scan directory at run time and prepends it. A bare `export PHP_INI_SCAN_DIR="$PWD/deploy/php"` **replaces** that directory — on this Nix build it is where every extension is declared, so the assignment delivered the upload limits and silently unloaded PDO, pdo_pgsql and tokenizer, taking production from 54 extensions to 12. The symptom was `deploy:migrations-pending` reporting `error=repository_unreadable` and the restart correctly refusing to serve, against a database that was entirely healthy. The documented `":$dir"` shorthand does **not** work here (`PHP_CONFIG_FILE_SCAN_DIR` is defined but empty on this build), and the resolved path must never be hardcoded — it is a store path whose hash moves with the Nix channel. `PhpIniScanDirTest` runs the real scripts and proves the resulting runtime keeps its extensions *and* its raised limits.
+**`PHP_INI_SCAN_DIR` must be added to, never assigned.** All three entrypoints (`start-production.sh`, `start-serving.sh`, `scheduler.sh`) apply `deploy/php/uploads.ini` through `configure_php_ini_scan_dir` in `deploy/lib/php-runtime.sh`, which resolves the interpreter's own scan directory at run time and prepends it. A bare `export PHP_INI_SCAN_DIR="$PWD/deploy/php"` **replaces** that directory — on this Nix build it is where every extension is declared, so the assignment delivered the upload limits and silently unloaded PDO, pdo_pgsql and tokenizer (54 extensions to 12; symptom: `deploy:migrations-pending` reporting `error=repository_unreadable` against a healthy database). The documented `":$dir"` shorthand does **not** work here (`PHP_CONFIG_FILE_SCAN_DIR` is defined but empty on this build), and the resolved path must never be hardcoded — it is a store path whose hash moves with the Nix channel. `PhpIniScanDirTest` runs the real scripts and proves the resulting runtime keeps its extensions *and* its raised limits.
 
 ## Frozen / legacy code
 
@@ -1584,63 +1525,66 @@ Version-controlled defaults are proven by `RequiredProductionDefaultsTest`, whic
 
 ## Key `.env` variables
 
-Beyond standard Laravel keys, this app requires:
+Beyond standard Laravel keys, this app requires the variables below. **"Fail-closed"** means ON only
+for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF
+(never a `(bool)` cast, which reads `off`/`no` as ON). None of the safety switches here may be added
+to `config/required_production_flags.php` (see *Deployment & migrations*).
 
 | Key | Purpose |
 |-----|---------|
 | `BRIDGE_DATASET` | Bridge Data Output dataset ID |
 | `BRIDGE_SERVER_TOKEN` | Bridge API access token |
-| `GOOGLE_PLACES_API_KEY` | **SERVER key only** — this application's own Places Nearby Search and Geocoding calls, behind the admission budgets. **Never emitted into a page**: browser surfaces use `GOOGLE_MAPS_BROWSER_KEY`, and there is no fallback between them. Restrict it in Google Cloud to Places + Geocoding (and to the deployment's egress IPs where stable); it does not need the Maps JavaScript API. |
-| `GOOGLE_MAPS_BROWSER_ENABLED` | Master switch for **everything browser-side**: the two Maps SDK loader components, the Location DNA map injector and the Stellar Maps Embed iframe. Default `false`, parsed fail-closed (`true`/`1`/`on`/`yes` only). Off means no SDK tag, no iframe and **no Google credential in the HTML** — address fields still accept typed input and maps show the "not configured" panel. The emergency stop that needs no Google Cloud access. Read only via `App\Support\Google\GoogleBrowserMaps`. |
-| `GOOGLE_MAPS_BROWSER_KEY` | The **browser** credential, a different key from `GOOGLE_PLACES_API_KEY`. Emitted into pages — including the public Offer Listing detail pages — so it must be restricted in Google Cloud to our exact production origins and to the Maps JavaScript / Places / Maps Embed APIs, with its own quotas and billing alerts. One key per environment; a development key names the exact development origin and never a broad wildcard over a shared host suffix. Absent by default; both this and the switch must agree. |
-| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`. **Parsed fail-closed**: ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF (it was a `(bool)` cast, under which `off` switched it on). Off means zero Nearby requests. Does not govern Autocomplete. Also required — together with `GOOGLE_GEOCODING_ENABLED` — by the Location DNA geocode step and the geocode backfill command, as it always was. |
-| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby Search ceilings (25 / 100), one unit per outbound request, admitted before it is sent by `GoogleProviderAdmissionMiddleware` through the shared `ProviderRequestBudget`. A cache hit is free, a retry pays again, a sent-and-failed request still counted. Zero or malformed blocks Nearby entirely. **Nearby only** — Geocoding has its own ceilings below, Autocomplete is not budgeted, and browser-side Google is not governed by the server. See *Google Places request budget*. |
-| `GOOGLE_GEOCODING_ENABLED` | Master switch for **every server-side Google Geocoding request** — Location DNA's geocode step, the backfill command, the four Tenant address pickers. Default `false`, parsed fail-closed exactly like `GOOGLE_PLACES_ENABLED`; a present key is not permission. **Separate from `GOOGLE_PLACES_ENABLED` on purpose**, and an additional gate — never a replacement — where that switch already applied. Off means zero Geocoding requests: Tenant pickers leave city / state / ZIP / county for the user, Location DNA records the coordinate as `skipped`. |
-| `GOOGLE_GEOCODING_HOURLY_LIMIT` / `GOOGLE_GEOCODING_DAILY_LIMIT` | **HARD** Geocoding ceilings (25 / 100) on their **own** `ProviderRequestBudget` — independent of the Nearby ceilings; spending one never spends the other. One unit per outbound Geocoding request, admitted before it is sent; a stored or cached coordinate is free; a retry pays again. Zero or malformed blocks Geocoding entirely. See *Google Places request budget*. |
+| `GOOGLE_PLACES_API_KEY` | **SERVER key only** — our own Places Nearby Search and Geocoding calls, behind the admission budgets. **Never emitted into a page and never a fallback** for any browser key. Restrict in Google Cloud to Places + Geocoding (and the deployment's egress IPs where stable); it does not need Maps JavaScript. See *Google Places request budget*, *Browser-side Google*. |
+| `GOOGLE_MAPS_BROWSER_ENABLED` | Master switch for everything browser-side (both Maps SDK loader components, the Location DNA map injector, the Stellar Maps Embed iframe). Default `false`, fail-closed. Off = no SDK tag, no iframe, **no Google credential in the HTML**; surfaces degrade to typed address input and the "not configured" panel. The emergency stop needing no Google Cloud access. Read only via `App\Support\Google\GoogleBrowserMaps`. See *Browser-side Google*. |
+| `GOOGLE_MAPS_BROWSER_KEY` | The **browser** credential, distinct from `GOOGLE_PLACES_API_KEY`. Emitted into pages (including public Offer Listing pages), so restrict it to our exact origins and to Maps JavaScript / Places / Maps Embed, with its own quotas and billing alerts. One key per environment; a dev key names the exact dev origin, never a broad wildcard over a shared host suffix. Absent by default; key and switch must agree. |
+| `GOOGLE_PLACES_ENABLED` | Master switch for server-side Places **Nearby Search** (Location DNA POIs). Default `false`, fail-closed. Off = zero Nearby requests. Does not govern Autocomplete. Also required, with `GOOGLE_GEOCODING_ENABLED`, by the Location DNA geocode step and the geocode backfill command. |
+| `GOOGLE_PLACES_HOURLY_LIMIT` / `GOOGLE_PLACES_DAILY_LIMIT` | **HARD** Nearby ceilings (25 / 100), one unit per outbound request, admitted before sending by `GoogleProviderAdmissionMiddleware` via `ProviderRequestBudget`. Cache hit free; retry pays again; sent-and-failed still counts. Zero/malformed blocks Nearby. Nearby only. See *Google Places request budget*. |
+| `GOOGLE_GEOCODING_ENABLED` | Master switch for **every server-side Geocoding request** (Location DNA geocode step, backfill command, the four Tenant address pickers). Default `false`, fail-closed; a present key is not permission. **Separate from `GOOGLE_PLACES_ENABLED` on purpose** and an additional gate where that one applies. Off: Tenant pickers leave city/state/ZIP/county to the user; Location DNA records `skipped`. |
+| `GOOGLE_GEOCODING_HOURLY_LIMIT` / `GOOGLE_GEOCODING_DAILY_LIMIT` | **HARD** Geocoding ceilings (25 / 100) on their **own** `ProviderRequestBudget`, independent of Nearby. Same unit and rules as above; a stored or cached coordinate is free. Zero/malformed blocks Geocoding. |
 | `OPENAI_API_KEY` | DNA profile generation |
-| `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked) |
-| `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`) |
+| `BYA_COMPATIBILITY_KILL_SWITCH` | Consumer compatibility gate (default `true` = blocked). See *Feature flags*. |
+| `BYA_COMPATIBILITY_GA_ENABLED` | GA rollout flag (default `false`); do not enable without the owner. |
 | `DNA_SCORES_GENERATION_ENABLED` | Master gate for production `dna_scores` generation via the lifecycle (observers + `ComputeLocationDna` chain + `dna:generate-scores`). Default `false` = inert. Independent of Matching V2. |
 | `MATCHING_V2_PERSISTENCE_ENABLED` | Matching V2 C7 persistence gate (materialize ranked results into `matching_v2_*`). Default `false`. A write also requires `MATCHING_V2_ENABLED` and a non-production environment — `MatchResultPersister` hard-refuses in production. |
-| `MATCHING_V2_PERSISTENCE_VERSION` | Materialization version tag stamped on persisted runs; the reader trusts only rows at the current value (read-time re-gate). Default `c7-v1`. |
-| `HIRE_AGENT_HERO_REDESIGN_ENABLED` | Master gate for the redesigned Hire Agent hero (M4). **Default `true` as of the required-modern-platform-defaults change** — it shipped `false` so the merge was inert, and that pilot is over. A `false` default now describes a regression rather than an inert merge: it is what let a container rebuild, which discarded the machine-local `.env` these values lived in, silently restore the superseded hero. Read only via `HireAgentHeroData::redesignEnabledFor()`. Set to `false` to roll back — still an environment change, not a revert. Required to be `true` in production by `config/required_production_flags.php`. Manual visual verification remains the prerequisite before changing the hero itself; there is no automated browser coverage. |
-| `HIRE_AGENT_HERO_REDESIGN_ROLES` | Comma-separated roles the redesign applies to while enabled. **Default `seller,buyer,landlord,tenant`** (was `landlord`, the pilot). Independent of the master switch — both must agree. All four is the default because a partial list produces a visibly mixed platform, which reads as a rendering bug rather than as a missing variable. Narrowing it is a rollout decision, not a code change. The production contract requires all four to be present, as a **subset** test, so adding a fifth role later does not fail a deploy. |
-| `HIRE_AGENT_DETAIL_REDESIGN_ENABLED` | Master gate for the redesigned Hire Agent listing **detail page** (M5) — section navigation, quick actions, sidebar, cards, photo gallery. **Default `true`**, for the same reason as the hero flag above. **Still independent of the hero flag on purpose**: the two moved together once, which is a fact about today's values, not a merger of the switches. Gating is read only via `HireAgentDetailRedesign::enabledFor($role)` — no view may gate on the master switch, because the page body and the shared shell disagreeing is what once let the body render redesign markup without the stylesheet that lays it out. `enabled()` still answers the master switch alone and is not a gate. The reader keeps its own `false` fallback for a **missing** key — a config that failed to load must still read as off, which is a different question from the default. Pairs with `HIRE_AGENT_DETAIL_REDESIGN_ROLES`; both must agree. Required `true` in production. |
-| `HIRE_AGENT_DETAIL_REDESIGN_ROLES` | Comma-separated roles the detail redesign applies to while enabled. **Default `seller,buyer,landlord,tenant`** (was `landlord`, the pilot). Independent of the master switch — both must agree, and this list is the only thing that grants a role the redesign. Mirrors `HIRE_AGENT_HERO_REDESIGN_ROLES`; added in M7.1 when page layout moved into the shared shell all four roles render, so "which files exist" stopped being able to scope the pilot. Required in production as a subset. |
-| `CENSUS_GEOCODER_ENABLED` | Master gate for `CensusGeocoderAdapter` (G3) — the first non-Google coordinate provider. Default `false` = the adapter reports itself unavailable and is skipped without being called. **This flag carries more weight than the other gates in this table**: the US Census Geocoder needs no API key, so the missing credential that normally keeps an unfinished integration quiet does not exist here. Nothing else stands between the adapter and an outbound request. As of G3 the adapter is on no ladder, bound in no container and referenced by no flow, so enabling it changes nothing — assembling a ladder that includes it is G4/G5. |
-| `CENSUS_GEOCODER_BENCHMARK` | Which vintage of the Census address-range corpus to match against. Default `Public_AR_Current`. Pinned explicitly rather than relying on the service default so a change on the Census side arrives as a config diff instead of as coordinates that quietly moved. Valid values come from `/geocoder/benchmarks?format=json`; an unrecognised one is rejected with HTTP 400 and surfaces as a provider fault, not as "this address does not exist". |
-| `CENSUS_GEOCODER_TIMEOUT` / `CENSUS_GEOCODER_CACHE_TTL` / `CENSUS_GEOCODER_MAX_ADDRESS_LENGTH` | Request ceiling (default 10s), cache lifetime (default 30 days, keyed on the unit-free lookup line so every unit in a building shares one call), and the service's own 100-character address limit mirrored locally so an over-long address is declined before a request is spent on it. |
-| `CENSUS_GEOCODER_HOURLY_CAP` / `CENSUS_GEOCODER_DAILY_CAP` | Request ceilings (G4), defaults 500/hour and 5,000/day. **Deliberately independent of price.** Census is free and publishes no rate limit, which is exactly why these exist: an observer firing per save or a page resolving per render turns one user action into thousands of requests, and against a free provider that produces no bill and no signal until the Bureau stops answering us. These are a backstop against a bug, not a capacity plan — raise them with evidence from telemetry. `null` disables a ceiling; prefer a high number, since a ceiling you can see in config beats one that is absent. Note `(int) null` is `0`, which would block everything — `config/census_geocoder.php` guards that explicitly. |
-| `CENSUS_GEOCODER_BREAKER_THRESHOLD` / `_COOLDOWN` / `_WINDOW` | Circuit breaker (G4): 5 faults inside 600s opens the circuit for 300s, during which nothing is sent. Only genuine provider faults count — a no-match is the provider working correctly, and a rate-limit block is our own decision (counting it would let the breaker trip on our own rationing and stay open blaming Census). **Local rungs are never affected**: an open circuit must not stop a coordinate we already hold from being returned. |
-| `CENSUS_GEOCODER_AMBIGUOUS_CACHE_TTL` | How long an ambiguous match is remembered (default 1 day, vs 30 for a clean hit or miss). Ambiguity is deterministic, so re-asking every render wastes budget — but it is usually the symptom of a thin address rather than a property of the world, so it expires sooner and a corrected ZIP is picked up the next day without anyone needing to know a cache exists. |
-| `MLS_DIRECT_IMPORT_PREFILL_ENABLED` | Master gate for the Seller/Landlord **"Import by MLS #"** entry point on Create Offer Listing — the Bridge OData lookup that turns an MLS number into a facts-only prefill. **Default `true`** (was `false`): the owner has enabled it and it is verified in production, and the off default has since done the only harm it can do — removing a working entry point from the form with no error anywhere, indistinguishable from the feature having been withdrawn. `false` = inert: the input is not rendered and `HasMlsImport::importListingByMlsNumber()` returns early, so a hidden input or a hand-crafted Livewire call lands on the same answer as the UI. Read via `mlsNumberImportAvailable()`, which requires both this flag **and** a role in `mls_direct_import.prefill_roles` (`seller`, `landlord`). That role list is not a rollout dial — Buyer/Tenant listings describe search criteria across many areas rather than one property, so there is nothing to prefill. **Does not gate the pre-existing URL / raw-text importer** (`MlsListingImportService`), which is not a Bridge feature and keeps working regardless. **Not the Match Check flag either**: `mls_match_check.enabled` gates a Buyer/Tenant scoring page that never writes a form, while this gates a Seller/Landlord write path into a listing. **This default does not supply credentials** — Bridge credentials are still required (see `config/bridge.php`); with the flag on and credentials absent the lookup reports "MLS data service unavailable" rather than "listing not found". Required `true` in production. |
-| `MLS_DIRECT_IMPORT_QUICK_IMPORT_ENABLED` | Master gate for the shortened Seller/Landlord MLS quick-import path: enter an MLS #, have the property portion of the listing built for you, answer only the BidYourOffer transaction questions, review, publish. **Default `true`** (was `false`). **Separate from `MLS_DIRECT_IMPORT_PREFILL_ENABLED` and still an additional gate, never a replacement one** — both must be on for the flow to be reachable, because prefill adds an input to a form the user is already filling in while this adds a whole creation path that writes a draft listing. Role scope is `mls_direct_import.prefill_roles`, one list, so the two surfaces cannot drift about which roles the feature exists for. Deliberately **not** tied to `config/mls_media.php`: the flow's promise is delivered by the facts alone, which is what lets the media licence be settled on its own timetable. Required `true` in production. |
-| `REQUIRED_PRODUCTION_FLAGS_ENFORCED` | Whether `deploy:require-flags` **gates** a production start or merely warns. Default `true`. See the Deployment & migrations section above — this is the escape hatch, not a rollout dial, and the command announces in capitals when it is taken. Setting it `false` does not change any product flag; it only stops the gate refusing. |
-| `ADDRESS_POINT_CORPUS_ENABLED` | Master gate for `AddressPointCoordinateAdapter`, the ladder rung that reads our own address-point corpus. Default `false`. Off is not a placeholder: the corpus holds **zero rows** and no importer exists, so an enabled rung would spend a query per resolution to return `address_point_not_found` forever. Turn it on only after an import has been loaded and verified. Unlike the Census flag, an enabled rung here cannot reach the network — the worst case is a wasted local query. |
-| `ADDRESS_POINT_CORPUS_VERSION` | Which `corpus_version` the rung reads. **Both this and the flag must be set** — an enabled rung with no version pinned reports itself unavailable rather than guessing which import to serve. Deliberately not "whatever the ledger says is active": two corpus versions coexisting is what makes a new import verifiable before it is trusted, and a rung that followed activation would start serving new coordinates the instant a ledger row flipped, with no deploy and no diff. |
-| `ADDRESS_POINT_CORPUS_MAX_MATCHES` | How many corpus rows one lookup line may pull back (default 25). Rows sharing a normalized line are units of one building; a handful settles whether they agree on a point. A zero or negative value falls back to the default rather than silencing the rung. |
-| `OVERTURE_CORPUS_POI_ENABLED` | Master gate for `OvertureCorpusPoiAdapter`, the local Overture Places corpus. Default `false`. The **licensing** prerequisite is now met — the verbatim Foursquare NOTICE, the Apache-2.0 text and our notice of changes are committed and served — but that cleared one blocker, not the gate: activation is a separate, reviewed decision and this ships off. Both this and the registry's `location_providers.providers.overture_corpus.enabled` must agree — two gates, two files, neither redundant. `OvertureActivationReadinessTest` asserts both are off **and** that satisfying the NOTICE did not move either. Changing this alongside `OVERTURE_CORPUS_POI_VERSION` rotates the POI tile keys and every row's `pois_fetch_version` (see `CorpusSurface`). |
-| `OVERTURE_CORPUS_POI_ROUTING_ENABLED` | The **routing** gate — the second of the two, and the one that makes the corpus the effective POI provider. Backs `location_providers.providers.overture_corpus.enabled`, which was hardcoded `false`. Default `false`, parsed fail-closed exactly like `GOOGLE_PLACES_ENABLED` (ON only for `true`/`1`/`on`/`yes`). **Separate from `OVERTURE_CORPUS_POI_ENABLED` on purpose**: that one is a capability (may the adapter read the corpus at all), this one is a routing decision (is the corpus the base for `poi.default`). One variable for both would mean silencing the adapter during cluster maintenance also silently re-routed the pipeline. **With this OFF, `poi.default` resolves to NO provider and a Location DNA POI run is refused with `no_poi_provider_selected`, writing zero rows — it does not fall back to Google.** `google_places` is declared `overlay` there and `LocationProviderRegistry::effectiveBase()` no longer promotes an overlay to base. |
-| `OVERTURE_CORPUS_POI_VERSION` | Which `corpus_version` the adapter reads, pinned explicitly rather than following the activation ledger — two corpus versions coexisting is what lets a new import be verified before it is trusted. Default unpinned; an enabled adapter with no version reports itself unavailable rather than guessing. **Changing this rotates every POI tile cache key** (`LocationDnaPoiTileCache::$corpusToken`), which is the point: before that token existed, re-pinning served the previous corpus's cached candidates under the new pin for the tile TTL. |
-| `VIRTUAL_DRIVE_GOOGLE_ENABLED` | Development-only kill switch for Google Street View inside the Virtual Drive provider proof. Default `false`. **Off does not rely on the browser behaving**: `/dev/virtual-drive/google` then omits `google-streetview-provider.js` entirely — the only file that can construct a `StreetViewPanorama` — emits no browser key, and the launch-claim endpoint refuses. Parsed fail-closed like `VIRTUAL_DRIVE_PROOF_ENABLED` (ON only for `true`/`1`/`on`/`yes`; `off`/`no`/malformed are OFF). Read only via `VirtualDriveGoogleGate`. It sits **under** `VIRTUAL_DRIVE_PROOF_ENABLED` and the environment allow-list, so `true` on a production host still reaches a 404. Separate from the proof flag on purpose: Apple Look Around can be reviewed with Google incapable of starting. Apple is unaffected. |
-| `VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT` | How many intentional Virtual Drive launches the whole proof environment may start per calendar day (app timezone). **Default 0 = refuse; there is no "unlimited" value** — absent, non-numeric, negative, fractional and zero all mean no launches, and the refusal names this variable, because an operator who switched Google on without choosing a ceiling has not authorised an unbounded day. One launch = one page permitted to construct its **one billable panorama**: pressing "Try again" after a home with no imagery, changing homes and clicking signs spend nothing more; a reload and a fresh press spend another. `VirtualDriveGoogleLaunchLedger` keeps the tally **server-side** in the configured cache, one key per day, under a cache lock — `localStorage` would be per-browser and resettable, which is not "across the proof environment". Every write is **read back**: a store that cannot hold the tally (`CACHE_DRIVER=null`) would make every launch look like the first of the day with no error anywhere, so an unreadable ledger is a refusal (503). The claim is taken **before** the Maps JavaScript API is requested, and a granted claim is the **only** place `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY` is ever emitted — so the ceiling withholds the means rather than asking the browser to comply. See `docs/virtual-drive-provider-audit-2026-09-11.md` §17. |
+| `MATCHING_V2_PERSISTENCE_VERSION` | Version tag stamped on persisted runs; the reader trusts only rows at the current value (read-time re-gate). Default `c7-v1`. |
+| `HIRE_AGENT_HERO_REDESIGN_ENABLED` | Master gate for the redesigned Hire Agent hero (M4). **Default `true`**; a `false` default would let a container rebuild silently restore the superseded hero. Read only via `HireAgentHeroData::redesignEnabledFor()`. Roll back by setting `false` (an environment change, not a revert). Required `true` in production. Manual visual verification is the prerequisite before changing the hero; there is no automated browser coverage. |
+| `HIRE_AGENT_HERO_REDESIGN_ROLES` | Roles the hero redesign applies to. **Default `seller,buyer,landlord,tenant`**; independent of the master switch — both must agree. A partial list reads as a rendering bug. Narrowing it is a rollout decision. Production requires all four, as a **subset** test. |
+| `HIRE_AGENT_DETAIL_REDESIGN_ENABLED` | Master gate for the redesigned Hire Agent **detail page** (M5). **Default `true`**, required `true` in production, and **independent of the hero flag on purpose**. Gate only via `HireAgentDetailRedesign::enabledFor($role)` — no view may gate on the master switch (`enabled()` is not a gate), because body and shared shell disagreeing renders redesign markup without its stylesheet. The reader's own `false` fallback for a **missing** key is deliberate: an unloaded config must read as off. |
+| `HIRE_AGENT_DETAIL_REDESIGN_ROLES` | Roles the detail redesign applies to. **Default `seller,buyer,landlord,tenant`**; both it and the master switch must agree, and this list is the only thing that grants a role the redesign (layout lives in the shared shell all four roles render). Required in production as a subset. |
+| `CENSUS_GEOCODER_ENABLED` | Master gate for `CensusGeocoderAdapter`. Default `false` = the adapter reports itself unavailable and is skipped without being called. **Carries more weight than other gates**: Census needs no API key, so nothing else stands between the adapter and an outbound request. The adapter **is** the last rung of `StandardCoordinateLadder`, which Seller/Landlord listing saves reach via `PropertyCoordinatePersistenceService` — so enabling it lets ordinary saves send requests. See *Property coordinate ladder*. |
+| `CENSUS_GEOCODER_BENCHMARK` | Census address-range corpus vintage. Default `Public_AR_Current`, pinned so a Census-side change arrives as a config diff. Valid values from `/geocoder/benchmarks?format=json`; an unrecognised one is an HTTP 400 surfacing as a provider fault, not "address does not exist". |
+| `CENSUS_GEOCODER_TIMEOUT` / `CENSUS_GEOCODER_CACHE_TTL` / `CENSUS_GEOCODER_MAX_ADDRESS_LENGTH` | Request timeout (10s), cache lifetime (30 days, keyed on the unit-free lookup line), and the service's 100-character limit mirrored locally so an over-long address is declined before spending a request. |
+| `CENSUS_GEOCODER_HOURLY_CAP` / `CENSUS_GEOCODER_DAILY_CAP` | Request ceilings, 500/hour and 5,000/day — a backstop against a per-save or per-render bug against a free provider that gives no bill and no signal, not a capacity plan; raise with telemetry evidence. `null` disables a ceiling (prefer a high number). `(int) null` would be `0` and block everything; `config/census_geocoder.php` guards that. |
+| `CENSUS_GEOCODER_BREAKER_THRESHOLD` / `_COOLDOWN` / `_WINDOW` | Circuit breaker: 5 faults inside 600s opens it for 300s. Only genuine provider faults count — not a no-match, not our own rate-limit block. **Local rungs are never affected.** |
+| `CENSUS_GEOCODER_AMBIGUOUS_CACHE_TTL` | How long an ambiguous match is remembered (default 1 day vs 30), so a corrected ZIP is picked up the next day. |
+| `MLS_DIRECT_IMPORT_PREFILL_ENABLED` | Master gate for Seller/Landlord **"Import by MLS #"** on Create Offer Listing (Bridge OData lookup → facts-only prefill). **Default `true`**, required `true` in production. `false` = inert: input not rendered and `HasMlsImport::importListingByMlsNumber()` returns early (so hand-crafted calls get the same answer). Read via `mlsNumberImportAvailable()`, which also requires a role in `mls_direct_import.prefill_roles` (`seller`, `landlord` — not a rollout dial; Buyer/Tenant have nothing to prefill). Does **not** gate the URL / raw-text importer (`MlsListingImportService`) and is **not** the Match Check flag (`mls_match_check.enabled`). Supplies no credentials: without Bridge credentials the lookup reports "MLS data service unavailable". |
+| `MLS_DIRECT_IMPORT_QUICK_IMPORT_ENABLED` | Master gate for the Seller/Landlord MLS quick-import creation path. **Default `true`**, required `true` in production. **An additional gate on top of the prefill flag, never a replacement** — both must be on. Same role list (`mls_direct_import.prefill_roles`). Deliberately **not** tied to `config/mls_media.php`. |
+| `REQUIRED_PRODUCTION_FLAGS_ENFORCED` | Whether `deploy:require-flags` gates a production start or only warns. Default `true`. An escape hatch, not a rollout dial; changes no product flag. See *Deployment & migrations*. |
+| `ADDRESS_POINT_CORPUS_ENABLED` | Master gate for `AddressPointCoordinateAdapter`. Default `false`. The corpus holds **zero rows** and no importer exists (an enabled rung would return `address_point_not_found` forever); enable only after an import is loaded and verified. Cannot reach the network. |
+| `ADDRESS_POINT_CORPUS_VERSION` | Which `corpus_version` the rung reads. **Both this and the flag must be set** — unpinned, the rung reports itself unavailable. Pinned rather than following the ledger, so a new import is verifiable before it is trusted. |
+| `ADDRESS_POINT_CORPUS_MAX_MATCHES` | Rows one lookup line may pull back (default 25); zero/negative falls back to the default. |
+| `OVERTURE_CORPUS_POI_ENABLED` | Adapter (capability) gate for `OvertureCorpusPoiAdapter`. Default `false`. The licensing prerequisite is met, but **that is not activation authorization** — activation is a separate reviewed decision. Must agree with the routing gate; `OvertureActivationReadinessTest` asserts both off. See *Location DNA attribution*. |
+| `OVERTURE_CORPUS_POI_ROUTING_ENABLED` | Routing gate behind `location_providers.providers.overture_corpus.enabled`. Default `false`, fail-closed. **Separate from the adapter gate on purpose** (capability vs routing). **Off, `poi.default` resolves to NO provider and a POI run is refused with `no_poi_provider_selected`, writing zero rows — it does not fall back to Google** (`google_places` is an `overlay`, and `LocationProviderRegistry::effectiveBase()` never promotes an overlay to base). |
+| `OVERTURE_CORPUS_POI_VERSION` | Which `corpus_version` the adapter reads; pinned, not ledger-following. Default unpinned (enabled adapter then reports unavailable). **Changing it rotates every POI tile key (`LocationDnaPoiTileCache::$corpusToken`) and `pois_fetch_version`** via `CorpusSurface`. |
+| `VIRTUAL_DRIVE_GOOGLE_ENABLED` | Development-only kill switch for Street View in the Virtual Drive proof. Default `false`, fail-closed like `VIRTUAL_DRIVE_PROOF_ENABLED`. Off: `/dev/virtual-drive/google` omits `google-streetview-provider.js` (the only file that can construct a `StreetViewPanorama`), emits no browser key, and the launch-claim endpoint refuses. Read only via `VirtualDriveGoogleGate`. Sits **under** `VIRTUAL_DRIVE_PROOF_ENABLED` and the environment allow-list (production still 404s). Apple is unaffected. |
+| `VIRTUAL_DRIVE_GOOGLE_DAILY_LAUNCH_LIMIT` | Intentional Virtual Drive launches per calendar day (app timezone) across the proof environment. **Default 0 = refuse; no "unlimited" value** — absent, non-numeric, negative, fractional and zero all refuse, naming this variable. One launch = one page allowed its **one billable panorama** ("Try again", changing homes and clicking signs spend nothing; a reload and fresh press spend another). `VirtualDriveGoogleLaunchLedger` keeps the tally **server-side** in the cache under a lock and **reads every write back**; an unreadable ledger (`CACHE_DRIVER=null`) is a 503 refusal. The claim precedes any Maps JavaScript request, and a granted claim is the **only** place `VIRTUAL_DRIVE_GOOGLE_MAPS_BROWSER_KEY` is emitted. See `docs/virtual-drive-provider-audit-2026-09-11.md` §17. |
 | `LOCATION_DNA_FLOOD_ZONE_MAX_AREA` | FEMA API bounding-box threshold in sq-degrees |
-| `CRITERIA_LDNA_GEOGRAPHY_SOURCE` | Which `CriteriaGeographyRepository` backs the geography cascade. **Exactly three values are accepted** — `eloquent` (default; the `us_*` reference tables), `census` (the `census_*` corpus from `census:import-geography`), `fake` (in-memory fixture, local/demo only). **Anything else throws at container resolution.** That is deliberate: the binding used to fall through to `eloquent`, so a typo silently served legacy data and looked exactly like success. Selecting `census` requires the corpus to be present — run `php artisan census:verify-geography` first, and in the deploy sequence of any environment using it, or every tier enumerates empty with no error. |
+| `CRITERIA_LDNA_GEOGRAPHY_SOURCE` | Which `CriteriaGeographyRepository` backs the geography cascade: exactly `eloquent` (default; `us_*` tables), `census` (`census_*` corpus from `census:import-geography`) or `fake` (local/demo only). **Anything else throws at container resolution** — never a silent fallback. `census` requires the corpus: run `php artisan census:verify-geography` first and in that environment's deploy sequence, or every tier enumerates empty. |
 | `CRITERIA_LDNA_PREVIEW_ENABLED` | Geography preview surface. Default `false`. |
 | `OFFER_PLAYOFF_ALLOWED_IDS` | Comma-separated user IDs or `*` for all |
-| `EXPLORE_ENABLED` | Master gate for BidYourOffer Explore (`/explore` plus `/api/explore/listings*`). Default `false` = every route 404s, data endpoints included, so the feature is invisible rather than advertised. Mirrors `CheckMatchCheckEnabled`. Fails closed: a config that did not load reads as off. Says nothing about VOW. |
-| `EXPLORE_VOW_ENABLED` | The Property Intelligence / VOW tier. Default `false`, **and setting it `true` grants nothing** — `VowAvailability` refuses in code, and a test asserts the flag cannot move the tier. It exists so the posture can be reported, not as the gate: no VOW approval, dataset, credential, registration flow or feed field exists in this application. Activation requirements are in `VowAvailability::activationRequirements()` and `docs/bidyouroffer-explore-audit-2026-09-10.md`. |
-| `EXPLORE_GOOGLE_MAPS_BROWSER_KEY` | Browser key for the Maps JavaScript API `maps3d` renderer. **Not `GOOGLE_PLACES_API_KEY`**, which is a server key for address validation and POI lookup and must never be emitted into a page or used as a fallback here. Absent by default — that is a distinct third state from "Explore off": the route serves, the API answers, and the map area states why it is empty, because a blank grey rectangle is indistinguishable from a bug. With no key the page issues **zero** Google requests. |
-| `EXPLORE_GOOGLE_MAPS_MAP_ID` / `EXPLORE_GOOGLE_MAPS_VERSION` | Optional styled Map ID (photorealistic tiles render without one) and the API version channel (default `alpha`, which is where `Map3DElement` currently lives). |
-| `EXPLORE_DEFAULT_LAT` / `_LNG` / `_ALTITUDE` / `_TILT` / `_HEADING` / `_RANGE` | The opening camera. Defaults to St. Petersburg / Tampa Bay because that is where this dataset's 1,225 cached records actually are; opening anywhere else shows an empty neighbourhood, which reads as a broken feature rather than an empty market. |
-| `EXPLORE_DISCOVERY_ENABLED` | Whether an Explore viewport may ask the provider for the CURRENT eligible listings in that area, through `LazyBridgeImportService` — the one existing MLS ingestion pipeline. Default `false`, the same posture as `MLS_SYNC_ENABLED` and for the same reason: merging and activating are two decisions. **Off is not merely quieter, it is less complete** — Explore then renders only what some earlier workflow happened to import, which is a statement about our cache, so the response labels itself `discovery.status = "disabled"` rather than letting a thin result read as a thin market. On, a request costs at most one provider pass per transaction type per viewport, free while the tile's fetch cache is warm, every page admitted against the provider budget before it is sent — and it never dispatches Location DNA. Parsed strictly: ON only for `true`/`1`/`on`/`yes`; `off`, `no` and any malformed value are OFF. |
-| `EXPLORE_DISCOVERY_TILE_DEGREES` | Grid (default `0.05°`, ~5.5 km) the discovery bbox is snapped **outwards** to before it is hashed into a fetch-cache key. **This is what makes cache reuse real**: unsnapped, the key changes with every pixel of pan and every camera nudge becomes a provider request. Outwards, never nearest, so the box always contains the viewport — otherwise a property at the screen edge would be rendered from an area discovery never asked about. |
-| `EXPLORE_DISCOVERY_MAX_PAGES` / `EXPLORE_DISCOVERY_MAX_RECORDS` | Per-pass pagination ceilings (default 5 × 500), **clamped downwards** against the global `BRIDGE_LAZY_*` envelope by the importer — a call site may lower a spend limit, never raise one. Lower than the criteria-search defaults because this runs while somebody is moving a camera rather than on a results page they are waiting for. Hitting a ceiling makes the pass *partial*, which suppresses the withhold-unconfirmed-rows rule: absence would then mean "we stopped asking", not "it is gone". |
-| `EXPLORE_PROVIDER_BUDGET_ENABLED` | The provider-spend guard. Default `true`. **Switching it off does not unleash traffic** — `ExploreProviderBudget` reads a disabled guard as "do not call the provider", so it is a second way to stop spending and never a way to start it. All accounting is the existing `ProviderRequestBudget`; no second budget system exists, and a test asserts the guard contains no counters of its own. |
-| `EXPLORE_PROVIDER_KILL_SWITCH` | Emergency stop for Explore's outbound Stellar/Bridge traffic (discovery pages and the panel lookup), leaving Explore and the rest of the application serving. Default `false`. **Fails safe**: tripped by `true`/`1`/`on`/`yes` and by ANY unrecognised value; untripped only for unset, empty, `false`/`0`/`off`/`no`. Distinct from `EXPLORE_DISCOVERY_ENABLED` only in intent: that is the feature gate, this is the thing you set at 2am. Exhaustion degrades — last-known rows stay on the map and the response is marked `degraded` — it never reports an empty market. |
-| `EXPLORE_PROVIDER_GLOBAL_HOURLY` / `_GLOBAL_DAILY` | HARD ceiling across every caller (300 / 2,000), in outbound Bridge HTTP requests, each admitted before it is sent. The bill's backstop, and the ceiling that catches what no per-caller limit can see — many actors, or one rotating addresses. Conservative for a controlled launch; an application-side ceiling, not a statement of Stellar's allowance, which is unknown here. Raise only from `explore_provider` telemetry. |
-| `EXPLORE_PROVIDER_ACTOR_HOURLY` / `_ACTOR_DAILY` | HARD ceiling per actor (60 / 300), where the actor is `user id, else IP` — the identity every throttled route here already uses, hashed before it becomes a cache key. Nothing new is fingerprinted. Bounds one browser traversing unlimited distinct cold tiles, which `throttle:120,1` cannot: that limits requests, not provider spend. **No value means "unlimited"** — zero, negative or non-numeric falls back to the shipped default. |
-| `EXPLORE_GOOGLE_3D_ENABLED` | The 3D renderer's own switch. **Default OFF**, and a browser key alone turns nothing on: Google needs `EXPLORE_ENABLED`, this switch and `EXPLORE_GOOGLE_MAPS_BROWSER_KEY`. ON only for `true`/`1`/`on`/`yes`; unset, empty, `false`/`0`/`off`/`no` and any malformed value are OFF. **Off means the loader never runs**: no `<script>`, no contact with `maps.googleapis.com`, and the browser credential is not emitted into the HTML at all. Also the emergency stop for Google — no key deletion needed. |
-| `EXPLORE_MAX_RESULTS` / `EXPLORE_MAX_SPAN_DEGREES` | Page size (default 150, hard ceiling 250) and the bounding-box span ceiling (default 1.0°). An over-large bbox is **refused with a 422, never clamped** — a clamped box returns markers for somewhere the consumer is not looking, and the thinner result reads as "nothing for sale here", which is a false statement about a real market. |
+| `EXPLORE_ENABLED` | Master gate for Explore (`/explore`, `/api/explore/listings*`). Default `false` = every route 404s (mirrors `CheckMatchCheckEnabled`). Ordinary cast; an unloaded config reads as off. Says nothing about VOW. See *BidYourOffer Explore*. |
+| `EXPLORE_VOW_ENABLED` | Default `false`, **and `true` grants nothing** — `VowAvailability` refuses in code (test-asserted); the flag only lets the posture be reported. Requirements: `VowAvailability::activationRequirements()`. |
+| `EXPLORE_GOOGLE_MAPS_BROWSER_KEY` | Browser key for the `maps3d` renderer; **never** `GOOGLE_PLACES_API_KEY`. Absent by default (a distinct third state: page serves, map area says why it is empty, zero Google requests). |
+| `EXPLORE_GOOGLE_MAPS_MAP_ID` / `EXPLORE_GOOGLE_MAPS_VERSION` | Optional styled Map ID and the API channel (default `alpha`, where `Map3DElement` lives). |
+| `EXPLORE_DEFAULT_LAT` / `_LNG` / `_ALTITUDE` / `_TILT` / `_HEADING` / `_RANGE` | Opening camera; defaults to St. Petersburg / Tampa Bay, where the cached records are. |
+| `EXPLORE_GOOGLE_3D_ENABLED` | The 3D renderer's switch. Default `false`, fail-closed. Google needs `EXPLORE_ENABLED` + this + the browser key. Off = loader never runs and no credential in the HTML; also Google's emergency stop. |
+| `EXPLORE_DISCOVERY_ENABLED` | Whether a viewport may ask the provider for current listings via `LazyBridgeImportService`. Default `false`, fail-closed. Off = cache-only, labelled `discovery.status = "disabled"`. On: at most one pass per transaction type per viewport, every page budget-admitted, never dispatching Location DNA. |
+| `EXPLORE_DISCOVERY_TILE_DEGREES` | Grid (default `0.05°`) the discovery bbox is snapped **outwards** to before hashing into a fetch-cache key — what makes cache reuse real. |
+| `EXPLORE_DISCOVERY_MAX_PAGES` / `EXPLORE_DISCOVERY_MAX_RECORDS` | Per-pass pagination ceilings (5 × 500), **clamped downwards** against `BRIDGE_LAZY_*`. Hitting one makes the pass *partial* (withhold rule suppressed). |
+| `EXPLORE_PROVIDER_BUDGET_ENABLED` | The provider-spend guard. Default `true`, ordinary cast. **Off does not unleash traffic** — a disabled guard means "do not call the provider". |
+| `EXPLORE_PROVIDER_KILL_SWITCH` | Emergency stop for Explore's outbound Bridge traffic. Default `false`. **Fails safe the other way**: untripped only for unset, empty, `false`/`0`/`off`/`no`; tripped by `true`/`1`/`on`/`yes` **and any unrecognised value**. Exhaustion degrades (last-known rows stay, response marked `degraded`), never reports an empty market. |
+| `EXPLORE_PROVIDER_GLOBAL_HOURLY` / `_GLOBAL_DAILY` | HARD all-caller ceiling (300 / 2,000) in outbound Bridge requests, admitted before sending. Application-side, not Stellar's allowance. Raise only from `explore_provider` telemetry. |
+| `EXPLORE_PROVIDER_ACTOR_HOURLY` / `_ACTOR_DAILY` | HARD per-actor ceiling (60 / 300), actor = hashed `user id, else IP`. **No value means "unlimited"** — zero, negative or non-numeric falls back to the default (also true of the global caps). |
+| `EXPLORE_MAX_RESULTS` / `EXPLORE_MAX_SPAN_DEGREES` | Page size (150, hard ceiling 250) and bbox span ceiling (1.0°). An over-large bbox is **refused with a 422, never clamped**. |
 
 `.env` is not tracked in git — back it up separately.
