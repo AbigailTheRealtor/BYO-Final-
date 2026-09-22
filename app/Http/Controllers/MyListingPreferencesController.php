@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Services\ListingPreferences\ListingPreferenceHistoryReader;
 use App\Services\ListingPreferences\ListingPreferenceListingHydrator;
 use App\Services\ListingPreferences\ListingPreferenceListReader;
+use App\Services\ListingPreferences\Taste\TasteDnaService;
 use App\Support\ListingPreferences\ListingPreferenceAvailability;
 use App\Support\ListingPreferences\ListingPreferencePrefetch;
 use App\Support\ListingPreferences\ListingPreferenceState;
 use App\Support\ListingPreferences\SeekerRole;
+use App\Support\ListingPreferences\Taste\TasteDnaAvailability;
+use App\Support\ListingPreferences\Taste\TasteObservationPresenter;
 use App\Support\SmartTags\SmartTagListingType;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -49,6 +52,7 @@ class MyListingPreferencesController extends Controller
         private readonly ListingPreferenceListingHydrator $hydrator,
         private readonly ListingPreferenceHistoryReader $history,
         private readonly ListingPreferencePrefetch $prefetch,
+        private readonly TasteDnaService $taste,
     ) {
     }
 
@@ -83,6 +87,34 @@ class MyListingPreferencesController extends Controller
             'page'      => $page,
             'cards'     => $this->hydrator->hydrate($refs, $userId),
             'reasons'   => $this->list->reasonLabelsFor($page->items()),
+            'tasteLink' => TasteDnaAvailability::enabled(),
+        ]);
+    }
+
+    /**
+     * "Your Home Taste" — patterns in the customer's OWN Save / Maybe / Pass
+     * choices (Phase 4).
+     *
+     * Computed on request from their own history and nobody else's; nothing is
+     * stored and nothing else reads it. The view receives worded observations
+     * only — never a score, a key, an id or a subject — because the presenter is
+     * the one path from a signal to a page.
+     */
+    public function taste(Request $request): View
+    {
+        $role = $this->roleFor($request);
+
+        if ($role === null) {
+            return view('listing-preferences.mine.taste', ['available' => false, 'incomplete' => false, 'groups' => [], 'labels' => []]);
+        }
+
+        $profile = $this->taste->profileFor((int) $request->user()->getAuthIdentifier(), $role);
+
+        return view('listing-preferences.mine.taste', [
+            'available'  => true,
+            'incomplete' => ! $profile->complete,
+            'groups'     => TasteObservationPresenter::grouped(TasteObservationPresenter::present($profile)),
+            'labels'     => TasteObservationPresenter::GROUP_LABELS,
         ]);
     }
 
@@ -169,6 +201,7 @@ class MyListingPreferencesController extends Controller
             'page'      => null,
             'cards'     => [],
             'reasons'   => [],
+            'tasteLink' => false,
         ];
     }
 

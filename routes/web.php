@@ -1496,6 +1496,12 @@ Route::middleware(['listing-preferences', 'auth'])
     ->group(function () {
         Route::get('/', [\App\Http\Controllers\MyListingPreferencesController::class, 'index'])->name('index');
         Route::get('/history', [\App\Http\Controllers\MyListingPreferencesController::class, 'history'])->name('history');
+
+        // Phase 4 — "Your Home Taste". A second, separate gate on top of the
+        // group's: base Save / Maybe / Pass runs with Taste DNA off.
+        Route::get('/taste', [\App\Http\Controllers\MyListingPreferencesController::class, 'taste'])
+            ->middleware('listing-preference-taste')
+            ->name('taste');
     });
 
 // ===========================================================================

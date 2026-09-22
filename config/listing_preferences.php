@@ -50,14 +50,31 @@ return [
     'guest_capture_enabled' => false,
 
     /*
-    | Behavioural learning — Taste DNA, ranking influence, "find more like this".
+    | Taste DNA — "Your Home Taste" (Phase 4).
     |
-    | HARD OFF, and not merely unbuilt. docs/smart-tags/SMART_TAGS_GOVERNANCE.md
-    | requires behavioural learning to carry its own governance revision, and
-    | docs/listing-preferences/LISTING_PREFERENCE_GOVERNANCE.md §4 states the
-    | Fair Housing prohibitions any learner must satisfy. Turning this on is a
-    | reviewed code change after that governance work, not a configuration edit —
-    | the same posture as MLS_REMARKS_PROCESSING_APPROVED.
+    | The customer's own page of patterns learned from their own Save / Maybe /
+    | Pass history. Governed by LISTING_PREFERENCE_GOVERNANCE.md §13.
+    |
+    | Parsed exactly like `enabled`: ON only for `true`, `1`, `on`, `yes`.
+    | Requires `enabled` as well — read only through TasteDnaAvailability — so
+    | base Save / Maybe / Pass can run with this off, and switching capture on
+    | never switches learning on with it.
+    |
+    | IT GATES ONE PAGE AND NOTHING ELSE. Taste DNA is derived on demand for that
+    | page and has no consumer in ranking, matching, Stellar, Ask AI or
+    | recommendations; TasteDnaArchitectureGuardTest asserts none exists.
+    */
+    'taste_dna_enabled' => filter_var(env('LISTING_PREFERENCE_TASTE_DNA_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
+    /*
+    | Learning that ACTS — ranking influence, re-ranking, recommendations, "find
+    | more like this", Ask AI consumption. Phase 5.
+    |
+    | HARD OFF, and not merely unbuilt. Taste DNA (above) learns and explains,
+    | and changes nothing a customer is shown; letting it move results needs its
+    | own governance revision and weight-invariant tests. Turning this on is a
+    | reviewed code change, not a configuration edit — the same posture as
+    | MLS_REMARKS_PROCESSING_APPROVED. Nothing reads it.
     */
     'learning_enabled' => false,
 

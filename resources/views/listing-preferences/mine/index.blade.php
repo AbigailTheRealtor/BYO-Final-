@@ -29,7 +29,12 @@
                     </a>
                 </li>
             @endforeach
-            <li class="nav-item ms-auto">
+            @if($tasteLink ?? false)
+                <li class="nav-item ms-auto">
+                    <a class="nav-link" href="{{ route('listing-preferences.mine.taste') }}">Your Home Taste</a>
+                </li>
+            @endif
+            <li class="nav-item {{ ($tasteLink ?? false) ? '' : 'ms-auto' }}">
                 <a class="nav-link" href="{{ route('listing-preferences.mine.history') }}">History</a>
             </li>
         </ul>
