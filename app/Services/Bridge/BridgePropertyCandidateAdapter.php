@@ -187,6 +187,15 @@ class BridgePropertyCandidateAdapter
             grossAnnualIncome:       $this->toInt($raw['GrossIncome'] ?? $raw['GrossScheduledIncome'] ?? null),
             annualOperatingExpenses: $this->toInt($raw['STELLAR_AnnualExpenses'] ?? null),
             businessType:            $this->toList($raw, 'BusinessType'),
+
+            // The governed provider, from the row's own stored column and never
+            // defaulted: fromStored() is fail-closed, so an unrecognised value is
+            // null. fromRecord()'s unsaved row carries the provider the
+            // normalizer stamps, exactly as an upsert would store it.
+            mlsProvider:             $p->mlsProvider(),
+
+            // The feed's own precision. BathroomsTotalInteger (above) is rounded.
+            bathroomsTotalDecimal:   $this->toDecimal($raw['BathroomsTotalDecimal'] ?? null),
         );
     }
 
@@ -281,6 +290,18 @@ class BridgePropertyCandidateAdapter
     private function toFloat(mixed $v): ?float
     {
         return $v === null || $v === '' ? null : (float) $v;
+    }
+
+    /**
+     * A numeric feed value as a float, or null. Unlike toFloat(), which re-casts
+     * an already-typed column, a raw value that is not numeric is null rather
+     * than (float) 'abc' = 0.0 — a fabricated zero.
+     */
+    private function toDecimal(mixed $v): ?float
+    {
+        return is_int($v) || is_float($v) || (is_string($v) && is_numeric(trim($v)))
+            ? (float) $v
+            : null;
     }
 
     private function toBool(mixed $v): ?bool

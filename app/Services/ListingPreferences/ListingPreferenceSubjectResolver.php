@@ -6,6 +6,7 @@ use App\Models\BridgeProperty;
 use App\Models\LandlordAgentAuctionMeta;
 use App\Models\SellerAgentAuctionMeta;
 use App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter;
+use App\Support\Listing\MlsListingLink;
 use App\Support\Listing\MlsProvider;
 use App\Support\ListingPreferences\ListingPreferenceSubjectRef;
 use App\Support\SmartTags\SmartTagListingRef;
@@ -205,38 +206,10 @@ class ListingPreferenceSubjectResolver
      */
     private function providersForListingKeys(array $listingKeys): array
     {
-        $listingKeys = array_values(array_unique(array_filter($listingKeys, static fn ($k): bool => $k !== '')));
-
-        if ($listingKeys === []) {
-            return [];
-        }
-
-        $seen = [];
-
-        BridgeProperty::query()
-            ->whereIn('listing_key', $listingKeys)
-            ->get(['provider', 'listing_key'])
-            ->each(function (BridgeProperty $row) use (&$seen): void {
-                $seen[(string) $row->listing_key][] = $row->mlsProvider();
-            });
-
-        $out = [];
-
-        foreach ($seen as $key => $providers) {
-            // EXACTLY ONE ROW, and its provider recognised. Ambiguity is counted
-            // in ROWS, not in distinct recognised providers: if a second row also
-            // holds this key, the meta cannot say which one the listing came from,
-            // and discarding the competitor because we happen not to recognise its
-            // provider would resolve the key to Stellar by elimination — the
-            // silent substitution this whole change exists to prevent.
-            if (count($providers) !== 1 || ! $providers[0] instanceof MlsProvider) {
-                continue;
-            }
-
-            $out[$key] = $providers[0];
-        }
-
-        return $out;
+        // The exactly-one-recognised-row rule lives in MlsListingLink, so every
+        // caller that must turn a bare ListingKey into (provider, key) applies it
+        // identically.
+        return MlsListingLink::providersForListingKeys($listingKeys);
     }
 
     /**

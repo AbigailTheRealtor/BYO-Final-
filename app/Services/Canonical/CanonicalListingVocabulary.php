@@ -47,8 +47,10 @@ namespace App\Services\Canonical;
  *     compatibility preferences, screening rules, compensation. Those are the
  *     BidYourOffer workflow, not the property or the listing.
  *   · No persisted canonical id. Identity is still (listing_type, listing_id)
- *     on the CanonicalListing itself; the provider-scoped MLS identity of an
- *     MLS-linked row is P0-5's to resolve.
+ *     on the CanonicalListing itself. An MLS record's canonical listing also
+ *     carries its provider-scoped native identity (provider, listing_key) as a
+ *     non-persisted reference beside the fields — never as a key (P0-5). An
+ *     MLS-linked BYO row does not carry it yet.
  *   · No description or media. Landlord prose passes a Fair Housing gate, MLS
  *     PublicRemarks is licence-restricted and MLS media carries its own licence
  *     policy; none of that is needed for listing convergence yet.
@@ -96,9 +98,16 @@ final class CanonicalListingVocabulary
 
     /**
      * RESO LeaseAmountFrequency for a lease list price. Declared so a lease price
-     * is never read without its period; no BidYourOffer source supplies it today,
-     * so it is absent and a consumer must treat the period as unknown — never
-     * assume monthly.
+     * is never read without its period. The value is the platform's existing
+     * normalized token — {@see \App\Services\ListingImport\MlsNormalizer::normalizeLeaseFrequency()}
+     * (`monthly`, `weekly`, `daily`, `annually`, `seasonal`, `month_to_month`,
+     * …), the one normalization matching (`MonthlyEquivalent`) and Explore
+     * already consume — never a second lease-period vocabulary.
+     *
+     * The MLS adapter populates it from the feed (P0-5). A BidYourOffer Landlord
+     * row does store a `lease_amount_frequency` meta, but the BYO adapter does not
+     * read it yet, so on a BYO row the period is absent. Absent means unknown and
+     * a consumer must treat it so — never assume monthly.
      */
     public const LISTING_LEASE_AMOUNT_FREQUENCY = 'listing.lease_amount_frequency';
 
@@ -224,8 +233,18 @@ final class CanonicalListingVocabulary
         'pet.profile.breed'       => [self::TYPE_STRING, self::SIDE_DEMAND],
     ];
 
+    /**
+     * The listing type of an MLS record's canonical listing: a `bridge_properties`
+     * row, id = `bridge_properties.id`. The same token the shared listing-type
+     * registry produces for that table (a test pins the two equal). It names
+     * the local table, not the provider —
+     * the provider-scoped native identity travels separately on the
+     * CanonicalListing, never in a key name.
+     */
+    public const MLS_LISTING_TYPE = 'bridge';
+
     /** Listing types whose rows describe a property on offer. */
-    public const SUPPLY_LISTING_TYPES = ['seller_agent', 'landlord_agent'];
+    public const SUPPLY_LISTING_TYPES = ['seller_agent', 'landlord_agent', self::MLS_LISTING_TYPE];
 
     /** Listing types whose rows describe what a seeker wants. */
     public const DEMAND_LISTING_TYPES = ['buyer_agent', 'tenant_agent'];
