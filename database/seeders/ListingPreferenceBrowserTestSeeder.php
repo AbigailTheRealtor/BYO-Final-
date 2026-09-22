@@ -17,6 +17,7 @@ use App\Support\ListingPreferences\SeekerRole;
 use App\Support\SmartTags\SmartTagContext;
 use App\Support\SmartTags\SmartTagListingRef;
 use App\Support\SmartTags\SmartTagListingType;
+use App\Support\SmartTags\SmartTagTaxonomy;
 use App\Support\Safeguards\ProductionDatabaseRefused;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -57,6 +58,15 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
     public const MANAGE_TENANT = 'lp-manage-tenant@example.test';
     public const STRANGER      = 'lp-manage-stranger@example.test';
     public const VD_BUYER      = 'lp-vd-buyer@example.test';
+
+    /*
+     | Phase 4 — "Your Home Taste". Two accounts of their own: one with enough
+     | agreeing choices for patterns to appear, one with a single choice, which
+     | must show the empty state. Kept apart from every other fixture so no spec
+     | that asserts "no preference yet" can be falsified by this one.
+     */
+    public const HOME_TASTE_BUYER = 'lp-home-taste-buyer@example.test';
+    public const HOME_TASTE_NEW   = 'lp-home-taste-new@example.test';
 
     /** Bridge keys the Virtual Drive proof page is pointed at by the harness. */
     public const VD_KEYS = ['LP-VD-HOME-A', 'LP-VD-HOME-B'];
@@ -121,6 +131,7 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
 
         $manage       = $this->seedManagement();
         $virtualDrive = $this->seedVirtualDrive();
+        $homeTaste    = $this->seedHomeTaste();
 
         file_put_contents(
             $fixturePath,
@@ -133,6 +144,7 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
                 'password'         => self::PASSWORD,
                 'manage'           => $manage,
                 'virtual_drive'    => $virtualDrive,
+                'home_taste'       => $homeTaste,
             ], JSON_PRETTY_PRINT)
         );
     }
@@ -277,6 +289,63 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
                 fn (string $k) => ListingPreferenceReasonCatalog::get($k)->label, $sale)),
             'pass_reason_labels' => array_values(array_map(
                 fn (string $k) => ListingPreferenceReasonCatalog::get($k)->label, $pass)),
+        ];
+    }
+
+    /**
+     * The "Your Home Taste" fixture — Phase 4.
+     *
+     * Written through ListingPreferenceWriter like every other fixture here, so
+     * the history the page learns from is what real clicks produce: three Saves
+     * that agree on one reason, two Passes that agree on another, and a second
+     * account with a single Save, which is never enough to be called a taste.
+     *
+     * @return array<string, mixed>
+     */
+    private function seedHomeTaste(): array
+    {
+        $writer = app(ListingPreferenceWriter::class);
+
+        $buyer    = $this->account(self::HOME_TASTE_BUYER, 'buyer', 'Taste Buyer');
+        $newcomer = $this->account(self::HOME_TASTE_NEW, 'buyer', 'Taste Newcomer');
+
+        SellerAgentAuction::where('address', 'like', '%Taste Terrace%')->get()->each(function (SellerAgentAuction $old): void {
+            SellerAgentAuctionMeta::where('seller_agent_auction_id', $old->id)->delete();
+            $old->delete();
+        });
+
+        $liked    = 'natural_light';
+        $disliked = 'needs_complete_update';
+
+        $ref = fn (SellerAgentAuction $l) => new SmartTagListingRef(SmartTagListingType::SellerAgent, (int) $l->id);
+
+        $savedIds = [];
+        foreach ([1, 2, 3] as $n) {
+            $listing    = $this->publishedListing($buyer, "{$n} Taste Terrace, St. Petersburg, FL 33701");
+            $savedIds[] = (int) $listing->id;
+            $writer->setState((int) $buyer->id, SeekerRole::Buyer, $ref($listing), ListingPreferenceState::Save, [$liked]);
+        }
+
+        foreach ([4, 5] as $n) {
+            $writer->setState((int) $buyer->id, SeekerRole::Buyer,
+                $ref($this->publishedListing($buyer, "{$n} Taste Terrace, St. Petersburg, FL 33701")),
+                ListingPreferenceState::Pass, [$disliked]);
+        }
+
+        $writer->setState((int) $newcomer->id, SeekerRole::Buyer,
+            $ref($this->publishedListing($newcomer, '6 Taste Terrace, St. Petersburg, FL 33701')),
+            ListingPreferenceState::Save, [$liked]);
+
+        return [
+            'buyer_email'    => self::HOME_TASTE_BUYER,
+            'newcomer_email' => self::HOME_TASTE_NEW,
+            'password'       => self::PASSWORD,
+            'liked_label'    => SmartTagTaxonomy::get($liked)->label,
+            'disliked_label' => SmartTagTaxonomy::get($disliked)->label,
+            'internal_keys'  => [$liked, $disliked],
+            // A home the NEWCOMER has not chosen yet: the spec Saves it in the
+            // browser, which is the second agreeing choice their page needs.
+            'live_listing_id' => $savedIds[0],
         ];
     }
 

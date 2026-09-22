@@ -72,6 +72,9 @@ function isolatedEnv(extra = {}) {
         // sets it explicitly so BOTH postures are exercised by a real server
         // rather than by a config poke.
         LISTING_PREFERENCES_ENABLED: FLAG,
+        // Phase 4 — "Your Home Taste" follows the same posture: on for the
+        // interaction instance, off (absent both gates) for the flag instance.
+        LISTING_PREFERENCE_TASTE_DNA_ENABLED: FLAG,
         // No credential may reach a provider from a browser run.
         GOOGLE_PLACES_API_KEY: '',
         GOOGLE_PLACES_ENABLED: 'false',

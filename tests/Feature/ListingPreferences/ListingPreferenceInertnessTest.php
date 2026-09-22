@@ -37,6 +37,7 @@ class ListingPreferenceInertnessTest extends TestCase
         $this->assertFalse($shipped['enabled'], 'LISTING_PREFERENCES_ENABLED must default off');
         $this->assertFalse($shipped['guest_capture_enabled'], 'guest capture is a decided no, not a dial');
         $this->assertFalse($shipped['learning_enabled'], 'behavioural learning stays gated on its governance revision');
+        $this->assertFalse($shipped['taste_dna_enabled'], 'LISTING_PREFERENCE_TASTE_DNA_ENABLED must default off');
     }
 
     /** @test */
@@ -167,6 +168,8 @@ class ListingPreferenceInertnessTest extends TestCase
         }
         $expected[] = 'listing-preferences.mine.index';
         $expected[] = 'listing-preferences.mine.history';
+        // Phase 4: "Your Home Taste", read-only, behind a SECOND gate as well.
+        $expected[] = 'listing-preferences.mine.taste';
         sort($expected);
 
         $this->assertSame($expected, $found, 'expected exactly the per-surface endpoints and the management pages');
@@ -184,6 +187,9 @@ class ListingPreferenceInertnessTest extends TestCase
 
         $this->assertStringNotContainsString('listing_preferences', (string) $contract);
         $this->assertStringNotContainsString('LISTING_PREFERENCES', (string) $contract);
+        // Phase 4's env name is singular, so the line above cannot see it.
+        $this->assertStringNotContainsString('LISTING_PREFERENCE_TASTE_DNA', (string) $contract);
+        $this->assertStringNotContainsString('taste_dna', (string) $contract);
     }
 
     private function sellerListing(): SellerAgentAuction

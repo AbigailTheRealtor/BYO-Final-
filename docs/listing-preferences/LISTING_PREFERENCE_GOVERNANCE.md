@@ -1,12 +1,14 @@
 # Listing Preference Governance — Save | Maybe | Pass
 
-Status: **Phase 2 — capture, behind a default-off flag.** Authenticated Buyers and Tenants can
+Status: **Phase 4 — Taste DNA (learn and explain, customer's own page only), behind its own
+default-off flag; see §13.** Phases 2–3 (capture, surfaces, management area) are merged.
+Earlier status: **Phase 2 — capture, behind a default-off flag.** Authenticated Buyers and Tenants can
 Save, Maybe or Pass a listing, give optional structured reasons, and undo, from the BidYourOffer
 Seller/Landlord property-detail pages. `LISTING_PREFERENCES_ENABLED` ships **false**, and off means
 the routes 404 and no control renders.
 
-Still not built, and still governed: ranking influence, Ask AI consumption, Virtual Drive, and
-**all behavioural learning** (§6, §10).
+Still not built, and still governed: ranking influence, Ask AI consumption, and **any learning that
+acts on what a customer is shown** (§6, §8, §13). Taste DNA learns and explains only.
 
 Customer terminology is **Save | Maybe | Pass**, everywhere — config, storage, docs and (later)
 the interface. Earlier planning notes used "Love/Maybe/Pass"; that wording is **superseded and must
@@ -277,7 +279,8 @@ No learning or ranking code exists. When it is built:
 |------|---------|---------|
 | `LISTING_PREFERENCES_ENABLED` | `false` | the master gate — capture, display, learning |
 | `listing_preferences.guest_capture_enabled` | `false` | guest records (§7) — a recorded decision |
-| `listing_preferences.learning_enabled` | `false` | behavioural learning — blocked by §6 and §10 |
+| `LISTING_PREFERENCE_TASTE_DNA_ENABLED` | `false` | "Your Home Taste" — Phase 4, §13. Requires the master gate too |
+| `listing_preferences.learning_enabled` | `false` | learning that ACTS on ranking, recommendations or Ask AI — Phase 5; hard-coded, read by nothing |
 
 Phase 1 **does not read these to decide anything**: there is no write path to gate, and the
 foundation behaves identically whether they are on or off. They are declared now so Phase 2 adds a
@@ -308,7 +311,7 @@ before any code is written.
 | 1 | inert foundation — tables, vocabulary, boundaries, tests, this document | — (merged) |
 | 2 | write path and one shared surface; authenticated only; undo works | `LISTING_PREFERENCES_ENABLED` (shipped off) |
 | 3 | remaining surfaces incl. Virtual Drive's `save` action; history and recovery UI | Phase 2 verified |
-| 4 | behavioural learning | §6 + §10 governance revision |
+| 4 | Taste DNA: learn and explain, on the customer's own page only (§13) | §6 + §13 — `LISTING_PREFERENCE_TASTE_DNA_ENABLED` (ships off) |
 | 5 | ranking integration as post-score re-rank; Ask AI consumption | Phase 4 + weight-invariant tests |
 
 ---
@@ -350,3 +353,135 @@ applies: only *applicability* is relaxed.
 
 **Pass changes nothing about the listing.** A test asserts the seller row and its meta are
 byte-identical after a Pass and a clear.
+
+---
+
+## 13. Phase 4 — Taste DNA ("Your Home Taste")
+
+**This section is the governance revision that §10 and Smart Tags governance §11 require before any
+learner ships.** It covers the three things they name — the decay model, the retention policy and
+the audit surface — and the Fair Housing half is §6, unchanged and binding.
+
+### What Phase 4 is, and what it is not
+
+Taste DNA learns patterns from **one customer's own explicit** Save, Maybe and Pass choices and the
+structured reasons they picked, and **explains** them back to that customer on one authenticated page,
+`/my/listing-preferences/taste`. It changes nothing a customer is shown anywhere else: not Match DNA,
+not the 100-point score, not Stellar or BYO ordering, not filtering, re-ranking, recommendations or
+Ask AI. Those are Phase 5, gated by `learning_enabled`, which stays hard-coded `false` and has no reader.
+
+`TasteDnaArchitectureGuardTest` enforces that by reading the source: only a named allowlist of files
+may reference Taste DNA, and none of them is in ranking, matching, Stellar, Explore, Ask AI, DNA, the
+Livewire wizards, jobs, commands, the helpers or `config/match_scoring.php`.
+
+### Evidence — the only inputs
+
+| Input | Source | Notes |
+|-------|--------|-------|
+| choices | `listing_preference_events` for ONE `(user_id, seeker_role)` | the existing append-only history; no second feedback store |
+| stated reasons | the event's `reasons_json` snapshot, resolved **live** through `ListingPreferenceReasonCatalog::learnable()` | `smart_tag` and `criteria` dimensions only |
+| listing characteristics | resolved **present** `smart_tag_assignments`; bedrooms, bathrooms, living area, lot size (buyers only), property sub-type | read by an allow-list of columns and meta keys |
+
+**Never an input:** page views, searches, dwell time or any passive browsing; free text of any kind
+(the snapshot holds keys, and `other_property_items` / descriptions / remarks are never read);
+`unspecified` reasons (`other`, `layout`, …); **location reasons** — a preference carries no structural
+link to the customer's Important Places, so "Location / proximity", "Commute" and "Busy road" are not
+learned in Phase 4 at all rather than guessed at; any address, city, ZIP, county, subdivision, school,
+coordinate or demographic field; and **any other customer's history** — the one query is keyed on the
+signed-in user and role, and no method reads across users.
+
+A tag is learned only while `isSeekerSelectable()` — asked of the taxonomy for stated reasons **and**
+for listing characteristics, so `accessible_features`, `playground`, retired and pending-review tags
+cannot enter by the back door of "the house had it". `natural_light` participates (seeker-selectable)
+and stays non-derivable. A property sub-type is dropped when it is "Other", a placeholder
+("Non-Applicable", "N/A", "None", "Unknown") or fails `SmartTagComplianceGuard` — the guard is asked of
+every sub-type, so this dimension cannot carry a concept the tag taxonomy may not.
+
+**Historical reasons, current facts.** The two sources age differently, and the rule is:
+
+* A **stated reason is historical evidence**: the snapshot stored on the event when the customer chose.
+  It never changes afterwards, and it keeps counting when the listing is later archived, refused by the
+  feed, or deleted outright.
+* An **observed characteristic is a correlation against the facts the platform CURRENTLY publishes**
+  for the listing the customer last acted on for that home. If the seller corrects the listing, the
+  correlation follows the current canonical fact on the next derivation. Nothing is snapshotted, no
+  second event system exists, and preference history is never rewritten.
+* When the listing or the fact is **unavailable** — feed-refused Bridge row, archived or draft native
+  listing, deleted row, blank or unreadable value, implausible number — that characteristic is
+  **omitted**, never guessed and never carried over from an earlier value.
+* The page says which is which (see *Audit surface*), so a correlation never reads as something the
+  customer told us.
+
+**One home, one subject.** Choices are grouped by `subject_key` only. An MLS home seen through its
+Bridge row and through the BYO Seller/Landlord listing imported from it resolves to the one
+provider-scoped `mls:` subject and counts as **one** home; a key two providers hold stays unmerged
+(the listing keeps its own `byo:` subject); nothing is ever grouped by address, parcel or proximity.
+
+### Weighting — deterministic, in `TasteDnaDeriver`
+
+* Save → positive, Pass → negative, **Maybe → uncertain**: a Maybe never counts toward a positive or
+  negative pattern; it only dilutes agreement, and an uncertain pattern is never called "often".
+* A stated reason weighs 1.0; a listing characteristic weighs 0.5. One choice that both states and has
+  a feature counts once, at the stronger weight.
+* **Per home, per direction, the maximum — not the sum.** Toggling one house ten times is one house;
+  repetition strengthens a pattern only across independent homes.
+* Conflict lowers confidence; comparable Saves and Passes on a reason the customer named read as
+  **mixed**. A feature that is merely present on both saved and passed homes explains nothing and is
+  not announced.
+* Tiers, never percentages: `insufficient` (never shown), `emerging` ("tend to"), `established`
+  ("often"). Every shown tier needs at least two homes; one choice is never a taste.
+* Numeric facts are described as the middle range of saved (and passed) homes, and not shown when
+  the saved and passed ranges overlap.
+* `RULES_VERSION` changes whenever a rule or constant changes.
+
+### Decay model — supersession, not the clock
+
+A choice still in force weighs 1.0. A choice the customer later **changed or cleared** is
+**superseded**: it weighs 0.25, stays in the evidence and still counts as a home they chose. So later
+contrary feedback outweighs older evidence **without deleting it**, a clear never erases history, and
+a clear is never read as a Pass. A reason revision replaces the earlier answer to the same choice.
+
+There is **no wall-clock decay**, deliberately: decay by age would make the profile depend on when it
+was computed, and "the same history rebuilds to the same profile" would stop being true.
+
+### Retention — nothing new is stored
+
+Taste DNA is **derived on demand and never persisted**: no table, no migration, no cache, no job.
+Every page view recomputes from the events, so there is no derived copy to drift, to retain, or to
+forget, and "rebuild" is simply computing again — `TasteDnaServiceTest` proves identical output from
+identical history and that deriving writes nothing. Retention of Taste DNA is therefore exactly the
+retention of `listing_preference_events`, which this phase does not change.
+
+**A truncated history is never derived from.** `TasteEvidenceReader::MAX_EVENTS` (5,000 per customer
+and role) is a safety ceiling against a runaway account, not a window. The reader asks for one row past
+it; if that row exists, the evidence is reported incomplete, the profile is `incomplete` with no
+signals, and the page says it cannot summarise the customer's taste right now instead of showing
+patterns drawn from part of it. Reading only the newest N events could cut one home's Save → Pass
+sequence in the middle and state a direction the full history does not support.
+
+### Audit surface — every observation is traceable
+
+Each signal carries its dimension and canonical key, direction, confidence tier, the internal
+strength and agreement behind the tier, the number of homes supporting it with Saved / Maybe / Passed
+counts, first and last supporting timestamps, and its sources (stated reason, listing
+characteristic). `TasteProfile::toArray()` is the full internal record. The customer page is worded
+only by `TasteObservationPresenter`, which shows the pattern, the direction in words, the number of
+homes and where it came from — and **no score, percentage, key, id or subject**. The source line
+separates the two kinds of evidence in words: a stated reason reads *"Based on reasons you picked."*;
+an observed characteristic reads *"Seen across homes you Saved, from details those homes currently
+list — not a reason you picked."* (or *Passed on* / *chose*), so a feature the homes happened to have
+is never presented as something the customer said.
+
+### Flags
+
+`LISTING_PREFERENCE_TASTE_DNA_ENABLED` (default `false`, parsed fail-closed) **and** the master
+`LISTING_PREFERENCES_ENABLED` must both be on, read only through `TasteDnaAvailability`, which the
+route middleware and the management page's tab both ask. Base Save / Maybe / Pass runs with Taste DNA
+off. Neither flag may be added to `config/required_production_flags.php`.
+
+### Still prohibited, and still Phase 5 or later
+
+Everything in §6 — user-to-user similarity, collaborative or neighbourhood learning, demographic
+inference, geographic clustering, protected-class inference — and any use of Taste DNA to rank,
+filter, recommend or answer questions. Location learning against the customer's own Important Places
+needs a structural link from a preference to those places first; it is not approximated here.
