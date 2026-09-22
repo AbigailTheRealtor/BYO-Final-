@@ -60,7 +60,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: pdo, pdo_sqlite, sqlite3, mbstring, xml, ctype, fileinfo, json, bcmath
+          # intl: ChainNameNormalizer (chain-name-norm-v1) applies Unicode NFKC and refuses to run without it.
+          extensions: pdo, pdo_sqlite, sqlite3, mbstring, intl, xml, ctype, fileinfo, json, bcmath
           coverage: none
 
       # GDAL supplies ogr2ogr for tests/Feature/Spatial/TigerShpToNdjsonConverterTest.php, which

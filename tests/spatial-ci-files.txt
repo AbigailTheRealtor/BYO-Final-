@@ -244,6 +244,12 @@ tests/Unit/Spatial/BoundaryImportSqlManifestTest.php
 tests/Unit/Spatial/BoundaryRecordTest.php
 tests/Unit/Spatial/BoundaryRowMaterializerTest.php
 tests/Unit/Spatial/CensusTigerBoundarySourceTest.php
+tests/Unit/Spatial/ChainRegistry/ChainMatcherTest.php
+tests/Unit/Spatial/ChainRegistry/ChainNameNormalizerTest.php
+tests/Unit/Spatial/ChainRegistry/ChainRegistryConfigTest.php
+tests/Unit/Spatial/ChainRegistry/ChainRegistryStructuralGuardTest.php
+tests/Unit/Spatial/ChainRegistry/ChainRegistryValidationTest.php
+tests/Unit/Spatial/ChainRegistry/ChainSiteClassifierTest.php
 tests/Unit/Spatial/CmsHospitalOverlaySourceTest.php
 tests/Unit/Spatial/CorpusActivationServiceTest.php
 tests/Unit/Spatial/CorpusCopyLoaderTest.php
