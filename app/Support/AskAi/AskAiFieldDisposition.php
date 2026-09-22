@@ -4,6 +4,7 @@ namespace App\Support\AskAi;
 
 use App\Services\AskAi\AskAiContextBuilderService;
 use App\Services\AskAi\AskAiFieldQuestionRegistryService;
+use App\Services\AskAi\AskAiPublicPropertyQuestionService;
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 
 /**
@@ -56,6 +57,8 @@ final class AskAiFieldDisposition
     public const PRIVATE_FIELD            = 'PRIVATE';
     public const INTERNAL                 = 'INTERNAL';
     public const NOT_APPLICABLE           = 'NOT_APPLICABLE_TO_ASK_AI';
+    /** Public, with no curated question: answered by its generated card entry ("Label: value."). */
+    public const ANSWERABLE_PUBLIC_GENERATED = 'ANSWERABLE_PUBLIC_GENERATED';
 
     /**
      * Public-allowed fields that are deliberately NOT asked about, and why.
@@ -158,7 +161,7 @@ final class AskAiFieldDisposition
     public const IMPORT_META_READ_ELSEWHERE = [
         'property_type'        => 'AskAiContextBuilderService base block (listing.property_type).',
         'mls_list_price'       => 'AskAiPublicPropertyQuestionService mls_price_not_divergent guard (via ListingPriceDisplay).',
-        'mls_property_details' => 'AskAiMlsDetailsQuestionMatcher — the owner\'s MLS Details facts, by label.',
+        'mls_property_details' => 'AskAiPublicPropertyQuestionService::mlsDetailsCatalog() — the MlsFieldCatalog::PROPERTY_FACTS rows the page shows, under the feed\'s display permissions and the public-answer screens.',
     ];
 
     /**
@@ -168,9 +171,17 @@ final class AskAiFieldDisposition
      */
     public static function forRole(string $role): array
     {
-        $map      = AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role] ?? [];
-        $answered = self::answeredFields($role);
-        $out      = [];
+        $map       = AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role] ?? [];
+        $answered  = self::answeredFields($role);
+        $generated = [];
+        foreach (AskAiPublicPropertyQuestionService::generatedFieldCatalog($role) as $entry) {
+            $generated[substr((string) $entry['source_path'], strlen('listing.'))] = true;
+        }
+        // Buyer/Tenant publish through the criteria allowlist, not the snapshot tier.
+        $criteria = in_array($role, ['buyer', 'tenant'], true)
+            ? AskAiPublicPropertyQuestionService::publicCriteriaKeys($role)
+            : null;
+        $out = [];
 
         foreach (array_keys($map) as $field) {
             $visibility = SnapshotFactVisibility::classify($field, $role);
@@ -180,7 +191,11 @@ final class AskAiFieldDisposition
                 continue;
             }
 
-            if ($visibility !== SnapshotFactVisibility::PUBLIC_ALLOWED) {
+            $public = $criteria !== null
+                ? in_array($field, $criteria, true)
+                : $visibility === SnapshotFactVisibility::PUBLIC_ALLOWED;
+
+            if (!$public) {
                 $out[$field] = self::PRIVATE_FIELD;
                 continue;
             }
@@ -190,8 +205,13 @@ final class AskAiFieldDisposition
                 continue;
             }
 
-            $out[$field] = array_key_exists("{$role}.{$field}", self::DELIBERATELY_NOT_ASKED)
-                ? self::NOT_APPLICABLE
+            if (array_key_exists("{$role}.{$field}", self::DELIBERATELY_NOT_ASKED)) {
+                $out[$field] = self::NOT_APPLICABLE;
+                continue;
+            }
+
+            $out[$field] = isset($generated[$field])
+                ? self::ANSWERABLE_PUBLIC_GENERATED
                 : '';   // '' is the failure: a public field nobody has dispositioned.
         }
 

@@ -213,6 +213,9 @@ class AskAiFieldDispositionContractTest extends TestCase
     {
         $known = [
             D::ANSWERABLE_PUBLIC, D::ANSWERABLE_OWNER_ONLY,
+            // A public fact the public page renders and no curated question covers is
+            // answered by the card's generated "<Label>: value." question.
+            D::ANSWERABLE_PUBLIC_GENERATED,
             D::PRIVATE_FIELD, D::INTERNAL, D::NOT_APPLICABLE,
         ];
 

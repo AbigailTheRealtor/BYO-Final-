@@ -4,7 +4,7 @@ namespace App\Services\AskAi;
 
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\AskAi\AskAiKnowledgeBaseQuestionMatcher;
-use App\Support\AskAi\AskAiMlsDetailsQuestionMatcher;
+use App\Support\AskAi\AskAiPublicQuestionMatcher;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -3467,6 +3467,10 @@ class AskAiRunnerV2Service
      * The fail-closed answer for a question Ask AI cannot answer from stored listing data
      * while the model path is disabled. Permanent and true — never "try again".
      */
+    /** A question that matches more than one fact is refused, never guessed. */
+    public const DETERMINISTIC_AMBIGUOUS =
+        "That question matches more than one detail on this listing. Please ask about one detail at a time.";
+
     public const DETERMINISTIC_UNANSWERABLE =
         "Ask AI answers from this listing's own information, and this question can't be answered that way.";
 
@@ -3562,34 +3566,6 @@ class AskAiRunnerV2Service
             $classification = $this->classifier->classify($question);
             $questionType   = $classification['question_type'];
 
-            // Step 0 — Knowledge Base question, asked by its own label.
-            //
-            // A question that IS one of this listing's Knowledge Base questions (exact
-            // label, gated by property type) routes to that key and nowhere else. Without
-            // this the keyword classifier sent most such questions to "unsupported" or to a
-            // model-only intent, and first-match substring routing sent one to a different
-            // key's answer. It never overrides a prohibited classification.
-            //
-            // OWNER SCOPE ONLY. Knowledge Base answers are owner-only and are redacted for
-            // every other scope; routing a non-owner here would reach the missing-data guard
-            // and tell them the information "has not been provided" — false whenever the
-            // owner answered. Non-owners keep their existing path, and the public card has
-            // its own acknowledged Knowledge Base admission.
-            if ($questionType !== 'prohibited'
-                && !isset($options['normalized_field_key'])
-                && ($options['viewer_scope'] ?? null) === AskAiViewerAuthorizationService::SCOPE_OWNER) {
-                $kbKey = AskAiKnowledgeBaseQuestionMatcher::forListing($listingType, $listingId, $question);
-                if ($kbKey !== null) {
-                    $questionType                           = 'listing_facts';
-                    $classification['question_type']        = 'listing_facts';
-                    $classification['normalized_field_key'] = 'faq_answers.' . $kbKey;
-                    $options = array_merge($options, [
-                        'normalized_field_key' => 'faq_answers.' . $kbKey,
-                        'kb_label_match'       => $kbKey,
-                    ]);
-                }
-            }
-
             // Determine normalizer_status before building the trace so every
             // exit path (including early returns) carries the correct value.
             // not_applicable — question type is deterministic; normalizer not relevant.
@@ -3630,33 +3606,82 @@ class AskAiRunnerV2Service
                 'source_attribution'          => null,
             ];
 
-            // Step 0b — an MLS Details fact, asked by the OWNER by its own label.
+            // Step 0 — deterministic resolution against what THIS viewer may see.
             //
-            // Tier-2 facts from MLS quick import live in the supplemental details blob
-            // that the listing page renders under "MLS Details"; nothing in Ask AI read it.
-            // Owner scope only (publishing Tier-2 rows to shoppers here is a display
-            // decision not taken), never over a prohibited classification, and only when
-            // no Knowledge Base question already claimed the wording.
-            if ($questionType !== 'prohibited'
-                && !isset($options['normalized_field_key'])
-                && ($options['viewer_scope'] ?? null) === AskAiViewerAuthorizationService::SCOPE_OWNER
-            ) {
-                $mlsRow = AskAiMlsDetailsQuestionMatcher::forListing($listingType, $listingId, $question);
-                if ($mlsRow !== null) {
-                    $trace['mls_details_label'] = $mlsRow['label'];
-                    $classification['question_type'] = 'listing_facts';
+            // Ask AI answers every PUBLIC fact to every authorized viewer, and owner-only
+            // facts to the owner. The public card (AskAiPublicPropertyQuestionService) is the
+            // one public-answer authority: curated questions, a generated question for every
+            // other public fact, the owner-acknowledged Knowledge Base, and the MLS Details the
+            // page shows — each through its visibility gate, property-type applicability,
+            // guards and text screens. Free text is matched against that same card with the
+            // same rules as the card's typed box, so the two cannot disagree.
+            //
+            // Order, never left to execution order: (1) the card's own question, then its
+            // approved aliases and label variants; (2) OWNER: this listing's Knowledge Base
+            // question by its exact label, then the owner's other facts by label; tenant
+            // AUTHORIZED scope: the designed disclosures by label; (3) non-owner: a keyword
+            // naming a fact the card answers. Ambiguity at any step is refused. A non-owner
+            // with no match is refused deterministically — never a model, never the legacy
+            // pipeline, which could state a raw value the card deliberately withholds.
+            // Prohibited questions never enter.
+            if ($questionType !== 'prohibited' && !isset($options['normalized_field_key'])) {
+                $viewerScope  = $options['viewer_scope'] ?? null;
+                $ownerScope   = $viewerScope === AskAiViewerAuthorizationService::SCOPE_OWNER;
+                $nonOwnerScope = in_array($viewerScope, [AskAiViewerAuthorizationService::SCOPE_PUBLIC, AskAiViewerAuthorizationService::SCOPE_AUTHORIZED], true);
 
-                    return $this->statedFactResult(
-                        'mls_details.' . $mlsRow['label'],
-                        $mlsRow['value'],
-                        'mls_details_fact',
-                        $classification,
-                        null,
-                        null,
-                        ['required_disclosures' => [], 'source_attribution' => ['required_sources' => ['mls_details']]],
-                        $trace,
-                        $mlsRow['label']
-                    );
+                if ($ownerScope || $nonOwnerScope) {
+                    try {
+                        $card = app(AskAiPublicPropertyQuestionService::class)->forStoredListing($listingType, $listingId, $ownerScope);
+                    } catch (\Throwable) {
+                        $card = [];
+                    }
+
+                    $cardMatch = AskAiPublicQuestionMatcher::match($question, $card);
+                    if ($cardMatch['status'] === 'matched') {
+                        $trace['public_question_id'] = $cardMatch['question']['id'];
+
+                        return $this->deterministicResult((string) $cardMatch['question']['answer'], 'public_card', (string) $cardMatch['question']['id'], $classification, $trace);
+                    }
+                    if ($cardMatch['status'] === 'ambiguous') {
+                        return $this->deterministicRefusal(self::DETERMINISTIC_AMBIGUOUS, 'ambiguous_question', $classification, $trace);
+                    }
+
+                    if ($ownerScope) {
+                        $kbKey = AskAiKnowledgeBaseQuestionMatcher::forListing($listingType, $listingId, $question);
+                        if ($kbKey !== null) {
+                            $questionType                           = 'listing_facts';
+                            $classification['question_type']        = 'listing_facts';
+                            $classification['normalized_field_key'] = 'faq_answers.' . $kbKey;
+                            $trace['kb_label_match']                = $kbKey;
+                            $options = array_merge($options, [
+                                'normalized_field_key' => 'faq_answers.' . $kbKey,
+                                'kb_label_match'       => $kbKey,
+                            ]);
+                        }
+                    }
+
+                    $extrasScope = $ownerScope
+                        || ($viewerScope === AskAiViewerAuthorizationService::SCOPE_AUTHORIZED
+                            && AskAiContextBuilderService::canonicalListingType($listingType) === 'tenant');
+                    if ($extrasScope && !isset($options['normalized_field_key'])) {
+                        $extra = $this->viewerFactByLabel($listingType, $listingId, $question, (string) $viewerScope);
+                        if ($extra['status'] === 'matched') {
+                            return $this->deterministicResult($extra['answer'], 'viewer_fact', $extra['key'], $classification, $trace);
+                        }
+                        if ($extra['status'] === 'ambiguous') {
+                            return $this->deterministicRefusal(self::DETERMINISTIC_AMBIGUOUS, 'ambiguous_question', $classification, $trace);
+                        }
+                    }
+
+                    if ($nonOwnerScope && !isset($options['normalized_field_key'])) {
+                        $keyword = $this->cardAnswerByKeyword($listingType, $question, $card);
+                        if ($keyword !== null) {
+                            return $this->deterministicResult((string) $keyword['answer'], 'public_card', (string) $keyword['id'], $classification, $trace);
+                        }
+                        if (!$extrasScope) {
+                            return $this->deterministicRefusal(self::DETERMINISTIC_UNANSWERABLE, 'not_a_public_fact', $classification, $trace);
+                        }
+                    }
                 }
             }
 
@@ -5664,6 +5689,136 @@ class AskAiRunnerV2Service
         return null;
     }
 
+    /** A 'ready' deterministic answer with the runner's usual envelope. */
+    private function deterministicResult(string $answer, string $source, string $key, array $classification, array $trace): array
+    {
+        $response = [
+            'success'            => true,
+            'status'             => 'ready',
+            'answer'             => $answer,
+            'disclosures'        => [],
+            'source_attribution' => ['required_sources' => [$source]],
+            'refusal_message'    => null,
+            'error'              => null,
+            'source'             => ['answer_source' => $source, 'snapshot_id' => null, 'canonical_key' => $key, 'match_type' => 'deterministic', 'snapshot_version' => null],
+        ];
+        $response['follow_up_questions'] = $this->followUpService->forResult($response, $classification);
+
+        $trace['final_status'] = 'ready';
+        $this->emitTrace($trace);
+
+        return [
+            'success' => true, 'status' => 'ready', 'classification' => $classification,
+            'context' => null, 'contract' => null, 'prompt_package' => null, 'adapter_result' => null,
+            'final_response' => $response, 'error' => null, 'trace' => $trace, 'outcome_category' => $source,
+        ];
+    }
+
+    /** A deterministic refusal: permanent, true, and never "try again". */
+    private function deterministicRefusal(string $message, string $reason, array $classification, array $trace): array
+    {
+        $response = [
+            'success'            => false,
+            'status'             => 'insufficient_context',
+            'answer'             => $message,
+            'disclosures'        => [],
+            'source_attribution' => [],
+            'refusal_message'    => null,
+            'error'              => null,
+            'source'             => ['answer_source' => 'deterministic_refusal', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => $reason, 'snapshot_version' => null],
+        ];
+        $response['follow_up_questions'] = [];
+
+        $trace['final_status']   = 'insufficient_context';
+        $trace['refusal_reason'] = $reason;
+        $this->emitTrace($trace);
+
+        return [
+            'success' => false, 'status' => 'insufficient_context', 'classification' => $classification,
+            'context' => null, 'contract' => null, 'prompt_package' => null, 'adapter_result' => null,
+            'final_response' => $response, 'error' => null, 'trace' => $trace, 'outcome_category' => $reason,
+        ];
+    }
+
+    /**
+     * A fact from THIS viewer's own permitted context, by its exact label — for the owner
+     * (their listing's facts, RESTRICTED excepted, as everywhere else) and for a tenant
+     * listing's authorized counterparty (the designed disclosures). The context is built
+     * and redacted for the viewer's scope FIRST, so a label never reaches a fact the scope
+     * may not see. DELIBERATELY_NOT_ASKED fields stay unasked. A label two facts with
+     * different values would claim is refused.
+     *
+     * @return array{status: 'matched'|'ambiguous'|'none', answer?: string, key?: string}
+     */
+    private function viewerFactByLabel(string $listingType, int $listingId, string $question, string $scope): array
+    {
+        $role = AskAiContextBuilderService::canonicalListingType($listingType);
+        if ($role === null) {
+            return ['status' => 'none'];
+        }
+        try {
+            $context = app(AskAiContextBuilderService::class)->buildForListing($listingType, $listingId, ['viewer_scope' => $scope]);
+            $context = app(AskAiViewerAuthorizationService::class)->redactContext($context, $listingType, $scope);
+        } catch (\Throwable) {
+            return ['status' => 'none'];
+        }
+
+        $needle = AskAiPublicPropertyQuestionService::normalizeQuery($question);
+        $hits   = [];
+        foreach ((array) ($context['listing'] ?? []) as $field => $value) {
+            if (!is_string($field) || !$this->hasStatableValue($value)
+                || SnapshotFactVisibility::classify($field, $role) === SnapshotFactVisibility::RESTRICTED
+                || array_key_exists("{$role}.{$field}", \App\Support\AskAi\AskAiFieldDisposition::DELIBERATELY_NOT_ASKED)) {
+                continue;
+            }
+            $labels = array_unique([
+                AskAiPublicPropertyQuestionService::fieldLabel($role, $field),
+                preg_replace('/\s+information$/i', '', self::deriveFieldLabel('listing.' . $field)) ?? '',
+            ]);
+            foreach ($labels as $label) {
+                if ($label !== '' && stripos($label, 'the requested') !== 0
+                    && in_array($needle, AskAiPublicPropertyQuestionService::labelVariants($label), true)) {
+                    $hits[$this->statedFact('listing.' . $field, $value, $label)] = $field;
+                }
+            }
+        }
+
+        if (count($hits) === 1) {
+            return ['status' => 'matched', 'answer' => (string) array_key_first($hits), 'key' => 'listing.' . reset($hits)];
+        }
+
+        return count($hits) > 1 ? ['status' => 'ambiguous'] : ['status' => 'none'];
+    }
+
+    /**
+     * A non-owner's paraphrase that names a fact by keyword ("does it have a pool?"): the
+     * role-validated keyword map picks the FIELD, and the answer is the card's own answer for
+     * that field — never a raw stored value, so every guard the card applies still applies.
+     * Exactly one available card question must read the field.
+     */
+    private function cardAnswerByKeyword(string $listingType, string $question, array $card): ?array
+    {
+        $role = AskAiContextBuilderService::canonicalListingType($listingType);
+        $key  = $role === null ? null : $this->detectListingFieldKey($question, $role);
+        if ($key === null) {
+            return null;
+        }
+
+        $registry = AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry()
+            + AskAiPublicPropertyQuestionService::generatedFieldCatalog($role);
+        $hits = [];
+        foreach ($card as $q) {
+            $entry = $registry[$q['id']] ?? null;
+            $reads = $entry === null ? [(string) ($q['source_path'] ?? '')]
+                : array_merge([$entry['source_path'] ?? null], (array) ($entry['covers'] ?? []));
+            if (in_array($key, $reads, true)) {
+                $hits[$q['id']] = $q;
+            }
+        }
+
+        return count($hits) === 1 ? array_values($hits)[0] : null;
+    }
+
     /** A value worth stating: not null, not blank, not an empty list. */
     private function hasStatableValue(mixed $value): bool
     {
@@ -5752,7 +5907,7 @@ class AskAiRunnerV2Service
      * @param  string $normalizedFieldKey  Canonical path e.g. 'faq_answers.roof_age_and_condition'.
      * @return string
      */
-    private function deriveFieldLabel(string $normalizedFieldKey): string
+    private static function deriveFieldLabel(string $normalizedFieldKey): string
     {
         $labelMap = [
             // Seller: Property Condition & Maintenance

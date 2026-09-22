@@ -905,6 +905,12 @@ class AskAiContextBuilderService
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
+    /** The listing model for a canonical role, through the one model lookup, or null. Read-only. */
+    public function loadListing(string $canonicalType, int $listingId): ?object
+    {
+        return $this->findListing($canonicalType, $listingId);
+    }
+
     /**
      * One stored meta value of a listing, read through the same model lookup the context
      * uses, or null. Read-only.

@@ -205,8 +205,11 @@ class AskAiRoleTypeMatrixPrivacyTest extends TestCase
     /** @return array<string, array> catalog entries for this role admitted for these type tokens */
     private function admittedEntries(string $role, array $tokens): array
     {
+        // Curated entries plus the generated one-per-public-fact entries, each held to its
+        // OWN type admission (generated entries take theirs from AskAiFieldApplicability).
         return array_filter(
-            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
+            AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry()
+                + AskAiPublicPropertyQuestionService::generatedFieldCatalog($role),
             static fn ($e) => ($e['role'] ?? null) === $role && PT::admits($e['property_types'] ?? null, $tokens)
         );
     }

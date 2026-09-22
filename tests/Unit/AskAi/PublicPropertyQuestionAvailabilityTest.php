@@ -595,7 +595,8 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_climate_control'    => 'Heating: Electric. Cooling: Central Air.',
             'seller_water_and_sewer'    => 'Water: Public. Sewer: Public Sewer.',
             'seller_construction'       => 'Exterior construction: Block and Stucco. Foundation: Slab.',
-            'seller_interior_features'  => 'Interior features listed for this property: Ceiling Fans, Walk-In Closet.',
+            // seller_interior_features is gone: the public seller page does not render
+            // interior_features, so Ask AI may not publish it either.
             'seller_home_warranty'      => 'The seller is offering a home warranty.',
             'seller_association_details' => 'This property is in a homeowners association: Oak Ridge HOA.',
             'seller_special_assessments' => 'The listing indicates there are no special assessments.',
@@ -635,8 +636,8 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'landlord_interior_features'     => 'Interior features listed for this property: Ceiling Fans.',
             'landlord_included_items'        => 'Included with this property: Refrigerator, Microwave.',
             'landlord_water_frontage'        => 'This property is not waterfront.',
-            'landlord_climate_control'       => 'Heating: Electric. Cooling: Central Air.',
-            'landlord_water_and_sewer'       => 'Water: Public. Sewer: Public Sewer.',
+            // landlord_climate_control and landlord_water_and_sewer are gone: air_conditioning,
+            // heating_fuel, water and sewer are not rendered on the public landlord page.
             'landlord_construction'          => 'Exterior construction: Concrete. Foundation: Slab.',
             'landlord_total_acreage'         => 'The total acreage is 1/4 to less than 1/2 acre.',
             'landlord_lot_dimensions'        => 'Lot dimensions: 50 x 100.',
@@ -663,10 +664,12 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
     public function test_commercial_only_landlord_questions_answer_on_a_commercial_lease(): void
     {
-        // Terms of Lease, zoning and building features are collected only on the Commercial
-        // Property form (LP lease-terms :1027, property-preferences :1336, :1610). The renewal
-        // option and pet fee are collected on both, and on a Commercial lease they are the only
-        // questions that reach them (the pet-policy composite is Residential-only).
+        // Terms of Lease and zoning are collected only on the Commercial Property form (LP
+        // lease-terms :1027, property-preferences :1336). The renewal option and pet fee are
+        // collected on both, and on a Commercial lease they are the only questions that reach
+        // them (the pet-policy composite is Residential-only). Building features are collected
+        // too (:1610) but the public landlord page does not render them, so they get no public
+        // question.
         $answers = $this->answers('landlord', ['listing' => [
             'property_type'     => 'Commercial Property',
             'lease_terms'       => 'Modified Gross',
@@ -678,7 +681,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
         $this->assertSame('Lease terms offered: Modified Gross.', $answers['landlord_lease_terms']);
         $this->assertSame('The zoning is listed as CG.', $answers['landlord_zoning']);
-        $this->assertSame('Building features listed for this property: Elevator.', $answers['landlord_building_features']);
+        $this->assertArrayNotHasKey('landlord_building_features', $answers);
         $this->assertSame('Pet fee: $50 (Monthly Pet Fee).', $answers['landlord_pet_fee']);
         $this->assertArrayNotHasKey('landlord_pets_allowed', $answers);
     }
