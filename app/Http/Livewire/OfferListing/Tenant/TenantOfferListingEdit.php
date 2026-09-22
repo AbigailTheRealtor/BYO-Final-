@@ -4184,6 +4184,9 @@ class TenantOfferListingEdit extends Component
         // Smart Tag preferences live in their own table, so the new row gets its own
         // write. Never throws.
         $this->persistSeekerSmartTags($newDraft);
+        // Feature off: that write is skipped, so carry the source version's stored picks
+        // onto the new row instead. No-op when on.
+        $this->carrySeekerSmartTagsForward($source, $newDraft);
         $newDraft->deleteMeta('draft_payload_hash'); // stale on new record; recomputed on next edit
 
         $this->auctionId = $newDraft->id;

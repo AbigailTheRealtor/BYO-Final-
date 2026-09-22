@@ -1874,6 +1874,10 @@ class BuyerOfferListingEdit extends Component
 
             $this->saveAllMetadata($auction);
 
+            // Feature off: keep the parent version's stored seeker picks on this new
+            // row (the form's picks are neither shown nor written). No-op when on.
+            $this->carrySeekerSmartTagsForward($parentDraftId !== null ? $previousDraft : null, $auction);
+
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
             $auction->saveMeta('draft_payload_hash', $newPayloadHash);

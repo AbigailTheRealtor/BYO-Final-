@@ -305,8 +305,11 @@ class SmartTagSeekerOfferListingWizardTest extends TestCase
         $v2 = BuyerAgentAuction::query()->latest('id')->firstOrFail();
         $this->assertNotSame($v1->id, $v2->id);
         $this->assertSame(['private_pool'], $this->keysFor($v1));
-        $this->assertSame([], $this->keysFor($v2));
-        $this->assertSame(1, SmartTagSeekerPreference::query()->count());
+        // The submitted 'garage' is ignored; the stored pick is CARRIED to the new
+        // version (preservation, not an edit — see
+        // SmartTagSeekerOfferListingVersionCarryForwardTest).
+        $this->assertSame(['private_pool'], $this->keysFor($v2));
+        $this->assertSame(2, SmartTagSeekerPreference::query()->count());
     }
 
     // ── 22. draft deletion purges, whatever the flag ────────────────────────

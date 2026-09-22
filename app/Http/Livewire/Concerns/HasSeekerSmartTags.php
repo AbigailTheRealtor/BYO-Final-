@@ -199,6 +199,49 @@ trait HasSeekerSmartTags
     }
 
     /**
+     * Keep the seeker's EXISTING picks on a new draft version while the feature
+     * is off.
+     *
+     * Call right after a draft save has minted `$target` from `$source`. With the
+     * gate ON this does nothing: the form's own selection was just written by
+     * {@see persistSeekerSmartTags()}, and that remains the whole behaviour. With
+     * it OFF the picker is hidden and nothing submitted is written, but the row
+     * the user continues editing is a new one — so the source's stored picks are
+     * carried across by {@see SmartTagSeekerPreferenceWriter::carryForwardSelections()},
+     * which reads them from the database, never from `$seeker_smart_tags`, and
+     * keeps only those valid for the new version's stored property type.
+     * Never throws.
+     */
+    protected function carrySeekerSmartTagsForward($source, $target): void
+    {
+        if (SmartTagSeekerPreferenceGate::writesEnabled() || $source === null || $target === null) {
+            return;
+        }
+
+        try {
+            $from = $source->fresh();
+            $to   = $target->fresh();
+
+            if ($from === null || $to === null
+                || SmartTagSeekerSubjectType::forModel($from) !== $this->seekerSmartTagSubjectType()
+                || SmartTagSeekerSubjectType::forModel($to) !== $this->seekerSmartTagSubjectType()) {
+                return;
+            }
+
+            app(SmartTagSeekerPreferenceWriter::class)->carryForwardSelections(
+                $from,
+                $to,
+                Auth::id() !== null ? (int) Auth::id() : null,
+            );
+        } catch (\Throwable $e) {
+            Log::warning('smart_tag_seeker_preferences carry-forward failed', [
+                'subject_type' => $this->seekerSmartTagSubjectType()->value,
+                'exception'    => $e::class,
+            ]);
+        }
+    }
+
+    /**
      * Strings only, de-duplicated. Shape, not meaning — whether a key is
      * canonical, applicable and seeker-selectable is the writer's decision.
      *

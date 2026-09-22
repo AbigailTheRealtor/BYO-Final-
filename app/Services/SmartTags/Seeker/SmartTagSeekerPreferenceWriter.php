@@ -172,6 +172,95 @@ class SmartTagSeekerPreferenceWriter
     }
 
     /**
+     * Carry a seeker record's EXISTING selections onto a new version of it —
+     * the row an Offer Listing wizard mints on every draft save.
+     *
+     * PRESERVATION, NOT AN EDIT. It accepts no keys: the source row's stored
+     * selections are the only input, so nothing a browser submits can reach it.
+     * That is why it is not gated by SMART_TAGS_SEEKER_PREFERENCES_ENABLED, like
+     * {@see purge()}: with the feature off the picker is hidden and submitted
+     * values are ignored, but a draft save still creates a new row, and without
+     * this the newest version would silently lose what the seeker picked while
+     * the feature was on.
+     *
+     * Refused unless source and target are the SAME seeker subject type (no
+     * criteria → Offer Listing, no Buyer ↔ Tenant, no Hire row — forModel()
+     * answers null for those), two different saved rows, both owned by the
+     * acting user, and the target's STORED property type resolves a context.
+     * The keys are re-projected through the selection policy for the TARGET's
+     * context on SURFACE_SEEKER, so a key the new version's property type
+     * cannot take — or one retired or made non-selectable since — is dropped
+     * rather than carried. The target's set is replaced, so re-running is a
+     * no-op; the source is never written.
+     */
+    public function carryForwardSelections(object $source, object $target, ?int $actingUserId): SmartTagSeekerPreferenceResult
+    {
+        $type       = SmartTagSeekerSubjectType::forModel($source);
+        $targetType = SmartTagSeekerSubjectType::forModel($target);
+
+        if ($type === null || $targetType === null) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_UNSUPPORTED_SUBJECT
+            );
+        }
+
+        if ($type !== $targetType) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_SUBJECT_MISMATCH
+            );
+        }
+
+        $sourceId = (int) ($source->id ?? 0);
+        $targetId = (int) ($target->id ?? 0);
+        if ($sourceId <= 0 || $targetId <= 0) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_UNSAVED_SUBJECT
+            );
+        }
+
+        if ($sourceId === $targetId) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_SUBJECT_MISMATCH
+            );
+        }
+
+        // Both rows must belong to the actor — the same null-safe comparison as
+        // replaceSelections(), applied to each side.
+        foreach ([$source, $target] as $row) {
+            $ownerId = $row->user_id ?? null;
+            if ($actingUserId === null || $ownerId === null || (int) $ownerId !== $actingUserId) {
+                return SmartTagSeekerPreferenceResult::refused(
+                    SmartTagSeekerPreferenceResult::REFUSED_NOT_OWNER
+                );
+            }
+        }
+
+        $context = $this->contextFor($type, $target);
+
+        if ($context === null || ! in_array($context, $type->possibleContexts(), true)) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_NO_CONTEXT
+            );
+        }
+
+        $existing = SmartTagSeekerPreference::query()
+            ->where('subject_type', $type->value)
+            ->where('subject_id', $sourceId)
+            ->pluck('tag_key')
+            ->all();
+
+        $projection = SmartTagSelectionPolicy::project(
+            $existing,
+            $context,
+            SmartTagTaxonomy::SURFACE_SEEKER,
+        );
+
+        $this->persist($type, $targetId, $actingUserId, $context, $projection->accepted);
+
+        return SmartTagSeekerPreferenceResult::applied($projection, $context);
+    }
+
+    /**
      * Remove every selection for a criteria record, used when that record is
      * deleted.
      *
