@@ -20,10 +20,11 @@ use App\Support\ListingPreferences\ListingPreferenceAvailability;
  * Read by the route middleware and the management page's tab alike, so the link
  * and the endpoint cannot disagree about whether the page exists.
  *
- * WHAT THIS DOES NOT GATE: ranking, matching, Stellar, Ask AI or recommendations.
- * Nothing there reads Taste DNA at all (TasteDnaArchitectureGuardTest), so there
- * is nothing for a flag to switch. `listing_preferences.learning_enabled` stays
- * hard-off for that later work.
+ * PHASE 5 adds exactly one consumer, and a third gate for it: the bounded Best
+ * Match rerank on the Stellar results page (`rerankingEnabled()`). Matching, the
+ * score, Ask AI and recommendations still never read Taste DNA
+ * (TasteDnaArchitectureGuardTest), and `listing_preferences.learning_enabled`
+ * stays hard-off for everything beyond that rerank.
  */
 final class TasteDnaAvailability
 {
@@ -31,5 +32,17 @@ final class TasteDnaAvailability
     {
         return ListingPreferenceAvailability::featureEnabled()
             && config('listing_preferences.taste_dna_enabled') === true;
+    }
+
+    /**
+     * Whether Taste DNA may reorder near-tied Best Match results.
+     *
+     * All three gates, each `=== true`: Save / Maybe / Pass, Taste DNA, and
+     * reranking itself. Any one off — or a config that did not load — is off.
+     */
+    public static function rerankingEnabled(): bool
+    {
+        return self::enabled()
+            && config('listing_preferences.taste_reranking_enabled') === true;
     }
 }

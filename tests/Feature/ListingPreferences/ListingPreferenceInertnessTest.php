@@ -38,6 +38,7 @@ class ListingPreferenceInertnessTest extends TestCase
         $this->assertFalse($shipped['guest_capture_enabled'], 'guest capture is a decided no, not a dial');
         $this->assertFalse($shipped['learning_enabled'], 'behavioural learning stays gated on its governance revision');
         $this->assertFalse($shipped['taste_dna_enabled'], 'LISTING_PREFERENCE_TASTE_DNA_ENABLED must default off');
+        $this->assertFalse($shipped['taste_reranking_enabled'], 'LISTING_PREFERENCE_TASTE_RERANKING_ENABLED must default off');
     }
 
     /** @test */
@@ -190,6 +191,8 @@ class ListingPreferenceInertnessTest extends TestCase
         // Phase 4's env name is singular, so the line above cannot see it.
         $this->assertStringNotContainsString('LISTING_PREFERENCE_TASTE_DNA', (string) $contract);
         $this->assertStringNotContainsString('taste_dna', (string) $contract);
+        $this->assertStringNotContainsString('LISTING_PREFERENCE_TASTE_RERANKING', (string) $contract);
+        $this->assertStringNotContainsString('taste_reranking', (string) $contract);
     }
 
     private function sellerListing(): SellerAgentAuction

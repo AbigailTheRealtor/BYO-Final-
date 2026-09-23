@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\BridgeProperty;
+use App\Models\BuyerAgentAuction;
+use App\Models\BuyerAgentAuctionMeta;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionMeta;
 use App\Models\SellerAgentAuction;
@@ -68,6 +70,14 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
     public const HOME_TASTE_BUYER = 'lp-home-taste-buyer@example.test';
     public const HOME_TASTE_NEW   = 'lp-home-taste-new@example.test';
 
+    /*
+     | Phase 5 — the bounded Best Match rerank on /stellar/buyer/results. Its own
+     | account and its own city, so no other spec's Bridge rows enter its results
+     | and no other spec's account has a taste that could move them.
+     */
+    public const RERANK_BUYER = 'lp-rerank-buyer@example.test';
+    public const RERANK_CITY  = 'Rerankville';
+
     /** Bridge keys the Virtual Drive proof page is pointed at by the harness. */
     public const VD_KEYS = ['LP-VD-HOME-A', 'LP-VD-HOME-B'];
 
@@ -132,6 +142,7 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
         $manage       = $this->seedManagement();
         $virtualDrive = $this->seedVirtualDrive();
         $homeTaste    = $this->seedHomeTaste();
+        $rerank       = $this->seedTasteRerank();
 
         file_put_contents(
             $fixturePath,
@@ -145,6 +156,7 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
                 'manage'           => $manage,
                 'virtual_drive'    => $virtualDrive,
                 'home_taste'       => $homeTaste,
+                'rerank'           => $rerank,
             ], JSON_PRETTY_PRINT)
         );
     }
@@ -347,6 +359,100 @@ class ListingPreferenceBrowserTestSeeder extends Seeder
             // browser, which is the second agreeing choice their page needs.
             'live_listing_id' => $savedIds[0],
         ];
+    }
+
+    /**
+     * Phase 5: a Buyer whose results contain five listings the REAL matcher
+     * scores identically — they differ only in structured sub-type, which the
+     * matcher scores the same when the criteria name none. The customer has Saved three Condominiums elsewhere, so their taste
+     * holds an observed sub-type pattern, and the one Condominium in the results
+     * (last in the matcher's own tie order) is the one Taste may lift.
+     *
+     * Deliberately a sub-type, not a Smart Tag: this seeder is a Smart Tag
+     * taxonomy READER and writes no tag rows. It also exercises the correlation
+     * wording ("You tend to Save homes of this type"), which must never read as a
+     * reason the customer gave.
+     *
+     * @return array<string, mixed>
+     */
+    private function seedTasteRerank(): array
+    {
+        $writer = app(ListingPreferenceWriter::class);
+        $buyer  = $this->account(self::RERANK_BUYER, 'buyer', 'Rerank Buyer');
+
+        BuyerAgentAuction::where('user_id', $buyer->id)->get()->each(function (BuyerAgentAuction $old): void {
+            BuyerAgentAuctionMeta::where('buyer_agent_auction_id', $old->id)->delete();
+            $old->delete();
+        });
+
+        $criteria = BuyerAgentAuction::create([
+            'user_id'     => $buyer->id,
+            'title'       => 'Rerank search',
+            'is_approved' => 'true',
+            'is_sold'     => 'false',
+            'is_paid'     => '0',
+            'is_draft'    => false,
+        ]);
+
+        foreach ([
+            'workflow_type'    => 'offer_listing',
+            'property_type'    => 'residential',
+            'preferred_cities' => json_encode([self::RERANK_CITY]),
+            'maximum_budget'   => '600000',
+            'bedrooms'         => '2',
+            'bathrooms'        => '1',
+        ] as $key => $value) {
+            $criteria->saveMeta($key, $value);
+        }
+
+        $keys = [];
+        foreach ([1, 2, 3, 4, 5] as $n) {
+            $key    = "LP-RR-HOME-{$n}";
+            $keys[] = $key;
+            $this->rerankListing($key, self::RERANK_CITY, $n === 5 ? 'Condominium' : 'Single Family Residence', 400000);
+        }
+
+        foreach ([1, 2, 3] as $n) {
+            $home = $this->rerankListing("LP-RR-HISTORY-{$n}", 'Historyville', 'Condominium', 380000);
+            $writer->setState((int) $buyer->id, SeekerRole::Buyer,
+                new SmartTagListingRef(SmartTagListingType::Bridge, (int) $home->id),
+                ListingPreferenceState::Save, []);
+        }
+
+        return [
+            'buyer_email'      => self::RERANK_BUYER,
+            'password'         => self::PASSWORD,
+            'results_path'     => '/stellar/buyer/results?criteria_type=buyer_offer&criteria_id=' . $criteria->id,
+            'keys'             => $keys,
+            'standard_first'   => 'LP-RR-HOME-1',
+            'personalized_key' => 'LP-RR-HOME-5',
+            'subtype_label'    => 'Condominium',
+        ];
+    }
+
+    private function rerankListing(string $key, string $city, string $subtype, int $price): BridgeProperty
+    {
+        BridgeProperty::forNativeKey(MlsProvider::current(), $key)->delete();
+
+        return BridgeProperty::create([
+            'provider'                => MlsProvider::current()->value,
+            'listing_key'             => $key,
+            'listing_id'              => 'MLS-' . $key,
+            'standard_status'         => 'Active',
+            'property_type'           => 'Residential',
+            'property_sub_type'       => $subtype,
+            'list_price'              => $price,
+            'unparsed_address'        => $key . ' Harness Way',
+            'city'                    => $city,
+            'state_or_province'       => 'FL',
+            'postal_code'             => '34223',
+            'bedrooms_total'          => 3,
+            'bathrooms_total_integer' => 2,
+            'living_area'             => 1800,
+            'senior_community_yn'     => false,
+            'imported_at'             => now(),
+            'raw_json'                => json_encode(['IDXParticipationYN' => true]),
+        ]);
     }
 
     /**
