@@ -121,8 +121,8 @@ class SmartTagSeekerPreferenceReader
 
         $propertyType = $subject->get->property_type ?? null;
 
-        return SmartTagContextResolver::forSeekerCriteria(
-            $type->role()->value,
+        return SmartTagContextResolver::forSeekerSubject(
+            $type,
             is_string($propertyType) ? $propertyType : null,
         );
     }

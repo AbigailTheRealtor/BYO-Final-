@@ -37,6 +37,7 @@ class BuyerOfferListingEdit extends Component
     use WithFileUploads;
     use ResolvesOwnedAuction;
     use HasImportantPlaces;
+    use \App\Http\Livewire\Concerns\HasSeekerSmartTags; // Property Features You Want: canonical seeker Smart Tag preferences
     // Phase 9D Search Areas plumbing, shared with the four Hire Agent components. Adopted here
     // in place of a private hydrateDiscreteLocationFromBlob() copy; loadSearchAreas() and
     // saveSearchAreas() come along unused, because saveAllMetadata() keeps its inline writes.
@@ -55,6 +56,12 @@ class BuyerOfferListingEdit extends Component
     protected function geographyCascadeWorkflow(): ?string
     {
         return $this->user_type === 'buyer' ? 'create_buyer' : null;
+    }
+
+    /** This wizard's seeker Smart Tag preferences belong to the Buyer Offer Listing it saves. */
+    protected function seekerSmartTagSubjectType(): \App\Support\SmartTags\SmartTagSeekerSubjectType
+    {
+        return \App\Support\SmartTags\SmartTagSeekerSubjectType::BuyerOfferListing;
     }
 
     protected $listeners = [
@@ -1757,6 +1764,10 @@ class BuyerOfferListingEdit extends Component
             'flood_zone_tolerance'            => json_encode($this->flood_zone_tolerance ?? []),
         ];
 
+        if (($seekerSmartTagsDraft = $this->seekerSmartTagsForDraftPayload()) !== null) {
+            $data['seeker_smart_tags'] = $seekerSmartTagsDraft;
+        }
+
         if ($isAgent) {
             $data['agent_brokerage']      = $this->agent_brokerage;
             $data['agent_license_number'] = $this->agent_license_number;
@@ -1862,6 +1873,10 @@ class BuyerOfferListingEdit extends Component
             $this->auctionId = $auction->id;
 
             $this->saveAllMetadata($auction);
+
+            // Feature off: keep the parent version's stored seeker picks on this new
+            // row (the form's picks are neither shown nor written). No-op when on.
+            $this->carrySeekerSmartTagsForward($parentDraftId !== null ? $previousDraft : null, $auction);
 
             $auction->saveMeta('draft_version',      $previousVersion + 1);
             $auction->saveMeta('parent_draft_id',    $parentDraftId);
@@ -2001,6 +2016,7 @@ class BuyerOfferListingEdit extends Component
             $this->commute_mode = $auction->get->commute_mode ?? '';
             // 9C: Important Places (additive; separate meta key — commute fields above untouched)
             $this->loadImportantPlaces($auction);
+            $this->restoreSeekerSmartTags($auction);
             $this->hoa_acceptance = $auction->get->hoa_acceptance ?? '';
             $this->hoa_max_monthly_fee = $auction->get->hoa_max_monthly_fee ?? '';
             $floodZoneRaw = $auction->get->flood_zone_tolerance ?? null;
@@ -2916,6 +2932,10 @@ class BuyerOfferListingEdit extends Component
             // Save file name to database
             $auction->saveMeta('video', $videoName);
         }
+
+        // Seeker Smart Tag preferences — last, so the writer reads this save's stored
+        // property_type and workflow stamp. Draft and publish alike; never throws.
+        $this->persistSeekerSmartTags($auction);
     }
 
     public function update()

@@ -19,6 +19,7 @@ final class SmartTagSeekerPreferenceResult
     public const REFUSED_UNSAVED_SUBJECT     = 'subject_has_no_id';
     public const REFUSED_NOT_OWNER           = 'actor_is_not_the_owner';
     public const REFUSED_NO_CONTEXT          = 'criteria_has_no_supported_property_type';
+    public const REFUSED_SUBJECT_MISMATCH    = 'source_and_target_are_not_versions_of_one_subject_type';
 
     private function __construct(
         public readonly bool $accepted,

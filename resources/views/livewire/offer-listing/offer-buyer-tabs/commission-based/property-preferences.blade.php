@@ -751,6 +751,10 @@
 </div>
 @endif
 
+{{-- Property Features You Want — canonical seeker Smart Tag preferences (renders only for
+     the Offer Listing seeker components, only while the seeker-preference gate is on). --}}
+@include('livewire.offer-listing.shared._seeker-smart-tags')
+
 {{-- Pets for Income Property (after Non-Negotiable Amenities, before Required Property or Business Assets) --}}
 @if ($property_type === 'Income')
     <div class="form-group">
