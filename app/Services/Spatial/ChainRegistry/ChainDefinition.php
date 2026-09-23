@@ -22,6 +22,12 @@ final class ChainDefinition
      * @param array<string, ChainFormat>                $formats
      * @param array{store_with_fuel: bool, fuel_only: bool}|null $fuelSites
      * @param array<string, list<string>>               $coBrands       partner brand_key => compound names
+     * @param list<string>                              $strongIdentityCategories allowed categories that
+     *        admit a row only on own-QID or name-alias identity (v2)
+     * @param bool                                      $brandAliasRequiresCorroboration a brand alias alone
+     *        is not identity; the name, an own/department QID or a name-pattern format must agree (v2)
+     * @param array<string, array{as_category: string, exclusion_name_patterns: array<string, string>}> $sourceCategoryRescues
+     *        non-imported taxonomy token => how a strongly identified row of it is admitted (v2)
      */
     public function __construct(
         public readonly string $key,
@@ -40,7 +46,21 @@ final class ChainDefinition
         public readonly ?array $fuelSites,
         public readonly array $coBrands,
         public readonly string $validationStatus,
+        public readonly array $strongIdentityCategories = [],
+        public readonly bool $brandAliasRequiresCorroboration = false,
+        public readonly array $sourceCategoryRescues = [],
     ) {
+    }
+
+    public function requiresStrongIdentity(string $categoryKey): bool
+    {
+        return in_array($categoryKey, $this->strongIdentityCategories, true);
+    }
+
+    /** @return array{as_category: string, exclusion_name_patterns: array<string, string>}|null */
+    public function rescueFor(string $sourceToken): ?array
+    {
+        return $this->sourceCategoryRescues[$sourceToken] ?? null;
     }
 
     public function format(string $formatKey): ChainFormat

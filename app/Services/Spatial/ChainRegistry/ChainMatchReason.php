@@ -42,6 +42,10 @@ final class ChainMatchReason
     public const CATEGORY_NOT_ALLOWED = 'category_not_allowed';
     /** R7: no format resolves, more than one does, or department identity met a non-department format. */
     public const UNSUPPORTED_FORMAT = 'unsupported_format';
+    // v2: the category (or a source-category rescue) demands own-QID or name-alias identity.
+    public const STRONG_IDENTITY_REQUIRED = 'strong_identity_required';
+    // v2: a brand alias alone, at a chain whose brand field is measured to be misattributed.
+    public const BRAND_ALIAS_UNCORROBORATED = 'brand_alias_uncorroborated';
 
     // ── Diagnostics: recorded, never change a membership ────────────────────────────────────
     /** A fuel brand the chain declares as expected co-located fuel (Mobil on 7-Eleven). */
@@ -65,6 +69,7 @@ final class ChainMatchReason
         return [
             self::CHAIN_EXCLUSION, self::BRAND_CONFLICT, self::CATEGORY_EXCLUDED,
             self::CATEGORY_NOT_ALLOWED, self::UNSUPPORTED_FORMAT,
+            self::STRONG_IDENTITY_REQUIRED, self::BRAND_ALIAS_UNCORROBORATED,
         ];
     }
 

@@ -22,6 +22,14 @@ use App\Services\Spatial\OvertureTaxonomyMapV2;
  * by category alone, an asymmetric co-brand, an entry without evidence, or any
  * `validation_status` other than `provisional` — each is an {@see InvalidChainRegistry}.
  *
+ * CHAIN-REGISTRY-V2 VOCABULARY (census of 2026-09-22, decisions 1–8). Each widening is declared in
+ * config and validated here, never inferred: `allowed_categories.<cat>.identity = strong` (own-QID
+ * or name-alias identity only), `brand_alias_requires_corroboration`, `source_category_rescues`
+ * (a NON-imported taxonomy token admitted for one chain, always on strong identity, into one of
+ * its storefront categories) and a format's `host_chains` (CVS inside Target), optionally narrowed
+ * to a subset of its categories by `host_categories`. None of them can create a fuel or department
+ * membership, and none of them reads coordinates.
+ *
  * RULE HASH. {@see ruleHash()} is a SHA-256 over every identity-affecting rule (presentation —
  * display names, labels, visibility, notes, evidence text — is excluded). Every chain's
  * {@see chainRuleHash()} is derived from the WHOLE registry, deliberately: foreign-brand (R5)
@@ -33,7 +41,7 @@ final class ChainRegistry
     public const CONFIG_KEY = 'poi_chain_registry';
 
     /** Versions the matcher's precedence (design §12). A precedence change is a rule change. */
-    public const MATCH_PRECEDENCE_VERSION = 'chain-match-precedence-v1';
+    public const MATCH_PRECEDENCE_VERSION = 'chain-match-precedence-v2';
 
     /** The only status the config may declare. Promotion lives outside the registry (§14). */
     public const STATUS_PROVISIONAL = 'provisional';
@@ -43,11 +51,14 @@ final class ChainRegistry
 
     public const CO_BRAND_EVIDENCE_RULE = 'co_brand_evidence';
 
+    /** The only value `allowed_categories.<cat>.identity` may take. */
+    public const IDENTITY_STRONG = 'strong';
+
     private const TOP_KEYS = ['registry_version', 'normalizer_version', 'taxonomy_map_version', 'global', 'chains'];
     private const GLOBAL_KEYS = ['excluded_categories', 'exclusion_wikidata_ids', 'exclusion_name_patterns', 'closed_name_patterns', 'fuel_brands'];
     private const CHAIN_REQUIRED = ['display_name', 'aliases', 'brand_aliases', 'own_wikidata_ids', 'allowed_categories', 'formats', 'default_format', 'validation_status'];
-    private const CHAIN_OPTIONAL = ['department_wikidata_ids', 'exclusion_wikidata_ids', 'exclusion_name_patterns', 'fuel_brands', 'excluded_categories', 'fuel_sites', 'co_brands', 'notes'];
-    private const FORMAT_KEYS = ['categories', 'name_patterns', 'role', 'user_visible', 'label', 'evidence'];
+    private const CHAIN_OPTIONAL = ['department_wikidata_ids', 'exclusion_wikidata_ids', 'exclusion_name_patterns', 'fuel_brands', 'excluded_categories', 'fuel_sites', 'co_brands', 'notes', 'brand_alias_requires_corroboration', 'source_category_rescues'];
+    private const FORMAT_KEYS = ['categories', 'name_patterns', 'role', 'user_visible', 'label', 'evidence', 'host_chains', 'host_categories'];
 
     /**
      * Neutral strings no rule may match. A pattern that matches one of these matches almost
@@ -77,6 +88,11 @@ final class ChainRegistry
 
     /** @var array<string, true> the 16 canonical v2 category keys */
     private array $canonicalCategories = [];
+
+    private OvertureTaxonomyMapV2 $taxonomy;
+
+    /** @var array<string, list<string>> non-imported source token => sorted chain keys rescuing it */
+    private array $rescueChains = [];
 
     private ?string $ruleHash = null;
 
@@ -125,7 +141,8 @@ final class ChainRegistry
     public static function fromArray(array $config): self
     {
         $r = new self();
-        $r->canonicalCategories = array_fill_keys((new OvertureTaxonomyMapV2())->canonicalKeys(), true);
+        $r->taxonomy = new OvertureTaxonomyMapV2();
+        $r->canonicalCategories = array_fill_keys($r->taxonomy->canonicalKeys(), true);
         $r->parse($config);
 
         return $r;
@@ -237,6 +254,23 @@ final class ChainRegistry
         return isset($this->canonicalCategories[$categoryKey]);
     }
 
+    /**
+     * Chains that declare a rescue for a NON-imported taxonomy token (v2 decision 1). Empty for
+     * every token no chain names — which is every token but `shopping` in chain-registry-v2.
+     *
+     * @return list<string> sorted
+     */
+    public function rescueChainsFor(string $sourceToken): array
+    {
+        return $this->rescueChains[$sourceToken] ?? [];
+    }
+
+    /** @return array<string, list<string>> source token => chain keys */
+    public function rescueSources(): array
+    {
+        return $this->rescueChains;
+    }
+
     // ── Rule hash ────────────────────────────────────────────────────────────────────────────
 
     /**
@@ -254,9 +288,20 @@ final class ChainRegistry
                     'categories' => self::sorted($f->categories),
                     'name_patterns' => self::sorted($f->namePatterns),
                     'role' => $f->role,
+                    'host_chains' => self::sorted($f->hostChains),
+                    'host_categories' => self::sorted($f->hostCategories),
                 ];
             }
             ksort($formats);
+
+            $rescues = [];
+            foreach ($c->sourceCategoryRescues as $token => $rescue) {
+                $rescues[$token] = [
+                    'as_category' => $rescue['as_category'],
+                    'exclusion_name_patterns' => self::sortedMap($rescue['exclusion_name_patterns']),
+                ];
+            }
+            ksort($rescues);
 
             $aliases = array_map(static fn (array $a): string => $a['match'] . ':' . $a['value'], $c->aliases);
 
@@ -275,6 +320,9 @@ final class ChainRegistry
                 'exclusion_name_patterns' => self::sortedMap($c->exclusionNamePatterns),
                 'fuel_brands' => self::sorted($c->fuelBrands),
                 'allowed_categories' => self::sortedMap($c->allowedCategories),
+                'strong_identity_categories' => self::sorted($c->strongIdentityCategories),
+                'brand_alias_requires_corroboration' => $c->brandAliasRequiresCorroboration,
+                'source_category_rescues' => $rescues,
                 'excluded_categories' => self::sorted($c->excludedCategories),
                 'formats' => $formats,
                 'default_format' => $c->defaultFormat,
@@ -502,14 +550,22 @@ final class ChainRegistry
 
         // Categories.
         $allowed = [];
+        $strongIdentity = [];
         foreach (self::map($c['allowed_categories'], "{$p}.allowed_categories") as $cat => $entry) {
             $cat = (string) $cat;
             $this->assertCategory($cat, "{$p}.allowed_categories");
             $e = self::map($entry, "{$p}.allowed_categories.{$cat}");
-            self::exactKeys($e, ['role', 'evidence'], [], "{$p}.allowed_categories.{$cat}");
+            self::exactKeys($e, ['role', 'evidence'], ['identity'], "{$p}.allowed_categories.{$cat}");
             self::evidence($e['evidence'], "{$p}.allowed_categories.{$cat}");
             $allowed[$cat] = self::role($e['role'], "{$p}.allowed_categories.{$cat}.role");
+            if (array_key_exists('identity', $e)) {
+                if ($e['identity'] !== self::IDENTITY_STRONG) {
+                    self::fail("{$p}.allowed_categories.{$cat}.identity must be '" . self::IDENTITY_STRONG . "'");
+                }
+                $strongIdentity[] = $cat;
+            }
         }
+        $strongIdentity = self::sorted($strongIdentity);
         if ($allowed === []) {
             self::fail("{$p}.allowed_categories must have at least one entry");
         }
@@ -599,6 +655,42 @@ final class ChainRegistry
         }
         ksort($coBrands);
 
+        // A brand alias alone is not identity at this chain (v2 decision 6).
+        $corroboration = $c['brand_alias_requires_corroboration'] ?? false;
+        if (! is_bool($corroboration)) {
+            self::fail("{$p}.brand_alias_requires_corroboration must be a boolean");
+        }
+        if ($corroboration && $brandAliases === []) {
+            self::fail("{$p}.brand_alias_requires_corroboration is set but the chain has no brand aliases");
+        }
+
+        // Source-category rescues (v2 decision 1): a NON-imported taxonomy token admitted for this
+        // chain only, into one of its storefront categories. Strong identity is always required;
+        // that is code, not config, so no entry can relax it.
+        $rescues = [];
+        foreach (self::map($c['source_category_rescues'] ?? [], "{$p}.source_category_rescues") as $token => $entry) {
+            $token = (string) $token;
+            $rp = "{$p}.source_category_rescues.{$token}";
+            if (preg_match('/^[a-z][a-z0-9_]*$/', $token) !== 1) {
+                self::fail("{$rp}: source token must match ^[a-z][a-z0-9_]*$");
+            }
+            if ($this->taxonomy->isImported($token) || isset($this->canonicalCategories[$token])) {
+                self::fail("{$rp}: '{$token}' is already imported; a rescue is only for a token outside the import list");
+            }
+            $e = self::map($entry, $rp);
+            self::exactKeys($e, ['as_category', 'evidence'], ['exclusion_name_patterns'], $rp);
+            self::evidence($e['evidence'], $rp);
+            $as = self::string($e['as_category'], "{$rp}.as_category");
+            if (($allowed[$as] ?? null) !== ChainRole::STOREFRONT) {
+                self::fail("{$rp}.as_category must be one of the chain's storefront categories, got {$as}");
+            }
+            $rescues[$token] = [
+                'as_category' => $as,
+                'exclusion_name_patterns' => self::patternMap($e['exclusion_name_patterns'] ?? [], "{$rp}.exclusion_name_patterns"),
+            ];
+        }
+        ksort($rescues);
+
         if (($c['validation_status'] ?? null) !== self::STATUS_PROVISIONAL) {
             self::fail("{$p}.validation_status must be '" . self::STATUS_PROVISIONAL . "': promotion is a validation record, never config");
         }
@@ -624,6 +716,9 @@ final class ChainRegistry
             $fuelSites,
             $coBrands,
             self::STATUS_PROVISIONAL,
+            $strongIdentity,
+            $corroboration,
+            $rescues,
         );
     }
 
@@ -689,7 +784,42 @@ final class ChainRegistry
             self::fail("{$p}: a label is required exactly when user_visible is true");
         }
 
-        return new ChainFormat($key, $categories, $patterns, $role, $userVisible, $label);
+        // Host chains (v2 decision 7): only an explicit, named storefront format may declare one.
+        $hosts = [];
+        foreach (self::list($f['host_chains'] ?? [], "{$p}.host_chains") as $host) {
+            $hosts[] = self::string($host, "{$p}.host_chains");
+        }
+        $hosts = self::unique(self::sorted($hosts), "{$p}.host_chains");
+        if ($hosts !== [] && ($role !== ChainRole::STOREFRONT || $patterns === [])) {
+            self::fail("{$p}: host_chains may be declared only on a storefront format with name patterns");
+        }
+
+        // Host categories: where, among the format's categories, the host exception applies. A
+        // subset lets a name pattern select the format in a category where a host brand is still
+        // a conflict. Absent means every category of the format; never meaningful without hosts.
+        $hostCategories = $categories;
+        if (array_key_exists('host_categories', $f)) {
+            if ($hosts === []) {
+                self::fail("{$p}: host_categories may be declared only with host_chains");
+            }
+            $hostCategories = [];
+            foreach (self::list($f['host_categories'], "{$p}.host_categories") as $cat) {
+                $cat = self::string($cat, "{$p}.host_categories");
+                if (! in_array($cat, $categories, true)) {
+                    self::fail("{$p}.host_categories: {$cat} is not one of the format's categories");
+                }
+                $hostCategories[] = $cat;
+            }
+            if ($hostCategories === []) {
+                self::fail("{$p}.host_categories must have at least one entry");
+            }
+            $hostCategories = self::unique(self::sorted($hostCategories), "{$p}.host_categories");
+        }
+        if ($hosts === []) {
+            $hostCategories = [];
+        }
+
+        return new ChainFormat($key, $categories, $patterns, $role, $userVisible, $label, $hosts, $hostCategories);
     }
 
     private function validateCrossChain(): void
@@ -705,6 +835,29 @@ final class ChainRegistry
                 }
             }
         }
+
+        // Host chains exist, are not the chain itself, and are not co-brand partners: a host store
+        // and a co-brand are different relationships and one pair may not be both.
+        foreach ($this->chains as $key => $chain) {
+            foreach ($chain->formats as $fk => $format) {
+                foreach ($format->hostChains as $host) {
+                    if (! isset($this->chains[$host]) || $host === $key) {
+                        self::fail("chains.{$key}.formats.{$fk}.host_chains names unknown or self chain {$host}");
+                    }
+                    if ($chain->isCoBrandPartner($host)) {
+                        self::fail("chains.{$key}.formats.{$fk}: {$host} cannot be both a host and a co-brand partner");
+                    }
+                }
+            }
+        }
+
+        // Rescue index.
+        foreach ($this->chains as $key => $chain) {
+            foreach (array_keys($chain->sourceCategoryRescues) as $token) {
+                $this->rescueChains[$token][] = $key;
+            }
+        }
+        ksort($this->rescueChains);
 
         // Every identity string belongs to exactly one chain.
         $owner = [];
@@ -808,6 +961,9 @@ final class ChainRegistry
         $patternSets = ['global.exclusion_name_patterns' => $this->exclusionNamePatterns, 'global.closed_name_patterns' => $this->closedNamePatterns];
         foreach ($this->chains as $key => $chain) {
             $patternSets["chains.{$key}.exclusion_name_patterns"] = $chain->exclusionNamePatterns;
+            foreach ($chain->sourceCategoryRescues as $token => $rescue) {
+                $patternSets["chains.{$key}.source_category_rescues.{$token}.exclusion_name_patterns"] = $rescue['exclusion_name_patterns'];
+            }
         }
         foreach ($patternSets as $where => $patterns) {
             foreach ($patterns as $reason => $pattern) {

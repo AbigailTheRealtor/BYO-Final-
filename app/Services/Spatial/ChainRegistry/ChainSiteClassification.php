@@ -9,8 +9,9 @@ namespace App\Services\Spatial\ChainRegistry;
  *   storefront              the chain's own store is present
  *   storefront_unconfirmed  departments only (a Publix pharmacy with no Publix supermarket):
  *                           credible identity, retained internally, never a storefront
- *   fuel_only               fuel only, at a chain permitted a fuel-only format (7-Eleven)
- *   unsupported_format      fuel only at a chain that is not (Wawa, RaceTrac, Speedway)
+ *   fuel_only               fuel only, at a chain permitted a fuel-only format (7-Eleven, and in
+ *                           chain-registry-v2 RaceTrac and Speedway)
+ *   unsupported_format      fuel only at a chain that is not (Wawa)
  *
  * `displayQualifier` is the ONLY user-visible text this layer offers: "Fuel only" for a fuel-only
  * site, a declared visible format label ("Supercenter"), or null. A store that also sells fuel
