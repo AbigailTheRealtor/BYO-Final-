@@ -99,6 +99,38 @@ class ChainRegistryValidationTest extends TestCase
             'mismatched compound names'    => [fn (array $c) => self::set($c, 'chains.speedway.co_brands.seven_eleven.compound_names', ['7 eleven speedway']), 'symmetrically'],
             'co-brand with unknown chain'  => [fn (array $c) => self::set($c, 'chains.aldi.co_brands', ['lidl' => ['evidence_rule' => 'co_brand_evidence', 'compound_names' => ['aldi lidl'], 'evidence' => 'P']]), 'unknown chain'],
             'unknown evidence rule'        => [fn (array $c) => self::set($c, 'chains.speedway.co_brands.seven_eleven.evidence_rule', 'proximity'), 'evidence_rule'],
+
+            // v2: strong identity.
+            'identity not strong'          => [fn (array $c) => self::set($c, 'chains.cvs.allowed_categories.convenience_store.identity', 'weak'), "identity must be 'strong'"],
+            'identity is a boolean'        => [fn (array $c) => self::set($c, 'chains.cvs.allowed_categories.convenience_store.identity', true), "identity must be 'strong'"],
+
+            // v2: brand-alias corroboration.
+            'corroboration not boolean'    => [fn (array $c) => self::set($c, 'chains.walmart.brand_alias_requires_corroboration', 'yes'), 'must be a boolean'],
+            'corroboration, no brand alias'=> [fn (array $c) => self::set($c, 'chains.walmart.brand_aliases', []), 'no brand aliases'],
+
+            // v2: source-category rescues.
+            'rescue of an imported token'  => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.pharmacy', ['as_category' => 'drugstore', 'evidence' => 'P']), 'already imported'],
+            'rescue of a canonical key'    => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.shopping_center', ['as_category' => 'drugstore', 'evidence' => 'P']), 'already imported'],
+            'rescue token malformed'       => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.Shopping', ['as_category' => 'drugstore', 'evidence' => 'P']), 'source token'],
+            'rescue into a department'     => [fn (array $c) => self::set($c, 'chains.walmart.source_category_rescues', ['shopping' => ['as_category' => 'pharmacy', 'evidence' => 'P']]), 'storefront categories'],
+            'rescue into a fuel category'  => [fn (array $c) => self::set($c, 'chains.speedway.source_category_rescues', ['truck_stop' => ['as_category' => 'gas_station', 'evidence' => 'P']]), 'storefront categories'],
+            'rescue into unknown category' => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.shopping.as_category', 'bakery'), 'storefront categories'],
+            'rescue without evidence'      => [fn (array $c) => self::unset($c, 'chains.cvs.source_category_rescues.shopping.evidence'), "'evidence'"],
+            'rescue unknown field'         => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.shopping.identity', 'weak'), "unknown field 'identity'"],
+            'rescue pattern hits fuel'     => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.shopping.exclusion_name_patterns', ['mobil' => ['pattern' => '/\\bmobil\\b/', 'evidence' => 'P']]), 'fuel brand name'],
+            'rescue pattern too broad'     => [fn (array $c) => self::set($c, 'chains.cvs.source_category_rescues.shopping.exclusion_name_patterns', ['any' => ['pattern' => '/./', 'evidence' => 'P']]), 'neutral string'],
+
+            // v2: host chains.
+            'host on a default format'     => [fn (array $c) => self::set($c, 'chains.cvs.formats.store.host_chains', ['target']), 'host_chains may be declared only'],
+            'host on a department format'  => [fn (array $c) => self::set($c, 'chains.walmart.formats.curbside', ['categories' => ['grocery_store'], 'name_patterns' => ['/^curbside\\b/'], 'role' => 'department', 'host_chains' => ['target'], 'evidence' => 'P']), 'host_chains may be declared only'],
+            'host is unknown chain'        => [fn (array $c) => self::set($c, 'chains.cvs.formats.store_in_target.host_chains', ['kmart']), 'unknown or self'],
+            'host is the chain itself'     => [fn (array $c) => self::set($c, 'chains.cvs.formats.store_in_target.host_chains', ['cvs']), 'unknown or self'],
+            'host is a co-brand partner'   => [fn (array $c) => self::set($c, 'chains.seven_eleven.formats.inside', ['categories' => ['convenience_store'], 'name_patterns' => ['/\\binside speedway\\b/'], 'role' => 'storefront', 'host_chains' => ['speedway'], 'evidence' => 'P']), 'both a host and a co-brand'],
+            'duplicate host'               => [fn (array $c) => self::set($c, 'chains.cvs.formats.store_in_target.host_chains', ['target', 'target']), 'duplicate'],
+            'host categories, no host'     => [fn (array $c) => self::set($c, 'chains.cvs.formats.store.host_categories', ['pharmacy']), 'only with host_chains'],
+            'host category outside format' => [fn (array $c) => self::set($c, 'chains.cvs.formats.store_in_target.host_categories', ['pharmacy', 'grocery_store']), 'not one of the format'],
+            'host categories empty'        => [fn (array $c) => self::set($c, 'chains.cvs.formats.store_in_target.host_categories', []), 'at least one'],
+            'duplicate host category'      => [fn (array $c) => self::set($c, 'chains.cvs.formats.store_in_target.host_categories', ['pharmacy', 'pharmacy']), 'duplicate'],
         ];
     }
 

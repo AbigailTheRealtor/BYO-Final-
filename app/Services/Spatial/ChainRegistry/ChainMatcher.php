@@ -8,17 +8,25 @@ namespace App\Services\Spatial\ChainRegistry;
  * Design: docs/spatial/overture-chain-registry-design.md §12. Precedence version:
  * {@see ChainRegistry::MATCH_PRECEDENCE_VERSION}.
  *
- *   R0  row validity: category ∈ the 16 canonical keys; status open/NULL; QID well-formed; a
- *       QID-shaped brand NAME is read as the brand QID and must agree with the QID field
+ *   R0  row validity: category ∈ the 16 canonical keys — or, with no canonical key, a raw source
+ *       token some chain declares a rescue for (v2), which restricts R3 to those chains; status
+ *       open/NULL; QID well-formed; a QID-shaped brand NAME is read as the brand QID and must
+ *       agree with the QID field
  *   R1  global service-exclusion QID                      → reject the row
  *   R2  global exclusion / closed-name pattern (name or brand) → reject the row
  *   R3  identity candidates per chain, strongest first: own QID → brand alias (exact) →
  *       name alias (exact / word-prefix) → declared co-brand compound name (whole name) →
  *       department QID
- *   R4  chain-local exclusion QID or pattern              → drop that candidate
- *   R5  foreign STORE/CHAIN identity on the row           → drop that candidate
+ *   R4  chain-local exclusion QID or pattern, and a rescue's own sub-entity patterns → drop
+ *   R5  foreign STORE/CHAIN identity on the row           → drop that candidate, unless the
+ *       foreign identity is a declared HOST chain of a format whose host categories include the
+ *       row's category and the row names this chain (v2: CVS inside Target) — that format is
+ *       then forced
  *   R6  category excluded / not allowed                   → drop that candidate
+ *   R6b the category or rescue demands STRONG identity (own QID or name alias) (v2) → drop
  *   R7  format and role resolution                        → drop that candidate if none
+ *   R7b a brand alias alone, at a chain that requires corroboration, with no own/department
+ *       QID, no name alias and no name-pattern format (v2) → drop that candidate
  *   R8  more than one survivor must be a declared co-brand evidenced on THIS row, else ambiguous
  *
  * THREE KINDS OF FOREIGN IDENTITY, AND THEY ARE NOT THE SAME THING
@@ -31,7 +39,8 @@ namespace App\Services\Spatial\ChainRegistry;
  *     is not store-chain identity.
  *
  * No positive evidence can override an exclusion: R1/R2 run before identity is even collected,
- * and R4–R6 each drop a candidate outright whatever its match method was.
+ * and R4–R7b each drop a candidate outright whatever its match method was. A rescued row passes
+ * every step a canonical row does, with the rescue's target category standing in for its own.
  */
 final class ChainMatcher
 {
@@ -53,8 +62,15 @@ final class ChainMatcher
     {
         // ── R0 ───────────────────────────────────────────────────────────────────────────────
         $category = strtolower(trim((string) $input->categoryKey));
+        $rescueSource = null;
         if (! $this->registry->isCanonicalCategory($category)) {
-            return ChainMatchResult::rejected(ChainMatchReason::CATEGORY_NOT_IMPORTED);
+            // Only a row with NO canonical key may be rescued, and only by a chain that names its
+            // raw token. A malformed canonical key is never reinterpreted as a source token.
+            $source = strtolower(trim((string) $input->sourceCategory));
+            if ($category !== '' || $source === '' || $this->registry->rescueChainsFor($source) === []) {
+                return ChainMatchResult::rejected(ChainMatchReason::CATEGORY_NOT_IMPORTED);
+            }
+            $rescueSource = $source;
         }
 
         $status = strtolower(trim((string) $input->operatingStatus));
@@ -120,6 +136,9 @@ final class ChainMatcher
         // ── R3 ───────────────────────────────────────────────────────────────────────────────
         $candidates = [];
         foreach ($this->registry->chains() as $key => $chain) {
+            if ($rescueSource !== null && $chain->rescueFor($rescueSource) === null) {
+                continue;
+            }
             $candidate = $this->identify($chain, $qid, $name, $brand, $fuelByQid, $fuelByName);
             if ($candidate !== null) {
                 $candidates[$key] = $candidate;
@@ -127,7 +146,10 @@ final class ChainMatcher
         }
 
         if ($candidates === []) {
-            return ChainMatchResult::noMatch(ChainMatchReason::NO_CHAIN, [], []);
+            // A rescue token no rescuing chain identified is simply a row outside the import list.
+            return $rescueSource !== null
+                ? ChainMatchResult::rejected(ChainMatchReason::CATEGORY_NOT_IMPORTED)
+                : ChainMatchResult::noMatch(ChainMatchReason::NO_CHAIN, [], []);
         }
 
         // ── R4–R7, per candidate ─────────────────────────────────────────────────────────────
@@ -148,19 +170,37 @@ final class ChainMatcher
                 ];
             }
 
-            $drop = $this->candidateDrop($chain, $candidate, $qid, $name, $brand, $category, $fuelByQid, $fuelByName);
+            $rescue = $rescueSource !== null ? $chain->rescueFor($rescueSource) : null;
+            $candidateCategory = $rescue !== null ? $rescue['as_category'] : $category;
+
+            $hostFormat = null;
+            $drop = $this->candidateDrop($chain, $candidate, $qid, $name, $brand, $candidateCategory, $fuelByQid, $fuelByName, $rescue, $hostFormat);
             if ($drop !== null) {
                 $drops[$key] = $drop;
                 continue;
             }
 
-            $format = $this->resolveFormat($chain, $category, $candidate['remainder']);
+            $format = $hostFormat ?? $this->resolveFormat($chain, $candidateCategory, $candidate['remainder']);
             if ($format === null || ($candidate['department_identity'] && $format->role !== ChainRole::DEPARTMENT)) {
                 $drops[$key] = ChainMatchReason::UNSUPPORTED_FORMAT;
                 continue;
             }
 
-            $survivors[$key] = $candidate + ['format' => $format];
+            // R7b — a brand alias alone is not identity where the brand field is measured to be
+            // misattributed. The place's own name, an own or department QID, or a format the
+            // name itself selected must agree.
+            if ($chain->brandAliasRequiresCorroboration
+                && $candidate['method'] === ChainMembership::METHOD_BRAND_ALIAS
+                && ! $candidate['name_identity']
+                && ! $candidate['department_identity']
+                && $candidate['compound_partners'] === []
+                && $format->isDefault()
+            ) {
+                $drops[$key] = ChainMatchReason::BRAND_ALIAS_UNCORROBORATED;
+                continue;
+            }
+
+            $survivors[$key] = $candidate + ['format' => $format, 'rescued_from' => $rescue !== null ? $rescueSource : null];
         }
 
         if ($survivors === []) {
@@ -187,6 +227,7 @@ final class ChainMatcher
                 $s['format']->key,
                 $s['method'],
                 array_values(array_diff($keys, [$key])),
+                $s['rescued_from'],
             );
         }
 
@@ -196,7 +237,7 @@ final class ChainMatcher
     /**
      * R3 for one chain. Null when the row carries no identity evidence for it.
      *
-     * @return array{method: string, remainder: string, department_identity: bool, name_identity: bool, brand_identity: bool, compound_partners: list<string>}|null
+     * @return array{method: string, own_identity: bool, remainder: string, department_identity: bool, name_identity: bool, brand_identity: bool, compound_partners: list<string>}|null
      */
     private function identify(ChainDefinition $chain, ?string $qid, ?string $name, ?string $brand, ?string $fuelByQid, ?string $fuelByName): ?array
     {
@@ -256,6 +297,7 @@ final class ChainMatcher
 
         return [
             'method' => $method,
+            'own_identity' => $own,
             'remainder' => $remainder,
             'department_identity' => $department,
             'name_identity' => $aliasLength !== null,
@@ -270,9 +312,11 @@ final class ChainMatcher
     }
 
     /**
-     * R4–R6 for one candidate. Null when the candidate survives them.
+     * R4–R6b for one candidate. Null when the candidate survives them. When the R5 host exception
+     * applies, `$hostFormat` receives the format it requires.
      *
-     * @param array{method: string, remainder: string, department_identity: bool, name_identity: bool, brand_identity: bool, compound_partners: list<string>} $candidate
+     * @param array{as_category: string, exclusion_name_patterns: array<string, string>}|null $rescue
+     * @param array{method: string, own_identity: bool, remainder: string, department_identity: bool, name_identity: bool, brand_identity: bool, compound_partners: list<string>} $candidate
      */
     private function candidateDrop(
         ChainDefinition $chain,
@@ -283,27 +327,37 @@ final class ChainMatcher
         string $category,
         ?string $fuelByQid,
         ?string $fuelByName,
+        ?array $rescue,
+        ?ChainFormat &$hostFormat,
     ): ?string {
-        // R4 — chain-local exclusions.
+        // R4 — chain-local exclusions, then the rescue's own sub-entity exclusions.
         if ($qid !== null && in_array($qid, $chain->exclusionWikidataIds, true)) {
             return ChainMatchReason::CHAIN_EXCLUSION;
         }
         if (self::anyPatternMatches($chain->exclusionNamePatterns, $name, $brand)) {
             return ChainMatchReason::CHAIN_EXCLUSION;
         }
+        if ($rescue !== null && self::anyPatternMatches($rescue['exclusion_name_patterns'], $name, $brand)) {
+            return ChainMatchReason::CHAIN_EXCLUSION;
+        }
 
-        // R5 — foreign STORE/CHAIN identity. A fuel brand is never foreign here.
+        // R5 — foreign STORE/CHAIN identity. A fuel brand is never foreign here. The one
+        // exception is a declared host store: only with this chain in the place's own NAME, and
+        // only in a category the format hosts in (CVS Pharmacy with brand "Target").
         $partners = array_keys($chain->coBrands);
+        $host = $candidate['name_identity'] ? $this->hostFormat($chain, $category, $qid, $brand) : null;
         if ($qid !== null && $fuelByQid === null
             && ! $chain->hasOwnWikidata($qid)
             && ! in_array($qid, $chain->departmentWikidataIds, true)
             && ! $this->anyPartner($partners, static fn (ChainDefinition $p): bool => $p->hasOwnWikidata($qid))
+            && ! ($host !== null && $host['by_qid'])
         ) {
             return ChainMatchReason::BRAND_CONFLICT;
         }
         if ($brand !== null && $fuelByName === null
             && ! $chain->hasBrandAlias($brand)
             && ! $this->anyPartner($partners, static fn (ChainDefinition $p): bool => $p->hasBrandAlias($brand))
+            && ! ($host !== null && $host['by_brand'])
         ) {
             return ChainMatchReason::BRAND_CONFLICT;
         }
@@ -316,6 +370,45 @@ final class ChainMatcher
         }
         if (! isset($chain->allowedCategories[$category])) {
             return ChainMatchReason::CATEGORY_NOT_ALLOWED;
+        }
+
+        // R6b — strong identity: the chain's own QID, or the chain named in the place's own name.
+        // A rescue always demands it; that is not configurable.
+        if (($rescue !== null || $chain->requiresStrongIdentity($category))
+            && ! $candidate['own_identity'] && ! $candidate['name_identity']
+        ) {
+            return ChainMatchReason::STRONG_IDENTITY_REQUIRED;
+        }
+
+        // A host exception is used only if the row's foreign identity actually needed it.
+        if ($host !== null && ($host['by_qid'] || $host['by_brand'])) {
+            $hostFormat = $host['format'];
+        }
+
+        return null;
+    }
+
+    /**
+     * The format whose declared host chain explains the row's foreign QID and/or brand, if any.
+     * `by_qid` / `by_brand` say which foreign field the host accounts for — each is excused only
+     * when the host owns it, so a host brand beside some third chain's QID still conflicts.
+     *
+     * @return array{format: ChainFormat, by_qid: bool, by_brand: bool}|null
+     */
+    private function hostFormat(ChainDefinition $chain, string $category, ?string $qid, ?string $brand): ?array
+    {
+        foreach ($chain->formats as $format) {
+            if (! $format->hostsIn($category)) {
+                continue;
+            }
+            foreach ($format->hostChains as $hostKey) {
+                $hostChain = $this->registry->chain($hostKey);
+                $byQid = $qid !== null && $hostChain->hasOwnWikidata($qid);
+                $byBrand = $brand !== null && $hostChain->hasBrandAlias($brand);
+                if ($byQid || $byBrand) {
+                    return ['format' => $format, 'by_qid' => $byQid, 'by_brand' => $byBrand];
+                }
+            }
         }
 
         return null;

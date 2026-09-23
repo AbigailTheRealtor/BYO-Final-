@@ -1,6 +1,8 @@
 # Overture chain registry — design (PR 2)
 
-**Status:** APPROVED. Product decisions locked 2026-09-22 (§17). Implemented by this PR as a
+**Status:** APPROVED. Product decisions locked 2026-09-22 (§17); the real-data census decisions of
+the same date are implemented as **`chain-registry-v2`** (§19), which supersedes decisions 3, 4, 11
+and — for RaceTrac and Speedway — 6. Implemented by this PR as a
 **pure, unreferenced** layer: the config, its reader/validator, the name normaliser, the matcher,
 the site-classification contract and their tests (§18). No migration, table, import, extraction,
 de-duplication, query service or activation. No runtime code calls any of it.
@@ -211,8 +213,9 @@ convenience_store S, gas_station F · formats `store`, `fuel` · fuel_sites stor
 fuel_only ❌ (decision 6).
 
 **racetrac** — `racetrac` p, `race trac` p · brand `racetrac` (M: identity for location-only names
-"Polo", "Lake Mary") · own Q735942 (M, 224) · chain pattern `truck` (M) · convenience_store S,
-gas_station F · formats `store`, `fuel` · fuel_sites store_with_fuel ✅, fuel_only ❌.
+"Polo", "Lake Mary" — in v2 only with corroboration, §19.1) · own Q735942 (M, 224) · chain pattern
+`truck` (M) · convenience_store S, gas_station F · formats `store`, `fuel` · fuel_sites
+store_with_fuel ✅, fuel_only ❌ in v1 (✅ in v2, §19 decision 3).
 
 **speedway** — `speedway` **x** (M: "Daytona International Speedway" and 68 race-track rows must
 fail) · brand `speedway` (M: 9/172) · no own QID · convenience_store S, gas_station F · formats
@@ -480,7 +483,7 @@ a site-builder decision (PR 5) and never crosses chains.
 * **Measured reality:** the combined "7-Eleven/Speedway" name was observed only on Western Union
   rows, which R1 rejects. Storefront co-brand evidence is **unmeasured** (v2§10-2).
 
-## 12. Matcher precedence (`chain-match-precedence-v1`)
+## 12. Matcher precedence (`chain-match-precedence-v2`; v1 was the same without the v2 rows)
 
 ### 12.1 Rules, in order
 
@@ -491,14 +494,16 @@ the same registry version always give the same answer, whatever order the config
 
 | # | Rule | Effect |
 |---|---|---|
-| R0 | `categoryKey` ∉ the 16 keys; status not `open`/NULL; brand QID present but malformed; a QID-shaped brand name is read as the brand QID and must agree with the QID field (§4.2) | reject: `category_not_imported` / `status_excluded` / `malformed_wikidata` / `conflicting_wikidata` |
+| R0 | `categoryKey` ∉ the 16 keys — unless the key is empty and a chain declares a **source-category rescue** for the raw `sourceCategory` token (v2, §19), which restricts R3 to those chains; status not `open`/NULL; brand QID present but malformed; a QID-shaped brand name is read as the brand QID and must agree with the QID field (§4.2) | reject: `category_not_imported` / `status_excluded` / `malformed_wikidata` / `conflicting_wikidata` |
 | R1 | brand QID ∈ global **service** exclusion IDs | reject: `exclusion_wikidata` |
 | R2 | name or brand matches a global exclusion / closed-name pattern | reject: `exclusion_pattern` / `closed_name` |
 | R3 | per chain, **candidate identity**, strongest first: own QID → brand alias (exact) → name alias (exact / word-prefix, longest wins) → declared co-brand compound name (whole name) → department QID. **A fuel-brand QID or name is never identity.** | no candidate at all → `no_chain` |
-| R4 | chain-local exclusion QID or pattern (name or brand) | drop candidate: `chain_exclusion` |
-| R5 | foreign **STORE/CHAIN** identity: a brand QID that is not this chain's own or department ID, not a fuel brand, and not a declared partner's own ID; or a brand name that is not this chain's brand alias, not a fuel brand name, and not a declared partner's brand alias | drop candidate: `brand_conflict` |
-| R6 | category in global or chain `excluded_categories` / not in `allowed_categories` | drop: `category_excluded` / `category_not_allowed` |
+| R4 | chain-local exclusion QID or pattern (name or brand); for a rescued row, the rescue's own sub-entity patterns | drop candidate: `chain_exclusion` |
+| R5 | foreign **STORE/CHAIN** identity: a brand QID that is not this chain's own or department ID, not a fuel brand, and not a declared partner's own ID; or a brand name that is not this chain's brand alias, not a fuel brand name, and not a declared partner's brand alias. **v2 host exception:** a foreign QID / brand owned by a format's declared `host_chains`, on a row whose NAME identifies this chain and whose category is one of that format's host categories (`host_categories`, default all of its categories), is not a conflict — and that format is then forced | drop candidate: `brand_conflict` |
+| R6 | category (a rescued row: the rescue's `as_category`) in global or chain `excluded_categories` / not in `allowed_categories` | drop: `category_excluded` / `category_not_allowed` |
+| R6b | **v2:** the category is marked `identity: strong`, or the row is rescued, and identity is neither the chain's own QID nor its name alias | drop: `strong_identity_required` |
 | R7 | format and role resolution (§9) | drop: `unsupported_format` |
+| R7b | **v2:** the chain sets `brand_alias_requires_corroboration`, identity is a brand alias only (no own / department QID, no name alias, no compound) and the resolved format is a default | drop: `brand_alias_uncorroborated` |
 | R8 | more than one survivor: every pair must be a declared co-brand evidenced on this row (§11) | otherwise `ambiguous`, zero memberships |
 
 Every candidate chain also gets fuel diagnostics (`fuel_brand_expected` / `fuel_brand_conflict`)
@@ -546,7 +551,7 @@ defensive fixtures; their exact source category is unknown.
 | `Target Specialty Products` † | `target` exact-only (R3 no candidate) |
 | `CVS Pharmacy` inside Target | a `cvs` membership (`store_in_target`); Target is never a candidate (`target` is exact); different chains are never merged |
 | `Target Pharmacy`, brand Target | Target's chain pattern `pharmacy` (R4) and excluded category (R6) |
-| RaceTrac row named `Polo` / `Lake Mary`, brand "RaceTrac" | R3 via **brand alias** → `racetrac` |
+| RaceTrac row named `Polo` / `Lake Mary`, brand "RaceTrac" | v1: R3 via **brand alias** → `racetrac`. v2: refused unless the row carries RaceTrac's own QID — `brand_alias_uncorroborated` (R7b) in `convenience_store`, `strong_identity_required` (R6b) in `gas_station` (§19.1) |
 | `7-Eleven` + Mobil Q109676002 | `seven_eleven` membership; `fuel_brand_expected` diagnostic |
 | `Shell` + Arco Q304769 | `shell` membership; `fuel_brand_conflict` **diagnostic only** (§7) |
 | `7-Eleven` + Shell's own QID | 7-Eleven dropped `brand_conflict` (STORE identity); Shell survives |
@@ -644,15 +649,15 @@ All pure unit tests: no database, no network, no container. All six files are in
 |---|---|---|
 | 1 | `shopping_center` is never a chain identity category (the corpus keeps it for Location DNA). | `global.excluded_categories` |
 | 2 | Department-only sites are retained internally as `storefront_unconfirmed`; never in storefront-only queries (nor, in v1, generic queries). They may later help de-duplication, identity resolution and coverage analysis. | `ChainRole`, `ChainSiteClassification` |
-| 3 | No McDonald's identity from `coffee_shop` / `cafe` in v1; revisit McCafé after PR 3 evidence. | `mcdonalds.excluded_categories` |
-| 4 | No generic `restaurant` for the fast-food chains or Starbucks in v1; PR 3 reports chain × category misses. | per-chain `excluded_categories` |
+| 3 | No McDonald's identity from `coffee_shop` / `cafe` in v1; revisit McCafé after PR 3 evidence. **Superseded for `coffee_shop` by v2 decision 2 (§19); `cafe` stays excluded.** | `mcdonalds.excluded_categories` |
+| 4 | No generic `restaurant` for the fast-food chains or Starbucks in v1; PR 3 reports chain × category misses. **Superseded for Burger King and McDonald's by v2 decision 2; unchanged for the rest.** | per-chain `excluded_categories` |
 | 5 | **A fuel-brand ID alone never creates or removes store-chain membership.** Recorded as `fuel_brand_expected` / `fuel_brand_conflict` diagnostics. A non-fuel foreign STORE/CHAIN identity remains a conflict. | `global.fuel_brands`, §7, R5 |
-| 6 | Wawa / RaceTrac / Speedway: a fuel-only site is not a confirmed store (`unsupported_format`). 7-Eleven keeps `fuel_only`, not equivalent to a storefront. | `fuel_sites` |
+| 6 | Wawa / RaceTrac / Speedway: a fuel-only site is not a confirmed store (`unsupported_format`). 7-Eleven keeps `fuel_only`, not equivalent to a storefront. **Superseded for RaceTrac and Speedway by v2 decision 3; unchanged for Wawa.** | `fuel_sites` |
 | 7 | No Walmart fuel in v1 (unmeasured). | `walmart.allowed_categories` |
 | 8 | The foreign STORE/CHAIN rule stays strict; PR 3 reports `brand_conflict` by candidate chain. | R5, `candidateRejections` |
 | 9 | No unmeasured sub-brand aliases (GreenWise, Starbucks licensed variants, …). | aliases |
 | 10 | No "· with fuel" display suffix; `store_with_fuel` is internal metadata. A genuine fuel-only site shows "Fuel only". | `ChainSiteClassification::displayQualifier` |
-| 11 | CVS `shopping` rows are not rescued; PR 3 measures the 195 rows (duplicates, departments, real storefronts or bad classifications). | `cvs.allowed_categories` |
+| 11 | CVS `shopping` rows are not rescued; PR 3 measures the 195 rows (duplicates, departments, real storefronts or bad classifications). **Superseded by v2 decision 1: the census measured them (150 real storefronts).** | `cvs.allowed_categories` |
 | 12 | Validation status is per chain in v1; format evidence may be recorded, not promoted separately. | §14 |
 
 ## 18. Implementation (this PR) and what follows
@@ -676,3 +681,62 @@ The matcher ships unreferenced, as `OvertureTaxonomyMapV2` did.
 and every chain stays provisional until PR 3's accounting (chain × category matrix, reason tallies
 by candidate chain, fuel diagnostics, near-miss report) exists, so shipping it first is safe. Every
 **P** marker in the config is a question that accounting answers.
+
+## 19. chain-registry-v2 — the census decisions (2026-09-22)
+
+The real-data census (`overture-chain-registry-census.md`) ran every eligible `2026-08-19.0`
+Florida-box row through v1 unmodified. Its findings were decided as follows and implemented as
+`chain-registry-v2` with `chain-match-precedence-v2`. **Every chain stays `provisional`.**
+
+| v2 # | Decision | Config | Matcher |
+|---|---|---|---|
+| 1 | CVS `convenience_store` on strong identity. CVS `shopping` via a **chain-scoped rescue**, not the import list; Beauty, MinuteClinic and specialty pharmacy excluded. | `cvs.allowed_categories.convenience_store.identity`, `cvs.source_category_rescues.shopping` (→ `drugstore`, never Location DNA `pharmacy`) | R0, R4, R6b |
+| 2 | Burger King `restaurant`; McDonald's `restaurant` + `coffee_shop`; strong identity only; no McDonald's `cafe` | `allowed_categories.*.identity` | R6b |
+| 3 | Speedway / RaceTrac: a strongly identified gas row may stand alone as `fuel_only`, labelled "Fuel only"; no store claimed. 7-Eleven and Wawa unchanged | `fuel_sites.fuel_only`, `gas_station.identity` | R6b; `ChainSiteClassifier` |
+| 4 | Walmart grocery: "Neighborhood Market" and "Supercenter" names → storefront; plain "Walmart" → department (so `storefront_unconfirmed` until de-duplication); pickup / delivery excluded | `supercenter.categories` += `grocery_store`; `walmart.exclusion_name_patterns.pickup_delivery` | R4, R7 |
+| 5 | Measured office / warehouse / distribution-centre / support-centre / careers exclusions (global); Walmart-only `dc`; CVS-only `photo`; RaceTrac-only "racetrac petroleum"; Burger King-only `^burger king capital holdings` (§19.1). **No global `petroleum`, `holdings` or `llc`** | `global.exclusion_name_patterns`, chain `exclusion_name_patterns` | R2, R4 |
+| 6 | A brand alias alone is not identity at Walgreens, Walmart, Taco Bell, Chick-fil-A, Burger King, CVS and RaceTrac (§19.1); own QIDs untouched | `brand_alias_requires_corroboration` | R7b |
+| 7 | CVS inside Target: Target identity coexists with CVS only with CVS in the name and on the `store_in_target` format's **host categories** (`pharmacy`, `drugstore`) — which includes a CVS row rescued from `shopping`, since the rescue files it as `drugstore`. An "inside Target" CVS name selects `store_in_target` in `convenience_store` too, but Target is not a host there (§19.1) | `cvs.formats.store_in_target.host_chains`, `.host_categories` | R5, R7 |
+| 8 | Winn-Dixie `drugstore` on strong identity (provisional). Shell suffix **not** adopted: the 9-row gas-station sample was not clean | `winn_dixie.allowed_categories.drugstore` | R6b |
+
+Locked non-changes: Starbucks gets no `restaurant`; 7-Eleven, Wawa and co-branding are unchanged;
+fuel-brand identity stays diagnostic only.
+
+**New load-time rules** (`ChainRegistryValidationTest`): `identity` may only be `strong`;
+`brand_alias_requires_corroboration` is a boolean and needs brand aliases; a rescue token must match
+`^[a-z][a-z0-9_]*$`, must **not** be an imported token or a canonical key, and must name one of the
+chain's **storefront** categories as `as_category` (a rescue can never create a department or fuel
+membership); rescue patterns pass every pattern rule, including the fuel-name guard; `host_chains`
+only on a storefront format with name patterns, naming an existing chain other than itself that is
+not also its co-brand partner; `host_categories` only beside `host_chains`, non-empty, unique, and a
+subset of the format's own categories. Strong identity for a rescue is code, not config. All new fields
+are in the rule hash; their evidence text is not.
+
+**Strong identity** means the chain's own QID, or the chain's name alias in the place's own name. A
+brand alias, even corroborated, is not strong. In the census every eligible Speedway / RaceTrac gas
+row already had one of the two, so requiring it there costs no eligible row in this release.
+
+**What a later PR must carry:** the extraction recipe (PR 3) must admit a non-imported row only when
+`ChainRegistry::rescueChainsFor()` names a chain for its token, and pass the raw token as
+`ChainMatchInput::$sourceCategory`; such a row must never enter a Location DNA category. A rescued
+membership says so in `rescued_from_source_category`.
+
+Measured effect (census §8, final v2 rule hash `b5920a1c7319…`): 10,880 → 11,082 memberships;
+256 legitimate rows gained plus 10 Walmart Supercenter rows reclassified to storefront; 54 removed
+(48 false positives, 5 RaceWay banner rows excluded from the literal RaceTrac key, 1 probable real);
+150 Speedway and 35 RaceTrac lone fuel rows become "Fuel
+only" sites.
+
+### 19.1 Residual findings of the v2 census, resolved (2026-09-23)
+
+The first v2 run (rule hash `4fedf3232df8…`, never shipped) left five findings. Four are rule
+changes inside `chain-registry-v2` — v2 was never released, so its version string stays and only
+its rule-hash pin moves; the fifth is intended behaviour.
+
+| Finding | Decision | Rule | Census effect |
+|---|---|---|---|
+| "Burger King Capital Holdings, Llc" (`restaurant`) matched as a storefront | A Burger King-only, anchored corporate exclusion for the measured shape. No global `holdings` / `llc` | `burger_king.exclusion_name_patterns.capital_holdings` = `/^burger king capital holdings\b/` | −1 |
+| 5 RaceTrac-branded "RaceWay" / "Race Way" / "Raceway 6847" rows matched RaceTrac | Not bad attribution: RaceWay is a distinct RaceTrac-affiliated franchise banner. It is intentionally excluded from the literal `racetrac` key in v2 — these rows are not RaceTrac stores and answer no RaceTrac search; a separate `raceway` key or a family-brand decision is possible future work. RaceTrac joins decision 6: its own QID or "RaceTrac" in the name is identity; the brand field alone is not. No fuzzy RaceTrac ↔ RaceWay match | `racetrac.brand_alias_requires_corroboration` | −5; every other RaceTrac row carries name identity or the QID |
+| "CVS Pharmacy inside Target Store" in `convenience_store` got the generic `store` format | The name pattern selects `store_in_target` there too. Target stays a **conflict** in `convenience_store` (no measured Target-branded row) via the new `host_categories` | `store_in_target.categories` += `convenience_store`; `host_categories` = `pharmacy`, `drugstore` | 1 reclassified |
+| "Cfaleesburgfl" (brand "Chick-fil-A", **no brand QID**, `chicken_restaurant`) refused as uncorroborated | Evidence is an opaque name plus a brand field measured to be misattributed at this chain. Stays refused; no alias invented. The own QID would admit it (tested) | none | 0 |
+| ~27 plain Walmart `grocery_store` rows stay departments | **No change.** Intended per v2 decision 4: plain / ambiguous Walmart grocery rows are `storefront_unconfirmed` until de-duplication places them. Measured precisely: 21 `grocery_department` memberships, 19 with no Walmart storefront within 150 m | none | 0 |

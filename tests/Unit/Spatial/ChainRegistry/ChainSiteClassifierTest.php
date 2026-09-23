@@ -73,15 +73,61 @@ class ChainSiteClassifierTest extends TestCase
         $this->assertTrue($site->qualifiesForGenericBrandQuery());
     }
 
-    public function test_lone_fuel_is_unsupported_for_wawa_racetrac_speedway(): void
+    public function test_lone_fuel_is_unsupported_for_wawa(): void
     {
-        foreach (['wawa' => 'Wawa', 'racetrac' => 'RaceTrac', 'speedway' => 'Speedway'] as $key => $name) {
+        // v2 left Wawa alone: its gas path was never exercised by eligible census rows.
+        $site = $this->classifier->classify('wawa', [$this->member('wawa', 'Wawa', 'gas_station')]);
+        $this->assertSame(Site::STATUS_UNSUPPORTED_FORMAT, $site->status);
+        $this->assertFalse($site->qualifiesForStorefrontQuery());
+        $this->assertFalse($site->qualifiesForGenericBrandQuery());
+        $this->assertNull($site->displayQualifier);
+    }
+
+    public function test_lone_fuel_is_fuel_only_for_racetrac_and_speedway(): void
+    {
+        // v2 decision 3: labelled "Fuel only", never a storefront — no store is claimed.
+        foreach (['racetrac' => 'RaceTrac', 'speedway' => 'Speedway'] as $key => $name) {
             $site = $this->classifier->classify($key, [$this->member($key, $name, 'gas_station')]);
-            $this->assertSame(Site::STATUS_UNSUPPORTED_FORMAT, $site->status, $key);
+            $this->assertSame(Site::STATUS_FUEL_ONLY, $site->status, $key);
+            $this->assertSame(Site::SITE_FORMAT_FUEL_ONLY, $site->siteFormat, $key);
+            $this->assertSame('Fuel only', $site->displayQualifier, $key);
             $this->assertFalse($site->qualifiesForStorefrontQuery(), $key);
-            $this->assertFalse($site->qualifiesForGenericBrandQuery(), $key);
+            $this->assertTrue($site->qualifiesForGenericBrandQuery(), $key);
+        }
+    }
+
+    public function test_racetrac_and_speedway_store_plus_fuel_is_a_storefront(): void
+    {
+        foreach (['racetrac' => 'RaceTrac', 'speedway' => 'Speedway'] as $key => $name) {
+            $site = $this->classifier->classify($key, [
+                $this->member($key, $name, 'gas_station'),
+                $this->member($key, $name, 'convenience_store'),
+            ]);
+            $this->assertSame(Site::STATUS_STOREFRONT, $site->status, $key);
+            $this->assertSame(Site::SITE_FORMAT_STORE_WITH_FUEL, $site->siteFormat, $key);
             $this->assertNull($site->displayQualifier, $key);
         }
+    }
+
+    public function test_plain_walmart_grocery_alone_stays_unconfirmed_and_folds_into_a_storefront(): void
+    {
+        // v2 decision 4: storefront_unconfirmed until de-duplication places it.
+        $alone = $this->classifier->classify('walmart', [$this->member('walmart', 'Walmart', 'grocery_store')]);
+        $this->assertSame(Site::STATUS_STOREFRONT_UNCONFIRMED, $alone->status);
+        $this->assertFalse($alone->qualifiesForStorefrontQuery());
+
+        $folded = $this->classifier->classify('walmart', [
+            $this->member('walmart', 'Walmart', 'grocery_store'),
+            $this->member('walmart', 'Walmart', 'superstore'),
+        ]);
+        $this->assertSame(Site::STATUS_STOREFRONT, $folded->status);
+    }
+
+    public function test_walmart_supercenter_named_grocery_row_is_a_storefront(): void
+    {
+        $site = $this->classifier->classify('walmart', [$this->member('walmart', 'Walmart Supercenter', 'grocery_store')]);
+        $this->assertSame(Site::STATUS_STOREFRONT, $site->status);
+        $this->assertSame('Supercenter', $site->displayQualifier);
     }
 
     public function test_department_only_site_is_storefront_unconfirmed(): void
