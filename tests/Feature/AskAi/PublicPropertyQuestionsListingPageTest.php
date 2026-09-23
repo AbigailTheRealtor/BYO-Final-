@@ -31,6 +31,9 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
     /** @param array<string,mixed> $meta */
     private function sellerListing(array $meta): SellerAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a listing that names none gets only
+        // the questions valid for every type. Every real listing states one.
+        $meta += ['property_type' => 'Residential'];
         $user    = User::factory()->create();
         $listing = SellerAgentAuction::create([
             'user_id'     => $user->id,
@@ -51,6 +54,9 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
     /** @param array<string,mixed> $meta */
     private function landlordListing(array $meta): LandlordAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a listing that names none gets only
+        // the questions valid for every type. Every real listing states one.
+        $meta += ['property_type' => 'Residential Property'];
         $user    = User::factory()->create();
         $listing = LandlordAgentAuction::create([
             'user_id'     => $user->id,
@@ -165,6 +171,7 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
             'seller_total_acreage'      => ['question' => 'What is the lot size / acreage?',    'answer' => 'The total acreage is 1/4 to less than 1/2 acre.'],
             'seller_appliances'         => ['question' => 'What appliances are included?',      'answer' => 'Appliances listed for this property: Dishwasher, Range, Refrigerator.'],
             'seller_utilities'          => ['question' => 'What utilities are listed for this property?', 'answer' => 'Utilities listed for this property: Electricity Connected, Water Available.'],
+            'seller_association_details' => ['question' => 'Is there an association, and does it have to approve a buyer?', 'answer' => 'This property is in a homeowners association.'],
         ], $this->renderedQuestions($section));
     }
 
@@ -228,9 +235,11 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         $meta = $this->completeLandlordMeta();
         $meta['bathrooms']               = '';
         unset($meta['pets']);
-        // Present on the listing, deliberately NOT answerable in Batch 1: the rent's
-        // frequency is owner_only, the deposit is restricted, and utilities is a
-        // two-meaning cascade.
+        // Present on the listing. The rent's frequency is owner_only, the deposit is
+        // restricted, and utilities is a two-meaning cascade — none of those may publish.
+        // The rent AMOUNT is answerable since the universal-deterministic batches, and only
+        // with no period: the page already prints it as "Desired Lease Price", and the one
+        // field that could name a period is the owner-only frequency.
         $meta['desired_rental_amount']   = '2450';
         $meta['lease_amount_frequency']  = 'Monthly';
         $meta['security_deposit_amount'] = '3175';
@@ -241,10 +250,19 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
 
         $this->assertArrayNotHasKey('landlord_bathrooms', $questions);
         $this->assertArrayNotHasKey('landlord_pets_allowed', $questions);
-        $this->assertSame(['landlord_bedrooms', 'landlord_heated_square_feet', 'landlord_appliances'], array_keys($questions));
+        $this->assertSame(['landlord_bedrooms', 'landlord_heated_square_feet', 'landlord_appliances', 'landlord_rent'], array_keys($questions));
+        $this->assertSame('The desired lease price is $2,450.', $questions['landlord_rent']['answer']);
 
-        foreach (['2,450', '2450', '3,175', '3175', 'Included in Rent', 'deposit', 'rent'] as $withheld) {
+        foreach (['3,175', '3175', 'Included in Rent', 'deposit'] as $withheld) {
             $this->assertStringNotContainsStringIgnoringCase($withheld, $section, "'{$withheld}' must not appear in the section.");
+        }
+
+        // The owner-only frequency must not surface as a CLAIM. Checked against what the
+        // card states, not the whole section: "monthly rent" is typed-match vocabulary so a
+        // renter who asks that way still reaches the answer, which itself names no period.
+        $stated = implode(' ', array_map(static fn (array $q): string => $q['question'] . ' ' . $q['answer'], $questions));
+        foreach (['Monthly', 'per month', '/mo'] as $period) {
+            $this->assertStringNotContainsStringIgnoringCase($period, $stated, "'{$period}' must not be stated in any question or answer.");
         }
     }
 
@@ -340,7 +358,7 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
                 continue;
             }
             foreach (['buyer', 'tenant'] as $role) {
-                $result = $service->evaluate($registry[$id], $role, ['listing' => ['asking_price' => '500000', 'bedrooms' => '3', 'pets_allowed' => 'Yes']], []);
+                $result = $service->evaluate($registry[$id], $role, ['listing' => ['property_type' => 'Residential', 'asking_price' => '500000', 'bedrooms' => '3', 'pets_allowed' => 'Yes']], []);
                 $this->assertFalse($result['available'], "{$id} became available for {$role}.");
             }
         }
@@ -370,7 +388,7 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         $seller = $this->renderedQuestions($this->section($this->sellerPage($this->sellerListing($this->completeSellerMeta())), 'seller'));
         $landlord = $this->renderedQuestions($this->section($this->landlordPage($this->landlordListing($this->completeLandlordMeta())), 'landlord'));
 
-        $this->assertCount(10, $seller);
+        $this->assertCount(11, $seller);
         $this->assertCount(5, $landlord);
 
         Http::assertNothingSent();

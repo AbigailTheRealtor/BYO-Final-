@@ -11,6 +11,7 @@ use App\Support\SmartTags\SmartTagSelectionPolicy;
 use App\Support\SmartTags\SmartTagSelectionResult;
 use App\Support\SmartTags\SmartTagTaxonomy;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * THE write path for seeker Smart Tag preferences. There is no other.
@@ -42,7 +43,8 @@ use Illuminate\Support\Facades\DB;
 class SmartTagSeekerPreferenceWriter
 {
     /**
-     * Replace this criteria record's entire seeker tag selection.
+     * Replace this seeker record's entire tag selection — a Buyer/Tenant criteria
+     * record or a Buyer/Tenant Offer Listing.
      *
      * @param array<int, mixed> $requested raw values from the request
      */
@@ -155,16 +157,107 @@ class SmartTagSeekerPreferenceWriter
     {
         $propertyType = null;
 
-        // Criteria records store property_type as EAV meta, read through the
-        // model's own accessor exactly as every other consumer reads it.
+        // Every seeker subject — criteria record or Offer Listing — stores
+        // property_type as EAV meta, read through the model's own accessor exactly
+        // as every other consumer reads it. The SUBJECT TYPE chooses the
+        // vocabulary, because the four forms spell property types differently.
         if (isset($subject->get->property_type)) {
             $propertyType = $subject->get->property_type;
         }
 
-        return SmartTagContextResolver::forSeekerCriteria(
-            $type->role()->value,
+        return SmartTagContextResolver::forSeekerSubject(
+            $type,
             is_string($propertyType) ? $propertyType : null,
         );
+    }
+
+    /**
+     * Carry a seeker record's EXISTING selections onto a new version of it —
+     * the row an Offer Listing wizard mints on every draft save.
+     *
+     * PRESERVATION, NOT AN EDIT. It accepts no keys: the source row's stored
+     * selections are the only input, so nothing a browser submits can reach it.
+     * That is why it is not gated by SMART_TAGS_SEEKER_PREFERENCES_ENABLED, like
+     * {@see purge()}: with the feature off the picker is hidden and submitted
+     * values are ignored, but a draft save still creates a new row, and without
+     * this the newest version would silently lose what the seeker picked while
+     * the feature was on.
+     *
+     * Refused unless source and target are the SAME seeker subject type (no
+     * criteria → Offer Listing, no Buyer ↔ Tenant, no Hire row — forModel()
+     * answers null for those), two different saved rows, both owned by the
+     * acting user, and the target's STORED property type resolves a context.
+     * The keys are re-projected through the selection policy for the TARGET's
+     * context on SURFACE_SEEKER, so a key the new version's property type
+     * cannot take — or one retired or made non-selectable since — is dropped
+     * rather than carried. The target's set is replaced, so re-running is a
+     * no-op; the source is never written.
+     */
+    public function carryForwardSelections(object $source, object $target, ?int $actingUserId): SmartTagSeekerPreferenceResult
+    {
+        $type       = SmartTagSeekerSubjectType::forModel($source);
+        $targetType = SmartTagSeekerSubjectType::forModel($target);
+
+        if ($type === null || $targetType === null) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_UNSUPPORTED_SUBJECT
+            );
+        }
+
+        if ($type !== $targetType) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_SUBJECT_MISMATCH
+            );
+        }
+
+        $sourceId = (int) ($source->id ?? 0);
+        $targetId = (int) ($target->id ?? 0);
+        if ($sourceId <= 0 || $targetId <= 0) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_UNSAVED_SUBJECT
+            );
+        }
+
+        if ($sourceId === $targetId) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_SUBJECT_MISMATCH
+            );
+        }
+
+        // Both rows must belong to the actor — the same null-safe comparison as
+        // replaceSelections(), applied to each side.
+        foreach ([$source, $target] as $row) {
+            $ownerId = $row->user_id ?? null;
+            if ($actingUserId === null || $ownerId === null || (int) $ownerId !== $actingUserId) {
+                return SmartTagSeekerPreferenceResult::refused(
+                    SmartTagSeekerPreferenceResult::REFUSED_NOT_OWNER
+                );
+            }
+        }
+
+        $context = $this->contextFor($type, $target);
+
+        if ($context === null || ! in_array($context, $type->possibleContexts(), true)) {
+            return SmartTagSeekerPreferenceResult::refused(
+                SmartTagSeekerPreferenceResult::REFUSED_NO_CONTEXT
+            );
+        }
+
+        $existing = SmartTagSeekerPreference::query()
+            ->where('subject_type', $type->value)
+            ->where('subject_id', $sourceId)
+            ->pluck('tag_key')
+            ->all();
+
+        $projection = SmartTagSelectionPolicy::project(
+            $existing,
+            $context,
+            SmartTagTaxonomy::SURFACE_SEEKER,
+        );
+
+        $this->persist($type, $targetId, $actingUserId, $context, $projection->accepted);
+
+        return SmartTagSeekerPreferenceResult::applied($projection, $context);
     }
 
     /**
@@ -187,5 +280,53 @@ class SmartTagSeekerPreferenceWriter
             ->where('subject_type', $type->value)
             ->where('subject_id', $subjectId)
             ->delete();
+    }
+
+    /**
+     * Purge the preferences of rows a caller has just deleted, by model CLASS.
+     * Never throws.
+     *
+     * For deletion paths that fire no model events — the shared Offer Listing
+     * draft purge in {@see \App\Http\Livewire\Concerns\BelongsToListingWorkflow}
+     * is a query-builder mass delete, so the observer cannot see it. The class
+     * is resolved with {@see SmartTagSeekerSubjectType::forModelClass()}, not
+     * forModel(): the rows are gone, and removing a deleted row's preferences is
+     * correct whichever product it belonged to. A class that is not a seeker
+     * subject (Seller, Landlord) is a no-op.
+     *
+     * NOT GATED, like {@see purge()}. A failure is logged with no subject data
+     * beyond the type and a count and swallowed: a draft the user deleted must
+     * never reappear because its preference rows could not be cleaned up, and
+     * orphaned preference rows are inert.
+     *
+     * @param class-string|string $modelClass
+     * @param array<int, mixed>   $ids
+     */
+    public static function tryPurgeDeleted(string $modelClass, array $ids): void
+    {
+        try {
+            $type = SmartTagSeekerSubjectType::forModelClass($modelClass);
+
+            if ($type === null) {
+                return;
+            }
+
+            $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+
+            if ($ids === []) {
+                return;
+            }
+
+            SmartTagSeekerPreference::query()
+                ->where('subject_type', $type->value)
+                ->whereIn('subject_id', $ids)
+                ->delete();
+        } catch (\Throwable $e) {
+            Log::warning('smart_tag_seeker_preferences purge failed', [
+                'subject_type' => isset($type) ? $type->value : null,
+                'id_count'     => count($ids),
+                'exception'    => $e::class,
+            ]);
+        }
     }
 }

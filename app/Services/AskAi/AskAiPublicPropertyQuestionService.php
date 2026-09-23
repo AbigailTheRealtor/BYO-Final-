@@ -2,12 +2,15 @@
 
 namespace App\Services\AskAi;
 
+use App\Services\Pets\PetFeeNormalizer;
+
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\Listing\ListingPriceDisplay;
 use App\Support\Listing\FloodZoneCode;
 use App\Support\OfferListing\CriteriaPrivacyPolicy;
 use App\Support\OfferListing\PublicProviderTextPolicy;
 use App\Support\AskAi\PublicAnswerPiiScreen;
+use App\Support\AskAi\AskAiPropertyTypeResolver;
 
 /**
  * AskAiPublicPropertyQuestionService — "Questions About This Property" (Batches 1, 2b)
@@ -222,6 +225,23 @@ class AskAiPublicPropertyQuestionService
     ];
 
     /**
+     * The criteria context keys the public may be told for a Buyer or Tenant listing — the
+     * card's own allowlist, exposed so the free-text path reads the SAME list rather than a
+     * lookalike. Empty for any other role.
+     *
+     * @return list<string>
+     */
+    public static function publicCriteriaKeys(string $role): array
+    {
+        // The allowlists map key => why it is public; the keys are the list.
+        return array_keys(match ($role) {
+            'buyer'  => self::PUBLIC_BUYER_CRITERIA,
+            'tenant' => self::PUBLIC_TENANT_CRITERIA,
+            default  => [],
+        });
+    }
+
+    /**
      * Sources this surface may restate although SnapshotFactVisibility keeps them owner-only
      * for the AI context. Each is already published on the listing page. Used ONLY by
      * entries declaring source_kind 'admitted_listing', and only as the source_path — never
@@ -367,6 +387,12 @@ class AskAiPublicPropertyQuestionService
     /** A published KB answer longer than this is withheld rather than truncated. */
     private const KB_MAX_ANSWER_LENGTH = 1200;
 
+    /** Generated field questions sort after every curated and knowledge-base question. */
+    private const GENERATED_ORDER_BASE = 3000;
+
+    /** MLS Details facts sort last. */
+    private const MLS_ORDER_BASE = 4000;
+
     /**
      * The listing meta key holding the owner's explicit publication acknowledgement.
      *
@@ -454,9 +480,20 @@ class AskAiPublicPropertyQuestionService
             return [];
         }
 
+        // WHAT kind of property this is, resolved once for the whole catalog pass.
+        //
+        // Fail-closed and exact (see AskAiPropertyTypeResolver): an absent, unrecognised
+        // or role-inapplicable property type is null, and null admits only the questions
+        // that declare every type. Role says who is listing; this says what, and until it
+        // existed a Vacant Land listing with a stray `bedrooms` meta row advertised
+        // "How many bedrooms are there?".
+        $propertyTypes = AskAiPropertyTypeResolver::forListing($role, $meta, $context);
+
         $catalog = array_filter(
             AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            static fn ($entry): bool => is_array($entry) && ($entry['role'] ?? null) === $role
+            static fn ($entry): bool => is_array($entry)
+                && ($entry['role'] ?? null) === $role
+                && AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)
         );
 
         // Batch 4 — the curated knowledge-base questions, built from the canonical KB
@@ -472,6 +509,24 @@ class AskAiPublicPropertyQuestionService
                 $catalog[$id] = $entry;
             }
         }
+        // Every other PUBLIC fact of this listing (generated from the visibility authority)
+        // and every MLS Details fact the page shows. Ordinary catalog entries from here on,
+        // exactly like the knowledge-base ones above: one card, one set of screens, one
+        // typed-question vocabulary — never a second answer path.
+        foreach (self::generatedFieldCatalog($role) as $id => $entry) {
+            // Held to the same property-type admission as a curated entry: a stray value of a
+            // field this type's form never collects is not asked (AskAiFieldApplicability).
+            if (!array_key_exists($id, $catalog)
+                && AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)) {
+                $catalog[$id] = $entry;
+            }
+        }
+        foreach ($this->mlsDetailsCatalog($role, $meta, $viewer) as $id => $entry) {
+            if (!array_key_exists($id, $catalog)) {
+                $catalog[$id] = $entry;
+            }
+        }
+
         // Display order; usort is stable (PHP 8), so equal orders keep catalog order.
         $ids = array_keys($catalog);
         usort($ids, static fn ($a, $b): int => ((int) ($catalog[$a]['order'] ?? PHP_INT_MAX)) <=> ((int) ($catalog[$b]['order'] ?? PHP_INT_MAX)));
@@ -514,7 +569,397 @@ class AskAiPublicPropertyQuestionService
             ];
         }
 
+        return $this->withLabelAliases($questions, $catalog, $role);
+    }
+
+    /**
+     * Label fallback, as typed-question vocabulary: every question also answers to the label
+     * of each fact it reads — "Pet fee type", "What is the pet fee type?" — so a fact with no
+     * hand-written alias is still reachable by deterministic wording, on the card's typed box
+     * and on the free-text path alike (both match this same list).
+     *
+     * AMBIGUITY IS REFUSED, NOT GUESSED: a label variant that more than one available question
+     * would claim — or that already is another question's text or explicit alias — is dropped
+     * from all of them. Computed over the AVAILABLE questions only, so it never ships the
+     * vocabulary of a question this listing cannot answer.
+     *
+     * @param  list<array<string, mixed>>   $questions
+     * @param  array<string, array>         $catalog
+     * @return list<array<string, mixed>>
+     */
+    private function withLabelAliases(array $questions, array $catalog, string $role): array
+    {
+        $taken  = [];   // phrase => ids already claiming it (question text / explicit alias)
+        $offers = [];   // phrase => ids a LABEL variant would give it to
+
+        foreach ($questions as $q) {
+            $taken[self::normalizeQuery($q['question'])][$q['id']] = true;
+            foreach ($q['aliases'] as $alias) {
+                $taken[$alias][$q['id']] = true;
+            }
+            foreach ($this->labelsFor($catalog[$q['id']] ?? [], $role) as $label) {
+                foreach (self::labelVariants($label) as $variant) {
+                    $offers[$variant][$q['id']] = true;
+                }
+            }
+        }
+
+        foreach ($questions as $i => $q) {
+            foreach ($offers as $variant => $ids) {
+                if (!isset($ids[$q['id']]) || count($ids) !== 1) {
+                    continue;
+                }
+                $claimants = $taken[$variant] ?? [];
+                unset($claimants[$q['id']]);
+                if ($claimants !== [] || in_array($variant, $questions[$i]['aliases'], true)) {
+                    continue;
+                }
+                $questions[$i]['aliases'][] = $variant;
+            }
+        }
+
         return $questions;
+    }
+
+    /** "<label>", "what is (the) <label>", "what are (the) <label>" — normalised, no fuzziness. */
+    public static function labelVariants(string $label): array
+    {
+        $base = self::normalizeQuery($label);
+        if ($base === '') {
+            return [];
+        }
+
+        return array_values(array_unique([
+            $base, "what is the {$base}", "what is {$base}", "what are the {$base}", "what are {$base}",
+        ]));
+    }
+
+    /** @return list<string> the labels of every listing fact an entry reads */
+    private function labelsFor(array $entry, string $role): array
+    {
+        if (($entry['source_kind'] ?? null) === 'kb') {
+            return []; // a KB question is matched by its own wording, never by a derived label
+        }
+        if (isset($entry['label']) && is_string($entry['label'])) {
+            return [$entry['label']];
+        }
+
+        $labels = [];
+        foreach (array_merge([$entry['source_path'] ?? null], (array) ($entry['supporting_paths'] ?? []), (array) ($entry['covers'] ?? [])) as $path) {
+            if (is_string($path) && preg_match('/^listing\.([a-z0-9_]+)$/', $path, $m) === 1) {
+                $labels[] = self::fieldLabel($role, $m[1]);
+            }
+        }
+
+        return array_values(array_unique($labels));
+    }
+
+    /**
+     * The human label of one listing fact: the curated listingFieldRegistry() label where
+     * one exists for this role, otherwise the key title-cased (SnapshotFactVisibility's rule).
+     */
+    public static function fieldLabel(string $role, string $field): string
+    {
+        $row = AskAiFieldQuestionRegistryService::listingFieldRegistry()['listing.' . $field] ?? null;
+        if (is_array($row) && in_array($role, (array) ($row['roles'] ?? [$role]), true)
+            && is_string($row['label'] ?? null) && trim($row['label']) !== '') {
+            return trim($row['label']);
+        }
+
+        return SnapshotFactVisibility::deriveLabel($field);
+    }
+
+    /**
+     * Where the public page prints a generated fact under a different label from the derived
+     * one, the page's label, so an answer names the fact exactly as the page beside it does.
+     * Wording only: a label never makes a field public. Anything absent falls back to
+     * fieldLabel().
+     */
+    private const GENERATED_LABELS = [
+        'tenant' => [
+            'property_items'                      => 'Property Items',
+            'water_view'                          => 'View Preferences',
+        ],
+    ];
+
+    /**
+     * One card question for every PUBLIC fact of this role that no curated question reads.
+     *
+     * Public means the visibility authority says so — SnapshotFactVisibility's public tier
+     * for Seller/Landlord, the criteria allowlist for Buyer/Tenant — so a label never makes a
+     * field public. RESTRICTED keys and AskAiFieldDisposition::DELIBERATELY_NOT_ASKED are
+     * excluded. The answer is the stored value under its label, through the same screens as
+     * any published text (see statedFactAnswer()).
+     *
+     * Pure and static: AskAiFieldDisposition reads it to account for every public field.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function generatedFieldCatalog(string $role): array
+    {
+        $map = AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role] ?? [];
+        if ($map === []) {
+            return [];
+        }
+
+        $public = in_array($role, self::CRITERIA_ROLES, true)
+            ? array_keys(self::publicCriteria()[$role] ?? [])
+            : SnapshotFactVisibility::publicKeysForRole($role);
+
+        $covered = [];
+        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $entry) {
+            if (($entry['role'] ?? null) !== $role) {
+                continue;
+            }
+            foreach (array_merge([$entry['source_path'] ?? null], (array) ($entry['supporting_paths'] ?? []), (array) ($entry['covers'] ?? [])) as $path) {
+                if (is_string($path) && preg_match('/^(?:listing|criteria_meta)\.([a-z0-9_]+)$/', $path, $m) === 1) {
+                    $covered[$m[1]] = true;
+                }
+            }
+        }
+
+        $catalog = [];
+        $order   = self::GENERATED_ORDER_BASE;
+        foreach ($public as $field) {
+            if (!array_key_exists($field, $map)
+                || isset($covered[$field])
+                || SnapshotFactVisibility::classify($field, $role) === SnapshotFactVisibility::RESTRICTED
+                || array_key_exists("{$role}.{$field}", \App\Support\AskAi\AskAiFieldDisposition::DELIBERATELY_NOT_ASKED)) {
+                continue;
+            }
+
+            $row      = AskAiFieldQuestionRegistryService::listingFieldRegistry()['listing.' . $field] ?? [];
+            $label    = self::GENERATED_LABELS[$role][$field] ?? self::fieldLabel($role, $field);
+            $criteria = in_array($role, self::CRITERIA_ROLES, true);
+            // A criteria listing describes what the client is LOOKING FOR, so the registry's
+            // sample questions — phrased about a property ("Does this property have a
+            // carport?") — would misstate it. Criteria questions name the client's listing.
+            if ($criteria) {
+                $question = 'What does the ' . $role . "'s listing state for " . $label . '?';
+            } else {
+                $question = is_string($row['sample_question'] ?? null) && trim($row['sample_question']) !== ''
+                    ? trim($row['sample_question'])
+                    : self::questionForLabel($label);
+            }
+
+            // The form decides which types a question may be asked for (AskAiFieldApplicability),
+            // exactly as for curated entries. A legacy no-input field is shown by the page on
+            // every type, so it is admitted for every type.
+            $types = AskAiPropertyTypeResolver::ALL_TYPES;
+            if (!$criteria) {
+                $app = \App\Support\AskAi\AskAiFieldApplicability::for($role, $field);
+                if (is_array($app)) {
+                    $types = count(array_diff(\App\Support\AskAi\AskAiFieldApplicability::ROLE_TYPES[$role] ?? [], $app)) === 0
+                        ? AskAiPropertyTypeResolver::ALL_TYPES
+                        : array_values($app);
+                } elseif ($app === null) {
+                    continue; // undeclared: never admitted by default (the contract test names it)
+                }
+            }
+
+            $catalog["{$role}_field_{$field}"] = [
+                'role'             => $role,
+                'property_types'   => $types,
+                'question'         => $question,
+                'source_kind'      => 'listing',
+                'source_path'      => 'listing.' . $field,
+                'supporting_paths' => [],
+                'covers'           => ['listing.' . $field],
+                'formatter'        => 'stated_fact',
+                'guards'           => [],
+                'category'         => 'details',
+                'order'            => $order++,
+                'aliases'          => $criteria ? [] : array_values(array_filter([$row['sample_question_2'] ?? null], 'is_string')),
+                'label'            => $label,
+                'generated'        => true,
+            ];
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * The displayed question for a generated entry that has no curated sample question.
+     *
+     * Built from the page's own label, verbatim, in one template that is grammatical for
+     * every label the pages use — plural ("Shared Amenities"), phrase ("Neighboring Tenants
+     * Include"), yes/no ("Has CDD") or amount ("Total Move-In Funds Required"). Templates
+     * that rephrase a label ("What is the has CDD?", "Is total move-in funds required?")
+     * misread one of those shapes. The label variants remain the matching vocabulary.
+     */
+    public static function questionForLabel(string $label): string
+    {
+        return 'What does the listing state for ' . trim($label) . '?';
+    }
+
+    /**
+     * The listing's MLS Details facts — the rows MLS quick import stored and the listing page
+     * renders under "MLS Details" — as ordinary card questions. Only the `facts` group (rows
+     * already cleared by MlsFieldCatalog's fail-closed display allow-lists); never contacts,
+     * related resources or listing bookkeeping. Seller and Landlord only.
+     *
+     * The feed's own permissions govern first: when the MLS says this listing may not be
+     * displayed (MlsDisplayPermissions::listingDisplayable() — IDX participation and entire-
+     * listing display), no MLS fact is offered to anyone but the owner, even though the facts
+     * group itself is display-cleared. Stricter than the page, never looser.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function mlsDetailsCatalog(string $role, array $meta, array $viewer = []): array
+    {
+        if (!in_array($role, ['seller', 'landlord'], true)) {
+            return [];
+        }
+        if (($viewer['viewer_is_owner'] ?? false) !== true
+            && !app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class)->permissionsFrom($meta)->listingDisplayable()) {
+            return [];
+        }
+
+        $details = \App\Services\ListingImport\Mls\MlsSupplementalDetails::fromStored(
+            $meta[\App\Services\ListingImport\QuickImport\MlsQuickImportDraftWriter::META_PROPERTY_DETAILS] ?? null
+        );
+
+        // One entry per LABEL. The page can print one label in two sections (a fact the feed
+        // carries twice); two entries with one label would each make the other ambiguous and
+        // neither could be asked. Identical values are stated once; differing values are all
+        // stated, each with the section the page shows it under — never one picked silently.
+        $byLabel = [];
+        foreach ($details->group('facts') as $section) {
+            foreach ((array) ($section['rows'] ?? []) as $row) {
+                $label = trim((string) ($row['label'] ?? ''));
+                $value = trim((string) ($row['value'] ?? ''));
+                $key   = strtolower(preg_replace('/[^A-Za-z0-9]+/', '_', (string) ($row['key'] ?? $label)) ?? '');
+                if ($label === '' || $key === '' || $value === '') {
+                    continue;
+                }
+                $norm = self::normalizeQuery($label);
+                $byLabel[$norm] ??= ['label' => $label, 'key' => $key, 'values' => []];
+                $byLabel[$norm]['values'][$value][] = trim((string) ($section['title'] ?? ''));
+            }
+        }
+
+        $catalog = [];
+        $order   = self::MLS_ORDER_BASE;
+        foreach ($byLabel as $group) {
+            if (count($group['values']) === 1) {
+                $stated = (string) array_key_first($group['values']);
+            } else {
+                $parts = [];
+                foreach ($group['values'] as $value => $titles) {
+                    $titles  = array_values(array_unique(array_filter($titles)));
+                    $parts[] = rtrim((string) $value, '.') . ($titles === [] ? '' : ' (' . implode(', ', $titles) . ')');
+                }
+                $stated = implode('; ', $parts);
+            }
+
+            $catalog["mls_{$role}_{$group['key']}"] = [
+                'role'           => $role,
+                'property_types' => AskAiPropertyTypeResolver::ALL_TYPES,
+                'question'       => self::questionForLabel($group['label']),
+                'source_kind'    => 'mls_details',
+                'source_path'    => 'mls_details.' . $group['key'],
+                'mls_value'      => $stated,
+                'formatter'      => 'stated_fact',
+                'guards'         => [],
+                'category'       => 'mls_details',
+                'order'          => $order++,
+                'aliases'        => [],
+                'label'          => $group['label'],
+                'generated'      => true,
+            ];
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * "<Label>: <value>." — the stored fact under its label, and nothing else.
+     *
+     * Every screen a published text answer passes applies here too, and every one HIDES
+     * rather than rewrites: placeholder values, landlord screening values through
+     * LandlordScreeningPolicy::displayValue() (the page's own rule), Fair Housing
+     * (PublicProviderTextPolicy), personal data and the listing's own withheld address
+     * (PublicAnswerPiiScreen), and the length ceiling.
+     */
+    private function statedFactAnswer(string $label, string $field, mixed $value, string $role, array $viewer): ?string
+    {
+        if ($role === 'landlord' && \App\Support\OfferListing\LandlordScreeningPolicy::isGovernedField($field)) {
+            $value = \App\Support\OfferListing\LandlordScreeningPolicy::displayValue($field, is_array($value) ? json_encode($value) : $value);
+        }
+
+        if (is_string($value) && (str_starts_with(trim($value), '[') || str_starts_with(trim($value), '{'))) {
+            $decoded = json_decode($value, true);
+            $value   = is_array($decoded) ? $decoded : $value;
+        }
+        if (is_bool($value)) {
+            $value = $value ? 'Yes' : 'No';
+        }
+        if (is_array($value)) {
+            $items = [];
+            array_walk_recursive($value, function ($item) use (&$items): void {
+                $clean = $this->cleanScalar($item);
+                if ($clean !== null && strcasecmp($clean, 'other') !== 0) {
+                    $items[] = $clean;
+                }
+            });
+            $value = $items === [] ? null : implode(', ', array_unique($items));
+        }
+
+        $text = $this->cleanScalar($value);
+        if ($text === null || $label === '' || mb_strlen($text) > self::KB_MAX_ANSWER_LENGTH) {
+            return null;
+        }
+        if (!PublicProviderTextPolicy::isPublishable($text)) {
+            return null;
+        }
+        $withheld = PublicAnswerPiiScreen::addressFragments(
+            ($viewer['address_withheld'] ?? false) === true,
+            $viewer['address'] ?? null,
+            $viewer['unit'] ?? null
+        );
+        if (!PublicAnswerPiiScreen::isPublishable($text, $withheld)) {
+            return null;
+        }
+
+        return $label . ': ' . rtrim($text, '.') . '.';
+    }
+
+    /**
+     * The card exactly as a listing page builds it, for a stored listing: the same chip
+     * context, the same meta array (redacted for a non-owner of a Buyer/Tenant listing, as the
+     * controllers do), the same withheld-address decision. The free-text path answers from
+     * this, so the card and Ask AI cannot disagree about what is public.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forStoredListing(string $listingType, int $listingId, bool $viewerIsOwner): array
+    {
+        $builder = app(AskAiContextBuilderService::class);
+        $role    = AskAiContextBuilderService::canonicalListingType($listingType);
+        $listing = $role === null ? null : $builder->loadListing($role, $listingId);
+        if ($listing === null || !isset($listing->meta)) {
+            return [];
+        }
+
+        $meta = [];
+        foreach ($listing->meta as $row) {
+            $decoded = json_decode((string) $row->meta_value, true);
+            $meta[$row->meta_key] = (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded)))
+                ? $decoded
+                : $row->meta_value;
+        }
+        if (in_array($role, self::CRITERIA_ROLES, true)) {
+            $meta = CriteriaPrivacyPolicy::redactForViewer($role, $meta, $viewerIsOwner);
+        }
+
+        $reader = app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class);
+
+        return $this->forListing($role, $builder->buildChipContext($listing, $role), $meta, [
+            'address_withheld' => $reader->addressVisibleTo($meta, $viewerIsOwner) === false,
+            'viewer_is_owner'  => $viewerIsOwner,
+            'address'          => $meta['address'] ?? ($listing->address ?? null),
+            'unit'             => $meta['unit_number'] ?? null,
+        ]);
     }
 
     /**
@@ -601,7 +1046,7 @@ class AskAiPublicPropertyQuestionService
         // 2 + 3. One exact, defined, public (or explicitly admitted) source — and every
         // supporting path public in its own right.
         $sourceKind = $entry['source_kind'] ?? 'listing';
-        if (!in_array($sourceKind, ['listing', 'admitted_listing', 'criteria_meta', 'kb'], true)) {
+        if (!in_array($sourceKind, ['listing', 'admitted_listing', 'criteria_meta', 'kb', 'mls_details'], true)) {
             return $this->hidden('source_kind_unknown');
         }
 
@@ -613,6 +1058,43 @@ class AskAiPublicPropertyQuestionService
         // suppression and alias emission apply to it unchanged.
         if ($sourceKind === 'kb') {
             return $this->evaluateKb($entry, $role, $meta, $viewer);
+        }
+        if ($sourceKind === 'mls_details') {
+            if (!in_array($role, ['seller', 'landlord'], true)) {
+                return $this->hidden('source_kind_not_available_for_criteria_role');
+            }
+            // An MLS Details row is the FEED's value, already cleared for display by
+            // MlsFieldCatalog's fail-closed allow-lists (mlsDetailsCatalog() has also applied the
+            // feed's listing-display permission). Being display-cleared does not exempt it from
+            // the public-answer screens: Fair Housing, personal data, this viewer's withheld
+            // street address and the length ceiling all still HIDE it. The placeholder-word
+            // screen alone is not applied — it is for prose someone typed, and "None" is a
+            // meaningful feed value.
+            $label  = trim((string) ($entry['label'] ?? ''));
+            $value  = trim((string) ($entry['mls_value'] ?? ''));
+            if ($label === '' || $value === '' || mb_strlen($value) > self::KB_MAX_ANSWER_LENGTH) {
+                return $this->hidden('formatter_rejected_value');
+            }
+            $answer = $label . ': ' . rtrim($value, '.') . '.';
+            // The owner reads their own imported facts as stored — the same scope the owner-only
+            // MLS matcher gave them before this card served every viewer. The public-answer
+            // screens below exist for everyone else.
+            if (($viewer['viewer_is_owner'] ?? false) === true) {
+                return ['available' => true, 'reason' => 'available', 'answer' => $answer];
+            }
+            $withheld = PublicAnswerPiiScreen::addressFragments(
+                ($viewer['address_withheld'] ?? false) === true,
+                $viewer['address'] ?? null,
+                $viewer['unit'] ?? null
+            );
+            if (!PublicProviderTextPolicy::isPublishable($answer)) {
+                return $this->hidden('fair_housing_screen');
+            }
+            if (!PublicAnswerPiiScreen::isPublishable($answer, $withheld)) {
+                return $this->hidden('pii_screen');
+            }
+
+            return ['available' => true, 'reason' => 'available', 'answer' => $answer];
         }
         // A criteria entry has exactly two admissions — its role's public criteria catalog
         // (context keys) and its narrow page-meta allowlist. Refusing the property roles'
@@ -698,6 +1180,13 @@ class AskAiPublicPropertyQuestionService
 
         // 5. A deterministic formatter that accepts this exact value.
         $formatter = (string) ($entry['formatter'] ?? '');
+        if ($formatter === 'stated_fact') {
+            $answer = $this->statedFactAnswer((string) ($entry['label'] ?? ''), (string) $sourceKey['key'], $value, $role, $viewer);
+
+            return $answer === null
+                ? $this->hidden('formatter_rejected_value')
+                : ['available' => true, 'reason' => 'available', 'answer' => $answer];
+        }
         if (!$this->hasFormatter($formatter)) {
             return $this->hidden('formatter_missing');
         }
@@ -974,6 +1463,16 @@ class AskAiPublicPropertyQuestionService
 
                 $catalog['kb_' . $role . '_' . $key] = [
                     'role'        => $role,
+                    // UNIVERSAL, and deliberately so. A knowledge-base entry is a question
+                    // the OWNER chose to answer about THIS listing: its applicability was
+                    // already decided by a human who was looking at the property, and the
+                    // canonical KB config it is read from carries no property-type scoping
+                    // to derive anything narrower from. Declaring every type is therefore
+                    // the honest statement, not a shortcut — and it is declared rather than
+                    // left absent because an absent declaration is refused outright, so a
+                    // future property-type-scoped KB config fails loudly here instead of
+                    // silently publishing a commercial answer on a house.
+                    'property_types' => AskAiPropertyTypeResolver::ALL_TYPES,
                     // The canonical question text, read from the config the owner answered
                     // under. Never a second copy: a divergent label would ask the public a
                     // subtly different question from the one the owner was answering.
@@ -1512,6 +2011,19 @@ class AskAiPublicPropertyQuestionService
             'criteria_feature_list',
             // Batch 2e
             'flood_zone',
+            // Batch 5 — seller property facts. Several are COMPOSITES: one question
+            // answering from a source path plus its supporting paths, because a shopper
+            // asks "is it on the water?" and never "what is waterfront_feet?".
+            'provider_description', 'waterfront_composite', 'parking_composite',
+            'climate_composite', 'water_sewer_composite', 'construction_composite',
+            'interior_feature_list', 'building_feature_list', 'furnishings', 'home_warranty',
+            'lot_size_composite', 'association_details_composite', 'special_assessment_composite',
+            'occupant_status', 'target_closing_date', 'included_items_list', 'parcel_count_composite',
+            // Batch 6 — landlord property and lease facts.
+            'lease_price', 'available_date', 'lease_terms_composite', 'smoking_policy',
+            'subletting_policy', 'parking_terms', 'property_condition', 'unit_details_composite',
+            'lot_dimensions_only', 'pet_policy_composite', 'pool_composite',
+            'renewal_composite', 'pet_fee',
         ], true);
     }
 
@@ -1608,6 +2120,42 @@ class AskAiPublicPropertyQuestionService
 
             // ---- Batch 2e: FEMA flood zone (seller / landlord) ----
             'flood_zone'                   => $this->floodZone($text),
+
+
+            // ---- Batch 5: seller property facts (composites) ----
+            'provider_description'          => $this->providerDescription($text),
+            'waterfront_composite'          => $this->waterfrontComposite($text, $supporting),
+            'parking_composite'             => $this->parkingComposite($text, $supporting),
+            'climate_composite'             => $this->climateComposite($text, $supporting),
+            'water_sewer_composite'         => $this->waterSewerComposite($text, $supporting),
+            'construction_composite'        => $this->constructionComposite($text, $supporting),
+            'interior_feature_list'         => $this->list($text, 'Interior features listed for this property'),
+            'building_feature_list'         => $this->list($text, 'Building features listed for this property'),
+            'furnishings'                   => $this->furnishings($text),
+            'home_warranty'                 => $this->yesNo($text, 'The seller is offering a home warranty.', 'The seller is not offering a home warranty.'),
+            'lot_size_composite'            => $this->lotSizeComposite($text, $supporting),
+            'association_details_composite' => $this->associationDetailsComposite($text, $supporting),
+            'special_assessment_composite'  => $this->specialAssessmentComposite($text, $supporting),
+            'occupant_status'               => $this->occupantStatus($text),
+            'target_closing_date'           => $this->targetClosingDate($text),
+            'included_items_list'           => $this->list($text, 'Included with this property'),
+            'parcel_count_composite'        => $this->parcelCountComposite($text, $supporting),
+
+
+            // ---- Batch 6: landlord property and lease facts ----
+            'lease_price'             => $this->leasePrice($text),
+            'available_date'          => $this->availableDate($text),
+            'lease_terms_composite'   => $this->leaseTermsComposite($text, $supporting),
+            'smoking_policy'          => $this->smokingPolicy($text),
+            'subletting_policy'       => $this->sublettingPolicy($text),
+            'parking_terms'           => $this->parkingTerms($text),
+            'property_condition'      => $this->propertyCondition($text),
+            'unit_details_composite'  => $this->unitDetailsComposite($text, $supporting),
+            'lot_dimensions_only'     => $this->lotDimensionsOnly($text),
+            'pet_policy_composite'    => $this->petPolicyComposite($text, $supporting),
+            'pool_composite'          => $this->poolComposite($text, $supporting),
+            'renewal_composite'       => $this->renewalComposite($text, $supporting),
+            'pet_fee'                 => $this->petFee($text, $supporting),
 
             default                  => null,
         };
@@ -2268,6 +2816,744 @@ class AskAiPublicPropertyQuestionService
     // =========================================================================
 
     /** @param callable(string): string $sentence */
+    /* ====================================================================== *
+     * Batch 5 — seller property-fact formatters.
+     *
+     * Every one of these is a pure string transform over already-screened values.
+     * None reads the database, the container or the clock, and none calls a model.
+     * ====================================================================== */
+
+    /**
+     * The seller's own prose about the property.
+     *
+     * Provider-authored text, so it is SCREENED rather than printed. Two refusals,
+     * both whole-answer:
+     *   • PublicProviderTextPolicy — the same Fair Housing rules the listing page
+     *     and the knowledge base already apply. A description that steers is
+     *     withheld, never edited: `decide()` returns a verdict, not a cleaned
+     *     string, and there is no redaction path in this product.
+     *   • Length — over the knowledge-base ceiling it is withheld rather than
+     *     truncated, because a half-sentence of a seller's description is a
+     *     statement they did not make.
+     */
+    private function providerDescription(string $text): ?string
+    {
+        if ($text === '' || !PublicProviderTextPolicy::isPublishable($text)) {
+            return null;
+        }
+
+        if (mb_strlen($text) > self::KB_MAX_ANSWER_LENGTH) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    /**
+     * Waterfront, frontage, access and view as ONE answer.
+     *
+     * A shopper asks "is it on the water?". Answering that from `waterfront` alone
+     * and leaving frontage, access and view to three further questions would be
+     * four rows describing one fact. The negative is still stated — "not
+     * waterfront" is information a buyer acts on — but the supporting details are
+     * only added when the property IS on the water, because "Not waterfront. Water
+     * view: Yes" reads as a contradiction.
+     */
+    private function waterfrontComposite(string $text, array $supporting): ?string
+    {
+        $isWaterfront = $this->isAffirmative($text);
+
+        if ($isWaterfront === null) {
+            return null;
+        }
+
+        if (!$isWaterfront) {
+            // A view without frontage is a real and separate fact, so it survives.
+            $view = $this->cleanScalar($supporting['water_view'] ?? null);
+
+            return ($view !== null && $this->isAffirmative($view) === true)
+                ? 'This property is not waterfront, but the listing indicates it has a water view.'
+                : 'This property is not waterfront.';
+        }
+
+        $parts = ['This property is waterfront.'];
+
+        $feet = $this->cleanScalar($supporting['waterfront_feet'] ?? null);
+        if ($feet !== null && is_numeric(str_replace([',', ' '], '', $feet))) {
+            $n = (float) str_replace([',', ' '], '', $feet);
+            if ($n > 0) {
+                $parts[] = 'Water frontage: ' . number_format($n) . ' feet.';
+            }
+        }
+
+        $access = $this->cleanScalar($supporting['water_access'] ?? null);
+        if ($access !== null) {
+            $affirmative = $this->isAffirmative($access);
+            $parts[] = $affirmative === true
+                ? 'The listing indicates water access.'
+                : ($affirmative === false ? '' : 'Water access: ' . $access . '.');
+        }
+
+        $view = $this->cleanScalar($supporting['water_view'] ?? null);
+        if ($view !== null && $this->isAffirmative($view) === true) {
+            $parts[] = 'The listing indicates a water view.';
+        }
+
+        return trim(implode(' ', array_filter($parts)));
+    }
+
+    /**
+     * Garage, garage spaces and carport as one parking answer.
+     *
+     * `garage_spaces` is a COUNT and `garage` is a Yes/No control — the two are
+     * different questions the form asks separately, and a count with no garage is
+     * a contradiction we decline to publish rather than reconcile.
+     */
+    private function parkingComposite(string $text, array $supporting): ?string
+    {
+        $hasGarage = $this->isAffirmative($text);
+        $carport   = $this->cleanScalar($supporting['carport'] ?? null);
+        $hasCarport = $carport === null ? null : $this->isAffirmative($carport);
+
+        if ($hasGarage === null && $hasCarport === null) {
+            return null;
+        }
+
+        $parts = [];
+
+        if ($hasGarage === true) {
+            // Never a size: the only "spaces" field is a Yes/No control, not a count.
+            $parts[] = 'This property has a garage.';
+        } elseif ($hasGarage === false) {
+            $parts[] = 'This property does not have a garage.';
+        }
+
+        if ($hasCarport === true) {
+            // "also" only follows a garage; after "does not have a garage" it would read
+            // as a contradiction, and with no garage answer there is nothing to add to.
+            $parts[] = match ($hasGarage) {
+                true    => 'It also has a carport.',
+                false   => 'It does have a carport.',
+                default => 'This property has a carport.',
+            };
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Heating and cooling as one answer; either half alone still answers. */
+    private function climateComposite(string $text, array $supporting): ?string
+    {
+        $cooling = $this->cleanScalar($text);
+        // Two heating keys exist for historical reasons and only one is ever populated.
+        $heating = $this->cleanScalar($supporting['heating_and_fuel'] ?? null)
+            ?? $this->cleanScalar($supporting['heating_fuel'] ?? null);
+
+        $parts = [];
+
+        if ($heating !== null) {
+            $parts[] = 'Heating: ' . $this->sentenceList($heating) . '.';
+        }
+
+        if ($cooling !== null) {
+            $affirmative = $this->isAffirmative($cooling);
+            $parts[] = $affirmative === true
+                ? 'The property has air conditioning.'
+                : ($affirmative === false
+                    ? 'The listing indicates no air conditioning.'
+                    : 'Cooling: ' . $this->sentenceList($cooling) . '.');
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Water supply and sewer/septic as one answer. */
+    private function waterSewerComposite(string $text, array $supporting): ?string
+    {
+        $water = $this->cleanScalar($text) ?? $this->cleanScalar($supporting['water_source'] ?? null);
+        $sewer = $this->cleanScalar($supporting['sewer'] ?? null);
+
+        $parts = [];
+        if ($water !== null) { $parts[] = 'Water: ' . $this->sentenceList($water) . '.'; }
+        if ($sewer !== null) { $parts[] = 'Sewer: ' . $this->sentenceList($sewer) . '.'; }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Exterior construction and foundation as one answer. */
+    private function constructionComposite(string $text, array $supporting): ?string
+    {
+        $exterior   = $this->cleanScalar($text);
+        $foundation = $this->cleanScalar($supporting['foundation'] ?? null);
+
+        $parts = [];
+        if ($exterior !== null)   { $parts[] = 'Exterior construction: ' . $this->sentenceList($exterior) . '.'; }
+        if ($foundation !== null) { $parts[] = 'Foundation: ' . $this->sentenceList($foundation) . '.'; }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** Furnishings, stated as the seller's own vocabulary rather than a yes/no. */
+    private function furnishings(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        // The stored vocabulary is Furnished / Unfurnished / Turnkey, which is NOT a
+        // yes/no: "Turnkey" means furnished and move-in ready, and reading it through a
+        // boolean would lose that. Each recognised value gets its own sentence and an
+        // unrecognised one is printed as the seller wrote it.
+        return match (strtolower($value)) {
+            'furnished'   => 'This property is offered furnished.',
+            'unfurnished' => 'This property is offered unfurnished.',
+            'turnkey'     => 'This property is offered turnkey — furnished and move-in ready.',
+            'partially furnished', 'partly furnished' => 'This property is offered partially furnished.',
+            default       => 'Furnishings: ' . $value . '.',
+        };
+    }
+
+    /** Lot size with dimensions when both are present. */
+    private function lotSizeComposite(string $text, array $supporting): ?string
+    {
+        $size = $this->cleanScalar($text);
+        $dims = $this->cleanScalar($supporting['lot_dimensions'] ?? null);
+
+        $parts = [];
+
+        if ($size !== null) {
+            $numeric = str_replace([',', ' '], '', $size);
+            $parts[] = is_numeric($numeric)
+                ? 'The lot is ' . number_format((float) $numeric) . ' square feet.'
+                : 'Lot size: ' . $size . '.';
+        }
+
+        if ($dims !== null) {
+            $parts[] = 'Lot dimensions: ' . $dims . '.';
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /**
+     * Whether there is an association, its name, and whether it approves buyers.
+     *
+     * Gated on the association existing: a name or an approval requirement left
+     * behind by a listing that is no longer in an HOA must not re-announce one.
+     */
+    private function associationDetailsComposite(string $text, array $supporting): ?string
+    {
+        $hasHoa = $this->isAffirmative($text);
+
+        if ($hasHoa === null) {
+            return null;
+        }
+
+        if (!$hasHoa) {
+            return 'This property is not in a homeowners association.';
+        }
+
+        $name = $this->cleanScalar($supporting['association_name'] ?? null)
+            ?? $this->cleanScalar($supporting['hoa_name'] ?? null);
+
+        $parts = [$name !== null
+            ? 'This property is in a homeowners association: ' . $name . '.'
+            : 'This property is in a homeowners association.'];
+
+        $approval = $this->cleanScalar($supporting['association_approval_required'] ?? null);
+        if ($approval !== null) {
+            $needs = $this->isAffirmative($approval);
+            if ($needs === true) {
+                $parts[] = 'The association must approve a buyer.';
+            } elseif ($needs === false) {
+                $parts[] = 'The association does not require buyer approval.';
+            }
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /** Special assessments: the yes/no leads, amount and description follow. */
+    private function specialAssessmentComposite(string $text, array $supporting): ?string
+    {
+        $has = $this->isAffirmative($text);
+
+        if ($has === null) {
+            return null;
+        }
+
+        if (!$has) {
+            return 'The listing indicates there are no special assessments.';
+        }
+
+        $parts  = ['The listing indicates there is a special assessment.'];
+        $amount = $this->cleanScalar($supporting['special_assessment_amount'] ?? null);
+
+        if ($amount !== null) {
+            $money = $this->withMoney($amount, static fn (string $m): string => $m);
+            if ($money !== null) {
+                $parts[] = 'Amount: ' . $money . '.';
+            }
+        }
+
+        $description = $this->cleanScalar($supporting['special_assessment_description'] ?? null);
+        if ($description !== null && PublicProviderTextPolicy::isPublishable($description)
+            && mb_strlen($description) <= self::MAX_VERBATIM_LENGTH * 4) {
+            $parts[] = rtrim($description, '.') . '.';
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * Occupancy, in the seller's own stored vocabulary.
+     *
+     * States the PROPERTY's status and never anything about who occupies it —
+     * "tenant occupied" is a fact about the transaction a buyer inherits; the
+     * occupants themselves are nobody's business here.
+     */
+    private function occupantStatus(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        return match (strtolower($value)) {
+            'vacant'          => 'The property is vacant.',
+            'owner occupied', 'owner-occupied' => 'The property is owner occupied.',
+            'tenant occupied', 'tenant-occupied' => 'The property is tenant occupied.',
+            default           => 'Occupancy status: ' . $value . '.',
+        };
+    }
+
+    /** A seller's preferred closing date, rendered as a human date. */
+    private function targetClosingDate(string $text): ?string
+    {
+        $date = $this->humanDate($text);
+
+        return $date === null ? null : 'The seller would like to close by ' . $date . '.';
+    }
+
+    /** Parcel COUNT — never a parcel identifier. */
+    private function parcelCountComposite(string $text, array $supporting): ?string
+    {
+        $count = $this->cleanScalar($text);
+        $n     = ($count !== null && is_numeric($count)) ? (int) $count : null;
+
+        if ($n !== null && $n > 0) {
+            return $n === 1
+                ? 'This listing includes one parcel.'
+                : 'This listing includes ' . $n . ' parcels.';
+        }
+
+        $additional = $this->cleanScalar($supporting['additional_parcels'] ?? null);
+        if ($additional !== null) {
+            $has = $this->isAffirmative($additional);
+            if ($has === true)  { return 'This listing includes additional parcels.'; }
+            if ($has === false) { return 'This listing does not include additional parcels.'; }
+        }
+
+        return null;
+    }
+
+    /* ---- shared primitives for the formatters above ---- */
+
+    /** A trimmed, non-placeholder scalar, or null. */
+    private function cleanScalar(mixed $value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+
+        if ($text === '' || in_array(strtolower($text), self::PLACEHOLDER_VALUES, true)) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    /**
+     * Yes / no / neither.
+     *
+     * Returns null for anything that is not recognisably affirmative or negative,
+     * so a stored vocabulary value ("Central", "Well") falls through to being
+     * printed as itself rather than being read as a boolean.
+     */
+    private function isAffirmative(mixed $value): ?bool
+    {
+        $text = $this->cleanScalar($value);
+
+        if ($text === null) {
+            return null;
+        }
+
+        $normalized = strtolower($text);
+
+        if (in_array($normalized, ['yes', 'y', 'true', '1', 'available', 'included'], true)) {
+            return true;
+        }
+
+        if (in_array($normalized, ['no', 'n', 'false', '0', 'none', 'not available'], true)) {
+            return false;
+        }
+
+        return null;
+    }
+
+    /**
+     * A stored multi-value string as readable prose.
+     *
+     * JSON arrays and comma/pipe separated lists both occur in this schema; both
+     * become "A, B and C". Never exposes brackets, quotes or a raw JSON blob.
+     */
+    private function sentenceList(string $text): string
+    {
+        $items = [];
+
+        if (str_starts_with(trim($text), '[')) {
+            $decoded = json_decode($text, true);
+            if (is_array($decoded)) {
+                $items = array_values(array_filter(array_map(
+                    fn ($v) => $this->cleanScalar($v),
+                    $decoded
+                )));
+            }
+        }
+
+        if ($items === []) {
+            $items = array_values(array_filter(array_map(
+                fn ($v) => $this->cleanScalar($v),
+                preg_split('/\s*[,|;]\s*/', $text) ?: [$text]
+            )));
+        }
+
+        if ($items === []) {
+            return $text;
+        }
+
+        if (count($items) === 1) {
+            return $items[0];
+        }
+
+        $last = array_pop($items);
+
+        return implode(', ', $items) . ' and ' . $last;
+    }
+
+    /** A stored date as a human date, or null when it cannot be read as one. */
+    private function humanDate(mixed $value): ?string
+    {
+        $text = $this->cleanScalar($value);
+
+        if ($text === null) {
+            return null;
+        }
+
+        $timestamp = strtotime($text);
+
+        if ($timestamp === false) {
+            return null;
+        }
+
+        return date('F j, Y', $timestamp);
+    }
+
+    /* ---- Batch 6: landlord formatters ---- */
+
+    /**
+     * The landlord's asking rent, with NO period.
+     *
+     * The form labels this figure "Desired Rental Amount" and the listing page prints it
+     * as "Desired Lease Price" — neither states a period, the value resolves from auction
+     * keys as well (`starting_rent`, `lease_now_price`), and it serves commercial leases
+     * too. The only field that could supply a period, `lease_amount_frequency`, is
+     * OWNER_ONLY in SnapshotFactVisibility and cannot reach a public answer. So no suffix
+     * is stated rather than one assumed: "/mo" is wrong for about a quarter of the rental
+     * inventory, and a seasonal rate published as a monthly one is a false claim.
+     */
+    private function leasePrice(string $text): ?string
+    {
+        return $this->withMoney($text, static fn (string $m): string => "The desired lease price is {$m}.");
+    }
+
+    /** Availability — a date when it reads as one, otherwise the landlord's own words. */
+    private function availableDate(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        // "Now" / "Immediately" are real answers the form accepts and are not dates.
+        if (in_array(strtolower($value), ['now', 'immediate', 'immediately', 'available now'], true)) {
+            return 'This property is available now.';
+        }
+
+        $date = $this->humanDate($value);
+
+        return $date === null
+            ? 'Availability: ' . $value . '.'
+            : 'This property is available from ' . $date . '.';
+    }
+
+    /**
+     * Lease length, accepted terms, renewal and any additional terms as one answer.
+     *
+     * `additional_lease_terms` is provider-authored prose and is screened before it
+     * joins the sentence; the structured parts publish either way.
+     */
+    private function leaseTermsComposite(string $text, array $supporting): ?string
+    {
+        // `$text` is the landlord's offered lease terms. The HOA minimum lease period is
+        // never an input here — see the registry entry.
+        $terms = $this->cleanScalar($text);
+        $parts = [];
+
+        if ($terms !== null) {
+            $parts[] = 'Lease terms offered: ' . $this->sentenceList($terms) . '.';
+        }
+
+        $parts = array_merge($parts, $this->renewalAndAdditionalTerms(
+            $supporting['renewal_option'] ?? null,
+            $supporting['additional_lease_terms'] ?? null
+        ));
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /** The renewal option, plus any additional lease terms — both landlord forms ask these. */
+    private function renewalComposite(string $text, array $supporting): ?string
+    {
+        $parts = $this->renewalAndAdditionalTerms($text, $supporting['additional_lease_terms'] ?? null);
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    /**
+     * The one wording of renewal + additional terms, shared by both lease answers so they
+     * cannot drift. `additional_lease_terms` is provider-authored prose and is screened
+     * before it joins the sentence; the structured renewal answer publishes either way.
+     *
+     * @return list<string>
+     */
+    private function renewalAndAdditionalTerms(mixed $renewalValue, mixed $additionalValue): array
+    {
+        $parts   = [];
+        $renewal = $this->cleanScalar($renewalValue);
+        if ($renewal !== null) {
+            $offered = $this->isAffirmative($renewal);
+            if ($offered === true) {
+                $parts[] = 'A renewal option is offered.';
+            } elseif ($offered === false) {
+                $parts[] = 'No renewal option is offered.';
+            } else {
+                $parts[] = 'Renewal: ' . $renewal . '.';
+            }
+        }
+
+        $additional = $this->cleanScalar($additionalValue);
+        if ($additional !== null
+            && PublicProviderTextPolicy::isPublishable($additional)
+            && mb_strlen($additional) <= self::KB_MAX_ANSWER_LENGTH) {
+            $parts[] = rtrim($additional, '.') . '.';
+        }
+
+        return $parts;
+    }
+
+    /**
+     * The landlord's pet fee on its own — the structured type and amount only, never the
+     * "Other" free-text box beside it (breed-proxy exposure). An "Other" type publishes
+     * NOTHING: cleanScalar() already treats the literal as a placeholder, and rightly — what
+     * the fee is (recurring or one-time) lives in the prose that is not published, so a bare
+     * amount would state half a fact.
+     */
+    private function petFee(string $text, array $supporting): ?string
+    {
+        $type = $this->cleanScalar($text);
+        if ($type === null) {
+            return null;
+        }
+
+        if ($type === PetFeeNormalizer::TYPE_NONE) {
+            return 'There is no pet fee.';
+        }
+
+        $amount = $this->cleanScalar($supporting['pet_fee_amount'] ?? null);
+        $money  = $amount === null ? null : $this->withMoney($amount, static fn (string $m): string => $m);
+
+        if (!in_array($type, [PetFeeNormalizer::TYPE_ONE_TIME_REFUNDABLE, PetFeeNormalizer::TYPE_NON_REFUNDABLE, PetFeeNormalizer::TYPE_MONTHLY], true)) {
+            return null; // an unrecognised stored type is not paraphrased
+        }
+
+        return $money === null
+            ? 'Pet fee type: ' . $type . '.'
+            : 'Pet fee: ' . $money . ' (' . $type . ').';
+    }
+
+    private function smokingPolicy(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        return match (strtolower($value)) {
+            'no', 'no smoking', 'non-smoking', 'not allowed', 'prohibited'
+                => 'Smoking is not allowed.',
+            'yes', 'allowed', 'smoking allowed'
+                => 'Smoking is allowed.',
+            'outside only', 'outdoors only', 'outside'
+                => 'Smoking is allowed outside only.',
+            default => 'Smoking policy: ' . $value . '.',
+        };
+    }
+
+    private function sublettingPolicy(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        if ($value === null) {
+            return null;
+        }
+
+        $allowed = $this->isAffirmative($value);
+
+        if ($allowed === true)  { return 'Subletting is allowed.'; }
+        if ($allowed === false) { return 'Subletting is not allowed.'; }
+
+        return 'Subletting policy: ' . $value . '.';
+    }
+
+    private function parkingTerms(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        return $value === null ? null : 'Parking: ' . $this->sentenceList($value) . '.';
+    }
+
+    private function propertyCondition(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        return $value === null ? null : 'Property condition: ' . $this->sentenceList($value) . '.';
+    }
+
+    /** Unit size and unit count — two different facts about "the unit". */
+    private function unitDetailsComposite(string $text, array $supporting): ?string
+    {
+        $size  = $this->cleanScalar($text);
+        $count = $this->cleanScalar($supporting['number_of_units'] ?? null);
+        $parts = [];
+
+        if ($size !== null) {
+            $numeric = str_replace([',', ' '], '', $size);
+            $parts[] = is_numeric($numeric)
+                ? 'The unit is ' . number_format((float) $numeric) . ' square feet.'
+                : 'Unit size: ' . $size . '.';
+        }
+
+        if ($count !== null && is_numeric($count) && (int) $count > 0) {
+            $n = (int) $count;
+            $parts[] = $n === 1
+                ? 'The property has one unit.'
+                : 'The property has ' . $n . ' units.';
+        }
+
+        return $parts === [] ? null : implode(' ', $parts);
+    }
+
+    private function lotDimensionsOnly(string $text): ?string
+    {
+        $value = $this->cleanScalar($text);
+
+        return $value === null ? null : 'Lot dimensions: ' . $value . '.';
+    }
+
+    /**
+     * The landlord's whole pet answer in one row.
+     *
+     * Structured facts only — species, weight cap, and the money. Restriction prose and
+     * the "other" free-text box are excluded: that is where breed limits live, and a
+     * breed limit is a recognised Fair Housing proxy.
+     *
+     * The LEAD SENTENCE IS NOT THIS METHOD'S TO WORD. It is {@see petsAllowed()}'s, which
+     * the seller entry also uses and Batch 2c pins: "No" keeps its assistance-animal
+     * sentence verbatim, so a refusal can never read as though it covered a service or
+     * support animal; and a policy value that is not a plain Yes/No publishes nothing
+     * rather than being paraphrased. Only a "Yes" gains the structured detail below.
+     */
+    private function petPolicyComposite(string $text, array $supporting): ?string
+    {
+        $policy = $this->cleanScalar($text);
+        $lead   = $policy === null ? null : $this->petsAllowed($policy);
+
+        if ($lead === null || strtolower($policy) !== 'yes') {
+            return $lead;
+        }
+
+        $parts = [$lead];
+
+        $species = $this->cleanScalar($supporting['pet_species_allowed'] ?? null);
+        if ($species !== null) {
+            $parts[] = 'Accepted: ' . $this->sentenceList($species) . '.';
+        }
+
+        $weight = $this->cleanScalar($supporting['pet_max_weight_lbs'] ?? null);
+        if ($weight !== null && is_numeric(str_replace([',', ' '], '', $weight))) {
+            $parts[] = 'Weight limit: ' . number_format((float) str_replace([',', ' '], '', $weight)) . ' lbs.';
+        }
+
+        $amount = $this->cleanScalar($supporting['pet_fee_amount'] ?? null);
+        if ($amount !== null) {
+            $money = $this->withMoney($amount, static fn (string $m): string => $m);
+            if ($money !== null) {
+                $type    = $this->cleanScalar($supporting['pet_fee_type'] ?? null);
+                $parts[] = $type !== null
+                    ? 'Pet fee: ' . $money . ' (' . $type . ').'
+                    : 'Pet fee: ' . $money . '.';
+            }
+        }
+
+        $deposit = $this->cleanScalar($supporting['pet_deposit_fee_rent'] ?? null);
+        if ($deposit !== null) {
+            $money = $this->withMoney($deposit, static fn (string $m): string => $m);
+            if ($money !== null) {
+                $parts[] = 'Pet deposit: ' . $money . '.';
+            }
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /** Pool, with its type when the seller recorded one. */
+    private function poolComposite(string $text, array $supporting): ?string
+    {
+        // Delegates the yes/no to the EXISTING yesNo() rather than the looser
+        // isAffirmative(): 'Optional', 'Community' and a bare '1' must still answer
+        // nothing, which is behaviour Batch 2b established deliberately and this
+        // composite must not quietly widen.
+        $base = $this->yesNo($text, 'This property has a pool.', 'This property does not have a pool.');
+
+        if ($base === null || $base !== 'This property has a pool.') {
+            return $base;
+        }
+
+        $type = $this->cleanScalar($supporting['pool_type'] ?? null);
+
+        return $type === null
+            ? $base
+            : $base . ' Pool type: ' . $this->sentenceList($type) . '.';
+    }
+
     private function withMoney(string $text, callable $sentence): ?string
     {
         // Read the sign before stripping currency characters, or "-5000" becomes "5000".

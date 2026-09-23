@@ -83,9 +83,21 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
     }
 
     /** @return string[] Known-safe public keys that must survive redaction. */
+    /** Public for every role (SnapshotFactVisibility / the criteria allowlist, or a base key). */
     private function safeKeys(): array
     {
-        return ['bedrooms', 'bathrooms', 'city', 'current_use', 'rental_purpose'];
+        return ['bedrooms', 'bathrooms', 'city'];
+    }
+
+    /**
+     * Owner-only facts. They used to survive for non-owners — the redaction was a deny-list of
+     * compliance tokens — and were answered to public viewers. They were also the token
+     * matcher's false-positive guards; that precision is still pinned by the owner-scope tests,
+     * where nothing is stripped.
+     */
+    private function ownerOnlyKeys(): array
+    {
+        return ['current_use', 'rental_purpose'];
     }
 
     /**
@@ -110,6 +122,15 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
                 $out['listing'],
                 "Safe key '{$key}' must survive for role={$role} scope={$scope}"
             );
+        }
+
+        // Owner-only facts are removed for non-owners by the public-fact allowlist — except
+        // on a tenant listing's AUTHORIZED scope, which exists so a landlord with an accepted
+        // deal sees the applicant's disclosures (never-expose keys aside).
+        if (!($role === 'tenant' && $scope === AskAiViewerAuthorizationService::SCOPE_AUTHORIZED)) {
+            foreach ($this->ownerOnlyKeys() as $key) {
+                $this->assertArrayNotHasKey($key, $out['listing'], "Owner-only key '{$key}' must not reach role={$role} scope={$scope}");
+            }
         }
     }
 
@@ -186,9 +207,11 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
         // answers AND the ordinary ones (faq_q10) that used to be kept.
         $this->assertArrayNotHasKey('faq_answers', $out);
 
-        // Non-sensitive listing fields retained.
+        // Kept: on the tenant criteria card's public allowlist.
         $this->assertArrayHasKey('desired_lease_length', $out['listing']);
-        $this->assertArrayHasKey('pets_allowed', $out['listing']);
+        // Removed: the applicant's own pet disclosure is not on that allowlist, so a public
+        // viewer's context no longer carries it (it used to, and could be answered).
+        $this->assertArrayNotHasKey('pets_allowed', $out['listing']);
     }
 
     public function test_authorized_scope_keeps_applicant_subset_but_drops_never_expose(): void
@@ -212,17 +235,18 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
      * non-owner context comes back byte-for-byte unchanged — was the Knowledge Base leak.
      * The rest of that premise still holds: nothing but faq_answers is removed here.
      */
-    public function test_non_tenant_non_owner_listing_loses_only_faq_answers(): void
+    public function test_non_tenant_non_owner_listing_keeps_only_public_facts(): void
     {
+        // This test used to assert the opposite — that a non-owner of a non-tenant listing
+        // lost ONLY the Knowledge Base, so monthly income and a credit score passed straight
+        // through to a public viewer. The listing context is now an allowlist.
         $ctx = [
-            'listing'     => ['monthly_income' => '$5,000', 'credit_score' => '700'],
+            'listing'     => ['bedrooms' => 3, 'monthly_income' => '$5,000', 'credit_score' => '700'],
             'faq_answers' => ['faq_q18' => 'whatever'],
         ];
         $out = $this->svc->redactContext($ctx, 'seller', AskAiViewerAuthorizationService::SCOPE_PUBLIC);
 
-        $expected = $ctx;
-        unset($expected['faq_answers']);
-        $this->assertSame($expected, $out);
+        $this->assertSame(['listing' => ['bedrooms' => 3]], $out);
     }
 
     // -------------------------------------------------------------------------
@@ -353,11 +377,13 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
     }
 
     /**
-     * Seller minimums are not a Knowledge Base concern and their visibility is unchanged:
-     * this layer never stripped them and does not start or stop now. (They are kept out of
-     * public answers by SnapshotFactVisibility and the Agent AI loaders, pinned elsewhere.)
+     * Seller minimums (the seller's DESIRED minimum cap rate and net income) are owner-only in
+     * SnapshotFactVisibility. This docblock used to say this layer never stripped them because
+     * they were "kept out of public answers" elsewhere — they were not: the deterministic
+     * direct-return path answered them to public viewers from this very context. The public-fact
+     * allowlist now removes them here, where every downstream path reads from.
      */
-    public function test_seller_minimum_visibility_is_unchanged_by_knowledge_base_removal(): void
+    public function test_seller_minimums_are_removed_for_non_owners(): void
     {
         $out = $this->svc->redactContext(
             $this->contextWithKnowledgeBase(),
@@ -365,8 +391,8 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
             AskAiViewerAuthorizationService::SCOPE_PUBLIC
         );
 
-        $this->assertSame('7.5', $out['listing']['minimum_cap_rate']);
-        $this->assertSame('120000', $out['listing']['minimum_annual_net_income']);
+        $this->assertArrayNotHasKey('minimum_cap_rate', $out['listing']);
+        $this->assertArrayNotHasKey('minimum_annual_net_income', $out['listing']);
         $this->assertArrayNotHasKey('hoa_fee', $out['listing'], 'C2s compliance stripping still applies');
         $this->assertArrayNotHasKey('buyer_avatar', $out, 'Avatar stripping still applies');
         $this->assertSame(['display_name' => 'Pat Agent'], $out['agent_profile']);

@@ -237,6 +237,29 @@ class AskAiViewerAuthorizationService
             unset($context['faq_answers']);
         }
 
+        // PUBLIC-FACT ALLOWLIST for non-owner listing context.
+        //
+        // The redaction above is a DENY-list (compliance tokens) and so failed open: every
+        // OWNER_ONLY listing fact — a landlord's minimum credit score and eviction policy, a
+        // seller's buy-now price, a buyer's pre-approval and financing contingencies — stayed
+        // in a non-owner's context, reached the prompt and, on the deterministic path, was
+        // answered verbatim to a public viewer. Measured: 153 of 153 owner-only fields.
+        //
+        // Now a non-owner's listing context keeps only what the public may be told, from the
+        // two existing authorities rather than a third list: SnapshotFactVisibility's
+        // PUBLIC_ALLOWED tier for Seller/Landlord (the same rule the snapshot search already
+        // applies to every non-owner), and the criteria card's public allowlist for
+        // Buyer/Tenant. Page-level base keys (title, type, status, place names) are kept.
+        //
+        // A tenant listing's AUTHORIZED scope is untouched here: it exists so a landlord with
+        // an accepted deal sees the applicant's disclosures, and is handled below.
+        if ($scope !== self::SCOPE_OWNER
+            && !($role === 'tenant' && $scope === self::SCOPE_AUTHORIZED)
+            && isset($context['listing']) && is_array($context['listing'])
+        ) {
+            $context['listing'] = $this->keepOnlyPublicListingFacts($context['listing'], $role);
+        }
+
         if ($role !== 'tenant') {
             return $context;
         }
@@ -259,6 +282,56 @@ class AskAiViewerAuthorizationService
         }
 
         return $context;
+    }
+
+    /** Base keys extractListingFields() writes for every role; page-level, never owner facts. */
+    private const PUBLIC_BASE_LISTING_KEYS = [
+        'listing_type', 'listing_id', 'listing_title', 'city', 'state', 'county',
+        'property_type', 'listing_status', 'created_at', 'updated_at',
+    ];
+
+    /**
+     * @param  array<string, mixed>  $listing
+     * @return array<string, mixed>
+     */
+    private function keepOnlyPublicListingFacts(array $listing, string $role): array
+    {
+        $criteria = in_array($role, ['buyer', 'tenant'], true)
+            ? array_flip(AskAiPublicPropertyQuestionService::publicCriteriaKeys($role))
+            : null;
+        // Fields the public card admits beyond the snapshot tier (`admitted_listing` entries,
+        // e.g. the financing types a seller will consider). The card and free text must agree.
+        $admitted = $criteria === null ? self::admittedListingFields($role) : [];
+
+        foreach (array_keys($listing) as $key) {
+            if (in_array($key, self::PUBLIC_BASE_LISTING_KEYS, true)) {
+                continue;
+            }
+            $public = $criteria !== null
+                ? isset($criteria[$key])
+                : (Snapshot\SnapshotFactVisibility::classify((string) $key, $role) === Snapshot\SnapshotFactVisibility::PUBLIC_ALLOWED
+                    || isset($admitted[$key]));
+            if (!$public) {
+                unset($listing[$key]);
+            }
+        }
+
+        return $listing;
+    }
+
+    /** @return array<string, true> listing fields admitted to the public card by `admitted_listing` entries */
+    private static function admittedListingFields(string $role): array
+    {
+        $fields = [];
+        foreach (AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry() as $entry) {
+            if (($entry['role'] ?? null) === $role
+                && ($entry['source_kind'] ?? null) === 'admitted_listing'
+                && preg_match('/^listing\.([a-z0-9_]+)$/', (string) ($entry['source_path'] ?? ''), $m) === 1) {
+                $fields[$m[1]] = true;
+            }
+        }
+
+        return $fields;
     }
 
     /**

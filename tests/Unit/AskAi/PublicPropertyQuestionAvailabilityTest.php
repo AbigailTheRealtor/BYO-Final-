@@ -35,7 +35,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
 
     private function context(array $listing): array
     {
-        return ['listing' => $listing, 'faq_answers' => []];
+        return ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []];
     }
 
     /** A seller listing whose every catalog question (Batch 1 + 2b) is answerable. */
@@ -69,6 +69,31 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'association_fee_includes' => 'Water, Trash',
             'has_cdd'               => 'Yes',
             'annual_cdd_fee'        => '1200',
+            // Universal-deterministic batches: one value per remaining public field.
+            'description'           => 'Bright corner home with an updated kitchen.',
+            'waterfront'            => 'Yes',
+            'waterfront_feet'       => '80',
+            'water_access'          => 'Canal',
+            'water_view'            => 'Canal',
+            'garage_spaces'         => '0',
+            'carport'               => 'Yes',
+            'air_conditioning'      => 'Central Air',
+            'heating_and_fuel'      => 'Electric',
+            'water'                 => 'Public',
+            'sewer'                 => 'Public Sewer',
+            'exterior_construction' => 'Block, Stucco',
+            'foundation'            => 'Slab',
+            'interior_features'     => 'Ceiling Fans, Walk-In Closet',
+            'building_features'     => 'Storage',
+            'furnished'             => 'Unfurnished',
+            'home_warranty_offered' => 'Yes',
+            'association_name'      => 'Oak Ridge HOA',
+            'has_special_assessments' => 'No',
+            'occupant_status'       => 'Owner',
+            'closing_date'          => '2026-12-15',
+            'property_items'        => 'Refrigerator, Washer',
+            'total_parcel_count'    => '2',
+            'additional_parcels'    => 'Yes',
         ]);
     }
 
@@ -106,6 +131,33 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'leasing_restrictions'      => 'No',
             'association_amenities'     => 'Clubhouse, Fitness Center',
             'association_fee_includes'  => 'Grounds Maintenance',
+            // Universal-deterministic batches: one value per remaining public field.
+            'available_date'        => '2026-10-01',
+            'lease_terms'           => '12 Months',
+            'smoking_policy'        => 'No Smoking',
+            'description'           => 'Second-floor unit with a screened balcony.',
+            'rent_amount'           => '2400',
+            'subletting_policy'     => 'Not Allowed',
+            'parking_terms'         => 'One assigned space',
+            'condition_prop'        => 'Move-In Ready',
+            'unit_size'             => '950',
+            'interior_features'     => 'Ceiling Fans',
+            'building_features'     => 'Elevator',
+            'property_items'        => 'Refrigerator, Microwave',
+            'waterfront'            => 'No',
+            'air_conditioning'      => 'Central Air',
+            'heating_fuel'          => 'Electric',
+            'water'                 => 'Public',
+            'sewer'                 => 'Public Sewer',
+            'exterior_construction' => 'Concrete',
+            'foundation'            => 'Slab',
+            'lot_dimensions'        => '50 x 100',
+            'association_name'      => 'Harbor View Condominium Association',
+            // Landlord form fields added by the MLS-import completeness audit.
+            'pool'                  => 'Yes',
+            'garage'                => 'Yes',
+            'carport'               => 'No',
+            'total_acreage'         => '1/4 to less than 1/2 acre',
         ]);
     }
 
@@ -119,12 +171,20 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         ];
     }
 
-    /** Catalog ids for a role, in display order. */
+    /**
+     * Catalog ids for a role, in display order — only those admitted for a Residential listing,
+     * which is what both complete fixtures are. A question the Residential FORM never collects
+     * (seller zoning, building features) is not one a complete Residential listing answers.
+     */
     private function catalogIds(string $role): array
     {
         $catalog = array_filter(
             AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
             fn (array $e) => $e['role'] === $role
+                && \App\Support\AskAi\AskAiPropertyTypeResolver::admits(
+                    $e['property_types'] ?? null,
+                    [\App\Support\AskAi\AskAiPropertyTypeResolver::RESIDENTIAL]
+                )
         );
         $ids = array_keys($catalog);
         usort($ids, fn ($a, $b) => $catalog[$a]['order'] <=> $catalog[$b]['order']);
@@ -201,7 +261,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     public function test_empty_context_produces_no_questions(): void
     {
         $this->assertSame([], $this->service->forListing('seller', [], []));
-        $this->assertSame([], $this->service->forListing('landlord', ['listing' => []], []));
+        $this->assertSame([], $this->service->forListing('landlord', ['listing' => ['property_type' => 'Residential']], []));
     }
 
     // ── 4. Owner-only and restricted sources never produce public questions ─
@@ -523,16 +583,34 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'seller_utilities'          => 'Utilities listed for this property: Electricity Connected, Water Available.',
             'seller_pets_allowed'       => 'Pets are allowed at this property.',
             'seller_pool'               => 'This property has a pool.',
-            'seller_garage'             => 'This property does not have a garage.',
-            'seller_zoning'             => 'The zoning is listed as RS-60.',
             'seller_roof_type'          => 'Roof type listed for this property: Shingle.',
             'seller_leasing_restrictions' => 'The listing indicates there are leasing restrictions.',
             'seller_offered_financing'  => 'The seller has indicated they will consider the following financing types: Conventional, FHA, VA and Cash.',
             'seller_flood_zone'         => 'This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.',
+            // Universal-deterministic batches. seller_garage is now the narrower fallback of
+            // seller_parking, which answers in its place.
+            'seller_listing_description' => 'Bright corner home with an updated kitchen.',
+            'seller_water_frontage'     => 'This property is waterfront. Water frontage: 80 feet. Water access: Canal.',
+            'seller_parking'            => 'This property does not have a garage. It does have a carport.',
+            'seller_climate_control'    => 'Heating: Electric. Cooling: Central Air.',
+            'seller_water_and_sewer'    => 'Water: Public. Sewer: Public Sewer.',
+            'seller_construction'       => 'Exterior construction: Block and Stucco. Foundation: Slab.',
+            // seller_interior_features is gone: the public seller page does not render
+            // interior_features, so Ask AI may not publish it either.
+            'seller_home_warranty'      => 'The seller is offering a home warranty.',
+            'seller_association_details' => 'This property is in a homeowners association: Oak Ridge HOA.',
+            'seller_special_assessments' => 'The listing indicates there are no special assessments.',
+            'seller_occupancy'          => 'Occupancy status: Owner.',
+            'seller_target_closing'     => 'The seller would like to close by December 15, 2026.',
+            'seller_included_items'     => 'Included with this property: Refrigerator, Washer.',
+            'seller_parcel_count'       => 'This listing includes 2 parcels.',
         ];
         $this->assertSame($expected, $this->answers('seller', $this->fullSellerContext(), $this->fullSellerMeta()));
 
         $this->assertSame([
+            // Universal-deterministic batches: the lease-term block leads the landlord card.
+            'landlord_available_date'        => 'This property is available from October 1, 2026.',
+            'landlord_smoking_policy'        => 'Smoking is not allowed.',
             'landlord_bedrooms'              => 'This property has 2 bedrooms.',
             'landlord_bathrooms'             => 'This property has 1 bathroom.',
             'landlord_heated_square_feet'    => 'The heated square footage is 950 square feet.',
@@ -541,12 +619,98 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             'landlord_hoa_fee_coverage'      => 'The HOA fee is $175 per quarter and includes grounds maintenance.',
             'landlord_appliances'            => 'Appliances listed for this property: Washer, Dryer.',
             'landlord_pets_allowed'          => "Pets are not allowed under the property's pet policy. Assistance animals are handled separately under applicable law.",
-            'landlord_zoning'                => 'The zoning is listed as RM-15.',
             'landlord_roof_type'             => 'Roof types listed for this property: Tile, Metal.',
             'landlord_leasing_restrictions'  => 'The listing indicates there are no leasing restrictions.',
             'landlord_association_amenities' => 'Community amenities listed for this property: Clubhouse, Fitness Center.',
             'landlord_flood_zone'            => 'This property is in FEMA Flood Zone VE, a coastal high-hazard Special Flood Hazard Area.',
+            // The lease price states no period: the only field that could supply one is
+            // owner-only, and "/mo" is wrong for a large share of rentals.
+            'landlord_listing_description'   => 'Second-floor unit with a screened balcony.',
+            'landlord_rent'                  => 'The desired lease price is $2,400.',
+            'landlord_pool'                  => 'This property has a pool.',
+            'landlord_subletting_policy'     => 'Subletting policy: Not Allowed.',
+            'landlord_parking_terms'         => 'Parking: One assigned space.',
+            'landlord_garage_carport'        => 'This property has a garage.',
+            'landlord_condition'             => 'Property condition: Move-In Ready.',
+            'landlord_unit_details'          => 'The unit is 950 square feet.',
+            'landlord_interior_features'     => 'Interior features listed for this property: Ceiling Fans.',
+            'landlord_included_items'        => 'Included with this property: Refrigerator, Microwave.',
+            'landlord_water_frontage'        => 'This property is not waterfront.',
+            // landlord_climate_control and landlord_water_and_sewer are gone: air_conditioning,
+            // heating_fuel, water and sewer are not rendered on the public landlord page.
+            'landlord_construction'          => 'Exterior construction: Concrete. Foundation: Slab.',
+            'landlord_total_acreage'         => 'The total acreage is 1/4 to less than 1/2 acre.',
+            'landlord_lot_dimensions'        => 'Lot dimensions: 50 x 100.',
+            'landlord_association_details'   => 'This property is in a homeowners association: Harbor View Condominium Association.',
         ], $this->answers('landlord', $this->fullLandlordContext(), $this->fullLandlordMeta()));
+    }
+
+    public function test_commercial_only_seller_questions_answer_on_a_commercial_listing(): void
+    {
+        // Zoning and building features are collected only on the Commercial / Business /
+        // Vacant Land blocks of the seller form (SP property-preferences :2156, :2428), so
+        // they are pinned here rather than on the Residential fixture.
+        $answers = $this->answers('seller', ['listing' => [
+            'property_type'     => 'Commercial',
+            'zoning'            => 'CG',
+            'building_features' => 'Loading Dock, Unfurnished',
+            'furnished'         => 'Unfurnished',
+        ], 'faq_answers' => []], []);
+
+        $this->assertSame('The zoning is listed as CG.', $answers['seller_zoning']);
+        $this->assertSame('Building features listed for this property: Loading Dock, Unfurnished.', $answers['seller_building_features']);
+        $this->assertSame('This property is offered unfurnished.', $answers['seller_furnished']);
+    }
+
+    public function test_commercial_only_landlord_questions_answer_on_a_commercial_lease(): void
+    {
+        // Terms of Lease and zoning are collected only on the Commercial Property form (LP
+        // lease-terms :1027, property-preferences :1336). The renewal option and pet fee are
+        // collected on both, and on a Commercial lease they are the only questions that reach
+        // them (the pet-policy composite is Residential-only). Building features are collected
+        // too (:1610) but the public landlord page does not render them, so they get no public
+        // question.
+        $answers = $this->answers('landlord', ['listing' => [
+            'property_type'     => 'Commercial Property',
+            'lease_terms'       => 'Modified Gross',
+            'zoning'            => 'CG',
+            'building_features' => 'Elevator',
+            'pet_fee_type'      => 'Monthly Pet Fee',
+            'pet_fee_amount'    => '50',
+        ], 'faq_answers' => []], []);
+
+        $this->assertSame('Lease terms offered: Modified Gross.', $answers['landlord_lease_terms']);
+        $this->assertSame('The zoning is listed as CG.', $answers['landlord_zoning']);
+        $this->assertArrayNotHasKey('landlord_building_features', $answers);
+        $this->assertSame('Pet fee: $50 (Monthly Pet Fee).', $answers['landlord_pet_fee']);
+        $this->assertArrayNotHasKey('landlord_pets_allowed', $answers);
+    }
+
+    public function test_landlord_renewal_and_pet_fee_questions(): void
+    {
+        $renewal = $this->answers('landlord', $this->context(['renewal_option' => 'Yes']), []);
+        $this->assertSame('A renewal option is offered.', $renewal['landlord_renewal_option']);
+
+        // Where the lease-terms composite renders it states renewal itself, so the narrower
+        // entry yields rather than saying it twice.
+        $both = $this->answers('landlord', ['listing' => [
+            'property_type' => 'Commercial Property', 'lease_terms' => 'Net Lease', 'renewal_option' => 'No',
+        ], 'faq_answers' => []], []);
+        $this->assertSame('Lease terms offered: Net Lease. No renewal option is offered.', $both['landlord_lease_terms']);
+        $this->assertArrayNotHasKey('landlord_renewal_option', $both);
+
+        $fee = fn (array $l) => $this->answers('landlord', ['listing' => $l + ['property_type' => 'Commercial Property'], 'faq_answers' => []], [])['landlord_pet_fee'] ?? null;
+        $this->assertSame('There is no pet fee.', $fee(['pet_fee_type' => 'No Pet Fee', 'pet_fee_amount' => '75']));
+        $this->assertSame('Pet fee type: Non Refundable.', $fee(['pet_fee_type' => 'Non Refundable']));
+        // "Other": its meaning lives in the unpublished prose, so nothing is stated — and the
+        // prose itself never reaches an answer.
+        $this->assertNull($fee(['pet_fee_type' => 'Other', 'pet_fee_amount' => '300', 'pet_fee_other' => 'SENTINEL-OTHER-TEXT']));
+        $this->assertNull($fee(['pet_fee_type' => 'Something Unrecognised', 'pet_fee_amount' => '10']));
+
+        // A Residential listing states the fee inside the pet-policy composite instead.
+        $residential = $this->answers('landlord', $this->context(['pet_policy' => 'Yes', 'pet_fee_type' => 'Monthly Pet Fee', 'pet_fee_amount' => '50']), []);
+        $this->assertArrayHasKey('landlord_pets_allowed', $residential);
+        $this->assertArrayNotHasKey('landlord_pet_fee', $residential);
     }
 
     public function test_formatter_output_is_deterministic(): void

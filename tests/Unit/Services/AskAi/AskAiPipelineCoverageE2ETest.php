@@ -193,6 +193,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_hvac_age_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -201,7 +203,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'how old is the hvac?');
+        $result = $runner->run('seller', 1, 'how old is the hvac?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -241,6 +243,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_recent_renovations_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -249,7 +253,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'what renovations have been made?');
+        $result = $runner->run('seller', 1, 'what renovations have been made?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -288,6 +292,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_flood_damage_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -296,7 +302,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'has the property flooded?');
+        $result = $runner->run('seller', 1, 'has the property flooded?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -334,6 +340,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_utility_costs_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -342,7 +350,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'what are the average monthly utility costs?');
+        $result = $runner->run('seller', 1, 'what are the average monthly utility costs?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -383,15 +391,26 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_laundry_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
 
-        $adapter->expects($this->never())->method('generate');
-        $finalBuilder->expects($this->never())->method('build');
+        if ($this->roleForFaqKey('laundry_situation') === 'landlord') {
+            // The missing-data guard answers before any adapter call.
+            $adapter->expects($this->never())->method('generate');
+            $finalBuilder->expects($this->never())->method('build');
+        }
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('landlord', 1, 'is there in-unit laundry?');
+        // faq_answers.laundry_situation is in no landlord Knowledge Base config (buildConfigIndex),
+        // so it can never hold an answer on a landlord listing and is no longer routed to.
+        if ($this->roleForFaqKey('laundry_situation') !== 'landlord') {
+            $this->assertDeadKeyIsNotRouted($runner, 'landlord', 'is there in-unit laundry?', 'faq_answers.laundry_situation');
+            return;
+        }
+        $result = $runner->run('landlord', 1, 'is there in-unit laundry?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -430,15 +449,26 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_lease_renewal_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
 
-        $adapter->expects($this->never())->method('generate');
-        $finalBuilder->expects($this->never())->method('build');
+        if ($this->roleForFaqKey('lease_renewal_process') === 'landlord') {
+            // The missing-data guard answers before any adapter call.
+            $adapter->expects($this->never())->method('generate');
+            $finalBuilder->expects($this->never())->method('build');
+        }
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('landlord', 1, 'how does lease renewal work?');
+        // faq_answers.lease_renewal_process is in no landlord Knowledge Base config (buildConfigIndex),
+        // so it can never hold an answer on a landlord listing and is no longer routed to.
+        if ($this->roleForFaqKey('lease_renewal_process') !== 'landlord') {
+            $this->assertDeadKeyIsNotRouted($runner, 'landlord', 'how does lease renewal work?', 'faq_answers.lease_renewal_process');
+            return;
+        }
+        $result = $runner->run('landlord', 1, 'how does lease renewal work?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -476,15 +506,26 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_security_features_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
 
-        $adapter->expects($this->never())->method('generate');
-        $finalBuilder->expects($this->never())->method('build');
+        if ($this->roleForFaqKey('security_features') === 'landlord') {
+            // The missing-data guard answers before any adapter call.
+            $adapter->expects($this->never())->method('generate');
+            $finalBuilder->expects($this->never())->method('build');
+        }
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('landlord', 1, 'is there a security system?');
+        // faq_answers.security_features is in no landlord Knowledge Base config (buildConfigIndex),
+        // so it can never hold an answer on a landlord listing and is no longer routed to.
+        if ($this->roleForFaqKey('security_features') !== 'landlord') {
+            $this->assertDeadKeyIsNotRouted($runner, 'landlord', 'is there a security system?', 'faq_answers.security_features');
+            return;
+        }
+        $result = $runner->run('landlord', 1, 'is there a security system?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -523,6 +564,8 @@ class AskAiPipelineCoverageE2ETest extends TestCase
 
     public function test_pest_termite_field_absent_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
@@ -531,7 +574,7 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         $finalBuilder->expects($this->never())->method('build');
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, 'have there been termites?');
+        $result = $runner->run('seller', 1, 'have there been termites?', ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -688,15 +731,28 @@ class AskAiPipelineCoverageE2ETest extends TestCase
         string $configKey,
         string $phrase
     ): void {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $internalRunner = $this->makeInternalRunnerWithoutField();
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
         $finalBuilder   = $this->createMock(AskAiFinalResponseBuilderService::class);
 
-        $adapter->expects($this->never())->method('generate');
-        $finalBuilder->expects($this->never())->method('build');
+        // Each key is asked on a listing of the role whose Knowledge Base configures it —
+        // key detection resolves only keys the listing's own role can hold.
+        $role = $this->roleForFaqKey($configKey);
+        if ($role !== null) {
+            // The missing-data guard answers before any adapter call.
+            $adapter->expects($this->never())->method('generate');
+            $finalBuilder->expects($this->never())->method('build');
+        }
 
         $runner = $this->makeRunner($internalRunner, $adapter, $finalBuilder);
-        $result = $runner->run('seller', 1, $phrase);
+
+        if ($role === null) {
+            $this->assertDeadKeyIsNotRouted($runner, 'seller', $phrase, $canonicalPath);
+            return;
+        }
+        $result = $runner->run($role, 1, $phrase, ['viewer_scope' => 'owner']);
 
         $this->assertFalse(
             $result['success'],
@@ -718,5 +774,36 @@ class AskAiPipelineCoverageE2ETest extends TestCase
             $answer,
             "Missing-data message for [{$configKey}] must end with ' has not been provided for this listing.'"
         );
+    }
+
+    /**
+     * The role whose Knowledge Base config defines this key, or null when none does. A key no
+     * config defines can never hold an answer: the context builder admits only configured
+     * keys (the Fair Housing P0-B admission boundary).
+     */
+    private function roleForFaqKey(string $configKey): ?string
+    {
+        foreach (['seller', 'landlord', 'buyer', 'tenant'] as $role) {
+            if (array_key_exists($configKey, \App\Services\AskAi\AskAiFaqEnrichmentService::buildConfigIndex($role))) {
+                return $role;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * A key no Knowledge Base config defines is no longer routed to, and the owner is not told
+     * it "has not been provided": there is no question through which they could provide it.
+     */
+    private function assertDeadKeyIsNotRouted(AskAiRunnerV2Service $runner, string $role, string $phrase, string $canonicalPath): void
+    {
+        $result = $runner->run($role, 1, $phrase, ['viewer_scope' => 'owner']);
+
+        $this->assertNotSame($canonicalPath, $result['classification']['normalized_field_key'] ?? null,
+            "{$canonicalPath} is configured for no role and must not be routed to.");
+        $this->assertStringNotContainsString('has not been provided',
+            (string) ($result['final_response']['answer'] ?? ''),
+            "{$canonicalPath}: the owner must not be told a question that does not exist was left unanswered.");
     }
 }

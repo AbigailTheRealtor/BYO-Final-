@@ -750,6 +750,10 @@
     </div>
 </div>
 
+{{-- Property Features You Want — canonical seeker Smart Tag preferences (renders only for
+     the Offer Listing seeker components, only while the seeker-preference gate is on). --}}
+@include('livewire.offer-listing.shared._seeker-smart-tags')
+
 {{-- Commute Preferences — RETIRED from this form (Buyer and Tenant alike).
      It promised "so we can score properties" by commute, and nothing does: no scorer,
      matcher or DNA generator reads commute_destination_zip, max_commute_minutes or
