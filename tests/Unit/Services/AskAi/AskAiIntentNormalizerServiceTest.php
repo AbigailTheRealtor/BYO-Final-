@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\AskAi;
 
 use App\Services\Ai\OpenAiClientService;
 use App\Services\AskAi\AskAiIntentNormalizerService;
+use App\Services\AskAi\AskAiOpenAiAdapterService;
 use App\Services\AskAi\AskAiResponseContractService;
 use PHPUnit\Framework\TestCase;
 
@@ -140,6 +141,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_A_hvac_paraphrase_normalizes_to_hvac_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.hvac_system_age');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -151,6 +153,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_A_mechanical_systems_paraphrase_normalizes_to_hvac_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.hvac_system_age');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -162,6 +165,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_A_roof_paraphrase_normalizes_to_roof_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -173,6 +177,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_A_utility_cost_paraphrase_normalizes_to_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.average_utility_costs');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -184,6 +189,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_A_bedrooms_paraphrase_normalizes_to_listing_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.bedrooms');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -195,6 +201,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_A_pool_paraphrase_normalizes_to_listing_pool_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.pool');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -502,6 +509,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_I_normalize_passes_timeout_seconds_10_to_send(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->expects($this->once())
             ->method('send')
@@ -527,6 +535,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_I_normalize_passes_max_tokens_80_to_send(): void
     {
+        $this->requiresTheModelPath();
         // max_tokens was raised from 60 → 80 to accommodate the richer three-shape
         // JSON response format introduced by the field router enrichment (Task #2405).
         $mock = $this->createMock(OpenAiClientService::class);
@@ -555,6 +564,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_I_normalize_passes_both_call_options_in_single_call(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->expects($this->once())
             ->method('send')
@@ -812,6 +822,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_K1_solid_covering_overhead_resolves_to_roof_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -823,6 +834,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_K2_top_covering_of_the_house_resolves_to_roof_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -834,6 +846,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_K3_covering_above_the_home_resolves_to_roof_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -845,6 +858,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_K4_overhead_structure_resolves_to_roof_faq_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
         $normalizer = $this->makeNormalizer($client);
         $keys       = $this->makeKnownFieldKeys();
@@ -940,6 +954,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L1_matched_key_sets_status_matched(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.hvac_system_age');
         $normalizer = $this->makeNormalizer($client);
 
@@ -950,6 +965,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L1_matched_key_sets_error_null(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.bedrooms');
         $normalizer = $this->makeNormalizer($client);
 
@@ -962,6 +978,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L2_unknown_response_sets_status_unknown(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('unknown');
         $normalizer = $this->makeNormalizer($client);
 
@@ -972,6 +989,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L2_unknown_response_sets_error_null(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('unknown');
         $normalizer = $this->makeNormalizer($client);
 
@@ -997,6 +1015,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L3_invalid_json_exception_sets_error_invalid_json(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
             new \Exception('OpenAI response is not valid JSON: Syntax error.')
@@ -1010,6 +1029,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L3_unserializable_response_exception_sets_error_invalid_json(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
             new \Exception('OpenAI response could not be parsed by the SDK.')
@@ -1035,6 +1055,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L4_hallucinated_key_sets_error_invalid_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.invented_field_that_does_not_exist');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1047,6 +1068,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L4_timeout_exception_sets_status_failed_timeout(): void
     {
+        $this->requiresTheModelPath();
         // The existing makeClientMockThatThrows() throws
         // RuntimeException('Connection timed out after 10 seconds.')
         // which contains 'timed out' — classifyThrowable() must detect this.
@@ -1076,6 +1098,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L5_rate_limit_exception_code_sets_error_rate_limited(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
             new \Exception('Non-retryable OpenAI API error (HTTP 429).', 429)
@@ -1089,6 +1112,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L5_rate_limit_via_previous_exception_sets_error_rate_limited(): void
     {
+        $this->requiresTheModelPath();
         // Simulate the wrapped exception produced when retries are exhausted on a 429.
         $previous = new \Exception('Rate limited', 429);
         $wrapping = new \Exception('OpenAI generation failed after 3 attempt(s). Last error: Rate limited', 0, $previous);
@@ -1104,6 +1128,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L5_rate_limit_exception_message_sets_status_failed_rate_limited(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
             new \RuntimeException('HTTP 429: Too many requests. Please slow down.')
@@ -1149,6 +1174,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L6_generic_api_exception_sets_status_failed_api_error(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
             new \RuntimeException('Network error: connection refused')
@@ -1178,6 +1204,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L7_generic_api_exception_sets_error_api_error(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willThrowException(
             new \Exception('Non-retryable OpenAI API error (HTTP 403).', 403)
@@ -1203,6 +1230,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L8_missing_normalized_key_sets_error_empty_response(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithMissingKey();
         $normalizer = $this->makeNormalizer($client);
 
@@ -1213,6 +1241,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L8_null_normalized_key_sets_error_empty_response(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->method('send')->willReturn([
             'data'           => ['normalized_key' => null],
@@ -1230,6 +1259,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L8_empty_string_normalized_key_sets_error_empty_response(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1240,6 +1270,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L8_empty_question_sets_status_unknown(): void
     {
+        $this->requiresTheModelPath();
         $mock = $this->createMock(OpenAiClientService::class);
         $mock->expects($this->never())->method('send');
 
@@ -1254,6 +1285,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_L9_status_resets_between_calls(): void
     {
+        $this->requiresTheModelPath();
         // First call: match
         $mockA = $this->createMock(OpenAiClientService::class);
         $mockA->method('send')->willReturn([
@@ -1316,6 +1348,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_M1_matched_response_sets_last_context_path(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('faq_answers.hvac_system_age');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1336,6 +1369,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_M3_hallucinated_key_sets_last_context_path_before_guard(): void
     {
+        $this->requiresTheModelPath();
         // Even when the hallucination guard rejects the path, getLastContextPath()
         // still returns the raw path OpenAI produced, for observability.
         $client     = $this->makeClientMock('listing.invented_field_that_does_not_exist');
@@ -1358,6 +1392,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_M5_last_context_path_resets_between_calls(): void
     {
+        $this->requiresTheModelPath();
         // First call: match → contextPath set
         $client     = $this->makeClientMock('listing.bedrooms');
         $normalizer = $this->makeNormalizer($client);
@@ -1410,6 +1445,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N1_new_format_matched_returns_context_path(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('matched', 'listing.bedrooms');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1420,6 +1456,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N1_new_format_matched_sets_status_matched(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('matched', 'listing.bathrooms');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1430,6 +1467,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N1_new_format_matched_sets_context_path(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('matched', 'faq_answers.hvac_system_age');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1450,6 +1488,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N2_new_format_unsupported_sets_status_unknown(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('unsupported');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1480,6 +1519,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N3_new_format_prohibited_sets_status_prohibited(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('prohibited');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1490,6 +1530,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N3_new_format_prohibited_sets_error_null(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('prohibited');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1521,6 +1562,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N4_new_format_hallucinated_path_sets_error_invalid_key(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('matched', 'listing.invented_field_xyz');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1531,6 +1573,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N4_new_format_hallucinated_path_still_captured_in_context_path(): void
     {
+        $this->requiresTheModelPath();
         // The raw path is captured in lastContextPath even when the guard rejects it.
         $client     = $this->makeClientMockWithStatus('matched', 'listing.invented_field_xyz');
         $normalizer = $this->makeNormalizer($client);
@@ -1542,6 +1585,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N5_new_format_matched_empty_context_path_fails(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMockWithStatus('matched', '');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1554,6 +1598,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_N6_new_format_unknown_status_value_fails_empty_response(): void
     {
+        $this->requiresTheModelPath();
         // An unrecognized status value is treated as a malformed response.
         $client     = $this->makeClientMockWithStatus('unrecognized_status_value');
         $normalizer = $this->makeNormalizer($client);
@@ -1575,6 +1620,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_P1_role_parameter_accepted_without_error(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.max_rent');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1592,6 +1638,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_P2_seller_role_resolves_bathrooms(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.bathrooms');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1606,6 +1653,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_P3_seller_role_resolves_annual_property_taxes(): void
     {
+        $this->requiresTheModelPath();
         $client     = $this->makeClientMock('listing.annual_property_taxes');
         $normalizer = $this->makeNormalizer($client);
 
@@ -1621,6 +1669,7 @@ class AskAiIntentNormalizerServiceTest extends TestCase
 
     public function test_case_P4_empty_role_accepted_without_error(): void
     {
+        $this->requiresTheModelPath();
         // When role is empty string, no registry context is added but the normalizer works normally.
         $client     = $this->makeClientMock('faq_answers.roof_age_and_condition');
         $normalizer = $this->makeNormalizer($client);
@@ -1708,6 +1757,40 @@ class AskAiIntentNormalizerServiceTest extends TestCase
             $content,
             'AskAiIntentNormalizerService must define getLastContextPath() for router_context_path tracing'
         );
+    }
+
+    // =========================================================================
+    // Hard gate — the model path is disabled in code
+    // =========================================================================
+
+    /**
+     * The tests that call this drive a mocked send() to pin how the normaliser PARSES a
+     * model reply. With LLM_ANSWERING_APPROVED false that parser is unreachable — normalize()
+     * refuses before touching the client — so they are skipped, not deleted: they describe
+     * the dormant code exactly, and they run again on their own if a reviewed change ever
+     * flips the constant.
+     */
+    private function requiresTheModelPath(): void
+    {
+        if (AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED !== true) {
+            $this->markTestSkipped('Normaliser model path is hard-disabled (LLM_ANSWERING_APPROVED = false).');
+        }
+    }
+
+    public function test_normalize_refuses_before_touching_the_client_while_the_gate_is_closed(): void
+    {
+        $client = $this->getMockBuilder(OpenAiClientService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['send'])
+            ->getMock();
+        $client->expects($this->never())->method('send');
+
+        $contract   = $this->getMockBuilder(AskAiResponseContractService::class)->disableOriginalConstructor()->getMock();
+        $normalizer = new AskAiIntentNormalizerService($client, $contract);
+
+        $this->assertNull($normalizer->normalize('how many bedrooms', ['listing.bedrooms'], 'seller'));
+        $this->assertSame('failed', $normalizer->getLastStatus());
+        $this->assertSame('llm_answering_not_approved', $normalizer->getLastError());
     }
 }
 

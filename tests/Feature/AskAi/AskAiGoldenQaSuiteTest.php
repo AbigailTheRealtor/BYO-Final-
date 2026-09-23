@@ -1509,8 +1509,8 @@ class AskAiGoldenQaSuiteTest extends TestCase
      * The real classifier routes "will landlord accept a 4 month lease" to
      * listing.lease_terms.  The mocked internalRunner returns prompt_ready with
      * lease_terms = "3 Months, 6 Months" in allowed_context.  The mocked adapter
-     * always fails.  The synthesis gate fires unconditionally and returns
-     * insufficient_context instead of echoing the raw value.
+     * always fails.  The synthesis gate fires unconditionally; with the model path
+     * disabled it states the value under its label instead of denying it.
      */
     public function test_s20b_end_to_end_synthesis_gate_fires_for_appliances(): void
     {
@@ -1577,22 +1577,18 @@ class AskAiGoldenQaSuiteTest extends TestCase
         $finalResponse = $result['final_response'] ?? [];
         $trace         = $result['trace'] ?? [];
 
-        // Synthesis gate must have fired — runner returns insufficient_context,
-        // not the raw "Refrigerator, Dishwasher, Microwave" comma list.
-        $this->assertSame(
-            'insufficient_context',
-            $finalResponse['status'] ?? null,
-            'Synthesis gate must fire for listing.appliances when adapter fails — '
-            . 'must return insufficient_context, not the raw appliance list value'
-        );
-
-        // The raw comma list must NOT appear in the answer (gate blocked the echo).
+        // The gate still fires, and the BARE list is still never echoed as though it were a
+        // reasoned answer. What changed: with the model path hard-disabled
+        // (LLM_ANSWERING_APPROVED = false) the gate no longer falls through to "This
+        // information was not provided in the listing." — false, the value is right here —
+        // but states the stored value under its label. A statement of the record claims
+        // nothing beyond it, so it is safe where a synthesised sentence was not available.
         $answerText = (string) ($finalResponse['answer'] ?? '');
-        $this->assertStringNotContainsString(
-            $rawValue,
-            $answerText,
-            '"Refrigerator, Dishwasher, Microwave" must not appear — synthesis gate blocks raw list echoes'
-        );
+        $this->assertSame('ready', $finalResponse['status'] ?? null);
+        $this->assertSame('Included appliances: ' . $rawValue . '.', $answerText,
+            'The synthesis gate must state the stored value under its label, never deny it.');
+        $this->assertNotSame($rawValue, $answerText, 'The bare list must never be echoed unlabelled.');
+        $this->assertStringNotContainsString('not provided', $answerText);
 
         // Trace confirms the gate fired unconditionally for this synthesis-required field.
         $this->assertTrue(

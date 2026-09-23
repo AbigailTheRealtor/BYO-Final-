@@ -74,7 +74,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
     /** The published answer for one KB key, or null when the question is not available. */
     private function kbAnswer(string $role, array $meta, array $viewer, string $key): ?string
     {
-        foreach ($this->service->forListing($role, ['listing' => []], $meta, $viewer) as $q) {
+        foreach ($this->service->forListing($role, ['listing' => ['property_type' => 'Residential']], $meta, $viewer) as $q) {
             if ($q['id'] === 'kb_' . $role . '_' . $key) {
                 return $q['answer'];
             }
@@ -86,7 +86,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
     /** Every question id a listing produces. */
     private function ids(string $role, array $meta, array $viewer = []): array
     {
-        return array_column($this->service->forListing($role, ['listing' => []], $meta, $viewer), 'id');
+        return array_column($this->service->forListing($role, ['listing' => ['property_type' => 'Residential']], $meta, $viewer), 'id');
     }
 
     // =====================================================================
@@ -336,7 +336,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
         $result = $this->service->evaluate(
             $entry,
             'buyer',
-            ['listing' => []],
+            ['listing' => ['property_type' => 'Residential']],
             $this->sellerMeta('Roof replaced in 2019.'),
             $this->viewerVisible()
         );
@@ -358,7 +358,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
         $result = $this->service->evaluate(
             $entry,
             'seller',
-            ['listing' => []],
+            ['listing' => ['property_type' => 'Residential']],
             $this->sellerMeta('Roof replaced in 2019.'),
             $this->viewerVisible()
         );
@@ -464,7 +464,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
         $this->assertNull($this->kbAnswer('seller', $meta, $this->viewerVisible(), self::SELLER_KEY));
 
         // And nothing truncated leaked into any other question either.
-        foreach ($this->service->forListing('seller', ['listing' => []], $meta, $this->viewerVisible()) as $q) {
+        foreach ($this->service->forListing('seller', ['listing' => ['property_type' => 'Residential']], $meta, $this->viewerVisible()) as $q) {
             $this->assertStringNotContainsString('…', $q['answer']);
             $this->assertStringNotContainsString('...', $q['answer']);
         }
@@ -560,7 +560,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
         ];
 
         foreach ($unknowns as $i => $viewer) {
-            $result = $this->service->evaluate($entry, 'seller', ['listing' => []], $meta, $viewer);
+            $result = $this->service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential']], $meta, $viewer);
 
             $this->assertFalse($result['available'], "Unknown viewer context #{$i} must not publish.");
             $this->assertSame('kb_address_visibility_unknown', $result['reason'], "case #{$i}");
@@ -577,7 +577,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
     {
         // The field-sourced catalog must keep working for callers that pass no viewer at all —
         // Buyer and Tenant controllers do exactly that, and Batch 1-3 questions predate it.
-        $context = ['listing' => ['flood_zone_code' => 'AE']];
+        $context = ['listing' => ['property_type' => 'Residential', 'flood_zone_code' => 'AE']];
 
         $withViewer    = array_column($this->service->forListing('seller', $context, [], $this->viewerVisible()), 'id');
         $withoutViewer = array_column($this->service->forListing('seller', $context, []), 'id');
@@ -750,7 +750,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
     public function the_kb_path_is_deterministic_and_orders_below_the_field_catalog(): void
     {
         $meta    = $this->sellerMeta('Roof replaced in 2019, architectural shingle.');
-        $context = ['listing' => ['flood_zone_code' => 'AE']];
+        $context = ['listing' => ['property_type' => 'Residential', 'flood_zone_code' => 'AE']];
 
         $first  = $this->service->forListing('seller', $context, $meta, $this->viewerVisible());
         $second = (new AskAiPublicPropertyQuestionService())->forListing('seller', $context, $meta, $this->viewerVisible());
@@ -781,7 +781,7 @@ class PublicKnowledgeBaseBatch4Test extends TestCase
             }
         }
 
-        foreach ($this->service->forListing('seller', ['listing' => []], $meta, $this->viewerVisible()) as $q) {
+        foreach ($this->service->forListing('seller', ['listing' => ['property_type' => 'Residential']], $meta, $this->viewerVisible()) as $q) {
             if ($q['id'] === 'kb_seller_' . self::SELLER_KEY) {
                 $this->assertSame(trim($label), $q['question']);
 

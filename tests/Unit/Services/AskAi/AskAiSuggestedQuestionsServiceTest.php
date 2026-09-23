@@ -309,7 +309,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
 
     public function test_required_context_path_is_not_surfaced_in_output(): void
     {
-        $withContext = ['listing' => ['bedrooms' => 3], 'faq_answers' => []];
+        $withContext = ['listing' => ['property_type' => 'Residential', 'bedrooms' => 3], 'faq_answers' => []];
 
         foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
             foreach ([[], $withContext] as $ctx) {
@@ -352,7 +352,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
 
     public function test_listing_facts_chips_suppressed_when_listing_context_absent(): void
     {
-        $context = ['listing' => [], 'faq_answers' => []];
+        $context = ['listing' => ['property_type' => 'Residential'], 'faq_answers' => []];
 
         foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
             $results = $this->service->forListing($type, $context);
@@ -408,7 +408,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
 
     public function test_non_listing_facts_chips_never_filtered_by_context(): void
     {
-        $context = ['listing' => [], 'faq_answers' => []];
+        $context = ['listing' => ['property_type' => 'Residential'], 'faq_answers' => []];
 
         foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
             $noCtxTypes = array_column($this->service->forListing($type), 'question_type');
@@ -599,7 +599,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     public function test_seller_listing_facts_chips_with_full_context(): void
     {
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'address'             => '123 Main St',
                 'asking_price'        => 450000,
                 'bedrooms'            => 4,
@@ -629,7 +629,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
         //   max_price      (not max_budget)
         //   financing_type (singular, not financing_types)
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'max_price'      => 600000,
                 'financing_type' => 'Conventional',
                 'bedrooms'       => 3,
@@ -651,7 +651,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     {
         // Verify that old/wrong field names (max_budget, financing_types) do NOT trigger chips
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'max_budget'      => 600000,   // wrong — correct is max_price
                 'financing_types' => 'Cash',   // wrong — correct is financing_type (singular)
             ],
@@ -670,7 +670,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
         //   rent_amount    (not asking_price)
         //   smoking_policy (not smoking_allowed)
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'rent_amount'    => 2500,
                 'bedrooms'       => 2,
                 'pet_policy'     => 'Cats allowed, no dogs',
@@ -698,7 +698,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     {
         // Verify that old/wrong field names do NOT trigger chips
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'asking_price'   => 2500,      // wrong — correct is rent_amount
                 'smoking_allowed'=> false,     // wrong — correct is smoking_policy
             ],
@@ -718,7 +718,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
         //   appliances      (not required_appliances)
         //   pet_information (not pets_allowed)
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'max_rent'        => 2000,
                 'appliances'      => 'Dishwasher, microwave',
                 'pet_information' => 'One small dog',
@@ -742,7 +742,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     {
         // Verify that old/wrong field names do NOT trigger chips
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'required_appliances' => 'Dishwasher', // wrong — correct is appliances
                 'pets_allowed'        => true,         // wrong — correct is pet_information
             ],
@@ -763,7 +763,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     {
         $contexts = [
             'seller' => [
-                'listing' => [
+                'listing' => ['property_type' => 'Residential', 
                     'address' => '1 Oak Ave', 'asking_price' => 300000, 'bedrooms' => 3,
                     'rental_restrictions' => 'HOA rules', 'lease_terms' => '12 months',
                 ],
@@ -774,11 +774,11 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
                 ],
             ],
             'buyer' => [
-                'listing' => ['max_price' => 400000, 'financing_type' => 'Cash', 'bedrooms' => 2],
+                'listing' => ['property_type' => 'Residential', 'max_price' => 400000, 'financing_type' => 'Cash', 'bedrooms' => 2],
                 'faq_answers' => [],
             ],
             'landlord' => [
-                'listing' => [
+                'listing' => ['property_type' => 'Residential', 
                     'rent_amount' => 1800, 'bedrooms' => 1, 'pet_policy' => 'No pets',
                     'available_date' => '2026-07-01', 'utilities' => 'None',
                     'smoking_policy' => 'Non-smoking only',
@@ -789,7 +789,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
                 ],
             ],
             'tenant' => [
-                'listing' => ['max_rent' => 1500, 'appliances' => 'Washer/dryer', 'pet_information' => 'No pets'],
+                'listing' => ['property_type' => 'Residential', 'max_rent' => 1500, 'appliances' => 'Washer/dryer', 'pet_information' => 'No pets'],
                 'faq_answers' => ['laundry_situation' => $this->makeFaqEntry('In-unit preferred')],
             ],
         ];
@@ -807,7 +807,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     public function test_no_prohibited_phrases_in_listing_facts_questions_with_context(): void
     {
         $context = [
-            'listing' => [
+            'listing' => ['property_type' => 'Residential', 
                 'address' => '1 Main', 'asking_price' => 500000, 'bedrooms' => 3,
                 'rental_restrictions' => 'None', 'lease_terms' => '12 months',
                 'max_price' => 600000, 'financing_type' => 'Cash',
@@ -879,7 +879,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
      */
     public function test_requires_data_chip_suppressed_when_data_absent(): void
     {
-        $emptyContext = ['listing' => [], 'faq_answers' => []];
+        $emptyContext = ['listing' => ['property_type' => 'Residential'], 'faq_answers' => []];
 
         foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
             $results = $this->service->forListing($type, $emptyContext);
@@ -909,7 +909,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
     {
         // A non-empty but data-free context: triggers filterByContext, suppresses
         // all requires_data=true chips, leaving only requires_data=false static chips.
-        $emptyDataContext = ['listing' => [], 'faq_answers' => []];
+        $emptyDataContext = ['listing' => ['property_type' => 'Residential'], 'faq_answers' => []];
 
         foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
             $results     = $this->service->forListing($type, $emptyDataContext);
@@ -959,7 +959,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
      */
     public function test_public_not_allowed_chips_visible_for_authenticated_viewers(): void
     {
-        $emptyDataContext = ['listing' => [], 'faq_answers' => []];
+        $emptyDataContext = ['listing' => ['property_type' => 'Residential'], 'faq_answers' => []];
 
         // buyer and tenant have public_allowed=false chips that rank highly enough
         // (buyer_tenant_match = priority 3, missing_data = priority 5) to appear
@@ -1049,7 +1049,7 @@ class AskAiSuggestedQuestionsServiceTest extends TestCase
             'field_id',
         ];
 
-        $withContext = ['listing' => ['bedrooms' => 2], 'faq_answers' => []];
+        $withContext = ['listing' => ['property_type' => 'Residential', 'bedrooms' => 2], 'faq_answers' => []];
 
         foreach (['seller', 'buyer', 'landlord', 'tenant'] as $type) {
             foreach ([[], $withContext] as $ctx) {

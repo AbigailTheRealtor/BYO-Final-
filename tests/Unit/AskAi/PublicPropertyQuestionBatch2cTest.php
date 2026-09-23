@@ -30,7 +30,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
     private function answers(string $role, array $listing, array $meta = []): array
     {
         $out = [];
-        foreach ($this->service->forListing($role, ['listing' => $listing, 'faq_answers' => []], $meta) as $q) {
+        foreach ($this->service->forListing($role, ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []], $meta) as $q) {
             $out[$q['id']] = $q['answer'];
         }
 
@@ -176,15 +176,16 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
 
         // The narrower entry is still evaluable on its own — it is the fallback, not removed.
         $entry  = AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry()['seller_hoa_fee'];
-        $result = $this->service->evaluate($entry, 'seller', ['listing' => ['hoa_association' => 'Yes', 'hoa_fee' => '250', 'hoa_payment_schedule' => 'Monthly']], ['association_fee_frequency' => 'Monthly']);
+        $result = $this->service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential', 'hoa_association' => 'Yes', 'hoa_fee' => '250', 'hoa_payment_schedule' => 'Monthly']], ['association_fee_frequency' => 'Monthly']);
         $this->assertTrue($result['available']);
 
         // The composite takes the narrower question's place in the display order.
-        $ids = array_column($this->service->forListing('seller', ['listing' => [
+        $ids = array_column($this->service->forListing('seller', ['listing' => ['property_type' => 'Residential', 
             'hoa_association' => 'Yes', 'hoa_fee' => '250', 'hoa_payment_schedule' => 'Monthly', 'association_fee_includes' => 'Water',
             'year_built' => '1998', 'total_acreage' => '1/4 to less than 1/2 acre',
         ]], ['association_fee_frequency' => 'Monthly', 'association_fee_includes' => json_encode(['Water'])]), 'id');
-        $this->assertSame(['seller_year_built', 'seller_hoa_fee_coverage', 'seller_total_acreage'], $ids);
+        // The listing is in an HOA, so the association question answers too — after acreage.
+        $this->assertSame(['seller_year_built', 'seller_hoa_fee_coverage', 'seller_total_acreage', 'seller_association_details'], $ids);
     }
 
     public function test_12_landlord_composite_works_through_its_new_context_key(): void
@@ -299,7 +300,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
             'breed_of_pets'  => 'SENTINEL-BREED', 'breed_restrictions' => 'SENTINEL-BREED-RESTRICTION',
         ];
 
-        foreach ($this->service->forListing('seller', ['listing' => $listing, 'faq_answers' => []], $meta) as $q) {
+        foreach ($this->service->forListing('seller', ['listing' => $listing + ['property_type' => 'Residential'], 'faq_answers' => []], $meta) as $q) {
             $this->assertStringNotContainsString('SENTINEL', $q['answer'], $q['id']);
         }
 
@@ -321,7 +322,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
         // The tenant pets question states the housing requirement from `pets_allowed` and
         // nothing else — no applicant pet detail, breed or weight, and no assistance animal.
         foreach (['tenant', 'buyer'] as $criteriaRole) {
-            foreach ($this->service->forListing($criteriaRole, ['listing' => $tenantShaped], []) as $q) {
+            foreach ($this->service->forListing($criteriaRole, ['listing' => $tenantShaped + ['property_type' => 'Residential']], []) as $q) {
                 $this->assertStringNotContainsString('SENTINEL', $q['answer'], $q['id']);
                 $this->assertStringNotContainsString('80', $q['answer'], $q['id']);
                 $this->assertStringNotContainsStringIgnoringCase('animal', $q['answer'], $q['id']);
@@ -383,7 +384,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
 
     public function test_25_knowledge_base_answers_are_still_not_a_public_source(): void
     {
-        $context = ['listing' => ['hoa_association' => 'Yes', 'hoa_fee' => '250'], 'faq_answers' => [
+        $context = ['listing' => ['property_type' => 'Residential', 'hoa_association' => 'Yes', 'hoa_fee' => '250'], 'faq_answers' => [
             'hoa_community_highlights' => ['answer_text' => 'SENTINEL-KB-HOA'],
             'roof_age_and_condition'   => ['answer_text' => 'SENTINEL-KB-ROOF'],
         ]];
@@ -411,7 +412,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
      */
     public function test_26_property_composites_stay_out_of_the_criteria_roles(): void
     {
-        $criteria = ['listing' => [
+        $criteria = ['listing' => ['property_type' => 'Residential', 
             'hoa_association' => 'Yes', 'hoa_fee' => '250', 'association_fee_includes' => 'Water', 'has_cdd' => 'Yes',
             'max_price' => '450000', 'max_hoa_fee' => '300', 'pets_allowed' => 'Yes',
         ]];
@@ -464,11 +465,19 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
         // the remaining structured lists when the richest source is empty.
         $this->assertSame([
             'seller_hoa_fee'                => 'seller_hoa_fee_coverage',
+            // Universal-deterministic batches: the garage answer folds into parking, and the
+            // acreage band stays the lead where a lot-size composite would say less.
+            'seller_garage'                 => 'seller_parking',
             'landlord_hoa_fee'              => 'landlord_hoa_fee_coverage',
             'buyer_search_areas_counties'   => 'buyer_search_areas',
             'buyer_view_preference'         => 'buyer_property_features',
             'tenant_search_areas_counties'  => 'tenant_search_areas',
             'tenant_appliances'             => 'tenant_property_features',
+            'seller_lot_size'               => 'seller_total_acreage',
+            // Landlord: renewal and pet fee are asked on both forms; each yields to the
+            // composite that also states it wherever that composite renders.
+            'landlord_renewal_option'       => 'landlord_lease_terms',
+            'landlord_pet_fee'              => 'landlord_pets_allowed',
         ], $pairs);
     }
 
@@ -479,7 +488,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
         $entry['narrower_of'] = 'does_not_exist';
 
         // Evaluated alone, the narrower entry is unaffected by its narrower_of.
-        $result = $service->evaluate($entry, 'seller', ['listing' => ['hoa_association' => 'Yes', 'hoa_fee' => '250']], []);
+        $result = $service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential', 'hoa_association' => 'Yes', 'hoa_fee' => '250']], []);
         $this->assertSame('The HOA fee is $250.', $result['answer']);
     }
 
@@ -488,7 +497,7 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
         $entry = AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry()['seller_hoa_fee_coverage'];
         $entry['other_companion'] = ['selected_in' => 'association_fee_includes', 'meta_key' => 'association_fee_includes_other'];
 
-        $result = $this->service->evaluate($entry, 'seller', ['listing' => ['hoa_association' => 'Yes', 'hoa_fee' => '250', 'association_fee_includes' => 'Water']], ['association_fee_includes' => '["Water"]']);
+        $result = $this->service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential', 'hoa_association' => 'Yes', 'hoa_fee' => '250', 'association_fee_includes' => 'Water']], ['association_fee_includes' => '["Water"]']);
         $this->assertSame('other_companion_invalid', $result['reason']);
     }
 }

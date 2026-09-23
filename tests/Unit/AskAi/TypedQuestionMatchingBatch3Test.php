@@ -227,7 +227,13 @@ class TypedQuestionMatchingBatch3Test extends TestCase
         // question on any given listing.
         $this->assertSame([
             'seller_hoa_fee / seller_hoa_fee_coverage',
+            // Batch 5: the parking composite answers "garage" more completely than the
+            // yes/no it supersedes, and the acreage question answers "how big is the lot"
+            // more completely than the square-foot fallback.
+            'seller_garage / seller_parking',
+            'seller_lot_size / seller_total_acreage',
             'landlord_hoa_fee / landlord_hoa_fee_coverage',
+            'landlord_renewal_option / landlord_lease_terms',
             'buyer_search_areas_counties / buyer_search_areas',
             'tenant_search_areas_counties / tenant_search_areas',
             'tenant_appliances / tenant_property_features',
@@ -243,7 +249,7 @@ class TypedQuestionMatchingBatch3Test extends TestCase
         $service = new AskAiPublicPropertyQuestionService();
 
         // A seller listing that can answer three questions and no others.
-        $questions = $service->forListing('seller', ['listing' => [
+        $questions = $service->forListing('seller', ['listing' => ['property_type' => 'Residential', 
             'flood_zone_code'       => 'AE',
             'annual_property_taxes' => '4200',
             'tax_year'              => '2025',
@@ -273,6 +279,6 @@ class TypedQuestionMatchingBatch3Test extends TestCase
     {
         $service = new AskAiPublicPropertyQuestionService();
 
-        $this->assertSame([], $service->forListing('seller', ['listing' => []], []));
+        $this->assertSame([], $service->forListing('seller', ['listing' => ['property_type' => 'Residential']], []));
     }
 }

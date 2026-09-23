@@ -40,7 +40,7 @@ class PublicFloodZoneQuestionBatch2eTest extends TestCase
     /** The flood answer for a role, or null when the question is hidden. */
     private function answer(string $role, mixed $code): ?string
     {
-        foreach ($this->service->forListing($role, ['listing' => ['flood_zone_code' => $code]], []) as $q) {
+        foreach ($this->service->forListing($role, ['listing' => ['property_type' => 'Residential', 'flood_zone_code' => $code]], []) as $q) {
             if (str_ends_with($q['id'], '_flood_zone')) {
                 return $q['answer'];
             }
@@ -201,7 +201,7 @@ class PublicFloodZoneQuestionBatch2eTest extends TestCase
     {
         foreach (['buyer', 'tenant'] as $role) {
             foreach (['X', 'AE', 'VE'] as $code) {
-                foreach ($this->service->forListing($role, ['listing' => ['flood_zone_code' => $code]], []) as $q) {
+                foreach ($this->service->forListing($role, ['listing' => ['property_type' => 'Residential', 'flood_zone_code' => $code]], []) as $q) {
                     $this->assertStringNotContainsString('flood', $q['id']);
                     $this->assertStringNotContainsStringIgnoringCase('flood', $q['answer']);
                 }
@@ -310,7 +310,7 @@ class PublicFloodZoneQuestionBatch2eTest extends TestCase
             'source_path' => 'listing.' . $key, 'supporting_paths' => [],
             'formatter' => 'flood_zone', 'guards' => [],
         ];
-        $result = $this->service->evaluate($entry, 'seller', ['listing' => [$key => 'AE']], []);
+        $result = $this->service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential', $key => 'AE']], []);
 
         $this->assertFalse($result['available'], "{$key} answered a public question.");
     }

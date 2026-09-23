@@ -335,6 +335,35 @@ class AskAiResponseContractService
                 'listing.service_type',
                 // Landlord: Approval / Leasing
                 'listing.landlord_approval_conditions',
+                // Landlord: Applicant qualification criteria.
+                //
+                // These are what the landlord REQUIRES OF AN APPLICANT, and they are already
+                // published to applicants on the rental-qualification page — the safe
+                // direction, and the whole point of that page: an applicant is entitled to
+                // know what they must meet before they apply. They are declared here so a
+                // cited answer about them is contract-legal; whether any individual one is
+                // ever SHOWN is still decided per key by SnapshotFactVisibility and, for the
+                // shopper card, by the public question catalog. Declaring a path and
+                // publishing a value remain two separate permissions.
+                //
+                // They are NOT applicant disclosures: 'listing.prior_eviction' here is the
+                // landlord's stated policy on prior evictions, never a particular person's
+                // history. LegacyApplicantDisclosureContainmentTest guards that distinction
+                // at the meta-key level and is unaffected by this declaration.
+                'listing.min_credit_score',
+                'listing.income_qualification_method',
+                'listing.eviction_history_requirement',
+                'listing.prior_eviction',
+                'listing.security_deposit_required',
+                'listing.guests_allowed',
+                'listing.rental_purpose',
+                // Landlord: Maintenance responsibility
+                'listing.maintenance_by',
+                // Landlord: Estimated utility costs the tenant should expect
+                'listing.est_electric',
+                'listing.est_water_sewer_trash',
+                // Waterfront frontage measurement (seller; land and residential alike)
+                'listing.waterfront_feet',
                 // Multifamily / Commercial: Building & Unit Mix
                 'listing.unit_mix_summary',
                 'listing.total_buildings',

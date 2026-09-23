@@ -81,6 +81,8 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
 
         $listing->saveMeta('workflow_type', 'offer_listing');
         foreach ([
+            // Ask AI resolves property type fail-closed; every real listing states one.
+            'property_type'             => 'Residential',
             'auction_type'              => 'Traditional',
             'maximum_budget'            => '500000',
             'bedrooms'                  => '3',
@@ -111,6 +113,7 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
 
         $listing->saveMeta('workflow_type', 'offer_listing');
         foreach ([
+            'property_type' => 'Residential Property',
             'bedrooms'   => '2',
             'bathrooms'  => '1',
             'appliances' => json_encode(['Washer', 'Dryer']),

@@ -43,7 +43,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
     private function ask(string $role, array $listing, array $meta = []): array
     {
         $out = [];
-        foreach ($this->service->forListing($role, ['listing' => $listing], $meta) as $q) {
+        foreach ($this->service->forListing($role, ['listing' => $listing + ['property_type' => 'Residential']], $meta) as $q) {
             $out[$q['id']] = $q['answer'];
         }
 
@@ -190,8 +190,12 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
 
     public function test_buyer_missing_values_hide_their_questions(): void
     {
-        $this->assertSame([], $this->ask('buyer', []));
-        $this->assertSame([], $this->ask('buyer', ['max_price' => '', 'bedrooms' => null, 'cities' => '[]']));
+        // property_type is explicitly NULL: these assertions are about a listing with NO
+        // stored values, and the shared ask() helper supplies a default type for every other
+        // test in this file. Leaving that default here would make the property-type question
+        // itself available and the premise would no longer hold.
+        $this->assertSame([], $this->ask('buyer', ['property_type' => null]));
+        $this->assertSame([], $this->ask('buyer', ['property_type' => null, 'max_price' => '', 'bedrooms' => null, 'cities' => '[]']));
     }
 
     /* ================================================================== */
@@ -211,6 +215,9 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
         // Income and deposit capacity are not in the tenant criteria catalog, so no amount
         // of them produces a rent answer.
         $answers = $this->ask('tenant', [
+            // No property type: this assertion is about which criteria can produce a rent
+            // answer, and the property-type question would otherwise appear alongside them.
+            'property_type'           => null,
             'monthly_income'          => '9000',
             'security_deposit_budget' => '5000',
             'move_in_funds_available' => '8000',
@@ -409,8 +416,8 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
 
     public function test_tenant_missing_values_hide_their_questions(): void
     {
-        $this->assertSame([], $this->ask('tenant', []));
-        $this->assertSame([], $this->ask('tenant', ['rent_budget' => '', 'bedrooms' => null, 'cities' => '[]']));
+        $this->assertSame([], $this->ask('tenant', ['property_type' => null]));
+        $this->assertSame([], $this->ask('tenant', ['property_type' => null, 'rent_budget' => '', 'bedrooms' => null, 'cities' => '[]']));
     }
 
     /* ================================================================== */
@@ -430,7 +437,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
             'source_path' => 'listing.' . $key, 'supporting_paths' => [],
             'formatter' => 'criteria_property_type', 'guards' => [],
         ];
-        $result = $this->service->evaluate($entry, 'buyer', ['listing' => [$key => 'PROBE']], []);
+        $result = $this->service->evaluate($entry, 'buyer', ['listing' => ['property_type' => 'Residential', $key => 'PROBE']], []);
 
         $this->assertFalse($result['available'], "'{$key}' resolved to an answer.");
         $this->assertContains($result['reason'], ['not_public_allowed', 'source_not_in_context_map']);
@@ -458,7 +465,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
             'source_path' => 'listing.' . $key, 'supporting_paths' => [],
             'formatter' => 'criteria_property_type', 'guards' => [],
         ];
-        $result = $this->service->evaluate($entry, 'tenant', ['listing' => [$key => 'PROBE']], []);
+        $result = $this->service->evaluate($entry, 'tenant', ['listing' => ['property_type' => 'Residential', $key => 'PROBE']], []);
 
         $this->assertFalse($result['available'], "'{$key}' resolved to an answer.");
         $this->assertContains($result['reason'], ['not_public_allowed', 'source_not_in_context_map']);
@@ -489,7 +496,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
             'formatter' => 'criteria_search_areas', 'guards' => [],
         ];
         $result = $this->service->evaluate($entry, 'tenant',
-            ['listing' => ['cities' => 'Seminole', 'monthly_income' => '9000']], []);
+            ['listing' => ['property_type' => 'Residential', 'cities' => 'Seminole', 'monthly_income' => '9000']], []);
 
         $this->assertFalse($result['available']);
         $this->assertSame('supporting_not_public_allowed', $result['reason']);
@@ -504,7 +511,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
             'source_path' => 'listing.max_price', 'supporting_paths' => [],
             'formatter' => 'criteria_max_purchase_budget', 'guards' => [],
         ];
-        $result = $this->service->evaluate($entry, 'buyer', ['listing' => ['max_price' => '450000']], []);
+        $result = $this->service->evaluate($entry, 'buyer', ['listing' => ['property_type' => 'Residential', 'max_price' => '450000']], []);
 
         $this->assertFalse($result['available']);
         $this->assertSame('source_kind_not_available_for_criteria_role', $result['reason']);
@@ -523,7 +530,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
             'source_path' => 'listing.max_rent', 'supporting_paths' => [],
             'formatter' => 'criteria_max_rent', 'guards' => [],
         ];
-        $result = $this->service->evaluate($entry, 'tenant', ['listing' => ['max_rent' => '2500']], []);
+        $result = $this->service->evaluate($entry, 'tenant', ['listing' => ['property_type' => 'Residential', 'max_rent' => '2500']], []);
 
         $this->assertFalse($result['available']);
         $this->assertSame('not_public_allowed', $result['reason']);
@@ -693,7 +700,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
             'source_path' => 'criteria_meta.rent_budget', 'supporting_paths' => [],
             'formatter' => 'criteria_max_rent', 'guards' => [],
         ];
-        $result = $this->service->evaluate($entry, 'seller', ['listing' => []], ['budget' => '2500']);
+        $result = $this->service->evaluate($entry, 'seller', ['listing' => ['property_type' => 'Residential']], ['budget' => '2500']);
 
         $this->assertFalse($result['available']);
         $this->assertSame('source_kind_not_available_for_property_role', $result['reason']);
@@ -719,7 +726,7 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
 
     public function test_an_unknown_role_answers_nothing(): void
     {
-        $this->assertSame([], $this->service->forListing('agent', ['listing' => ['max_price' => '450000']], []));
-        $this->assertSame([], $this->service->forListing('', ['listing' => ['max_price' => '450000']], []));
+        $this->assertSame([], $this->service->forListing('agent', ['listing' => ['property_type' => 'Residential', 'max_price' => '450000']], []));
+        $this->assertSame([], $this->service->forListing('', ['listing' => ['property_type' => 'Residential', 'max_price' => '450000']], []));
     }
 }
