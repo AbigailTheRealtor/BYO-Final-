@@ -723,7 +723,8 @@ membership says so in `rescued_from_source_category`.
 
 Measured effect (census §8, final v2 rule hash `b5920a1c7319…`): 10,880 → 11,082 memberships;
 256 legitimate rows gained plus 10 Walmart Supercenter rows reclassified to storefront; 54 removed
-(53 false positives, 1 probable real); 150 Speedway and 35 RaceTrac lone fuel rows become "Fuel
+(48 false positives, 5 RaceWay banner rows excluded from the literal RaceTrac key, 1 probable real);
+150 Speedway and 35 RaceTrac lone fuel rows become "Fuel
 only" sites.
 
 ### 19.1 Residual findings of the v2 census, resolved (2026-09-23)
@@ -735,7 +736,7 @@ its rule-hash pin moves; the fifth is intended behaviour.
 | Finding | Decision | Rule | Census effect |
 |---|---|---|---|
 | "Burger King Capital Holdings, Llc" (`restaurant`) matched as a storefront | A Burger King-only, anchored corporate exclusion for the measured shape. No global `holdings` / `llc` | `burger_king.exclusion_name_patterns.capital_holdings` = `/^burger king capital holdings\b/` | −1 |
-| 5 RaceTrac-branded "RaceWay" / "Race Way" / "Raceway 6847" rows matched RaceTrac | RaceTrac joins decision 6. (RaceWay is RaceTrac's franchise banner, so these may be real RaceWay sites; they are refused as RaceTrac **stores**, which is what the membership would claim.) Its own QID or "RaceTrac" in the name is identity; the brand field alone is not. No fuzzy RaceTrac ↔ RaceWay match | `racetrac.brand_alias_requires_corroboration` | −5; every other RaceTrac row carries name identity or the QID |
+| 5 RaceTrac-branded "RaceWay" / "Race Way" / "Raceway 6847" rows matched RaceTrac | Not bad attribution: RaceWay is a distinct RaceTrac-affiliated franchise banner. It is intentionally excluded from the literal `racetrac` key in v2 — these rows are not RaceTrac stores and answer no RaceTrac search; a separate `raceway` key or a family-brand decision is possible future work. RaceTrac joins decision 6: its own QID or "RaceTrac" in the name is identity; the brand field alone is not. No fuzzy RaceTrac ↔ RaceWay match | `racetrac.brand_alias_requires_corroboration` | −5; every other RaceTrac row carries name identity or the QID |
 | "CVS Pharmacy inside Target Store" in `convenience_store` got the generic `store` format | The name pattern selects `store_in_target` there too. Target stays a **conflict** in `convenience_store` (no measured Target-branded row) via the new `host_categories` | `store_in_target.categories` += `convenience_store`; `host_categories` = `pharmacy`, `drugstore` | 1 reclassified |
 | "Cfaleesburgfl" (brand "Chick-fil-A", **no brand QID**, `chicken_restaurant`) refused as uncorroborated | Evidence is an opaque name plus a brand field measured to be misattributed at this chain. Stays refused; no alias invented. The own QID would admit it (tested) | none | 0 |
 | ~27 plain Walmart `grocery_store` rows stay departments | **No change.** Intended per v2 decision 4: plain / ambiguous Walmart grocery rows are `storefront_unconfirmed` until de-duplication places them. Measured precisely: 21 `grocery_department` memberships, 19 with no Walmart storefront within 150 m | none | 0 |

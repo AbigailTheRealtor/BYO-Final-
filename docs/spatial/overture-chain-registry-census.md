@@ -107,10 +107,14 @@ chain name and correctly create nothing; the fuel-diagnostic paths were not exer
 
 ## 5. False positives found
 
-* **Brand-field misattribution (≈ 34 rows):** 13 "… Community Pharmacy" as Walgreens; "Victoria
+* **Brand-field misattribution (≈ 29 rows):** 13 "… Community Pharmacy" as Walgreens; "Victoria
   Grocery", "Sabores Market Kendall", "Asian-Mart (Edgewater)" as Walmart; "KFC" as Taco Bell; "Hot
   Chick'n" as Chick-fil-A; "Burger and Philly", "Whopper Bar" as Burger King; "Jenny's Your Friendly
-  Pharmacy", "Omnicare" as CVS; "RaceWay" ×5 as RaceTrac; one "iFixandRepair … Walmart" tenant.
+  Pharmacy", "Omnicare" as CVS; one "iFixandRepair … Walmart" tenant.
+* **Not a false positive — a distinct banner:** 5 "RaceWay" / "Race Way" / "Raceway 6847" rows carry
+  brand "RaceTrac". RaceWay is a RaceTrac-affiliated franchise banner, so the brand field is not
+  simply wrong; but a RaceWay site is not a RaceTrac store, and v1 counted them as ordinary RaceTrac
+  storefronts. v2 excludes them from the literal `racetrac` key (§9).
 * **Sub-entities / offices reached by name prefix:** "CVS Photo" ×6 (no brand); "Walmart DC",
   "Walmart Warehouse Dc"; "Publix Downtown Office", "Publix Grocery Warehouse"; "Walgreens District
   Office"; "RaceTrac Support Center", "Racetrac Petroleum".
@@ -203,12 +207,14 @@ reclassified from department to `supercenter` storefront.
 pharmacy refused as sub-entities (`chain_exclusion`); 1 MinuteClinic rejected by the global clinic
 pattern. No other non-imported token produced a membership.
 
-**Removed memberships (54: 53 false positives, 1 probable real).** Brand-field misattribution
-(`brand_alias_uncorroborated`, 29): 13 Walgreens "… Community Pharmacy" / "St John's Pharmacy",
-5 RaceTrac "RaceWay" ×3 / "Race Way" / "Raceway 6847", 4 Walmart (Victoria Grocery, Sabores Market,
+**Removed memberships (54: 48 false positives, 5 RaceWay banner rows, 1 probable real).** All 29
+brand-alias drops are `brand_alias_uncorroborated`. Brand-field misattribution (23): 13 Walgreens
+"… Community Pharmacy" / "St John's Pharmacy", 4 Walmart (Victoria Grocery, Sabores Market,
 Asian-Mart, the iFixandRepair tenant), 2 CVS (Jenny's, Omnicare), 2 Burger King ("Burger and
-Philly", "Whopper Bar"), 1 Taco Bell ("KFC"), 2 Chick-fil-A ("Hot Chick'n", and "Cfaleesburgfl" —
-the probable real one, §9). Sub-entities and logistics (25): 6 CVS Photo, 9 Walmart pickup /
+Philly", "Whopper Bar"), 1 Taco Bell ("KFC"), 1 Chick-fil-A ("Hot Chick'n"). RaceWay banner (5):
+"RaceWay" ×3 / "Race Way" / "Raceway 6847" — RaceTrac-affiliated, not misattributed, and excluded
+from the literal `racetrac` key by decision (§9). Conservative refusal (1): "Cfaleesburgfl", the
+probable real Chick-fil-A (§9). Sub-entities and logistics (25): 6 CVS Photo, 9 Walmart pickup /
 delivery, 2 Walmart DCs, 4 Publix offices / warehouses, 1 Walgreens district office, 2 RaceTrac
 Support Center, 1 Racetrac Petroleum. "Burger King Capital Holdings, Llc" is not in this list
 because v1 never matched it (`restaurant` was not allowed); v2 now refuses it (§9).
@@ -243,7 +249,7 @@ five findings. Final v2 differs from it by exactly seven rows, and by nothing el
 | Finding | Decision | Effect |
 |---|---|---|
 | "Burger King Capital Holdings, Llc" (`restaurant`) matched | Burger King-only exclusion `/^burger king capital holdings\b/`; no global `holdings` / `llc` | −1 |
-| 5 "RaceWay" / "Race Way" / "Raceway 6847" convenience rows with brand "RaceTrac", no QID, matched RaceTrac | RaceTrac requires corroboration of a brand alias. Every other RaceTrac membership has "RaceTrac" / "Race Trac" in its name or the own QID, so nothing legitimate is lost. No fuzzy RaceTrac ↔ RaceWay rule | −5 |
+| 5 "RaceWay" / "Race Way" / "Raceway 6847" convenience rows with brand "RaceTrac", no QID, matched RaceTrac | RaceWay is a distinct RaceTrac-affiliated franchise banner, not bad attribution. It is intentionally **not** the literal `racetrac` brand key in v2: RaceTrac requires corroboration of a brand alias, so these rows answer no RaceTrac search and are not counted as RaceTrac storefronts. No RaceWay alias and no fuzzy RaceTrac ↔ RaceWay rule. A separate `raceway` key or a family-brand decision is possible future work. Every other RaceTrac membership has "RaceTrac" / "Race Trac" in its name or the own QID | −5 |
 | "CVS Pharmacy inside Target Store" in `convenience_store` resolved to `store` | `store_in_target` now covers `convenience_store` for format selection; Target remains a conflict there (`host_categories` = `pharmacy`, `drugstore`) | 1 reclassified |
 | "Cfaleesburgfl" refused | Row: name "Cfaleesburgfl", brand "Chick-fil-A", brand QID **none**, `chicken_restaurant`, confidence 0.963. Its only candidate evidence is the brand alias; the name is opaque and Chick-fil-A's brand field is measured to be misattributed ("Hot Chick'n"). Refused as `brand_alias_uncorroborated`, which is the rule working, not a strong-identity defect. No alias invented | 0 (stays refused) |
 | Walmart plain `grocery_store` rows stay departments | No change — intended (§8) | 0 |
