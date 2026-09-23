@@ -103,17 +103,17 @@ class AskAiRateLimitLoggingTest extends TestCase
     }
 
     /**
-     * (1) Unauthenticated requests are rejected before rate limiting and produce
-     *     no rate_limited usage-log row (the guest tier is unreachable here).
+     * (1) A guest asking about a listing that is not public is refused as not found before
+     *     rate limiting, and produces no rate_limited usage-log row.
      */
-    public function test_unauthenticated_request_is_not_rate_limited_or_logged(): void
+    public function test_guest_on_a_listing_that_is_not_public_is_not_rate_limited_or_logged(): void
     {
         $this->mockRunnerNeverCalled();
 
         $countBefore = AskAiUsageLog::where('status', 'rate_limited')->count();
 
-        $this->postJson('/ask-ai/listing-question', $this->payload(1))
-             ->assertUnauthorized();
+        $this->postJson('/ask-ai/listing-question', $this->payload(999999))
+             ->assertNotFound();
 
         $this->assertSame(
             $countBefore,

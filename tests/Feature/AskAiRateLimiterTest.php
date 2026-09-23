@@ -33,7 +33,7 @@ class AskAiRateLimiterTest extends TestCase
         parent::setUp();
         Cache::flush();
         // Exercise the controller's AskAiRateLimitService, not the edge throttle;
-        // CSRF uses the blade token in production. Auth middleware stays active.
+        // CSRF uses the blade token in production.
         $this->withoutMiddleware([ThrottleRequests::class, VerifyCsrfToken::class]);
     }
 
@@ -92,17 +92,45 @@ class AskAiRateLimiterTest extends TestCase
     }
 
     /**
-     * (a) Unauthenticated requests are rejected by auth before any rate limiting
-     *     (the guest rate-limit tier is unreachable via this route).
+     * (a) A guest asking about a listing that is not public (here, one that does not exist)
+     *     is refused as not found before any rate limiting, and the runner is never called.
      */
-    public function test_unauthenticated_request_is_rejected(): void
+    public function test_guest_on_a_listing_that_is_not_public_is_refused(): void
     {
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->never())->method('run');
         $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
-        $this->postJson('/ask-ai/listing-question', $this->payload(1))
-             ->assertUnauthorized();
+        $this->postJson('/ask-ai/listing-question', $this->payload(999999))
+             ->assertNotFound();
+    }
+
+    /**
+     * (a2) Guests reach the endpoint on public listings, so the guest tier is live: the
+     *      6th request in an hour from one IP is refused with guest_ip_hourly.
+     */
+    public function test_guest_hourly_limit_blocks_on_6th_request(): void
+    {
+        $this->mockRunner();
+        $ids = [];
+        for ($i = 0; $i < 6; $i++) {
+            $listing = SellerAgentAuction::forceCreate([
+                'user_id'     => User::factory()->create()->id,
+                'address'     => "{$i} Public Way",
+                'is_approved' => true,
+                'is_draft'    => false,
+            ]);
+            $listing->saveMeta('workflow_type', 'offer_listing');
+            $ids[] = $listing->id;
+        }
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/ask-ai/listing-question', $this->payload($ids[$i]))->assertOk();
+        }
+
+        $this->postJson('/ask-ai/listing-question', $this->payload($ids[5]))
+             ->assertStatus(429)
+             ->assertJsonPath('error.limit_type', 'guest_ip_hourly');
     }
 
     /**

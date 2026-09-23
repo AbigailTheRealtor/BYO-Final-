@@ -2668,15 +2668,9 @@
                     <i class="fa-solid fa-lock"></i>Log in to Request a Showing
                 </a>
                 @endauth
-                @if($askAiViewerIsOwner ?? false)
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solAiModal">
                     <i class="fa-solid fa-robot"></i>Ask AI About Property
                 </button>
-                @else
-                <a href="#sol-ask-ai-card" class="sol-action-btn sol-action-outline">
-                    <i class="fa-solid fa-robot"></i>Ask AI About Property
-                </a>
-                @endif
                 <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
                     <i class="fa-solid fa-circle-question"></i>Ask a Question
                 </button>
@@ -2842,10 +2836,9 @@
         </div>
     </div>
 
-    {{-- Modal: Ask AI About This Property — OWNER ONLY. Its endpoint is owner-scoped, so a
-         shopper would only ever reach the "available to the listing owner" notice; shoppers
-         get the verified questions in the Ask AI card instead. --}}
-    @if($askAiViewerIsOwner ?? false)
+    {{-- Modal: Ask AI About This Property — for every viewer, signed in or not. Authorization is
+         per fact: the endpoint answers the owner at owner scope and everyone else at public
+         scope, so a guest gets exactly the public facts this page already shows. --}}
     <div class="modal fade" id="solAiModal" tabindex="-1" aria-labelledby="solAiModalLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
@@ -2854,12 +2847,23 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this listing. Try asking:</p>
+                    @php
+                        // Owner: this page's own examples. Everyone else: only questions this listing's public
+                        // card can answer (AskAiModalExamples), never a generic list they may be refused.
+                        $__solAiModalExamples = \App\Support\AskAi\AskAiModalExamples::forViewer(
+                            $askAiViewerIsOwner ?? false,
+                            ['"What are the HOA fees and what do they cover?"', '"Is this property in a flood zone?"', '"What financing options does the seller accept?"', '"When was the roof last replaced?"'],
+                            $propertyQuestions ?? []
+                        );
+                    @endphp
+                    <p class="text-muted mb-3" style="font-size:.875rem;">Ask AI answers verified information available about this listing.@if(!empty($__solAiModalExamples)) Try asking:@endif</p>
+                    @if(!empty($__solAiModalExamples))
                     <div id="solAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="solAiExampleText"></span>
                     </div>
+                    @endif
                     @php
-                        $__solAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? [], auth()->check());
+                        $__solAiSuggestions = ($askAiViewerIsOwner ?? false) ? app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('seller', $askAiChipContext ?? [], auth()->check()) : [];
                         $__solCategorized   = [];
                         foreach ($__solAiSuggestions as $__sq) { $__solCategorized[$__sq['category'] ?? 'general'][] = $__sq; }
                     @endphp
@@ -2948,7 +2952,6 @@
             </div>
         </div>
     </div>
-    @endif
 
 </div>{{-- /container --}}
 
@@ -2967,17 +2970,10 @@
         <i class="fa-solid fa-calendar-days"></i>
         <span>Showing</span>
     </button>
-    @if($askAiViewerIsOwner ?? false)
     <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solAiModal">
         <i class="fa-solid fa-robot"></i>
         <span>Ask AI</span>
     </button>
-    @else
-    <a href="#sol-ask-ai-card" class="sol-mobile-bar-btn">
-        <i class="fa-solid fa-robot"></i>
-        <span>Ask AI</span>
-    </a>
-    @endif
     <button class="sol-mobile-bar-btn" id="solMobileShareBtn">
         <i class="fa-solid fa-share-nodes"></i>
         <span>Share</span>
@@ -3102,17 +3098,11 @@
     }());
     @endif
 
-    @if($askAiViewerIsOwner ?? false)
-    /* ---- AI modal example questions rotation (owner modal only) ---- */
-    var aiExamples = [
-        '"What are the HOA fees and what do they cover?"',
-        '"Is this property in a flood zone?"',
-        '"What financing options does the seller accept?"',
-        '"When was the roof last replaced?"'
-    ];
+    /* ---- AI modal example questions rotation ---- */
+    var aiExamples = @json($__solAiModalExamples);
     var aiIdx = 0;
     var aiEl = document.getElementById('solAiExampleText');
-    if (aiEl) {
+    if (aiEl && aiExamples.length) {
         aiEl.textContent = aiExamples[0];
         setInterval(function () {
             aiIdx = (aiIdx + 1) % aiExamples.length;
@@ -3124,7 +3114,6 @@
         }, 3500);
         aiEl.style.transition = 'opacity .3s ease';
     }
-    @endif
 
     /* ---- Share listing (Web Share API with clipboard fallback, clipboard-guarded) ---- */
     function shareHandler() {
@@ -3182,8 +3171,7 @@
         });
     });
 
-    @if($askAiViewerIsOwner ?? false)
-    /* ---- Ask AI modal — V2-aware submit + session management (owner modal only) ---- */
+    /* ---- Ask AI modal — V2-aware submit + session management ---- */
     (function () {
         var submitBtn  = document.getElementById('solAiSubmitBtn');
         var textarea   = document.getElementById('solAiTextarea');
@@ -3196,11 +3184,6 @@
         var listingId  = {{ $auction->id }};
         var csrfToken  = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
-        /* WF-1: the V1 listing-question endpoint is owner-scoped by design. A
-           non-owner viewing this public listing must never be routed to it (that
-           is the source of the Ask AI 403). The public-facing assistant is V2;
-           when V2 is unavailable, non-owners get a graceful notice instead. */
-        var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
 
         /* V2 configuration — from Blade */
         var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
@@ -3373,20 +3356,9 @@
             .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
         }
 
-        /* --- Owner-only notice (WF-1): shown when a non-owner has no V2 path --- */
-        function showOwnerOnlyNotice() {
-            setLoading(false);
-            if (!resultDiv) return;
-            resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
-                + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
-                + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
-            resultDiv.style.display = '';
-        }
 
         /* --- V1 fetch submit --- */
         function submitV1(q) {
-            // WF-1: never call the owner-only endpoint for a non-owner (would 403).
-            if (!isOwner) { showOwnerOnlyNotice(); return; }
             resetResult();
             fetch('/ask-ai/listing-question', {
                 method: 'POST',
@@ -3531,7 +3503,6 @@
             });
         }
     }());
-    @endif
 
 })();
 </script>

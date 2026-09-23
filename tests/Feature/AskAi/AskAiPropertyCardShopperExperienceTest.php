@@ -23,8 +23,15 @@ use Tests\TestCase;
  * The Ask AI quick-actions card is now where "Questions About This Property" lives. For a
  * shopper (a guest, or a signed-in user who does not own the listing) it holds the verified,
  * precomputed questions and nothing else: the decorative chips, the disabled textbox, the
- * rotating examples, the suggested-question chips, the owner-scoped free-text modal and the
- * separate Batch 1 section are all gone. The listing owner keeps their existing Ask AI modal.
+ * generic rotating examples, the suggested-question chips and the separate Batch 1 section
+ * are all gone. The listing owner keeps their existing Ask AI modal.
+ *
+ * Since the public-access change the free-text modal is open to shoppers too — public
+ * questions must not require login or ownership. Its endpoint authorizes per fact: a
+ * shopper is answered at PUBLIC scope and never with the owner's options. What a shopper
+ * is shown there is still governed here: its example questions are the listing's own
+ * verified public questions, never the generic lists above, and it carries no suggestion
+ * chips. The card itself stays inert.
  *
  * Revealing an answer is a native <details> toggle over text already in the page, so the
  * zero-network guarantee is structural: the card carries no script, link, form or handler,
@@ -228,12 +235,14 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
             $prefix . '-interaction-ai-chip',                   // decorative chips
             'Ask a question about this property…',              // the disabled textbox
             'Suggested Questions',                               // modal suggested chips (V2 header)
-            'class="ask-ai-chip"',                               // modal suggested chips
-            $prefix . 'AiExampleText',                           // rotating examples
-            'aiExamples',
+            '<button type="button" role="button" class="ask-ai-chip"', // rendered suggestion chips
         ] as $old) {
             $this->assertStringNotContainsString($old, $html, "Old shopper Ask AI UI '{$old}' must be gone.");
         }
+
+        // The modal's examples are this listing's own verified public questions.
+        $this->assertStringContainsString($prefix . 'AiExampleText', $html);
+        $this->assertStringContainsString(json_encode('How many bedrooms are there?', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), $html);
     }
 
     /**
@@ -250,12 +259,12 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
         $this->assertFileDoesNotExist(base_path('resources/views/offer-listing/partials/_property-questions.blade.php'));
     }
 
-    // ── 9–10. No free-text path to owner Ask AI, and revealing is network-free ─
+    // ── 9–10. The public free-text modal, and revealing a card answer is network-free ─
 
     /**
      * @dataProvider shopperProvider
      */
-    public function test_shopper_page_has_no_free_text_or_ask_ai_request_path(string $role, string $viewer): void
+    public function test_shopper_page_offers_the_public_ask_ai_modal(string $role, string $viewer): void
     {
         $html   = $this->shopperPage($role, $viewer);
         $prefix = $role === 'landlord' ? 'lol' : 'sol';
@@ -266,15 +275,18 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
             $prefix . 'AiTextarea',
             $prefix . 'AiSubmitBtn',
             '/ask-ai/listing-question',
-            '/api/ask-ai',
-            '/agent-ai/',
-            'agentai_v2',
-        ] as $path) {
-            $this->assertStringNotContainsString($path, $html, "Shopper page must not carry '{$path}'.");
+            'Ask AI answers verified information available about this listing.',
+        ] as $present) {
+            $this->assertStringContainsString($present, $html, "Shopper page must carry '{$present}'.");
         }
 
-        // The other Ask AI entry points now take the shopper to the card, in page.
-        $this->assertStringContainsString('href="#' . $prefix . '-ask-ai-card"', $html);
+        foreach ([
+            'Ask AI for this listing is available to the listing owner.',
+            'showOwnerOnlyNotice',
+            '/api/ask-ai',
+        ] as $absent) {
+            $this->assertStringNotContainsString($absent, $html, "Shopper page must not carry '{$absent}'.");
+        }
     }
 
     /**
@@ -395,25 +407,39 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
 
     /**
      * A guest's null id and a listing's null user_id both cast to 0; that must never read as
-     * ownership and hand a guest the owner's Ask AI modal.
+     * ownership — neither in what the page shows the guest nor in the scope they are answered at.
      */
-    public function test_guest_on_a_listing_without_an_owner_does_not_get_the_owner_modal(): void
+    public function test_guest_on_a_listing_without_an_owner_is_never_treated_as_its_owner(): void
     {
         $listing = $this->landlordListing();
         DB::table('landlord_agent_auctions')->where('id', $listing->id)->update(['user_id' => null]);
 
         $html = $this->page('landlord', $listing->id);
+        foreach (self::OLD_LANDLORD_GENERIC as $ownerExample) {
+            $this->assertStringNotContainsString($ownerExample, $html, 'The owner\'s modal examples must not reach a guest.');
+        }
+        $this->assertStringNotContainsString('<button type="button" role="button" class="ask-ai-chip"', $html);
 
-        $this->assertStringNotContainsString('id="lolAiModal"', $html);
-        $this->assertStringNotContainsString('/ask-ai/listing-question', $html);
+        $this->mock(AskAiRunnerV2Service::class)->shouldReceive('run')->once()
+            ->withArgs(fn ($type, $id, $q, $options) => ($options['viewer_scope'] ?? null) === 'public')
+            ->andReturn(['success' => true, 'status' => 'ready', 'final_response' => ['answer' => 'ok']]);
+
+        $this->postJson('/ask-ai/listing-question', [
+            'listing_type' => 'landlord',
+            'listing_id'   => $listing->id,
+            'question'     => 'How many bedrooms are there?',
+        ])->assertOk();
     }
 
     /**
-     * The owner-scoped endpoint itself still refuses a shopper, whatever a page renders.
+     * A shopper reaches the endpoint, and is answered at PUBLIC scope with none of the
+     * client-supplied runner options — never the owner's scope, whatever a page renders.
      */
-    public function test_owner_endpoint_still_refuses_a_non_owner(): void
+    public function test_endpoint_answers_a_non_owner_at_public_scope_only(): void
     {
-        $this->mock(AskAiRunnerV2Service::class)->shouldNotReceive('run');
+        $this->mock(AskAiRunnerV2Service::class)->shouldReceive('run')->once()
+            ->withArgs(fn ($type, $id, $q, $options) => $options === ['viewer_scope' => 'public', 'requester_user_id' => auth()->id()])
+            ->andReturn(['success' => true, 'status' => 'ready', 'final_response' => ['answer' => 'Taxes are public.']]);
 
         $listing = $this->sellerListing();
         $this->actingAs(User::factory()->create());
@@ -422,6 +448,7 @@ class AskAiPropertyCardShopperExperienceTest extends TestCase
             'listing_type' => 'seller',
             'listing_id'   => $listing->id,
             'question'     => 'What are the property taxes?',
-        ])->assertStatus(403);
+            'options'      => ['normalized_field_key' => 'reason_for_sale', 'viewer_scope' => 'owner'],
+        ])->assertOk()->assertJsonPath('answer', 'Taxes are public.');
     }
 }

@@ -31,16 +31,15 @@ class AskAiListingQuestionTest extends TestCase
     {
         parent::setUp();
 
-        // The endpoint is now authenticated and answers only about a listing the
-        // requester OWNS. Seed one owned auction per type (auto-increment ids, so
-        // they never collide with existing data) and reference those ids below.
+        // The owner is answered at owner scope; everyone else only about a PUBLIC listing,
+        // at public scope. These fixtures are the acting user's own DRAFTS, so the owner
+        // paths below run at owner scope and a non-owner cannot reach them at all.
         $this->user = User::factory()->create();
         $this->actingAs($this->user);
 
         // Avoid edge-throttle flakiness across the many requests in this suite;
-        // the controller's own rate limiter and the auth middleware remain active.
-        // CSRF is disabled for the test harness (production uses the blade @csrf
-        // token); the new auth middleware stays active so 401 coverage holds.
+        // the controller's own rate limiter remains active. CSRF is disabled for the
+        // test harness (production uses the blade @csrf token).
         $this->withoutMiddleware([ThrottleRequests::class, VerifyCsrfToken::class]);
 
         $this->sellerId   = $this->ownedAuctionId(SellerAgentAuction::class);
@@ -637,9 +636,11 @@ class AskAiListingQuestionTest extends TestCase
     // ── C2 — authentication & object-level authorization ──────────────────────
 
     /**
-     * (C2) Unauthenticated requests are rejected (route is behind auth).
+     * (C2) A guest may ask about a PUBLIC listing, but never reaches one whose public page
+     * would not render for them — here the owner's draft. Refused as not found, the same as
+     * the page, and the runner is never called.
      */
-    public function test_unauthenticated_request_is_rejected(): void
+    public function test_guest_cannot_reach_a_listing_that_is_not_public(): void
     {
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->never())->method('run');
@@ -653,13 +654,17 @@ class AskAiListingQuestionTest extends TestCase
             'question'     => 'What are the HOA fees?',
         ]);
 
-        $response->assertUnauthorized(); // 401
+        $response->assertNotFound(); // 404 — a draft is private to its owner
+        $this->assertSame('not_found', $response->json('status'));
+        $this->assertNull($response->json('answer'));
     }
 
     /**
-     * (C2) An authenticated user cannot ask about a listing they do not own.
+     * (C2) A signed-in user who does not own a listing gets exactly a guest's access: never
+     * another user's draft (404, runner never called). On a public listing a non-owner is
+     * answered at PUBLIC scope — see AskAiPublicGuestAccessTest.
      */
-    public function test_non_owner_is_forbidden(): void
+    public function test_non_owner_cannot_reach_another_users_draft_listing(): void
     {
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->never())->method('run');
@@ -679,14 +684,15 @@ class AskAiListingQuestionTest extends TestCase
             'question'     => 'What is the income requirement?',
         ]);
 
-        $response->assertForbidden(); // 403
-        $this->assertSame('forbidden', $response->json('status'));
+        $response->assertNotFound(); // 404
+        $this->assertSame('not_found', $response->json('status'));
+        $this->assertNull($response->json('answer'));
     }
 
     /**
      * (C2) An unknown / unsupported listing type is denied (no MLS support exists).
      */
-    public function test_unknown_listing_type_is_forbidden(): void
+    public function test_unknown_listing_type_is_refused(): void
     {
         $mock = $this->createMock(AskAiRunnerV2Service::class);
         $mock->expects($this->never())->method('run');
@@ -698,6 +704,7 @@ class AskAiListingQuestionTest extends TestCase
             'question'     => 'Tell me about this MLS property.',
         ]);
 
-        $response->assertForbidden(); // 403
+        $response->assertNotFound(); // 404 — a type Ask AI does not serve is not a listing
+        $this->assertSame('not_found', $response->json('status'));
     }
 }

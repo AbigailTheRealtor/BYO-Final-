@@ -11,9 +11,10 @@
     knowledge search or language model. This partial therefore contains no <script>, no
     form, no input and no link — keep it that way; the card test scans for all of them.
 
-    The free-text Ask AI modal is owner-only (the endpoint behind it is owner-scoped), so
-    its trigger renders for the listing owner alone. A shopper gets the questions, or a
-    plain empty state, and never a text box that can only answer "owner only".
+    The free-text Ask AI modal is open to every viewer (its endpoint authorizes per fact:
+    owner scope for the owner, public scope for everyone else), and shoppers reach it from
+    the page's own Ask AI buttons. This card keeps no trigger for them, so it stays a
+    surface with no request path at all; the owner's shortcut below is its only control.
 
     Batch 2d added the two CRITERIA roles to this same card rather than building a second
     one. A buyer or tenant listing is a search request, not a property, so only the heading

@@ -1633,12 +1633,23 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
             </div>
             <div class="modal-body p-4">
-                <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this tenant's criteria. Try asking:</p>
+                @php
+                    // Owner: this page's own examples. Everyone else: only questions this listing's public
+                    // card can answer (AskAiModalExamples), never a generic list they may be refused.
+                    $__tclAiModalExamples = \App\Support\AskAi\AskAiModalExamples::forViewer(
+                        $askAiViewerIsOwner ?? false,
+                        ['What lease length does this tenant prefer?', 'Does this tenant have pets?', 'What is this tenant\'s monthly rent budget?', 'What amenities are most important to this tenant?', 'What is this tenant\'s desired move-in date?', 'How many bedrooms does this tenant need?', 'What neighborhood or area is this tenant targeting?'],
+                        $propertyQuestions ?? []
+                    );
+                @endphp
+                <p class="text-muted mb-3" style="font-size:.875rem;">Ask AI answers verified information available about this tenant's criteria.@if(!empty($__tclAiModalExamples)) Try asking:@endif</p>
+                @if(!empty($__tclAiModalExamples))
                 <div id="tclAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                     <span class="text-muted fst-italic" style="font-size:.875rem;" id="tclAiExampleText"></span>
                 </div>
+                @endif
                 @php
-                    $__tclAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('tenant', $askAiChipContext ?? [], auth()->check());
+                    $__tclAiSuggestions = ($askAiViewerIsOwner ?? false) ? app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('tenant', $askAiChipContext ?? [], auth()->check()) : [];
                     $__tclCategorized   = [];
                     foreach ($__tclAiSuggestions as $__sq) { $__tclCategorized[$__sq['category'] ?? 'general'][] = $__sq; }
                 @endphp
@@ -1790,19 +1801,11 @@
 
     /* ---- Interaction Hub ---- */
     (function () {
-        var tclAiExamples = [
-            'What lease length does this tenant prefer?',
-            'Does this tenant have pets?',
-            'What is this tenant\'s monthly rent budget?',
-            'What amenities are most important to this tenant?',
-            'What is this tenant\'s desired move-in date?',
-            'How many bedrooms does this tenant need?',
-            'What neighborhood or area is this tenant targeting?'
-        ];
+        var tclAiExamples = @json($__tclAiModalExamples);
         var tclAiIdx = 0;
         var tclAiEl = document.getElementById('tclAiExampleText');
         var tclAiModal = document.getElementById('tclAiModal');
-        if (tclAiEl && tclAiModal) {
+        if (tclAiEl && tclAiModal && tclAiExamples.length) {
             tclAiEl.textContent = tclAiExamples[0];
             tclAiModal.addEventListener('show.bs.modal', function () {
                 tclAiEl.textContent = tclAiExamples[tclAiIdx % tclAiExamples.length];
@@ -1822,9 +1825,6 @@
             var listingId = {{ $auction->id }};
             var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
-            /* WF-1: V1 listing-question endpoint is owner-scoped; never route a
-               non-owner to it (source of the Ask AI 403). Public assistant is V2. */
-            var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
 
             /* V2 configuration — from Blade */
             var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
@@ -1991,18 +1991,8 @@
                 .then(function(data) { setLoading(false); if (textarea) textarea.value = ''; appendTurn(q, data); })
                 .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
             }
-            function showOwnerOnlyNotice() {
-                setLoading(false);
-                if (!resultDiv) return;
-                resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
-                    + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
-                    + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
-                resultDiv.style.display = '';
-            }
 
             function submitV1(q) {
-                // WF-1: never call the owner-only endpoint for a non-owner (would 403).
-                if (!isOwner) { showOwnerOnlyNotice(); return; }
                 resetResult();
                 fetch('/ask-ai/listing-question', {
                     method: 'POST',
