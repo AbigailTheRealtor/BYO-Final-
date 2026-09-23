@@ -75,6 +75,17 @@ function isolatedEnv(extra = {}) {
         // Phase 4 — "Your Home Taste" follows the same posture: on for the
         // interaction instance, off (absent both gates) for the flag instance.
         LISTING_PREFERENCE_TASTE_DNA_ENABLED: FLAG,
+        // Phase 5 — the bounded Best Match rerank on /stellar/buyer/results.
+        LISTING_PREFERENCE_TASTE_RERANKING_ENABLED: FLAG,
+        /*
+         | NO MLS PROVIDER. The Stellar results page runs the lazy Bridge import
+         | before matching, and this shell carries the real Bridge credentials.
+         | Blank, the importer skips the request (BridgeApiService refuses without
+         | both) and the page matches against the seeded rows alone — the same
+         | posture phpunit.xml forces for the PHP suite.
+         */
+        BRIDGE_DATASET: '',
+        BRIDGE_SERVER_TOKEN: '',
         // No credential may reach a provider from a browser run.
         GOOGLE_PLACES_API_KEY: '',
         GOOGLE_PLACES_ENABLED: 'false',

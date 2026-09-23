@@ -60,21 +60,37 @@ return [
     | base Save / Maybe / Pass can run with this off, and switching capture on
     | never switches learning on with it.
     |
-    | IT GATES ONE PAGE AND NOTHING ELSE. Taste DNA is derived on demand for that
-    | page and has no consumer in ranking, matching, Stellar, Ask AI or
-    | recommendations; TasteDnaArchitectureGuardTest asserts none exists.
+    | On its own it gates ONE PAGE. Taste DNA is derived on demand for that page;
+    | its only other consumer is the Phase 5 rerank, which needs its own flag
+    | below as well. Matching, the score, Ask AI and recommendations never read
+    | it; TasteDnaArchitectureGuardTest asserts the allowlist of consumers.
     */
     'taste_dna_enabled' => filter_var(env('LISTING_PREFERENCE_TASTE_DNA_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
 
     /*
-    | Learning that ACTS — ranking influence, re-ranking, recommendations, "find
-    | more like this", Ask AI consumption. Phase 5.
+    | Taste reranking — Phase 5 (governance §14).
     |
-    | HARD OFF, and not merely unbuilt. Taste DNA (above) learns and explains,
-    | and changes nothing a customer is shown; letting it move results needs its
-    | own governance revision and weight-invariant tests. Turning this on is a
-    | reviewed code change, not a configuration edit — the same posture as
-    | MLS_REMARKS_PROCESSING_APPROVED. Nothing reads it.
+    | Lets the customer's own Taste DNA reorder NEAR-TIED results on the Stellar
+    | Buyer / Tenant results page, under Best Match only, by at most
+    | TasteDnaReranker::MAX_INFLUENCE points of ORDERING — never the score,
+    | never which listings appear, never an explicit sort.
+    |
+    | Parsed exactly like `enabled`: ON only for `true`, `1`, `on`, `yes`.
+    | Requires `enabled` AND `taste_dna_enabled` as well — read only through
+    | TasteDnaAvailability::rerankingEnabled() — so the page that EXPLAINS taste
+    | can run with ranking off, and turning Taste DNA on never turns ranking on.
+    */
+    'taste_reranking_enabled' => filter_var(env('LISTING_PREFERENCE_TASTE_RERANKING_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
+    /*
+    | Learning that acts BEYOND the bounded rerank above — recommendations,
+    | "find more like this", filtering, Ask AI consumption, any use of Taste DNA
+    | outside the Stellar Best Match reorder.
+    |
+    | HARD OFF, and not merely unbuilt. Each of those needs its own governance
+    | revision; turning this on is a reviewed code change, not a configuration
+    | edit — the same posture as MLS_REMARKS_PROCESSING_APPROVED. Nothing reads
+    | it, and Phase 5's reranking does not either: it has its own flag.
     */
     'learning_enabled' => false,
 

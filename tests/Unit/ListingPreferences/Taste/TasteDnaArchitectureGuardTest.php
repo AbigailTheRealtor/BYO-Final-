@@ -5,13 +5,15 @@ namespace Tests\Unit\ListingPreferences\Taste;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Taste DNA is INERT to everything but the customer's own page — structurally.
+ * Taste DNA reaches exactly TWO surfaces — structurally.
  *
- * Phase 4 learns and explains. It must not reach Match DNA, the 100-point score,
- * Stellar or BYO ordering, filtering, re-ranking, recommendations or Ask AI;
- * those are Phase 5 and need their own governance. A feature flag cannot prove
- * that — a flag gates a caller, and the promise is that no caller exists — so
- * these guards read the source.
+ * Phase 4 learns and explains on the customer's own page. Phase 5 adds ONE
+ * consumer (governance §14): the bounded Best Match reorder on the Stellar
+ * results page, reached only through the results controller and the two
+ * worded partials. It must still never reach Match DNA, the 100-point score,
+ * the matcher, BYO search, filtering, recommendations or Ask AI. A feature flag
+ * cannot prove that — a flag gates a caller, and the promise is about which
+ * callers exist — so these guards read the source.
  *
  * Code is compared with comments stripped, so prose DESCRIBING a prohibition
  * ("no address, no ZIP") is never read as a violation of it.
@@ -33,6 +35,11 @@ class TasteDnaArchitectureGuardTest extends TestCase
         'routes/web.php',
         'config/listing_preferences.php',
         'resources/views/listing-preferences/mine/taste.blade.php',
+        // Phase 5 (governance §14): the one ranking consumer, and its two
+        // worded partials. The card component includes the explanation partial
+        // by name and reads no Taste class — asserted below.
+        'app/Http/Controllers/Stellar/StellarBuyerResultsController.php',
+        'resources/views/listing-preferences/taste/',
     ];
 
     /** Where a consumer would have to live to change what a customer is shown. */
@@ -76,7 +83,7 @@ class TasteDnaArchitectureGuardTest extends TestCase
             }
         }
 
-        $this->assertSame([], $offenders, 'Taste DNA gained a reference outside its allowlist — a consumer is exactly what Phase 4 may not have');
+        $this->assertSame([], $offenders, 'Taste DNA gained a reference outside its allowlist — every consumer is a governance decision');
     }
 
     /** @test */
@@ -97,7 +104,7 @@ class TasteDnaArchitectureGuardTest extends TestCase
         $this->assertSame(
             [],
             $this->grep("listing_preferences\\.learning_enabled['\"]", ['app', 'routes', 'resources']),
-            'listing_preferences.learning_enabled governs Phase 5 and has no reader'
+            'listing_preferences.learning_enabled governs learning beyond the Phase 5 rerank and has no reader'
         );
     }
 

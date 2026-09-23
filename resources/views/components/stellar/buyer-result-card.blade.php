@@ -307,6 +307,9 @@
             </div>
         @endif
 
+        {{-- Your Home Taste (Phase 5): worded reasons this card moved, or nothing. --}}
+        @include('listing-preferences.taste._rerank-explanation', ['explanation' => $card['taste_explanation'] ?? null])
+
     </div>{{-- /card-body --}}
 
     {{-- ====================================================================

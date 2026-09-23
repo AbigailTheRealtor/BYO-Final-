@@ -52,6 +52,10 @@
                     {{ $total }} listing{{ $total !== 1 ? 's' : '' }} match your criteria &mdash;
                     sorted by <strong>Best Match</strong>
                 </small>
+                @include('listing-preferences.taste._rerank-caption', [
+                    'status' => $tasteStatus ?? null,
+                    'urls'   => $tasteToggleUrls ?? null,
+                ])
             @endif
         </div>
         @if(!empty($mapPins))

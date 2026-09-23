@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Stellar;
 
 use App\Http\Controllers\Controller;
 use App\Models\BridgeProperty;
+use App\Services\ListingPreferences\Taste\TasteRerankingService;
+use App\Services\ListingPreferences\Taste\TasteRerankOutcome;
 use App\Services\Stellar\BuyerCriteriaLoader;
 use App\Services\Stellar\BuyerOfferListingCriteriaLoader;
 use App\Services\Stellar\CriteriaListingResolver;
@@ -12,6 +14,7 @@ use App\Services\Stellar\TenantOfferListingCriteriaLoader;
 use App\Services\Stellar\BuyerResultViewMapper;
 use App\Services\Stellar\Matching\BuyerMatchService;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
+use App\Support\ListingPreferences\SeekerRole;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
@@ -27,7 +30,8 @@ class StellarBuyerResultsController extends Controller
         private TenantOfferListingCriteriaLoader  $tenantOfferLoader,
         private CriteriaListingResolver           $criteriaResolver,
         private BuyerMatchService                 $matchService,
-        private BuyerResultViewMapper             $viewMapper
+        private BuyerResultViewMapper             $viewMapper,
+        private TasteRerankingService             $tasteReranking
     ) {}
 
     public function index(Request $request)
@@ -158,6 +162,25 @@ class StellarBuyerResultsController extends Controller
         // Map to Blade-safe arrays and paginate in-memory
         // -----------------------------------------------------------------------
         $mapped    = $this->viewMapper->map($matchedCollection);
+
+        // -----------------------------------------------------------------------
+        // Your Home Taste (Phase 5): a bounded reorder of NEAR-TIED results,
+        // under Best Match only. It runs over the WHOLE scored list, before the
+        // page is sliced, so page 1 is the top of the personalized order and no
+        // listing is duplicated or lost between pages. Scores, membership, the
+        // total and the map pins are untouched; with any gate off the order is
+        // exactly the matcher's.
+        // -----------------------------------------------------------------------
+        $taste  = $this->tasteReranking->rerankStellarResults(
+            $user,
+            $role === 'tenant' ? SeekerRole::Tenant : SeekerRole::Buyer,
+            $mapped,
+            $matchedCollection->map(fn ($result) => $result->listing),
+            $request->query('sort'),
+            $request->query(TasteRerankingService::OPT_OUT_PARAM),
+        );
+        $mapped = $taste->cards;
+
         $total     = count($mapped);
         $page      = max(1, (int) $request->get('page', 1));
         $offset    = ($page - 1) * self::PER_PAGE;
@@ -205,7 +228,26 @@ class StellarBuyerResultsController extends Controller
             'selectedCriteriaEditUrl' => $this->buildEditUrl($selectedType, $selectedId),
             'buyerCriteriaAddUrl'    => url('/offer-listing/buyer'),
             'tenantCriteriaAddUrl'   => url('/offer-listing/tenant/tenant'),
+            'tasteStatus'            => $taste->status,
+            'tasteToggleUrls'        => $taste->offersToggle() ? $this->tasteToggleUrls($request) : null,
         ]);
+    }
+
+    /**
+     * The two links the Best Match caption offers: standard order, and back to
+     * personalized. Both keep the current criteria and drop the page, so a
+     * switch always starts from the top of the other order.
+     *
+     * @return array{standard: string, personalized: string}
+     */
+    private function tasteToggleUrls(Request $request): array
+    {
+        $query = $request->except(['page', TasteRerankingService::OPT_OUT_PARAM]);
+
+        return [
+            'standard'     => $request->url() . '?' . http_build_query($query + [TasteRerankingService::OPT_OUT_PARAM => TasteRerankingService::OPT_OUT_VALUE]),
+            'personalized' => $request->url() . ($query === [] ? '' : '?' . http_build_query($query)),
+        ];
     }
 
     // =========================================================================
@@ -279,6 +321,8 @@ class StellarBuyerResultsController extends Controller
             'selectedCriteriaEditUrl' => null,
             'buyerCriteriaAddUrl'    => url('/offer-listing/buyer'),
             'tenantCriteriaAddUrl'   => url('/offer-listing/tenant/tenant'),
+            'tasteStatus'            => TasteRerankOutcome::INACTIVE,
+            'tasteToggleUrls'        => null,
         ], $extra);
 
         if (empty($base['selectedCriteriaEditUrl'])

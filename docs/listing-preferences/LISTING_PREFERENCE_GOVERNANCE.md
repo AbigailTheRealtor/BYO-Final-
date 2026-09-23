@@ -1,14 +1,15 @@
 # Listing Preference Governance — Save | Maybe | Pass
 
-Status: **Phase 4 — Taste DNA (learn and explain, customer's own page only), behind its own
-default-off flag; see §13.** Phases 2–3 (capture, surfaces, management area) are merged.
+Status: **Phase 5 — Taste DNA as a bounded, post-score reorder of near-tied Stellar Buyer/Tenant
+results under Best Match, behind its own default-off flag; see §14.** Phase 4 (Taste DNA: learn and
+explain on the customer's own page, §13) and Phases 2–3 (capture, surfaces, management area) are merged.
 Earlier status: **Phase 2 — capture, behind a default-off flag.** Authenticated Buyers and Tenants can
 Save, Maybe or Pass a listing, give optional structured reasons, and undo, from the BidYourOffer
 Seller/Landlord property-detail pages. `LISTING_PREFERENCES_ENABLED` ships **false**, and off means
 the routes 404 and no control renders.
 
-Still not built, and still governed: ranking influence, Ask AI consumption, and **any learning that
-acts on what a customer is shown** (§6, §8, §13). Taste DNA learns and explains only.
+Still not built, and still governed: Ask AI consumption, recommendations, filtering, and **any
+learning that acts on what a customer is shown beyond the §14 rerank** (§6, §8, §13, §14).
 
 Customer terminology is **Save | Maybe | Pass**, everywhere — config, storage, docs and (later)
 the interface. Earlier planning notes used "Love/Maybe/Pass"; that wording is **superseded and must
@@ -259,15 +260,16 @@ records the decision; it is not a dial to turn.
 
 ## 8. Ranking, and what a learner may not do to it
 
-No learning or ranking code exists. When it is built:
+Phase 5 built the first and only ranking consumer, under these rules; §14 is its full record.
 
 - `config/match_scoring.php` requires **all enabled weights to sum to 100**, and `BuyerMatchScorer`
   has fixed category caps. Preference must **not** become a new scoring category.
 - The precedent is `ImportantPlaceMatcher`: it **scores, it never selects** — shares a slot by
   `max()`, can only raise a score, and leaves the SQL geography untouched.
 - Preference therefore applies as a **post-score re-rank** and a separately displayed signal.
-  Passed listings are demoted or filtered **at presentation only**; nothing is excluded in SQL and
-  nothing is deleted.
+  Nothing is excluded in SQL and nothing is deleted. **Phase 5 decision:** a Passed listing is
+  **neither hidden nor filtered** — it stays in the results with its Pass shown as UI state, and only
+  LEARNED taste (never the listing's own current state) may move it, within the §14 bound.
 
 ---
 
@@ -280,7 +282,8 @@ No learning or ranking code exists. When it is built:
 | `LISTING_PREFERENCES_ENABLED` | `false` | the master gate — capture, display, learning |
 | `listing_preferences.guest_capture_enabled` | `false` | guest records (§7) — a recorded decision |
 | `LISTING_PREFERENCE_TASTE_DNA_ENABLED` | `false` | "Your Home Taste" — Phase 4, §13. Requires the master gate too |
-| `listing_preferences.learning_enabled` | `false` | learning that ACTS on ranking, recommendations or Ask AI — Phase 5; hard-coded, read by nothing |
+| `LISTING_PREFERENCE_TASTE_RERANKING_ENABLED` | `false` | the bounded Best Match rerank — Phase 5, §14. Requires both gates above too |
+| `listing_preferences.learning_enabled` | `false` | learning that acts BEYOND the §14 rerank — recommendations, filtering, Ask AI; hard-coded, read by nothing |
 
 Phase 1 **does not read these to decide anything**: there is no write path to gate, and the
 foundation behaves identically whether they are on or off. They are declared now so Phase 2 adds a
@@ -312,7 +315,8 @@ before any code is written.
 | 2 | write path and one shared surface; authenticated only; undo works | `LISTING_PREFERENCES_ENABLED` (shipped off) |
 | 3 | remaining surfaces incl. Virtual Drive's `save` action; history and recovery UI | Phase 2 verified |
 | 4 | Taste DNA: learn and explain, on the customer's own page only (§13) | §6 + §13 — `LISTING_PREFERENCE_TASTE_DNA_ENABLED` (ships off) |
-| 5 | ranking integration as post-score re-rank; Ask AI consumption | Phase 4 + weight-invariant tests |
+| 5 | bounded post-score rerank of near-tied Stellar Buyer/Tenant results under Best Match (§14) | Phase 4 + score/membership invariant tests — `LISTING_PREFERENCE_TASTE_RERANKING_ENABLED` (ships off) |
+| later | Ask AI consumption, recommendations, BYO ranking | each its own governance revision; `learning_enabled` stays hard-off |
 
 ---
 
@@ -366,9 +370,10 @@ the audit surface — and the Fair Housing half is §6, unchanged and binding.
 
 Taste DNA learns patterns from **one customer's own explicit** Save, Maybe and Pass choices and the
 structured reasons they picked, and **explains** them back to that customer on one authenticated page,
-`/my/listing-preferences/taste`. It changes nothing a customer is shown anywhere else: not Match DNA,
-not the 100-point score, not Stellar or BYO ordering, not filtering, re-ranking, recommendations or
-Ask AI. Those are Phase 5, gated by `learning_enabled`, which stays hard-coded `false` and has no reader.
+`/my/listing-preferences/taste`. In Phase 4 it changed nothing a customer is shown anywhere else. **Phase 5 (§14)
+adds exactly one consumer** — the bounded Best Match rerank on the Stellar results page, behind its
+own flag. Match DNA, the 100-point score, BYO ordering, filtering, recommendations and Ask AI still
+never read it; `learning_enabled` stays hard-coded `false` with no reader.
 
 `TasteDnaArchitectureGuardTest` enforces that by reading the source: only a named allowlist of files
 may reference Taste DNA, and none of them is in ranking, matching, Stellar, Explore, Ask AI, DNA, the
@@ -482,6 +487,136 @@ off. Neither flag may be added to `config/required_production_flags.php`.
 ### Still prohibited, and still Phase 5 or later
 
 Everything in §6 — user-to-user similarity, collaborative or neighbourhood learning, demographic
-inference, geographic clustering, protected-class inference — and any use of Taste DNA to rank,
-filter, recommend or answer questions. Location learning against the customer's own Important Places
+inference, geographic clustering, protected-class inference — and any use of Taste DNA to filter,
+recommend or answer questions. Ranking is permitted only as the bounded rerank §14 governs. Location learning against the customer's own Important Places
 needs a structural link from a preference to those places first; it is not approximated here.
+
+---
+
+## 14. Phase 5 — Taste DNA as a bounded Best Match rerank
+
+**This section is the governance revision §8, §11 and §13 require before Taste DNA may act on what a
+customer is shown.** §6 is unchanged and binding.
+
+### What Phase 5 is
+
+The customer's own Phase 4 Taste profile may **reorder near-tied results** on the Stellar results page
+(`/stellar/buyer/results`, which serves both Buyer and Tenant criteria), **under Best Match only**. The
+pipeline is and stays: eligibility / filters → Match DNA score → Taste rerank → presentation. Taste
+DNA never decides whether a property qualifies.
+
+| Never changes | How it is guaranteed |
+|---|---|
+| any listing's 100-point Match DNA score | the reranker receives scores read-only and returns none; `config/match_scoring.php`, `BuyerMatchService`, `BuyerMatchScorer`, `BuyerMatchResultBuilder` and `BuyerResultViewMapper` are untouched (guard test); a real-matcher test compares every score, bar and display ON vs OFF |
+| which listings appear | the reranker returns a permutation of its input and asserts it; the total, the map pins and pagination read the same list; a listing the customer Passed stays |
+| an explicit sort | only an absent `sort` or `sort=best_match` is personalized; any other value is left untouched. Stellar offers **no sort control today** (audited: the controller reads only `criteria_type`, `criteria_id`, `page`) |
+| whose taste | the signed-in account's own profile, for the seeker role its `user_type` names, and only when that is the results' market; an agent viewing a client's search gets the standard order |
+
+### Where it runs, and why there
+
+`StellarBuyerResultsController::index()` → `TasteRerankingService::rerankStellarResults()`, **after**
+`BuyerResultViewMapper::map()` and **before** the in-memory `array_slice` that makes a page. The matcher
+already scores every eligible candidate (≤ 200) and sorts them before that slice, so reordering the
+whole list there means page 1 is genuinely the top of the personalized order and no listing is
+duplicated or lost between pages. Nothing is loaded that the matcher did not already load.
+
+**BYO search is out of scope, deliberately.** `/search/seller-listings` and `/search/rental-properties`
+have **no match score**, offer only explicit sorts (`newest` default, `most_viewed`, `ending_soon`) and
+paginate in SQL. There is no Best Match order to refine, every order there is an explicit choice, and
+reordering after SQL pagination could only shuffle one page. Personalizing BYO needs a native property
+score first. Seller, Landlord, Virtual Drive, Explore and Ask AI are untouched.
+
+### The bounded-influence rule
+
+`TasteDnaReranker` (pure, container-free, no database) gives each candidate an ordering adjustment in
+**[−1.25, +1.25] points** and sorts by (base score + adjustment), ties broken by the matcher's original
+position. So a listing can pass another only when its base score is **less than 2.5 points lower**. The
+Stellar total is an integer, so **a gap of 3 or more points is never crossed** — an 88 cannot pass a 98,
+or a 91.
+
+Why 2.5, on this scale: the Stellar total is an integer sum of eight capped categories. Its smallest
+distinctions are one-point items — one lifestyle signal (new construction, energy efficiency, pets, one
+community feature), a view, a water view. From three points up the matcher is recording something
+substantive: a garage the buyer asked for, a subtype match, a band of price proximity. Taste may decide
+between listings the matcher considers near-equal (0–2 points apart) and never between listings it has
+separated. A production score distribution was **not** read to choose this (the production database is
+off-limits to development tooling); the rule is derived from the scorer's own granularity and is pinned
+by a deterministic randomized test over 200 × 25 candidates.
+
+Crossing any gap needs strong evidence:
+
+| Evidence on one listing | Adjustment | Can cross |
+|---|---|---|
+| one emerging correlation (seen on homes, never stated) | 0.156 | exact ties only |
+| one established stated reason | 0.625 | exact ties only |
+| two established stated reasons | 1.25 (saturated) | a 1-point gap |
+| saturated positive here AND saturated negative on the other listing | 2.5 swing | a 2-point gap |
+
+Weights: `established` 1.0, `emerging` 0.5; a signal the customer supported with a stated reason 1.0,
+an observed-only correlation 0.5 (Phase 4's own 1.0 / 0.5); raw evidence saturates at 2.0. Constants
+live in `TasteDnaReranker`, versioned by its `RULES_VERSION`.
+
+### Which signals may act
+
+* **Confidence** `emerging` or `established` only — `insufficient` never acts, so one choice never
+  moves anything (Phase 4 already needs two homes for `emerging`).
+* **Direction** `positive` or `negative` only — `mixed` and `uncertain` contribute nothing.
+* **Dimensions: Smart Tags and structured property sub-type only.** A tag must be
+  `isSeekerSelectable()` **now**, asked of the taxonomy by the reranker itself, so `accessible_features`,
+  `playground`, retired and pending-review tags (e.g. `gated_community`) cannot act; `natural_light`
+  acts and stays non-derivable. A sub-type matches through `TasteDnaDeriver::subtypeKey()`, the same
+  cleaning and compliance check Phase 4 learns with.
+* **Excluded, and still shown on Your Home Taste:** `reason` signals (price, size, fees — the
+  customer's criteria, already scored explicitly; a learned price tendency would read as affordability)
+  and the numeric bands (bedrooms, bathrooms, living area, lot size — observed-only, correlated with
+  price, and a learned "usually 2 bedrooms" must never rank against an explicit "3+ bedrooms").
+* **An absent characteristic is not evidence.** A negative signal demotes only a listing that HAS the
+  characteristic; a listing with no facts (feed-refused, unpublished) is not moved.
+* **No location of any kind.** No Important Places (their structural link to a preference does not
+  exist), no neighbourhood, school, demographic or proximity signal, and nothing from another customer.
+
+### Current Save / Maybe / Pass — shown, not scored
+
+The customer's current state on a result is **UI state only**. It is not a boost, a penalty or a
+filter: the same choice already reached the learned profile once, and scoring it again directly would
+count one click twice. A Passed listing remains in the results; if it has characteristics the customer
+tends to Pass on, learned taste may lower it within the bound — like any other listing.
+
+### Transparency and control
+
+Beside "sorted by **Best Match**" the page says **"Personalized with Your Home Taste · Show standard
+Best Match order"** (the link adds `taste=off`, keeps the criteria, drops the page). Opted out, it says
+**"Standard Best Match order · Personalize with Your Home Taste"**. A listing that moved, and carries
+evidence of its own, shows up to two sentences from `TasteRerankExplanation` —
+*"Natural Light is a reason you have picked when Saving homes."* for a stated reason,
+*"Fireplace appears often in homes you Save."* for a correlation — never a number, percentage, key or
+id, and never the word AI. A listing that moved only because a neighbour moved is not explained.
+Nothing is rendered when the feature is off, the viewer is not a matching seeker, an explicit sort is
+chosen, or their taste has nothing to act on. Your Home Taste's own page says ordering may change when
+reranking is on.
+
+### Determinism, identity, performance
+
+Same candidates, scores, profile and facts → same order; equal keys keep the matcher's order; no
+randomness, no clock. Identity is inherited, not rebuilt: history is grouped by the stored
+`subject_key` exactly as Phase 4 groups it, so a Bridge row and its MLS-linked BYO listing are one
+home and two listings at one address are two. PR #192's whitespace behaviour is pinned as-is
+(`TasteRerankingIdentityTest`: padded keys trim to one provider-scoped subject; native linkage matches
+the stored key exactly) and **no history is rewritten and no migration exists**. Candidate facts come
+from rows the matcher already loaded plus **one** Smart Tag query (`TasteListingFactsReader::forBridgeRows()`);
+the profile read is bounded by the customer's own history. With any gate closed there are no extra
+queries; with all open the count does not grow with the number of results (tested at 10 vs 150).
+
+### Flags
+
+`LISTING_PREFERENCE_TASTE_RERANKING_ENABLED` (default `false`, fail-closed — ON only for
+`true`/`1`/`on`/`yes`) **and** `LISTING_PREFERENCE_TASTE_DNA_ENABLED` **and**
+`LISTING_PREFERENCES_ENABLED`, read only through `TasteDnaAvailability::rerankingEnabled()`, each
+`=== true`. Taste DNA's page runs with reranking off. None may be added to
+`config/required_production_flags.php`.
+
+### Still prohibited
+
+Everything in §6. Ask AI consumption, recommendations, "more like this", filtering or hiding by taste,
+BYO ranking, location learning, price learning in ranking, and any use of the numeric bands in ranking
+— each needs its own governance revision.

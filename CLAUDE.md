@@ -1260,11 +1260,11 @@ business logic.
 
 ### Listing preferences Phase 4 — Taste DNA ("Your Home Taste"), behind a default-off flag
 
-**Learns and explains; changes nothing a customer is shown.** `/my/listing-preferences/taste` shows a
-Buyer or Tenant patterns in their OWN Save / Maybe / Pass history. It is not read by Match DNA, the
-100-point score, Stellar/BYO ordering, filtering, re-ranking, recommendations or Ask AI —
-`TasteDnaArchitectureGuardTest` holds an allowlist of the only files that may reference it. Letting it
-act is Phase 5, behind `listing_preferences.learning_enabled` (hard-coded `false`, no reader).
+**Learns and explains.** `/my/listing-preferences/taste` shows a Buyer or Tenant patterns in their OWN
+Save / Maybe / Pass history. Its only other consumer is the Phase 5 bounded Best Match rerank (next
+section); it is not read by Match DNA, the 100-point score, BYO ordering, filtering, recommendations or
+Ask AI — `TasteDnaArchitectureGuardTest` holds an allowlist of the only files that may reference it.
+`listing_preferences.learning_enabled` (hard-coded `false`, no reader) governs anything beyond the rerank.
 Governance: `LISTING_PREFERENCE_GOVERNANCE.md` §13.
 
 **Derived on demand, never stored** — no table, no migration, no job. `TasteDnaService` reads
@@ -1295,6 +1295,32 @@ binds the profile is `incomplete` and the page says so rather than showing patte
 **Flags:** `LISTING_PREFERENCE_TASTE_DNA_ENABLED` (default `false`, fail-closed) AND
 `LISTING_PREFERENCES_ENABLED`, read only through `TasteDnaAvailability`. Base Save / Maybe / Pass runs
 with it off. Never in `config/required_production_flags.php`.
+
+### Listing preferences Phase 5 — Taste DNA reranking, behind a default-off flag
+
+**A bounded reorder of NEAR-TIED Stellar Buyer/Tenant results under Best Match, and nothing else.**
+Governance: `LISTING_PREFERENCE_GOVERNANCE.md` §14. `StellarBuyerResultsController` calls
+`TasteRerankingService::rerankStellarResults()` once, after `BuyerResultViewMapper::map()` and before the
+in-memory `array_slice` page — the matcher already scored all ≤ 200 candidates there, so page 1 is the
+top of the personalized order and total, map pins and membership are untouched. The 100-point score,
+`config/match_scoring.php` and everything in `app/Services/Stellar` are unchanged and never see Taste.
+
+**The bound is the design.** `TasteDnaReranker` (pure) gives each candidate an ordering adjustment in
+[−1.25, +1.25] points, sorted by base + adjustment, ties by the matcher's position: **a gap of 3+ integer
+points is never crossed.** Only `emerging`/`established` `positive`/`negative` signals on Smart Tags
+(seeker-selectable, asked live) and structured sub-type act; `reason` and the numeric bands never do
+(criteria are already scored; learned price/size must not rank against explicit criteria). Stated reasons
+outweigh observed correlations. An absent tag is not evidence. The customer's current Save/Maybe/Pass on a
+result is UI state only — never a boost or penalty, and a Passed listing is never hidden.
+
+**Bypassed entirely** for any `sort` other than absent/`best_match` (Stellar has no sort control today),
+for `taste=off` (the page's "Show standard Best Match order" link), for agents and for a seeker whose role
+is not the results' market. **BYO search is out of scope** — no score, explicit sorts only, SQL pagination.
+Explanations come only from `TasteRerankExplanation` (words, never numbers, never "AI").
+
+**Flag:** `LISTING_PREFERENCE_TASTE_RERANKING_ENABLED` (default `false`, fail-closed) AND both flags
+above, read only through `TasteDnaAvailability::rerankingEnabled()`. `learning_enabled` stays hard-off
+for everything beyond this rerank. Never in `config/required_production_flags.php`.
 
 ### AI DNA profiles (separate from Location DNA)
 
