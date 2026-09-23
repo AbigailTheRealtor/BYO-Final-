@@ -29,6 +29,9 @@ class PublicPropertyQuestionsBatch2cListingPageTest extends TestCase
 
     private function seller(array $meta): SellerAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a listing that names none gets only
+        // the questions valid for every type. Every real listing states one.
+        $meta += ['property_type' => 'Residential'];
         $user    = User::factory()->create();
         $listing = SellerAgentAuction::create(['user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'address' => '100 Test Lane']);
         $listing->saveMeta('workflow_type', 'offer_listing');
@@ -42,6 +45,9 @@ class PublicPropertyQuestionsBatch2cListingPageTest extends TestCase
 
     private function landlord(array $meta): LandlordAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a listing that names none gets only
+        // the questions valid for every type. Every real listing states one.
+        $meta += ['property_type' => 'Residential Property'];
         $user    = User::factory()->create();
         $listing = LandlordAgentAuction::create(['user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'title' => 'Test Rental']);
         $listing->saveMeta('workflow_type', 'offer_listing');

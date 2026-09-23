@@ -185,7 +185,21 @@ class AskAiNonOwnerKnowledgeBaseRedactionTest extends TestCase
         $response = $this->ask($nonOwner, $role, $listingId, $question);
         $response->assertOk();
 
-        $this->assertNotEmpty($this->internalRuns, 'The real pipeline must have run for this to prove anything');
+        // The non-owner path now resolves deterministically BEFORE any context is built: an
+        // answer comes from the public card (which never reads an unacknowledged Knowledge
+        // Base) and anything else is refused. So the proof is either (a) the request never
+        // built a context at all — a stronger guarantee than a redacted one — or (b) every
+        // context it did build is redacted. The response assertion below holds for both, and
+        // the owner test keeps it sensitive.
+        if ($this->internalRuns === []) {
+            // This fixture listing holds no public fact, so the resolver's only true answer is
+            // the deterministic refusal.
+            $this->assertSame(
+                \App\Services\AskAi\AskAiRunnerV2Service::DETERMINISTIC_UNANSWERABLE,
+                $response->json('answer_text'),
+                'With no pipeline run the answer must come from the deterministic resolver.'
+            );
+        }
 
         foreach ($this->internalRuns as $run) {
             $this->assertNotSame(AskAiViewerAuthorizationService::SCOPE_OWNER, $run['viewer_scope']);

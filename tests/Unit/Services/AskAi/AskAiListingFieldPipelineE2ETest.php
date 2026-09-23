@@ -987,7 +987,9 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
             'Universal prompt-ready fallback must return insufficient_context, not failed.'
         );
         $this->assertSame(
-            'A response could not be generated right now. Please try again shortly.',
+            // With LLM_ANSWERING_APPROVED false nothing is transient, so the answer is the
+            // permanent deterministic refusal rather than "try again shortly".
+            \App\Services\AskAi\AskAiRunnerV2Service::DETERMINISTIC_UNANSWERABLE,
             $result['final_response']['answer'] ?? null,
             'Universal prompt-ready fallback answer must be the clean try-again message.'
         );
@@ -1035,7 +1037,9 @@ class AskAiListingFieldPipelineE2ETest extends TestCase
             'Q3 adapter failure: status must be insufficient_context, never failed.'
         );
         $this->assertSame(
-            'A response could not be generated right now. Please try again shortly.',
+            // With LLM_ANSWERING_APPROVED false nothing is transient, so the answer is the
+            // permanent deterministic refusal rather than "try again shortly".
+            \App\Services\AskAi\AskAiRunnerV2Service::DETERMINISTIC_UNANSWERABLE,
             $result['final_response']['answer'] ?? null,
             'Q3 adapter failure: answer must be the clean try-again message.'
         );

@@ -91,7 +91,12 @@ class AskAiIntentNormalizerService
      */
     public function isEnabled(): bool
     {
-        return (bool) config('ask_ai.enable_openai_intent_normalization', false);
+        // The config flag alone is not enough: this service sends the owner's question to
+        // a language model, so it sits behind the same code-constant gate as the answering
+        // adapter. With that constant false no environment value — the workspace .env sets
+        // ASK_AI_ENABLE_OPENAI_INTENT_NORMALIZATION=true — can turn normalisation on.
+        return AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED === true
+            && (bool) config('ask_ai.enable_openai_intent_normalization', false);
     }
 
     /**
@@ -206,6 +211,14 @@ class AskAiIntentNormalizerService
         $this->lastStatus      = null;
         $this->lastError       = null;
         $this->lastContextPath = null;
+
+        // HARD GATE, independent of isEnabled(): a caller that skips the check still cannot
+        // reach the client. Routing on a model's output is model-dependent answering.
+        if (AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED !== true) {
+            $this->lastStatus = 'failed';
+            $this->lastError  = 'llm_answering_not_approved';
+            return null;
+        }
 
         if ($question === '' || empty($knownFieldKeys)) {
             $this->lastStatus = 'unknown';

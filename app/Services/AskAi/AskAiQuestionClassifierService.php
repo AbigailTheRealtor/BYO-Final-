@@ -1464,7 +1464,18 @@ class AskAiQuestionClassifierService
             'what is good about',
             // Neighborhood / area — includes location_intelligence in context.
             // Must live here (not listing_facts) so location_intelligence payload is included.
-            'what is the neighborhood like',
+            //
+            // 'what is the neighborhood like' is DELIBERATELY ABSENT. It is the exact
+            // wording FAQ_KEY_KEYWORD_MAP['faq_answers.neighborhood_character'] claims, and
+            // two intents claiming one phrase is a non-deterministic route: which answer a
+            // shopper got depended on which matcher ran first. The specific FAQ key is the
+            // canonical owner — the owner wrote an answer to precisely that question — so
+            // the broad intent yields the phrase rather than competing for it.
+            //
+            // Nothing is lost: the SUBSTRING 'neighborhood like' below still matches that
+            // wording for this intent's own purposes, so an area question continues to
+            // carry the location_intelligence payload. Removing the exact duplicate settles
+            // ownership without narrowing what this intent recognises.
             'neighborhood like',
             'what is the area like',
             'area like',

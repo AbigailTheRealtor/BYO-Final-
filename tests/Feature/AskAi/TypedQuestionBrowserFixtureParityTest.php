@@ -91,7 +91,7 @@ class TypedQuestionBrowserFixtureParityTest extends TestCase
 
         $real = [];
         foreach ($scenarios as $role => [$listing, $meta]) {
-            foreach ($service->forListing($role, ['listing' => $listing], $meta) as $q) {
+            foreach ($service->forListing($role, ['listing' => $listing + ['property_type' => 'Residential']], $meta) as $q) {
                 $real[$q['id']] = $q['aliases'];
             }
         }

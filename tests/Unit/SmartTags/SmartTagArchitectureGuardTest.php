@@ -204,6 +204,18 @@ class SmartTagArchitectureGuardTest extends TestCase
         'resources/views/partials/smart-tags/',
         'resources/views/buyer_criteria/',
         'resources/views/tenant_criteria/',
+        // Seeker preferences on Buyer/Tenant OFFER LISTINGS — the records Stellar
+        // matching actually reads. Same writer, reader, table, policy and gate as
+        // the criteria entries above; the concern is the only file that calls
+        // them, the four wizards name only the subject type they write, and the
+        // partial renders what the concern projected. None derives, writes or
+        // purges evidence about a property.
+        'app/Http/Livewire/Concerns/HasSeekerSmartTags.php',
+        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php',
+        'app/Http/Livewire/OfferListing/Buyer/BuyerOfferListingEdit.php',
+        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
+        'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
+        'resources/views/livewire/offer-listing/shared/_seeker-smart-tags.blade.php',
     ];
 
     /** @test */

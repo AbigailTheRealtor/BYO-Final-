@@ -153,7 +153,6 @@ class SnapshotFactVisibility
         'zoning',
 
         // Interior
-        'interior_features',
         'appliances',
         'furnished',
         'condition_prop',
@@ -164,9 +163,6 @@ class SnapshotFactVisibility
         'exterior_construction',
         'foundation',
         'heating_and_fuel',
-        'heating_fuel',
-        'air_conditioning',
-        'building_features',
 
         // Views & water
         'water_view',
@@ -183,9 +179,7 @@ class SnapshotFactVisibility
 
         // Utilities
         'utilities',
-        'water',
         'water_source',
-        'sewer',
 
         // Pool
         'pool',
@@ -226,6 +220,15 @@ class SnapshotFactVisibility
      * Public facts specific to seller / for-sale listings (decision D1).
      */
     private const SELLER_PUBLIC_KEYS = [
+        // Printed by the public SELLER page but not the landlord page, so public for the
+        // seller only (AskAiPublicPageVisibilityParityTest). They were shared keys, which let
+        // a public viewer be told on a rental what the rental's own page never shows.
+        'heating_fuel',
+        'air_conditioning',
+        'building_features',
+        'water',
+        'sewer',
+
         'asking_price',
         'parcel_id',
         'legal_description',
@@ -259,6 +262,10 @@ class SnapshotFactVisibility
      * property or the offered lease terms belong here.
      */
     private const LANDLORD_PUBLIC_KEYS = [
+        // Printed by the public LANDLORD page but not the seller page, so public for the
+        // landlord only (AskAiPublicPageVisibilityParityTest).
+        'interior_features',
+
         'rent_amount',
         'available_date',
         'lease_length',

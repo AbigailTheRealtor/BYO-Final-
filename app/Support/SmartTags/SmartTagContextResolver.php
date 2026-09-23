@@ -95,7 +95,11 @@ final class SmartTagContextResolver
     }
 
     /**
-     * For a Buyer/Tenant search (later phases). Role decides the transaction.
+     * For a Buyer/Tenant OFFER LISTING, whose forms store the same vocabulary as
+     * the Seller/Landlord ones (`Residential`, `Income`, `Commercial`, `Business`,
+     * `Vacant Land`; `Residential Property`, `Commercial Property`). Role decides
+     * the transaction. Seeker preference code reaches this through
+     * {@see forSeekerSubject()}, never by role string.
      */
     public static function forSeeker(string $role, ?string $propertyType): ?SmartTagContext
     {
@@ -121,6 +125,27 @@ final class SmartTagContextResolver
             'tenant' => self::lookup(self::TENANT_CRITERIA, $propertyType),
             default  => null,
         };
+    }
+
+    /**
+     * For ANY seeker preference subject — THE entry point the seeker writer and
+     * reader use.
+     *
+     * The subject type, not the role, chooses the vocabulary
+     * ({@see SmartTagSeekerSubjectType::propertyTypeContexts()}): Buyer Criteria
+     * and Buyer Offer Listing are both buyers but store different strings, and
+     * `Residential Property` is a sale on one form and a lease on another. The
+     * result is additionally required to be a context the subject type can ever
+     * reach, so a map edit that crossed sale and lease would resolve to null
+     * rather than to the wrong side of the market.
+     */
+    public static function forSeekerSubject(SmartTagSeekerSubjectType $type, ?string $propertyType): ?SmartTagContext
+    {
+        $context = self::lookup($type->propertyTypeContexts(), $propertyType);
+
+        return $context !== null && in_array($context, $type->possibleContexts(), true)
+            ? $context
+            : null;
     }
 
     /**

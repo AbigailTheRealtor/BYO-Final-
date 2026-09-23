@@ -35,6 +35,9 @@ class TypedQuestionCardBatch3Test extends TestCase
 
     private function seller(array $meta): SellerAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a listing that names none gets only
+        // the questions valid for every type. Every real listing states one.
+        $meta += ['property_type' => 'Residential'];
         $user    = User::factory()->create();
         $listing = SellerAgentAuction::create([
             'user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'address' => '1 Batch3 Way',
@@ -51,6 +54,9 @@ class TypedQuestionCardBatch3Test extends TestCase
 
     private function landlord(array $meta): LandlordAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a listing that names none gets only
+        // the questions valid for every type. Every real listing states one.
+        $meta += ['property_type' => 'Residential Property'];
         $user    = User::factory()->create();
         $listing = LandlordAgentAuction::create([
             'user_id' => $user->id, 'is_approved' => true, 'is_draft' => false, 'title' => 'Batch3 Rental',
@@ -66,6 +72,9 @@ class TypedQuestionCardBatch3Test extends TestCase
 
     private function buyer(array $meta): BuyerAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a search that names none gets only
+        // the questions valid for every type. Every real criteria listing states one.
+        $meta += ['property_type' => 'Residential'];
         $user    = User::factory()->create();
         $listing = BuyerAgentAuction::create([
             'user_id' => $user->id, 'title' => 'Batch3 Buyer', 'is_approved' => true, 'is_draft' => false, 'is_sold' => false,
@@ -80,6 +89,9 @@ class TypedQuestionCardBatch3Test extends TestCase
 
     private function tenant(array $meta): TenantAgentAuction
     {
+        // Ask AI resolves property type fail-closed: a search that names none gets only
+        // the questions valid for every type. Every real criteria listing states one.
+        $meta += ['property_type' => 'Residential'];
         $listing = TenantAgentAuction::factory()->active()->create(['user_id' => User::factory()->create()->id]);
         $listing->saveMeta('workflow_type', 'offer_listing');
         foreach ($meta as $k => $v) {
@@ -136,7 +148,9 @@ class TypedQuestionCardBatch3Test extends TestCase
         $card  = $this->card($this->page('offer.listing.seller.view', $listing->id), 'seller');
         $vocab = $this->shippedVocabulary($card);
 
-        $this->assertSame(['seller_pool', 'seller_zoning'], array_keys($vocab));
+        // Zoning is stored but not asked: the Residential seller form does not collect it
+        // (SP property-preferences :2156 / :2537 / :2796 — Commercial, Business, Vacant Land).
+        $this->assertSame(['seller_pool'], array_keys($vocab));
 
         $all = array_merge(...array_values($vocab));
         foreach ([

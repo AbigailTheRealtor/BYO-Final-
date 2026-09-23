@@ -436,6 +436,8 @@ class AskAiRoofNlpQaTest extends TestCase
 
     public function test_case_G_missing_roof_faq_answer_returns_field_specific_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $classifier     = $this->createMock(AskAiQuestionClassifierService::class);
         $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
@@ -472,7 +474,7 @@ class AskAiRoofNlpQaTest extends TestCase
             'seller',
             1,
             'Tell me about the roof',
-            ['normalized_field_key' => self::ROOF_FAQ_KEY]
+            ['normalized_field_key' => self::ROOF_FAQ_KEY, 'viewer_scope' => 'owner']
         );
 
         $this->assertFalse($result['success']);
@@ -496,6 +498,8 @@ class AskAiRoofNlpQaTest extends TestCase
 
     public function test_case_G_missing_roof_faq_returns_exact_message_format(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $classifier     = $this->createMock(AskAiQuestionClassifierService::class);
         $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
@@ -527,7 +531,7 @@ class AskAiRoofNlpQaTest extends TestCase
             'seller',
             1,
             'Tell me about the roof',
-            ['normalized_field_key' => self::ROOF_FAQ_KEY]
+            ['normalized_field_key' => self::ROOF_FAQ_KEY, 'viewer_scope' => 'owner']
         );
 
         $expectedMessage = 'Roof information has not been provided for this listing.';
@@ -794,6 +798,8 @@ class AskAiRoofNlpQaTest extends TestCase
 
     public function test_integration_flag_on_novel_roof_phrasing_missing_faq_returns_field_message(): void
     {
+        // The missing-data message is the OWNER's view: for any other scope the
+        // Knowledge Base block is redacted, so it cannot claim an answer is absent.
         $realClassifier = $this->makeClassifier();
         $internalRunner = $this->createMock(AskAiInternalRunnerService::class);
         $adapter        = $this->createMock(AskAiOpenAiAdapterService::class);
@@ -825,7 +831,7 @@ class AskAiRoofNlpQaTest extends TestCase
         $novelPhrase = 'Does this home have a solid covering overhead?';
         $runner = $this->makeRunner($realClassifier, $internalRunner, $adapter, $finalBuilder, $normalizerMock);
 
-        $result = $runner->run('seller', 1, $novelPhrase);
+        $result = $runner->run('seller', 1, $novelPhrase, ['viewer_scope' => 'owner']);
 
         $this->assertFalse($result['success']);
         $this->assertSame('insufficient_context', $result['status']);
@@ -907,9 +913,11 @@ class AskAiRoofNlpQaTest extends TestCase
     {
         $content = file_get_contents($this->runnerFilePath());
         $this->assertStringContainsString(
-            "questionType === 'listing_facts' && !isset(\$options['normalized_field_key'])",
+            // Step 1b now also runs for UNSUPPORTED questions — the deterministic replacement
+            // for the model normaliser that used to route them (LLM_ANSWERING_APPROVED false).
+            "(\$questionType === 'listing_facts' || \$wasUnsupported) && !isset(\$options['normalized_field_key'])",
             $content,
-            'Runner must include the step 1b listing_facts deterministic detector guard.'
+            'Runner must include the step 1b deterministic detector guard for listing_facts and unsupported questions.'
         );
     }
 

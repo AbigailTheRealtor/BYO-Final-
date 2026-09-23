@@ -415,6 +415,18 @@ class AskAiContextBuilderService
             'zoning'                         => 'zoning',
             'waterfront'                     => 'waterfront',
             'water_access'                   => 'water_access',
+            // Landlord form inputs Ask AI never read (MLS quick import writes them too):
+            // LP property-preferences pool :865 / garage :661 / carport :626 / floor covering
+            // :1264 (Residential Property), total acreage :549 and waterfront feet :822 (both
+            // types), lease-terms lease available date :1200 (both types). Visibility is still
+            // SnapshotFactVisibility's per-key decision, unchanged by listing them here.
+            'pool'                           => 'pool_needed',
+            'garage'                         => 'garage_needed',
+            'carport'                        => 'carport_needed',
+            'total_acreage'                  => 'total_acreage',
+            'waterfront_feet'                => 'waterfront_feet',
+            'floor_covering'                 => 'floor_covering',
+            'lease_available_date'           => 'lease_available_date',
             'roof_type'                      => 'roof_type',
             'exterior_construction'          => 'exterior_construction',
             'foundation'                     => 'foundation',
@@ -873,6 +885,48 @@ class AskAiContextBuilderService
     protected function normalizeListingType(string $listingType): string
     {
         return self::TYPE_ALIASES[strtolower($listingType)] ?? $listingType;
+    }
+
+    /** The canonical role for an accepted listing-type alias, or null. One reading of TYPE_ALIASES. */
+    public static function canonicalListingType(string $listingType): ?string
+    {
+        return self::TYPE_ALIASES[$listingType] ?? null;
+    }
+
+    /**
+     * The listing's stored `property_type` meta value, or null when the listing, the role or
+     * the value cannot be resolved. Read-only; used to gate Knowledge Base question matching
+     * to the questions this listing's property type is actually asked.
+     */
+    public function listingPropertyType(string $listingType, int $listingId): ?string
+    {
+        $value = $this->listingMeta($listingType, $listingId, 'property_type');
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /** The listing model for a canonical role, through the one model lookup, or null. Read-only. */
+    public function loadListing(string $canonicalType, int $listingId): ?object
+    {
+        return $this->findListing($canonicalType, $listingId);
+    }
+
+    /**
+     * One stored meta value of a listing, read through the same model lookup the context
+     * uses, or null. Read-only.
+     */
+    public function listingMeta(string $listingType, int $listingId, string $metaKey): mixed
+    {
+        $canonical = self::canonicalListingType($listingType);
+        $listing   = $canonical === null ? null : $this->findListing($canonical, $listingId);
+
+        if ($listing === null || !method_exists($listing, 'info')) {
+            return null;
+        }
+
+        $value = $listing->info($metaKey);
+
+        return $value === false ? null : $value;
     }
 
     /**

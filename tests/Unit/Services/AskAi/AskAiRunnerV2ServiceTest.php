@@ -551,7 +551,9 @@ class AskAiRunnerV2ServiceTest extends TestCase
             'Universal fallback must set error=null; adapter error string must not surface at top level.'
         );
         $this->assertSame(
-            'A response could not be generated right now. Please try again shortly.',
+            // With LLM_ANSWERING_APPROVED false nothing is transient, so the answer is the
+            // permanent deterministic refusal rather than "try again shortly".
+            \App\Services\AskAi\AskAiRunnerV2Service::DETERMINISTIC_UNANSWERABLE,
             $result['final_response']['answer'] ?? null,
             'Universal fallback must return the clean try-again message.'
         );
