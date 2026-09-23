@@ -11,10 +11,10 @@ use Tests\TestCase;
 
 /**
  * Phase C verification:
- *   C1/WF-1 — Ask AI 403: the owner-only listing-question endpoint still blocks
- *             non-owners, and the offer-listing detail view exposes the V1 Ask AI
- *             path only to the owner (isOwner flag), so non-owners are no longer
- *             routed to a control that 403s.
+ *   C1/WF-1 — Ask AI access: the listing-question endpoint answers a non-owner of a
+ *             public listing at PUBLIC scope (never the owner's), and the detail view
+ *             offers every viewer the same working Ask AI modal — no control that
+ *             then answers "available to the listing owner".
  *   C2/BYA-H6 — the listing 'Expired' status signal (derived from expiration_date)
  *             that the new bid-submit guards rely on is correct.
  */
@@ -40,13 +40,21 @@ class AskAiAndExpiryGatingTest extends TestCase
         return $auction;
     }
 
-    // ── C1: endpoint authorization unchanged ────────────────────────────────
+    // ── C1: a non-owner is answered, at public scope only ───────────────────
 
-    public function test_non_owner_is_forbidden_from_listing_question_endpoint(): void
+    public function test_non_owner_is_answered_at_public_scope_by_listing_question_endpoint(): void
     {
         $owner   = User::factory()->create();
         $other   = User::factory()->create();
         $listing = $this->makeSellerOfferListing($owner);
+
+        $mock = $this->createMock(AskAiRunnerV2Service::class);
+        $mock->expects($this->once())->method('run')
+            ->with('seller', $listing->id, 'What is the asking price?', $this->callback(
+                fn ($options) => ($options['viewer_scope'] ?? null) === 'public'
+            ))
+            ->willReturn(['success' => true, 'status' => 'ready', 'final_response' => ['answer' => 'The asking price is $500,000.']]);
+        $this->app->instance(AskAiRunnerV2Service::class, $mock);
 
         $response = $this->actingAs($other)->postJson(route('ask-ai.listing-question'), [
             'listing_type' => 'seller',
@@ -54,7 +62,7 @@ class AskAiAndExpiryGatingTest extends TestCase
             'question'     => 'What is the asking price?',
         ]);
 
-        $response->assertStatus(403);
+        $response->assertOk()->assertJsonPath('answer', 'The asking price is $500,000.');
     }
 
     // ── C1: the owner IS served an answer (not a swallowed soft-failure) ────
@@ -93,9 +101,9 @@ class AskAiAndExpiryGatingTest extends TestCase
         ]);
     }
 
-    // ── C1: view exposes the owner-only Ask AI path only to the owner ───────
+    // ── C1: every viewer gets the same working Ask AI modal ─────────────────
 
-    public function test_owner_view_marks_isOwner_true(): void
+    public function test_owner_view_carries_the_ask_ai_modal_with_the_owner_examples(): void
     {
         $owner   = User::factory()->create();
         $listing = $this->makeSellerOfferListing($owner);
@@ -104,16 +112,19 @@ class AskAiAndExpiryGatingTest extends TestCase
             ->get(route('offer.listing.seller.view', $listing->id));
 
         $response->assertStatus(200);
-        $this->assertStringContainsString('isOwner       = true', $response->getContent());
+        $html = $response->getContent();
+        $this->assertStringContainsString('id="solAiModal"', $html);
+        $this->assertStringContainsString('/ask-ai/listing-question', $html);
+        $this->assertStringContainsString(json_encode('"What financing options does the seller accept?"', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), $html);
     }
 
     /**
-     * Batch 2a made this stricter. A non-owner used to receive the owner-only Ask AI script
-     * with isOwner = false, which kept them off the 403 path at click time. They now receive
-     * no owner Ask AI script or endpoint at all — the shopper Ask AI card holds only the
-     * verified, precomputed property questions (see AskAiPropertyCardShopperExperienceTest).
+     * Batch 2a hid the modal from non-owners because its endpoint was owner-only and every
+     * question they typed ended in "available to the listing owner". The endpoint now
+     * authorizes per fact, so a non-owner gets the same modal — and no owner-only notice,
+     * no client-side owner gate, and none of the owner's generic example questions.
      */
-    public function test_non_owner_view_carries_no_owner_ask_ai_path(): void
+    public function test_non_owner_view_carries_the_public_ask_ai_modal_and_no_owner_gate(): void
     {
         $owner   = User::factory()->create();
         $other   = User::factory()->create();
@@ -124,10 +135,11 @@ class AskAiAndExpiryGatingTest extends TestCase
 
         $response->assertStatus(200);
         $html = $response->getContent();
-        $this->assertStringNotContainsString('isOwner       = true', $html);
-        $this->assertStringNotContainsString('isOwner       = false', $html);
-        $this->assertStringNotContainsString('/ask-ai/listing-question', $html);
-        $this->assertStringNotContainsString('id="solAiModal"', $html);
+        $this->assertStringContainsString('id="solAiModal"', $html);
+        $this->assertStringContainsString('/ask-ai/listing-question', $html);
+        $this->assertStringNotContainsString('isOwner       =', $html);
+        $this->assertStringNotContainsString('Ask AI for this listing is available to the listing owner.', $html);
+        $this->assertStringNotContainsString('What financing options does the seller accept?', $html);
     }
 
     // ── C2: 'Expired' lifecycle signal used by the bid-submit guards ────────

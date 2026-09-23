@@ -795,8 +795,9 @@ listing pages, resolved from the `mls_listing_key` provenance meta and batched o
 role (`forWorkflow()` narrows in SQL, `ListingWorkflowResolver` decides in PHP — both halves).
 Media is `MlsMediaExtractor` + `MlsMediaPolicy`, so only the **unbranded** tour is offered
 (branded is RESTRICTED) and `has_video` is correctly false until a video category is licensed.
-**Ask AI is not wired in** — `ask-ai.listing-question` answers only about a listing the
-requester OWNS and serves private offer-listings, not public MLS data. **Save does not exist
+**Ask AI is not wired in** — `ask-ai.listing-question` answers about BidYourOffer offer
+listings (anyone who can see the listing's public page at public scope, the owner at owner
+scope), not about Bridge rows or public MLS data. **Save does not exist
 anywhere in this application.** Schedule Showing appears only where a real BidYourOffer
 listing exists. `match_score` is null: no reliable score exists for an MLS-only property and
 Phase 1 invents none.

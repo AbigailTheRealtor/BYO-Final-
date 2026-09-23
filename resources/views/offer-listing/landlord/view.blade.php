@@ -2138,15 +2138,9 @@
             </a>
             @endauth
             {{-- Option A: Ask AI added to sidebar to match Seller view --}}
-            @if($askAiViewerIsOwner ?? false)
             <button class="lol-action-btn lol-action-outline" data-bs-toggle="modal" data-bs-target="#lolAiModal">
                 <i class="fa-solid fa-robot"></i>Ask AI About Property
             </button>
-            @else
-            <a href="#lol-ask-ai-card" class="lol-action-btn lol-action-outline">
-                <i class="fa-solid fa-robot"></i>Ask AI About Property
-            </a>
-            @endif
             <button type="button" class="lol-action-btn lol-action-outline lol-action-hire"
                     data-bs-toggle="modal" data-bs-target="#lolHireAgentModal">
                 <i class="fa-solid fa-user-tie"></i>Hire an Agent
@@ -2336,10 +2330,9 @@
         </div>
     </div>
 
-    {{-- Modal: Ask AI About This Property — OWNER ONLY. Its endpoint is owner-scoped, so a
-         shopper would only ever reach the "available to the listing owner" notice; shoppers
-         get the verified questions in the Ask AI card instead. --}}
-    @if($askAiViewerIsOwner ?? false)
+    {{-- Modal: Ask AI About This Property — for every viewer, signed in or not. Authorization is
+         per fact: the endpoint answers the owner at owner scope and everyone else at public
+         scope, so a guest gets exactly the public facts this page already shows. --}}
     <div class="modal fade" id="lolAiModal" tabindex="-1" aria-labelledby="lolAiModalLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
@@ -2348,12 +2341,23 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this rental listing. Try asking:</p>
+                    @php
+                        // Owner: this page's own examples. Everyone else: only questions this listing's public
+                        // card can answer (AskAiModalExamples), never a generic list they may be refused.
+                        $__lolAiModalExamples = \App\Support\AskAi\AskAiModalExamples::forViewer(
+                            $askAiViewerIsOwner ?? false,
+                            ['What utilities are included in the rent?', 'Are pets allowed at this property?', 'What is the minimum lease term?', 'What are the move-in costs and deposits?', 'Is parking included or available?', 'Is the property near public transit?', 'What appliances are included?'],
+                            $propertyQuestions ?? []
+                        );
+                    @endphp
+                    <p class="text-muted mb-3" style="font-size:.875rem;">Ask AI answers verified information available about this listing.@if(!empty($__lolAiModalExamples)) Try asking:@endif</p>
+                    @if(!empty($__lolAiModalExamples))
                     <div id="lolAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
                         <span class="text-muted fst-italic" style="font-size:.875rem;" id="lolAiExampleText"></span>
                     </div>
+                    @endif
                     @php
-                        $__lolAiSuggestions = app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('landlord', $askAiChipContext ?? [], auth()->check());
+                        $__lolAiSuggestions = ($askAiViewerIsOwner ?? false) ? app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing('landlord', $askAiChipContext ?? [], auth()->check()) : [];
                         $__lolCategorized   = [];
                         foreach ($__lolAiSuggestions as $__sq) { $__lolCategorized[$__sq['category'] ?? 'general'][] = $__sq; }
                     @endphp
@@ -2442,7 +2446,6 @@
             </div>
         </div>
     </div>
-    @endif
 
 </div>{{-- /container --}}
 
@@ -2460,15 +2463,9 @@
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolShowingModal">
         <i class="fa-solid fa-calendar-days"></i><span>Showing</span>
     </button>
-    @if($askAiViewerIsOwner ?? false)
     <button type="button" class="lol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#lolAiModal">
         <i class="fa-solid fa-robot"></i><span>Ask AI</span>
     </button>
-    @else
-    <a href="#lol-ask-ai-card" class="lol-mobile-bar-btn">
-        <i class="fa-solid fa-robot"></i><span>Ask AI</span>
-    </a>
-    @endif
     @if(auth()->check() && auth()->id() == $auction->user_id)
     <a href="{{ route('offer.listing.landlord.edit', ['auctionId' => $auction->id]) }}" class="lol-mobile-bar-btn">
         <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
@@ -2574,33 +2571,22 @@
 
     /* ── Interaction Hub ── */
     (function () {
-        @if($askAiViewerIsOwner ?? false)
-        /* AI modal example questions rotation (owner modal only) */
-        var lolAiExamples = [
-            'What utilities are included in the rent?',
-            'Are pets allowed at this property?',
-            'What is the minimum lease term?',
-            'What are the move-in costs and deposits?',
-            'Is parking included or available?',
-            'Is the property near public transit?',
-            'What appliances are included?'
-        ];
+        /* AI modal example questions rotation */
+        var lolAiExamples = @json($__lolAiModalExamples);
         var lolAiIdx = 0;
         var lolAiEl = document.getElementById('lolAiExampleText');
         var lolAiModal = document.getElementById('lolAiModal');
-        if (lolAiEl && lolAiModal) {
+        if (lolAiEl && lolAiModal && lolAiExamples.length) {
             lolAiEl.textContent = lolAiExamples[0];
             lolAiModal.addEventListener('show.bs.modal', function () {
                 lolAiEl.textContent = lolAiExamples[lolAiIdx % lolAiExamples.length];
                 lolAiIdx++;
             });
         }
-        @endif
         var lolHubNativeBtn = document.getElementById('lolHubNativeShareBtn');
         if (navigator.share && lolHubNativeBtn) { lolHubNativeBtn.style.display = ''; }
         /* Copy Link — goes directly to clipboard regardless of native share availability */
-        @if($askAiViewerIsOwner ?? false)
-        /* ---- Ask AI modal — V2-aware submit + session management (owner modal only) ---- */
+        /* ---- Ask AI modal — V2-aware submit + session management ---- */
         (function () {
             var submitBtn = document.getElementById('lolAiSubmitBtn');
             var textarea  = document.getElementById('lolAiTextarea');
@@ -2613,9 +2599,6 @@
             var listingId = {{ $auction->id }};
             var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
-            /* WF-1: V1 listing-question endpoint is owner-scoped; never route a
-               non-owner to it (source of the Ask AI 403). Public assistant is V2. */
-            var isOwner       = {{ (auth()->id() && (int) auth()->id() === (int) $auction->user_id) ? 'true' : 'false' }};
 
             /* V2 configuration — from Blade */
             var useV2         = {{ $agentAiV2 ? 'true' : 'false' }};
@@ -2782,18 +2765,8 @@
                 .then(function(data) { setLoading(false); if (textarea) textarea.value = ''; appendTurn(q, data); })
                 .catch(function() { setLoading(false); appendTurn(q, { status: 'failed' }); });
             }
-            function showOwnerOnlyNotice() {
-                setLoading(false);
-                if (!resultDiv) return;
-                resultDiv.innerHTML = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:.5rem;padding:.9rem 1rem;">'
-                    + '<div style="font-size:.8rem;font-weight:700;color:#0369a1;margin-bottom:.35rem;"><i class="fa-solid fa-circle-info me-1"></i>Notice</div>'
-                    + '<div style="font-size:.875rem;color:#1e293b;">Ask AI for this listing is available to the listing owner.</div></div>';
-                resultDiv.style.display = '';
-            }
 
             function submitV1(q) {
-                // WF-1: never call the owner-only endpoint for a non-owner (would 403).
-                if (!isOwner) { showOwnerOnlyNotice(); return; }
                 resetResult();
                 fetch('/ask-ai/listing-question', {
                     method: 'POST',
@@ -2916,7 +2889,6 @@
                 });
             }
         }());
-        @endif
 
         var lolHubCopyBtn = document.getElementById('lolHubCopyBtn');
         if (lolHubCopyBtn) {

@@ -1896,11 +1896,12 @@ class AgentAiBuild7Test extends TestCase
     }
 
     /**
-     * P0.1 — the V1 controller's OWNERSHIP logic still runs with the V2 flag on.
+     * P0.1 — the V1 controller's AUTHORIZATION logic still runs with the V2 flag on.
      *
      * Validation reachability (above) proves the controller ran; this proves the
-     * authorization branch inside it ran too. A signed-in user who does not own the listing
-     * must receive the controller's own 403, not a 401, not a 404, and not an answer.
+     * authorization branch inside it ran too. The endpoint answers a non-owner only about a
+     * listing whose public page would render for them; this seeded listing's would not, so a
+     * signed-in non-owner receives the controller's own 'not_found' and no answer.
      */
     public function test_v1_ask_ai_ownership_check_still_runs_when_v2_flag_is_on(): void
     {
@@ -1918,10 +1919,10 @@ class AgentAiBuild7Test extends TestCase
             'question'     => 'How many bedrooms does this property have?',
         ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(404)
                  ->assertJson([
                      'success' => false,
-                     'status'  => 'forbidden',
+                     'status'  => 'not_found',
                      'answer'  => null,
                  ]);
     }
