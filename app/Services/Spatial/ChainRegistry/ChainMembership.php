@@ -27,6 +27,9 @@ final class ChainMembership
         public readonly string $formatKey,
         public readonly string $matchMethod,
         public readonly array $coBrandWith = [],
+        // The raw taxonomy token a chain-scoped rescue admitted this row from (v2 decision 1);
+        // null for every row that arrived through an imported category.
+        public readonly ?string $rescuedFromSourceCategory = null,
     ) {
         if (! in_array($role, ChainRole::all(), true)) {
             throw new \InvalidArgumentException("unknown chain role: {$role}");
@@ -53,6 +56,7 @@ final class ChainMembership
             'match_method' => $this->matchMethod,
             'storefront_status' => $this->storefrontStatus(),
             'co_brand_with' => $this->coBrandWith,
+            'rescued_from_source_category' => $this->rescuedFromSourceCategory,
         ];
     }
 }

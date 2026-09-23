@@ -21,6 +21,7 @@ class ChainRegistryConfigTest extends TestCase
      */
     private const RULE_HASH_PINS = [
         'chain-registry-v1' => '09a1c24c0ace9a71a296ca7825bf7d571f647513cac2cba545d700e7439c61d9',
+        'chain-registry-v2' => 'b5920a1c73199a0d8e030e5281018baa763438eb7ad02aee76f7ba3cbc0b151f',
     ];
 
     private const APPROVED_CHAINS = [
@@ -54,7 +55,8 @@ class ChainRegistryConfigTest extends TestCase
 
     public function test_versions_are_independent_contracts(): void
     {
-        $this->assertSame('chain-registry-v1', $this->registry->registryVersion());
+        $this->assertSame('chain-registry-v2', $this->registry->registryVersion());
+        $this->assertSame('chain-match-precedence-v2', ChainRegistry::MATCH_PRECEDENCE_VERSION);
         $this->assertSame('chain-name-norm-v1', $this->registry->normalizerVersion());
         $this->assertSame(OvertureTaxonomyMapV2::VERSION, $this->registry->taxonomyMapVersion());
         $this->assertStringNotContainsString('2026', $this->registry->registryVersion(), 'not tied to an Overture release');
@@ -134,35 +136,46 @@ class ChainRegistryConfigTest extends TestCase
         }
     }
 
-    public function test_decision_3_mcdonalds_not_identified_from_coffee_or_cafe(): void
+    public function test_v2_decision_2_mcdonalds_restaurant_and_coffee_need_strong_identity(): void
     {
         $mcd = $this->registry->chain('mcdonalds');
-        $this->assertSame(['burger_restaurant', 'fast_food_restaurant'], array_keys($mcd->allowedCategories));
-        $this->assertContains('coffee_shop', $mcd->excludedCategories);
-        $this->assertContains('cafe', $mcd->excludedCategories);
+        $this->assertSame(['burger_restaurant', 'coffee_shop', 'fast_food_restaurant', 'restaurant'], array_keys($mcd->allowedCategories));
+        $this->assertSame(['coffee_shop', 'restaurant'], $mcd->strongIdentityCategories);
+        $this->assertSame(['cafe'], $mcd->excludedCategories, 'zero McDonald\'s cafe rows in the census');
     }
 
-    public function test_decision_4_no_generic_restaurant_for_fast_food_or_starbucks(): void
+    public function test_v2_decision_2_restaurant_only_for_burger_king_and_mcdonalds(): void
     {
-        foreach (['mcdonalds', 'taco_bell', 'chick_fil_a', 'wendys', 'burger_king', 'starbucks'] as $key) {
-            $chain = $this->registry->chain($key);
-            $this->assertArrayNotHasKey('restaurant', $chain->allowedCategories, $key);
-            $this->assertContains('restaurant', $chain->excludedCategories, $key);
-        }
         foreach ($this->registry->chains() as $key => $chain) {
+            if (in_array($key, ['burger_king', 'mcdonalds'], true)) {
+                $this->assertArrayHasKey('restaurant', $chain->allowedCategories, $key);
+                $this->assertTrue($chain->requiresStrongIdentity('restaurant'), $key);
+                continue;
+            }
             $this->assertArrayNotHasKey('restaurant', $chain->allowedCategories, $key);
+        }
+        foreach (['taco_bell', 'chick_fil_a', 'wendys', 'starbucks'] as $key) {
+            $this->assertContains('restaurant', $this->registry->chain($key)->excludedCategories, $key);
         }
     }
 
-    public function test_decision_6_only_seven_eleven_permits_fuel_only(): void
+    public function test_v2_decision_3_fuel_only_chains(): void
     {
+        $fuelOnly = [];
         foreach ($this->registry->chains() as $key => $chain) {
-            $expected = $key === 'seven_eleven';
-            $this->assertSame($expected, ($chain->fuelSites['fuel_only'] ?? false) === true, $key);
+            if (($chain->fuelSites['fuel_only'] ?? false) === true) {
+                $fuelOnly[] = $key;
+            }
         }
+        $this->assertSame(['racetrac', 'seven_eleven', 'speedway'], $fuelOnly, 'Wawa unchanged; 7-Eleven unchanged');
         foreach (['wawa', 'racetrac', 'speedway', 'seven_eleven'] as $key) {
             $this->assertTrue($this->registry->chain($key)->fuelSites['store_with_fuel'], $key);
         }
+        foreach (['racetrac', 'speedway'] as $key) {
+            $this->assertTrue($this->registry->chain($key)->requiresStrongIdentity('gas_station'), $key);
+        }
+        $this->assertFalse($this->registry->chain('seven_eleven')->requiresStrongIdentity('gas_station'));
+        $this->assertFalse($this->registry->chain('wawa')->requiresStrongIdentity('gas_station'));
     }
 
     public function test_decision_7_walmart_has_no_fuel(): void
@@ -196,10 +209,103 @@ class ChainRegistryConfigTest extends TestCase
         }
     }
 
-    public function test_decision_11_cvs_shopping_not_rescued(): void
+    public function test_v2_decision_1_cvs_shopping_is_a_chain_scoped_rescue_not_an_import(): void
     {
-        $this->assertArrayNotHasKey('shopping', $this->registry->chain('cvs')->allowedCategories);
-        $this->assertSame(['drugstore', 'pharmacy'], array_keys($this->registry->chain('cvs')->allowedCategories));
+        $cvs = $this->registry->chain('cvs');
+        $this->assertArrayNotHasKey('shopping', $cvs->allowedCategories);
+        $this->assertFalse((new OvertureTaxonomyMapV2())->isImported('shopping'), 'shopping stays out of the import list');
+        $this->assertSame(['shopping' => ['cvs']], $this->registry->rescueSources(), 'the only rescue in the registry');
+        $this->assertSame('drugstore', $cvs->rescueFor('shopping')['as_category'], 'never Location DNA pharmacy');
+        $this->assertSame(['specialty'], array_keys($cvs->rescueFor('shopping')['exclusion_name_patterns']));
+        $this->assertSame(['convenience_store', 'drugstore', 'pharmacy'], array_keys($cvs->allowedCategories));
+        $this->assertSame(['convenience_store'], $cvs->strongIdentityCategories);
+    }
+
+    public function test_v2_decision_6_brand_alias_corroboration_chains(): void
+    {
+        $chains = [];
+        foreach ($this->registry->chains() as $key => $chain) {
+            if ($chain->brandAliasRequiresCorroboration) {
+                $chains[] = $key;
+            }
+        }
+        $this->assertSame(['burger_king', 'chick_fil_a', 'cvs', 'racetrac', 'taco_bell', 'walgreens', 'walmart'], $chains);
+    }
+
+    public function test_v2_decision_7_target_is_a_host_only_for_cvs_inside_target(): void
+    {
+        $hosts = [];
+        foreach ($this->registry->chains() as $key => $chain) {
+            foreach ($chain->formats as $fk => $format) {
+                foreach ($format->hostChains as $host) {
+                    $hosts[] = "{$key}.{$fk}:{$host}";
+                }
+            }
+        }
+        $this->assertSame(['cvs.store_in_target:target'], $hosts);
+        $this->assertFalse($this->registry->chain('cvs')->isCoBrandPartner('target'));
+
+        // The name pattern selects the format in all three CVS storefront categories; Target is a
+        // HOST only where it was measured — pharmacy and drugstore, never convenience_store.
+        $format = $this->registry->chain('cvs')->format('store_in_target');
+        $this->assertSame(['convenience_store', 'drugstore', 'pharmacy'], $format->categories);
+        $this->assertSame(['drugstore', 'pharmacy'], $format->hostCategories);
+        $this->assertFalse($format->hostsIn('convenience_store'));
+    }
+
+    public function test_v2_decision_4_walmart_grocery_roles(): void
+    {
+        $walmart = $this->registry->chain('walmart');
+        $this->assertSame('department', $walmart->allowedCategories['grocery_store'], 'plain Walmart grocery stays unconfirmed');
+        $this->assertTrue($walmart->format('supercenter')->appliesTo('grocery_store'));
+        $this->assertTrue($walmart->format('neighborhood_market')->appliesTo('grocery_store'));
+        $this->assertArrayHasKey('pickup_delivery', $walmart->exclusionNamePatterns);
+    }
+
+    public function test_v2_decision_5_measured_exclusions_and_their_scope(): void
+    {
+        $global = $this->registry->exclusionNamePatterns();
+        foreach (['office', 'warehouse', 'distribution_center', 'support_center', 'careers'] as $reason) {
+            $this->assertArrayHasKey($reason, $global, $reason);
+        }
+        foreach ($global as $reason => $pattern) {
+            foreach (['petroleum', 'specialty', 'dc 7023', 'cvs photo', 'grocery pickup'] as $probe) {
+                $this->assertSame(0, preg_match($pattern, $probe), "global {$reason} must not match '{$probe}'");
+            }
+        }
+        $this->assertArrayHasKey('photo', $this->registry->chain('cvs')->exclusionNamePatterns);
+        $this->assertArrayHasKey('dc', $this->registry->chain('walmart')->exclusionNamePatterns);
+        $this->assertArrayHasKey('petroleum', $this->registry->chain('racetrac')->exclusionNamePatterns);
+        // Burger King's corporate row: one anchored shape, never a global holdings / llc rule.
+        $this->assertSame(['capital_holdings'], array_keys($this->registry->chain('burger_king')->exclusionNamePatterns));
+        foreach ($global as $reason => $pattern) {
+            foreach (['kj capital holdings llc', 'publix holdings'] as $probe) {
+                $this->assertSame(0, preg_match($pattern, $probe), "global {$reason} must not match '{$probe}'");
+            }
+        }
+    }
+
+    public function test_v2_decision_8_winn_dixie_drugstore_and_shell_stays_exact(): void
+    {
+        $wd = $this->registry->chain('winn_dixie');
+        $this->assertSame('storefront', $wd->allowedCategories['drugstore']);
+        $this->assertTrue($wd->requiresStrongIdentity('drugstore'));
+        $this->assertSame([['value' => 'shell', 'match' => ChainRegistry::MATCH_EXACT]], $this->registry->chain('shell')->aliases);
+    }
+
+    public function test_starbucks_seven_eleven_wawa_and_co_branding_unchanged_by_v2(): void
+    {
+        $sb = $this->registry->chain('starbucks');
+        $this->assertSame(['cafe', 'coffee_shop'], array_keys($sb->allowedCategories));
+        $this->assertSame([], $sb->strongIdentityCategories);
+        $this->assertFalse($sb->brandAliasRequiresCorroboration);
+        foreach (['seven_eleven', 'wawa'] as $key) {
+            $c = $this->registry->chain($key);
+            $this->assertSame(['convenience_store', 'gas_station'], array_keys($c->allowedCategories), $key);
+            $this->assertSame([], $c->strongIdentityCategories, $key);
+            $this->assertSame([], $c->sourceCategoryRescues, $key);
+        }
+        $this->assertSame(['speedway'], array_keys($this->registry->chain('seven_eleven')->coBrands));
     }
 
     public function test_ordinary_word_chains_are_exact_only(): void
@@ -234,7 +340,14 @@ class ChainRegistryConfigTest extends TestCase
             'own QID'                => [static function (array $c): array { $c['chains']['walmart']['own_wikidata_ids']['Q483551'] = 'P'; return $c; }],
             'global exclusion QID'   => [static function (array $c): array { $c['global']['exclusion_wikidata_ids']['Q1'] = ['label' => 'x', 'evidence' => 'P']; return $c; }],
             'global pattern'         => [static function (array $c): array { $c['global']['exclusion_name_patterns']['kiosk'] = ['pattern' => '/\bkiosk\b/', 'evidence' => 'P']; return $c; }],
-            'chain pattern'          => [static function (array $c): array { $c['chains']['cvs']['exclusion_name_patterns']['photo'] = ['pattern' => '/\bphoto\b/', 'evidence' => 'P']; return $c; }],
+            'chain pattern'          => [static function (array $c): array { $c['chains']['cvs']['exclusion_name_patterns']['kiosk'] = ['pattern' => '/\bkiosk\b/', 'evidence' => 'P']; return $c; }],
+            'strong identity added'  => [static function (array $c): array { $c['chains']['aldi']['allowed_categories']['grocery_store']['identity'] = 'strong'; return $c; }],
+            'strong identity removed'=> [static function (array $c): array { unset($c['chains']['speedway']['allowed_categories']['gas_station']['identity']); return $c; }],
+            'corroboration flag'     => [static function (array $c): array { $c['chains']['walgreens']['brand_alias_requires_corroboration'] = false; return $c; }],
+            'rescue target'          => [static function (array $c): array { $c['chains']['cvs']['source_category_rescues']['shopping']['as_category'] = 'pharmacy'; return $c; }],
+            'rescue pattern'         => [static function (array $c): array { $c['chains']['cvs']['source_category_rescues']['shopping']['exclusion_name_patterns']['caremark'] = ['pattern' => '/\bcaremark\b/', 'evidence' => 'P']; return $c; }],
+            'host chain removed'     => [static function (array $c): array { unset($c['chains']['cvs']['formats']['store_in_target']['host_chains'], $c['chains']['cvs']['formats']['store_in_target']['host_categories']); return $c; }],
+            'host categories'        => [static function (array $c): array { $c['chains']['cvs']['formats']['store_in_target']['host_categories'][] = 'convenience_store'; return $c; }],
             'allowed category'       => [static function (array $c): array { $c['chains']['aldi']['allowed_categories']['convenience_store'] = ['role' => 'storefront', 'evidence' => 'P']; $c['chains']['aldi']['formats']['store']['categories'][] = 'convenience_store'; return $c; }],
             'category role'          => [static function (array $c): array { $c['chains']['publix']['allowed_categories']['pharmacy']['role'] = 'storefront'; $c['chains']['publix']['formats']['pharmacy_department']['role'] = 'storefront'; return $c; }],
             'excluded category'      => [static function (array $c): array { $c['chains']['aldi']['excluded_categories'] = ['restaurant' => 'P']; return $c; }],
@@ -260,6 +373,8 @@ class ChainRegistryConfigTest extends TestCase
     public function test_presentation_edits_do_not_change_the_hash(): void
     {
         $config = require __DIR__ . '/../../../../config/poi_chain_registry.php';
+        $config['chains']['cvs']['source_category_rescues']['shopping']['evidence'] = 'M: re-measured';
+        $config['chains']['mcdonalds']['allowed_categories']['restaurant']['evidence'] = 'D: re-worded';
         $config['chains']['walmart']['display_name'] = 'Walmart Inc.';
         $config['chains']['walmart']['notes'][] = 'another note';
         $config['chains']['walmart']['formats']['supercenter']['label'] = 'Super Center';
