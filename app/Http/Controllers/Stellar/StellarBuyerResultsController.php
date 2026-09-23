@@ -178,6 +178,8 @@ class StellarBuyerResultsController extends Controller
             $matchedCollection->map(fn ($result) => $result->listing),
             $request->query('sort'),
             $request->query(TasteRerankingService::OPT_OUT_PARAM),
+            (string) $selectedType,
+            (int) $selectedId,
         );
         $mapped = $taste->cards;
 

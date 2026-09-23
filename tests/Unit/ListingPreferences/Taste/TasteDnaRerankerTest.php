@@ -418,17 +418,38 @@ class TasteDnaRerankerTest extends TestCase
     }
 
     /** @test */
-    public function a_lowered_listing_is_explained_by_what_they_pass_on(): void
+    public function a_lowered_listing_is_never_told_what_they_pass_on(): void
     {
         $profile = $this->profile([
-            $this->tag('needs_complete_update', TasteDirection::Negative, TasteConfidence::Emerging, [TasteSource::ListingCharacteristic], 'Needs complete update'),
+            $this->tag('needs_complete_update', TasteDirection::Negative, TasteConfidence::Established, [TasteSource::StatedReason], 'Needs complete update'),
+            $this->tag('natural_light', TasteDirection::Positive, TasteConfidence::Established, [TasteSource::StatedReason], 'Natural light'),
         ]);
 
-        $result = TasteDnaReranker::rerank($profile, $this->candidates([['a', 90, ['needs_complete_update']], ['b', 90, []]]));
-        $text   = TasteRerankExplanation::for($result->influence('a'));
+        // Lowered on its own evidence — and it even has a Saved-for feature.
+        $result = TasteDnaReranker::rerank($profile, $this->candidates([
+            ['a', 90, ['needs_complete_update', 'carport']],
+            ['b', 90, []],
+        ]));
 
-        $this->assertSame(TasteRerankExplanation::HEADLINE_LOWERED, $text['headline']);
-        $this->assertSame(['Needs complete update appears regularly in homes you Pass on.'], $text['lines']);
+        $this->assertSame(['b', 'a'], $result->orderedKeys);
+        $this->assertTrue($result->influence('a')->moved());
+        $this->assertNull(TasteRerankExplanation::for($result->influence('a')), 'no confrontational card copy');
+    }
+
+    /** @test */
+    public function a_raised_listing_names_only_what_it_has_that_they_save(): void
+    {
+        $profile = $this->profile([
+            $this->tag('natural_light', TasteDirection::Positive, TasteConfidence::Established, [TasteSource::StatedReason], 'Natural light'),
+            $this->tag('updated_kitchen', TasteDirection::Positive, TasteConfidence::Established, [TasteSource::StatedReason], 'Updated kitchen'),
+            $this->tag('carport', TasteDirection::Negative, TasteConfidence::Emerging, [TasteSource::ListingCharacteristic], 'Carport'),
+        ]);
+
+        $result = TasteDnaReranker::rerank($profile, $this->candidates([['a', 90, []], ['b', 90, ['natural_light', 'updated_kitchen', 'carport']]]));
+        $text   = TasteRerankExplanation::for($result->influence('b'));
+
+        $this->assertSame(['b', 'a'], $result->orderedKeys);
+        $this->assertStringNotContainsString('Pass', implode(' ', $text['lines']));
     }
 
     /** @test */
@@ -453,7 +474,9 @@ class TasteDnaRerankerTest extends TestCase
             ['b', 90, ['natural_light', 'updated_kitchen', 'fireplace']],
         ]));
 
-        foreach (['a', 'b'] as $key) {
+        $this->assertNull(TasteRerankExplanation::for($result->influence('a')), 'lowered: not explained');
+
+        foreach (['b'] as $key) {
             $text = TasteRerankExplanation::for($result->influence($key));
             $this->assertNotNull($text);
 

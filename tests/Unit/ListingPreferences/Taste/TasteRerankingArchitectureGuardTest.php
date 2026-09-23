@@ -51,6 +51,30 @@ class TasteRerankingArchitectureGuardTest extends TestCase
         $this->assertSame(1, substr_count($code, 'rerankStellarResults('), 'exactly one rerank call');
     }
 
+    /**
+     * EXPLICIT BEFORE LEARNED. The seeker's explicit Smart Tag picks are checked
+     * before the Taste profile is even read, and the controller hands the service
+     * the searched criteria so it can check them.
+     *
+     * @test
+     */
+    public function explicit_seeker_picks_are_checked_before_any_taste_is_read(): void
+    {
+        $service = $this->code('app/Services/ListingPreferences/Taste/TasteRerankingService.php');
+
+        $explicit = strpos($service, '$this->hasExplicitSeekerTags(');
+        $profile  = strpos($service, '$this->taste->profileFor(');
+
+        $this->assertNotFalse($explicit);
+        $this->assertNotFalse($profile);
+        $this->assertLessThan($profile, $explicit);
+        $this->assertStringContainsString('->keysForSubject(', $service);
+
+        $controller = $this->code('app/Http/Controllers/Stellar/StellarBuyerResultsController.php');
+        $this->assertStringContainsString('(string) $selectedType,', $controller);
+        $this->assertStringContainsString('(int) $selectedId,', $controller);
+    }
+
     /** @test */
     public function the_matcher_the_scorer_and_the_score_config_never_see_taste(): void
     {

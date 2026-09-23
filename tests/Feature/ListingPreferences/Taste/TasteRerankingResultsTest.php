@@ -54,11 +54,19 @@ class TasteRerankingResultsTest extends TestCase
             $this->flags(...$flags);
             [$user, $criteria] = $this->scenario();
 
+            DB::flushQueryLog();
+            DB::enableQueryLog();
             $response = $this->results($user, $criteria);
+            DB::disableQueryLog();
 
             $this->assertSame(['A', 'B', 'C'], $this->order($response), json_encode($flags));
             $this->assertSame(TasteRerankOutcome::INACTIVE, $response->viewData('tasteStatus'));
             $response->assertDontSee('data-taste-rerank', false);
+
+            // No Taste work at all: no history, no candidate tags, no seeker picks read.
+            $taste = array_filter(DB::getQueryLog(), static fn (array $q): bool =>
+                (bool) preg_match('/listing_preference_events|smart_tag_assignments|smart_tag_seeker_preferences/', $q['query']));
+            $this->assertSame([], array_values($taste), json_encode($flags) . ' must run no Taste query');
         }
     }
 
@@ -149,6 +157,96 @@ class TasteRerankingResultsTest extends TestCase
 
         // Best Match named explicitly is still Best Match.
         $this->assertSame(['B', 'A', 'C'], $this->order($this->results($user, $criteria, ['sort' => 'best_match'])));
+    }
+
+    /**
+     * An unrecognised or malformed sort is NOT read as Best Match: it fails
+     * closed to the standard order rather than accidentally personalizing.
+     *
+     * @test
+     */
+    public function an_unknown_sort_value_fails_closed_to_the_standard_order(): void
+    {
+        [$user, $criteria] = $this->scenario();
+
+        foreach (['zzz', 'BEST_MATCH', 'bestmatch', 'best-match', '0', 'price'] as $sort) {
+            $response = $this->results($user, $criteria, ['sort' => $sort]);
+
+            $this->assertSame(['A', 'B', 'C'], $this->order($response), var_export($sort, true));
+            $this->assertSame(TasteRerankOutcome::EXPLICIT_SORT, $response->viewData('tasteStatus'));
+        }
+
+        // A BLANK sort is no sort: the global TrimStrings + ConvertEmptyStringsToNull
+        // middleware hands the controller null (and trims 'best_match '), so these
+        // are Best Match by the application's own request normalisation.
+        foreach (['', ' ', 'best_match '] as $sort) {
+            $this->assertSame(['B', 'A', 'C'], $this->order($this->results($user, $criteria, ['sort' => $sort])), var_export($sort, true));
+        }
+    }
+
+    // ------------------------------------------------- explicit criteria
+
+    /**
+     * EXPLICIT BEATS LEARNED. Seeker Smart Tag picks (PR #195) are stored and
+     * shown but not yet matched on, so a search carrying any gets the standard
+     * Best Match order — even when the pick agrees with the learned taste, and
+     * whether or not the picker is switched on right now.
+     *
+     * @test
+     */
+    public function explicit_seeker_smart_tags_on_the_searched_criteria_bypass_taste(): void
+    {
+        foreach ([true, false] as $pickerOn) {
+            config()->set('smart_tags_wiring.seeker_preferences_enabled', $pickerOn);
+
+            foreach (['natural_light', 'private_pool'] as $pick) {
+                [$user, $criteria] = $this->scenario();
+                $this->seekerPick('buyer_offer_listing', $criteria, $user, $pick);
+
+                $response = $this->results($user, $criteria);
+
+                $this->assertSame(['A', 'B', 'C'], $this->order($response), "{$pick}, picker " . var_export($pickerOn, true));
+                $this->assertSame(TasteRerankOutcome::EXPLICIT_CRITERIA, $response->viewData('tasteStatus'));
+                $response->assertDontSee('data-taste-rerank', false);
+            }
+        }
+    }
+
+    /** @test */
+    public function picks_on_a_different_criteria_record_do_not_block_this_search(): void
+    {
+        [$user, $criteria] = $this->scenario();
+        $other = $this->buyerCriteria($user);
+        $this->seekerPick('buyer_offer_listing', $other, $user, 'private_pool');
+
+        // Same id on the OTHER subject type is a different record, too.
+        $this->seekerPick('tenant_offer_listing', $criteria, $user, 'private_pool');
+
+        $this->assertSame(['B', 'A', 'C'], $this->order($this->results($user, $criteria)));
+    }
+
+    /** @test */
+    public function a_tenant_search_with_explicit_picks_is_not_personalized(): void
+    {
+        [$user, $criteria] = $this->scenario(role: SeekerRole::Tenant);
+        $this->seekerPick('tenant_offer_listing', $criteria, $user, 'natural_light');
+
+        $response = $this->results($user, $criteria, ['criteria_type' => 'tenant_offer']);
+
+        $this->assertSame(['A', 'B', 'C'], $this->order($response));
+        $this->assertSame(TasteRerankOutcome::EXPLICIT_CRITERIA, $response->viewData('tasteStatus'));
+    }
+
+    /** @test */
+    public function a_criteria_type_the_service_cannot_check_fails_closed(): void
+    {
+        [$user, $criteria] = $this->scenario();
+
+        $outcome = app(\App\Services\ListingPreferences\Taste\TasteRerankingService::class)->rerankStellarResults(
+            $user, SeekerRole::Buyer, [['bridge_property_id' => 1, 'total_score' => 90]], [], null, null, 'buyer', $criteria,
+        );
+
+        $this->assertSame(TasteRerankOutcome::EXPLICIT_CRITERIA, $outcome->status);
     }
 
     // --------------------------------------------------------- no evidence
@@ -438,6 +536,16 @@ class TasteRerankingResultsTest extends TestCase
                 return $this->stub;
             }
         });
+    }
+
+    private function seekerPick(string $subjectType, int $subjectId, User $user, string $tag): void
+    {
+        DB::table('smart_tag_seeker_preferences')->insert([
+            'subject_type' => $subjectType, 'subject_id' => $subjectId, 'user_id' => $user->id,
+            'seeker_role' => str_starts_with($subjectType, 'tenant') ? 'tenant' : 'buyer', 'tag_key' => $tag,
+            'context' => str_starts_with($subjectType, 'tenant') ? 'residential.lease' : 'residential.sale',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
     }
 
     private function saveLinkedByo(User $user, BridgeProperty $home): void

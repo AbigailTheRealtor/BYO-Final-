@@ -1313,10 +1313,15 @@ points is never crossed.** Only `emerging`/`established` `positive`/`negative` s
 outweigh observed correlations. An absent tag is not evidence. The customer's current Save/Maybe/Pass on a
 result is UI state only — never a boost or penalty, and a Passed listing is never hidden.
 
-**Bypassed entirely** for any `sort` other than absent/`best_match` (Stellar has no sort control today),
-for `taste=off` (the page's "Show standard Best Match order" link), for agents and for a seeker whose role
-is not the results' market. **BYO search is out of scope** — no score, explicit sorts only, SQL pagination.
-Explanations come only from `TasteRerankExplanation` (words, never numbers, never "AI").
+**Explicit criteria outrank learned taste.** Seeker Smart Tag picks (PR #195) are stored and shown but not
+yet matched on, so a search whose criteria carry ANY pick bypasses the rerank (`explicit_criteria`), checked
+before the profile is read, whatever the picker flag says, fail-closed for an uncheckable criteria type.
+
+**Bypassed entirely** for any `sort` other than absent/`best_match` (Stellar has no sort control today;
+unknown values fail closed), for `taste=off` (the page's "Show standard Best Match order" link), for agents
+and for a seeker whose role is not the results' market. **BYO search is out of scope by design** — no score,
+explicit sorts only, SQL pagination. Explanations come only from `TasteRerankExplanation` — raised cards
+only, what they have that the customer Saves; never numbers, never "AI", never "you usually Pass on this".
 
 **Flag:** `LISTING_PREFERENCE_TASTE_RERANKING_ENABLED` (default `false`, fail-closed) AND both flags
 above, read only through `TasteDnaAvailability::rerankingEnabled()`. `learning_enabled` stays hard-off

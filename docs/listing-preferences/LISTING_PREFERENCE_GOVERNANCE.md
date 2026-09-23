@@ -511,6 +511,26 @@ DNA never decides whether a property qualifies.
 | which listings appear | the reranker returns a permutation of its input and asserts it; the total, the map pins and pagination read the same list; a listing the customer Passed stays |
 | an explicit sort | only an absent `sort` or `sort=best_match` is personalized; any other value is left untouched. Stellar offers **no sort control today** (audited: the controller reads only `criteria_type`, `criteria_id`, `page`) |
 | whose taste | the signed-in account's own profile, for the seeker role its `user_type` names, and only when that is the results' market; an agent viewing a client's search gets the standard order |
+| an explicit request | a search whose criteria carry explicit seeker Smart Tag picks gets the standard order (below) |
+
+### Explicit criteria take precedence over learned taste
+
+What a customer asks for today must never be overruled by what their history suggests. Everything
+the matcher filters and scores on (types, price, beds, baths, geography, amenities…) is decided
+**before** reranking and cannot be undone by it — the rerank sees only already-eligible listings and
+cannot cross a real score gap.
+
+**Seeker Smart Tag picks (PR #195) are the exception, and are handled conservatively.** Buyer/Tenant
+Offer Listings (and Criteria) can now carry explicit Smart Tag picks
+(`smart_tag_seeker_preferences`). As merged they are **stored and shown only**: no loader, filter
+builder, SQL query or scorer reads them — the reader documents itself as serving "a future matcher".
+Letting learned taste reorder such a search could rank a listing matching a PAST pattern above one
+matching a CURRENT request, so **any stored pick on the searched criteria bypasses the rerank** and
+the page shows the standard Best Match order (`explicit_criteria`). The check runs before the Taste
+profile is read, ignores whether the picker is switched on right now (a request is still a request
+while its control is hidden), and fails closed for a criteria type it cannot check. It is lifted —
+by a governance edit, not a flag — only once the picks have authoritative matcher semantics, at
+which point Match DNA scores them and Taste stays bounded after it.
 
 ### Where it runs, and why there
 
@@ -520,7 +540,7 @@ already scores every eligible candidate (≤ 200) and sorts them before that sli
 whole list there means page 1 is genuinely the top of the personalized order and no listing is
 duplicated or lost between pages. Nothing is loaded that the matcher did not already load.
 
-**BYO search is out of scope, deliberately.** `/search/seller-listings` and `/search/rental-properties`
+**BYO search is out of scope, deliberately — a scope boundary, not an unfinished bug.** `/search/seller-listings` and `/search/rental-properties`
 have **no match score**, offer only explicit sorts (`newest` default, `most_viewed`, `ending_soon`) and
 paginate in SQL. There is no Best Match order to refine, every order there is an explicit choice, and
 reordering after SQL pagination could only shuffle one page. Personalizing BYO needs a native property
@@ -586,11 +606,12 @@ tends to Pass on, learned taste may lower it within the bound — like any other
 
 Beside "sorted by **Best Match**" the page says **"Personalized with Your Home Taste · Show standard
 Best Match order"** (the link adds `taste=off`, keeps the criteria, drops the page). Opted out, it says
-**"Standard Best Match order · Personalize with Your Home Taste"**. A listing that moved, and carries
-evidence of its own, shows up to two sentences from `TasteRerankExplanation` —
-*"Natural Light is a reason you have picked when Saving homes."* for a stated reason,
-*"Fireplace appears often in homes you Save."* for a correlation — never a number, percentage, key or
-id, and never the word AI. A listing that moved only because a neighbour moved is not explained.
+**"Standard Best Match order · Personalize with Your Home Taste"**. A listing Taste RAISED, on evidence
+of its own, shows up to two sentences from `TasteRerankExplanation` about what it has that the
+customer tends to Save — *"Natural Light is a reason you have picked when Saving homes."* for a stated
+reason, *"Fireplace appears often in homes you Save."* for a correlation — never a number,
+percentage, key, id or confidence tier, and never the word AI. A lowered listing is **not** explained
+(no "you usually Pass on this" on a card), nor is one that moved only because a neighbour moved.
 Nothing is rendered when the feature is off, the viewer is not a matching seeker, an explicit sort is
 chosen, or their taste has nothing to act on. Your Home Taste's own page says ordering may change when
 reranking is on.

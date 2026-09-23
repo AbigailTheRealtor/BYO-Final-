@@ -15,33 +15,31 @@ namespace App\Support\ListingPreferences\Taste;
  * merely appears on homes they chose is worded as something they tend to do,
  * never as something they told us.
  *
- * Only a listing whose position actually changed, AND which carries evidence of
- * its own, is explained. A listing that moved only because a neighbour moved
- * says nothing — there is nothing true to say about it.
+ * Only a listing Taste RAISED, on evidence of its own, is explained — and only by
+ * what it has that the customer tends to Save. A listing that moved only because
+ * a neighbour moved says nothing (there is nothing true to say about it), and a
+ * listing Taste LOWERED says nothing either: the card is there to help the
+ * customer judge the home, not to tell them "you usually Pass on this".
  */
 final class TasteRerankExplanation
 {
     public const MAX_LINES = 2;
 
-    public const HEADLINE_RAISED  = 'Fits things you tend to Save';
-    public const HEADLINE_LOWERED = 'Has things you tend to Pass on';
+    public const HEADLINE_RAISED = 'Fits things you tend to Save';
 
     /**
      * @return array{headline: string, lines: list<string>}|null
      */
     public static function for(?TasteRerankInfluence $influence): ?array
     {
-        if ($influence === null || ! $influence->moved()) {
+        if ($influence === null || ! $influence->raised()) {
             return null;
         }
 
-        $raised = $influence->raised();
-
-        // Explain in the direction the listing moved: a raised listing by what
-        // it has that the customer Saves, a lowered one by what they Pass on.
+        // Only what it has that the customer tends to Save — never a Pass pattern.
         $relevant = array_values(array_filter(
             $influence->contributions,
-            static fn (TasteRerankContribution $c): bool => $c->isPositive() === $raised,
+            static fn (TasteRerankContribution $c): bool => $c->isPositive(),
         ));
 
         if ($relevant === []) {
@@ -55,31 +53,24 @@ final class TasteRerankExplanation
         }
 
         return [
-            'headline' => $raised ? self::HEADLINE_RAISED : self::HEADLINE_LOWERED,
+            'headline' => self::HEADLINE_RAISED,
             'lines'    => $lines,
         ];
     }
 
     private static function line(TasteSignal $signal): string
     {
-        $positive = $signal->direction === TasteDirection::Positive;
-        $often    = $signal->confidence === TasteConfidence::Established;
-        $label    = $signal->label;
+        $often = $signal->confidence === TasteConfidence::Established;
+        $label = $signal->label;
 
         if ($signal->hasSource(TasteSource::StatedReason)) {
-            return $positive
-                ? $label . ' is a reason you have picked when Saving homes.'
-                : $label . ' is a reason you have picked when Passing on homes.';
+            return $label . ' is a reason you have picked when Saving homes.';
         }
 
         if ($signal->dimension === TasteDimension::PropertySubtype) {
-            return $positive
-                ? 'You ' . ($often ? 'often' : 'tend to') . ' Save homes of this type (' . $label . ').'
-                : 'You ' . ($often ? 'often' : 'tend to') . ' Pass on homes of this type (' . $label . ').';
+            return 'You ' . ($often ? 'often' : 'tend to') . ' Save homes of this type (' . $label . ').';
         }
 
-        return $positive
-            ? $label . ' appears ' . ($often ? 'often' : 'regularly') . ' in homes you Save.'
-            : $label . ' appears ' . ($often ? 'often' : 'regularly') . ' in homes you Pass on.';
+        return $label . ' appears ' . ($often ? 'often' : 'regularly') . ' in homes you Save.';
     }
 }

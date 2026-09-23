@@ -3,12 +3,14 @@
 namespace App\Services\ListingPreferences\Taste;
 
 use App\Models\BridgeProperty;
+use App\Services\SmartTags\Seeker\SmartTagSeekerPreferenceReader;
 use App\Support\ListingPreferences\SeekerRole;
 use App\Support\ListingPreferences\Taste\TasteDnaAvailability;
 use App\Support\ListingPreferences\Taste\TasteDnaReranker;
 use App\Support\ListingPreferences\Taste\TasteRerankCandidate;
 use App\Support\ListingPreferences\Taste\TasteRerankExplanation;
 use App\Support\SmartTags\SmartTagListingType;
+use App\Support\SmartTags\SmartTagSeekerSubjectType;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
@@ -29,6 +31,15 @@ use Illuminate\Contracts\Auth\Authenticatable;
  * reorder a client's search, and the client's must never be read on the agent's
  * behalf.
  *
+ * EXPLICIT CRITERIA OUTRANK LEARNED TASTE. A seeker who picked Smart Tags on
+ * the criteria being searched has told us what they want TODAY. Those picks are
+ * stored and shown, but nothing in the matcher filters or scores them yet — so
+ * learned taste reordering the results could put a listing matching a PAST
+ * pattern above one matching a CURRENT request. Until the picks have
+ * authoritative matcher semantics, such a search gets the standard Best Match
+ * order. A criteria type this service cannot check is treated the same way:
+ * unconfirmed is not "none".
+ *
  * QUERY SHAPE. With any gate closed: none. Otherwise the Phase 4 profile read
  * (one event query plus the facts of the homes in the customer's own history —
  * bounded by THEIR history, not by the candidates) and one Smart Tag query for
@@ -48,9 +59,16 @@ class TasteRerankingService
      */
     public const BEST_MATCH_SORTS = ['', 'best_match'];
 
+    /** The Stellar results page's criteria tokens, and the seeker-tag subject each one is. */
+    private const CRITERIA_SUBJECTS = [
+        'buyer_offer'  => SmartTagSeekerSubjectType::BuyerOfferListing,
+        'tenant_offer' => SmartTagSeekerSubjectType::TenantOfferListing,
+    ];
+
     public function __construct(
         private readonly TasteDnaService $taste,
         private readonly TasteListingFactsReader $facts,
+        private readonly SmartTagSeekerPreferenceReader $seekerTags,
     ) {
     }
 
@@ -59,6 +77,8 @@ class TasteRerankingService
      *                                            carrying `bridge_property_id` and `total_score`
      * @param iterable<BridgeProperty>   $rows    the same candidates' rows, already loaded
      * @param SeekerRole                 $market  the side of the market these results are for
+     * @param string                     $criteriaType the page's criteria token (`buyer_offer` / `tenant_offer`)
+     * @param int                        $criteriaId   the criteria record being searched
      */
     public function rerankStellarResults(
         ?Authenticatable $user,
@@ -67,6 +87,8 @@ class TasteRerankingService
         iterable $rows,
         ?string $sort,
         ?string $tasteParam,
+        string $criteriaType,
+        int $criteriaId,
     ): TasteRerankOutcome {
         $cards = array_values($cards);
 
@@ -86,6 +108,10 @@ class TasteRerankingService
 
         if ($tasteParam === self::OPT_OUT_VALUE) {
             return new TasteRerankOutcome(TasteRerankOutcome::OPTED_OUT, $cards);
+        }
+
+        if ($this->hasExplicitSeekerTags($criteriaType, $criteriaId)) {
+            return new TasteRerankOutcome(TasteRerankOutcome::EXPLICIT_CRITERIA, $cards);
         }
 
         $profile = $this->taste->profileFor((int) $user->getAuthIdentifier(), $role);
@@ -123,5 +149,22 @@ class TasteRerankingService
         }
 
         return new TasteRerankOutcome(TasteRerankOutcome::PERSONALIZED, $ordered);
+    }
+
+    /**
+     * Whether the searched criteria carry explicit Smart Tag picks — ANY stored
+     * pick, whether or not the seeker-preference picker is switched on now: a
+     * request the customer made is still their request while the control is
+     * hidden. An unrecognised criteria type answers true (fail closed).
+     */
+    private function hasExplicitSeekerTags(string $criteriaType, int $criteriaId): bool
+    {
+        $subject = self::CRITERIA_SUBJECTS[$criteriaType] ?? null;
+
+        if ($subject === null || $criteriaId <= 0) {
+            return true;
+        }
+
+        return $this->seekerTags->keysForSubject($subject, $criteriaId) !== [];
     }
 }
