@@ -125,6 +125,7 @@ tests/Feature/Security/GeocodeCommandHonestFailureTest.php
 tests/Feature/Security/GooglePlacesCredentialGuardTest.php
 tests/Feature/Security/GooglePlacesKillSwitchTest.php
 tests/Feature/Spatial/CorpusExtractOvertureCommandTest.php
+tests/Feature/Spatial/CorpusExtractOvertureV2CommandTest.php
 tests/Feature/Spatial/CorpusImportAuthorityOverlayCommandTest.php
 tests/Feature/Spatial/CorpusImportBoundariesCommandTest.php
 tests/Feature/Spatial/CorpusImportFemaBoundariesCommandTest.php
@@ -284,6 +285,10 @@ tests/Unit/Spatial/OverturePlaceNormalizerFlatShapeTest.php
 tests/Unit/Spatial/OverturePlaceNormalizerTest.php
 tests/Unit/Spatial/OverturePlaceNormalizerV117Test.php
 tests/Unit/Spatial/OvertureTaxonomyMapV2Test.php
+tests/Unit/Spatial/OvertureExtractV2/OvertureExtractV2ConfigTest.php
+tests/Unit/Spatial/OvertureExtractV2/OvertureExtractV2SqlManifestTest.php
+tests/Unit/Spatial/OvertureExtractV2/OvertureExtractV2StructuralGuardTest.php
+tests/Unit/Spatial/OvertureExtractV2/OvertureV2NormalizerTest.php
 tests/Unit/Spatial/PadUsBoundarySourceTest.php
 tests/Unit/Spatial/PlaceAuthorityLinkMaterializerTest.php
 tests/Unit/Spatial/PlaceRowMaterializerTest.php
