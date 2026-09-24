@@ -45,6 +45,9 @@ class TasteListingFactsReader
 {
     private const SQFT_PER_ACRE = 43_560.0;
 
+    /** The only Bridge columns read — the allow-list, in one place. */
+    private const BRIDGE_COLUMNS = ['id', 'raw_json', 'bedrooms_total', 'bathrooms_total_integer', 'living_area', 'lot_size_sqft', 'property_sub_type'];
+
     /**
      * @param  list<string> $refKeys "<listing_type>:<listing_id>"
      * @return array<string, TasteListingFacts> keyed by the same ref key; an
@@ -78,6 +81,15 @@ class TasteListingFactsReader
             };
         }
 
+        return $this->assemble($raw);
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>> $raw ref key => facts fields
+     * @return array<string, TasteListingFacts>
+     */
+    private function assemble(array $raw): array
+    {
         $tags = $this->presentTags(array_keys($raw));
 
         $out = [];
@@ -99,16 +111,42 @@ class TasteListingFactsReader
     }
 
     /**
+     * Facts for Bridge rows the caller ALREADY HOLDS — the Phase 5 results
+     * page, whose candidates were loaded by the matcher moments earlier.
+     *
+     * Same publication rule, same columns, same Smart Tag read as `for()`; the
+     * only difference is that the rows are not fetched again. The cost is ONE
+     * query (the resolved tags) however many candidates there are, which is
+     * what keeps reranking free of per-listing queries.
+     *
+     * @param  iterable<BridgeProperty>        $rows
+     * @return array<string, TasteListingFacts> keyed "bridge:<id>"; an unpublishable row has no entry
+     */
+    public function forBridgeRows(iterable $rows): array
+    {
+        return $this->assemble($this->bridgeFields($rows));
+    }
+
+    /**
      * @param  list<int> $ids
      * @return array<string, array<string, mixed>>
      */
     private function bridge(array $ids): array
     {
-        $out = [];
+        return $this->bridgeFields(
+            BridgeProperty::query()
+                ->whereIn('id', $ids)
+                ->get(self::BRIDGE_COLUMNS)
+        );
+    }
 
-        $rows = BridgeProperty::query()
-            ->whereIn('id', $ids)
-            ->get(['id', 'raw_json', 'bedrooms_total', 'bathrooms_total_integer', 'living_area', 'lot_size_sqft', 'property_sub_type']);
+    /**
+     * @param  iterable<BridgeProperty> $rows
+     * @return array<string, array<string, mixed>>
+     */
+    private function bridgeFields(iterable $rows): array
+    {
+        $out = [];
 
         foreach ($rows as $row) {
             // The management page's rule, not a second one: decoded as the

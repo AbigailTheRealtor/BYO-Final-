@@ -40,8 +40,11 @@ class TenantOfferListingController extends Controller
      *   4. hire_agent stamp → always 404, even if it somehow passed step 1/2.
      *
      * Dynamically loads ALL meta keys into a flat array — no hardcoded whitelist.
+     *
+     * Public so AskAiPublicListingAccess asks this same resolver: Ask AI answers a
+     * non-owner about a listing exactly when this page would show it to them.
      */
-    protected function resolveOfferListing(int $id): array
+    public function resolveOfferListing(int $id): array
     {
         $auction = TenantAgentAuction::with('meta')->findOrFail($id);
 

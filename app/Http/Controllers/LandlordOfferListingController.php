@@ -79,7 +79,11 @@ class LandlordOfferListingController extends Controller
         return app(ListingOfferAuctionLinker::class)->ensureFor($auction, 'landlord');
     }
 
-    private function resolveOfferListing(int|string $id): LandlordAgentAuction
+    /**
+     * Public so AskAiPublicListingAccess asks this same resolver: Ask AI answers a
+     * non-owner about a listing exactly when this page would show it to them.
+     */
+    public function resolveOfferListing(int|string $id): LandlordAgentAuction
     {
         $auction = LandlordAgentAuction::with('meta')->find($id);
 

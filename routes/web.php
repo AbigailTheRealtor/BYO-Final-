@@ -259,11 +259,16 @@ Route::get('/widget/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Cont
     ->where('agentShortId', '[0-9a-f]+')
     ->name('hire.agent.widget');
 
-// Ask AI — listing question endpoint. Authenticated; the controller answers
-// only about a listing the requester OWNS (the AskAi engine serves private
-// consumer offer-listings, not public MLS data). CSRF + edge throttle.
+// Ask AI — listing question endpoint. Open to anyone who can see the listing's public
+// page, guests included: public questions must not require login or ownership.
+// Authorization is per FACT. The controller hands the runner the 'owner' scope for the
+// listing's owner and the 'public' scope for everyone else, admits a non-owner only where
+// the listing's own public page renders (AskAiPublicListingAccess), and drops a
+// non-owner's runner options. Answers are deterministic; no model is ever called
+// (AskAiOpenAiAdapterService::LLM_ANSWERING_APPROVED). CSRF + edge throttle + the
+// controller's own guest / user / listing rate limits.
 Route::post('/ask-ai/listing-question', [\App\Http\Controllers\AskAiListingQuestionController::class, 'run'])
-    ->middleware(['auth', 'throttle:ask-ai-api'])
+    ->middleware(['throttle:ask-ai-api'])
     ->name('ask-ai.listing-question');
 
 // Ask AI — the unauthenticated web channel endpoint (POST /ask-ai/ask) was REMOVED in P0.
@@ -272,8 +277,9 @@ Route::post('/ask-ai/listing-question', [\App\Http\Controllers\AskAiListingQuest
 // visitor could post a listing_type + listing_id and drive the full Ask AI pipeline,
 // including its OpenAI calls, at our expense. An audit of the whole application found NO
 // caller: no Blade view, no JavaScript, no controller, no console command. Every Ask AI
-// surface in the product posts to /ask-ai/listing-question, which is authenticated and
-// ownership-scoped.
+// surface in the product posts to /ask-ai/listing-question. That endpoint now admits guests
+// too, but not the way this one did: it never runs at owner scope for a non-owner, it
+// refuses listings whose public page would not render, and it reaches no model.
 //
 // The canonical channel-agnostic contract this route shared with external integrations is
 // UNCHANGED and still served by POST /api/ask-ai/ask under 'auth:sanctum' (routes/api.php).

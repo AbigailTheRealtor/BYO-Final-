@@ -12,42 +12,25 @@ use App\Services\AskAi\AskAiRateLimitService;
 use App\Services\AskAi\AskAiUsageLoggerService;
 use App\Services\AskAi\AskAiComplianceGuardrailService;
 use App\Services\AskAi\AskAiViewerAuthorizationService;
+use App\Support\AskAi\AskAiPublicListingAccess;
 
 class AskAiListingQuestionController extends Controller
 {
-    /**
-     * Canonical-or-aliased listing_type → the auctions table that stores it.
-     * The AskAi engine serves ONLY these private consumer offer-listings (it has
-     * no public MLS/Bridge support), so every request is authorized against the
-     * listing's user_id ownership column before the runner is invoked.
-     */
-    private const OWNER_TABLES = [
-        'seller'                  => 'seller_agent_auctions',
-        'seller_agent_auction'    => 'seller_agent_auctions',
-        'property_auction'        => 'seller_agent_auctions',
-        'buyer'                   => 'buyer_agent_auctions',
-        'buyer_agent_auction'     => 'buyer_agent_auctions',
-        'buyer_criteria_auction'  => 'buyer_agent_auctions',
-        'landlord'                => 'landlord_agent_auctions',
-        'landlord_agent_auction'  => 'landlord_agent_auctions',
-        'landlord_auction'        => 'landlord_agent_auctions',
-        'tenant'                  => 'tenant_agent_auctions',
-        'tenant_agent_auction'    => 'tenant_agent_auctions',
-        'tenant_criteria_auction' => 'tenant_agent_auctions',
-    ];
-
     private AskAiRunnerV2Service $runner;
     private AskAiUsageLoggerService $logger;
     private AskAiRateLimitService $rateLimiter;
+    private AskAiViewerAuthorizationService $viewerAuthorization;
 
     public function __construct(
         AskAiRunnerV2Service $runner,
         AskAiUsageLoggerService $logger,
-        AskAiRateLimitService $rateLimiter
+        AskAiRateLimitService $rateLimiter,
+        AskAiViewerAuthorizationService $viewerAuthorization
     ) {
-        $this->runner      = $runner;
-        $this->logger      = $logger;
-        $this->rateLimiter = $rateLimiter;
+        $this->runner              = $runner;
+        $this->logger              = $logger;
+        $this->rateLimiter         = $rateLimiter;
+        $this->viewerAuthorization = $viewerAuthorization;
     }
 
     public function run(Request $request): JsonResponse
@@ -65,20 +48,33 @@ class AskAiListingQuestionController extends Controller
         $question     = $validated['question'];
         $questionHash = hash('sha256', $question);
 
-        // Object-level authorization: the requester may only ask about a listing
-        // they own. Closes the unauthenticated-IDOR + restricted-field exposure
-        // on this endpoint. Unknown listing types are denied.
-        if (! $this->ownsListing(Auth::id(), $listingType, $listingId)) {
-            return response()->json([
-                'success'             => false,
-                'status'              => 'forbidden',
-                'answer'              => null,
-                'refusal_message'     => null,
-                'disclosures'         => null,
-                'source_attribution'  => null,
-                'error'               => 'You can only ask questions about your own listing.',
-                'follow_up_questions' => [],
-            ], 403);
+        // Authorization is per FACT, not per listing. Everyone who can see a listing's public
+        // page may ask about it; what they may learn is decided by the scope the runner is
+        // handed, and every fact is filtered by the existing visibility policy for it.
+        //
+        //   owner                      -> 'owner'  (public facts + owner-permitted facts)
+        //   guest / logged-in non-owner -> 'public' (exactly the same answers as each other)
+        //
+        // A non-owner is admitted only where the listing's own public page would render for
+        // them — never a draft, an unapproved or archived listing, a Hire listing, a missing
+        // record or an unknown type. Those answer 404, the same as the page.
+        $scope = $this->viewerAuthorization->resolveScope(Auth::id(), $listingType, $listingId);
+        if ($scope !== AskAiViewerAuthorizationService::SCOPE_OWNER) {
+            if (! AskAiPublicListingAccess::isPubliclyViewable($listingType, $listingId)) {
+                return response()->json([
+                    'success'             => false,
+                    'status'              => 'not_found',
+                    'answer'              => null,
+                    'refusal_message'     => null,
+                    'disclosures'         => null,
+                    'source_attribution'  => null,
+                    'error'               => 'This listing is not available.',
+                    'follow_up_questions' => [],
+                ], 404);
+            }
+
+            // Never a wider tier than a guest's, whatever resolveScope() found.
+            $scope = AskAiViewerAuthorizationService::SCOPE_PUBLIC;
         }
 
         $rateLimitResult = $this->rateLimiter->check($request, $listingType, $listingId);
@@ -116,10 +112,17 @@ class AskAiListingQuestionController extends Controller
         }
 
         try {
-            // Ownership was verified above (ownsListing), so the requester is the listing
-            // owner — pass the 'owner' scope so Part J / C-B redaction is a no-op here.
-            $options = $validated['options'] ?? [];
-            $options['viewer_scope']      = AskAiViewerAuthorizationService::SCOPE_OWNER;
+            // The scope resolved above: 'owner' for the listing's owner, 'public' for everyone
+            // else. The runner's per-fact redaction (Part J / C-B) applies to 'public'.
+            //
+            // Client-supplied runner options are honoured for the owner only, as before this
+            // endpoint admitted anyone else. For a non-owner they are dropped whole: keys such
+            // as 'normalized_field_key' steer the runner past the public question card, and
+            // 'restricted_owner_answer' is echoed back as answer text. No page sends them.
+            $options = $scope === AskAiViewerAuthorizationService::SCOPE_OWNER
+                ? ($validated['options'] ?? [])
+                : [];
+            $options['viewer_scope']      = $scope;
             $options['requester_user_id'] = Auth::id();
 
             $result = $this->runner->run(
@@ -280,24 +283,4 @@ class AskAiListingQuestionController extends Controller
         }
     }
 
-    /**
-     * True only when the given user owns the (type, id) offer listing. Unknown
-     * listing types and guests are denied.
-     */
-    private function ownsListing(?int $userId, string $listingType, int $listingId): bool
-    {
-        if (! $userId) {
-            return false;
-        }
-
-        $table = self::OWNER_TABLES[strtolower($listingType)] ?? null;
-        if ($table === null) {
-            return false;
-        }
-
-        return DB::table($table)
-            ->where('id', $listingId)
-            ->where('user_id', $userId)
-            ->exists();
-    }
 }

@@ -40,8 +40,11 @@ class BuyerOfferListingController extends Controller
      *
      * @param  int|string  $id
      * @param  bool        $withRelations  Load meta + bids.user when true (view page only).
+     *
+     * Public so AskAiPublicListingAccess asks this same resolver: Ask AI answers a
+     * non-owner about a listing exactly when this page would show it to them.
      */
-    private function resolveOfferListing($id, bool $withRelations = false): BuyerAgentAuction
+    public function resolveOfferListing($id, bool $withRelations = false): BuyerAgentAuction
     {
         $query = $withRelations
             ? BuyerAgentAuction::with(['meta', 'bids.user'])

@@ -530,6 +530,19 @@ final class TasteDnaDeriver
     // --------------------------------------------------------------- shared
 
     /**
+     * The signal key a structured sub-type is learned under, or null when the
+     * value is not a sub-type Taste DNA may learn. Public so the Phase 5
+     * reranker matches a candidate's sub-type through THIS rule — the same
+     * cleaning, placeholder drop and compliance check — rather than a copy.
+     */
+    public static function subtypeKey(mixed $value): ?string
+    {
+        $normalised = self::normaliseSubtype($value);
+
+        return $normalised === null ? null : strtolower($normalised);
+    }
+
+    /**
      * A structured sub-type, cleaned — or null when it is not one.
      *
      * "Other" is the form's escape hatch, not a type; its companion free-text

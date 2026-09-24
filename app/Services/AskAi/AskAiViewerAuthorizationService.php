@@ -136,6 +136,15 @@ class AskAiViewerAuthorizationService
     ];
 
     /**
+     * The canonical role ('seller' | 'landlord' | 'buyer' | 'tenant') for a listing-type
+     * alias, or null for a type Ask AI does not serve. The same table resolveScope() uses.
+     */
+    public static function canonicalRole(string $listingType): ?string
+    {
+        return self::CANONICAL_ROLE[strtolower($listingType)] ?? null;
+    }
+
+    /**
      * Resolve the authorization scope of a requester for a listing.
      *
      * @param  int|null $userId       Authenticated requester id, or null for a guest.

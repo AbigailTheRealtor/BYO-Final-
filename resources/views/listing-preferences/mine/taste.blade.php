@@ -12,7 +12,12 @@
     <p class="text-muted small mb-3">
         Some patterns come from reasons you picked. Others are details the homes you chose currently list, and each one says which it is.
         We only show a pattern once several of your choices point the same way, and it changes as you keep choosing.
-        It does not change which homes you are shown or the order they appear in.
+        @if(\App\Support\ListingPreferences\Taste\TasteDnaAvailability::rerankingEnabled())
+            It does not change which homes you are shown or their match scores. When your results are sorted by Best Match,
+            it can reorder homes that match your search about equally — and the results page lets you switch that off.
+        @else
+            It does not change which homes you are shown or the order they appear in.
+        @endif
     </p>
 
     <a class="btn btn-sm btn-outline-secondary mb-3" href="{{ route('listing-preferences.mine.index') }}">
