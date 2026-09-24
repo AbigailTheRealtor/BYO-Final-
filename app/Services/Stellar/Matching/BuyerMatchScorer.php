@@ -3,6 +3,7 @@
 namespace App\Services\Stellar\Matching;
 
 use App\Models\BridgeProperty;
+use App\Services\Bridge\BridgeListingMatchFactsBuilder;
 use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
 use App\Services\SmartTags\Seeker\SeekerSmartTagMatch;
 use App\Services\SmartTags\Seeker\SeekerSmartTagMatcher;
@@ -105,56 +106,91 @@ class BuyerMatchScorer
     {
         $candidates = is_array($candidates) ? $candidates : iterator_to_array($candidates, false);
 
-        // One batch read of the candidates' resolved tags, and only when the seeker picked any —
-        // so the per-listing loop below never queries and a search with no picks queries nothing.
-        $tags = ListingSmartTagIndex::forBridgeRows($candidates, self::scoredSeekerTags($criteria));
+        // Input construction, not scoring: one batch read of the candidates' resolved tags, and only
+        // when the seeker picked any — so the loop below never queries and a search with no picks
+        // queries nothing. Each listing's share of it is handed to score() as a fact.
+        $tags = ListingSmartTagIndex::forCandidates($candidates, $criteria);
 
         $results = [];
 
         foreach ($candidates as $listing) {
-            $results[] = $this->score($listing, $criteria, $tags);
+            $results[] = $this->score($listing, $criteria, $tags->factsFor($listing));
         }
 
         return $results;
     }
 
     /**
-     * @param ListingSmartTagIndex|null $tags the candidates' resolved tags, read once by scoreAll();
-     *                                        a single-listing caller may omit it, and the listing's
-     *                                        own tags are then read here (one read, only when the
-     *                                        seeker picked any), so every surface scores alike
+     * The Bridge entry point: one `bridge_properties` row scored against one criteria set.
+     *
+     * This method only ADAPTS. The row becomes {@see ListingMatchFacts} at the provider
+     * boundary ({@see BridgeListingMatchFactsBuilder}); every rule below reads those facts
+     * through {@see scoreFacts()} and never the row. The row itself is carried onto the
+     * result for the presenters that render it, and the facts travel with it so the
+     * explanation blocks read the same values the score did.
+     *
+     * The listing's resolved Smart Tags are not in the row, so they arrive as a fact of their own,
+     * read by the caller through {@see ListingSmartTagIndex} — in batch by {@see scoreAll()},
+     * `ListingSmartTagIndex::forCandidates([$listing], $criteria)->factsFor($listing)` for one row.
+     * Omitted, the listing's feature coverage is unknown: its picks earn nothing and are worded as
+     * "could not be checked", never as a match.
      */
-    public function score(BridgeProperty $listing, BuyerCriteriaPayload $criteria, ?ListingSmartTagIndex $tags = null): BuyerMatchResult
+    public function score(BridgeProperty $listing, BuyerCriteriaPayload $criteria, ?ListingSmartTagFacts $smartTags = null): BuyerMatchResult
     {
-        $rawJson = $listing->raw_json ? json_decode($listing->raw_json, true) : [];
-        if (!is_array($rawJson)) {
-            $rawJson = [];
-        }
+        $facts = BridgeListingMatchFactsBuilder::build($listing)->withSmartTags($smartTags);
+        $score = $this->scoreFacts($facts, $criteria);
 
+        $result = new BuyerMatchResult(
+            listingKey:     $facts->listingKey,
+            totalScore:     $score->totalScore,
+            categoryScores: $score->categoryScores,
+            listing:        $listing,
+            whyThisMatches: [],
+            tradeoffs:      [],
+            cautionFlags:   [],
+            missingData:    []
+        );
+        $result->importantPlaceMatches = $score->importantPlaceMatches;
+        $result->seekerFeatureMatch    = $score->seekerFeatureMatch;
+        $result->facts                 = $facts;
+
+        return $result;
+    }
+
+    /**
+     * The scoring engine: one listing's facts against one criteria set. Pure — no model,
+     * no feed record, no query.
+     */
+    public function scoreFacts(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): ListingMatchScore
+    {
         // Important Places: measured once per listing — used by the location score and carried on
         // the result for display. The rows name a category and a distance, never the place itself.
         $importantPlaceMatches = ImportantPlaceMatcher::evaluate(
-            $listing->latitude !== null ? (float) $listing->latitude : null,
-            $listing->longitude !== null ? (float) $listing->longitude : null,
+            $facts->latitude !== null ? (float) $facts->latitude : null,
+            $facts->longitude !== null ? (float) $facts->longitude : null,
             $criteria->importantPlaces
         );
 
+        // The seeker's picks against the listing's resolved tags — both already in hand, so this
+        // is a comparison, not a read. No picks: no match, and the score is the pre-feature one.
         $seekerFeatureMatch = null;
         $scoredPicks        = self::scoredSeekerTags($criteria);
 
         if ($scoredPicks !== []) {
-            $tags ??= ListingSmartTagIndex::forBridgeRows([$listing], $scoredPicks);
-            $seekerFeatureMatch = SeekerSmartTagMatcher::evaluate($scoredPicks, $tags->presentKeysFor($listing));
+            $seekerFeatureMatch = SeekerSmartTagMatcher::evaluate(
+                $scoredPicks,
+                $facts->smartTags !== null && $facts->smartTags->hasAnyResolvedTag ? $facts->smartTags->presentKeys : null
+            );
         }
 
-        $locationScore        = $this->scoreLocation($listing, $criteria, $importantPlaceMatches);
-        $priceScore           = $this->scorePrice($listing, $criteria, $rawJson);
-        $sizeScore            = $this->scoreSize($listing, $criteria);
-        $propertyTypeScore    = $this->scorePropertyType($listing, $criteria);
-        $amenityScore         = $this->scoreAmenities($listing, $criteria, $seekerFeatureMatch);
-        $financialScore       = $this->scoreFinancial($listing, $criteria, $rawJson);
-        $lifestyleScore       = $this->scoreLifestyle($listing, $criteria, $rawJson);
-        $nonResidentialScore  = $this->scoreNonResidential($listing, $criteria, $rawJson);
+        $locationScore        = $this->scoreLocation($facts, $criteria, $importantPlaceMatches);
+        $priceScore           = $this->scorePrice($facts, $criteria);
+        $sizeScore            = $this->scoreSize($facts, $criteria);
+        $propertyTypeScore    = $this->scorePropertyType($facts, $criteria);
+        $amenityScore         = $this->scoreAmenities($facts, $criteria, $seekerFeatureMatch);
+        $financialScore       = $this->scoreFinancial($facts, $criteria);
+        $lifestyleScore       = $this->scoreLifestyle($facts, $criteria);
+        $nonResidentialScore  = $this->scoreNonResidential($facts, $criteria);
 
         $total = (int) round(
             $locationScore['score'] +
@@ -180,33 +216,20 @@ class BuyerMatchScorer
             'non_residential' => (int) round($nonResidentialScore['score']),
         ];
 
-        $result = new BuyerMatchResult(
-            listingKey:     $listing->listing_key ?? (string) $listing->id,
-            totalScore:     $total,
-            categoryScores: $categoryScores,
-            listing:        $listing,
-            whyThisMatches: [],
-            tradeoffs:      [],
-            cautionFlags:   [],
-            missingData:    []
-        );
-        $result->importantPlaceMatches = $importantPlaceMatches;
-        $result->seekerFeatureMatch    = $seekerFeatureMatch;
-
-        return $result;
+        return new ListingMatchScore($total, $categoryScores, $importantPlaceMatches, $seekerFeatureMatch);
     }
 
     // =========================================================================
     // Category 1: Location (30 pts)
     // =========================================================================
 
-    private function scoreLocation(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $importantPlaceMatches = []): array
+    private function scoreLocation(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria, array $importantPlaceMatches = []): array
     {
         $proximityScore = 0.0;
         $hasRadiusCriteria = !empty($criteria->radiusSearches);
 
-        $lat = $listing->latitude !== null ? (float) $listing->latitude : null;
-        $lng = $listing->longitude !== null ? (float) $listing->longitude : null;
+        $lat = $facts->latitude !== null ? (float) $facts->latitude : null;
+        $lng = $facts->longitude !== null ? (float) $facts->longitude : null;
 
         if ($hasRadiusCriteria) {
             if ($lat !== null && $lng !== null) {
@@ -267,12 +290,12 @@ class BuyerMatchScorer
 
         // City / ZIP exact match (6 pts) or county match (3 pts)
         $cityZipScore = 0;
-        $cityMatch = !empty($criteria->preferredCities) && in_array($listing->city, $criteria->preferredCities);
-        $zipMatch  = !empty($criteria->preferredZipCodes) && in_array($listing->postal_code, $criteria->preferredZipCodes);
+        $cityMatch = !empty($criteria->preferredCities) && in_array($facts->city, $criteria->preferredCities);
+        $zipMatch  = !empty($criteria->preferredZipCodes) && in_array($facts->postalCode, $criteria->preferredZipCodes);
 
         if ($cityMatch || $zipMatch) {
             $cityZipScore = 6;
-        } elseif (!empty($criteria->preferredCounties) && in_array($listing->county_or_parish, $criteria->preferredCounties)) {
+        } elseif (!empty($criteria->preferredCounties) && in_array($facts->countyOrParish, $criteria->preferredCounties)) {
             $cityZipScore = 3;
         }
 
@@ -293,16 +316,16 @@ class BuyerMatchScorer
     // Category 2: Price (25 pts)
     // =========================================================================
 
-    private function scorePrice(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $rawJson = []): array
+    private function scorePrice(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): array
     {
-        $listPrice = $listing->list_price !== null ? (float) $listing->list_price : null;
+        $listPrice = $facts->listPrice !== null ? (float) $facts->listPrice : null;
 
         if ($listPrice === null) {
             return ['score' => 0.0];
         }
 
-        // On a LEASE record `list_price` is the periodic rent and the period is
-        // LeaseAmountFrequency. The seeker's budget is monthly, so the listing
+        // On a LEASE record the list price is the periodic rent and the lease
+        // frequency is its period. The seeker's budget is monthly, so the listing
         // must be expressed per month before the two are comparable.
         //
         // A period we cannot establish earns NOTHING rather than being assumed
@@ -321,7 +344,7 @@ class BuyerMatchScorer
         if ($criteria->isLeaseSearch() && $hasPricePreference) {
             $monthly = MonthlyEquivalent::lease(
                 $listPrice,
-                ListingPeriodFacts::leaseFrequency($rawJson)
+                $facts->leaseFrequency
             );
 
             if ($monthly === null) {
@@ -364,11 +387,11 @@ class BuyerMatchScorer
     // Category 3: Size (15 pts)
     // =========================================================================
 
-    private function scoreSize(BridgeProperty $listing, BuyerCriteriaPayload $criteria): array
+    private function scoreSize(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): array
     {
         // Living area (7 pts)
         $livingAreaScore = $this->rangeScore(
-            value:  $listing->living_area !== null ? (float) $listing->living_area : null,
+            value:  $facts->livingArea !== null ? (float) $facts->livingArea : null,
             min:    $criteria->minSqft !== null ? (float) $criteria->minSqft : null,
             max:    $criteria->maxSqft !== null ? (float) $criteria->maxSqft : null,
             maxPts: 7.0,
@@ -378,7 +401,7 @@ class BuyerMatchScorer
 
         // Lot size (4 pts) — null listing value → 2 (neutral mid-score)
         $lotScore = $this->rangeScore(
-            value:  $listing->lot_size_sqft !== null ? (float) $listing->lot_size_sqft : null,
+            value:  $facts->lotSizeSqft !== null ? (float) $facts->lotSizeSqft : null,
             min:    $criteria->minLotSqft !== null ? (float) $criteria->minLotSqft : null,
             max:    $criteria->maxLotSqft !== null ? (float) $criteria->maxLotSqft : null,
             maxPts: 4.0,
@@ -387,7 +410,7 @@ class BuyerMatchScorer
         );
 
         // Year built (4 pts)
-        $yearBuiltScore = $this->scoreYearBuilt($listing, $criteria);
+        $yearBuiltScore = $this->scoreYearBuilt($facts, $criteria);
 
         return ['score' => $livingAreaScore + $lotScore + $yearBuiltScore];
     }
@@ -429,7 +452,7 @@ class BuyerMatchScorer
         return max(0.0, $score);
     }
 
-    private function scoreYearBuilt(BridgeProperty $listing, BuyerCriteriaPayload $criteria): float
+    private function scoreYearBuilt(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): float
     {
         $hasPreference = ($criteria->yearBuiltMin !== null || $criteria->yearBuiltMax !== null);
 
@@ -437,7 +460,7 @@ class BuyerMatchScorer
             return 4.0;
         }
 
-        $yearBuilt = $listing->year_built;
+        $yearBuilt = $facts->yearBuilt;
 
         if ($yearBuilt === null) {
             return 0.0;
@@ -468,7 +491,7 @@ class BuyerMatchScorer
     // Category 4: Property Type (10 pts)
     // =========================================================================
 
-    private function scorePropertyType(BridgeProperty $listing, BuyerCriteriaPayload $criteria): array
+    private function scorePropertyType(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): array
     {
         // Type exact match (5 pts) — always 5 for listings in candidate set (type is hard filter)
         $typeScore = 5.0;
@@ -478,8 +501,8 @@ class BuyerMatchScorer
 
         if (empty($criteria->propertySubTypes)) {
             $subTypeScore = 2.0;
-        } elseif ($listing->property_sub_type !== null &&
-                  in_array($listing->property_sub_type, $criteria->propertySubTypes)) {
+        } elseif ($facts->propertySubType !== null &&
+                  in_array($facts->propertySubType, $criteria->propertySubTypes)) {
             $subTypeScore = 5.0;
         } else {
             $subTypeScore = 0.0;
@@ -492,36 +515,36 @@ class BuyerMatchScorer
     // Category 5: Amenities (10 pts)
     // =========================================================================
 
-    private function scoreAmenities(BridgeProperty $listing, BuyerCriteriaPayload $criteria, ?SeekerSmartTagMatch $seekerFeatures = null): array
+    private function scoreAmenities(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria, ?SeekerSmartTagMatch $seekerFeatures = null): array
     {
         $expressed = [];
 
         if ($criteria->wantsPool !== null) {
             $expressed['pool'] = [
                 'max'    => 4.0,
-                'earned' => ($listing->pool_private_yn === true) ? 4.0 : 0.0,
+                'earned' => ($facts->poolPrivate === true) ? 4.0 : 0.0,
             ];
         }
 
         if ($criteria->wantsGarage !== null) {
             $expressed['garage'] = [
                 'max'    => 3.0,
-                'earned' => ($listing->garage_yn === true) ? 3.0 : 0.0,
+                'earned' => ($facts->garage === true) ? 3.0 : 0.0,
             ];
         }
 
         if ($criteria->wantsWaterfront !== null) {
             $waterfront = 0.0;
-            if ($listing->waterfront_yn === true) {
+            if ($facts->waterfront === true) {
                 $waterfront = 2.0;
-            } elseif ($listing->water_view_yn === true) {
+            } elseif ($facts->waterView === true) {
                 $waterfront = 1.0;
             }
             $expressed['waterfront'] = ['max' => 2.0, 'earned' => $waterfront];
         }
 
         if ($criteria->wantsAnyView !== null) {
-            $viewEarned = ($listing->view_yn === true || $listing->water_view_yn === true) ? 1.0 : 0.0;
+            $viewEarned = ($facts->view === true || $facts->waterView === true) ? 1.0 : 0.0;
             $expressed['any_view'] = ['max' => 1.0, 'earned' => $viewEarned];
         }
 
@@ -553,17 +576,16 @@ class BuyerMatchScorer
     // Category 6: Financial / Fees (5 pts)
     // =========================================================================
 
-    private function scoreFinancial(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $rawJson = []): array
+    private function scoreFinancial(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): array
     {
         if ($criteria->maxMonthlyTotalBurden === null) {
             return ['score' => 5.0];
         }
 
-        // `bridge_properties.association_fee` is AssociationFee stored verbatim;
-        // AssociationFeeFrequency stays in raw_json. Reading the column as a
-        // monthly figure made an annually billed $2,400 fee and a monthly $2,400
-        // fee the same number, and the ceiling this is scored against is
-        // explicitly a MONTHLY one.
+        // The fee amount and its billing period are separate facts. Reading the
+        // amount as a monthly figure made an annually billed $2,400 fee and a
+        // monthly $2,400 fee the same number, and the ceiling this is scored
+        // against is explicitly a MONTHLY one.
         //
         // A fee whose period cannot be established is NOT assumed monthly and is
         // NOT silently counted as zero — either would be a fabricated figure. The
@@ -572,14 +594,14 @@ class BuyerMatchScorer
         // rule is that missing feed data never penalises a listing. The gap is
         // reported to the seeker through BuyerMatchResultBuilder's missing-data
         // block rather than buried in a number.
-        $feeAmount = $listing->association_fee !== null ? (float) $listing->association_fee : null;
+        $feeAmount = $facts->associationFee !== null ? (float) $facts->associationFee : null;
 
         if ($feeAmount === null || $feeAmount == 0.0) {
             $hoaMonthly = 0.0;
         } else {
             $hoaMonthly = MonthlyEquivalent::associationFee(
                 $feeAmount,
-                ListingPeriodFacts::associationFeeFrequency($rawJson)
+                $facts->associationFeeFrequency
             );
 
             if ($hoaMonthly === null) {
@@ -587,7 +609,7 @@ class BuyerMatchScorer
             }
         }
 
-        $taxAnnual     = $listing->tax_annual_amount !== null ? (float) $listing->tax_annual_amount : 0.0;
+        $taxAnnual     = $facts->taxAnnualAmount !== null ? (float) $facts->taxAnnualAmount : 0.0;
         $taxMonthly    = $taxAnnual / 12.0;
         $totalBurden   = $hoaMonthly + $taxMonthly;
 
@@ -603,17 +625,17 @@ class BuyerMatchScorer
     }
 
     // =========================================================================
-    // Category 7: Lifestyle / Context (5 pts) — Tier 2 raw_json extraction
+    // Category 7: Lifestyle / Context (5 pts)
     // =========================================================================
 
-    private function scoreLifestyle(BridgeProperty $listing, BuyerCriteriaPayload $criteria, array $rawJson): array
+    private function scoreLifestyle(ListingMatchFacts $facts, BuyerCriteriaPayload $criteria): array
     {
         // Community features overlap (2 pts)
         $communityScore = 0.0;
         if (!empty($criteria->communityFeatureKeywords)) {
             $features   = array_merge(
-                $this->extractStringArray($rawJson, 'CommunityFeatures'),
-                $this->extractStringArray($rawJson, 'AssociationAmenities')
+                $this->extractStringArray($facts->communityFeatures),
+                $this->extractStringArray($facts->associationAmenities)
             );
             $matchCount = $this->countKeywordMatches($criteria->communityFeatureKeywords, $features);
             if ($matchCount >= 2) {
@@ -626,8 +648,8 @@ class BuyerMatchScorer
         // Green / energy efficiency (1 pt)
         $greenScore = 0.0;
         if ($criteria->wantsEnergyEfficient === true) {
-            $greenFeatures = $this->extractStringArray($rawJson, 'GreenEnergyEfficient');
-            $greenBuild    = $this->extractStringArray($rawJson, 'GreenBuildingVerificationType');
+            $greenFeatures = $this->extractStringArray($facts->greenEnergyEfficient);
+            $greenBuild    = $this->extractStringArray($facts->greenBuildingVerificationType);
             if (!empty($greenFeatures) || !empty($greenBuild)) {
                 $greenScore = 1.0;
             }
@@ -635,14 +657,14 @@ class BuyerMatchScorer
 
         // New construction preference (1 pt)
         $newConstructionScore = 0.0;
-        if ($criteria->wantsNewConstruction === true && $listing->new_construction_yn === true) {
+        if ($criteria->wantsNewConstruction === true && $facts->newConstruction === true) {
             $newConstructionScore = 1.0;
         }
 
         // Pet-friendly community (1 pt)
         $petScore = 0.0;
         if ($criteria->wantsPetFriendly === true) {
-            $petsAllowed = $listing->pets_allowed;
+            $petsAllowed = $facts->petsAllowed;
             if ($petsAllowed !== null && strtolower(trim($petsAllowed)) !== 'no') {
                 $petScore = 1.0;
             }
@@ -650,9 +672,9 @@ class BuyerMatchScorer
 
         // Lease term preference (2 pts) — primary commercial lease scoring dimension.
         // Compares EAV 'desired_lease_length' (via preferredLeaseTerms) against the
-        // Bridge raw_json 'LeaseTerm' field (e.g. "24 Months", "Month-to-Month").
-        // No preference → neutral 2 pts. Missing Bridge value → neutral 2 pts.
-        $leaseTermScore = $this->scoreLeaseTermPreference($rawJson, $criteria);
+        // listing's stated lease term (e.g. "24 Months", "Month-to-Month").
+        // No preference → 0 pts (inactive). Missing listing value → neutral 2 pts.
+        $leaseTermScore = $this->scoreLeaseTermPreference($facts->leaseTerm, $criteria);
 
         $total = $communityScore + $greenScore + $newConstructionScore + $petScore + $leaseTermScore;
 
@@ -660,25 +682,25 @@ class BuyerMatchScorer
     }
 
     /**
-     * Score lease-term alignment between tenant preference and Bridge listing.
+     * Score lease-term alignment between tenant preference and the listing's stated lease term.
      *
      * Returns 0 pts when no preference is expressed (dimension is inactive — existing
      * buyer flow scores are preserved exactly as before this field was added).
      * Returns 2 pts when preference and listing agree, or when a preference is set
-     * but the Bridge listing has no LeaseTerm value (neutral — don't penalise a
+     * but the listing states no lease term (neutral — don't penalise a
      * listing for missing data). Returns 0 pts when preference exists but does not match.
      *
      * Tenant form → canonical month buckets:
-     *   'Month-to-Month'  → matched against "Month-to-Month" Bridge token
+     *   'Month-to-Month'  → matched against a stated "Month-to-Month" term
      *   '6 Months'        → 6 months
      *   '1 Year'          → 12 months
      *   '2 Years'         → 24 months
      *   '3-5 Years'       → 36–60 months
      *   '6+ Years'        → 72+ months
      *
-     * Bridge LeaseTerm examples: "24 Months", "12 Months", "Month-to-Month", "Annual".
+     * Stated lease term examples: "24 Months", "12 Months", "Month-to-Month", "Annual".
      */
-    private function scoreLeaseTermPreference(array $rawJson, BuyerCriteriaPayload $criteria): float
+    private function scoreLeaseTermPreference(mixed $statedLeaseTerm, BuyerCriteriaPayload $criteria): float
     {
         // No preference expressed — dimension is inactive.
         // Returning 0 preserves pre-existing buyer/residential scoring: callers
@@ -688,47 +710,46 @@ class BuyerMatchScorer
             return 0.0;
         }
 
-        $bridgeLeaseTerm = $rawJson['LeaseTerm'] ?? null;
-        if ($bridgeLeaseTerm === null || $bridgeLeaseTerm === '') {
-            // Preference set but Bridge record lacks a LeaseTerm value → neutral:
+        if ($statedLeaseTerm === null || $statedLeaseTerm === '') {
+            // Preference set but the listing states no lease term → neutral:
             // don't penalise the listing for missing data, award full 2 pts.
             return 2.0;
         }
 
-        $bridgeTerm = strtolower(trim((string) $bridgeLeaseTerm));
+        $statedTerm = strtolower(trim((string) $statedLeaseTerm));
 
-        // Resolve Bridge LeaseTerm to a canonical bucket for comparison.
-        $bridgeMonths = null;
-        $bridgeIsMtm  = false;
+        // Resolve the stated lease term to a canonical bucket for comparison.
+        $statedMonths = null;
+        $statedIsMtm  = false;
 
-        if (str_contains($bridgeTerm, 'month-to-month') || str_contains($bridgeTerm, 'monthly') || $bridgeTerm === 'mtm') {
-            $bridgeIsMtm = true;
-        } elseif (preg_match('/(\d+)\s*months?/i', $bridgeLeaseTerm, $m)) {
-            $bridgeMonths = (int) $m[1];
-        } elseif (preg_match('/(\d+)\s*years?/i', $bridgeLeaseTerm, $m)) {
-            $bridgeMonths = (int) $m[1] * 12;
-        } elseif (str_contains($bridgeTerm, 'annual')) {
-            $bridgeMonths = 12;
+        if (str_contains($statedTerm, 'month-to-month') || str_contains($statedTerm, 'monthly') || $statedTerm === 'mtm') {
+            $statedIsMtm = true;
+        } elseif (preg_match('/(\d+)\s*months?/i', $statedLeaseTerm, $m)) {
+            $statedMonths = (int) $m[1];
+        } elseif (preg_match('/(\d+)\s*years?/i', $statedLeaseTerm, $m)) {
+            $statedMonths = (int) $m[1] * 12;
+        } elseif (str_contains($statedTerm, 'annual')) {
+            $statedMonths = 12;
         }
 
-        // If we couldn't parse the Bridge value, award neutral points.
-        if ($bridgeMonths === null && !$bridgeIsMtm) {
+        // If we couldn't parse the stated value, award neutral points.
+        if ($statedMonths === null && !$statedIsMtm) {
             return 2.0;
         }
 
-        // Check if any tenant preference bucket overlaps with the Bridge value.
+        // Check if any tenant preference bucket overlaps with the stated value.
         foreach ($criteria->preferredLeaseTerms as $pref) {
             $pref = trim((string) $pref);
-            if ($bridgeIsMtm && strtolower($pref) === 'month-to-month') {
+            if ($statedIsMtm && strtolower($pref) === 'month-to-month') {
                 return 2.0;
             }
-            if ($bridgeMonths !== null) {
+            if ($statedMonths !== null) {
                 $matched = match ($pref) {
-                    '6 Months'    => $bridgeMonths === 6,
-                    '1 Year'      => $bridgeMonths === 12,
-                    '2 Years'     => $bridgeMonths === 24,
-                    '3-5 Years'   => $bridgeMonths >= 36 && $bridgeMonths <= 60,
-                    '6+ Years'    => $bridgeMonths >= 72,
+                    '6 Months'    => $statedMonths === 6,
+                    '1 Year'      => $statedMonths === 12,
+                    '2 Years'     => $statedMonths === 24,
+                    '3-5 Years'   => $statedMonths >= 36 && $statedMonths <= 60,
+                    '6+ Years'    => $statedMonths >= 72,
                     default       => false,
                 };
                 if ($matched) {
@@ -752,15 +773,14 @@ class BuyerMatchScorer
     // =========================================================================
 
     private function scoreNonResidential(
-        BridgeProperty $listing,
-        BuyerCriteriaPayload $criteria,
-        array $rawJson
+        ListingMatchFacts $facts,
+        BuyerCriteriaPayload $criteria
     ): array {
-        return match ($listing->property_type) {
-            'Income'               => $this->scoreIncomeProperty($listing, $criteria, $rawJson),
-            'Commercial Sale'      => $this->scoreCommercialSale($listing, $criteria, $rawJson),
-            'Business Opportunity' => $this->scoreBusinessOpportunity($listing, $criteria, $rawJson),
-            'Vacant Land'          => $this->scoreVacantLand($listing, $criteria, $rawJson),
+        return match ($facts->propertyType) {
+            'Income'               => $this->scoreIncomeProperty($facts, $criteria),
+            'Commercial Sale'      => $this->scoreCommercialSale($facts, $criteria),
+            'Business Opportunity' => $this->scoreBusinessOpportunity($facts, $criteria),
+            'Vacant Land'          => $this->scoreVacantLand($facts, $criteria),
             default                => ['score' => 0.0],
         };
     }
@@ -775,27 +795,25 @@ class BuyerMatchScorer
     //   minUnits / maxUnits / unitsNeeded properties of any kind.
     //   Unit-count scoring is therefore intentionally skipped per task
     //   instructions ("if no buyer unit-count field exists, document and skip").
-    //   When `units_needed` is wired into the loader and payload, align
-    //   NumberOfUnitsTotal (raw_json) against that range here instead.
+    //   When `units_needed` is wired into the loader and payload, align the
+    //   listing's total unit count against that range here instead.
     //
-    // Current approach: align BuildingAreaTotal (raw_json, falls back to the
-    // native living_area column) against buyer's existing minSqft / maxSqft.
+    // Current approach: align the stated building area (falling back to the
+    // living area) against buyer's existing minSqft / maxSqft.
     // No preference expressed → full neutral points (10). Data absent → 5.
     // -------------------------------------------------------------------------
 
     private function scoreIncomeProperty(
-        BridgeProperty $listing,
-        BuyerCriteriaPayload $criteria,
-        array $rawJson
+        ListingMatchFacts $facts,
+        BuyerCriteriaPayload $criteria
     ): array {
         $hasSizePref = ($criteria->minSqft !== null || $criteria->maxSqft !== null);
         if (!$hasSizePref) {
             return ['score' => 10.0]; // no preference → full neutral points
         }
 
-        $buildingArea = isset($rawJson['BuildingAreaTotal']) && $rawJson['BuildingAreaTotal'] !== null
-            ? (float) $rawJson['BuildingAreaTotal']
-            : ($listing->living_area !== null ? (float) $listing->living_area : null);
+        $buildingArea = $facts->buildingAreaTotal
+            ?? ($facts->livingArea !== null ? (float) $facts->livingArea : null);
 
         if ($buildingArea === null) {
             return ['score' => 5.0]; // size data absent → reduced neutral
@@ -821,21 +839,19 @@ class BuyerMatchScorer
     // -------------------------------------------------------------------------
     // Commercial Sale — building size and lot size using existing buyer criteria.
     //
-    // BuildingAreaTotal (raw_json) is preferred over living_area for commercial
+    // The stated building area is preferred over the living area for commercial
     // listings. Both size dimensions use existing BuyerCriteriaPayload fields.
     // -------------------------------------------------------------------------
 
     private function scoreCommercialSale(
-        BridgeProperty $listing,
-        BuyerCriteriaPayload $criteria,
-        array $rawJson
+        ListingMatchFacts $facts,
+        BuyerCriteriaPayload $criteria
     ): array {
         $score = 0.0;
 
         // Building size alignment (up to 5 pts)
-        $buildingArea = isset($rawJson['BuildingAreaTotal']) && $rawJson['BuildingAreaTotal'] !== null
-            ? (float) $rawJson['BuildingAreaTotal']
-            : ($listing->living_area !== null ? (float) $listing->living_area : null);
+        $buildingArea = $facts->buildingAreaTotal
+            ?? ($facts->livingArea !== null ? (float) $facts->livingArea : null);
 
         $hasSizePref = ($criteria->minSqft !== null || $criteria->maxSqft !== null);
         if (!$hasSizePref) {
@@ -861,7 +877,7 @@ class BuyerMatchScorer
         }
 
         // Lot size alignment (up to 5 pts)
-        $lotSqft    = $listing->lot_size_sqft !== null ? (float) $listing->lot_size_sqft : null;
+        $lotSqft    = $facts->lotSizeSqft !== null ? (float) $facts->lotSizeSqft : null;
         $hasLotPref = ($criteria->minLotSqft !== null || $criteria->maxLotSqft !== null);
         if (!$hasLotPref) {
             $score += 5.0; // no preference → neutral
@@ -887,9 +903,8 @@ class BuyerMatchScorer
     // -------------------------------------------------------------------------
 
     private function scoreBusinessOpportunity(
-        BridgeProperty $listing,
-        BuyerCriteriaPayload $criteria,
-        array $rawJson
+        ListingMatchFacts $facts,
+        BuyerCriteriaPayload $criteria
     ): array {
         return ['score' => 0.0];
     }
@@ -903,16 +918,15 @@ class BuyerMatchScorer
     // -------------------------------------------------------------------------
 
     private function scoreVacantLand(
-        BridgeProperty $listing,
-        BuyerCriteriaPayload $criteria,
-        array $rawJson
+        ListingMatchFacts $facts,
+        BuyerCriteriaPayload $criteria
     ): array {
         $hasLotPref = ($criteria->minLotSqft !== null || $criteria->maxLotSqft !== null);
         if (!$hasLotPref) {
             return ['score' => 10.0]; // no preference → full neutral points
         }
 
-        $lotSqft = $listing->lot_size_sqft !== null ? (float) $listing->lot_size_sqft : null;
+        $lotSqft = $facts->lotSizeSqft !== null ? (float) $facts->lotSizeSqft : null;
         if ($lotSqft === null) {
             return ['score' => 5.0]; // lot size absent → reduced neutral
         }
@@ -1004,10 +1018,8 @@ class BuyerMatchScorer
         return $inside;
     }
 
-    private function extractStringArray(array $data, string $key): array
+    private function extractStringArray(mixed $val): array
     {
-        $val = $data[$key] ?? null;
-
         if (is_string($val)) {
             return array_filter([$val], fn($v) => $v !== '');
         }

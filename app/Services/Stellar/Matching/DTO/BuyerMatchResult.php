@@ -4,6 +4,7 @@ namespace App\Services\Stellar\Matching\DTO;
 
 use App\Models\BridgeProperty;
 use App\Services\SmartTags\Seeker\SeekerSmartTagMatch;
+use App\Services\Stellar\Matching\ListingMatchFacts;
 
 class BuyerMatchResult
 {
@@ -36,6 +37,13 @@ class BuyerMatchResult
      * labels only. toArray() is left unchanged, like the slots above.
      */
     public ?SeekerSmartTagMatch $seekerFeatureMatch = null;
+
+    /**
+     * The facts this listing was scored from, set by BuyerMatchScorer::score(), so the
+     * explanation blocks read exactly what the score read. Null on a result built by hand;
+     * BuyerMatchResultBuilder then derives them from $listing. toArray() is left unchanged.
+     */
+    public ?ListingMatchFacts $facts = null;
 
     public function __construct(
         string $listingKey,

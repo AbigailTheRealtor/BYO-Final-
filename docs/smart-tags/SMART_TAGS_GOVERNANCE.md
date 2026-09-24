@@ -346,7 +346,12 @@ property-detail match context and Match Check score alike.
 
 **Listing side.** Present rows of `smart_tag_assignments` only, read in batch by `ListingSmartTagIndex`
 (two queries per 500 candidates, none when nothing is picked) — never evidence, remarks, descriptions,
-free text or photos, and nothing is derived at match time. Stellar candidates are Bridge rows; BYO
+free text or photos, and nothing is derived at match time. The read is INPUT CONSTRUCTION: it happens
+before scoring, and each listing's result reaches the scorer as a fact (`ListingSmartTagFacts` on
+`ListingMatchFacts`), so `BuyerMatchScorer::scoreFacts()` and its category rules stay pure — no query, no
+model, no feed record. `scoreAll()` reads a result set in one batch; the single-listing surfaces read their
+one row the same way before calling `score()`. Identity is `bridge_properties.id` — never `listing_key`,
+which is unique only per provider. Stellar candidates are Bridge rows; BYO
 listings have no score, and a Bridge row is never merged with a BYO listing that shares its MLS key.
 
 **Unknown earns what known-absent earns: nothing.** That is the Amenities category's own rule — a pool,

@@ -1340,9 +1340,14 @@ promises a preference, not a requirement. Governance: `SMART_TAGS_GOVERNANCE.md`
 
 **One read per side.** Seeker: `SmartTagSeekerPreferenceReader::matchingKeysFor()` from all four Stellar
 loaders — both gates on, re-projected through `SmartTagSelectionPolicy` against the CURRENT context, never
-throws. Listing: present `smart_tag_assignments` rows via `ListingSmartTagIndex`, batched in `scoreAll()`
-(the single-listing `score()` reads its own). Unknown earns nothing and is worded as "could not be checked";
-cards carry labels only. Stellar candidates are Bridge rows; BYO listings have no score.
+throws. Listing: present `smart_tag_assignments` rows via `ListingSmartTagIndex`, read **before scoring**
+and handed in as a FACT (`ListingSmartTagFacts` on `ListingMatchFacts`) — batched in `scoreAll()`, and by the
+three single-listing surfaces (`PropertyMatchContextService`, `MatchCheckScorer`, the Match Check report)
+through `ListingSmartTagIndex::forCandidates([$listing], $criteria)->factsFor($listing)`. `scoreFacts()` and
+the category rules stay pure (PR #201's guard, unchanged); `score()` only adapts, and without tag facts the
+picks are unknown. Tags are keyed by `bridge_properties.id`, never `listing_key` (unique only per provider).
+Unknown earns nothing and is worded as "could not be checked"; cards carry labels only. Stellar candidates
+are Bridge rows; BYO listings have no score.
 
 **Two gates.** The picker (`SMART_TAGS_SEEKER_PREFERENCES_ENABLED`) saves picks; scoring them also needs
 `SMART_TAGS_SEEKER_MATCHING_ENABLED` (default off, fail-closed, additional), read only through
@@ -1353,8 +1358,10 @@ contract.
 **Unknown earns what known-absent earns — nothing** (the Amenities category's rule for an unreported pool);
 only the wording differs. **Duplicates are suppressed**: `STRUCTURED_TAG_EQUIVALENTS` drops `private_pool`,
 `garage`, `waterfront` (when the structured want is expressed) and `new_construction`, `pets_allowed` (when
-it is `true`) from the scored picks, so one preference never earns twice. Matching V2
-(`app/Services/Dna/Relevance`) is CLI-only and untouched.
+it is `true`) from the scored picks, so one preference never earns twice. `water_view` is deliberately NOT
+equivalent to "any view" — a narrower request, tested as such. This phase integrates with the authoritative
+`BuyerMatchScorer` path only; Matching V2 (`app/Services/Dna/Relevance`) is reached only by three artisan
+commands and the job one of them dispatches, and is untouched.
 
 ### AI DNA profiles (separate from Location DNA)
 

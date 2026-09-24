@@ -4,12 +4,21 @@ namespace App\Services\SmartTags\Seeker;
 
 use App\Models\BridgeProperty;
 use App\Models\SmartTagAssignment;
+use App\Services\Stellar\Matching\BuyerMatchScorer;
+use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
+use App\Services\Stellar\Matching\ListingSmartTagFacts;
 use App\Support\SmartTags\SmartTagListingType;
 use App\Support\SmartTags\SmartTagState;
 
 /**
- * The resolved PRESENT Smart Tags of a set of candidate listings, read in ONE
- * query, for the matcher to look up per listing without querying again.
+ * The resolved PRESENT Smart Tags of a set of candidate listings, read in batch
+ * BEFORE scoring, and handed to the scorer per listing as {@see ListingSmartTagFacts}.
+ *
+ * THIS IS INPUT CONSTRUCTION, NOT SCORING. BuyerMatchScorer::scoreFacts() and its
+ * category rules are pure and read facts only; the one Smart Tag read in matching
+ * is here, called by the adapters — BuyerMatchScorer::scoreAll() for a result
+ * set, and each single-listing surface (property-detail match context, Match
+ * Check) for its one row — so every surface scores from the same facts.
  *
  * Reads `smart_tag_assignments` only — the canonical per-listing answer the
  * resolver already produced — and derives nothing. Identity is the registry's
@@ -33,16 +42,30 @@ final class ListingSmartTagIndex
     /**
      * @param array<int, list<string>> $presentByBridgeId selected keys each listing has
      * @param array<int, true>         $withAnyTag        listings with at least one resolved present tag
+     * @param bool                     $read              whether any key was asked about (a read happened)
      */
     private function __construct(
         private readonly array $presentByBridgeId,
         private readonly array $withAnyTag,
+        private readonly bool $read,
     ) {
     }
 
     public static function empty(): self
     {
-        return new self([], []);
+        return new self([], [], false);
+    }
+
+    /**
+     * The candidates' tags for the picks this search SCORES — after the structured-criterion
+     * deduplication ({@see BuyerMatchScorer::scoredSeekerTags()}). No scored picks (including
+     * matching switched off, which empties the payload's picks) reads nothing.
+     *
+     * @param iterable<BridgeProperty> $rows
+     */
+    public static function forCandidates(iterable $rows, BuyerCriteriaPayload $criteria): self
+    {
+        return self::forBridgeRows($rows, BuyerMatchScorer::scoredSeekerTags($criteria));
     }
 
     /**
@@ -94,24 +117,24 @@ final class ListingSmartTagIndex
             }
         }
 
-        return new self($present, $withAny);
+        return new self($present, $withAny, true);
     }
 
     /**
-     * The listing's present keys among those requested — possibly none — or null
-     * when the listing has no resolved present tag at all. Both earn no credit
-     * for the keys they lack; null additionally means "we could not check".
-     *
-     * @return list<string>|null
+     * One listing's Smart Tag facts for the scorer — or null when nothing was asked about, in
+     * which case the scorer has no picks to compare and needs none.
      */
-    public function presentKeysFor(BridgeProperty $row): ?array
+    public function factsFor(BridgeProperty $row): ?ListingSmartTagFacts
     {
-        $id = (int) ($row->id ?? 0);
-
-        if (! isset($this->withAnyTag[$id])) {
+        if (! $this->read) {
             return null;
         }
 
-        return $this->presentByBridgeId[$id] ?? [];
+        $id = (int) ($row->id ?? 0);
+
+        return new ListingSmartTagFacts(
+            presentKeys:       $this->presentByBridgeId[$id] ?? [],
+            hasAnyResolvedTag: isset($this->withAnyTag[$id]),
+        );
     }
 }

@@ -15,6 +15,7 @@ use App\Services\Stellar\BuyerOfferListingCriteriaLoader;
 use App\Services\Stellar\BuyerResultViewMapper;
 use App\Services\Stellar\Matching\BuyerMatchQueryBuilder;
 use App\Services\Stellar\Matching\BuyerMatchResultBuilder;
+use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
 use App\Services\Stellar\Matching\BuyerMatchService;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
@@ -134,7 +135,7 @@ class SeekerSmartTagMatchingTest extends TestCase
         DB::flushQueryLog();
 
         $legacy = (new BuyerMatchScorer())->score($home, $this->payload(['wants_pool' => true]));
-        $empty  = (new BuyerMatchScorer())->score($home, $this->payload(['wants_pool' => true, 'seeker_smart_tags' => []]));
+        $empty  = $this->scoreOne($home, $this->payload(['wants_pool' => true, 'seeker_smart_tags' => []]));
 
         $this->assertSame([], $this->assignmentQueries(DB::getQueryLog()));
         DB::disableQueryLog();
@@ -268,7 +269,7 @@ class SeekerSmartTagMatchingTest extends TestCase
             'property_types' => ['Residential Lease'], 'is_55_plus_eligible' => false, 'seeker_smart_tags' => ['updated_kitchen'],
         ]);
 
-        $this->assertSame(10, (new BuyerMatchScorer())->score($rental, $payload)->categoryScores['amenities']);
+        $this->assertSame(10, $this->scoreOne($rental, $payload)->categoryScores['amenities']);
     }
 
     /** @test */
@@ -384,8 +385,8 @@ class SeekerSmartTagMatchingTest extends TestCase
     public function the_structured_amenities_already_score_an_unreported_feature_as_nothing(): void
     {
         // The precedent the rule follows, pinned: pool_private_yn unknown earns what false earns.
-        $unknown = (new BuyerMatchScorer())->score($this->bridge([], ['pool_private_yn' => null]), $this->payload(['wants_pool' => true]));
-        $absent  = (new BuyerMatchScorer())->score($this->bridge([], ['pool_private_yn' => false]), $this->payload(['wants_pool' => true]));
+        $unknown = $this->scoreOne($this->bridge([], ['pool_private_yn' => null]), $this->payload(['wants_pool' => true]));
+        $absent  = $this->scoreOne($this->bridge([], ['pool_private_yn' => false]), $this->payload(['wants_pool' => true]));
 
         $this->assertSame(0, $unknown->categoryScores['amenities']);
         $this->assertSame($absent->categoryScores, $unknown->categoryScores);
@@ -472,6 +473,127 @@ class SeekerSmartTagMatchingTest extends TestCase
         }
     }
 
+    /**
+     * DELIBERATE, NOT ACCIDENTAL: `water_view` is not the structured "any view" criterion.
+     * Any view is broad (a golf or city view satisfies it); a water-view pick is a narrower
+     * request, so it stays in the pick set beside the criterion and tells the two homes apart.
+     *
+     * @test
+     */
+    public function water_view_is_a_narrower_preference_than_any_view_and_is_not_deduplicated(): void
+    {
+        $payload = $this->payload(['wants_any_view' => true, 'seeker_smart_tags' => ['water_view']]);
+        $this->assertSame(['water_view'], BuyerMatchScorer::scoredSeekerTags($payload));
+        $this->assertArrayNotHasKey('water_view', BuyerMatchScorer::STRUCTURED_TAG_EQUIVALENTS);
+
+        $waterView = $this->bridge(['water_view'], ['view_yn' => true, 'water_view_yn' => true]);
+        $golfView  = $this->bridge(['golf_course_view'], ['view_yn' => true, 'water_view_yn' => false]);
+
+        // Both satisfy "any view" (1 of 1); only one satisfies the narrower pick (4 of 4).
+        $this->assertSame(10, $this->scoreOne($waterView, $payload)->categoryScores['amenities']);
+        $this->assertSame((int) round(10 * 1 / 5), $this->scoreOne($golfView, $payload)->categoryScores['amenities']);
+    }
+
+    // ------------------------------------------------ the P1-A facts architecture
+
+    /**
+     * scoreFacts() — and every category rule behind it — reads facts only. With picks
+     * and a listing's Smart Tag facts in hand it runs no query at all, and needs no row.
+     *
+     * @test
+     */
+    public function the_scorer_core_scores_smart_tag_facts_without_any_query(): void
+    {
+        $home    = $this->bridge(['quartz_countertops'], ['pool_private_yn' => true]);
+        $payload = $this->payload(['wants_pool' => true, 'seeker_smart_tags' => ['quartz_countertops', 'natural_light']]);
+
+        $facts = \App\Services\Bridge\BridgeListingMatchFactsBuilder::build($home)->withSmartTags(
+            ListingSmartTagIndex::forCandidates([$home], $payload)->factsFor($home)
+        );
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $score = (new BuyerMatchScorer())->scoreFacts($facts, $payload);
+        $log   = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        $this->assertSame([], $log, 'scoreFacts() must not touch the database');
+        $this->assertSame(['quartz_countertops'], $score->seekerFeatureMatch->matchedKeys);
+        // Pool 4/4 + picks 4 × ½ → 6 of 8.
+        $this->assertSame((int) round(10 * 6 / 8), $score->categoryScores['amenities']);
+    }
+
+    /**
+     * The Bridge entry point adapts only: without Smart Tag facts handed to it, it reads none,
+     * and the picks are unknown — no credit, worded as "could not be checked", never a match.
+     *
+     * @test
+     */
+    public function score_without_smart_tag_facts_reads_nothing_and_treats_the_picks_as_unknown(): void
+    {
+        $home    = $this->bridge(['quartz_countertops']);
+        $payload = $this->payload(['seeker_smart_tags' => ['quartz_countertops']]);
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $bare = (new BuyerMatchScorer())->score($home, $payload);
+        $log  = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        $this->assertSame([], $log);
+        $this->assertFalse($bare->seekerFeatureMatch->hasListingData);
+        $this->assertSame(0, $bare->categoryScores['amenities']);
+        $this->assertSame(10, $this->scoreOne($home, $payload)->categoryScores['amenities']);
+    }
+
+    /**
+     * Every production caller of the Bridge entry point hands it the listing's Smart Tag facts,
+     * read through the one index, so the results page, the property-detail match context and
+     * both Match Check steps score from the same facts.
+     *
+     * @test
+     */
+    public function every_production_score_call_supplies_the_listings_smart_tag_facts(): void
+    {
+        $root  = dirname(__DIR__, 3);
+        $calls = [];
+
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root . '/app')) as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+            $code = (string) file_get_contents($file->getPathname());
+            if (! str_contains($code, 'BuyerMatchScorer')) {
+                continue;
+            }
+            // A call on a BuyerMatchScorer instance whose first argument is a listing row.
+            preg_match_all('/(?:scorer|Scorer\(\)\)|buyerScorer|\$this)->score\(\s*\$listing\b[^;]*;/', $code, $m);
+            foreach ($m[0] as $call) {
+                $calls[substr($file->getPathname(), strlen($root) + 1)][] = $call;
+            }
+        }
+
+        $files = array_keys($calls);
+        sort($files);
+
+        $this->assertSame([
+            'app/Services/Stellar/MatchCheck/MatchCheckOrchestrator.php',
+            'app/Services/Stellar/MatchCheck/MatchCheckScorer.php',
+            'app/Services/Stellar/Matching/BuyerMatchScorer.php',
+            'app/Services/Stellar/PropertyMatchContextService.php',
+        ], $files, 'a new caller of BuyerMatchScorer::score() must be reviewed here');
+
+        foreach ($calls as $file => $found) {
+            foreach ($found as $call) {
+                $this->assertMatchesRegularExpression(
+                    '/ListingSmartTagIndex::forCandidates\(\[\$listing\], \$\w+\)->factsFor\(\$listing\)|\$tags->factsFor\(\$listing\)/',
+                    $call,
+                    "{$file} scores a listing without its Smart Tag facts: {$call}"
+                );
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- pipeline
 
     /** @test */
@@ -501,7 +623,7 @@ class SeekerSmartTagMatchingTest extends TestCase
         $payload = $this->payload(['seeker_smart_tags' => ['quartz_countertops', 'private_pool', 'natural_light']]);
 
         $batch  = (new BuyerMatchScorer())->scoreAll([$home], $payload)[0];
-        $single = (new BuyerMatchScorer())->score($home, $payload);
+        $single = $this->scoreOne($home, $payload);
 
         $this->assertSame($batch->categoryScores, $single->categoryScores);
         $this->assertSame($batch->totalScore, $single->totalScore);
@@ -615,14 +737,23 @@ class SeekerSmartTagMatchingTest extends TestCase
 
     private function score(BridgeProperty $home, array $tags, array $criteria = [])
     {
-        return (new BuyerMatchScorer())->score($home, $this->payload($criteria + ['seeker_smart_tags' => $tags]));
+        return $this->scoreOne($home, $this->payload($criteria + ['seeker_smart_tags' => $tags]));
+    }
+
+    /**
+     * The single-listing path exactly as the production surfaces take it: the listing's Smart
+     * Tag facts read beside the row, then the pure scorer.
+     */
+    private function scoreOne(BridgeProperty $home, BuyerCriteriaPayload $payload)
+    {
+        return (new BuyerMatchScorer())->score($home, $payload, ListingSmartTagIndex::forCandidates([$home], $payload)->factsFor($home));
     }
 
     private function build(BridgeProperty $home, array $tags)
     {
         $payload = $this->payload(['seeker_smart_tags' => $tags]);
 
-        return (new BuyerMatchResultBuilder())->build((new BuyerMatchScorer())->score($home, $payload), $payload);
+        return (new BuyerMatchResultBuilder())->build($this->scoreOne($home, $payload), $payload);
     }
 
     private function service(): BuyerMatchService

@@ -8,6 +8,7 @@ use App\Services\Stellar\BuyerCriteriaLoader;
 use App\Services\Stellar\BuyerOfferListingCriteriaLoader;
 use App\Services\Stellar\TenantCriteriaLoader;
 use App\Services\Stellar\TenantOfferListingCriteriaLoader;
+use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 
@@ -54,7 +55,9 @@ class PropertyMatchContextService
             return null;
         }
 
-        $matchResult = $this->scorer->score($listing, $payload);
+        // The listing's resolved Smart Tags are read here, before scoring, exactly as scoreAll()
+        // reads a result set's — so this page and the results card score from the same facts.
+        $matchResult = $this->scorer->score($listing, $payload, ListingSmartTagIndex::forCandidates([$listing], $payload)->factsFor($listing));
         $mapped      = $this->viewMapper->mapOne($matchResult);
 
         return array_intersect_key($mapped, array_flip([

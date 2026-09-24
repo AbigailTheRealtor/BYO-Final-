@@ -11,6 +11,7 @@ use App\Services\Stellar\BuyerCriteriaLoader;
 use App\Services\Stellar\BuyerOfferListingCriteriaLoader;
 use App\Services\Stellar\CriteriaListingResolver;
 use App\Services\Stellar\Matching\BuyerMatchResultBuilder;
+use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\TenantCriteriaLoader;
@@ -283,11 +284,11 @@ class MatchCheckOrchestrator
     }
 
     /**
-     * Report step (git-C13b, decision A). Re-runs BuyerMatchScorer::score() to recover the
-     * rich BuyerMatchResult the lean MatchCheckScorer discards (a side-effect-free comparison — no
-     * writes, no API, no lazy import; it reads the listing's resolved feature assignments only when
-     * the seeker selected features), decorates it with the git-C10 buildDetailed() F3 blocks, and projects
-     * it into a MatchReport via MatchReportFactory with the criteria identity, source, and an INJECTED
+     * Report step (git-C13b, decision A). Re-runs the PURE BuyerMatchScorer::score() to recover the
+     * rich BuyerMatchResult the lean MatchCheckScorer discards (a side-effect-free comparison — no DB,
+     * no API, no lazy import; the listing's resolved feature assignments are read just before it,
+     * only when the seeker selected features, and handed in as facts), decorates it with the git-C10
+     * buildDetailed() F3 blocks, and projects it into a MatchReport via MatchReportFactory with the criteria identity, source, and an INJECTED
      * ISO-8601 generatedAt (never now() inside the factory/DTO).
      *
      * Reached only for a SCORED result, which guarantees a non-null payload and a resolved preferred
@@ -302,7 +303,7 @@ class MatchCheckOrchestrator
             return null;
         }
 
-        $engineResult = (new BuyerMatchScorer())->score($listing, $criteria);
+        $engineResult = (new BuyerMatchScorer())->score($listing, $criteria, ListingSmartTagIndex::forCandidates([$listing], $criteria)->factsFor($listing));
         $detailed     = $this->resolveReportBuilder()->buildDetailed($engineResult, $criteria);
 
         return $this->resolveReportFactory()->fromDetailed(

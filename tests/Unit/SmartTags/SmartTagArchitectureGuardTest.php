@@ -233,6 +233,19 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Services/Stellar/Matching/DTO/BuyerCriteriaPayload.php',
         'app/Services/Stellar/Matching/DTO/BuyerMatchResult.php',
         'app/Services/Stellar/Matching/BuyerMatchScorer.php',
+
+        // After the P1-A facts seam: the scorer core reads resolved tags as FACTS
+        // (ListingSmartTagFacts on ListingMatchFacts; the comparison on
+        // ListingMatchScore), and the result builder words the comparison. The
+        // three single-listing surfaces read their row's tags through
+        // ListingSmartTagIndex before scoring, as scoreAll() does for a result set.
+        'app/Services/Stellar/Matching/ListingMatchFacts.php',
+        'app/Services/Stellar/Matching/ListingMatchScore.php',
+        'app/Services/Stellar/Matching/ListingSmartTagFacts.php',
+        'app/Services/Stellar/Matching/BuyerMatchResultBuilder.php',
+        'app/Services/Stellar/PropertyMatchContextService.php',
+        'app/Services/Stellar/MatchCheck/MatchCheckScorer.php',
+        'app/Services/Stellar/MatchCheck/MatchCheckOrchestrator.php',
     ];
 
     /** @test */

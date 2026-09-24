@@ -3,6 +3,7 @@
 namespace App\Services\Stellar\MatchCheck;
 
 use App\Models\BridgeProperty;
+use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
 use App\Services\Stellar\Matching\BuyerMatchScorer;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 
@@ -11,11 +12,12 @@ use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
  *
  * Translates a MatchCheckPreparation (the C5 read-only decision) into a MatchCheckResult,
  * delegating the actual numeric scoring to the already-built BuyerMatchScorer engine so no
- * scoring math is duplicated or re-invented here. BuyerMatchScorer::score() is a
+ * scoring math is duplicated or re-invented here. BuyerMatchScorer::score() is a pure,
  * side-effect-free comparison of one BridgeProperty against one BuyerCriteriaPayload — it
- * writes nothing, runs no lazy Bridge import and no external API calls (that machinery lives in
- * BuyerMatchService, which this class intentionally does NOT touch). Its one read is the
- * listing's resolved feature assignments, and only when the seeker selected features.
+ * runs no queries, no lazy Bridge import, and no external API calls (that machinery lives in
+ * BuyerMatchService, which this class intentionally does NOT touch). The one read beside it is
+ * this class's own: the listing's resolved feature assignments, taken just before scoring and
+ * only when the seeker selected features, handed to the scorer as facts.
  *
  * GATING / INERT BY DESIGN. The score engine is invoked only in the single terminal state
  * where it is meaningful (flag ON, listing visible, criteria payload supplied). Every other
@@ -70,7 +72,8 @@ class MatchCheckScorer
         }
 
         // Flag ON, visible, criteria payload present → delegate to the existing engine.
-        $result = $this->buyerScorer->score($listing, $criteria);
+        // Smart Tag facts read before scoring, as every surface does (see BuyerMatchScorer::score()).
+        $result = $this->buyerScorer->score($listing, $criteria, ListingSmartTagIndex::forCandidates([$listing], $criteria)->factsFor($listing));
 
         return MatchCheckResult::scored(
             $preparation,
