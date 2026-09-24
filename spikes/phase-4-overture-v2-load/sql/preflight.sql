@@ -1,0 +1,183 @@
+SET default_transaction_read_only = on;
+-- ─────────────────────────────────────────────────────────────────────────────
+-- preflight.sql  —  Overture v2 operator load · READ-ONLY target preflight
+-- Spatial Intelligence Platform · Phase 4 (see ../RUNBOOK.md)
+-- ─────────────────────────────────────────────────────────────────────────────
+--
+-- Proves, before anything is written, that the target is the Crunchy Bridge spatial cluster that
+-- holds v1 (by fingerprint, not by name), that v1 is healthy, and what state v2 is in. Every
+-- statement is a SELECT or a SET. It is run by ../bin/preflight.sh, never by hand without it:
+-- the script supplies the connection-side facts (host, port) that the fingerprint is taken over,
+-- and refuses a URL with no host (which libpq would otherwise complete from an ambient PGHOST).
+--
+-- Required psql variables (the script sets all of them):
+--   v2_state              absent | empty | loaded
+--   target_host           lowercase host from SPATIAL_DATABASE_URL
+--   target_port           port from SPATIAL_DATABASE_URL (default 5432)
+--   expected_fingerprint  sha256 hex of  host|port|current_database()|v1 ledger started_at (UTC)
+--
+-- A failed check prints `FAIL <id>` and stops psql with an error (ON_ERROR_STOP), so the caller
+-- exits non-zero. A passing run prints one `PASS <id>` line per check and nothing secret.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+\set ON_ERROR_STOP on
+SET TimeZone = 'UTC';
+
+\if :{?v2_state}
+\else
+\echo 'FAIL P-- v2_state is not set (run through bin/preflight.sh)'
+SELECT 1 / 0;
+\endif
+-- psql's \if takes a boolean, not a comparison, so the state becomes booleans first.
+SELECT :'v2_state' IN ('absent', 'empty', 'loaded') AS state_known,
+       :'v2_state' = 'absent' AS v2_absent,
+       :'v2_state' = 'empty' AS v2_empty \gset
+\if :state_known
+\else
+\echo 'FAIL P-- v2_state must be absent, empty or loaded'
+SELECT 1 / 0;
+\endif
+
+-- P00 — the session really is read-only (every later statement inherits it).
+SELECT current_setting('default_transaction_read_only') = 'on' AS ok \gset
+\if :ok
+\echo 'PASS P00 session is read-only'
+\else
+\echo 'FAIL P00 session is not read-only'
+SELECT 1 / 0;
+\endif
+
+-- P01 — target identity. The fingerprint binds host, port, database and the v1 ledger row's own
+-- creation time, so a different cluster, a restored copy or a renamed database all fail here.
+SELECT COALESCE(encode(sha256(convert_to(
+         :'target_host' || '|' || :'target_port' || '|' || current_database() || '|' ||
+         (SELECT to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+            FROM corpus_imports
+           WHERE dataset = 'overture-places' AND corpus_version = 'overture-2026-06-17.0-fl'),
+         'UTF8')), 'hex') = :'expected_fingerprint', false) AS ok \gset
+\if :ok
+\echo 'PASS P01 target fingerprint matches the recorded Crunchy spatial cluster'
+\else
+\echo 'FAIL P01 target fingerprint does NOT match — wrong cluster, restored copy or changed v1 ledger'
+SELECT 1 / 0;
+\endif
+
+-- P02 — never the application database.
+SELECT current_database() NOT ILIKE '%heliumdb%' AND :'target_host' NOT ILIKE 'helium%' AS ok \gset
+\if :ok
+\echo 'PASS P02 target is not the application database'
+\else
+\echo 'FAIL P02 target resolves to the application database'
+SELECT 1 / 0;
+\endif
+
+-- P03 / P04 — versions, reported and pinned. PostGIS must be 3.6.x: the full-size rehearsal is
+-- only evidence for the PostGIS line it ran on.
+SELECT current_setting('server_version') AS server_version,
+       (SELECT extversion FROM pg_extension WHERE extname = 'postgis') AS postgis_version;
+SELECT current_setting('server_version_num')::int / 10000 = 16 AS ok \gset
+\if :ok
+\echo 'PASS P03 PostgreSQL major version is 16'
+\else
+\echo 'FAIL P03 PostgreSQL major version is not 16'
+SELECT 1 / 0;
+\endif
+SELECT COALESCE((SELECT extversion LIKE '3.6.%' FROM pg_extension WHERE extname = 'postgis'), false) AS ok \gset
+\if :ok
+\echo 'PASS P04 PostGIS is 3.6.x'
+\else
+\echo 'FAIL P04 PostGIS is missing or not 3.6.x — the rehearsal evidence does not cover it'
+SELECT 1 / 0;
+\endif
+
+-- P05 — v1 ledger: exactly one active overture-places row, and it is v1 with 29,434 rows.
+SELECT (SELECT count(*) FROM corpus_imports
+         WHERE dataset = 'overture-places' AND corpus_version = 'overture-2026-06-17.0-fl'
+           AND status = 'active' AND row_count = 29434) = 1
+   AND (SELECT count(*) FROM corpus_imports
+         WHERE dataset = 'overture-places' AND status = 'active') = 1 AS ok \gset
+\if :ok
+\echo 'PASS P05 v1 overture-2026-06-17.0-fl is the one active overture-places corpus (29,434)'
+\else
+\echo 'FAIL P05 v1 ledger is not exactly one active overture-2026-06-17.0-fl row of 29,434'
+SELECT 1 / 0;
+\endif
+
+-- P06 — v1 rows actually present.
+SELECT (SELECT count(*) FROM places WHERE corpus_version = 'overture-2026-06-17.0-fl') = 29434 AS ok \gset
+\if :ok
+\echo 'PASS P06 v1 places hold 29,434 rows'
+\else
+\echo 'FAIL P06 v1 places do not hold 29,434 rows'
+SELECT 1 / 0;
+\endif
+
+-- P07 — v2 table state.
+SELECT count(*) AS v2_relations
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = 'public' AND c.relname LIKE 'overture\_v2\_%' AND c.relkind IN ('r', 'p') \gset
+\if :v2_absent
+SELECT :v2_relations = 0 AS ok \gset
+\if :ok
+\echo 'PASS P07 no overture_v2_* table exists'
+\else
+\echo 'FAIL P07 overture_v2_* tables already exist (expected absent)'
+SELECT 1 / 0;
+\endif
+\else
+SELECT :v2_relations = 3
+   AND to_regclass('public.overture_v2_corpora') IS NOT NULL
+   AND to_regclass('public.overture_v2_places') IS NOT NULL
+   AND to_regclass('public.overture_v2_chain_memberships') IS NOT NULL AS ok \gset
+\if :ok
+\echo 'PASS P07 exactly the three overture_v2_* tables exist'
+\else
+\echo 'FAIL P07 the three overture_v2_* tables are not all present (or others exist)'
+SELECT 1 / 0;
+\endif
+\if :v2_empty
+SELECT count(*) = 0 AS ok FROM overture_v2_corpora \gset
+\if :ok
+SELECT (SELECT count(*) FROM overture_v2_places) = 0
+   AND (SELECT count(*) FROM overture_v2_chain_memberships) = 0 AS ok \gset
+\endif
+\if :ok
+\echo 'PASS P07 the v2 tables are empty'
+\else
+\echo 'FAIL P07 the v2 tables are not empty (expected empty)'
+SELECT 1 / 0;
+\endif
+\endif
+\endif
+
+-- P08 — the spatial migration ledger holds EXACTLY the expected set. The two August address
+-- migrations must never be applied by this procedure; the three v2 migrations are applied only
+-- by the migrate stage. Any other row means the cluster moved and this runbook is stale.
+-- `migrations.migration` is varchar (Laravel's repository); compare as text[].
+SELECT (SELECT array_agg(migration::text ORDER BY migration::text) FROM migrations)
+     = (SELECT array_agg(m ORDER BY m) FROM unnest(
+         ARRAY[
+           '2026_07_16_000001_spatial_core_enable_extensions',
+           '2026_07_16_000002_spatial_core_create_place_categories',
+           '2026_07_16_000003_spatial_core_create_place_category_mappings',
+           '2026_07_16_000004_spatial_core_create_places',
+           '2026_07_16_000005_spatial_core_create_place_authority_links',
+           '2026_07_16_000006_spatial_core_create_boundaries',
+           '2026_07_16_000007_spatial_core_create_boundaries_parts',
+           '2026_07_16_000008_spatial_core_create_listing_locations',
+           '2026_07_16_000009_spatial_core_create_addresses',
+           '2026_07_16_000010_spatial_core_create_isochrone_cache',
+           '2026_07_16_000011_spatial_core_create_corpus_imports'
+         ] || CASE WHEN :'v2_state' = 'absent' THEN ARRAY[]::text[] ELSE ARRAY[
+           '2026_09_24_000001_spatial_overture_v2_create_corpora',
+           '2026_09_24_000002_spatial_overture_v2_create_places',
+           '2026_09_24_000003_spatial_overture_v2_create_chain_memberships'
+         ] END) AS m) AS ok \gset
+\if :ok
+\echo 'PASS P08 migration ledger is exactly the expected set (August address migrations still pending)'
+\else
+\echo 'FAIL P08 migration ledger differs from the expected set'
+SELECT 1 / 0;
+\endif
+
+\echo 'PREFLIGHT OK'
