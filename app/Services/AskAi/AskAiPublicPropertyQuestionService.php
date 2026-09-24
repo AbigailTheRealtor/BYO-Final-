@@ -602,6 +602,13 @@ class AskAiPublicPropertyQuestionService
                     $offers[$variant][$q['id']] = true;
                 }
             }
+            // A hand-written noun-phrase alias ("list price", "monthly rent") takes the same
+            // "what is/are [the] …" framings a label does, under the same ambiguity rule — so
+            // "what is the list price" reaches the question "list price" already reaches, and
+            // a framing two questions could claim reaches neither.
+            foreach (self::aliasFramings($q['aliases']) as $variant) {
+                $offers[$variant][$q['id']] = true;
+            }
         }
 
         foreach ($questions as $i => $q) {
@@ -632,6 +639,31 @@ class AskAiPublicPropertyQuestionService
         return array_values(array_unique([
             $base, "what is the {$base}", "what is {$base}", "what are the {$base}", "what are {$base}",
         ]));
+    }
+
+    /**
+     * The labelVariants() framings of each NOUN-PHRASE alias. An alias that is already a
+     * question ("how many bathrooms", "is there a pool") is left alone: "what is the how many
+     * bathrooms" is not wording anybody types, only vocabulary for a collision to hide in.
+     *
+     * @param  list<string>  $aliases  normalised
+     * @return list<string>
+     */
+    public static function aliasFramings(array $aliases): array
+    {
+        $framings = [];
+        foreach ($aliases as $alias) {
+            if (preg_match('/^(what|how|is|are|does|do|did|can|could|will|would|when|where|which|who|whose|why|any|tell)\b/', $alias) === 1) {
+                continue;
+            }
+            foreach (self::labelVariants($alias) as $variant) {
+                if ($variant !== $alias) {
+                    $framings[] = $variant;
+                }
+            }
+        }
+
+        return array_values(array_unique($framings));
     }
 
     /** @return list<string> the labels of every listing fact an entry reads */
