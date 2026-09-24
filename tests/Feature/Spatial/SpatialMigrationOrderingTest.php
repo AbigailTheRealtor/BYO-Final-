@@ -11,6 +11,7 @@ use Tests\TestCase;
  * FK edges that constrain ordering:
  *   • place_categories  →  place_category_mappings, places   (parent first)
  *   • boundaries        →  boundaries_parts                  (parent first)
+ *   • overture_v2_corpora → overture_v2_places → overture_v2_chain_memberships
  * Rollback is the reverse, so children drop before their parents.
  */
 class SpatialMigrationOrderingTest extends TestCase
@@ -39,7 +40,7 @@ class SpatialMigrationOrderingTest extends TestCase
     }
 
     /** @test */
-    public function there_are_exactly_thirteen_migrations_in_the_documented_order(): void
+    public function there_are_exactly_sixteen_migrations_in_the_documented_order(): void
     {
         $expected = [
             'spatial_core_enable_extensions',
@@ -62,6 +63,12 @@ class SpatialMigrationOrderingTest extends TestCase
             // after the migration that adds `corpus_version` — it indexes a
             // column that migration creates.
             'spatial_core_index_address_lookup',
+
+            // Overture corpus v2, side by side with v1 and touching none of it
+            // (docs/spatial/overture-v2-corpus-schema.md). FK chain, parent first.
+            'spatial_overture_v2_create_corpora',
+            'spatial_overture_v2_create_places',
+            'spatial_overture_v2_create_chain_memberships',
         ];
 
         $actual = array_map(
@@ -87,6 +94,8 @@ class SpatialMigrationOrderingTest extends TestCase
         $this->assertLessThan($this->posOf($n, 'create_place_category_mappings'), $this->posOf($n, 'create_place_categories'));
         $this->assertLessThan($this->posOf($n, 'create_places'), $this->posOf($n, 'create_place_categories'));
         $this->assertLessThan($this->posOf($n, 'create_boundaries_parts'), $this->posOf($n, 'create_boundaries'));
+        $this->assertLessThan($this->posOf($n, 'overture_v2_create_places'), $this->posOf($n, 'overture_v2_create_corpora'));
+        $this->assertLessThan($this->posOf($n, 'overture_v2_create_chain_memberships'), $this->posOf($n, 'overture_v2_create_places'));
     }
 
     /** @test */
@@ -97,6 +106,8 @@ class SpatialMigrationOrderingTest extends TestCase
         $this->assertLessThan($this->posOf($rollback, 'create_place_categories'), $this->posOf($rollback, 'create_place_category_mappings'));
         $this->assertLessThan($this->posOf($rollback, 'create_place_categories'), $this->posOf($rollback, 'create_places'));
         $this->assertLessThan($this->posOf($rollback, 'create_boundaries'), $this->posOf($rollback, 'create_boundaries_parts'));
+        $this->assertLessThan($this->posOf($rollback, 'overture_v2_create_places'), $this->posOf($rollback, 'overture_v2_create_chain_memberships'));
+        $this->assertLessThan($this->posOf($rollback, 'overture_v2_create_corpora'), $this->posOf($rollback, 'overture_v2_create_places'));
     }
 
     /** @test */

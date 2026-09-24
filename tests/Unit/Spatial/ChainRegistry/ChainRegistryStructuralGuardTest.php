@@ -22,13 +22,17 @@ class ChainRegistryStructuralGuardTest extends TestCase
     private const CONFIG_FILE = 'config/poi_chain_registry.php';
 
     /**
-     * The only files outside the namespace that may reference it: the offline extraction recipe.
-     * Exact paths, never a prefix a runtime file could slip under.
+     * The only files outside the namespace that may reference it: the offline extraction recipe,
+     * and the offline v2 importer's gate and command, which re-run the census over the rows they
+     * import (docs/spatial/overture-v2-corpus-schema.md §4). Both refuse production; neither is
+     * reachable from a request. Exact paths, never a prefix a runtime file could slip under.
      */
     private const OFFLINE_CONSUMERS = [
         'app/Console/Commands/CorpusExtractOvertureV2.php',
+        'app/Console/Commands/CorpusImportOvertureV2.php',
         'app/Services/Spatial/OvertureExtractV2/OvertureExtractV2Config.php',
         'app/Services/Spatial/OvertureExtractV2/OvertureV2MatcherCensus.php',
+        'app/Services/Spatial/OvertureV2Import/OvertureV2ImportGate.php',
     ];
 
     /** Application source directories a consumer would live in. */
@@ -107,6 +111,15 @@ class ChainRegistryStructuralGuardTest extends TestCase
         $command = self::code('app/Console/Commands/CorpusExtractOvertureV2.php');
         $this->assertStringContainsString("environment('production')", $command);
         $this->assertStringNotContainsString('DB::', $command);
+
+        // The importer writes, so it refuses production through the shared guard as well, and its
+        // gate — the class that runs the matcher — is handed no connection at all.
+        $import = self::code('app/Console/Commands/CorpusImportOvertureV2.php');
+        $this->assertStringContainsString('$this->refusesProductionDatabase()', $import);
+        $this->assertStringContainsString("environment('production')", $import);
+        $gate = self::code('app/Services/Spatial/OvertureV2Import/OvertureV2ImportGate.php');
+        $this->assertStringNotContainsString('DB::', $gate);
+        $this->assertStringNotContainsString('Connection', $gate);
     }
 
     public function test_the_config_has_exactly_one_reader(): void
