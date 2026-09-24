@@ -6,8 +6,11 @@ use App\Models\SmartTagSeekerPreference;
 use App\Support\SmartTags\SmartTagContext;
 use App\Support\SmartTags\SmartTagContextResolver;
 use App\Support\SmartTags\SmartTagDefinition;
+use App\Support\SmartTags\SmartTagSeekerPreferenceGate;
 use App\Support\SmartTags\SmartTagSeekerSubjectType;
+use App\Support\SmartTags\SmartTagSelectionPolicy;
 use App\Support\SmartTags\SmartTagTaxonomy;
+use Illuminate\Support\Facades\Log;
 
 /**
  * THE read path for seeker Smart Tag preferences.
@@ -17,9 +20,10 @@ use App\Support\SmartTags\SmartTagTaxonomy;
  * records store property type as EAV meta. It returns KEYS — matching compares
  * keys against `smart_tag_assignments.tag_key`, and a label would not join.
  *
- * NOT WIRED INTO SCORING. This phase supplies the preferences; consuming them is
- * the next one, and doing both at once would put an unproven signal into a
- * scorer whose weights must sum to 100.
+ * READ BY MATCHING THROUGH ONE METHOD. {@see matchingKeysFor()} is what the four
+ * Stellar criteria loaders hand the matcher; BuyerMatchScorer scores the picks
+ * inside its existing Amenities category (see SeekerSmartTagMatcher). They score,
+ * they never select: no pick filters a result.
  */
 class SmartTagSeekerPreferenceReader
 {
@@ -91,6 +95,57 @@ class SmartTagSeekerPreferenceReader
         );
 
         return array_values(array_intersect($this->keysFor($subject), $applicable));
+    }
+
+    /**
+     * The picks MATCHING may use for this record, right now — or none.
+     *
+     * Three rules, each fail-closed:
+     *
+     *   • The picker gate AND the separate matching gate must be ON
+     *     ({@see SmartTagSeekerPreferenceGate::matchingEnabled()}). With the
+     *     picker off a stored pick is one the customer can neither see nor edit;
+     *     with matching off, picks are saved but not yet scored. Either way the
+     *     answer is no picks, which is exactly the pre-feature score.
+     *   • Every key is re-projected through SmartTagSelectionPolicy on
+     *     SURFACE_SEEKER against the record's CURRENT context: the same
+     *     intersection the write used, asked again at read time, so a tag that
+     *     has since been retired, put under compliance review, made
+     *     non-seeker-selectable or made inapplicable by a property-type edit
+     *     stops contributing on the next search without anyone rewriting rows.
+     *   • No context, no picks.
+     *
+     * NEVER THROWS. A search must not fail because a preference could not be
+     * read; a fault is logged (class only) and reads as no picks, which is the
+     * pre-feature score.
+     *
+     * @return list<string> canonical keys, in taxonomy display order
+     */
+    public function matchingKeysFor(object $subject): array
+    {
+        try {
+            if (! SmartTagSeekerPreferenceGate::matchingEnabled()) {
+                return [];
+            }
+
+            $context = $this->contextFor($subject);
+
+            if ($context === null) {
+                return [];
+            }
+
+            return array_values(SmartTagSelectionPolicy::project(
+                $this->keysFor($subject),
+                $context,
+                SmartTagTaxonomy::SURFACE_SEEKER,
+            )->accepted);
+        } catch (\Throwable $e) {
+            Log::warning('smart_tag_seeker_preferences matching read failed', [
+                'exception' => $e::class,
+            ]);
+
+            return [];
+        }
     }
 
     /**

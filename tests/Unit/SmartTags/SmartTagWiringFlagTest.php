@@ -46,7 +46,7 @@ if (! function_exists('env')) {
     }
 }
 \$config = require '{$this->root()}/config/smart_tags_wiring.php';
-echo json_encode(['enabled' => \$config['enabled'], 'bridge_enabled' => \$config['bridge_enabled']]);
+echo json_encode(\$config);
 PHP;
 
         $file = tempnam(sys_get_temp_dir(), 'smarttagflag') . '.php';
@@ -70,6 +70,28 @@ PHP;
 
         $this->assertFalse($config['enabled'], 'The master gate must ship OFF.');
         $this->assertFalse($config['bridge_enabled'], 'The Bridge gate must ship OFF.');
+        $this->assertFalse($config['seeker_matching_enabled'], 'The seeker MATCHING gate must ship OFF.');
+    }
+
+    /**
+     * The seeker matching gate parses exactly like the others, and is read
+     * independently of the picker gate — the picker can be on with matching off.
+     *
+     * @test
+     */
+    public function the_seeker_matching_gate_parses_fail_closed_and_independently(): void
+    {
+        foreach (self::onValues() as [$on]) {
+            $this->assertTrue($this->evaluate(['SMART_TAGS_SEEKER_MATCHING_ENABLED' => $on])['seeker_matching_enabled'], $on);
+        }
+
+        foreach (self::offValues() as [$off]) {
+            $this->assertFalse($this->evaluate(['SMART_TAGS_SEEKER_MATCHING_ENABLED' => $off])['seeker_matching_enabled'], $off);
+        }
+
+        $pickerOnly = $this->evaluate(['SMART_TAGS_SEEKER_PREFERENCES_ENABLED' => 'true', 'SMART_TAGS_SEEKER_MATCHING_ENABLED' => null]);
+        $this->assertTrue($pickerOnly['seeker_preferences_enabled']);
+        $this->assertFalse($pickerOnly['seeker_matching_enabled'], 'Enabling the picker must not enable matching.');
     }
 
     /**

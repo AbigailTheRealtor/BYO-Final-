@@ -54,6 +54,19 @@ final class SmartTagSeekerPreferenceGate
     }
 
     /**
+     * May stored picks take part in the Stellar Match DNA score?
+     *
+     * Requires the picker gate AND the separate matching gate, each a real
+     * boolean `true`. The picker can therefore be switched on — and picks saved —
+     * while matching stays off until listing-side tag coverage exists.
+     */
+    public static function matchingEnabled(): bool
+    {
+        return self::enabled()
+            && (SmartTagConfig::wiring()['seeker_matching_enabled'] ?? null) === true;
+    }
+
+    /**
      * Deletion cleanup is NOT gated, and never should be.
      *
      * Present as a named constant-returning method rather than as an absent

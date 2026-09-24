@@ -3,6 +3,7 @@
 namespace App\Services\Stellar\Matching;
 
 use App\Services\Bridge\BridgeListingMatchFactsBuilder;
+use App\Services\SmartTags\Seeker\SeekerSmartTagMatch;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Support\Matching\MonthlyEquivalent;
@@ -23,7 +24,7 @@ class BuyerMatchResultBuilder
         $result->whyThisMatches = $this->buildWhyThisMatches($result, $facts);
         $result->tradeoffs      = $this->buildTradeoffs($result, $criteria, $facts);
         $result->cautionFlags   = $this->buildCautionFlags($criteria, $facts);
-        $result->missingData    = $this->buildMissingData($criteria, $facts);
+        $result->missingData    = $this->buildMissingData($criteria, $facts, $result->seekerFeatureMatch);
 
         return $result;
     }
@@ -80,9 +81,47 @@ class BuyerMatchResultBuilder
             }
         }
 
+        // The seeker's selected property features are scored inside Amenities, so they are
+        // explained there: which of their picks this home has, by name. Labels only — never a
+        // canonical key, and no weight beyond the category points the entry already shows.
+        $features = $result->seekerFeatureMatch;
+        if ($features !== null && $features->matchedCount() > 0) {
+            foreach ($entries as $i => $entry) {
+                if ($entry['dimension'] === 'amenities') {
+                    $entries[$i]['label'] = sprintf(
+                        'Has %d of your %d selected features: %s',
+                        $features->matchedCount(),
+                        $features->selectedCount(),
+                        self::featureList($features->matchedLabels())
+                    );
+                }
+            }
+        }
+
         usort($entries, fn($a, $b) => $b['score_contribution'] <=> $a['score_contribution']);
 
         return $entries;
+    }
+
+    /**
+     * "A, B and C" — at most three names, then "and N more", so a long selection stays readable.
+     *
+     * @param list<string> $labels
+     */
+    private static function featureList(array $labels): string
+    {
+        $shown = array_slice($labels, 0, 3);
+        $more  = count($labels) - count($shown);
+
+        if ($more > 0) {
+            return implode(', ', $shown) . " and {$more} more";
+        }
+
+        if (count($shown) <= 1) {
+            return (string) ($shown[0] ?? '');
+        }
+
+        return implode(', ', array_slice($shown, 0, -1)) . ' and ' . end($shown);
     }
 
     private function buildWhyLabel(string $dimension, ListingMatchFacts $facts, int $score): string
@@ -213,6 +252,21 @@ class BuyerMatchResultBuilder
             }
         }
 
+        // Selected property features this home does not list. Only when the home HAS resolved
+        // feature data — with none, the gap is missing data (below), not a known absence.
+        $features = $result->seekerFeatureMatch;
+        if ($features !== null && $features->hasListingData) {
+            $unmatched = $features->unmatchedLabels();
+            if ($unmatched !== []) {
+                $tradeoffs[] = [
+                    'dimension'   => 'amenities',
+                    'label'       => 'Does not list: ' . self::featureList($unmatched),
+                    'fields_used' => [],
+                    'deviation'   => 'selected_features_not_listed',
+                ];
+            }
+        }
+
         // Pet policy tradeoff
         if ($criteria->wantsPetFriendly === true) {
             $petsAllowed = $facts->petsAllowed;
@@ -319,7 +373,7 @@ class BuyerMatchResultBuilder
     // Block 4: missing_data
     // =========================================================================
 
-    private function buildMissingData(BuyerCriteriaPayload $criteria, ListingMatchFacts $facts): array
+    private function buildMissingData(BuyerCriteriaPayload $criteria, ListingMatchFacts $facts, ?SeekerSmartTagMatch $seekerFeatures = null): array
     {
         $missing = [];
 
@@ -386,6 +440,16 @@ class BuyerMatchResultBuilder
             $missing[] = [
                 'field' => 'LotSizeSquareFeet',
                 'label' => 'Lot size not listed',
+            ];
+        }
+
+        // Selected property features that could not be checked: this home has no resolved
+        // feature data at all. It earned nothing for them — unknown is never a match — and the
+        // seeker is told why rather than left with an unexplained lower score.
+        if ($seekerFeatures !== null && ! $seekerFeatures->hasListingData) {
+            $missing[] = [
+                'field' => 'selected_features',
+                'label' => 'Feature details not available — your selected features could not be checked for this home',
             ];
         }
 

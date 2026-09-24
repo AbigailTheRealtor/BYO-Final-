@@ -4,6 +4,8 @@ namespace App\Services\Stellar\Matching\DTO;
 
 use App\Services\Explore\ExploreTransactionType;
 use App\Services\Offers\ImportantPlacesService;
+use App\Services\SmartTags\Seeker\SeekerSmartTagMatcher;
+use App\Support\SmartTags\SmartTagSeekerPreferenceGate;
 use App\Support\Location\UsStateCode;
 
 class BuyerCriteriaPayload
@@ -137,6 +139,21 @@ class BuyerCriteriaPayload
      */
     public readonly array $importantPlaces;
 
+    /**
+     * The seeker's selected Smart Tags ("Property Features You Want"), as canonical keys.
+     *
+     * Set by the four Stellar loaders from SmartTagSeekerPreferenceReader::matchingKeysFor()
+     * (gates, current context and SmartTagSelectionPolicy already applied) and governed again
+     * here, context-free, so a hand-built payload cannot score a key the picker could never
+     * offer. The matching gate is asked again here too: with it off no producer of this payload
+     * can make the scorer read or score a pick. Empty = no feature preference = exactly the pre-feature score. Scored inside the
+     * Amenities category; never a filter. Deliberately NOT part of CriteriaHashService's hash:
+     * it changes no MLS request, only how fetched listings are scored.
+     *
+     * @var list<string>
+     */
+    public readonly array $seekerSmartTags;
+
     public function __construct(array $data)
     {
         $this->propertyTypes = $data['property_types'] ?? [];
@@ -223,6 +240,10 @@ class BuyerCriteriaPayload
         // Normalised here, like the state, so every producer of this payload hands the matcher the
         // same canonical row shape the wizards save.
         $this->importantPlaces = (new ImportantPlacesService())->normalize($data['important_places'] ?? []);
+
+        $this->seekerSmartTags = SmartTagSeekerPreferenceGate::matchingEnabled()
+            ? SeekerSmartTagMatcher::governedKeys(is_array($data['seeker_smart_tags'] ?? null) ? $data['seeker_smart_tags'] : [])
+            : [];
     }
 
     /**

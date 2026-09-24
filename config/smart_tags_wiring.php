@@ -91,4 +91,28 @@ return [
 
     'seeker_preferences_enabled' => filter_var(env('SMART_TAGS_SEEKER_PREFERENCES_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Seeker picks in MATCHING — an ADDITIONAL gate, never a replacement
+    |--------------------------------------------------------------------------
+    |
+    | Whether the Buyer/Tenant picks stored under the gate above take part in the
+    | Stellar Match DNA score. Both must be on; this alone does nothing.
+    |
+    | SEPARATE FROM THE PICKER ON PURPOSE. Picks are scored against the listings'
+    | resolved Smart Tags, and Bridge rows have none until Bridge derivation has
+    | run and been backfilled. Scoring before that would lower every MLS card's
+    | Amenities score alike for want of enrichment we have not produced yet. So
+    | the rollout is: store picks (the gate above) → derive and backfill Bridge
+    | tags → verify coverage → turn this on. With this OFF, picks keep saving
+    | exactly as before and the score is the pre-feature score, with no
+    | listing-tag read at all.
+    |
+    | Parsed strictly and fail-closed, like every gate here. A safety switch, so
+    | also excluded from the production flag contract.
+    |
+    */
+
+    'seeker_matching_enabled' => filter_var(env('SMART_TAGS_SEEKER_MATCHING_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
 ];

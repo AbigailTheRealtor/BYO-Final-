@@ -115,7 +115,9 @@ class MatchCheckScorerTest extends TestCase
         );
 
         $engine = Mockery::mock(BuyerMatchScorer::class);
-        $engine->shouldReceive('score')->once()->with($listing, $payload)->andReturn($engineResult);
+        // Third argument null: the payload carries no Smart Tag picks, so no tag facts are read
+        // (this test has no database) and none are handed to the engine.
+        $engine->shouldReceive('score')->once()->with($listing, $payload, null)->andReturn($engineResult);
 
         $result = (new MatchCheckScorer($engine))
             ->score($this->readyPrep('buyer', $this->criteriaRecord()), $listing, $payload);

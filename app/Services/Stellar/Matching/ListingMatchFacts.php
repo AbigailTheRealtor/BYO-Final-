@@ -54,6 +54,7 @@ final class ListingMatchFacts
      * @param mixed       $daysOnMarket                  as stated
      * @param bool        $floodZoneStated               the source carries a flood-zone designation
      * @param bool        $schoolsListed                 the source names an elementary or high school
+     * @param ListingSmartTagFacts|null $smartTags        resolved Smart Tags; null = not supplied, unknown
      */
     public function __construct(
         public readonly string $listingKey,
@@ -107,5 +108,19 @@ final class ListingMatchFacts
         public readonly mixed $daysOnMarket,
         public readonly bool $floodZoneStated,
         public readonly bool $schoolsListed,
+
+        // Resolved Smart Tags — supplied beside the row, not read from it (see withSmartTags())
+        public readonly ?ListingSmartTagFacts $smartTags = null,
     ) {}
+
+    /**
+     * The same facts with the listing's resolved Smart Tags attached.
+     *
+     * A provider-side builder reads a row; a listing's Smart Tags are not in the row, so they
+     * are read beside it, before scoring, and attached here. Null leaves them unknown.
+     */
+    public function withSmartTags(?ListingSmartTagFacts $smartTags): self
+    {
+        return new self(...array_merge(get_object_vars($this), ['smartTags' => $smartTags]));
+    }
 }

@@ -293,7 +293,7 @@ class MatchCheckOrchestratorTest extends TestCase
         $resolver->shouldReceive('resolvePreferred')->once()->andReturn($record);
 
         $engine = Mockery::mock(BuyerMatchScorer::class);
-        $engine->shouldReceive('score')->once()->with($listing, $payload)->andReturn(
+        $engine->shouldReceive('score')->once()->with($listing, $payload, null)->andReturn(
             new BuyerMatchResult('KEY-9', 88, ['location' => 24], $listing)
         );
         $scorer = new MatchCheckScorer($engine);
@@ -369,7 +369,7 @@ class MatchCheckOrchestratorTest extends TestCase
 
         $engine = Mockery::mock(BuyerMatchScorer::class);
         $engine->shouldReceive('score')->once()
-            ->with($listing, Mockery::type(BuyerCriteriaPayload::class))
+            ->with($listing, Mockery::type(BuyerCriteriaPayload::class), null)
             ->andReturn(new BuyerMatchResult('KEY-42', 91, ['location' => 25], $listing));
         $scorer = new MatchCheckScorer($engine);
 
@@ -403,7 +403,7 @@ class MatchCheckOrchestratorTest extends TestCase
         $loader = $this->neverCalledLoader();
 
         $engine = Mockery::mock(BuyerMatchScorer::class);
-        $engine->shouldReceive('score')->once()->with($listing, $payload)->andReturn(
+        $engine->shouldReceive('score')->once()->with($listing, $payload, null)->andReturn(
             new BuyerMatchResult('KEY-5', 77, ['location' => 20], $listing)
         );
         $scorer = new MatchCheckScorer($engine);
