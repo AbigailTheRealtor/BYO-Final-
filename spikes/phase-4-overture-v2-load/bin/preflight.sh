@@ -82,6 +82,7 @@ import os, re, sys, urllib.parse
 u = os.environ["SPATIAL_DATABASE_URL"]
 try:
     s = urllib.parse.urlsplit(u)
+    netloc_host = s.netloc.rsplit("@", 1)[-1].split(":", 1)[0]
     host = (s.hostname or "").lower()
     port = s.port or 5432
 except ValueError:
@@ -93,6 +94,8 @@ if "," in s.netloc:
     print("ERR multi-host URL"); sys.exit(0)
 if not host:
     print("ERR URL has no host (libpq would fall back to an ambient PGHOST)"); sys.exit(0)
+if netloc_host != netloc_host.lower():
+    print("ERR host must be written in lowercase (log masking is case-sensitive)"); sys.exit(0)
 if not re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)*\.db\.postgresbridge\.com", host):
     print("ERR host is not a *.db.postgresbridge.com Crunchy Bridge host"); sys.exit(0)
 if host == "helium" or host.startswith("helium."):
@@ -146,17 +149,34 @@ printf '[overture-v2-preflight] target host suffix ok (*.db.postgresbridge.com),
 export PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-15}"
 export PGSSLMODE=require   # the URL may strengthen it (verify-ca/verify-full); nothing may weaken it
 export PGAPPNAME="overture-v2-preflight"
+# psql's own error text is NEVER printed raw. A connection error names the host, the resolved
+# address and the user ("connection to server at ... failed ... for user ..."), and this
+# repository's Actions logs are public. stdout (the PASS/FAIL lines) passes through; from stderr
+# only the committed script's own error lines ("psql:<...>/preflight.sql:<line>: ...") are shown.
+ERR_FILE="$(mktemp)"
+trap 'rm -f "$ERR_FILE"' EXIT
 set +e
 psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
   -v v2_state="$V2_STATE" -v target_host="$TARGET_HOST" -v target_port="$TARGET_PORT" \
   -v expected_fingerprint="$EXPECTED_FINGERPRINT" \
-  -f "${SQL_DIR}/preflight.sql"
+  -f "${SQL_DIR}/preflight.sql" 2>"$ERR_FILE"
 status=$?
 set -e
+if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+  grep -E '^psql:[^[:space:]]*preflight\.sql:[0-9]+: ' "$ERR_FILE" >&2 || true
+fi
 
 case "$status" in
   0) printf '[overture-v2-preflight] PREFLIGHT PASSED (read-only; nothing was written)\n' ;;
-  2) printf '[overture-v2-preflight] CONNECTIVITY FAILED — STOP. Do not change the Crunchy allowlist from here and do not try another credential path. Follow RUNBOOK "Connectivity failure" (operator-container fallback).\n' >&2
+  2) # A fixed category, never the text: tells a rotated credential from an allowlist block.
+     category="other"
+     if grep -qiE 'authentication failed|no pg_hba|role .* does not exist' "$ERR_FILE"; then category="authentication (credential rejected or rotated)"
+     elif grep -qiE 'could not translate host name|Name or service not known|nodename nor servname' "$ERR_FILE"; then category="DNS (host name did not resolve)"
+     elif grep -qiE 'SSL|TLS|certificate' "$ERR_FILE"; then category="TLS"
+     elif grep -qiE 'timeout expired|timed out|Connection refused|No route to host|Network is unreachable' "$ERR_FILE"; then category="network (refused or timed out, e.g. an allowlist)"
+     fi
+     printf '[overture-v2-preflight] connection failure category: %s\n' "$category" >&2
+     printf '[overture-v2-preflight] CONNECTIVITY FAILED (details withheld: they name the host and user) — STOP. Do not change the Crunchy allowlist from here and do not try another credential path. Follow RUNBOOK "Connectivity failure" (operator-container fallback).\n' >&2
      exit 4 ;;
   *) printf '[overture-v2-preflight] PREFLIGHT FAILED (exit %s) — STOP. Nothing was written.\n' "$status" >&2
      exit 5 ;;

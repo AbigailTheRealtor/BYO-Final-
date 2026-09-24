@@ -322,12 +322,13 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
      * @param array<string, string> $env
      * @return array{code: int, out: string, psql_called: bool, psql_args: string}
      */
-    private function preflight(array $args, array $env, int $psqlExit = 0): array
+    private function preflight(array $args, array $env, int $psqlExit = 0, string $psqlStderr = ''): array
     {
         $stubDir = sys_get_temp_dir() . '/ov2-preflight-stub-' . bin2hex(random_bytes(6));
         mkdir($stubDir);
         $marker = $stubDir . '/psql.called';
-        file_put_contents($stubDir . '/psql', "#!/usr/bin/env bash\nprintf '%s\\n' \"\$@\" > '{$marker}'\nexit {$psqlExit}\n");
+        file_put_contents($stubDir . '/stderr.txt', $psqlStderr);
+        file_put_contents($stubDir . '/psql', "#!/usr/bin/env bash\nprintf '%s\\n' \"\$@\" > '{$marker}'\ncat '{$stubDir}/stderr.txt' >&2\nexit {$psqlExit}\n");
         chmod($stubDir . '/psql', 0755);
 
         $proc = proc_open(
@@ -346,6 +347,7 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
         $called = is_file($marker);
         $psqlArgs = $called ? (string) file_get_contents($marker) : '';
         @unlink($marker);
+        @unlink($stubDir . '/stderr.txt');
         @unlink($stubDir . '/psql');
         @rmdir($stubDir);
 
@@ -374,6 +376,7 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
             'any PGSERVICE' => [['--v2-state=absent'], ['PGSERVICE' => 'x', 'SPATIAL_DATABASE_URL' => self::GOOD_URL], 'PGSERVICE'],
             'url host param' => [['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => self::GOOD_URL . '&host=helium'], 'connection parameter'],
             'url hostaddr param' => [['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => self::GOOD_URL . '&hostaddr=10.0.0.5'], 'connection parameter'],
+            'uppercase host' => [['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => 'postgresql://u:p@P.ABC.db.postgresbridge.com/postgres'], 'lowercase'],
             'weak tls' => [['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => 'postgresql://u:p@p.abc.db.postgresbridge.com/postgres?sslmode=disable'], 'sslmode'],
         ];
         foreach ($cases as $label => [$args, $env, $expect]) {
@@ -569,5 +572,98 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
                 $this->assertStringNotContainsString($forbidden, $src, "{$file} must not contain {$forbidden}");
             }
         }
+    }
+
+    // ── Public logs: nothing names the target ──────────────────────────────────────────────────
+
+    /** @test */
+    public function preflight_never_prints_psql_connection_errors(): void
+    {
+        $leak = "psql: error: connection to server at \"p.abc123.db.postgresbridge.com\" (10.9.8.7), port 5432 failed: "
+            . "FATAL:  password authentication failed for user \"ov2op\"\n";
+
+        $down = $this->preflight(['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => self::GOOD_URL], 2, $leak);
+        $this->assertSame(4, $down['code']);
+        $this->assertStringContainsString('details withheld', $down['out']);
+        $this->assertStringContainsString('connection failure category: authentication', $down['out']);
+        foreach (['p.abc123', 'postgresbridge.com"', '10.9.8.7', 'ov2op', 'S3cretPassw0rd'] as $secretish) {
+            $this->assertStringNotContainsString($secretish, $down['out'], "a connection failure printed {$secretish}");
+        }
+
+        // A failed CHECK shows the committed script's own error line, and still nothing else.
+        $scriptError = "psql:/repo/spikes/phase-4-overture-v2-load/sql/preflight.sql:61: ERROR:  division by zero\n" . $leak;
+        $failed = $this->preflight(['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => self::GOOD_URL], 3, $scriptError);
+        $this->assertSame(5, $failed['code']);
+        $this->assertStringContainsString('preflight.sql:61: ERROR:  division by zero', $failed['out']);
+        foreach (['10.9.8.7', 'ov2op', 'connection to server'] as $secretish) {
+            $this->assertStringNotContainsString($secretish, $failed['out'], "a failed check printed {$secretish}");
+        }
+    }
+
+    /** @test */
+    public function every_secret_job_masks_the_target_before_anything_else_reads_the_secret(): void
+    {
+        foreach (self::workflow()['jobs'] as $name => $job) {
+            $firstSecretStep = null;
+            foreach ($job['steps'] ?? [] as $step) {
+                if (str_contains(json_encode($step, JSON_UNESCAPED_SLASHES), 'secrets.SPATIAL_DATABASE_URL')) {
+                    $firstSecretStep = $step;
+                    break;
+                }
+            }
+            if ($firstSecretStep === null) {
+                continue;
+            }
+            $this->assertSame("Mask the target's identity in this job's log", $firstSecretStep['name'] ?? null,
+                "job {$name}: the first step that reads the secret must be the masking step");
+            $this->assertStringContainsString('bin/mask_log_identity.sh', (string) $firstSecretStep['run']);
+        }
+    }
+
+    /**
+     * @param array<string, string> $env
+     * @return array{code: int, out: string}
+     */
+    private function mask(array $env): array
+    {
+        $proc = proc_open(['bash', base_path(self::DIR . '/bin/mask_log_identity.sh')], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes, null, array_merge(['PATH' => (string) getenv('PATH')], $env));
+        $out = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        return ['code' => proc_close($proc), 'out' => $out];
+    }
+
+    /** @test */
+    public function the_masking_step_masks_in_actions_and_is_silent_everywhere_else(): void
+    {
+        // Operator container / any ordinary terminal: prints NOTHING (printing the mask command
+        // would display exactly what it hides).
+        $quiet = $this->mask(['SPATIAL_DATABASE_URL' => self::GOOD_URL]);
+        $this->assertSame(0, $quiet['code']);
+        $this->assertSame('', $quiet['out']);
+
+        // GitHub Actions: host, user and password are registered as masks, and appear nowhere else.
+        // A stray GITHUB_ACTIONS without the runner's own variables is not a runner: still silent.
+        $stray = $this->mask(['GITHUB_ACTIONS' => 'true', 'SPATIAL_DATABASE_URL' => self::GOOD_URL]);
+        $this->assertSame('', $stray['out']);
+
+        $gha = $this->mask(['GITHUB_ACTIONS' => 'true', 'GITHUB_RUN_ID' => '1', 'RUNNER_TEMP' => sys_get_temp_dir(),
+            'SPATIAL_DATABASE_URL' => self::GOOD_URL]);
+        $this->assertSame(0, $gha['code']);
+        foreach (['p.abc123.db.postgresbridge.com', 'ov2op', 'S3cretPassw0rd'] as $value) {
+            $this->assertStringContainsString("::add-mask::{$value}\n", $gha['out']);
+        }
+        foreach (explode("\n", trim($gha['out'])) as $line) {
+            if (! str_starts_with($line, '::add-mask::')) {
+                foreach (['p.abc123', 'ov2op', 'S3cretPassw0rd'] as $value) {
+                    $this->assertStringNotContainsString($value, $line, 'a value appeared outside a mask command');
+                }
+            }
+        }
+
+        // Never set -x, and never print the VALUE (a message naming the variable is fine).
+        $this->assertDoesNotMatchRegularExpression('/set -x|(echo|printf)[^\n]*\$\{?SPATIAL_DATABASE_URL/', self::source(self::DIR . '/bin/mask_log_identity.sh'));
     }
 }
