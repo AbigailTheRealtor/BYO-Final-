@@ -78,6 +78,10 @@ Done in GitHub settings, not in this repository — so verify it by eye before t
    private repository it may require GitHub Enterprise), **STOP — run no stage**: without it the
    approval gate this procedure depends on does not exist. Use §6 instead only after a separate
    decision about how its writes are approved.
+   **The reviewer must be a different GitHub account from the one that dispatches the run.** With
+   *Prevent self-review* on, the dispatcher cannot approve its own run; with it off, the approval
+   gate is the dispatcher agreeing with itself. A repository with a single collaborator therefore
+   cannot use this path — STOP and use §6 (the position on 2026-09-24: one collaborator).
 3. **Deployment branches and tags:** *Selected branches* → `main` only.
 4. **Environment secret** `SPATIAL_DATABASE_URL` = the Crunchy spatial connection URI, with an
    explicit host and `sslmode=require`. **Environment secret only** — never a repository or
@@ -90,6 +94,13 @@ Done in GitHub settings, not in this repository — so verify it by eye before t
 7. **Recommended:** give the preflight and verify steps a separate **read-only database role**. The
    SQL files make their own sessions read-only, but only a role makes that enforcement rather than
    a promise the files keep (the test scans them for anything that could undo it).
+
+**This repository is public, so its Actions logs are world-readable.** GitHub masks a secret's
+whole value, but a failed connection prints the host, its address and the username on their own.
+Every job that reads the secret therefore runs `bin/mask_log_identity.sh` first, which registers
+those values with the runner's `::add-mask::` command (and does nothing outside Actions), and
+`bin/preflight.sh` never prints `psql`'s raw error text — a connection failure is a fixed message,
+and a failed check shows only the committed script's own error line.
 
 **Do not change the Crunchy Bridge network allowlist from this procedure.** If runners cannot reach
 the cluster, §6 applies.
