@@ -187,10 +187,10 @@ class TasteRerankingResultsTest extends TestCase
     // ------------------------------------------------- explicit criteria
 
     /**
-     * EXPLICIT BEATS LEARNED. Seeker Smart Tag picks (PR #195) are stored and
-     * shown but not yet matched on, so a search carrying any gets the standard
-     * Best Match order — even when the pick agrees with the learned taste, and
-     * whether or not the picker is switched on right now.
+     * EXPLICIT BEATS LEARNED. Seeker Smart Tag picks are scored in Match DNA,
+     * but can open a lead under the rerank's 3-point floor, so a search carrying
+     * any gets the standard Best Match order — even when the pick agrees with the
+     * learned taste, and whether or not the picker is switched on right now.
      *
      * @test
      */

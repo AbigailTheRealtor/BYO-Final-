@@ -2,6 +2,7 @@
 
 namespace App\Services\Stellar;
 
+use App\Services\SmartTags\Seeker\SmartTagSeekerPreferenceReader;
 use App\Models\BuyerCriteriaAuction;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 
@@ -260,6 +261,10 @@ class BuyerCriteriaLoader
             // Private: address + coordinate, consumed only by ImportantPlaceMatcher.
             'important_places'            => (new \App\Services\Offers\ImportantPlacesService())
                 ->normalize($infoGet('important_places_json') ?? ''),
+
+            // Selected Smart Tags ("Property Features You Want"): gate, current context and
+            // SmartTagSelectionPolicy applied by the reader. Scored, never a filter.
+            'seeker_smart_tags'           => app(SmartTagSeekerPreferenceReader::class)->matchingKeysFor($record),
         ];
     }
 

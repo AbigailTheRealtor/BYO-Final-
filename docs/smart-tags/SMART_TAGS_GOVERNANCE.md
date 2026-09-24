@@ -315,3 +315,58 @@ flags can only flip in the same change that adds the rule — a later, separatel
 Generic **"Style"** was considered alongside it and **rejected for V1**: there is no well-defined
 style taxonomy, and a vague style tag would be precisely the duplicate vocabulary §2 forbids.
 Specific architectural tags remain available to add individually.
+
+## 14. Seeker Smart Tags in Match DNA
+
+A Buyer/Tenant's "Property Features You Want" picks are **scored, never filtered**. The picker
+promises a preference ("Optional … we will use them when we look for a match … Leaving this empty
+simply means no feature preference"), not a requirement, so no pick removes a listing and result
+membership is unchanged.
+
+**Allocation.** The picks are one expressed item inside `BuyerMatchScorer`'s existing 10-pt Amenities
+category, weighted 4 (`SEEKER_FEATURES_MAX_PTS`, like the pool) and earning `4 × matched ÷ selected`
+before the category's own normalisation. Amenities still tops out at 10 and the total at 100 however
+many tags are picked; with no other amenity expressed the picks are the whole category; with no picks
+the score is exactly the pre-feature one.
+
+**Two gates, deliberately separate.** `SMART_TAGS_SEEKER_PREFERENCES_ENABLED` shows the picker and saves
+picks; `SMART_TAGS_SEEKER_MATCHING_ENABLED` (default off, fail-closed, an ADDITIONAL gate) lets them score.
+`SmartTagSeekerPreferenceGate::matchingEnabled()` requires both; the reader and `BuyerCriteriaPayload` each
+ask it, so with matching off every result is identical to the pre-feature score and no listing tag is read.
+Rollout: store picks → derive and backfill Bridge tags → verify coverage → enable matching. Neither gate
+may enter the production flag contract.
+
+**Seeker side.** `SmartTagSeekerPreferenceReader::matchingKeysFor()` is the one read: both gates must be
+on (a hidden control cannot steer results, and saved picks are not scored early), and every stored key is
+re-projected through `SmartTagSelectionPolicy` on `SURFACE_SEEKER` against the record's **current**
+context, so a tag later retired, put under review, made non-seeker-selectable or made inapplicable
+stops contributing on the next search. `BuyerCriteriaPayload` governs the keys again, context-free.
+All four Stellar loaders (Buyer/Tenant × Criteria/Offer Listing) use it, so the results page, the
+property-detail match context and Match Check score alike.
+
+**Listing side.** Present rows of `smart_tag_assignments` only, read in batch by `ListingSmartTagIndex`
+(two queries per 500 candidates, none when nothing is picked) — never evidence, remarks, descriptions,
+free text or photos, and nothing is derived at match time. Stellar candidates are Bridge rows; BYO
+listings have no score, and a Bridge row is never merged with a BYO listing that shares its MLS key.
+
+**Unknown earns what known-absent earns: nothing.** That is the Amenities category's own rule — a pool,
+garage or waterfront the feed did not report scores exactly as a reported "No". Excluding the picks
+from an untagged listing's denominator instead would give it the no-picks score (the full 10 when
+nothing else is expressed), above a tagged listing matching some picks: positive credit for unknown.
+The two states differ only in wording: "Feature details not available — your selected features could
+not be checked" versus "Does not list: …". Inventory-wide missing enrichment is handled by the matching
+gate, not by scoring.
+
+**Deduplication.** `BuyerMatchScorer::STRUCTURED_TAG_EQUIVALENTS` is the one, narrow map between the
+legacy structured criteria and the tag derived from the same column: `private_pool`↔pool,
+`garage`↔garage, `waterfront`↔waterfront (Amenities, suppressed when the criterion is expressed),
+`new_construction`↔new construction and `pets_allowed`↔pet-friendly (Lifestyle, suppressed when the
+criterion is `true`, the only value Lifestyle scores). The structured criterion stays authoritative;
+the tag leaves the pick set for that search; unrelated picks are untouched. Not equivalent, on purpose:
+`water_view`, `heated_pool`, `community_pool`, `oversized_garage`, `carport`, `solar_power`, and free-text
+community keywords. It is not an eligibility list — eligibility is the taxonomy and the policy.
+
+Cards name features by label only — no key, id or weight.
+
+**Taste.** Scoring the picks did not lift Phase 5's explicit-pick bypass: a pick can open a lead
+under the rerank's 3-point floor. See `LISTING_PREFERENCE_GOVERNANCE.md` §14.

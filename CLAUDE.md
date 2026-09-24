@@ -1314,9 +1314,11 @@ points is never crossed.** Only `emerging`/`established` `positive`/`negative` s
 outweigh observed correlations. An absent tag is not evidence. The customer's current Save/Maybe/Pass on a
 result is UI state only — never a boost or penalty, and a Passed listing is never hidden.
 
-**Explicit criteria outrank learned taste.** Seeker Smart Tag picks (PR #195) are stored and shown but not
-yet matched on, so a search whose criteria carry ANY pick bypasses the rerank (`explicit_criteria`), checked
-before the profile is read, whatever the picker flag says, fail-closed for an uncheckable criteria type.
+**Explicit criteria outrank learned taste.** Seeker Smart Tag picks are scored in Match DNA (next section),
+but a pick can open a lead under the rerank's 3-point floor, where Taste could still reorder against it — so
+a search whose criteria carry ANY pick bypasses the rerank (`explicit_criteria`), checked before the profile
+is read, whatever the picker flag says, fail-closed for an uncheckable criteria type.
+`ExplicitSeekerTagAuthorityTest` pins why; lifting it is a governance edit, not a flag.
 
 **Bypassed entirely** for any `sort` other than absent/`best_match` (Stellar has no sort control today;
 unknown values fail closed), for `taste=off` (the page's "Show standard Best Match order" link), for agents
@@ -1327,6 +1329,32 @@ only, what they have that the customer Saves; never numbers, never "AI", never "
 **Flag:** `LISTING_PREFERENCE_TASTE_RERANKING_ENABLED` (default `false`, fail-closed) AND both flags
 above, read only through `TasteDnaAvailability::rerankingEnabled()`. `learning_enabled` stays hard-off
 for everything beyond this rerank. Never in `config/required_production_flags.php`.
+
+### Seeker Smart Tags in Match DNA — scored, never filtered
+
+A Buyer/Tenant's "Property Features You Want" picks are **one expressed amenity inside
+`BuyerMatchScorer`'s existing 10-pt Amenities category** (weight `SEEKER_FEATURES_MAX_PTS` = 4, earning
+`4 × matched ÷ selected`, then the category's own normalisation). Amenities stays ≤ 10 and the total ≤ 100
+however many are picked; no picks is exactly the pre-feature score; nothing is filtered, because the picker
+promises a preference, not a requirement. Governance: `SMART_TAGS_GOVERNANCE.md` §14.
+
+**One read per side.** Seeker: `SmartTagSeekerPreferenceReader::matchingKeysFor()` from all four Stellar
+loaders — both gates on, re-projected through `SmartTagSelectionPolicy` against the CURRENT context, never
+throws. Listing: present `smart_tag_assignments` rows via `ListingSmartTagIndex`, batched in `scoreAll()`
+(the single-listing `score()` reads its own). Unknown earns nothing and is worded as "could not be checked";
+cards carry labels only. Stellar candidates are Bridge rows; BYO listings have no score.
+
+**Two gates.** The picker (`SMART_TAGS_SEEKER_PREFERENCES_ENABLED`) saves picks; scoring them also needs
+`SMART_TAGS_SEEKER_MATCHING_ENABLED` (default off, fail-closed, additional), read only through
+`SmartTagSeekerPreferenceGate::matchingEnabled()`. Off = identical results and no listing-tag read. Rollout:
+store picks → derive/backfill Bridge tags → verify coverage → enable matching. Never in the production flag
+contract.
+
+**Unknown earns what known-absent earns — nothing** (the Amenities category's rule for an unreported pool);
+only the wording differs. **Duplicates are suppressed**: `STRUCTURED_TAG_EQUIVALENTS` drops `private_pool`,
+`garage`, `waterfront` (when the structured want is expressed) and `new_construction`, `pets_allowed` (when
+it is `true`) from the scored picks, so one preference never earns twice. Matching V2
+(`app/Services/Dna/Relevance`) is CLI-only and untouched.
 
 ### AI DNA profiles (separate from Location DNA)
 

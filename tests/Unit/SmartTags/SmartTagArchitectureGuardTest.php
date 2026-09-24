@@ -216,6 +216,23 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php',
         'app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php',
         'resources/views/livewire/offer-listing/shared/_seeker-smart-tags.blade.php',
+
+        // Seeker Smart Tag MATCHING — the picks participating in the Stellar score.
+        //
+        // Readers by the same distinction: the four criteria loaders put the
+        // reader's matchingKeysFor() into the payload, the payload re-governs the
+        // keys, and the scorer reads resolved `smart_tag_assignments` through
+        // ListingSmartTagIndex and scores them inside Amenities. None derives,
+        // writes or purges evidence; BuyerMatchService stays a wired call site for
+        // its derivation OPT-OUT and is listed there. Named file by file, not by
+        // directory, so a new Stellar file that starts reading tags fails here.
+        'app/Services/Stellar/BuyerCriteriaLoader.php',
+        'app/Services/Stellar/TenantCriteriaLoader.php',
+        'app/Services/Stellar/BuyerOfferListingCriteriaLoader.php',
+        'app/Services/Stellar/TenantOfferListingCriteriaLoader.php',
+        'app/Services/Stellar/Matching/DTO/BuyerCriteriaPayload.php',
+        'app/Services/Stellar/Matching/DTO/BuyerMatchResult.php',
+        'app/Services/Stellar/Matching/BuyerMatchScorer.php',
     ];
 
     /** @test */
@@ -468,7 +485,8 @@ class SmartTagArchitectureGuardTest extends TestCase
         // so it holds whether or not the config is loadable here.
         $contract = (string) file_get_contents($this->root() . '/config/required_production_flags.php');
 
-        foreach (['SMART_TAGS_DERIVATION_ENABLED', 'SMART_TAGS_BRIDGE_ENABLED', 'smart_tags_wiring'] as $needle) {
+        foreach (['SMART_TAGS_DERIVATION_ENABLED', 'SMART_TAGS_BRIDGE_ENABLED', 'SMART_TAGS_SEEKER_PREFERENCES_ENABLED',
+                  'SMART_TAGS_SEEKER_MATCHING_ENABLED', 'smart_tags_wiring'] as $needle) {
             $this->assertStringNotContainsString($needle, $contract,
                 "The production flag contract must never name the Smart Tag safety switch {$needle}");
         }

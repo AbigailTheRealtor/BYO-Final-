@@ -283,9 +283,10 @@ class MatchCheckOrchestrator
     }
 
     /**
-     * Report step (git-C13b, decision A). Re-runs the PURE BuyerMatchScorer::score() to recover the
-     * rich BuyerMatchResult the lean MatchCheckScorer discards (a side-effect-free comparison — no DB,
-     * no API, no lazy import), decorates it with the git-C10 buildDetailed() F3 blocks, and projects
+     * Report step (git-C13b, decision A). Re-runs BuyerMatchScorer::score() to recover the
+     * rich BuyerMatchResult the lean MatchCheckScorer discards (a side-effect-free comparison — no
+     * writes, no API, no lazy import; it reads the listing's resolved feature assignments only when
+     * the seeker selected features), decorates it with the git-C10 buildDetailed() F3 blocks, and projects
      * it into a MatchReport via MatchReportFactory with the criteria identity, source, and an INJECTED
      * ISO-8601 generatedAt (never now() inside the factory/DTO).
      *

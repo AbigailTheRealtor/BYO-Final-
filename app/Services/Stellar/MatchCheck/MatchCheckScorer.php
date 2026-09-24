@@ -11,10 +11,11 @@ use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
  *
  * Translates a MatchCheckPreparation (the C5 read-only decision) into a MatchCheckResult,
  * delegating the actual numeric scoring to the already-built BuyerMatchScorer engine so no
- * scoring math is duplicated or re-invented here. BuyerMatchScorer::score() is a pure,
+ * scoring math is duplicated or re-invented here. BuyerMatchScorer::score() is a
  * side-effect-free comparison of one BridgeProperty against one BuyerCriteriaPayload — it
- * runs no queries, no lazy Bridge import, and no external API calls (that machinery lives in
- * BuyerMatchService, which this class intentionally does NOT touch).
+ * writes nothing, runs no lazy Bridge import and no external API calls (that machinery lives in
+ * BuyerMatchService, which this class intentionally does NOT touch). Its one read is the
+ * listing's resolved feature assignments, and only when the seeker selected features.
  *
  * GATING / INERT BY DESIGN. The score engine is invoked only in the single terminal state
  * where it is meaningful (flag ON, listing visible, criteria payload supplied). Every other

@@ -32,13 +32,14 @@ use Illuminate\Contracts\Auth\Authenticatable;
  * behalf.
  *
  * EXPLICIT CRITERIA OUTRANK LEARNED TASTE. A seeker who picked Smart Tags on
- * the criteria being searched has told us what they want TODAY. Those picks are
- * stored and shown, but nothing in the matcher filters or scores them yet — so
- * learned taste reordering the results could put a listing matching a PAST
- * pattern above one matching a CURRENT request. Until the picks have
- * authoritative matcher semantics, such a search gets the standard Best Match
- * order. A criteria type this service cannot check is treated the same way:
- * unconfirmed is not "none".
+ * the criteria being searched has told us what they want TODAY. The picks are
+ * now scored inside Match DNA's Amenities category, but a pick can open a lead
+ * smaller than the 3 points this rerank never crosses — one pick among many is
+ * one share of 10 points — and there Taste could still put a listing matching a
+ * PAST pattern above one matching a CURRENT request
+ * (ExplicitSeekerTagAuthorityTest pins both halves). So such a search keeps
+ * the standard Best Match order. A criteria type this service cannot check is
+ * treated the same way: unconfirmed is not "none".
  *
  * QUERY SHAPE. With any gate closed: none. Otherwise the Phase 4 profile read
  * (one event query plus the facts of the homes in the customer's own history —

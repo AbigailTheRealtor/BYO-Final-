@@ -522,15 +522,19 @@ cannot cross a real score gap.
 
 **Seeker Smart Tag picks (PR #195) are the exception, and are handled conservatively.** Buyer/Tenant
 Offer Listings (and Criteria) can now carry explicit Smart Tag picks
-(`smart_tag_seeker_preferences`). As merged they are **stored and shown only**: no loader, filter
-builder, SQL query or scorer reads them — the reader documents itself as serving "a future matcher".
-Letting learned taste reorder such a search could rank a listing matching a PAST pattern above one
-matching a CURRENT request, so **any stored pick on the searched criteria bypasses the rerank** and
+(`smart_tag_seeker_preferences`). They are now **scored** in Match DNA — one expressed amenity
+inside the 10-pt Amenities category (Smart Tags governance §14) — but never filtered on. Scoring
+does not by itself make the rerank safe: a pick can open a lead **under the 3 points the rerank
+never crosses** (one pick among eight is one eighth of 10 points), and inside such a lead maximum
+Taste can put a listing with FEWER explicit picks above one with more. `ExplicitSeekerTagAuthorityTest`
+pins both halves — a 3+-point explicit lead survives maximum opposing Taste, a 1-point one does not.
+So **any stored pick on the searched criteria still bypasses the rerank** and
 the page shows the standard Best Match order (`explicit_criteria`). The check runs before the Taste
 profile is read, ignores whether the picker is switched on right now (a request is still a request
 while its control is hidden), and fails closed for a criteria type it cannot check. It is lifted —
-by a governance edit, not a flag — only once the picks have authoritative matcher semantics, at
-which point Match DNA scores them and Taste stays bounded after it.
+by a governance edit, not a flag — only once an explicit-pick lead can no longer be crossed: for
+example by withholding Taste signals on the very tags the seeker picked and giving every explicit
+lead the 3-point floor, or by confining Taste to results that tie on the picks. Neither exists yet.
 
 ### Where it runs, and why there
 

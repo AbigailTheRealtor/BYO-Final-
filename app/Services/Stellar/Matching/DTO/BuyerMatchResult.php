@@ -3,6 +3,7 @@
 namespace App\Services\Stellar\Matching\DTO;
 
 use App\Models\BridgeProperty;
+use App\Services\SmartTags\Seeker\SeekerSmartTagMatch;
 
 class BuyerMatchResult
 {
@@ -28,6 +29,13 @@ class BuyerMatchResult
      * place's address or coordinate. toArray() is left unchanged, like the slots above.
      */
     public array $importantPlaceMatches = [];
+
+    /**
+     * How this listing compares with the seeker's selected Smart Tags, set by BuyerMatchScorer;
+     * null when the seeker selected none. Canonical keys stay inside it — presentation reads its
+     * labels only. toArray() is left unchanged, like the slots above.
+     */
+    public ?SeekerSmartTagMatch $seekerFeatureMatch = null;
 
     public function __construct(
         string $listingKey,

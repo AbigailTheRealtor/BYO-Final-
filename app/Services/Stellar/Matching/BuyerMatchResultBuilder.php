@@ -86,9 +86,47 @@ class BuyerMatchResultBuilder
             }
         }
 
+        // The seeker's selected property features are scored inside Amenities, so they are
+        // explained there: which of their picks this home has, by name. Labels only — never a
+        // canonical key, and no weight beyond the category points the entry already shows.
+        $features = $result->seekerFeatureMatch;
+        if ($features !== null && $features->matchedCount() > 0) {
+            foreach ($entries as $i => $entry) {
+                if ($entry['dimension'] === 'amenities') {
+                    $entries[$i]['label'] = sprintf(
+                        'Has %d of your %d selected features: %s',
+                        $features->matchedCount(),
+                        $features->selectedCount(),
+                        self::featureList($features->matchedLabels())
+                    );
+                }
+            }
+        }
+
         usort($entries, fn($a, $b) => $b['score_contribution'] <=> $a['score_contribution']);
 
         return $entries;
+    }
+
+    /**
+     * "A, B and C" — at most three names, then "and N more", so a long selection stays readable.
+     *
+     * @param list<string> $labels
+     */
+    private static function featureList(array $labels): string
+    {
+        $shown = array_slice($labels, 0, 3);
+        $more  = count($labels) - count($shown);
+
+        if ($more > 0) {
+            return implode(', ', $shown) . " and {$more} more";
+        }
+
+        if (count($shown) <= 1) {
+            return (string) ($shown[0] ?? '');
+        }
+
+        return implode(', ', array_slice($shown, 0, -1)) . ' and ' . end($shown);
     }
 
     private function buildWhyLabel(string $dimension, BridgeProperty $listing, int $score): string
@@ -216,6 +254,21 @@ class BuyerMatchResultBuilder
                     'label'       => 'No waterfront access listed',
                     'fields_used' => ['waterfront_yn'],
                     'deviation'   => 'waterfront_absent',
+                ];
+            }
+        }
+
+        // Selected property features this home does not list. Only when the home HAS resolved
+        // feature data — with none, the gap is missing data (below), not a known absence.
+        $features = $result->seekerFeatureMatch;
+        if ($features !== null && $features->hasListingData) {
+            $unmatched = $features->unmatchedLabels();
+            if ($unmatched !== []) {
+                $tradeoffs[] = [
+                    'dimension'   => 'amenities',
+                    'label'       => 'Does not list: ' . self::featureList($unmatched),
+                    'fields_used' => [],
+                    'deviation'   => 'selected_features_not_listed',
                 ];
             }
         }
@@ -395,6 +448,16 @@ class BuyerMatchResultBuilder
             $missing[] = [
                 'field' => 'LotSizeSquareFeet',
                 'label' => 'Lot size not listed',
+            ];
+        }
+
+        // Selected property features that could not be checked: this home has no resolved
+        // feature data at all. It earned nothing for them — unknown is never a match — and the
+        // seeker is told why rather than left with an unexplained lower score.
+        if ($result->seekerFeatureMatch !== null && ! $result->seekerFeatureMatch->hasListingData) {
+            $missing[] = [
+                'field' => 'selected_features',
+                'label' => 'Feature details not available — your selected features could not be checked for this home',
             ];
         }
 

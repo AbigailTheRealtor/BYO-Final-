@@ -3,6 +3,9 @@
 namespace App\Services\Stellar\Matching;
 
 use App\Models\BridgeProperty;
+use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
+use App\Services\SmartTags\Seeker\SeekerSmartTagMatch;
+use App\Services\SmartTags\Seeker\SeekerSmartTagMatcher;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Support\Geo\GreatCircleDistance;
@@ -29,18 +32,99 @@ class BuyerMatchScorer
      */
     public const LOCATION_MAX_PHASE1_PTS = 24;
 
+    /**
+     * The seeker's selected Smart Tags ("Property Features You Want") as ONE expressed amenity
+     * inside the 10-pt Amenities category — weighted like its largest existing item (pool, 4).
+     *
+     * They join the category's own normalisation rather than adding points beside it, so:
+     *   • Amenities still tops out at 10 and the total at 100, however many tags are picked;
+     *   • the pick set earns 4 × (matched ÷ selected) before normalisation, so each tag's share
+     *     shrinks as more are picked — ten tags cannot outweigh one pool;
+     *   • with no other amenity expressed, the picks ARE the category (10 × matched ÷ selected);
+     *   • with no picks the category is computed exactly as before.
+     * They never filter.
+     *
+     * UNKNOWN EARNS WHAT KNOWN-ABSENT EARNS: nothing. A listing with no resolved tags at all gets
+     * no credit for the picks, exactly as this category already gives no credit for a pool,
+     * garage or waterfront the feed did not report (`=== true` or nothing). Excluding the picks
+     * from an untagged listing's denominator instead would hand it the no-picks score — the full
+     * 10 when nothing else is expressed — above a tagged listing that matches only some picks,
+     * which is positive credit for unknown. The two cases differ only in their explanation.
+     * Inventory-wide missing enrichment is a ROLLOUT question, answered by the separate matching
+     * gate (SMART_TAGS_SEEKER_MATCHING_ENABLED), not by scoring unknown as a match.
+     */
+    public const SEEKER_FEATURES_MAX_PTS = 4.0;
+
+    /**
+     * DEDUPLICATION between the legacy structured criteria and canonical Smart Tags — nothing else.
+     *
+     * One customer preference must not be credited twice because the form asked it once as a
+     * structured field and the picker offered it again as a tag. When the structured criterion is
+     * expressed (as the category that scores it reads "expressed"), it stays authoritative for its
+     * concept and the equivalent tag leaves the pick set — denominator and contribution — for that
+     * search. Unrelated picks are untouched. Each tag here is derived from the very column the
+     * structured criterion scores (config/smart_tag_sources.php), which is what makes it the SAME
+     * preference rather than a neighbouring one.
+     *
+     * Deliberately NOT equivalent: `water_view` (narrower than "any view", which has no generic
+     * tag), `heated_pool` / `community_pool` / `oversized_garage` / `carport` (different features),
+     * `solar_power` (generation, not "energy efficient"). Free-text community keywords are not
+     * mapped: interpreting text is not a deterministic equivalence.
+     *
+     * @var array<string, array{0: string, 1: string}> tag => [payload property, 'expressed'|'true']
+     */
+    public const STRUCTURED_TAG_EQUIVALENTS = [
+        'private_pool'     => ['wantsPool', 'expressed'],        // Amenities: pool_private_yn
+        'garage'           => ['wantsGarage', 'expressed'],      // Amenities: garage_yn
+        'waterfront'       => ['wantsWaterfront', 'expressed'],  // Amenities: waterfront_yn
+        'new_construction' => ['wantsNewConstruction', 'true'],  // Lifestyle: new_construction_yn
+        'pets_allowed'     => ['wantsPetFriendly', 'true'],      // Lifestyle: pets_allowed
+    ];
+
+    /**
+     * The picks this search scores: the payload's picks minus any whose structured equivalent is
+     * expressed ({@see STRUCTURED_TAG_EQUIVALENTS}). Order preserved.
+     *
+     * @return list<string>
+     */
+    public static function scoredSeekerTags(BuyerCriteriaPayload $criteria): array
+    {
+        return array_values(array_filter($criteria->seekerSmartTags, static function (string $key) use ($criteria): bool {
+            if (! isset(self::STRUCTURED_TAG_EQUIVALENTS[$key])) {
+                return true;
+            }
+
+            [$property, $when] = self::STRUCTURED_TAG_EQUIVALENTS[$key];
+            $value = $criteria->{$property};
+
+            return $when === 'true' ? $value !== true : $value === null;
+        }));
+    }
+
     public function scoreAll(iterable $candidates, BuyerCriteriaPayload $criteria): array
     {
+        $candidates = is_array($candidates) ? $candidates : iterator_to_array($candidates, false);
+
+        // One batch read of the candidates' resolved tags, and only when the seeker picked any —
+        // so the per-listing loop below never queries and a search with no picks queries nothing.
+        $tags = ListingSmartTagIndex::forBridgeRows($candidates, self::scoredSeekerTags($criteria));
+
         $results = [];
 
         foreach ($candidates as $listing) {
-            $results[] = $this->score($listing, $criteria);
+            $results[] = $this->score($listing, $criteria, $tags);
         }
 
         return $results;
     }
 
-    public function score(BridgeProperty $listing, BuyerCriteriaPayload $criteria): BuyerMatchResult
+    /**
+     * @param ListingSmartTagIndex|null $tags the candidates' resolved tags, read once by scoreAll();
+     *                                        a single-listing caller may omit it, and the listing's
+     *                                        own tags are then read here (one read, only when the
+     *                                        seeker picked any), so every surface scores alike
+     */
+    public function score(BridgeProperty $listing, BuyerCriteriaPayload $criteria, ?ListingSmartTagIndex $tags = null): BuyerMatchResult
     {
         $rawJson = $listing->raw_json ? json_decode($listing->raw_json, true) : [];
         if (!is_array($rawJson)) {
@@ -55,11 +139,19 @@ class BuyerMatchScorer
             $criteria->importantPlaces
         );
 
+        $seekerFeatureMatch = null;
+        $scoredPicks        = self::scoredSeekerTags($criteria);
+
+        if ($scoredPicks !== []) {
+            $tags ??= ListingSmartTagIndex::forBridgeRows([$listing], $scoredPicks);
+            $seekerFeatureMatch = SeekerSmartTagMatcher::evaluate($scoredPicks, $tags->presentKeysFor($listing));
+        }
+
         $locationScore        = $this->scoreLocation($listing, $criteria, $importantPlaceMatches);
         $priceScore           = $this->scorePrice($listing, $criteria, $rawJson);
         $sizeScore            = $this->scoreSize($listing, $criteria);
         $propertyTypeScore    = $this->scorePropertyType($listing, $criteria);
-        $amenityScore         = $this->scoreAmenities($listing, $criteria);
+        $amenityScore         = $this->scoreAmenities($listing, $criteria, $seekerFeatureMatch);
         $financialScore       = $this->scoreFinancial($listing, $criteria, $rawJson);
         $lifestyleScore       = $this->scoreLifestyle($listing, $criteria, $rawJson);
         $nonResidentialScore  = $this->scoreNonResidential($listing, $criteria, $rawJson);
@@ -99,6 +191,7 @@ class BuyerMatchScorer
             missingData:    []
         );
         $result->importantPlaceMatches = $importantPlaceMatches;
+        $result->seekerFeatureMatch    = $seekerFeatureMatch;
 
         return $result;
     }
@@ -399,7 +492,7 @@ class BuyerMatchScorer
     // Category 5: Amenities (10 pts)
     // =========================================================================
 
-    private function scoreAmenities(BridgeProperty $listing, BuyerCriteriaPayload $criteria): array
+    private function scoreAmenities(BridgeProperty $listing, BuyerCriteriaPayload $criteria, ?SeekerSmartTagMatch $seekerFeatures = null): array
     {
         $expressed = [];
 
@@ -430,6 +523,14 @@ class BuyerMatchScorer
         if ($criteria->wantsAnyView !== null) {
             $viewEarned = ($listing->view_yn === true || $listing->water_view_yn === true) ? 1.0 : 0.0;
             $expressed['any_view'] = ['max' => 1.0, 'earned' => $viewEarned];
+        }
+
+        // Selected Smart Tags — see SEEKER_FEATURES_MAX_PTS. Absent when nothing was picked.
+        if ($seekerFeatures !== null && $seekerFeatures->selectedCount() > 0) {
+            $expressed['seeker_features'] = [
+                'max'    => self::SEEKER_FEATURES_MAX_PTS,
+                'earned' => self::SEEKER_FEATURES_MAX_PTS * $seekerFeatures->share(),
+            ];
         }
 
         if (empty($expressed)) {
