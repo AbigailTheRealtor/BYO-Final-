@@ -161,7 +161,19 @@ class AskAiCoverageRemediationRoutingTest extends TestCase
         $this->assertSame('listing.square_feet', $this->detect('How big is the home?'));
         $this->assertSame('listing.square_feet', $this->detect('Home square footage?'));
         $this->assertSame('listing.square_feet', $this->detect('Living area square footage?'));
-        $this->assertSame('listing.square_feet', $this->detect('How large is the property?'));
+    }
+
+    /**
+     * A PROPERTY's size is its living area or its lot. Routing that wording to square footage
+     * was a guess, so it now routes nowhere and is refused — the same answer the card's exact
+     * matcher gives. "the home" names the building and still routes (above).
+     *
+     * @test
+     */
+    public function vague_property_size_wording_routes_to_no_field(): void
+    {
+        $this->assertNull($this->detect('How large is the property?'));
+        $this->assertNull($this->detect('How big is the property?'));
     }
 
     // =========================================================================

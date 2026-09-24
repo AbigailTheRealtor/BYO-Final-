@@ -298,7 +298,7 @@ class AskAiLiveUiRegressionTest extends TestCase
     {
         $this->assertGuardBFiresWithLabel(
             'seller',
-            'How big is the property?',
+            'How big is the home?',
             'square_feet',
             'Square footage information'
         );
@@ -336,7 +336,7 @@ class AskAiLiveUiRegressionTest extends TestCase
     {
         $this->assertGuardBFiresWithLabel(
             'landlord',
-            'How large is the property?',
+            'How large is the home?',
             'square_feet',
             'Square footage information'
         );

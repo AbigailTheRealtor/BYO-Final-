@@ -181,7 +181,7 @@ class AskAiApprovedFieldCoverageHarnessTest extends TestCase
             'square_feet' => [
                 'listing.square_feet',
                 'What is the square footage?',
-                'How big is the property?',
+                'How big is the home?',
                 '2200',
                 'Square footage information',
             ],
