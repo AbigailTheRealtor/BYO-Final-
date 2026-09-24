@@ -2,7 +2,7 @@
 
 namespace App\Services\Stellar\Matching;
 
-use App\Models\BridgeProperty;
+use App\Services\Bridge\BridgeListingMatchFactsBuilder;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Support\Matching\MonthlyEquivalent;
@@ -18,16 +18,12 @@ class BuyerMatchResultBuilder
 
     public function build(BuyerMatchResult $result, BuyerCriteriaPayload $criteria): BuyerMatchResult
     {
-        $listing = $result->listing;
-        $rawJson = $listing->raw_json ? json_decode($listing->raw_json, true) : [];
-        if (!is_array($rawJson)) {
-            $rawJson = [];
-        }
+        $facts = $this->factsFor($result);
 
-        $result->whyThisMatches = $this->buildWhyThisMatches($result);
-        $result->tradeoffs      = $this->buildTradeoffs($result, $criteria, $rawJson);
-        $result->cautionFlags   = $this->buildCautionFlags($result, $criteria, $rawJson);
-        $result->missingData    = $this->buildMissingData($result, $criteria, $rawJson);
+        $result->whyThisMatches = $this->buildWhyThisMatches($result, $facts);
+        $result->tradeoffs      = $this->buildTradeoffs($result, $criteria, $facts);
+        $result->cautionFlags   = $this->buildCautionFlags($criteria, $facts);
+        $result->missingData    = $this->buildMissingData($criteria, $facts);
 
         return $result;
     }
@@ -37,19 +33,18 @@ class BuyerMatchResultBuilder
      *
      * Used by the Match Check *detailed* path only (git-C11 mapper / git-C13 orchestrator). The
      * live batch path uses build()/buildAll() and is deliberately left untouched, so it neither
-     * computes nor carries these blocks. Additive and inert: no flag, no I/O beyond the raw_json
-     * decode the existing build() already performs, no now(), no writes.
+     * computes nor carries these blocks. Additive and inert: no flag, no I/O, no now(), no writes.
      */
     public function buildDetailed(BuyerMatchResult $result, BuyerCriteriaPayload $criteria): BuyerMatchResult
     {
         // Populate the four existing blocks exactly as the batch path does — unchanged behavior.
         $this->build($result, $criteria);
 
-        $rawJson = $this->decodeRawJson($result->listing);
+        $facts = $this->factsFor($result);
 
         $result->whyNot          = $this->buildWhyNot($result);
-        $result->confidence      = $this->buildConfidence($result, $rawJson);
-        $result->recommendations = $this->buildRecommendations($result, $criteria);
+        $result->confidence      = $this->buildConfidence($facts);
+        $result->recommendations = $this->buildRecommendations($result, $criteria, $facts);
 
         return $result;
     }
@@ -58,10 +53,9 @@ class BuyerMatchResultBuilder
     // Block 1: why_this_matches
     // =========================================================================
 
-    private function buildWhyThisMatches(BuyerMatchResult $result): array
+    private function buildWhyThisMatches(BuyerMatchResult $result, ListingMatchFacts $facts): array
     {
         $entries = [];
-        $listing = $result->listing;
         $scores  = $result->categoryScores;
 
         $dimensionMeta = [
@@ -79,7 +73,7 @@ class BuyerMatchResultBuilder
             if ($score > 0) {
                 $entries[] = [
                     'dimension'          => $dimension,
-                    'label'              => $this->buildWhyLabel($dimension, $listing, $score),
+                    'label'              => $this->buildWhyLabel($dimension, $facts, $score),
                     'fields_used'        => $meta['fields'],
                     'score_contribution' => $score,
                 ];
@@ -91,21 +85,21 @@ class BuyerMatchResultBuilder
         return $entries;
     }
 
-    private function buildWhyLabel(string $dimension, BridgeProperty $listing, int $score): string
+    private function buildWhyLabel(string $dimension, ListingMatchFacts $facts, int $score): string
     {
         switch ($dimension) {
             case 'location':
-                $parts = array_filter([$listing->city, $listing->state_or_province]);
+                $parts = array_filter([$facts->city, $facts->stateOrProvince]);
                 $loc   = implode(', ', $parts) ?: 'your preferred area';
                 return "Located in {$loc} — {$score} location points";
             case 'price':
-                $price = $listing->list_price ? number_format((float) $listing->list_price, 0) : 'N/A';
+                $price = $facts->listPrice ? number_format((float) $facts->listPrice, 0) : 'N/A';
                 return "Listed at \${$price} — within your budget";
             case 'size':
-                $sqft = $listing->living_area ? number_format((int) $listing->living_area) : 'N/A';
+                $sqft = $facts->livingArea ? number_format((int) $facts->livingArea) : 'N/A';
                 return "Living area: {$sqft} sqft";
             case 'property_type':
-                $sub = $listing->property_sub_type ?: $listing->property_type;
+                $sub = $facts->propertySubType ?: $facts->propertyType;
                 return "Property type matches: {$sub}";
             case 'amenities':
                 return "Amenities match your preferences — {$score} points";
@@ -122,10 +116,9 @@ class BuyerMatchResultBuilder
     // Block 2: tradeoffs
     // =========================================================================
 
-    private function buildTradeoffs(BuyerMatchResult $result, BuyerCriteriaPayload $criteria, array $rawJson): array
+    private function buildTradeoffs(BuyerMatchResult $result, BuyerCriteriaPayload $criteria, ListingMatchFacts $facts): array
     {
         $tradeoffs = [];
-        $listing   = $result->listing;
         $scores    = $result->categoryScores;
 
         // Price tradeoff.
@@ -138,7 +131,7 @@ class BuyerMatchResultBuilder
             $phase1PriceProximityMax = BuyerMatchScorer::PRICE_PROXIMITY_MAX_PTS;
             $priceMax = $phase1PriceProximityMax;
             if (($scores['price'] ?? 0) < $priceMax) {
-                $listPrice = $listing->list_price !== null ? (float) $listing->list_price : null;
+                $listPrice = $facts->listPrice !== null ? (float) $facts->listPrice : null;
                 if ($listPrice !== null && $criteria->idealPrice !== null) {
                     $diffPct = round(abs($listPrice - $criteria->idealPrice) / $criteria->idealPrice * 100, 0);
                     $dir     = $listPrice > $criteria->idealPrice ? 'above' : 'below';
@@ -160,7 +153,7 @@ class BuyerMatchResultBuilder
         }
 
         // Size tradeoffs
-        $livingArea = $listing->living_area;
+        $livingArea = $facts->livingArea;
         if ($livingArea !== null && ($criteria->minSqft !== null || $criteria->maxSqft !== null)) {
             $min = $criteria->minSqft ?? 0;
             $max = $criteria->maxSqft ?? PHP_INT_MAX;
@@ -184,7 +177,7 @@ class BuyerMatchResultBuilder
         }
 
         // Amenity tradeoffs
-        if ($criteria->wantsPool === true && $listing->pool_private_yn !== true) {
+        if ($criteria->wantsPool === true && $facts->poolPrivate !== true) {
             $tradeoffs[] = [
                 'dimension'   => 'amenities',
                 'label'       => 'No private pool listed — community pool may be available',
@@ -193,7 +186,7 @@ class BuyerMatchResultBuilder
             ];
         }
 
-        if ($criteria->wantsGarage === true && $listing->garage_yn !== true) {
+        if ($criteria->wantsGarage === true && $facts->garage !== true) {
             $tradeoffs[] = [
                 'dimension'   => 'amenities',
                 'label'       => 'No garage listed',
@@ -202,8 +195,8 @@ class BuyerMatchResultBuilder
             ];
         }
 
-        if ($criteria->wantsWaterfront === true && $listing->waterfront_yn !== true) {
-            if ($listing->water_view_yn === true) {
+        if ($criteria->wantsWaterfront === true && $facts->waterfront !== true) {
+            if ($facts->waterView === true) {
                 $tradeoffs[] = [
                     'dimension'   => 'amenities',
                     'label'       => 'No waterfront — water view is available',
@@ -222,7 +215,7 @@ class BuyerMatchResultBuilder
 
         // Pet policy tradeoff
         if ($criteria->wantsPetFriendly === true) {
-            $petsAllowed = $listing->pets_allowed;
+            $petsAllowed = $facts->petsAllowed;
             if ($petsAllowed !== null && strtolower(trim($petsAllowed)) === 'no') {
                 $tradeoffs[] = [
                     'dimension'   => 'lifestyle',
@@ -240,13 +233,12 @@ class BuyerMatchResultBuilder
     // Block 3: caution_flags
     // =========================================================================
 
-    private function buildCautionFlags(BuyerMatchResult $result, BuyerCriteriaPayload $criteria, array $rawJson): array
+    private function buildCautionFlags(BuyerCriteriaPayload $criteria, ListingMatchFacts $facts): array
     {
         $flags   = [];
-        $listing = $result->listing;
 
         // CDD present
-        if ($listing->cdd_yn === true) {
+        if ($facts->cdd === true) {
             $flags[] = [
                 'type'     => 'cdd_present',
                 'severity' => 'info',
@@ -255,7 +247,7 @@ class BuyerMatchResultBuilder
         }
 
         // CDD status unknown
-        if ($listing->cdd_yn === null) {
+        if ($facts->cdd === null) {
             $flags[] = [
                 'type'     => 'cdd_status_unknown',
                 'severity' => 'info',
@@ -264,7 +256,7 @@ class BuyerMatchResultBuilder
         }
 
         // Reduced confidence geo match
-        if ($listing->latitude === null || $listing->longitude === null) {
+        if ($facts->latitude === null || $facts->longitude === null) {
             $flags[] = [
                 'type'     => 'reduced_confidence_geo_match',
                 'severity' => 'info',
@@ -273,7 +265,7 @@ class BuyerMatchResultBuilder
         }
 
         // Pet policy unknown
-        if ($criteria->wantsPetFriendly === true && $listing->pets_allowed === null) {
+        if ($criteria->wantsPetFriendly === true && $facts->petsAllowed === null) {
             $flags[] = [
                 'type'     => 'pet_policy_unknown',
                 'severity' => 'info',
@@ -282,7 +274,7 @@ class BuyerMatchResultBuilder
         }
 
         // HOA fee not listed
-        if ($listing->association_yn === true && $listing->association_fee === null) {
+        if ($facts->association === true && $facts->associationFee === null) {
             $flags[] = [
                 'type'     => 'hoa_fee_not_listed',
                 'severity' => 'info',
@@ -290,8 +282,8 @@ class BuyerMatchResultBuilder
             ];
         }
 
-        // Listing stale (DaysOnMarket >= 60)
-        $dom = $rawJson['DaysOnMarket'] ?? null;
+        // Listing stale (days on market >= 60)
+        $dom = $facts->daysOnMarket;
         if ($dom !== null && (int) $dom >= self::STALE_DAYS_THRESHOLD) {
             $flags[] = [
                 'type'     => 'listing_stale',
@@ -300,9 +292,9 @@ class BuyerMatchResultBuilder
             ];
         }
 
-        // Flood zone data absent — fire when flood zone code is NOT present in raw_json,
-        // meaning the listing carries no flood zone information at all.
-        if (!isset($rawJson['STELLAR_FloodZoneCode'])) {
+        // Flood zone data absent — fire when the listing states no flood zone designation,
+        // meaning it carries no flood zone information at all.
+        if (!$facts->floodZoneStated) {
             $flags[] = [
                 'type'     => 'flood_zone_data_absent',
                 'severity' => 'info',
@@ -312,7 +304,7 @@ class BuyerMatchResultBuilder
 
         // School district not normalized
         $hasSchoolPreference = false; // Phase 3 feature; no buyer school criteria in Phase 1
-        if ($hasSchoolPreference && (isset($rawJson['ElementarySchool']) || isset($rawJson['HighSchool']))) {
+        if ($hasSchoolPreference && $facts->schoolsListed) {
             $flags[] = [
                 'type'     => 'school_district_not_normalized',
                 'severity' => 'info',
@@ -327,10 +319,9 @@ class BuyerMatchResultBuilder
     // Block 4: missing_data
     // =========================================================================
 
-    private function buildMissingData(BuyerMatchResult $result, BuyerCriteriaPayload $criteria, array $rawJson = []): array
+    private function buildMissingData(BuyerCriteriaPayload $criteria, ListingMatchFacts $facts): array
     {
         $missing = [];
-        $listing = $result->listing;
 
         // A rent whose PERIOD the feed did not state, on a lease search where the
         // seeker gave a monthly budget. The scorer refuses to assume monthly and
@@ -339,8 +330,8 @@ class BuyerMatchResultBuilder
         // that the advertised figure may not be a monthly one.
         if ($criteria->isLeaseSearch()
             && $criteria->maxPrice !== null
-            && $listing->list_price !== null
-            && MonthlyEquivalent::leaseFactor(ListingPeriodFacts::leaseFrequency($rawJson)) === null) {
+            && $facts->listPrice !== null
+            && MonthlyEquivalent::leaseFactor($facts->leaseFrequency) === null) {
             $missing[] = [
                 'field' => ListingPeriodFacts::LEASE_FREQUENCY_FIELD,
                 'label' => 'Rent period not stated — this figure may not be monthly; verify before comparing to your budget',
@@ -352,10 +343,10 @@ class BuyerMatchResultBuilder
         // "amount not listed" rows below do not fire, and the scorer returned its
         // neutral score rather than a fabricated monthly figure. Say so.
         if (($criteria->maxMonthlyHoa !== null || $criteria->maxMonthlyTotalBurden !== null)
-            && $listing->association_fee !== null
-            && (float) $listing->association_fee != 0.0
+            && $facts->associationFee !== null
+            && (float) $facts->associationFee != 0.0
             && MonthlyEquivalent::associationFeeFactor(
-                ListingPeriodFacts::associationFeeFrequency($rawJson)
+                $facts->associationFeeFrequency
             ) === null) {
             $missing[] = [
                 'field' => ListingPeriodFacts::ASSOCIATION_FEE_FREQUENCY_FIELD,
@@ -364,7 +355,7 @@ class BuyerMatchResultBuilder
         }
 
         // HOA fee missing when buyer expressed an HOA ceiling
-        if ($criteria->maxMonthlyHoa !== null && $listing->association_fee === null && $listing->association_yn === true) {
+        if ($criteria->maxMonthlyHoa !== null && $facts->associationFee === null && $facts->association === true) {
             $missing[] = [
                 'field' => 'AssociationFee',
                 'label' => 'HOA fee amount not listed — verify with listing agent',
@@ -372,7 +363,7 @@ class BuyerMatchResultBuilder
         }
 
         // HOA fee missing when financial burden ceiling specified and association exists
-        if ($criteria->maxMonthlyTotalBurden !== null && $listing->association_fee === null && $listing->association_yn === true) {
+        if ($criteria->maxMonthlyTotalBurden !== null && $facts->associationFee === null && $facts->association === true) {
             $alreadyAdded = array_filter($missing, fn($m) => $m['field'] === 'AssociationFee');
             if (empty($alreadyAdded)) {
                 $missing[] = [
@@ -383,7 +374,7 @@ class BuyerMatchResultBuilder
         }
 
         // Year built missing when buyer expressed preference
-        if (($criteria->yearBuiltMin !== null || $criteria->yearBuiltMax !== null) && $listing->year_built === null) {
+        if (($criteria->yearBuiltMin !== null || $criteria->yearBuiltMax !== null) && $facts->yearBuilt === null) {
             $missing[] = [
                 'field' => 'YearBuilt',
                 'label' => 'Year built not listed',
@@ -391,7 +382,7 @@ class BuyerMatchResultBuilder
         }
 
         // Lot size missing when buyer expressed preference
-        if (($criteria->minLotSqft !== null || $criteria->maxLotSqft !== null) && $listing->lot_size_sqft === null) {
+        if (($criteria->minLotSqft !== null || $criteria->maxLotSqft !== null) && $facts->lotSizeSqft === null) {
             $missing[] = [
                 'field' => 'LotSizeSquareFeet',
                 'label' => 'Lot size not listed',
@@ -399,7 +390,7 @@ class BuyerMatchResultBuilder
         }
 
         // List price missing
-        if ($listing->list_price === null) {
+        if ($facts->listPrice === null) {
             $missing[] = [
                 'field' => 'ListPrice',
                 'label' => 'List price not available',
@@ -477,18 +468,16 @@ class BuyerMatchResultBuilder
      * Block 6: confidence — data-completeness + the geo signal. Deterministic; never now()/random.
      * Shape: ['level' => high|medium|low, 'score' => 0.0–1.0, 'factors' => [geo_precise, completeness]].
      */
-    private function buildConfidence(BuyerMatchResult $result, array $rawJson): array
+    private function buildConfidence(ListingMatchFacts $facts): array
     {
-        $listing = $result->listing;
-
-        $geoPrecise = $listing->latitude !== null && $listing->longitude !== null;
+        $geoPrecise = $facts->latitude !== null && $facts->longitude !== null;
 
         $keyFields = [
-            $listing->list_price,
-            $listing->living_area,
-            $listing->year_built,
-            $listing->lot_size_sqft,
-            $listing->property_type,
+            $facts->listPrice,
+            $facts->livingArea,
+            $facts->yearBuilt,
+            $facts->lotSizeSqft,
+            $facts->propertyType,
         ];
         $present      = count(array_filter($keyFields, fn ($v) => $v !== null && $v !== ''));
         $completeness = round($present / count($keyFields), 2);
@@ -513,15 +502,14 @@ class BuyerMatchResultBuilder
      * Block 7: recommendations — rule-based v1. widen_price (price under-scored and listing exceeds
      * the buyer's ideal/max) and consider_adjacent_area (location scored zero). No external lookup.
      */
-    private function buildRecommendations(BuyerMatchResult $result, BuyerCriteriaPayload $criteria): array
+    private function buildRecommendations(BuyerMatchResult $result, BuyerCriteriaPayload $criteria, ListingMatchFacts $facts): array
     {
         $recommendations = [];
-        $listing = $result->listing;
         $scores  = $result->categoryScores;
 
         // widen_price
         $priceScore = (int) ($scores['price'] ?? 0);
-        $listPrice  = $listing->list_price !== null ? (float) $listing->list_price : null;
+        $listPrice  = $facts->listPrice !== null ? (float) $facts->listPrice : null;
         if ($priceScore < BuyerMatchScorer::PRICE_PROXIMITY_MAX_PTS && $listPrice !== null) {
             $reference = $criteria->idealPrice ?? $criteria->maxPrice;
             if ($reference !== null && $listPrice > $reference) {
@@ -551,13 +539,12 @@ class BuyerMatchResultBuilder
     }
 
     /**
-     * Decode a listing's raw_json into an array (empty on absent/invalid). Used by buildDetailed()
-     * so build() stays untouched.
+     * The facts the score was computed from. A result from BuyerMatchScorer::score() carries
+     * them; one built by hand does not, and gets them from its listing through the same
+     * provider boundary the scorer uses — once, then kept on the result.
      */
-    private function decodeRawJson(BridgeProperty $listing): array
+    private function factsFor(BuyerMatchResult $result): ListingMatchFacts
     {
-        $rawJson = $listing->raw_json ? json_decode($listing->raw_json, true) : [];
-
-        return is_array($rawJson) ? $rawJson : [];
+        return $result->facts ??= BridgeListingMatchFactsBuilder::build($result->listing);
     }
 }
