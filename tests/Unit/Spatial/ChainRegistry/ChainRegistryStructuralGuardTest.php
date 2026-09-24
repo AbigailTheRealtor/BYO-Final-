@@ -7,7 +7,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * The chain registry ships PURE and UNREFERENCED. These guards read source, not behaviour:
  *   * nothing outside its own namespace references it — no Location DNA, Ask AI, Buyer/Tenant,
- *     Smart Tags or brand-query wiring;
+ *     Smart Tags or brand-query wiring. The ONE exception is the offline v2 extraction recipe
+ *     (OFFLINE_CONSUMERS), which validates its rescue lanes against the registry and runs the
+ *     matcher for accounting and rescue verdicts; it refuses production and has no DB or
+ *     network path of its own;
  *   * its config has exactly one reader;
  *   * it has no database, network, cache, log, Google or environment path;
  *   * it contains no similarity or edit-distance function, so identity cannot become fuzzy;
@@ -17,6 +20,16 @@ class ChainRegistryStructuralGuardTest extends TestCase
 {
     private const NAMESPACE_DIR = 'app/Services/Spatial/ChainRegistry';
     private const CONFIG_FILE = 'config/poi_chain_registry.php';
+
+    /**
+     * The only files outside the namespace that may reference it: the offline extraction recipe.
+     * Exact paths, never a prefix a runtime file could slip under.
+     */
+    private const OFFLINE_CONSUMERS = [
+        'app/Console/Commands/CorpusExtractOvertureV2.php',
+        'app/Services/Spatial/OvertureExtractV2/OvertureExtractV2Config.php',
+        'app/Services/Spatial/OvertureExtractV2/OvertureV2MatcherCensus.php',
+    ];
 
     /** Application source directories a consumer would live in. */
     private const APP_DIRS = ['app', 'bootstrap', 'config', 'database', 'resources', 'routes'];
@@ -73,7 +86,7 @@ class ChainRegistryStructuralGuardTest extends TestCase
         $offenders = [];
         foreach (self::APP_DIRS as $dir) {
             foreach (self::files($dir, ['php', 'js', 'vue']) as $file) {
-                if (str_starts_with($file, self::NAMESPACE_DIR . '/')) {
+                if (str_starts_with($file, self::NAMESPACE_DIR . '/') || in_array($file, self::OFFLINE_CONSUMERS, true)) {
                     continue;
                 }
                 $src = str_ends_with($file, '.php') ? self::code($file) : self::read($file);
@@ -84,6 +97,16 @@ class ChainRegistryStructuralGuardTest extends TestCase
         }
 
         $this->assertSame([], $offenders, 'The chain registry has no runtime consumer yet.');
+    }
+
+    public function test_every_offline_consumer_exists_and_refuses_production(): void
+    {
+        foreach (self::OFFLINE_CONSUMERS as $file) {
+            $this->assertFileExists(self::root() . '/' . $file, 'a stale allowlist entry is a hole');
+        }
+        $command = self::code('app/Console/Commands/CorpusExtractOvertureV2.php');
+        $this->assertStringContainsString("environment('production')", $command);
+        $this->assertStringNotContainsString('DB::', $command);
     }
 
     public function test_the_config_has_exactly_one_reader(): void
