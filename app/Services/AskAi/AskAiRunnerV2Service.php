@@ -1153,10 +1153,11 @@ class AskAiRunnerV2Service
             'half bath',
         ],
         'listing.square_feet' => [
+            // Not "how big / how large is the property": a property's size is its living
+            // area OR its lot, and naming one is a guess. Such wording is refused on every
+            // path, as the card refuses it. "the home" names the building, so it stays.
             'home square footage',
             'living area square footage',
-            'how big is the property',
-            'how large is the property',
             'total square feet',
             'home size in square',
             'living area size',
@@ -5605,6 +5606,47 @@ class AskAiRunnerV2Service
         return $foreign;
     }
 
+    /**
+     * detectListingFieldKey()'s keyword map, WITHOUT its "most specific phrase wins" ranking —
+     * the rule the non-owner fallback uses, so it can never be looser than the card.
+     *
+     * Every keyword found in the question is a hit. A hit whose keyword sits inside a longer
+     * hit's keyword is the same words read twice ("how big is the lot" inside "how big is
+     * the lot in acres") and is dropped. If the hits that remain name more than one field,
+     * the question names more than one fact: null, and the caller refuses. Exact substrings
+     * of approved keywords only — no scoring, no similarity.
+     */
+    private function unambiguousListingFieldKey(string $question, string $role): ?string
+    {
+        $lower   = mb_strtolower(trim($question));
+        $foreign = $this->listingKeysForeignToRole($role);
+
+        $hits = []; // keyword => listing key
+        foreach (self::LISTING_KEY_KEYWORD_MAP as $listingKey => $keywords) {
+            if (isset($foreign[$listingKey])) {
+                continue;
+            }
+            foreach ($keywords as $keyword) {
+                $needle = mb_strtolower($keyword);
+                if ($needle !== '' && str_contains($lower, $needle)) {
+                    $hits[$needle] = $listingKey;
+                }
+            }
+        }
+
+        $fields = [];
+        foreach ($hits as $needle => $listingKey) {
+            foreach (array_keys($hits) as $other) {
+                if ($other !== $needle && mb_strlen($other) > mb_strlen($needle) && str_contains($other, $needle)) {
+                    continue 2; // subsumed by a longer phrase in the same question
+                }
+            }
+            $fields[$listingKey] = true;
+        }
+
+        return count($fields) === 1 ? (string) array_key_first($fields) : null;
+    }
+
     private function detectListingFieldKey(string $question, ?string $role = null): ?string
     {
         $lower = mb_strtolower(trim($question));
@@ -5795,11 +5837,15 @@ class AskAiRunnerV2Service
      * role-validated keyword map picks the FIELD, and the answer is the card's own answer for
      * that field — never a raw stored value, so every guard the card applies still applies.
      * Exactly one available card question must read the field.
+     *
+     * The field is chosen WITHOUT RANKING (unambiguousListingFieldKey()): wording that names
+     * two facts is refused here exactly as the card refuses it, never resolved in favour of
+     * the longer keyword.
      */
     private function cardAnswerByKeyword(string $listingType, string $question, array $card): ?array
     {
         $role = AskAiContextBuilderService::canonicalListingType($listingType);
-        $key  = $role === null ? null : $this->detectListingFieldKey($question, $role);
+        $key  = $role === null ? null : $this->unambiguousListingFieldKey($question, $role);
         if ($key === null) {
             return null;
         }

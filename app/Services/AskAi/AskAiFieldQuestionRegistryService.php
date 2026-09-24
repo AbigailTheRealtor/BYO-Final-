@@ -3545,6 +3545,40 @@ class AskAiFieldQuestionRegistryService
     }
 
     /**
+     * The typed-question vocabulary of a QUANTITY question, generated from nouns the entry
+     * declares — never inferred from a label, and never applied to a question that did not
+     * ask for it. For each plural noun: "<noun>", "how many <noun>", "number of <noun>" and
+     * "how many <noun> <clause>" for each clause the entry names ("are there" for a listing,
+     * "are they looking for" for criteria). Singular nouns are added bare, as declared.
+     *
+     * Exact phrases only, like every other alias: no stemming, no pluralising, no similarity.
+     * They are ordinary 'aliases', so every collision and forbidden-concept test that holds
+     * a hand-written alias holds these too.
+     *
+     * @param  list<string>  $plurals
+     * @param  list<string>  $singulars
+     * @param  list<string>  $clauses
+     * @return list<string>
+     */
+    public static function quantityAliases(array $plurals, array $singulars, array $clauses): array
+    {
+        $aliases = [];
+        foreach ($plurals as $noun) {
+            $aliases[] = $noun;
+            $aliases[] = "how many {$noun}";
+            $aliases[] = "number of {$noun}";
+            foreach ($clauses as $clause) {
+                $aliases[] = "how many {$noun} {$clause}";
+            }
+        }
+        foreach ($singulars as $noun) {
+            $aliases[] = $noun;
+        }
+
+        return array_values(array_unique($aliases));
+    }
+
+    /**
      * Approved catalog for the public "Questions About This Property" shown in the Ask AI
      * card on the Seller and Landlord listing pages.
      *
@@ -3612,7 +3646,9 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['not_bidding_period', 'mls_price_not_divergent'],
                 'category'         => 'price',
                 'order'            => 10,
-                'aliases'          => ['asking price', 'list price', 'price', 'how much', 'how much is it', 'what is the price'],
+                'aliases'          => ['asking price', 'list price', 'price', 'how much', 'how much is it', 'what is the price',
+                                       'listing price', 'sale price', 'sales price', 'selling price', 'how much does it cost',
+                                       'how much is the property', 'how much is the home', 'how much is the house'],
             ],
             'seller_bedrooms' => [
                 'role'             => 'seller',
@@ -3627,7 +3663,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:bedrooms'],
                 'category'         => 'size',
                 'order'            => 20,
-                'aliases'          => ['bedrooms', 'beds', 'how many bedrooms'],
+                'aliases'          => self::quantityAliases(['bedrooms', 'beds'], ['bedroom', 'bed'], ['are there']),
             ],
             'seller_bathrooms' => [
                 'role'             => 'seller',
@@ -3640,7 +3676,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:bathrooms'],
                 'category'         => 'size',
                 'order'            => 30,
-                'aliases'          => ['bathrooms', 'baths', 'how many bathrooms'],
+                'aliases'          => self::quantityAliases(['bathrooms', 'baths'], ['bathroom', 'bath'], ['are there']),
             ],
             'seller_heated_square_feet' => [
                 'role'             => 'seller',
@@ -3653,7 +3689,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 40,
-                'aliases'          => ['square footage', 'square feet', 'sq ft', 'how big'],
+                'aliases'          => array_merge(['square footage', 'sq feet', 'how big'], self::quantityAliases(['square feet', 'sq ft', 'sqft'], [], [])),
             ],
             'seller_year_built' => [
                 'role'             => 'seller',
@@ -3742,7 +3778,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['acreage_not_overridden'],
                 'category'         => 'size',
                 'order'            => 80,
-                'aliases'          => ['lot size', 'acreage', 'acres', 'how big is the lot', 'what is the lot size'],
+                'aliases'          => array_merge(['lot size', 'acreage', 'how big is the lot', 'what is the lot size'], self::quantityAliases(['acres'], ['acre'], [])),
             ],
             'seller_appliances' => [
                 'role'             => 'seller',
@@ -3908,7 +3944,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 20,
-                'aliases'          => ['bedrooms', 'beds', 'how many bedrooms'],
+                'aliases'          => self::quantityAliases(['bedrooms', 'beds'], ['bedroom', 'bed'], ['are there']),
             ],
             'landlord_bathrooms' => [
                 'role'             => 'landlord',
@@ -3921,7 +3957,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 30,
-                'aliases'          => ['bathrooms', 'baths', 'how many bathrooms'],
+                'aliases'          => self::quantityAliases(['bathrooms', 'baths'], ['bathroom', 'bath'], ['are there']),
             ],
             'landlord_heated_square_feet' => [
                 'role'             => 'landlord',
@@ -3934,7 +3970,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 40,
-                'aliases'          => ['square footage', 'square feet', 'sq ft', 'how big'],
+                'aliases'          => array_merge(['square footage', 'sq feet', 'how big'], self::quantityAliases(['square feet', 'sq ft', 'sqft'], [], [])),
             ],
             'landlord_appliances' => [
                 'role'             => 'landlord',
@@ -4210,7 +4246,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:bedrooms'],
                 'category'         => 'size',
                 'order'            => 40,
-                'aliases'          => ['bedrooms', 'beds', 'how many bedrooms'],
+                'aliases'          => self::quantityAliases(['bedrooms', 'beds'], ['bedroom', 'bed'], ['are they looking for', 'do they want', 'do they need']),
             ],
             'buyer_bathrooms' => [
                 'role'             => 'buyer',
@@ -4223,7 +4259,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:bathrooms'],
                 'category'         => 'size',
                 'order'            => 50,
-                'aliases'          => ['bathrooms', 'baths', 'how many bathrooms'],
+                'aliases'          => self::quantityAliases(['bathrooms', 'baths'], ['bathroom', 'bath'], ['are they looking for', 'do they want', 'do they need']),
             ],
             'buyer_square_feet' => [
                 'role'             => 'buyer',
@@ -4236,7 +4272,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 60,
-                'aliases'          => ['square footage', 'square feet', 'sq ft', 'how big'],
+                'aliases'          => array_merge(['square footage', 'sq feet', 'how big'], self::quantityAliases(['square feet', 'sq ft', 'sqft'], [], ['are they looking for', 'do they want', 'do they need'])),
             ],
             'buyer_acreage' => [
                 'role'             => 'buyer',
@@ -4249,7 +4285,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 70,
-                'aliases'          => ['acreage', 'lot size', 'acres', 'land'],
+                'aliases'          => array_merge(['acreage', 'lot size', 'land'], self::quantityAliases(['acres'], ['acre'], ['are they looking for', 'do they want', 'do they need'])),
             ],
             'buyer_pool' => [
                 'role'             => 'buyer',
@@ -4412,7 +4448,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:bedrooms'],
                 'category'         => 'size',
                 'order'            => 40,
-                'aliases'          => ['bedrooms', 'beds', 'how many bedrooms'],
+                'aliases'          => self::quantityAliases(['bedrooms', 'beds'], ['bedroom', 'bed'], ['are they looking for', 'do they want', 'do they need']),
             ],
             'tenant_bathrooms' => [
                 'role'             => 'tenant',
@@ -4425,7 +4461,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => ['meta_present:bathrooms'],
                 'category'         => 'size',
                 'order'            => 50,
-                'aliases'          => ['bathrooms', 'baths', 'how many bathrooms'],
+                'aliases'          => self::quantityAliases(['bathrooms', 'baths'], ['bathroom', 'bath'], ['are they looking for', 'do they want', 'do they need']),
             ],
             'tenant_square_feet' => [
                 'role'             => 'tenant',
@@ -4438,7 +4474,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 60,
-                'aliases'          => ['square footage', 'square feet', 'sq ft', 'how big'],
+                'aliases'          => array_merge(['square footage', 'sq feet', 'how big'], self::quantityAliases(['square feet', 'sq ft', 'sqft'], [], ['are they looking for', 'do they want', 'do they need'])),
             ],
             'tenant_acreage' => [
                 'role'             => 'tenant',
@@ -4451,7 +4487,7 @@ class AskAiFieldQuestionRegistryService
                 'guards'           => [],
                 'category'         => 'size',
                 'order'            => 70,
-                'aliases'          => ['acreage', 'lot size', 'acres', 'land'],
+                'aliases'          => array_merge(['acreage', 'lot size', 'land'], self::quantityAliases(['acres'], ['acre'], ['are they looking for', 'do they want', 'do they need'])),
             ],
             'tenant_lease_term' => [
                 'role'             => 'tenant',
@@ -4867,7 +4903,8 @@ class AskAiFieldQuestionRegistryService
                 'category'         => 'price',
                 'order'            => 210,
                 'aliases'          => ['rent', 'how much is rent', 'monthly rent', 'what is the rent',
-                                       'price', 'how much', 'cost per month'],
+                                       'price', 'how much', 'cost per month', 'how much is the rent', 'rent price',
+                                       'rental price', 'rent amount', 'lease price'],
             ],
             'landlord_available_date' => [
                 'role'             => 'landlord',
@@ -5088,7 +5125,7 @@ class AskAiFieldQuestionRegistryService
                 'category'         => 'size',
                 'order'            => 365,
                 // 'lot size' / 'how big is the lot' belong to landlord_lot_dimensions.
-                'aliases'          => ['acreage', 'total acreage', 'how many acres'],
+                'aliases'          => array_merge(['acreage', 'total acreage'], self::quantityAliases(['acres'], ['acre'], [])),
             ],
             'landlord_water_frontage' => [
                 'role'             => 'landlord',
