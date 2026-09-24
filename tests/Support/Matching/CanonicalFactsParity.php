@@ -198,6 +198,8 @@ trait CanonicalFactsParity
      * Everything the live paths expose about one facts object scored against one
      * criteria set, through the UNCHANGED scorer and result builder. The row is only
      * carried (BuyerMatchResult requires one); the result builder reads the facts.
+     * The result is assembled exactly as BuyerMatchScorer::score() assembles it,
+     * including the seeker Smart Tag match its explanations read.
      *
      * @return array<string,mixed>
      */
@@ -211,6 +213,7 @@ trait CanonicalFactsParity
             $result = static function () use ($facts, $score, $row): BuyerMatchResult {
                 $r = new BuyerMatchResult($facts->listingKey, $score->totalScore, $score->categoryScores, $row);
                 $r->importantPlaceMatches = $score->importantPlaceMatches;
+                $r->seekerFeatureMatch    = $score->seekerFeatureMatch;
                 $r->facts                 = $facts;
 
                 return $r;

@@ -33,6 +33,14 @@ use App\Support\Listing\PropertyTypeVocabulary;
  *   rent period     the canonical period token, which MonthlyEquivalent reads exactly
  *                   as it reads the feed's own wording
  *
+ * SMART TAGS ARE ATTACHED LATER, NOT BUILT HERE
+ * ---------------------------------------------
+ * `smartTags` is neither canonical nor residual: a listing's resolved Smart Tags are
+ * not in the listing, so the caller reads them beside it and attaches them with
+ * {@see ListingMatchFacts::withSmartTags()} before scoring — exactly as the live
+ * Bridge path does. This builder leaves them unattached (null), the same state the
+ * Bridge builder produces, and reads no tag storage.
+ *
  * Everything else passes through. Where the canonical listing is stricter than a
  * stored column (an invalid coordinate, a zero price, a "No" that may have been
  * fabricated), the canonical answer — unknown — is kept; that is the point of the
@@ -50,10 +58,12 @@ final class CanonicalListingMatchFactsBuilder
 {
     public const ORIGIN_IDENTITY = 'identity';
     public const ORIGIN_RESIDUAL = 'residual';
+    public const ORIGIN_ATTACHED_SMART_TAGS = 'attached:smart_tags';
 
     /**
      * Where each ListingMatchFacts field comes from: the listing's native identity, the
-     * canonical key(s) it is read from, or the residual. Diagnostic only — parity
+     * canonical key(s) it is read from, the residual, or — for Smart Tags — an augmentation
+     * attached beside the row after these facts are built. Diagnostic only — parity
      * reports use it with CanonicalListing::fieldMeta() to say where a differing value
      * came from. Nothing scores from it. A test pins that it covers every field once.
      *
@@ -103,6 +113,8 @@ final class CanonicalListingMatchFactsBuilder
         'daysOnMarket'    => self::ORIGIN_RESIDUAL,
         'floodZoneStated' => self::ORIGIN_RESIDUAL,
         'schoolsListed'   => self::ORIGIN_RESIDUAL,
+
+        'smartTags' => self::ORIGIN_ATTACHED_SMART_TAGS,
     ];
 
     /** The canonical EXTENSION key for waterfront (declared in CanonicalListingVocabulary). */
@@ -165,6 +177,9 @@ final class CanonicalListingMatchFactsBuilder
             daysOnMarket:    $residual->daysOnMarket,
             floodZoneStated: $residual->floodZoneStated,
             schoolsListed:   $residual->schoolsListed,
+
+            // Unattached: the caller attaches resolved tags later, beside the row.
+            smartTags: null,
         );
     }
 

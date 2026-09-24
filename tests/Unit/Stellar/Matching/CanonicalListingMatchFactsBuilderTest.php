@@ -124,6 +124,17 @@ class CanonicalListingMatchFactsBuilderTest extends TestCase
         foreach (self::residualFields() as $field) {
             $this->assertSame($residual->{$field}, $facts->{$field}, $field);
         }
+
+        // A full residual and a full canonical listing still attach no Smart Tags.
+        $this->assertNull($facts->smartTags);
+    }
+
+    public function test_smart_tags_are_left_unattached_for_the_later_attachment_stage(): void
+    {
+        $facts = $this->build([V::PROPERTY_POOL => true, V::PROPERTY_TYPE => 'Residential', V::LISTING_TRANSACTION_TYPE => 'sale']);
+
+        $this->assertNull($facts->smartTags);
+        $this->assertSame(CanonicalListingMatchFactsBuilder::ORIGIN_ATTACHED_SMART_TAGS, CanonicalListingMatchFactsBuilder::ORIGIN['smartTags']);
     }
 
     public function test_a_listing_without_an_mls_native_identity_gets_no_facts(): void
@@ -141,15 +152,19 @@ class CanonicalListingMatchFactsBuilderTest extends TestCase
         );
         $origin = CanonicalListingMatchFactsBuilder::ORIGIN;
 
-        $this->assertCount(35, $factFields);
+        $this->assertCount(36, $factFields);
         $this->assertSame($factFields, array_keys($origin), 'ORIGIN names every ListingMatchFacts field once, in order');
 
         $residual = array_keys(array_filter($origin, static fn ($o) => $o === CanonicalListingMatchFactsBuilder::ORIGIN_RESIDUAL));
         $identity = array_keys(array_filter($origin, static fn ($o) => $o === CanonicalListingMatchFactsBuilder::ORIGIN_IDENTITY));
-        $canonical = array_diff_key($origin, array_flip(array_merge($residual, $identity)));
+        $attached = array_keys(array_filter($origin, static fn ($o) => $o === CanonicalListingMatchFactsBuilder::ORIGIN_ATTACHED_SMART_TAGS));
+        $canonical = array_diff_key($origin, array_flip(array_merge($residual, $identity, $attached)));
 
+        // 1 identity + 14 canonical + 20 residual + 1 attached augmentation = 36.
         $this->assertSame(self::residualFields(), $residual, 'the residual entries are exactly the residual object\'s fields');
         $this->assertSame(['listingKey'], $identity);
+        $this->assertSame(['smartTags'], $attached, 'Smart Tags are attached beside the row: neither canonical nor residual');
+        $this->assertNotContains('smartTags', self::residualFields());
         $this->assertCount(14, $canonical);
 
         foreach ($canonical as $field => $keys) {

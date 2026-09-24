@@ -9,11 +9,14 @@ use RecursiveIteratorIterator;
 /**
  * P1-B — two source-level guards.
  *
- *  1. The canonical builder and the residual object are provider-neutral: their CODE
- *     (comments excluded, and the historical `App\Services\Stellar\Matching` namespace
- *     declaration excluded) names no provider, no provider model or ingestion class,
- *     no `raw_json`, no RESO field name and no RESO property-type literal — the type
- *     comes from PropertyTypeVocabulary. Provider knowledge lives only in a reader.
+ *  1. The canonical builder and the residual object are provider-neutral and pure:
+ *     their CODE (comments excluded, and the historical `App\Services\Stellar\Matching`
+ *     namespace declaration excluded) names no provider, no provider model or
+ *     ingestion class, no `raw_json`, no `STELLAR_*` key, no RESO field name and no
+ *     RESO property-type literal — the type comes from PropertyTypeVocabulary — and
+ *     reaches for no decoder, database, network, cache, container or Smart Tags
+ *     machinery. Provider knowledge lives only in a reader; Smart Tags are attached
+ *     beside the facts by the caller.
  *
  *  2. Nothing is wired: no file in app/ references the three P1-B classes, or the new
  *     vocabulary accessor, apart from the P1-B classes themselves. Live matching still
@@ -33,7 +36,7 @@ class CanonicalMatchingInputGuardTest extends TestCase
     ];
 
     private const FORBIDDEN_NAMES = [
-        'Stellar', 'STELLAR_', 'Bridge', 'BridgeProperty', 'raw_json', 'PropertyCandidate',
+        'Stellar', 'Bridge', 'BridgeProperty', 'raw_json', 'PropertyCandidate',
         'MlsCanonicalListingResolver', 'MlsListingAdapter', 'MlsProvider',
         // RESO field names the scorer's facts come from
         'ListingKey', 'ListPrice', 'LeaseAmountFrequency', 'LivingArea', 'LotSizeSquareFeet', 'YearBuilt',
@@ -42,6 +45,24 @@ class CanonicalMatchingInputGuardTest extends TestCase
         'NewConstructionYN', 'PetsAllowed', 'CommunityFeatures', 'AssociationAmenities', 'GreenEnergyEfficient',
         'GreenBuildingVerificationType', 'LeaseTerm', 'DaysOnMarket', 'ElementarySchool', 'HighSchool',
         'Latitude', 'Longitude', 'City', 'StateOrProvince', 'PostalCode', 'CountyOrParish',
+    ];
+
+    /**
+     * Dependencies matched by STRUCTURE rather than as whole words. `STELLAR_` is a
+     * prefix: a word boundary after the underscore could never match a real key such
+     * as `STELLAR_CDDYN`, so none is used.
+     *
+     * @var array<string,string> label => pattern
+     */
+    private const FORBIDDEN_PATTERNS = [
+        'a STELLAR_* key'         => '/STELLAR_/',
+        'json_decode'             => '/\bjson_decode\s*\(/',
+        'database access'         => '/\b(DB|Schema)\s*::|Illuminate\\\\Database\\\\|->\s*(query|table|select|insert|update|delete)\s*\(/',
+        'network access'          => '/\b(Http|GuzzleHttp|Guzzle\w*)\b|\bcurl_\w+\s*\(|\b(file_get_contents|fopen|fsockopen|stream_socket_client)\s*\(/',
+        'cache or storage'        => '/\b(Cache|Storage|Redis|Session)\s*::/',
+        'a framework facade'      => '/Illuminate\\\\Support\\\\Facades\\\\/',
+        'the container or config' => '/\b(config|env|app|resolve)\s*\(/',
+        'Smart Tags machinery'    => '/SmartTag|withSmartTags/',
     ];
 
     private const RESO_TYPE_LITERALS = [
@@ -56,6 +77,9 @@ class CanonicalMatchingInputGuardTest extends TestCase
 
             foreach (self::FORBIDDEN_NAMES as $name) {
                 $this->assertDoesNotMatchRegularExpression('/\b' . preg_quote($name, '/') . '\b/', $code, "{$file} names {$name}");
+            }
+            foreach (self::FORBIDDEN_PATTERNS as $label => $pattern) {
+                $this->assertDoesNotMatchRegularExpression($pattern, $code, "{$file} reaches for {$label}");
             }
             $this->assertSame([], array_values(array_intersect($literals, self::RESO_TYPE_LITERALS)), "{$file} hard-codes a property type");
         }
