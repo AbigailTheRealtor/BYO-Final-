@@ -136,7 +136,19 @@ class OvertureExtractV2StructuralGuardTest extends TestCase
 
     public function test_no_migration_or_schema_for_the_recipe(): void
     {
+        // The recipe itself stays schema-less. The v2 corpus schema (PR 4,
+        // docs/spatial/overture-v2-corpus-schema.md) is the one place that names it — as the version
+        // it RECORDS on every imported row, never a pin it enforces. Exact paths only.
+        $v2Schema = [
+            'database/migrations/spatial/2026_09_24_000001_spatial_overture_v2_create_corpora.php',
+            'database/migrations/spatial/2026_09_24_000002_spatial_overture_v2_create_places.php',
+            'database/migrations/spatial/2026_09_24_000003_spatial_overture_v2_create_chain_memberships.php',
+        ];
         foreach (self::files('database') as $file) {
+            if (in_array($file, $v2Schema, true)) {
+                $this->assertStringNotContainsString('overtureextractv2', strtolower((string) file_get_contents(self::root() . '/' . $file)), $file);
+                continue;
+            }
             $src = strtolower((string) file_get_contents(self::root() . '/' . $file));
             $this->assertStringNotContainsString('overture-extract-v2', $src, $file);
             $this->assertStringNotContainsString('overtureextractv2', $src, $file);

@@ -16,18 +16,19 @@ use Tests\TestCase;
  */
 class SpatialMigrationIsolationTest extends TestCase
 {
-    /** Every table the 11 spatial migrations create. NONE may exist under SQLite. */
+    /** Every table the spatial migrations create. NONE may exist under SQLite. */
     private const SPATIAL_TABLES = [
         'place_categories', 'place_category_mappings', 'places', 'place_authority_links',
         'boundaries', 'boundaries_parts', 'listing_locations', 'addresses',
         'isochrone_cache', 'corpus_imports',
+        'overture_v2_corpora', 'overture_v2_places', 'overture_v2_chain_memberships',
     ];
 
     /** @test */
-    public function the_spatial_subdirectory_holds_the_thirteen_migrations(): void
+    public function the_spatial_subdirectory_holds_the_sixteen_migrations(): void
     {
         $spatial = glob(base_path('database/migrations/spatial') . '/*_*.php');
-        $this->assertCount(13, $spatial, 'Expected exactly 13 spatial migrations.');
+        $this->assertCount(16, $spatial, 'Expected exactly 16 spatial migrations.');
     }
 
     /** @test */
@@ -51,6 +52,8 @@ class SpatialMigrationIsolationTest extends TestCase
 
         foreach (array_keys($files) as $name) {
             $this->assertStringNotContainsString('spatial_core', $name,
+                "Migrator picked up a spatial migration [{$name}] on the default path.");
+            $this->assertStringNotContainsString('spatial_overture_v2', $name,
                 "Migrator picked up a spatial migration [{$name}] on the default path.");
         }
     }

@@ -135,6 +135,10 @@ tests/Feature/Spatial/CorpusLinkAuthorityCommandTest.php
 tests/Feature/Spatial/Gate1ValidateCommandTest.php
 tests/Feature/Spatial/Gate2CoverageMatrixCommandTest.php
 tests/Feature/Spatial/Gate2MeasureCoverageCommandTest.php
+tests/Feature/Spatial/OvertureV2Import/CorpusImportOvertureV2CommandTest.php
+tests/Feature/Spatial/OvertureV2Import/OvertureV2ImportContractTest.php
+tests/Feature/Spatial/OvertureV2Import/OvertureV2ImportGateTest.php
+tests/Feature/Spatial/OvertureV2Import/OvertureV2SchemaStructuralTest.php
 tests/Feature/Spatial/SpatialFirstSliceSeederIsolationTest.php
 tests/Feature/Spatial/SpatialMigrationGuardTest.php
 tests/Feature/Spatial/SpatialMigrationIsolationTest.php
