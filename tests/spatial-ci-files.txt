@@ -293,6 +293,7 @@ tests/Unit/Spatial/OvertureExtractV2/OvertureExtractV2ConfigTest.php
 tests/Unit/Spatial/OvertureExtractV2/OvertureExtractV2SqlManifestTest.php
 tests/Unit/Spatial/OvertureExtractV2/OvertureExtractV2StructuralGuardTest.php
 tests/Unit/Spatial/OvertureExtractV2/OvertureV2NormalizerTest.php
+tests/Unit/Spatial/OvertureV2OperatorLoadGuardTest.php
 tests/Unit/Spatial/PadUsBoundarySourceTest.php
 tests/Unit/Spatial/PlaceAuthorityLinkMaterializerTest.php
 tests/Unit/Spatial/PlaceRowMaterializerTest.php
