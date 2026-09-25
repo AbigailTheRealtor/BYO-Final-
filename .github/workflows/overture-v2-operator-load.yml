@@ -34,6 +34,10 @@ name: Overture v2 operator load (manual, protected)
 #     reviewed operator action in the runbook).
 #   • Nothing here activates v2: no OVERTURE_CORPUS_POI_* variable, no provider or pin change, no
 #     corpus_imports write. The v2 schema has no `active` state at all.
+#   • The URL is never a process argument. Every psql goes through bin/spatial_psql.sh, which
+#     hands libpq an ephemeral 0600 service file; artisan reads the URL from its environment.
+#   • The migrate stage records the ledger before and after (sql/migration_ledger.sql): the three
+#     v2 migrations must land as ONE batch = previous maximum + 1, with nothing else moved.
 #
 # INPUTS are never interpolated into shell. They reach steps only through `env:`.
 # ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -279,7 +283,19 @@ jobs:
       - name: v1 snapshot (before)
         env:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
-        run: psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_before.txt"
+        run: bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_before.txt"
+
+      - name: Migration ledger (before) — eleven core rows, record the previous maximum batch
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -v ledger_phase=before \
+            -f "$LOAD_DIR/sql/migration_ledger.sql" | tee "$RUNNER_TEMP/ledger_before.txt"
+          grep -qx "LEDGER OK" "$RUNNER_TEMP/ledger_before.txt"
+          prev="$(sed -n 's/^PREVIOUS_MAX_BATCH=\([0-9][0-9]*\)$/\1/p' "$RUNNER_TEMP/ledger_before.txt")"
+          [[ "$prev" =~ ^[0-9]+$ ]] || { echo "STOP: could not read the previous maximum batch"; exit 1; }
+          printf '%s\n' "$prev" > "$RUNNER_TEMP/previous_max_batch"
 
       - name: Pretend — print the exact SQL of the three v2 migrations
         env:
@@ -304,12 +320,27 @@ jobs:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
         run: bash "$LOAD_DIR/bin/preflight.sh" --v2-state=empty
 
+      - name: Migration ledger (after) — the three v2 migrations as ONE batch = previous maximum + 1
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          prev="$(cat "$RUNNER_TEMP/previous_max_batch")"
+          [[ "$prev" =~ ^[0-9]+$ ]] || { echo "STOP: previous maximum batch missing"; exit 1; }
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -v ledger_phase=after \
+            -v previous_max_batch="$prev" -f "$LOAD_DIR/sql/migration_ledger.sql" | tee "$RUNNER_TEMP/ledger_after.txt"
+          grep -qx "LEDGER OK" "$RUNNER_TEMP/ledger_after.txt"
+          # The eleven core rows, batches included, are byte-identical before and after.
+          diff -u <(grep '^LEDGER_ROW ' "$RUNNER_TEMP/ledger_before.txt") \
+                  <(grep '^LEDGER_ROW ' "$RUNNER_TEMP/ledger_after.txt" | grep -v '^LEDGER_ROW 2026_09_24_00000[123]_spatial_overture_v2_')
+          echo "ledger: three v2 migrations in batch $((prev + 1)); core rows unchanged"
+
       - name: v1 snapshot (after) — must be byte-identical
         env:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
         run: |
           set -euo pipefail
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_after.txt"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_after.txt"
           diff -u "$RUNNER_TEMP/v1_before.txt" "$RUNNER_TEMP/v1_after.txt"
           echo "v1 unchanged"
 
@@ -411,7 +442,7 @@ jobs:
       - name: v1 snapshot (before)
         env:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
-        run: psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_before.txt"
+        run: bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_before.txt"
 
       - name: Import (WRITE) — explicit --database, never a default
         env:
@@ -427,7 +458,7 @@ jobs:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
         run: |
           set -euo pipefail
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql" | tee "$RUNNER_TEMP/verify_1.txt"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql" | tee "$RUNNER_TEMP/verify_1.txt"
           grep -q "VERIFY OK" "$RUNNER_TEMP/verify_1.txt"
 
       - name: Second import — must be an explicit no-op
@@ -438,7 +469,7 @@ jobs:
           php artisan corpus:import-overture-v2 --corpus-version="$CORPUS_VERSION" \
             --extract-dir="$RUNNER_TEMP/ov2x/out" --write --database=pgsql_spatial | tee "$RUNNER_TEMP/import_2.txt"
           grep -q "ALREADY READY" "$RUNNER_TEMP/import_2.txt"
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql" | tee "$RUNNER_TEMP/verify_2.txt"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql" | tee "$RUNNER_TEMP/verify_2.txt"
           grep -q "VERIFY OK" "$RUNNER_TEMP/verify_2.txt"
           [ "$(grep -c '^LEDGER ready ' "$RUNNER_TEMP/verify_1.txt")" = "1" ] || { echo "STOP: expected exactly one ready LEDGER line"; exit 1; }
           diff <(grep '^LEDGER ' "$RUNNER_TEMP/verify_1.txt") <(grep '^LEDGER ' "$RUNNER_TEMP/verify_2.txt")
@@ -449,7 +480,7 @@ jobs:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
         run: |
           set -euo pipefail
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/sample_fidelity.sql" > "$RUNNER_TEMP/sample.jsonl"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/sample_fidelity.sql" > "$RUNNER_TEMP/sample.jsonl"
           python "$LOAD_DIR/bin/compare_sample.py" --sample "$RUNNER_TEMP/sample.jsonl" --extract-dir "$RUNNER_TEMP/ov2x/out"
 
       - name: v1 snapshot (after) — must be byte-identical
@@ -457,7 +488,7 @@ jobs:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
         run: |
           set -euo pipefail
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_after.txt"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_after.txt"
           diff -u "$RUNNER_TEMP/v1_before.txt" "$RUNNER_TEMP/v1_after.txt"
           echo "v1 unchanged"
 
@@ -493,6 +524,6 @@ jobs:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
         run: |
           set -euo pipefail
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql"
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/sample_fidelity.sql"
-          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/sample_fidelity.sql"
+          bash "$LOAD_DIR/bin/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql"

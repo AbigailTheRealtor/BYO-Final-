@@ -27,7 +27,7 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
         '--path=database/migrations/spatial/2026_09_24_000002_spatial_overture_v2_create_places.php',
         '--path=database/migrations/spatial/2026_09_24_000003_spatial_overture_v2_create_chain_memberships.php',
     ];
-    private const SQL_FILES = ['preflight.sql', 'v1_snapshot.sql', 'verify_v2_load.sql', 'sample_fidelity.sql'];
+    private const SQL_FILES = ['preflight.sql', 'v1_snapshot.sql', 'verify_v2_load.sql', 'sample_fidelity.sql', 'migration_ledger.sql'];
     private const WRITE_JOBS = ['migrate', 'import'];
 
     private static function source(string $relative): string
@@ -318,21 +318,30 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
     // ── bin/preflight.sh, as a subprocess against a stub psql ──────────────────────────────────
 
     /**
-     * @param list<string> $args
+     * Runs a procedure script with a STUB psql first on PATH. The stub records its argv, the
+     * libpq variables in its environment, and a copy (with modes) of the service file it was
+     * handed — so a test can see exactly what psql would have received, and where.
+     *
+     * @param list<string> $command
      * @param array<string, string> $env
-     * @return array{code: int, out: string, psql_called: bool, psql_args: string}
+     * @return array{code: int, out: string, psql_called: bool, psql_args: string, psql_argv: list<string>, svc: array<string, string>}
      */
-    private function preflight(array $args, array $env, int $psqlExit = 0, string $psqlStderr = ''): array
+    private function runWithStubPsql(array $command, array $env, int $psqlExit = 0, string $psqlStderr = ''): array
     {
-        $stubDir = sys_get_temp_dir() . '/ov2-preflight-stub-' . bin2hex(random_bytes(6));
+        $stubDir = sys_get_temp_dir() . '/ov2-psql-stub-' . bin2hex(random_bytes(6));
         mkdir($stubDir);
         $marker = $stubDir . '/psql.called';
         file_put_contents($stubDir . '/stderr.txt', $psqlStderr);
-        file_put_contents($stubDir . '/psql', "#!/usr/bin/env bash\nprintf '%s\\n' \"\$@\" > '{$marker}'\ncat '{$stubDir}/stderr.txt' >&2\nexit {$psqlExit}\n");
+        file_put_contents($stubDir . '/psql', "#!/usr/bin/env bash\n"
+            . "printf '%s\\n' \"\$@\" > '{$marker}'\n"
+            . "{ printf 'PGSERVICE=%s\\n' \"\${PGSERVICE:-}\"; printf 'PGSERVICEFILE=%s\\n' \"\${PGSERVICEFILE:-}\";\n"
+            . "  if [ -f \"\${PGSERVICEFILE:-/nonexistent}\" ]; then printf 'mode=%s\\n' \"\$(stat -c %a \"\$PGSERVICEFILE\")\";\n"
+            . "    printf 'dirmode=%s\\n' \"\$(stat -c %a \"\$(dirname \"\$PGSERVICEFILE\")\")\"; cp \"\$PGSERVICEFILE\" '{$stubDir}/svc.copy'; fi; } > '{$stubDir}/svc.env'\n"
+            . "cat '{$stubDir}/stderr.txt' >&2\nexit {$psqlExit}\n");
         chmod($stubDir . '/psql', 0755);
 
         $proc = proc_open(
-            array_merge(['bash', base_path(self::DIR . '/bin/preflight.sh')], $args),
+            $command,
             [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             null,
@@ -346,12 +355,45 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
 
         $called = is_file($marker);
         $psqlArgs = $called ? (string) file_get_contents($marker) : '';
-        @unlink($marker);
-        @unlink($stubDir . '/stderr.txt');
-        @unlink($stubDir . '/psql');
+        $svc = [];
+        if (is_file($stubDir . '/svc.env')) {
+            foreach (explode("\n", trim((string) file_get_contents($stubDir . '/svc.env'))) as $line) {
+                [$k, $v] = explode('=', $line, 2) + [1 => ''];
+                $svc[$k] = $v;
+            }
+        }
+        $svc['content'] = is_file($stubDir . '/svc.copy') ? (string) file_get_contents($stubDir . '/svc.copy') : '';
+        array_map('unlink', glob($stubDir . '/*'));
         @rmdir($stubDir);
 
-        return ['code' => $code, 'out' => $out, 'psql_called' => $called, 'psql_args' => $psqlArgs];
+        return ['code' => $code, 'out' => $out, 'psql_called' => $called, 'psql_args' => $psqlArgs,
+            'psql_argv' => $called ? explode("\n", rtrim($psqlArgs, "\n")) : [], 'svc' => $svc];
+    }
+
+    /**
+     * @param list<string> $args
+     * @param array<string, string> $env
+     * @return array{code: int, out: string, psql_called: bool, psql_args: string, psql_argv: list<string>, svc: array<string, string>}
+     */
+    private function preflight(array $args, array $env, int $psqlExit = 0, string $psqlStderr = ''): array
+    {
+        return $this->runWithStubPsql(array_merge(['bash', base_path(self::DIR . '/bin/preflight.sh')], $args), $env, $psqlExit, $psqlStderr);
+    }
+
+    /**
+     * @param list<string> $args
+     * @param array<string, string> $env
+     * @return array{code: int, out: string, psql_called: bool, psql_args: string, psql_argv: list<string>, svc: array<string, string>}
+     */
+    private function spatialPsql(array $args, array $env, int $psqlExit = 0): array
+    {
+        return $this->runWithStubPsql(array_merge(['bash', base_path(self::DIR . '/bin/spatial_psql.sh')], $args), $env, $psqlExit);
+    }
+
+    /** @return list<string> the ephemeral service directories currently under /tmp */
+    private static function serviceDirs(): array
+    {
+        return glob('/tmp/ov2-pgsvc.*') ?: [];
     }
 
     private const GOOD_URL = 'postgresql://ov2op:S3cretPassw0rd@p.abc123.db.postgresbridge.com:5432/postgres?sslmode=require';
@@ -400,6 +442,13 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
             'expected_fingerprint=' . self::FINGERPRINT, 'sql/preflight.sql', '-X'] as $arg) {
             $this->assertStringContainsString($arg, $ok['psql_args'], "psql was not handed {$arg}");
         }
+        // The connection reaches psql through the service file, never through its argv.
+        foreach ([self::GOOD_URL, 'S3cretPassw0rd', 'ov2op', 'postgresql://', 'password', 'service='] as $secretish) {
+            $this->assertStringNotContainsString($secretish, $ok['psql_args'], "the preflight's psql argv carries {$secretish}");
+        }
+        $this->assertSame('ov2_spatial', $ok['svc']['PGSERVICE'] ?? null);
+        $this->assertStringContainsString("password=S3cretPassw0rd\n", $ok['svc']['content']);
+        $this->assertFileDoesNotExist((string) ($ok['svc']['PGSERVICEFILE'] ?? ''), 'the service file must be deleted when psql exits');
 
         $down = $this->preflight(['--v2-state=absent'], ['SPATIAL_DATABASE_URL' => self::GOOD_URL], 2);
         $this->assertSame(4, $down['code'], 'a connection failure is exit 4');
@@ -425,6 +474,240 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
         $expected = preg_split('/\s+/', trim($m[1]));
         sort($expected);
         $this->assertSame($expected, $actual, 'bin/preflight.sh must list exactly the spatial migrations in the repository');
+    }
+
+    // ── The URL is never a process argument (bin/spatial_psql.sh) ─────────────────────────────
+
+    /** @test */
+    public function spatial_psql_hands_psql_no_connection_string_in_argv(): void
+    {
+        $before = self::serviceDirs();
+        $args = ['-X', '-q', '-v', 'ON_ERROR_STOP=1', '-f', '/dev/null'];
+        $r = $this->spatialPsql($args, ['SPATIAL_DATABASE_URL' => self::GOOD_URL]);
+
+        $this->assertSame(0, $r['code'], $r['out']);
+        $this->assertSame('', $r['out'], 'the helper prints nothing of its own on success');
+        $this->assertSame($args, $r['psql_argv'], 'psql receives exactly the caller\'s options and nothing else');
+        foreach ([self::GOOD_URL, 'S3cretPassw0rd', 'ov2op', 'p.abc123', 'postgres', 'host=', 'service=', 'sslmode'] as $secretish) {
+            $this->assertStringNotContainsString($secretish, $r['psql_args'], "psql argv carries {$secretish}");
+        }
+
+        // What psql DOES receive: a service name in its environment, and a 0600 file in a 0700
+        // directory under /tmp that holds the connection.
+        $this->assertSame('ov2_spatial', $r['svc']['PGSERVICE']);
+        $this->assertMatchesRegularExpression('#^/tmp/ov2-pgsvc\.[A-Za-z0-9]{8}/pg_service\.conf$#', $r['svc']['PGSERVICEFILE']);
+        $this->assertSame('600', $r['svc']['mode']);
+        $this->assertSame('700', $r['svc']['dirmode']);
+        $this->assertSame("[ov2_spatial]\nhost=p.abc123.db.postgresbridge.com\nport=5432\ndbname=postgres\nuser=ov2op\n"
+            . "password=S3cretPassw0rd\nsslmode=require\n", $r['svc']['content']);
+
+        // Deleted on exit — and nothing else left behind.
+        $this->assertFileDoesNotExist($r['svc']['PGSERVICEFILE']);
+        $this->assertDirectoryDoesNotExist(dirname($r['svc']['PGSERVICEFILE']));
+        $this->assertSame($before, self::serviceDirs());
+    }
+
+    /** @test */
+    public function spatial_psql_passes_psql_failures_through_and_still_cleans_up(): void
+    {
+        $r = $this->spatialPsql(['-X', '-f', '/dev/null'], ['SPATIAL_DATABASE_URL' => self::GOOD_URL], 3);
+        $this->assertSame(3, $r['code'], 'psql\'s exit status is the helper\'s');
+        $this->assertFileDoesNotExist($r['svc']['PGSERVICEFILE']);
+
+        // Percent-encoding is decoded exactly once, and an explicit stronger sslmode is kept.
+        $encoded = $this->spatialPsql(['-X', '-f', '/dev/null'],
+            ['SPATIAL_DATABASE_URL' => 'postgresql://ov2%40op:p%3As%2Fw@p.abc123.db.postgresbridge.com:6543/db1?sslmode=verify-full&connect_timeout=15']);
+        $this->assertSame(0, $encoded['code'], $encoded['out']);
+        $this->assertSame("[ov2_spatial]\nhost=p.abc123.db.postgresbridge.com\nport=6543\ndbname=db1\nuser=ov2@op\n"
+            . "password=p:s/w\nsslmode=verify-full\nconnect_timeout=15\n", $encoded['svc']['content']);
+        $this->assertStringNotContainsString('p:s/w', $encoded['psql_args']);
+    }
+
+    /** @test */
+    public function spatial_psql_refuses_ambient_routing_foreign_arguments_and_bad_targets_before_psql(): void
+    {
+        $url = ['SPATIAL_DATABASE_URL' => self::GOOD_URL];
+        $ok = ['-X', '-f', '/dev/null'];
+        $cases = [
+            'PGHOST' => [$ok, $url + ['PGHOST' => 'x'], 'PGHOST'],
+            'PGHOSTADDR' => [$ok, $url + ['PGHOSTADDR' => '10.0.0.5'], 'PGHOSTADDR'],
+            'PGDATABASE' => [$ok, $url + ['PGDATABASE' => 'x'], 'PGDATABASE'],
+            'PGUSER' => [$ok, $url + ['PGUSER' => 'x'], 'PGUSER'],
+            'PGPORT' => [$ok, $url + ['PGPORT' => '1'], 'PGPORT'],
+            'PGSERVICE' => [$ok, $url + ['PGSERVICE' => 'x'], 'PGSERVICE'],
+            'PGSERVICEFILE' => [$ok, $url + ['PGSERVICEFILE' => '/tmp/x'], 'PGSERVICEFILE'],
+            'PGOPTIONS' => [$ok, $url + ['PGOPTIONS' => '-c x=y'], 'PGOPTIONS'],
+            'production' => [$ok, $url + ['APP_ENV' => 'production'], 'production'],
+            'deployment' => [$ok, $url + ['REPLIT_DEPLOYMENT' => '1'], 'REPLIT_DEPLOYMENT'],
+            'helium DATABASE_URL' => [$ok, $url + ['DATABASE_URL' => 'postgresql://u:p@helium/heliumdb'], 'DATABASE_URL'],
+            'no url' => [$ok, [], 'SPATIAL_DATABASE_URL is not set'],
+            'not crunchy' => [$ok, ['SPATIAL_DATABASE_URL' => 'postgresql://u:S3cretPassw0rd@example.com/postgres'], 'postgresbridge'],
+            'url host param' => [$ok, ['SPATIAL_DATABASE_URL' => self::GOOD_URL . '&host=helium'], 'connection parameter'],
+            'weak tls' => [$ok, ['SPATIAL_DATABASE_URL' => 'postgresql://u:S3cretPassw0rd@p.abc.db.postgresbridge.com/postgres?sslmode=prefer'], 'sslmode'],
+            'unwritable password' => [$ok, ['SPATIAL_DATABASE_URL' => 'postgresql://u:S3cretPassw0rd%20@p.abc.db.postgresbridge.com/postgres'], 'service file'],
+            '-h' => [['-h', 'helium', '-f', '/dev/null'], $url, 'not allowed'],
+            '-d' => [['-d', 'heliumdb', '-f', '/dev/null'], $url, 'not allowed'],
+            '-U' => [['-U', 'x', '-f', '/dev/null'], $url, 'not allowed'],
+            '--dbname' => [['--dbname=x', '-f', '/dev/null'], $url, 'not allowed'],
+            'positional db' => [['-X', 'heliumdb'], $url, 'not allowed'],
+            'positional conninfo' => [['-X', 'service=other'], $url, 'not allowed'],
+            'url as -c value' => [['-c', 'postgresql://u:p@helium/x'], $url, 'connection string'],
+            'dangling -f' => [['-X', '-f'], $url, 'needs a value'],
+            'no -X (psqlrc would run)' => [['-q', '-f', '/dev/null'], $url, '-X is required'],
+        ];
+        $before = self::serviceDirs();
+        foreach ($cases as $label => [$args, $env, $expect]) {
+            $r = $this->spatialPsql($args, $env);
+            $this->assertSame(1, $r['code'], "{$label}: must refuse");
+            $this->assertStringContainsString('[spatial-psql] REFUSING:', $r['out'], "{$label}: refusal must be the helper's own");
+            $this->assertStringContainsString($expect, $r['out'], "{$label}: refusal must say why");
+            $this->assertFalse($r['psql_called'], "{$label}: psql must never be reached");
+            foreach (['S3cretPassw0rd', 'ov2op', 'p.abc123'] as $secretish) {
+                $this->assertStringNotContainsString($secretish, $r['out'], "{$label}: a refusal printed {$secretish}");
+            }
+        }
+        $this->assertSame($before, self::serviceDirs(), 'a refusal must leave no service directory behind');
+    }
+
+    /** @test */
+    public function libpq_reads_the_connection_from_the_service_file_the_helper_writes(): void
+    {
+        $realPsql = trim((string) shell_exec('command -v psql 2>/dev/null'));
+        if ($realPsql === '') {
+            $this->markTestSkipped('no psql client on this machine');
+        }
+        $dir = sys_get_temp_dir() . '/ov2-libpq-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0700);
+        $file = "{$dir}/pg_service.conf";
+        // Port 1 on a loopback hostaddr: libpq takes host, port, user and password from the file,
+        // resolves nothing and reaches nothing — the connection is refused locally.
+        $proc = proc_open(['python3', base_path(self::DIR . '/bin/spatial_target.py'), 'service', $file], [1 => ['pipe', 'w']], $pipes, null,
+            ['PATH' => (string) getenv('PATH'), 'SPATIAL_DATABASE_URL' => 'postgresql://ov2op:S3cretPassw0rd@p.abc123.db.postgresbridge.com:1/postgres']);
+        $this->assertSame("OK\n", stream_get_contents($pipes[1]));
+        fclose($pipes[1]);
+        proc_close($proc);
+        $this->assertSame('600', substr(sprintf('%o', fileperms($file)), -3));
+
+        $proc = proc_open([$realPsql, '-X', '-c', 'SELECT 1'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null,
+            ['PATH' => (string) getenv('PATH'), 'PGSERVICEFILE' => $file, 'PGSERVICE' => 'ov2_spatial',
+                'PGHOSTADDR' => '127.0.0.1', 'PGCONNECT_TIMEOUT' => '2']);
+        $err = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $code = proc_close($proc);
+        unlink($file);
+        rmdir($dir);
+
+        // With a hostaddr set libpq names only the address; port 1 (never the 5432 default) proves
+        // it read the connection from the service file, and no service-file error was raised.
+        $this->assertSame(2, $code, 'psql could not connect (as intended): ' . $err);
+        $this->assertStringContainsString('port 1 failed', $err, 'libpq took the port from the service file');
+        $this->assertStringNotContainsStringIgnoringCase('service file', $err);
+        $this->assertStringNotContainsStringIgnoringCase('definition of service', $err);
+        $this->assertStringNotContainsString('S3cretPassw0rd', $err);
+    }
+
+    /** @test */
+    public function no_procedure_file_hands_the_url_to_a_command_as_an_argument(): void
+    {
+        $shell = ['workflow' => implode("\n", self::runScripts())];
+        foreach (glob(base_path(self::DIR . '/bin/*.sh')) as $file) {
+            $shell[basename($file)] = (string) file_get_contents($file);
+        }
+        foreach ($shell as $where => $src) {
+            // The only permitted expansion of the URL in shell is the emptiness test.
+            preg_match_all('/\$\{?SPATIAL_DATABASE_URL[^}\s"]*\}?/', $src, $m);
+            foreach ($m[0] as $use) {
+                $this->assertSame('${SPATIAL_DATABASE_URL:-}', $use, "{$where} expands the URL as {$use}");
+            }
+            $this->assertDoesNotMatchRegularExpression('/\[ -n "\$\{SPATIAL_DATABASE_URL:-\}" \][^\n]*\$\{SPATIAL/', $src);
+        }
+        foreach (['bin/spatial_psql.sh', 'bin/preflight.sh', 'bin/mask_log_identity.sh'] as $file) {
+            preg_match_all('/\$\{?SPATIAL_DATABASE_URL/', self::source(self::DIR . '/' . $file), $m);
+            $this->assertLessThanOrEqual(1, count($m[0]), "{$file}: the URL is only ever tested for presence");
+        }
+
+        // Every psql in a workflow run: script is the helper, or a client install/version check.
+        foreach (self::runScripts() as $run) {
+            $stripped = preg_replace(['#bin/spatial_psql\.sh#', '/command -v psql/', '/psql --version/', '/postgresql-client/'], '', $run);
+            $this->assertDoesNotMatchRegularExpression('/\bpsql\b/', $stripped, "a run: script invokes psql directly:\n{$run}");
+        }
+        // In bin/, only the helper starts psql.
+        foreach (glob(base_path(self::DIR . '/bin/*.sh')) as $file) {
+            $code = implode("\n", array_filter(explode("\n", (string) file_get_contents($file)),
+                static fn (string $l): bool => ! str_starts_with(ltrim($l), '#')));
+            $code = preg_replace(['/command -v psql/', '/"psql is required\."/', '#spatial_psql\.sh#', "/'\\^psql:[^']*'/"], '', $code);
+            // A command position: psql preceded by start, whitespace or a shell operator.
+            $invocation = '/(^|[\s;|&(])psql(\s|$)/m';
+            if (basename($file) === 'spatial_psql.sh') {
+                $this->assertSame(1, preg_match_all($invocation, $code), 'the helper starts psql exactly once');
+                $this->assertStringContainsString('PGSERVICEFILE="${SVC_DIR}/pg_service.conf" PGSERVICE=ov2_spatial psql "$@"', $code);
+            } else {
+                $this->assertDoesNotMatchRegularExpression($invocation, $code, basename($file) . ' starts psql directly');
+            }
+        }
+
+        // No procedure document shows the old form, either.
+        $docs = self::source(self::DIR . '/RUNBOOK.md') . self::source(self::WORKFLOW);
+        foreach (self::SQL_FILES as $f) {
+            $docs .= self::source(self::DIR . '/sql/' . $f);
+        }
+        $this->assertDoesNotMatchRegularExpression('/psql\s+["\']?\$\{?SPATIAL_DATABASE_URL/', $docs);
+    }
+
+    /** @test */
+    public function the_url_is_read_by_exactly_one_parser(): void
+    {
+        $this->assertStringContainsString('python3 "${HERE}/spatial_target.py" check', self::source(self::DIR . '/bin/preflight.sh'));
+        $this->assertStringContainsString('python3 "${HERE}/spatial_target.py" service', self::source(self::DIR . '/bin/spatial_psql.sh'));
+        foreach (['bin/preflight.sh', 'bin/spatial_psql.sh'] as $file) {
+            $this->assertStringNotContainsString('urlsplit', self::source(self::DIR . '/' . $file), "{$file} parses the URL itself");
+        }
+        $py = self::source(self::DIR . '/bin/spatial_target.py');
+        $this->assertStringContainsString('os.O_EXCL', $py);
+        $this->assertStringContainsString('0o600', $py);
+        $this->assertDoesNotMatchRegularExpression('/print\([^)]*(password|fields\[.user.\]|\bu\b)/', $py, 'the parser never prints the password, user or URL');
+    }
+
+    // ── Migration ledger: the batch contract ───────────────────────────────────────────────────
+
+    /** @test */
+    public function the_migrate_stage_proves_one_new_batch_around_the_write(): void
+    {
+        $steps = self::workflow()['jobs']['migrate']['steps'];
+        $names = array_map(static fn (array $st): string => (string) ($st['name'] ?? ($st['uses'] ?? '')), $steps);
+        $before = array_search('Migration ledger (before) — eleven core rows, record the previous maximum batch', $names, true);
+        $write = array_search('Apply exactly the three v2 migrations (one batch)', $names, true);
+        $after = array_search('Migration ledger (after) — the three v2 migrations as ONE batch = previous maximum + 1', $names, true);
+        $this->assertNotFalse($before);
+        $this->assertNotFalse($after);
+        $this->assertLessThan($write, $before);
+        $this->assertGreaterThan($write, $after);
+
+        $b = (string) $steps[$before]['run'];
+        $a = (string) $steps[$after]['run'];
+        $this->assertStringContainsString('-v ledger_phase=before', $b);
+        $this->assertStringContainsString('PREVIOUS_MAX_BATCH', $b);
+        $this->assertStringContainsString('-v ledger_phase=after', $a);
+        $this->assertStringContainsString('-v previous_max_batch="$prev"', $a);
+        $this->assertStringContainsString('grep -qx "LEDGER OK"', $a);
+        $this->assertStringContainsString('diff -u', $a, 'the core rows must be diffed before/after');
+
+        $sql = self::source(self::DIR . '/sql/migration_ledger.sql');
+        foreach ([
+            "batch = :'previous_max_batch'::int + 1",
+            "count(*) FILTER (WHERE batch > :'previous_max_batch'::int) = 3",
+            "max(batch) = :'previous_max_batch'::int + 1",
+            "'2026_08_11_000001_spatial_core_version_address_corpus'",
+            "'2026_08_12_000001_spatial_core_index_address_lookup'",
+            "'2026_09_24_000001_spatial_overture_v2_create_corpora'",
+            "'2026_09_24_000002_spatial_overture_v2_create_places'",
+            "'2026_09_24_000003_spatial_overture_v2_create_chain_memberships'",
+            "'PREVIOUS_MAX_BATCH=' || max(batch)",
+            "\\echo 'LEDGER OK'",
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $sql, "migration_ledger.sql must check: {$needle}");
+        }
     }
 
     // ── Fingerprint, rehearsal gate, runbook ───────────────────────────────────────────────────
@@ -494,6 +777,41 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
             'declare `APP_ENV=operator`',
             'If the Required reviewers rule is not available',
             'is no longer readable, STOP',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $rb, "RUNBOOK.md must state: {$needle}");
+        }
+    }
+
+    /** @test */
+    public function the_runbook_defers_write_permission_to_the_gate_and_names_the_fallback_approval_model(): void
+    {
+        $rb = self::source(self::DIR . '/RUNBOOK.md');
+
+        // The header states no status of its own: it defers to REHEARSAL.md's gate block and the
+        // rehearsal-validity gate, so it can never again contradict them.
+        $header = substr($rb, 0, (int) strpos($rb, 'Loads the validated Overture v2 corpus'));
+        $this->assertStringContainsString('decided by the machine-readable gate block in', $header);
+        $this->assertStringContainsString('accepts the candidate SHA', $header);
+        $this->assertStringNotContainsString('NOT_RUN', $header, 'the header must not hard-code a rehearsal status');
+        $this->assertStringNotContainsString('are\ndisabled', $header);
+
+        foreach ([
+            '**Claude — operator / executor.**',
+            '**Abigail — independent human reviewer / approver.**',
+            'no production write executes merely because the',
+            '**STOPS again** before the next write phase.',
+            'no self-reviewing GitHub protection may be configured as a',
+            'Approval of the migration is not approval of the import',
+            'needs its own approval',
+            // Source overlays: exactly the four vendor-rewritten files, verified against the commit.
+            '`app/Models/Country.php`, `app/Models/State.php`, `app/Models/City.php` and',
+            '`database/seeders/CountryStateCityTableSeeder.php`',
+            'mounted **read-only**',
+            '`--network none`',
+            // Partial migration failure is a stop, never an automatic recovery.
+            '**the three are not atomic as a group**',
+            'Any failed step is a **STOP and report**',
+            '`migration_ledger.sql` with `ledger_phase=after`',
         ] as $needle) {
             $this->assertStringContainsString($needle, $rb, "RUNBOOK.md must state: {$needle}");
         }

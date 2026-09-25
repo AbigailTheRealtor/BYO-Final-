@@ -21,7 +21,8 @@
 #   • Refuses when DATABASE_URL / DB_* / PG* name the application database (helium / heliumdb).
 #   • Requires SPATIAL_DATABASE_URL with an EXPLICIT host on *.db.postgresbridge.com — a URL with
 #     no host would let libpq fall back to an ambient PGHOST.
-#   • NEVER prints the secret; it is handed only to psql.
+#   • NEVER prints the secret, and never puts it in any process's argv: psql is reached only
+#     through bin/spatial_psql.sh, which hands libpq an ephemeral 0600 service file.
 #   • Read-only: the SQL sets default_transaction_read_only = on before anything else.
 #   • Exit 4 = cannot connect (STOP; see RUNBOOK "Connectivity failure"). Exit 5 = connected,
 #     a check failed. Exit 1 = refused before connecting.
@@ -77,42 +78,9 @@ done
 command -v python3 >/dev/null 2>&1 || die "python3 is required to parse the target."
 command -v psql >/dev/null 2>&1 || die "psql is required."
 
-PARSED="$(python3 - <<'PY'
-import os, re, sys, urllib.parse
-u = os.environ["SPATIAL_DATABASE_URL"]
-try:
-    s = urllib.parse.urlsplit(u)
-    netloc_host = s.netloc.rsplit("@", 1)[-1].split(":", 1)[0]
-    host = (s.hostname or "").lower()
-    port = s.port or 5432
-except ValueError:
-    print("ERR url does not parse"); sys.exit(0)
-db = urllib.parse.unquote(s.path.lstrip("/"))
-if s.scheme not in ("postgres", "postgresql"):
-    print("ERR scheme is not postgres/postgresql"); sys.exit(0)
-if "," in s.netloc:
-    print("ERR multi-host URL"); sys.exit(0)
-if not host:
-    print("ERR URL has no host (libpq would fall back to an ambient PGHOST)"); sys.exit(0)
-if netloc_host != netloc_host.lower():
-    print("ERR host must be written in lowercase (log masking is case-sensitive)"); sys.exit(0)
-if not re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)*\.db\.postgresbridge\.com", host):
-    print("ERR host is not a *.db.postgresbridge.com Crunchy Bridge host"); sys.exit(0)
-if host == "helium" or host.startswith("helium."):
-    print("ERR host is the application database"); sys.exit(0)
-if not db or "heliumdb" in db.lower():
-    print("ERR database name is empty or the application database"); sys.exit(0)
-# Only these query parameters. A `host=` / `hostaddr=` / `port=` / `dbname=` / `service=` /
-# `options=` parameter would reroute libpq away from the host checked above.
-params = urllib.parse.parse_qs(s.query, keep_blank_values=True)
-extra = sorted(set(params) - {"sslmode", "connect_timeout", "application_name"})
-if extra:
-    print("ERR URL carries a connection parameter this procedure does not allow: " + ", ".join(extra)); sys.exit(0)
-if params.get("sslmode", ["require"])[-1] not in ("require", "verify-ca", "verify-full"):
-    print("ERR sslmode must be require, verify-ca or verify-full"); sys.exit(0)
-print(f"OK {host} {port}")
-PY
-)"
+# The one reading of the URL (bin/spatial_target.py), shared with bin/spatial_psql.sh so the two
+# can never disagree about which target is acceptable.
+PARSED="$(python3 "${HERE}/spatial_target.py" check)"
 case "$PARSED" in
   OK\ *) read -r _ TARGET_HOST TARGET_PORT <<<"$PARSED" ;;
   ERR\ *) die "SPATIAL_DATABASE_URL: ${PARSED#ERR }." ;;
@@ -152,18 +120,20 @@ export PGAPPNAME="overture-v2-preflight"
 # psql's own error text is NEVER printed raw. A connection error names the host, the resolved
 # address and the user ("connection to server at ... failed ... for user ..."), and this
 # repository's Actions logs are public. stdout (the PASS/FAIL lines) passes through; from stderr
-# only the committed script's own error lines ("psql:<...>/preflight.sql:<line>: ...") are shown.
+# only the committed script's own error lines ("psql:<...>/preflight.sql:<line>: ...") and the
+# helper's own value-free refusals are shown. psql is reached only through bin/spatial_psql.sh,
+# so the connection string is never in psql's argv (visible to `ps`).
 ERR_FILE="$(mktemp)"
 trap 'rm -f "$ERR_FILE"' EXIT
 set +e
-psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+bash "${HERE}/spatial_psql.sh" -X -q -v ON_ERROR_STOP=1 \
   -v v2_state="$V2_STATE" -v target_host="$TARGET_HOST" -v target_port="$TARGET_PORT" \
   -v expected_fingerprint="$EXPECTED_FINGERPRINT" \
   -f "${SQL_DIR}/preflight.sql" 2>"$ERR_FILE"
 status=$?
 set -e
 if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
-  grep -E '^psql:[^[:space:]]*preflight\.sql:[0-9]+: ' "$ERR_FILE" >&2 || true
+  grep -E '^psql:[^[:space:]]*preflight\.sql:[0-9]+: |^\[spatial-psql\] REFUSING: ' "$ERR_FILE" >&2 || true
 fi
 
 case "$status" in
