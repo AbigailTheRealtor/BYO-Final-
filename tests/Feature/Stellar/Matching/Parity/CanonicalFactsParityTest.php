@@ -138,10 +138,11 @@ class CanonicalFactsParityTest extends TestCase
 
         $totals = [];
         foreach ([
-            'both_present' => new ListingSmartTagFacts(['updated_kitchen', 'quartz_countertops'], true),
-            'one_present'  => new ListingSmartTagFacts(['updated_kitchen'], true),
-            'none_present' => new ListingSmartTagFacts([], true),
-            'no_tags'      => new ListingSmartTagFacts([], false),
+            // Three-state facts: present keys, then known-absent keys; a pick in neither is unknown.
+            'both_present' => new ListingSmartTagFacts(['updated_kitchen', 'quartz_countertops'], []),
+            'one_present'  => new ListingSmartTagFacts(['updated_kitchen'], ['quartz_countertops']),
+            'none_present' => new ListingSmartTagFacts([], ['updated_kitchen', 'quartz_countertops']),
+            'no_tags'      => new ListingSmartTagFacts([], []),
             'not_supplied' => null,
         ] as $case => $tags) {
             $legacy    = $this->outcome($a->withSmartTags($tags), $row, $payload);
