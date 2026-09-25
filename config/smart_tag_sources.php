@@ -592,10 +592,10 @@ return [
             'bridge.offices'                  => ['tags' => ['private_offices']],
             'bridge.conference_rooms'         => ['tags' => ['conference_room']],
 
-            // "Negotiable" affirms neither furnished nor unfurnished, so it can never rule
-            // furnished out. It maps to nothing either way.
+            // "Negotiable" affirms neither furnished nor unfurnished, so it can rule
+            // neither out. It maps to nothing either way.
             'bridge.furnished'          => ['tags' => ['furnished'], 'uninformative' => ['Negotiable']],
-            'bridge.unfurnished'        => ['tags' => ['unfurnished']],
+            'bridge.unfurnished'        => ['tags' => ['unfurnished'], 'uninformative' => ['Negotiable']],
             'bridge.occupant.tenant'    => ['tags' => ['tenant_occupied']],
             'bridge.occupant.vacant'    => ['tags' => ['vacant']],
 

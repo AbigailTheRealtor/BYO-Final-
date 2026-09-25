@@ -230,7 +230,8 @@ class BridgeNegativeCheckabilityTest extends TestCase
 
     /**
      * "Negotiable" affirms neither furnished nor unfurnished, so it can never produce
-     * "Does not list: Furnished" — and it maps to neither tag.
+     * "Does not list: Furnished" or "Does not list: Unfurnished" — and it maps to
+     * neither tag.
      *
      * @test
      */
@@ -240,18 +241,24 @@ class BridgeNegativeCheckabilityTest extends TestCase
 
         $this->assertSame(C::PRESENT, $this->answer($lease('Furnished'), 'furnished'));
         $this->assertSame(C::KNOWN_ABSENT, $this->answer($lease('Unfurnished'), 'furnished'));
+        $this->assertSame(C::PRESENT, $this->answer($lease('Unfurnished'), 'unfurnished'));
+        $this->assertSame(C::KNOWN_ABSENT, $this->answer($lease('Furnished'), 'unfurnished'));
 
         $negotiable = $lease('Negotiable');
-        $this->assertSame(C::UNKNOWN, $this->answer($negotiable, 'furnished'));
-        $this->assertSame(C::WHY_UNINFORMATIVE, $this->why($negotiable, 'furnished'));
-        $this->assertArrayNotHasKey('furnished', $this->derived($negotiable), 'not mapped to furnished');
-        $this->assertArrayNotHasKey('unfurnished', $this->derived($negotiable), 'not mapped to unfurnished');
+        foreach (['furnished', 'unfurnished'] as $tag) {
+            $this->assertSame(C::UNKNOWN, $this->answer($negotiable, $tag), $tag);
+            $this->assertSame(C::WHY_UNINFORMATIVE, $this->why($negotiable, $tag), $tag);
+            $this->assertArrayNotHasKey($tag, $this->derived($negotiable), "not mapped to {$tag}");
+        }
 
         foreach ([null, ''] as $missing) {
-            $this->assertSame(C::UNKNOWN, $this->answer($lease($missing), 'furnished'));
-            $this->assertSame(C::WHY_FIELD_UNAVAILABLE, $this->why($lease($missing), 'furnished'));
+            foreach (['furnished', 'unfurnished'] as $tag) {
+                $this->assertSame(C::UNKNOWN, $this->answer($lease($missing), $tag), $tag);
+                $this->assertSame(C::WHY_FIELD_UNAVAILABLE, $this->why($lease($missing), $tag), $tag);
+            }
         }
         $this->assertSame(C::UNKNOWN, $this->answer($this->record([], 'Residential Lease'), 'furnished'));
+        $this->assertSame(C::UNKNOWN, $this->answer($this->record([], 'Residential Lease'), 'unfurnished'));
     }
 
     /** @test */
