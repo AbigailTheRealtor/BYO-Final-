@@ -130,7 +130,11 @@ class AskAiRoleTypeMatrixPrivacyTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(100, $probed, 'Too few non-public fields probed — the proof would be hollow.');
+        // The floor was 100 when ~150 fields were non-public. The universal coverage audit
+        // (2026-09-24) made the page-printed property and lease facts public, so fewer remain to
+        // probe; 60 still covers every screening, qualification, deposit, lending and
+        // contact field that stays private.
+        $this->assertGreaterThan(60, $probed, 'Too few non-public fields probed — the proof would be hollow.');
         $this->assertSame([], $failures, implode("\n", $failures));
     }
 

@@ -76,7 +76,10 @@ class MlsListingPrefillService
 
         // ── Structure / size ────────────────────────────────────────────────
         'bedrooms'        => 'bedrooms',
-        'bathrooms'       => 'bathrooms',
+        // The canonical total in halves (BathroomTotal), NOT the feed's rounded
+        // BathroomsTotalInteger: one full and one half bathroom is "1.5", which the form
+        // offers, where the integer said "2". A zero or undeterminable total is omitted.
+        'bathroomsTotal'  => 'bathrooms',
         'livingAreaSqft'  => 'heated_sqft',
         'lotSizeSqft'     => 'lot_size_sqft',
         'yearBuilt'       => 'year_built',

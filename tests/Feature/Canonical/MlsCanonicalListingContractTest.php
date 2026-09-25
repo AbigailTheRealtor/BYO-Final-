@@ -167,8 +167,14 @@ class MlsCanonicalListingContractTest extends TestCase
         $this->assertSame(1.5, $this->fromRecord($raw)->bathrooms());
         $this->assertSame('BathroomsTotalDecimal', $this->fromRecord($raw)->fieldMeta(V::PROPERTY_BATHROOMS)['source_field']);
 
-        // No decimal total: absent, never back-filled from the rounded integer.
-        $this->assertFalse($this->fromRecord(['BathroomsTotalDecimal' => null] + $raw)->has(V::PROPERTY_BATHROOMS));
+        // No decimal total: the exact components (1 full + 1 half) give the same 1.5 through the
+        // shared BathroomTotal rule the listing's own bathrooms field is imported with…
+        $noDecimal = ['BathroomsTotalDecimal' => null] + $raw;
+        $this->assertSame(1.5, $this->fromRecord($noDecimal)->bathrooms());
+        $this->assertSame('BathroomTotal', $this->fromRecord($noDecimal)->fieldMeta(V::PROPERTY_BATHROOMS)['source_field']);
+
+        // …and with no decimal and no half count, absent — never back-filled from the rounded integer.
+        $this->assertFalse($this->fromRecord(['BathroomsTotalDecimal' => null, 'BathroomsHalf' => null] + $raw)->has(V::PROPERTY_BATHROOMS));
     }
 
     // ── Unknown stays unknown ───────────────────────────────────────────────

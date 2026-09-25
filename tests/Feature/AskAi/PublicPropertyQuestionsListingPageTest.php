@@ -116,11 +116,19 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
     }
 
     /**
-     * Only the Ask AI card (Batch 2a: the one home of Questions About This Property), so
-     * values printed elsewhere on the page cannot satisfy an assertion. The card ends where
-     * the next quick-actions card begins.
+     * The Ask AI region only — the card (Batch 2a: the one home of Questions About This
+     * Property) plus the selection modal — so values printed elsewhere on the page cannot
+     * satisfy an assertion. Since the selection-based design (2026-09-25) the card shows the
+     * FEATURED subset and the modal lists every answerable question with its answer, so both
+     * halves are the public surface, and every leak assertion runs against both.
      */
     private function section(string $html, string $role): string
+    {
+        return $this->card($html, $role) . $this->modal($html, $role);
+    }
+
+    /** The card alone: featured questions as native <details>, ending at the next card. */
+    private function card(string $html, string $role): string
     {
         $start = strpos($html, 'data-ask-ai-property-questions="' . $role . '"');
         if ($start === false) {
@@ -132,21 +140,40 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         return substr($html, $start, $next === false ? null : $next - $start);
     }
 
-    /** @return array<string,array{question:string,answer:string}> */
+    /** The modal body, from the picker root to its disclaimer. */
+    private function modal(string $html, string $role): string
+    {
+        $start = strpos($html, 'data-ask-ai-picker="' . $role . '"');
+        if ($start === false) {
+            return '';
+        }
+        $end = strpos($html, 'ask-ai-picker-disclaimer', $start);
+
+        return substr($html, $start, $end === false ? null : $end - $start);
+    }
+
+    /**
+     * EVERY question the surface offers, from the modal's "View all" list, with the answer
+     * selecting it shows. The card carries only the featured subset, so completeness is
+     * asserted here.
+     *
+     * @return array<string,array{question:string,answer:string}>
+     */
     private function renderedQuestions(string $section): array
     {
-        preg_match_all(
-            '#<details[^>]*data-property-question="([a-z_]+)"[^>]*>\s*<summary[^>]*>(.*?)</summary>\s*<p[^>]*data-property-answer="\1"[^>]*>(.*?)</p>\s*</details>#s',
-            $section,
-            $m,
-            PREG_SET_ORDER
-        );
+        preg_match_all('#<button[^>]*data-ask-ai-pick="([a-z_0-9]+)"[^>]*data-ask-ai-search-terms="[^"]*"[^>]*>(.*?)</button>#s', $section, $q, PREG_SET_ORDER);
+        preg_match_all('#<p[^>]*data-ask-ai-answer-for="([a-z_0-9]+)"[^>]*>(.*?)</p>#s', $section, $a, PREG_SET_ORDER);
+
+        $answers = [];
+        foreach ($a as [, $id, $answer]) {
+            $answers[$id] = html_entity_decode(trim($answer), ENT_QUOTES);
+        }
 
         $out = [];
-        foreach ($m as [, $id, $question, $answer]) {
+        foreach ($q as [, $id, $question]) {
             $out[$id] = [
                 'question' => html_entity_decode(trim($question), ENT_QUOTES),
-                'answer'   => html_entity_decode(trim($answer), ENT_QUOTES),
+                'answer'   => $answers[$id] ?? '',
             ];
         }
 
@@ -235,11 +262,10 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
         $meta = $this->completeLandlordMeta();
         $meta['bathrooms']               = '';
         unset($meta['pets']);
-        // Present on the listing. The rent's frequency is owner_only, the deposit is
-        // restricted, and utilities is a two-meaning cascade — none of those may publish.
-        // The rent AMOUNT is answerable since the universal-deterministic batches, and only
-        // with no period: the page already prints it as "Desired Lease Price", and the one
-        // field that could name a period is the owner-only frequency.
+        // Present on the listing. The deposit is restricted and utilities is a two-meaning
+        // cascade — neither may publish. The rent AMOUNT is answerable and states no period;
+        // the frequency is its OWN public fact since the universal coverage audit (2026-09-24),
+        // because the landlord page prints "Lease Amount Frequency" beside the rent.
         $meta['desired_rental_amount']   = '2450';
         $meta['lease_amount_frequency']  = 'Monthly';
         $meta['security_deposit_amount'] = '3175';
@@ -250,27 +276,25 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
 
         $this->assertArrayNotHasKey('landlord_bathrooms', $questions);
         $this->assertArrayNotHasKey('landlord_pets_allowed', $questions);
-        $this->assertSame(['landlord_bedrooms', 'landlord_heated_square_feet', 'landlord_appliances', 'landlord_rent'], array_keys($questions));
+        foreach (['landlord_bedrooms', 'landlord_heated_square_feet', 'landlord_appliances', 'landlord_rent', 'landlord_field_lease_amount_frequency'] as $id) {
+            $this->assertArrayHasKey($id, $questions, $id);
+        }
         $this->assertSame('The desired lease price is $2,450.', $questions['landlord_rent']['answer']);
+        $this->assertSame('Lease Amount Frequency: Monthly.', $questions['landlord_field_lease_amount_frequency']['answer']);
 
         foreach (['3,175', '3175', 'Included in Rent', 'deposit'] as $withheld) {
             $this->assertStringNotContainsStringIgnoringCase($withheld, $section, "'{$withheld}' must not appear in the section.");
         }
 
-        // The owner-only frequency must not surface as a CLAIM. Checked against what the
-        // card states, not the whole section: "monthly rent" is typed-match vocabulary so a
-        // renter who asks that way still reaches the answer, which itself names no period.
-        $stated = implode(' ', array_map(static fn (array $q): string => $q['question'] . ' ' . $q['answer'], $questions));
-        foreach (['Monthly', 'per month', '/mo'] as $period) {
-            $this->assertStringNotContainsStringIgnoringCase($period, $stated, "'{$period}' must not be stated in any question or answer.");
-        }
+        // The period is stated by its own question only — never folded into the rent answer.
+        $this->assertStringNotContainsStringIgnoringCase('month', $questions['landlord_rent']['answer']);
     }
 
     // ── 9. Revealing a question returns its answer ──────────────────────────
 
     public function test_revealing_a_question_shows_its_precomputed_answer(): void
     {
-        $section = $this->section($this->sellerPage($this->sellerListing($this->completeSellerMeta())), 'seller');
+        $section = $this->card($this->sellerPage($this->sellerListing($this->completeSellerMeta())), 'seller');
 
         // Native disclosure: the answer is inside the same <details> as its question,
         // closed by default, so opening it needs no request and no script.
@@ -315,7 +339,10 @@ class PublicPropertyQuestionsListingPageTest extends TestCase
             // seller/landlord fact by owner decision and is answered below; what must never
             // appear is a risk or insurance CONCLUSION drawn from it, which is asserted
             // straight after rather than by banning the word.
-            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', 'Short Sale', '6.125', 'interest'] as $leak) {
+            // 'Short Sale' left this list in the universal coverage audit (2026-09-24): the special
+            // sale provision is printed on the seller page and is stated under its own label.
+            $this->assertStringContainsString('Special Sale Provision: Short Sale', html_entity_decode($section, ENT_QUOTES));
+            foreach (['7.25', '987,654', '987654', 'cap rate', 'net income', '6.125', 'interest'] as $leak) {
                 $this->assertStringNotContainsStringIgnoringCase($leak, $section, "'{$leak}' must never appear in the public questions.");
             }
             $this->assertStringContainsString('The seller has indicated they will consider the following financing type: Seller Financing.', $section);

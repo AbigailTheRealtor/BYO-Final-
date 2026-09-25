@@ -427,8 +427,11 @@ class PublicPropertyQuestionBatch2bTest extends TestCase
 
         // Without source_kind admitted_listing the key stays owner_only.
         $this->assertSame('not_public_allowed', $this->service->evaluate($probe + ['source_path' => 'listing.offered_financing'], 'seller', $context, [])['reason']);
-        // An admitted_listing entry cannot reach a key that is not on the list …
-        $this->assertSame('not_public_allowed', $this->service->evaluate($probe + ['source_kind' => 'admitted_listing', 'source_path' => 'listing.sale_provision'], 'seller', $context, [])['reason']);
+        // An admitted_listing entry cannot reach a key that is not on the list … (sale_provision
+        // was the probe here; the universal coverage audit made it public, so reason_for_sale —
+        // owner_only by decision, the seller's motivation — stands in.)
+        $context['listing']['reason_for_sale'] = 'Retiring';
+        $this->assertSame('not_public_allowed', $this->service->evaluate($probe + ['source_kind' => 'admitted_listing', 'source_path' => 'listing.reason_for_sale'], 'seller', $context, [])['reason']);
         // … nor a RESTRICTED key, whatever the list says.
         //
         // The probe used to be flood_zone_code. Batch 2e made that key PUBLIC for seller and

@@ -270,8 +270,11 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
     {
         $cases = [
             // role, key, a meaningful value — every key is defined in the context map
-            ['landlord', 'lease_amount_frequency',  'Monthly'],   // owner_only
-            ['landlord', 'rent_includes',           'Water'],     // owner_only
+            // lease_amount_frequency and rent_includes were probed here as owner_only; the
+            // universal coverage audit (2026-09-24) made both public — the landlord page prints
+            // them. Two keys that stay owner_only (decision D4, screening) are probed instead.
+            ['landlord', 'min_credit_score',        '650'],       // owner_only (D4)
+            ['landlord', 'guests_allowed',          'Yes'],       // owner_only (D4)
             ['landlord', 'security_deposit_amount', '1500'],      // restricted
             ['landlord', 'rental_price',            '2000'],      // restricted (not in map)
             // flood_zone_code was here as "restricted" and has MOVED: it is a public
@@ -281,7 +284,7 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             ['seller',   'flood_zone_designation',  'Zone AE'],   // restricted
             ['seller',   'flood_zone_description',  'High risk'], // restricted
             ['seller',   'is_in_flood_zone',        'Yes'],       // restricted
-            ['seller',   'sale_provision',          'Short Sale'],// owner_only
+            ['seller',   'reason_for_sale',         'Retiring'],  // owner_only (motivation)
             ['seller',   'offered_financing',       'Cash'],      // owner_only
         ];
 
@@ -844,32 +847,49 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
         $reflection = new \ReflectionClass(AskAiPublicPropertyQuestionService::class);
         $this->assertNull($reflection->getConstructor(), 'The service must have no injected dependencies.');
 
-        // SUPERSEDED IN PART BY BATCH 3. The partial is no longer pure inert markup — it
-        // carries a typed-question box, so an <input> is expected, and it pushes one static
-        // <script> to the layout's stack. Both are deliberate, and what replaced the blanket
-        // rule is narrower and stronger:
+        // SELECTION-BASED (2026-09-25) superseded the Batch 3 typed box. The card is inert
+        // markup again — featured questions and one button that opens the modal — and the
+        // modal lists every answerable question with its precomputed answer:
         //
-        //   - still no form, no Livewire, no inline handler and no request API, so revealing
-        //     an answer still cannot become a request;
-        //   - the ONLY script is the external matcher asset, pushed OUTSIDE the card, so the
-        //     card region itself remains script-free (its own tests assert that);
-        //   - the input carries no `name`, so even a hypothetical surrounding form could not
-        //     carry the typed text anywhere.
-        foreach (['<form', 'wire:', 'fetch(', 'XMLHttpRequest', 'textarea', 'href=', 'onclick',
-                  '/ask-ai/listing-question', '/api/ask-ai', '/agent-ai/'] as $forbidden) {
-            $this->assertStringNotContainsStringIgnoringCase($forbidden, $partial, "Partial contains '{$forbidden}'.");
+        //   - no form, no Livewire, no inline handler and no request API in either partial,
+        //     so selecting a question can never become a request;
+        //   - the card carries no script and no input at all;
+        //   - the modal's scripts are external static assets only; its one input is the
+        //     search FILTER, which carries no `name`, so nothing typed can be submitted.
+        //     The owner-only picker (rendered for the listing owner alone) is the sole asset
+        //     that reaches an endpoint, and it sends a listed question's own text.
+        $modal = preg_replace(
+            '/\{\{--.*?--\}\}/s',
+            '',
+            file_get_contents(base_path('resources/views/offer-listing/partials/_ask-ai-question-modal.blade.php'))
+        );
+        foreach ([$partial, $modal] as $source) {
+            foreach (['<form', 'wire:', 'fetch(', 'XMLHttpRequest', 'textarea', 'href=', 'onclick',
+                      '/ask-ai/listing-question', '/api/ask-ai', '/agent-ai/'] as $forbidden) {
+                $this->assertStringNotContainsStringIgnoringCase($forbidden, $source, "Partial contains '{$forbidden}'.");
+            }
+            $this->assertDoesNotMatchRegularExpression('/<script(?![^>]*\bsrc=)/i', $source,
+                'Every script must be an external asset, never inline.');
+            $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $source,
+                'No Ask AI input may carry a name attribute.');
         }
 
-        // Exactly one script, and it is the external static matcher — never inline code.
-        preg_match_all('/<script\b[^>]*>/i', $partial, $scripts);
-        $this->assertCount(1, $scripts[0], 'The partial must carry exactly one script tag.');
-        $this->assertStringContainsString('js/ask-ai/deterministic-question-matcher.js', $scripts[0][0]);
-        $this->assertDoesNotMatchRegularExpression('/<script(?![^>]*\bsrc=)/i', $partial,
-            'Every script in the partial must be an external asset, never inline.');
+        $this->assertDoesNotMatchRegularExpression('/<script\b/i', $partial, 'The card carries no script.');
+        $this->assertDoesNotMatchRegularExpression('/<input\b/i', $partial, 'The card carries no input.');
 
-        // The typed input exists and is unsubmittable.
-        $this->assertStringContainsString('data-ask-ai-ask-input', $partial);
-        $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $partial,
-            'The typed-question input must carry no name attribute.');
+        preg_match_all('/<script\b[^>]*\bsrc="([^"]+)"/i', $modal, $scripts);
+        $this->assertSame(
+            ["{{ asset('js/ask-ai/question-picker.js') }}", "{{ asset('js/ask-ai/owner-question-picker.js') }}"],
+            $scripts[1]
+        );
+
+        // Presentation only orders, subsets and rewords: no model path there either.
+        foreach (['app/Support/AskAi/AskAiQuestionPresentation.php', 'config/ask_ai_question_presentation.php'] as $file) {
+            $source = file_get_contents(base_path($file));
+            foreach (['OpenAi', 'AskAiRunnerV2Service', 'AskAiIntentNormalizerService', 'AskAiQuestionClassifierService',
+                      'Http::', 'Guzzle', 'curl_', 'DB::'] as $forbidden) {
+                $this->assertStringNotContainsStringIgnoringCase($forbidden, $source, "{$file} contains '{$forbidden}'.");
+            }
+        }
     }
 }

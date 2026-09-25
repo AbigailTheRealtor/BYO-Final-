@@ -69,6 +69,9 @@ class MlsQuickImportFlowTest extends TestCase
         $mls ??= self::MLS;
 
         $raw = [
+            // Stellar sends the canonical decimal total beside the rounded integer; bathrooms are
+            // imported from it (BathroomTotal), never from the integer alone.
+            'BathroomsTotalDecimal' => 3,
             'ListingKey' => $key,
             'ListingId'  => $mls,
 

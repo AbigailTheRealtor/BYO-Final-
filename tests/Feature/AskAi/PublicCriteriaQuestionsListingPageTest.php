@@ -60,25 +60,41 @@ class PublicCriteriaQuestionsListingPageTest extends TestCase
         return $listing->fresh();
     }
 
-    /** @return array<string,string> question id => answer, read from the Ask AI card only */
+    /**
+     * question id => answer, for EVERY question the Ask AI surface offers.
+     *
+     * Selection-based Ask AI (2026-09-25): the card shows only the FEATURED subset, and the
+     * modal lists every answerable question with the precomputed answer selecting it shows.
+     * So completeness — and every privacy assertion over the answers — reads the modal.
+     *
+     * @return array<string,string>
+     */
     private function cardAnswers(string $html, string $role): array
     {
-        $start = strpos($html, 'data-ask-ai-property-questions="' . $role . '"');
-        if ($start === false) {
+        $modal = $this->modalRegion($html, $role);
+        if ($modal === '') {
             return [];
         }
-        $card = substr($html, $start);
 
-        preg_match_all(
-            '#<details[^>]*data-property-question="([a-z_]+)"[^>]*>\s*<summary[^>]*>.*?</summary>\s*<p[^>]*data-property-answer="\1"[^>]*>(.*?)</p>#s',
-            $card, $m, PREG_SET_ORDER
-        );
+        preg_match_all('#<p[^>]*data-ask-ai-answer-for="([a-z_0-9]+)"[^>]*>(.*?)</p>#s', $modal, $m, PREG_SET_ORDER);
         $out = [];
         foreach ($m as [, $id, $answer]) {
             $out[$id] = html_entity_decode(trim($answer), ENT_QUOTES);
         }
 
         return $out;
+    }
+
+    /** The Ask AI modal body, from the picker root to its disclaimer. */
+    private function modalRegion(string $html, string $role): string
+    {
+        $start = strpos($html, 'data-ask-ai-picker="' . $role . '"');
+        if ($start === false) {
+            return '';
+        }
+        $end = strpos($html, 'ask-ai-picker-disclaimer', $start);
+
+        return substr($html, $start, $end === false ? null : $end - $start);
     }
 
     private function buyerPage(array $meta, ?User $as = null, ?User $owner = null): string
@@ -280,14 +296,38 @@ class PublicCriteriaQuestionsListingPageTest extends TestCase
         $this->assertStringContainsString('data-bs-target="#bolAiModal"', $ownerHtml);
     }
 
-    public function test_a_shopper_gets_no_free_text_ask_ai_trigger_inside_the_card(): void
+    /**
+     * SUPERSEDED IN PART by selection-based Ask AI (2026-09-25). This used to assert that the
+     * card carried no trigger for the modal at all, because the modal then took FREE TEXT.
+     * The card now deliberately opens the modal ("View all questions"), and what must still
+     * hold is the thing the old assertion protected: a shopper has no way to submit typed text.
+     * The modal lists verified questions to SELECT; its one input is a nameless search filter
+     * in no form, and there is no textarea anywhere in the Ask AI surface.
+     */
+    public function test_a_shopper_gets_no_free_text_ask_ai_submission(): void
     {
         $html  = $this->buyerPage($this->fullBuyerMeta());
         $start = strpos($html, 'data-ask-ai-property-questions="buyer"');
         $this->assertNotFalse($start);
-        $card = substr($html, $start, strpos($html, '</div>', strrpos($html, 'ask-ai-pq-note')) - $start);
+        $card  = substr($html, $start, strpos($html, 'ask-ai-pq-note', $start) - $start);
+        $modal = $this->modalRegion($html, 'buyer');
+        $this->assertNotSame('', $modal);
 
-        $this->assertStringNotContainsString('bolAiModal', $card);
+        // The card's one control opens the SELECTION modal, and is not a submit button.
+        $this->assertMatchesRegularExpression('/<button type="button"[^>]*data-bs-target="#bolAiModal"[^>]*data-ask-ai-open-all/', $card);
+
+        foreach ([$card, $modal] as $region) {
+            foreach (['<form', '<textarea', 'action=', 'fetch(', 'XMLHttpRequest'] as $forbidden) {
+                $this->assertStringNotContainsString($forbidden, $region, "Ask AI contains '{$forbidden}'.");
+            }
+            $this->assertDoesNotMatchRegularExpression('/<input\\b[^>]*\\bname=/', $region);
+        }
+        preg_match_all('/<input\\b[^>]*>/', $modal, $inputs);
+        $this->assertCount(1, $inputs[0], 'The modal has exactly one input: the search filter.');
+        $this->assertStringContainsString('placeholder="Search questions..."', $inputs[0][0]);
+
+        // A shopper gets no owner questions — those reach the owner-scoped endpoint.
+        $this->assertStringNotContainsString('data-ask-ai-owner-picker', $modal);
     }
 
     /* ================================================================== */
@@ -353,15 +393,13 @@ class PublicCriteriaQuestionsListingPageTest extends TestCase
                   'ask-ai/listing-question', 'api/ask-ai/ask', 'agent-ai/'] as $forbidden) {
             $this->assertStringNotContainsString($forbidden, $card, "The criteria card contains '{$forbidden}'.");
         }
-                  // Batch 3 SUPERSEDES the "<input" and "<a" clauses of this list. The card now
-                  // carries a typed-question box, so an <input> is expected — and a <button>
-                  // with it. What still must hold is stronger and is asserted instead: no
-                  // <form> and no action for anything to submit to, the input carries no
-                  // `name` so a form could not carry it even if one existed, and no fetch,
-                  // XHR or endpoint string appears anywhere in the card.
-        $this->assertStringContainsString('data-ask-ai-ask-input', $card);
-        $this->assertDoesNotMatchRegularExpression('/<input\\b[^>]*\\bname=/', $card,
-            'The typed-question input must carry no name attribute.');
+        // SELECTION-BASED (2026-09-25) superseded Batch 3's typed box: the card is inert
+        // markup again — featured <details> plus one type=button that opens the modal — and
+        // carries no input at all. The modal holds the same precomputed answer.
+        $this->assertDoesNotMatchRegularExpression('/<input\\b/i', $card, 'The card carries no input.');
+        $this->assertDoesNotMatchRegularExpression('/<button\\b(?![^>]*type="button")[^>]*>/', $card,
+            'Every button in the card is type=button.');
+        $this->assertSame('The tenant is looking for rent up to $2,500.', $this->cardAnswers($html, 'tenant')['tenant_max_rent'] ?? null);
     }
 
     /* ================================================================== */

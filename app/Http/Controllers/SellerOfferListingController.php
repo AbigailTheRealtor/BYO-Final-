@@ -116,6 +116,11 @@ class SellerOfferListingController extends Controller
                 : $row->meta_value;
         }
 
+        // The canonical bathroom total for EVERY reader of this page — its rows, its hero and
+        // the Ask AI card below all read this one projected array (BathroomTotal). An older MLS
+        // import's rounded total yields to its own full/half components; nothing is written.
+        $meta = \App\Support\Listing\BathroomTotal::projectListingMeta($meta);
+
         $offerAuction = $this->resolveOfferAuction($auction);
         $calcData     = $this->buildCalcData($meta);
 

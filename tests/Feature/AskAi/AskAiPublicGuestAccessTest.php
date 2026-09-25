@@ -101,7 +101,7 @@ class AskAiPublicGuestAccessTest extends TestCase
     {
         return $this->seller([
             'property_type' => 'Income', 'maximum_budget' => '780000', 'year_built' => '1972',
-            'gross_annual_income' => self::PRIVATE_INCOME,
+            'minimum_annual_net_income' => self::PRIVATE_INCOME /* owner-only: the seller's desired minimum; gross_annual_income became public in the universal coverage audit (2026-09-24) */,
         ]);
     }
 
@@ -268,7 +268,7 @@ class AskAiPublicGuestAccessTest extends TestCase
             ['seller', $seller->id, 'How many bedrooms are there?'],
             ['seller', $seller->id, 'How old is the roof, and what condition is it in?'],
             ['seller', $seller->id, 'What is the racial makeup of this neighborhood?'],
-            ['seller', $income->id, 'What is the gross annual income?'],
+            ['seller', $income->id, 'What is the minimum annual net income?'],
             ['landlord', $landlord->id, 'What is the security deposit?'],
             ['landlord', $landlord->id, 'What is the rent?'],
         ] as [$type, $id, $question]) {
@@ -285,7 +285,7 @@ class AskAiPublicGuestAccessTest extends TestCase
     {
         $income = $this->incomeSeller();
 
-        $this->assertAnswered($this->ask($this->sellerOwner, 'seller', $income->id, 'What is the gross annual income?'), self::PRIVATE_INCOME);
+        $this->assertAnswered($this->ask($this->sellerOwner, 'seller', $income->id, 'What is the minimum annual net income?'), self::PRIVATE_INCOME);
     }
 
     // ── Private, restricted, prohibited, unsupported and ambiguous all refuse ─
@@ -298,7 +298,7 @@ class AskAiPublicGuestAccessTest extends TestCase
         $stranger = User::factory()->create();
 
         foreach ([null, $stranger] as $viewer) {
-            $this->assertRefusedWithout($this->ask($viewer, 'seller', $income->id, 'What is the gross annual income?'), self::PRIVATE_INCOME);
+            $this->assertRefusedWithout($this->ask($viewer, 'seller', $income->id, 'What is the minimum annual net income?'), self::PRIVATE_INCOME);
             $this->assertRefusedWithout($this->ask($viewer, 'buyer', $buyer->id, 'What is the credit score range?'), self::PRIVATE_CREDIT);
             $this->assertRefusedWithout($this->ask($viewer, 'tenant', $tenant->id, 'What is the monthly income?'), self::PRIVATE_INCOME);
             $this->assertRefusedWithout($this->ask($viewer, 'tenant', $tenant->id, 'Does the tenant have a prior eviction?'), self::PRIVATE_EVICTION);
@@ -309,8 +309,8 @@ class AskAiPublicGuestAccessTest extends TestCase
     {
         $income = $this->incomeSeller();
 
-        $this->assertRefusedWithout($this->ask(null, 'seller', $income->id, 'What is the gross annual income?', [
-            'normalized_field_key'    => 'gross_annual_income',
+        $this->assertRefusedWithout($this->ask(null, 'seller', $income->id, 'What is the minimum annual net income?', [
+            'normalized_field_key'    => 'minimum_annual_net_income',
             'viewer_scope'            => 'owner',
             'restricted_owner_answer' => 'INJECTED',
         ]), self::PRIVATE_INCOME);
@@ -391,11 +391,18 @@ class AskAiPublicGuestAccessTest extends TestCase
 
         $html = $this->get(route('offer.listing.seller.view', $listing->id))->assertOk()->getContent();
 
+        // Ask AI is selection-based: the guest opens the modal and SELECTS a verified public
+        // question whose answer is already in the page. No login, no ownership, no text box.
         $this->assertStringContainsString('id="solAiModal"', $html);
         $this->assertStringContainsString('data-bs-target="#solAiModal"', $html);
-        $this->assertStringContainsString('/ask-ai/listing-question', $html);
-        $this->assertStringContainsString('Ask AI answers verified information available about this listing.', $html);
+        $this->assertStringContainsString('data-ask-ai-picker="seller"', $html);
+        $this->assertStringContainsString('data-ask-ai-pick="seller_bedrooms"', $html);
+        $this->assertMatchesRegularExpression('/data-ask-ai-answer-for="seller_bedrooms"[^>]*>[^<]*3 bedrooms/', $html);
         $this->assertStringNotContainsString('available to the listing owner', $html);
+
+        // Owner questions, and the one asset that reaches the endpoint, are the owner's alone.
+        $this->assertStringNotContainsString('data-ask-ai-owner-picker', $html);
+        $this->assertStringNotContainsString('owner-question-picker.js', $html);
     }
 
     // ── Zero model calls on every path ───────────────────────────────────────
@@ -411,7 +418,7 @@ class AskAiPublicGuestAccessTest extends TestCase
             foreach ([
                 [$seller->id, 'How many bedrooms are there?'],
                 [$seller->id, 'Tell me something interesting about the neighbourhood vibe'],
-                [$income->id, 'What is the gross annual income?'],
+                [$income->id, 'What is the minimum annual net income?'],
                 [$income->id, 'Does the description mention a workshop?'],
             ] as [$id, $question]) {
                 $this->ask($viewer, 'seller', $id, $question)->assertOk();

@@ -1057,8 +1057,8 @@ final class MlsFieldCatalog
      * @var array<string,string>
      */
     public const DERIVED = [
-        'BathroomsTotalDecimal'  => 'BathroomsTotalInteger plus BathroomsHalf already shown',
-        'BathroomsTotalInteger'  => 'imported to the bathrooms field; shown there',
+        'BathroomsTotalDecimal'  => 'imported to the bathrooms field as the canonical total (BathroomTotal); shown there',
+        'BathroomsTotalInteger'  => 'the rounded total; the bathrooms field takes the canonical total (BathroomTotal) and uses this only when no partial bathroom is reported',
         'LotSizeSquareFeet'      => 'imported to the lot size field; shown there',
         'LivingArea'             => 'imported to the heated square feet field; shown there',
         'BuildingAreaTotal'      => 'imported to the building size field where the role has one (Seller) and shown there; otherwise kept under Property Details',

@@ -357,16 +357,18 @@ class AskAiTaxRoofBedroomsNlpTest extends TestCase
     }
 
     /**
-     * @dataProvider viewFilePathsProvider
+     * Selection-based Ask AI (2026-09-25) retired the per-view free-text renderer. The one
+     * surface that still renders an Ask AI endpoint response is the owner question picker,
+     * shared by all four views, so that is where source labels must be read correctly.
      */
-    public function test_case_SrcC_blade_view_reads_source_attribution_sources_array(string $role, string $filePath): void
+    public function test_case_SrcC_owner_picker_reads_source_attribution_sources_array(): void
     {
-        $content = $this->fileContents($filePath);
+        $content = $this->fileContents(dirname(__DIR__, 4) . '/public/js/ask-ai/owner-question-picker.js');
 
         $this->assertStringContainsString(
             'data.source_attribution.sources',
             $content,
-            "The {$role} view blade must read data.source_attribution.sources (structured object) to display source labels."
+            'The owner question picker must read data.source_attribution.sources (structured object) to display source labels.'
         );
     }
 
@@ -374,10 +376,11 @@ class AskAiTaxRoofBedroomsNlpTest extends TestCase
     {
         $base = dirname(__DIR__, 4) . '/resources/views/offer-listing';
         return [
-            'seller'   => ['seller',   "{$base}/seller/view.blade.php"],
-            'buyer'    => ['buyer',    "{$base}/buyer/view.blade.php"],
-            'landlord' => ['landlord', "{$base}/landlord/view.blade.php"],
-            'tenant'   => ['tenant',   "{$base}/tenant/view.blade.php"],
+            'seller'       => ['seller',   "{$base}/seller/view.blade.php"],
+            'buyer'        => ['buyer',    "{$base}/buyer/view.blade.php"],
+            'landlord'     => ['landlord', "{$base}/landlord/view.blade.php"],
+            'tenant'       => ['tenant',   "{$base}/tenant/view.blade.php"],
+            'owner picker' => ['owner picker', dirname(__DIR__, 4) . '/public/js/ask-ai/owner-question-picker.js'],
         ];
     }
 

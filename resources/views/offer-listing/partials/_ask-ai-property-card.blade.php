@@ -11,10 +11,13 @@
     knowledge search or language model. This partial therefore contains no <script>, no
     form, no input and no link — keep it that way; the card test scans for all of them.
 
-    The free-text Ask AI modal is open to every viewer (its endpoint authorizes per fact:
-    owner scope for the owner, public scope for everyone else), and shoppers reach it from
-    the page's own Ask AI buttons. This card keeps no trigger for them, so it stays a
-    surface with no request path at all; the owner's shortcut below is its only control.
+    SELECTION-BASED (2026-09-25). Ask AI answers only verified questions derived from listing
+    data, so the viewer SELECTS a question rather than typing one. This card shows the small
+    FEATURED subset (AskAiQuestionPresentation, config/ask_ai_question_presentation.php) and
+    one button that opens the page's Ask AI modal, where every answerable question is listed,
+    searchable and selectable (_ask-ai-question-modal). The card's former typed-question box is
+    gone: search lives in the modal, and it filters questions — it never answers typed text.
+    Featured is a presentation subset only; a question left out of it is still in the modal.
 
     Batch 2d added the two CRITERIA roles to this same card rather than building a second
     one. A buyer or tenant listing is a search request, not a property, so only the heading
@@ -29,6 +32,7 @@
     @param string $heading        optional; defaults to the property wording
     @param string $emptyText      optional; defaults to the property wording
     @param string $subject        optional; the noun in the empty state ('property')
+    @param array  $meta           the listing's decoded meta (property type for the featured set)
 --}}
 @php
     /* A criteria listing describes what someone is LOOKING FOR. Saying "Questions About
@@ -42,18 +46,12 @@
     };
     $askAiPqEmpty = $emptyText ?? "No verified {$askAiPqSubject} questions are available yet.";
 
-    /* One neutral placeholder for all four roles: it describes what the box does, and a
-       role-specific wording would have to be re-checked every time a role's noun changes. */
-    $askAiPqAskPlaceholder = 'Type a question about this listing…';
-    $askAiPqAskLabel       = 'Type a question about this listing';
+    /* Featured subset and full count, from the service's own answerable set. */
+    $askAiPqSet      = \App\Support\AskAi\AskAiQuestionPresentation::build($role, $questions ?? [], $meta ?? []);
+    $askAiPqFeatured = $askAiPqSet['featured'];
+    $askAiPqTotal    = count($askAiPqSet['all']);
 @endphp
 @once
-@push('scripts')
-{{-- A plain static asset: no imports, no build step, and nothing on this page depends on a
-     bundle. Pushed to the layout's script stack so the card markup itself stays free of
-     <script>, which the card's structural tests continue to assert. --}}
-<script src="{{ asset('js/ask-ai/deterministic-question-matcher.js') }}" defer></script>
-@endpush
 @push('styles')
 <style>
 .ask-ai-pq-heading { font-size: .72rem; font-weight: 600; color: #475569; margin-top: -.15rem; }
@@ -91,36 +89,9 @@
 .ask-ai-pq-answer { font-size: .72rem; color: #1e293b; line-height: 1.45; margin: 0; padding: 0 .55rem .45rem; }
 .ask-ai-pq-note { font-size: .66rem; color: #64748b; line-height: 1.4; }
 
-/* Typed question row. Full width of the card, wraps on narrow screens, and never
-   introduces its own scroll area. */
-.ask-ai-pq-ask { margin-top: .55rem; }
-.ask-ai-pq-ask-label {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-}
-.ask-ai-pq-ask-row { display: flex; flex-wrap: wrap; gap: .35rem; align-items: stretch; }
-.ask-ai-pq-ask-input {
-    flex: 1 1 12rem; min-width: 0; font-size: .74rem; line-height: 1.3;
-    padding: .34rem .55rem; border: 1px solid #cbd5e1; border-radius: .5rem;
-    background: #fff; color: #1e293b;
-}
-.ask-ai-pq-ask-input:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
-.ask-ai-pq-ask-button {
-    flex: 0 0 auto; font-size: .72rem; font-weight: 700; padding: .34rem .7rem;
-    border-radius: .5rem; border: 1px solid #2563eb; background: #eff6ff; color: #1d4ed8;
-    cursor: pointer; white-space: nowrap;
-}
-.ask-ai-pq-ask-button:hover { background: #dbeafe; }
-.ask-ai-pq-ask-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
-.ask-ai-pq-ask-status { font-size: .68rem; color: #475569; line-height: 1.4; margin: .3rem 0 0; }
-.ask-ai-pq-ask-status:empty { margin: 0; }
-/* Landlord and tenant carry the teal accent their cards already use. */
-.lol-view-page .ask-ai-pq-ask-button,
-.tcl-view-page .ask-ai-pq-ask-button { border-color: #0f766e; background: #f0fdfa; color: #0f766e; }
-.lol-view-page .ask-ai-pq-ask-button:hover,
-.tcl-view-page .ask-ai-pq-ask-button:hover { background: #ccfbf1; }
-.lol-view-page .ask-ai-pq-ask-input:focus-visible,
-.tcl-view-page .ask-ai-pq-ask-input:focus-visible { outline-color: #0f766e; }
+/* The one control: opens the modal with every answerable question. */
+.ask-ai-pq-open { margin-top: .55rem; }
+.ask-ai-pq-count { font-weight: 500; opacity: .85; }
 /* Landlord and tenant pages use the teal palette their old Ask AI chips used. Buyer keeps
    the blue default above, which is the buyer page's own accent. */
 .lol-view-page .ask-ai-pq-item,
@@ -142,51 +113,35 @@
 </style>
 @endpush
 @endonce
-<div class="{{ $prefix }}-interaction-card" id="{{ $prefix }}-ask-ai-card" data-ask-ai-property-questions="{{ $role }}">
+<div class="{{ $prefix }}-interaction-card" id="{{ $prefix }}-ask-ai-card" data-ask-ai-property-questions="{{ $role }}"
+     data-ask-ai-question-total="{{ $askAiPqTotal }}" data-ask-ai-featured-count="{{ count($askAiPqFeatured) }}">
     <div class="{{ $prefix }}-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
     <div class="{{ $prefix }}-interaction-card-label">Ask AI</div>
-    @if(!empty($questions))
+    @if(!empty($askAiPqFeatured))
         <div class="ask-ai-pq-heading">{{ $askAiPqHeading }}</div>
         <div class="ask-ai-pq-list">
-            @foreach($questions as $q)
+            @foreach($askAiPqFeatured as $q)
             <details class="ask-ai-pq-item" data-property-question="{{ $q['id'] }}"
                      data-question-aliases="{{ implode('|', $q['aliases'] ?? []) }}">
-                <summary class="ask-ai-pq-question">{{ $q['question'] }}</summary>
+                <summary class="ask-ai-pq-question">{{ $q['display'] }}</summary>
                 <p class="ask-ai-pq-answer" data-property-answer="{{ $q['id'] }}">{{ $q['answer'] }}</p>
             </details>
             @endforeach
         </div>
-        {{-- Typed question (Batch 3). Matching happens in the browser against the questions
-             rendered above and nothing else.
-
-             THERE IS NO <form> AND THE INPUT HAS NO name. That is not tidiness: without a
-             form there is nothing for Enter to submit, and without a name there is nothing
-             a form could carry. The typed text cannot reach Laravel even by accident, which
-             is the property the structural tests assert. --}}
-        <div class="ask-ai-pq-ask">
-            <label class="ask-ai-pq-ask-label" for="{{ $prefix }}-ask-ai-ask-input">{{ $askAiPqAskLabel }}</label>
-            <div class="ask-ai-pq-ask-row">
-                <input type="text"
-                       id="{{ $prefix }}-ask-ai-ask-input"
-                       class="ask-ai-pq-ask-input"
-                       data-ask-ai-ask-input
-                       autocomplete="off"
-                       enterkeyhint="search"
-                       maxlength="200"
-                       placeholder="{{ $askAiPqAskPlaceholder }}">
-                <button type="button" class="ask-ai-pq-ask-button" data-ask-ai-ask-button>Find answer</button>
-            </div>
-            <p class="ask-ai-pq-ask-status" role="status" aria-live="polite" data-ask-ai-ask-status></p>
-        </div>
+        <button type="button" class="{{ $prefix }}-interaction-cta {{ $prefix }}-interaction-cta-outline ask-ai-pq-open"
+                data-bs-toggle="modal" data-bs-target="#{{ $modalId }}" data-ask-ai-open-all
+                aria-label="Ask AI: view all {{ $askAiPqTotal }} questions about this listing">
+            <i class="fa-solid fa-robot"></i>@if($askAiPqTotal > count($askAiPqFeatured))View all questions <span class="ask-ai-pq-count">({{ $askAiPqTotal }})</span>@else Ask AI @endif
+        </button>
         <div class="ask-ai-pq-note">Answers come directly from this listing's details.</div>
     @else
         <div class="{{ $prefix }}-interaction-card-helper">{{ $askAiPqEmpty }}</div>
-    @endif
-    @if($viewerIsOwner)
+        @if($viewerIsOwner)
         <button type="button" class="{{ $prefix }}-interaction-cta {{ $prefix }}-interaction-cta-outline"
                 data-bs-toggle="modal" data-bs-target="#{{ $modalId }}"
                 aria-label="Ask AI a question about your listing">
             <i class="fa-solid fa-robot"></i>Ask AI
         </button>
+        @endif
     @endif
 </div>
