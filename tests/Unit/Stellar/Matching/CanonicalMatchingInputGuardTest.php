@@ -88,7 +88,14 @@ class CanonicalMatchingInputGuardTest extends TestCase
     public function test_no_application_code_consumes_the_p1b_classes(): void
     {
         $needles = ['CanonicalListingMatchFactsBuilder', 'ListingMatchResidualFacts', 'BridgeResidualMatchFactsReader', 'recognisedTypeFor'];
-        $allowed = array_merge(self::P1B_FILES, ['app/Support/Listing/PropertyTypeVocabulary.php']);
+        // P1-B2: the offline parity namespace is the one consumer — the runner builds both
+        // facts paths, and the moved allowed-difference registry evaluates AD-5 through the
+        // vocabulary accessor. Neither is live; CanonicalParityArchitectureGuardTest pins that.
+        $allowed = array_merge(self::P1B_FILES, [
+            'app/Support/Listing/PropertyTypeVocabulary.php',
+            'app/Services/Stellar/Matching/Parity/CanonicalMatchingParityRunner.php',
+            'app/Services/Stellar/Matching/Parity/CanonicalParityAllowedDifferences.php',
+        ]);
         $found   = [];
 
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::root() . '/app'));
