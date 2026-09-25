@@ -1,8 +1,12 @@
 # RUNBOOK — Overture v2 corpus load (Class-2 operator procedure)
 
-**Status: AUTHORED. Read-only preflight is the only stage that may run. The write stages are
-disabled** by `REHEARSAL.md` (`rehearsal_status: NOT_RUN`) and will refuse until the full-size
-rehearsal in §4 has passed and been recorded through a reviewed commit.
+**Status: whether a write stage may run is decided by the machine-readable gate block in
+`REHEARSAL.md`, never by this sentence.** A write stage (`migrate`, `import`) is permitted only
+when that block is `rehearsal_status: PASSED` **and** the rehearsal-validity gate (the `gate` job's
+"full-size PostGIS 3.6.x rehearsal" step, applied by hand under §6) accepts the candidate SHA —
+i.e. nothing load-relevant changed between `rehearsed_commit` and the commit being run. Otherwise
+the read-only preflight is the only stage that may run. A write stage additionally requires the
+per-phase human approval of §6.
 
 Loads the validated Overture v2 corpus **`overture-2026-08-19.0-fl-r2`** into the live
 `pgsql_spatial` cluster (Crunchy Bridge PostgreSQL 16 + PostGIS 3.6) beside the active v1 corpus.
@@ -102,6 +106,19 @@ those values with the runner's `::add-mask::` command (and does nothing outside 
 `bin/preflight.sh` never prints `psql`'s raw error text — a connection failure is a fixed message,
 and a failed check shows only the committed script's own error line.
 
+**The URL is never a process argument.** Handing the URL to psql as its connection argument would
+put the whole connection string, password included, in psql's argv, which any user on the host (and the host of
+a container) can read with `ps` while psql runs. Every psql in this procedure therefore goes through
+`bin/spatial_psql.sh`: it refuses the same ambient routing variables as the preflight *before*
+doing anything else, accepts only `-X -q -A -t -At -v -f -c` (no host, database, user, positional
+conninfo or `service=`), validates the URL with the same `bin/spatial_target.py` the preflight
+uses, writes a libpq **service file** (mode 0600, in a fresh 0700 `mktemp -d` directory under
+`/tmp`), starts psql with `PGSERVICEFILE` / `PGSERVICE` set in **that child's environment only**,
+and deletes the directory on exit. `php artisan` reads the URL from its environment
+(`config/database.php`), never from argv. Never pass the URL variable to psql (or any other
+command) as an argument anywhere in this procedure; `OvertureV2OperatorLoadGuardTest` fails if it
+appears.
+
 **Do not change the Crunchy Bridge network allowlist from this procedure.** If runners cannot reach
 the cluster, §6 applies.
 
@@ -124,7 +141,15 @@ instance.
    under the real name — either the v1 pipeline, or a synthetic `places_p_overture_2026_06_17_0_fl`
    partition plus an `active` `overture-places` `corpus_imports` row; record which. Then apply the
    **three v2 migrations with the exact command of §7** (one batch). Take `sql/v1_snapshot.sql`
-   before the v2 migrations.
+   before the v2 migrations, and run `sql/migration_ledger.sql` before (`ledger_phase=before`) and
+   after (`ledger_phase=after`, `previous_max_batch`) them → `LEDGER OK` both times.
+
+   **The scratch server is reached with plain `psql` and a scratch-only credential**, never through
+   `bin/spatial_psql.sh` or `bin/preflight.sh`: both refuse any host that is not
+   `*.db.postgresbridge.com`, and that allowlist is not relaxed for a rehearsal. The helper is
+   instead covered by `OvertureV2OperatorLoadGuardTest` (its argv, service file, cleanup and
+   refusals, and a real libpq read of the file), and is first exercised against the live cluster by
+   the **read-only** preflight, which must pass before any write stage is approved.
 2. **Full import.** The real extraction (§8 steps 1–3, byte-identical SHA-256s), the dry run, then
    `--write --database=pgsql_spatial`. Expect `IMPORTED`.
 3. **Reconciliation.** `sql/verify_v2_load.sql` → every `PASS`, `VERIFY OK` (52,716 places, 11,082
@@ -182,9 +207,52 @@ The fallback is a **dedicated operator container or machine**, never the Replit 
 - its egress address allowed by Crunchy through the normal, separately-approved infrastructure
   process — not from this procedure.
 
+The source is a `git archive` of the pinned SHA, mounted **read-only**. One vendor package
+(`dipeshsukhia/laravel-country-state-city-data`) rewrites four files on every artisan boot —
+`app/Models/Country.php`, `app/Models/State.php`, `app/Models/City.php` and
+`database/seeders/CountryStateCityTableSeeder.php` — so those four, and only those, are writable
+single-file overlays populated from the commit's own blobs; afterwards each must still equal its
+blob before the live run and again afterwards. Prove the layout boots with no credential and
+`--network none` (`php artisan --version`) before the live run. No Docker socket, no
+home-directory mount, no `.env`, no other secret. `/tmp` is a **tmpfs** (the helper's service
+file lives there and must never reach a disk that outlives the container).
+
+**The secret enters the container by `--env-file` only** — a 0600 file outside the source tree,
+created by the approver and deleted after the run — or by a name-only `-e SPATIAL_DATABASE_URL`
+inherited from a clean shell. **Never `-e SPATIAL_DATABASE_URL=<value>`**: that puts the URL in
+the `docker` command's own argv on the host, the exact exposure `bin/spatial_psql.sh` removes.
+
+This section is the write path whenever §3 cannot be satisfied — including a repository with a
+single collaborator — not only after a connectivity failure.
+
 Then run exactly the commands of the corresponding workflow job, in the same order, with the same
-gates applied **by hand**: `REHEARSAL.md` PASSED for this code, the typed confirmations of §10, and
-a second person reviewing each write. Record every command and its output.
+gates applied **by hand**: `REHEARSAL.md` PASSED and the rehearsal-validity gate accepting this SHA,
+the typed confirmations of §10, and the approval model below. Record every command and its output.
+
+**Approval model for this fallback (explicit, because GitHub cannot supply it here).** The
+repository has one collaborator, so *Required reviewers* + *Prevent self-review* cannot be
+satisfied meaningfully, and **no self-reviewing GitHub protection may be configured as a
+substitute**. The roles are:
+
+- **Claude — operator / executor.** Prepares and runs the commands.
+- **Abigail — independent human reviewer / approver.** Approves each write phase.
+
+Reaching a ready state authorises nothing: **no production write executes merely because the
+operator is ready.** For EACH write phase — the schema migration (§7) and, separately, the corpus
+import (§8) — the operator:
+
+1. prepares the exact command, the expected pre-state and the expected post-state;
+2. **STOPS**;
+3. receives Abigail's explicit approval for that phase;
+4. executes only the approved phase;
+5. verifies it (the phase's read-only checks);
+6. **STOPS again** before the next write phase.
+
+Each approval is written — in the operator session or the PR — names the phase and the pinned
+SHA, and is recorded with its timestamp in the run's evidence.
+Approval of the migration is not approval of the import, and neither is approval of activation,
+which this procedure never performs. Any recovery action (§7 rollback or rerun, §11) is itself a
+write and needs its own approval.
 
 ## 7. Stage `migrate` — WRITE (disabled until §4)
 
@@ -198,12 +266,20 @@ Sequence: `gate` (confirmations, rehearsal evidence) → `preflight` (`v2_state=
 approval) → `migrate` (reviewer approval):
 
 1. `v1_snapshot.sql` → before.
-2. `migrate --pretend` with the three paths — the exact DDL, printed for the reviewer.
-3. `migrate --database=pgsql_spatial` with **exactly** the three `--path` values
+2. `migration_ledger.sql` with `ledger_phase=before` → `LEDGER OK` (exactly the eleven core rows,
+   no August migration) and `PREVIOUS_MAX_BATCH=<n>`, recorded.
+3. `migrate --pretend` with the three paths — the exact DDL, printed for the reviewer.
+4. `migrate --database=pgsql_spatial` with **exactly** the three `--path` values
    (`…000001_spatial_overture_v2_create_corpora.php`, `…000002_…_create_places.php`,
    `…000003_…_create_chain_memberships.php`) → one new batch holding only them.
-4. `preflight.sh --v2-state=empty` → three empty v2 tables; ledger = the eleven + the three.
-5. `v1_snapshot.sql` → after; `diff` must be empty.
+5. `preflight.sh --v2-state=empty` → three empty v2 tables; ledger = the eleven + the three.
+6. `migration_ledger.sql` with `ledger_phase=after` and `previous_max_batch=<n>` → `LEDGER OK`:
+   exactly the three v2 migrations were added, all three in batch **n + 1**, nothing else in or
+   above that batch, neither August migration applied; and the eleven core `LEDGER_ROW` lines,
+   batches included, are byte-identical to step 2's.
+7. `v1_snapshot.sql` → after; `diff` must be empty.
+
+Any failed step is a **STOP and report** — no automatic rollback, rerun or repair.
 
 **Never** `--path=database/migrations/spatial` (that would also apply the two August address
 migrations), never `--step`, never a rollback without the three paths. (`docs/spatial/overture-v2-corpus-schema.md`
@@ -219,10 +295,15 @@ php artisan migrate:rollback --database=pgsql_spatial \
   --path=database/migrations/spatial/2026_09_24_000002_spatial_overture_v2_create_places.php \
   --path=database/migrations/spatial/2026_09_24_000003_spatial_overture_v2_create_chain_memberships.php
 ```
-Each migration runs in its own transaction: if **1** fails nothing was applied — diagnose and rerun;
-if **2** or **3** fails the earlier ones stay applied and empty — fix and rerun the same command
-(every statement is `IF NOT EXISTS`), or roll back with the three paths. This rollback is a manual,
-reviewed operator action; the workflow never performs it.
+Each migration runs in its own transaction, but **the three are not atomic as a group**, and
+Laravel 8 writes each ledger row *after* its migration's transaction commits. If **1** fails
+nothing was applied. If **2** or **3** fails, the earlier ones stay applied (empty) and logged in
+batch n + 1. If the connection drops between a commit and its ledger row, a table can exist with
+no ledger row. In every such case: **STOP and report.** A rerun would log the remaining migrations
+in batch **n + 2** (so `migration_ledger.sql` L04 fails, deliberately); a path-scoped rollback undoes
+only the **last** batch. Which recovery to take — rerun (every statement is `IF NOT EXISTS`) or the
+three-path rollback, possibly more than once — is decided by the reviewer and approved as its own
+write (§6). The workflow never performs it.
 
 ## 8. Stage `import` — WRITE (disabled until §4 and §7)
 
@@ -269,7 +350,9 @@ snapshot against a completed load, at any time.
 | 6 | Corpus version | typed `confirm_corpus_version`; the importer's contract |
 | 7 | Activation is not part of this | typed `confirm_no_activation`; V12 |
 | 8 | Code = rehearsed code | the `gate` job's diff against `rehearsed_commit` |
-| 9 | A second person approves each write job | the Environment's required reviewers |
+| 9 | A second person approves each write job | the Environment's required reviewers; under the §6 fallback, Abigail's explicit approval of each write phase, with the operator stopping before and after it |
+| 10 | The three v2 migrations are one batch = previous maximum + 1 | `migration_ledger.sql` before/after (L01–L05) and the core-row diff |
+| 11 | The URL is never a process argument | `bin/spatial_psql.sh`; `OvertureV2OperatorLoadGuardTest` |
 
 ## 11. Recovery
 

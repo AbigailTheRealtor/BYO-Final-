@@ -11,7 +11,7 @@ SET default_transaction_read_only = on;
 --
 -- Each check prints `PASS <id>` or prints `FAIL <id>` and stops psql with an error.
 --
---   psql "$SPATIAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f verify_v2_load.sql
+--   bin/spatial_psql.sh -X -q -v ON_ERROR_STOP=1 -f sql/verify_v2_load.sql   (never the URL as an argument)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 \set ON_ERROR_STOP on
