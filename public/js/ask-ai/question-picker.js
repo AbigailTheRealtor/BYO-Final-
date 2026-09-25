@@ -126,6 +126,8 @@
             Array.prototype.forEach.call(root.querySelectorAll('[data-ask-ai-pick]'), function (b) {
                 b.setAttribute('aria-pressed', b.getAttribute('data-ask-ai-pick') === id ? 'true' : 'false');
             });
+            // An owner answer's disclosure / source lines belong to that answer only.
+            Array.prototype.forEach.call(panel.querySelectorAll('[data-ask-ai-owner-note]'), function (n) { n.remove(); });
             panelQ.textContent = entry.question;
             panelA.textContent = entry.answer;
             panel.hidden = false;
