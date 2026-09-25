@@ -62,17 +62,18 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
     /** @test */
     public function a_material_explicit_advantage_is_never_overridden_by_maximum_taste(): void
     {
-        // B's InteriorFeatures were read and name no quartz: a checked miss, not unknown.
-        $a = $this->bridge(['white_cabinets'], [], ['InteriorFeatures' => ['Quartz Counters']]);
-        $b = $this->bridge(['natural_light', 'updated_kitchen'], [], ['InteriorFeatures' => ['Walk-In Closet(s)']]);
+        // B's Cooling was read — it names THE cooling system, so it can say no to central air —
+        // and names another system: a checked miss, not unknown.
+        $a = $this->bridge(['white_cabinets'], [], ['Cooling' => ['Central Air']]);
+        $b = $this->bridge(['natural_light', 'updated_kitchen'], [], ['Cooling' => ['Wall/Window Unit(s)']]);
 
-        $payload = $this->payload(['quartz_countertops']);
+        $payload = $this->payload(['central_air']);
         [$scoreA, $scoreB] = $this->scores([$a, $b], $payload);
 
         $this->assertGreaterThanOrEqual(3, $scoreA - $scoreB, 'one pick with no other amenity expressed is worth the whole category');
 
         $result = TasteDnaReranker::rerank($this->tasteAgainstA(), [
-            new TasteRerankCandidate('A', $scoreA, new TasteListingFacts(tagKeys: ['quartz_countertops', 'white_cabinets'])),
+            new TasteRerankCandidate('A', $scoreA, new TasteListingFacts(tagKeys: ['central_air', 'white_cabinets'])),
             new TasteRerankCandidate('B', $scoreB, new TasteListingFacts(tagKeys: ['natural_light', 'updated_kitchen'])),
         ]);
 
@@ -90,18 +91,19 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
     public function a_small_explicit_advantage_can_be_overturned_so_the_bypass_remains(): void
     {
         // Eight picks. A has three of them; B has two — the two Taste loves.
-        $picks = ['quartz_countertops', 'white_cabinets', 'gas_range', 'natural_light', 'updated_kitchen', 'private_pool', 'fireplace', 'walk_in_closet'];
-        $aTags = ['quartz_countertops', 'white_cabinets', 'gas_range'];
+        $picks = ['central_air', 'white_cabinets', 'gas_range', 'natural_light', 'updated_kitchen', 'private_pool', 'fireplace', 'spa'];
+        $aTags = ['central_air', 'white_cabinets', 'gas_range'];
         $bTags = ['natural_light', 'updated_kitchen'];
 
-        // Checkable picks only. A: quartz, cabinets, gas range present; pool and fireplace a
-        // structured No, walk-in closet not in its populated InteriorFeatures → 3 of 6; natural
-        // light and updated kitchen unknown. B: natural light and updated kitchen present;
-        // quartz, fireplace and walk-in closet checked and not listed → 2 of 5; cabinets, gas
-        // range and pool unknown (no rule / no Appliances / no pool column).
+        // Checkable picks only. A: central air, cabinets, gas range present; pool, fireplace and
+        // spa a structured No → 3 of 6; natural light and updated kitchen unknown. B: natural
+        // light and updated kitchen present; central air ruled out by its Cooling, fireplace and
+        // spa a structured No → 2 of 5; cabinets, gas range and pool unknown (no rule / no
+        // Appliances / no pool column). Every miss is an explicit answer — a checklist omission
+        // would be unknown, never a miss.
         $a = $this->bridge(['white_cabinets'], ['pool_private_yn' => false],
-            ['InteriorFeatures' => ['Quartz Counters'], 'Appliances' => ['Range Gas'], 'FireplaceYN' => false]);
-        $b = $this->bridge($bTags, ['pool_private_yn' => null], ['InteriorFeatures' => ['Split Bedroom']]);
+            ['Cooling' => ['Central Air'], 'Appliances' => ['Range Gas'], 'FireplaceYN' => false, 'SpaYN' => false]);
+        $b = $this->bridge($bTags, ['pool_private_yn' => null], ['Cooling' => ['Wall/Window Unit(s)'], 'FireplaceYN' => false, 'SpaYN' => false]);
         [$scoreA, $scoreB] = $this->scores([$a, $b], $this->payload($picks));
 
         // 10 × 3/6 against 10 × 2/5: A leads, by less than three points.
@@ -127,16 +129,16 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
     public function one_pick_beside_every_structured_amenity_reaches_the_three_point_floor(): void
     {
         $structured = ['pool_private_yn' => true, 'garage_yn' => true, 'waterfront_yn' => true, 'view_yn' => true];
-        $a = $this->bridge([], $structured, ['InteriorFeatures' => ['Quartz Counters']]);
-        $b = $this->bridge(['natural_light', 'updated_kitchen'], $structured, ['InteriorFeatures' => ['Walk-In Closet(s)'], 'Appliances' => ['Range Gas']]);
+        $a = $this->bridge([], $structured, ['Cooling' => ['Central Air']]);
+        $b = $this->bridge(['natural_light', 'updated_kitchen'], $structured, ['Cooling' => ['Wall/Window Unit(s)'], 'Appliances' => ['Range Gas']]);
 
-        $payload = $this->payload(['quartz_countertops'], ['wants_pool' => true, 'wants_garage' => true, 'wants_waterfront' => true, 'wants_any_view' => true]);
+        $payload = $this->payload(['central_air'], ['wants_pool' => true, 'wants_garage' => true, 'wants_waterfront' => true, 'wants_any_view' => true]);
         [$scoreA, $scoreB] = $this->scores([$a, $b], $payload);
 
         $this->assertSame(3, $scoreA - $scoreB);
 
-        $result = TasteDnaReranker::rerank($this->tasteAgainstA(['quartz_countertops']), [
-            new TasteRerankCandidate('A', $scoreA, new TasteListingFacts(tagKeys: ['quartz_countertops'])),
+        $result = TasteDnaReranker::rerank($this->tasteAgainstA(['central_air']), [
+            new TasteRerankCandidate('A', $scoreA, new TasteListingFacts(tagKeys: ['central_air'])),
             new TasteRerankCandidate('B', $scoreB, new TasteListingFacts(tagKeys: ['natural_light', 'updated_kitchen', 'gas_range'])),
         ]);
 
@@ -160,8 +162,8 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         $lazy->method('importForCriteria')->willReturn(LazyImportResult::cached(0));
         $this->app->instance(LazyBridgeImportService::class, $lazy);
 
-        $plain = $this->bridge([], [], ['InteriorFeatures' => ['Walk-In Closet(s)'], 'Appliances' => ['Range Gas']]);
-        $match = $this->bridge([], [], ['InteriorFeatures' => ['Quartz Counters']]);
+        $plain = $this->bridge([], [], ['Cooling' => ['Wall/Window Unit(s)'], 'Appliances' => ['Range Gas']]);
+        $match = $this->bridge([], [], ['Cooling' => ['Central Air']]);
 
         $user = User::factory()->create(['user_type' => 'buyer']);
         $criteriaId = DB::table('buyer_agent_auctions')->insertGetId([
@@ -174,7 +176,7 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         }
         DB::table('smart_tag_seeker_preferences')->insert([
             'subject_type' => 'buyer_offer_listing', 'subject_id' => $criteriaId, 'user_id' => $user->id,
-            'seeker_role' => 'buyer', 'tag_key' => 'quartz_countertops', 'context' => 'residential.sale',
+            'seeker_role' => 'buyer', 'tag_key' => 'central_air', 'context' => 'residential.sale',
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
@@ -185,7 +187,7 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         $this->assertSame([$match->listing_key, $plain->listing_key], array_column($cards, 'listing_key'));
         $this->assertSame(10, $cards[0]['total_score'] - $cards[1]['total_score']);
         $this->assertSame(TasteRerankOutcome::EXPLICIT_CRITERIA, $response->viewData('tasteStatus'));
-        $response->assertSee('Has 1 of your 1 selected features: Quartz Countertops');
+        $response->assertSee('Has 1 of your 1 selected features: Central Air');
     }
 
     // ------------------------------------------------------------------ helpers
@@ -194,7 +196,7 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
      * The strongest Taste the reranker acts on, all of it against A: stated,
      * established likes for what B has and dislikes for what A has.
      */
-    private function tasteAgainstA(array $aTags = ['quartz_countertops', 'white_cabinets']): TasteProfile
+    private function tasteAgainstA(array $aTags = ['central_air', 'white_cabinets']): TasteProfile
     {
         $signals = [
             $this->signal('natural_light', TasteDirection::Positive),

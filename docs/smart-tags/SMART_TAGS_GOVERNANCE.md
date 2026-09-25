@@ -357,9 +357,11 @@ listings have no score, and a Bridge row is never merged with a BYO listing that
 
 **Three answers per selected tag, and only two are scored.** PRESENT (a resolved present row) earns;
 KNOWN ABSENT (a resolved absent row, or — with no row — a governed structured Bridge rule for the tag in
-this context whose source field is populated on this listing, under a derivation current for exactly
-these inputs, and no conflict drop or contradiction) earns nothing; UNKNOWN (everything else: no rule,
-empty field, never derived, stale, pending/inactive/retired) is excluded from numerator AND denominator.
+this context that is DECLARED ABLE TO RULE IT OUT, whose source field carries an informative value on this
+listing, under a derivation current for exactly these inputs, and no conflict drop or contradiction) earns
+nothing; UNKNOWN (everything else: no rule, a field that cannot say no, only "Other", a masking generic
+value, empty field, never derived, stale, pending/inactive/retired) is excluded from numerator AND
+denominator.
 Share = matched ÷ checkable; nothing checkable leaves the listing's historical score untouched — no bonus,
 no penalty. Scoring unknown as a miss would mark a listing down for data the MLS never sent; scoring a
 checked miss as unknown would remove the picks' ranking power, because vocabulary tags never store an
@@ -367,6 +369,25 @@ explicit "absent". Capability is read from the rules, never from observed freque
 misses only under "Does not list: …"; all unknown is "Feature details not available — your selected
 features could not be checked for this home"; a mix adds "Some selected features could not be checked:
 …". Inventory-wide missing enrichment is handled by the matching gates, not by scoring.
+
+**Presence and absence are separate claims (`bridge.negative_evidence`).** A rule that can emit a tag
+cannot necessarily rule it out. Each Bridge rule declares, per tag, whether it may prove absence, read only
+through `SmartTagSourceRules::negativeEvidence()` and only by `BridgeSmartTagCheckability`; derivation never
+reads it. **Fail-closed:** an undeclared rule or tag can never produce a known miss. **Only sources whose
+answer IS the question are declared**: Y/N fields (false = no, null = unknown); counts where zero means none
+(STELLAR_DockLiftCap is a capacity and is not declared); single-select enums (Furnished, OccupantType); and
+status/type fields that name the one thing from a small set of alternatives — SpecialListingConditions
+("None" = a standard sale; auction is checkable), PropertyCondition, Cooling, WaterSource, Sewer,
+RoadSurfaceType — plus Fencing, whose only possible "no" is an explicit "None". **Every sparse "select all
+that apply" list is presence-only**: an agent ticks about 4 of Stellar's 38 InteriorFeatures values, so a
+value left out is not a "no" — a matching value still derives PRESENT, and omission is UNKNOWN (InteriorFeatures,
+ExteriorFeatures, Community/Association amenities, Appliances, Lot, Patio, AdditionalRooms, OtherStructures,
+Parking, Security, Utilities, Electric, Flooring, Laundry, OwnerPays, the water lists, …). `government_owned` is
+never ruled out — its only value, "HUD Owned", is a subset of government ownership. `uninformative` tokens
+("Other", WaterSource "See Remarks") make a field that holds only them no evidence; `masked_by` generic values
+("Zoned" for central air, "Private" for well water) leave that tag unknown on that row. A mask only ever turns
+a miss into unknown and never creates a present. `validationErrors()` refuses a declaration that names a rule
+that does not exist, a tag the rule cannot emit, or a token the rule already reads as a feature.
 
 **Deduplication.** `BuyerMatchScorer::STRUCTURED_TAG_EQUIVALENTS` is the one, narrow map between the
 legacy structured criteria and the tag derived from the same column: `private_pool`↔pool,

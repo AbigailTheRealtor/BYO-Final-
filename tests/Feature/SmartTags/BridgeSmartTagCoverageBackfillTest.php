@@ -615,33 +615,43 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
 
     /**
      * Checkability comes from the GOVERNED RULES: quartz has a structured Bridge rule (it may be
-     * checked even with zero rows anywhere); updated_kitchen has none (never checkable, whatever
-     * its count). A populated field is a known miss; an empty or absent one is unknown.
+     * PRESENT even with zero rows anywhere); updated_kitchen has none (never checkable, whatever
+     * its count). A known miss additionally needs a rule DECLARED able to say no. Cooling names
+     * THE cooling system, so it can rule central air out; InteriorFeatures is a sparse checklist,
+     * so its silence rules out neither quartz nor vaulted ceilings. An empty or absent field is
+     * unknown for all of them.
      *
      * @test
      */
     public function checkability_follows_the_governed_rule_and_the_populated_field(): void
     {
-        $this->assertTrue(BridgeSmartTagCheckability::hasStructuredCapability('quartz_countertops', SmartTagContext::ResidentialSale));
-        $this->assertFalse(BridgeSmartTagCheckability::hasStructuredCapability('updated_kitchen', SmartTagContext::ResidentialSale));
-        $this->assertFalse(BridgeSmartTagCheckability::hasStructuredCapability('natural_light', SmartTagContext::ResidentialSale));
+        $ctx = SmartTagContext::ResidentialSale;
+        $this->assertTrue(BridgeSmartTagCheckability::hasStructuredCapability('quartz_countertops', $ctx));
+        $this->assertFalse(BridgeSmartTagCheckability::hasNegativeCapability('quartz_countertops', $ctx));
+        $this->assertFalse(BridgeSmartTagCheckability::hasNegativeCapability('vaulted_ceilings', $ctx));
+        $this->assertTrue(BridgeSmartTagCheckability::hasNegativeCapability('central_air', $ctx));
+        $this->assertFalse(BridgeSmartTagCheckability::hasStructuredCapability('updated_kitchen', $ctx));
+        $this->assertFalse(BridgeSmartTagCheckability::hasStructuredCapability('natural_light', $ctx));
 
-        $has      = $this->bridgeRow(['raw' => ['InteriorFeatures' => ['Quartz Counters']]]);
-        $lacks    = $this->bridgeRow(['raw' => ['InteriorFeatures' => ['Walk-In Closet(s)']]]);
-        $empty    = $this->bridgeRow(['raw' => ['InteriorFeatures' => []]]);
-        $missing  = $this->bridgeRow(['raw' => ['Cooling' => ['Central Air']]]);
+        $has      = $this->bridgeRow(['raw' => ['InteriorFeatures' => ['Quartz Counters', 'Vaulted Ceiling(s)'], 'Cooling' => ['Central Air']]]);
+        $lacks    = $this->bridgeRow(['raw' => ['InteriorFeatures' => ['Walk-In Closet(s)'], 'Cooling' => ['Wall/Window Unit(s)']]]);
+        $empty    = $this->bridgeRow(['raw' => ['InteriorFeatures' => [], 'Cooling' => []]]);
+        $missing  = $this->bridgeRow(['raw' => ['Heating' => ['Central']]]);
         $this->derive(['--source' => 'bridge']);
 
-        $index = ListingSmartTagIndex::forBridgeRows([$has, $lacks, $empty, $missing], ['quartz_countertops', 'updated_kitchen']);
+        $picks = ['quartz_countertops', 'vaulted_ceilings', 'central_air', 'updated_kitchen'];
+        $index = ListingSmartTagIndex::forBridgeRows([$has, $lacks, $empty, $missing], $picks);
 
-        $this->assertSame(['quartz_countertops'], $index->factsFor($has)->presentKeys);
-        $this->assertSame(['quartz_countertops'], $index->factsFor($lacks)->knownAbsentKeys, 'populated field, rule did not name it');
+        $this->assertSame(['quartz_countertops', 'vaulted_ceilings', 'central_air'], $index->factsFor($has)->presentKeys, 'presence needs no negative capability');
+        $this->assertSame(['central_air'], $index->factsFor($lacks)->knownAbsentKeys, 'only the field that names the system says no');
         foreach ([$empty, $missing] as $row) {
             $this->assertSame([], $index->factsFor($row)->presentKeys);
             $this->assertSame([], $index->factsFor($row)->knownAbsentKeys, 'an empty or missing field is unknown');
         }
         foreach ([$has, $lacks, $empty, $missing] as $row) {
             $this->assertNotContains('updated_kitchen', $index->factsFor($row)->knownAbsentKeys, 'no structured rule: never a miss');
+            $this->assertNotContains('quartz_countertops', $index->factsFor($row)->knownAbsentKeys, 'a checklist omission is never a miss');
+            $this->assertNotContains('vaulted_ceilings', $index->factsFor($row)->knownAbsentKeys, 'a checklist omission is never a miss');
         }
     }
 
@@ -675,7 +685,8 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
     /**
      * The report splits seeker tags by governed structured capability per context and, when
      * simulating, counts each listing × checkable tag as present, known non-match, field
-     * unavailable, or unknown for another reason. Keys and counts only — no MLS value.
+     * unavailable, a field that cannot say no, only "Other", masked by a generic value, or
+     * unknown for another reason. Keys and counts only — no MLS value.
      *
      * @test
      */
@@ -684,6 +695,9 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
         $this->bridgeRow(['raw' => ['InteriorFeatures' => ['Quartz Counters']]]);
         $this->bridgeRow(['raw' => ['InteriorFeatures' => ['Walk-In Closet(s)']]]);
         $this->bridgeRow(['raw' => ['Cooling' => ['Central Air']]]);
+        $this->bridgeRow(['raw' => ['Cooling' => ['Wall/Window Unit(s)']]]);
+        $this->bridgeRow(['raw' => ['Cooling' => ['Other']]]);
+        $this->bridgeRow(['raw' => ['Cooling' => ['Zoned']]]);
 
         $stored = $this->coverage()['checkability'];
         $this->assertFalse($stored['simulated']);
@@ -697,12 +711,18 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
         $this->assertContains('natural_light', $row['not_structured_tags']);
         $this->assertNotContains('quartz_countertops', $row['not_structured_tags'], 'a rule exists, whatever today\'s count');
         $this->assertSame($row['seeker_tags_structured'], $row['structured_with_present'] + $row['structured_zero_present']);
+        $this->assertContains('quartz_countertops', $row['presence_only_tags'], 'a checklist can say yes, never no');
+        $this->assertNotContains('central_air', $row['presence_only_tags']);
+        $this->assertSame($row['seeker_tags_structured'] - count($row['presence_only_tags']), $row['seeker_tags_negative_checkable']);
 
         $checks = $row['listing_tag_checks'];
-        $this->assertSame(3 * $row['seeker_tags_structured'], array_sum($checks), 'every listing × structured tag is counted once');
+        $this->assertSame(6 * $row['seeker_tags_structured'], array_sum($checks), 'every listing × structured tag is counted once');
         $this->assertGreaterThan(0, $checks['present']);
-        $this->assertGreaterThan(0, $checks['known_non_match']);
+        $this->assertGreaterThan(0, $checks['known_non_match'], 'Cooling names another system: central air ruled out');
         $this->assertGreaterThan(0, $checks['source_field_unavailable']);
+        $this->assertGreaterThan(0, $checks['field_cannot_say_no'], 'InteriorFeatures populated, quartz neither present nor ruled out');
+        $this->assertSame(1, $checks['uninformative_only'], 'Cooling holding only "Other" says nothing about central air');
+        $this->assertSame(1, $checks['masked_by_generic_value'], '"Zoned" may be central air');
 
         $json = (string) json_encode($report);
         $this->assertStringNotContainsString('Walk-In Closet', $json, 'no raw MLS value in the report');
