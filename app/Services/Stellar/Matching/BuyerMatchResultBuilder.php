@@ -7,6 +7,7 @@ use App\Services\SmartTags\Seeker\SeekerSmartTagMatch;
 use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Support\Matching\MonthlyEquivalent;
+use App\Support\SmartTags\SmartTagTaxonomy;
 
 class BuyerMatchResultBuilder
 {
@@ -119,6 +120,37 @@ class BuyerMatchResultBuilder
         }
 
         return sprintf('Matches %d of %d checked selected features: %s', $features->matchedCount(), $features->checkableCount(), $matched);
+    }
+
+    /**
+     * Attach governed compliance notices to an explanation entry. The notice text is the
+     * Smart Tag definition's own `compliance.notice` — never written here — and the key is
+     * added only when there is one, so every other entry keeps its exact shape.
+     *
+     * @param array<string, mixed> $entry
+     * @param list<string>         $notices
+     * @return array<string, mixed>
+     */
+    private static function withNotices(array $entry, array $notices): array
+    {
+        if ($notices !== []) {
+            $entry['notices'] = $notices;
+        }
+
+        return $entry;
+    }
+
+    /**
+     * The notice every pet-policy statement must carry: the `pets_allowed` definition's,
+     * so the structured pet lines say exactly what the Smart Tag result says.
+     *
+     * @return list<string>
+     */
+    private static function petPolicyNotices(): array
+    {
+        $notice = SmartTagTaxonomy::get('pets_allowed')?->complianceNotice;
+
+        return $notice !== null && trim($notice) !== '' ? [$notice] : [];
     }
 
     /**
@@ -276,12 +308,12 @@ class BuyerMatchResultBuilder
         if ($features !== null) {
             $unmatched = $features->knownAbsentLabels();
             if ($unmatched !== []) {
-                $tradeoffs[] = [
+                $tradeoffs[] = self::withNotices([
                     'dimension'   => 'amenities',
                     'label'       => 'Does not list: ' . self::featureList($unmatched),
                     'fields_used' => [],
                     'deviation'   => 'selected_features_not_listed',
-                ];
+                ], $features->knownAbsentNotices());
             }
         }
 
@@ -289,12 +321,12 @@ class BuyerMatchResultBuilder
         if ($criteria->wantsPetFriendly === true) {
             $petsAllowed = $facts->petsAllowed;
             if ($petsAllowed !== null && strtolower(trim($petsAllowed)) === 'no') {
-                $tradeoffs[] = [
+                $tradeoffs[] = self::withNotices([
                     'dimension'   => 'lifestyle',
                     'label'       => 'Pet policy restricts pets in this community',
                     'fields_used' => ['pets_allowed'],
                     'deviation'   => 'pets_not_allowed',
-                ];
+                ], self::petPolicyNotices());
             }
         }
 
@@ -338,11 +370,11 @@ class BuyerMatchResultBuilder
 
         // Pet policy unknown
         if ($criteria->wantsPetFriendly === true && $facts->petsAllowed === null) {
-            $flags[] = [
+            $flags[] = self::withNotices([
                 'type'     => 'pet_policy_unknown',
                 'severity' => 'info',
                 'label'    => 'Pet policy not confirmed in listing data — verify with listing agent or HOA.',
-            ];
+            ], self::petPolicyNotices());
         }
 
         // HOA fee not listed
@@ -465,15 +497,15 @@ class BuyerMatchResultBuilder
         // nothing — unknown is left out of the score — and the seeker is told which, rather than
         // being told a feature is missing. None checkable: the whole selection is unknown here.
         if ($seekerFeatures !== null && ! $seekerFeatures->hasCheckablePicks()) {
-            $missing[] = [
+            $missing[] = self::withNotices([
                 'field' => 'selected_features',
                 'label' => 'Feature details not available — your selected features could not be checked for this home',
-            ];
+            ], $seekerFeatures->unknownNotices());
         } elseif ($seekerFeatures !== null && ($unknown = $seekerFeatures->unknownLabels()) !== []) {
-            $missing[] = [
+            $missing[] = self::withNotices([
                 'field' => 'selected_features',
                 'label' => 'Some selected features could not be checked: ' . self::featureList($unknown),
-            ];
+            ], $seekerFeatures->unknownNotices());
         }
 
         // List price missing

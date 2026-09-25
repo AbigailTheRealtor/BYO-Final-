@@ -69,7 +69,7 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
     public function the_coverage_report_writes_nothing_even_when_simulating(): void
     {
         $this->bridgeRow();
-        $this->bridgeRow(['property_type' => 'Land']);
+        $this->bridgeRow(['property_type' => 'Farm']);
         $this->derive(['--source' => 'bridge']);
         $this->bridgeRow();
 
@@ -86,7 +86,7 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
     {
         $covered     = $this->bridgeRow();
         $absentOnly  = $this->bridgeRow(['raw' => ['PoolPrivateYN' => false]]);
-        $unsupported = $this->bridgeRow(['property_type' => 'Land']);
+        $unsupported = $this->bridgeRow(['property_type' => 'Farm']);
         $this->derive(['--source' => 'bridge']);
         $never       = $this->bridgeRow();
 
@@ -133,7 +133,7 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
         $this->bridgeRow(['raw' => ['Cooling' => ['Central Air'], 'InteriorFeatures' => ['Walk-In Closet(s)'], 'PoolPrivateYN' => true]]);
         $this->bridgeRow(['property_type' => 'Residential Lease', 'raw' => ['Furnished' => 'Furnished', 'Cooling' => ['Wall/Window Unit(s)']]]);
         $this->bridgeRow(['raw' => ['PoolPrivateYN' => false]]);
-        $this->bridgeRow(['property_type' => 'Land']);
+        $this->bridgeRow(['property_type' => 'Farm']);
 
         $predicted = $this->coverage(simulate: true)['simulated'];
 
@@ -298,12 +298,14 @@ class BridgeSmartTagCoverageBackfillTest extends TestCase
     /** @test */
     public function unsupported_property_types_are_skipped_and_left_without_tags(): void
     {
-        $land = $this->bridgeRow(['property_type' => 'Land']);
-        $resIncome = $this->bridgeRow(['property_type' => 'Residential Income']);
+        // RESO types with no Smart Tag context. (`Land` and `Residential Income` were the examples
+        // here until they became aliases of land.sale / income.sale; they are no longer unsupported.)
+        $farm = $this->bridgeRow(['property_type' => 'Farm']);
+        $manufactured = $this->bridgeRow(['property_type' => 'Manufactured In Park']);
 
         $this->derive(['--source' => 'bridge']);
 
-        foreach ([$land, $resIncome] as $row) {
+        foreach ([$farm, $manufactured] as $row) {
             $this->assertSame(0, SmartTagAssignment::query()->where('listing_type', 'bridge')->where('listing_id', $row->id)->count());
             $this->assertSame(0, $this->stateCount($row));
         }

@@ -106,6 +106,7 @@
                                                         @if ($byoSeekerOption['description'] !== '') title="{{ $byoSeekerOption['description'] }}" @endif>
                                                         {{ $byoSeekerOption['label'] }}
                                                     </label>
+                                                    @include('partials.stellar.compliance-notices', ['notices' => ($byoSeekerOption['notice'] ?? '') !== '' ? [$byoSeekerOption['notice']] : []])
                                                 </div>
                                             </div>
                                         @endforeach

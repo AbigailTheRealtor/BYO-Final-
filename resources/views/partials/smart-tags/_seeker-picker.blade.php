@@ -99,6 +99,7 @@
                                         <label class="form-check-label" for="smart-tag-{{ $key }}">
                                             {{ $row['definition']->label }}
                                         </label>
+                                        @include('partials.stellar.compliance-notices', ['notices' => filled($row['definition']->complianceNotice) ? [$row['definition']->complianceNotice] : []])
                                     </div>
                                 </div>
                             @endforeach

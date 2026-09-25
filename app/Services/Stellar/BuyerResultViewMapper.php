@@ -295,10 +295,10 @@ class BuyerResultViewMapper
      */
     private function mapCautionFlags(array $flags): array
     {
-        return array_map(fn($f) => [
+        return array_map(fn($f) => self::keepNotices([
             'severity' => $f['severity'] ?? 'info',
             'label'    => $f['label'] ?? '',
-        ], $flags);
+        ], $f), $flags);
     }
 
     /**
@@ -306,9 +306,28 @@ class BuyerResultViewMapper
      */
     private function mapMissingData(array $missing): array
     {
-        return array_map(fn($m) => [
+        return array_map(fn($m) => self::keepNotices([
             'label' => $m['label'] ?? '',
-        ], $missing);
+        ], $m), $missing);
+    }
+
+    /**
+     * Carry an entry's governed compliance notices (e.g. the assistance-animal notice on a
+     * pet-policy line) onto its mapped form. Present only when the entry has some, so every
+     * other entry keeps its exact shape.
+     */
+    private static function keepNotices(array $mapped, array $entry): array
+    {
+        $notices = array_values(array_filter(
+            (array) ($entry['notices'] ?? []),
+            static fn ($n) => is_string($n) && trim($n) !== '',
+        ));
+
+        if ($notices !== []) {
+            $mapped['notices'] = $notices;
+        }
+
+        return $mapped;
     }
 
     // =========================================================================
@@ -409,12 +428,12 @@ class BuyerResultViewMapper
      */
     private function mapTradeoffsDetailed(array $entries): array
     {
-        return array_map(fn($e) => [
+        return array_map(fn($e) => self::keepNotices([
             'dimension'   => $e['dimension'] ?? null,
             'label'       => $e['label'] ?? '',
             'fields_used' => $e['fields_used'] ?? [],
             'deviation'   => $e['deviation'] ?? null,
-        ], $entries);
+        ], $e), $entries);
     }
 
     /**

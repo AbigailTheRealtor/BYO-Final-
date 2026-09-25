@@ -22,13 +22,21 @@ namespace App\Support\SmartTags;
  */
 final class SmartTagContextResolver
 {
-    /** Bridge `PropertyType`, exact after trimming. */
+    /**
+     * Bridge `PropertyType`, exact after trimming.
+     *
+     * `Residential Income` and `Land` are the RESO PropertyType values the live Stellar feed
+     * actually sends for income and land listings; `Income` and `Vacant Land` are kept for
+     * rows already stored under those spellings. Two spellings, one context each.
+     */
     public const BRIDGE = [
         'Residential'          => SmartTagContext::ResidentialSale,
         'Income'               => SmartTagContext::IncomeSale,
+        'Residential Income'   => SmartTagContext::IncomeSale,
         'Commercial Sale'      => SmartTagContext::CommercialSale,
         'Business Opportunity' => SmartTagContext::BusinessSale,
         'Vacant Land'          => SmartTagContext::LandSale,
+        'Land'                 => SmartTagContext::LandSale,
         'Residential Lease'    => SmartTagContext::ResidentialLease,
         'Commercial Lease'     => SmartTagContext::CommercialLease,
     ];

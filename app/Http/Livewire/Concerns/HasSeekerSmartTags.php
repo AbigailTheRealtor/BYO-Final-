@@ -110,6 +110,9 @@ trait HasSeekerSmartTags
                         'key'         => $key,
                         'label'       => $definition->label,
                         'description' => $definition->description,
+                        // The governed notice that must accompany this tag wherever it is
+                        // offered (pets_allowed's assistance-animal notice); '' for most tags.
+                        'notice'      => (string) ($definition->complianceNotice ?? ''),
                         'selected'    => $isSelected,
                     ];
                     $optionCount++;

@@ -17,7 +17,7 @@
             @foreach($items as $item)
                 <li class="d-flex align-items-start gap-2 py-1 border-bottom" style="font-size:.875rem;">
                     <i class="fas fa-arrow-right-arrow-left flex-shrink-0 mt-1" style="color:#ca8a04;font-size:.8rem;"></i>
-                    <span>{{ $item['label'] ?? '' }}</span>
+                    <span>{{ $item['label'] ?? '' }}@include('partials.stellar.compliance-notices', ['notices' => $item['notices'] ?? []])</span>
                 </li>
             @endforeach
         </ul>

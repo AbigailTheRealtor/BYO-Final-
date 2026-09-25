@@ -291,10 +291,7 @@ class TenantOfferListingCriteriaLoader
         // -----------------------------------------------------------------------
         $is55Plus = $this->is55PlusBool($get('leasing_55_plus'));
 
-        $petInfoRaw       = $get('pet_information') ?? $get('pets');
-        $wantsPetFriendly = ($petInfoRaw !== null && $petInfoRaw !== '' && $petInfoRaw !== 'none')
-            ? true
-            : null;
+        $wantsPetFriendly = self::wantsPetFriendly($get('pets'), $get('pet_information'));
 
         // -----------------------------------------------------------------------
         // Lease-term preference — commercial lease scoring dimension
@@ -415,6 +412,38 @@ class TenantOfferListingCriteriaLoader
             return false;
         }
         return null;
+    }
+
+    /**
+     * Whether the tenant's pets answer asks for a pet-friendly home: `true`, or `null` for
+     * no request (the scorer and result builder act only on `=== true`).
+     *
+     * `pets` is the pre-screening select and the authority: exactly '', 'Yes' or 'No'.
+     * Only 'Yes' asks. 'No' does NOT — reading it as a request is what used to tell a
+     * tenant without pets that "Pet policy restricts pets in this community". `null`
+     * rather than `false` for 'No', because `false` changes nothing in scoring but would
+     * mint a new criteria hash (CriteriaHashService) for the same search.
+     *
+     * `pet_information` is legacy free text the Offer Listing forms only round-trip, and it
+     * is stored as '' — which, under the old `pet_information ?? pets`, masked a 'Yes'.
+     * It is consulted only when `pets` holds no answer, and never counts when blank,
+     * 'none' or 'no'.
+     */
+    private static function wantsPetFriendly(mixed $pets, mixed $petInformation): ?bool
+    {
+        $answer = is_string($pets) ? strtolower(trim($pets)) : '';
+
+        if ($answer === 'yes') {
+            return true;
+        }
+
+        if ($answer !== '') {
+            return null;
+        }
+
+        $legacy = is_string($petInformation) ? strtolower(trim($petInformation)) : '';
+
+        return in_array($legacy, ['', 'none', 'no'], true) ? null : true;
     }
 
     private function is55PlusBool(mixed $value): bool
