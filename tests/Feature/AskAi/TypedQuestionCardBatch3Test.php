@@ -12,8 +12,14 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 /**
- * Batch 3 on the real public listing pages: what the typed-question box ships, and what it
+ * The Ask AI question VOCABULARY on the real public listing pages, and what the surface
  * structurally cannot do.
+ *
+ * HISTORY. Batch 3 shipped a typed-question box on the card; it is retired. Ask AI is now
+ * SELECTION-BASED (2026-09-25): the modal lists every answerable question with its search
+ * terms (the question's wording plus the same deterministic aliases Batch 3 built), and
+ * "Search questions..." only FILTERS that list. The class name is kept for continuity; the
+ * vocabulary is now read from the modal's View-all list.
  *
  * THE PAGE IS THE SECURITY BOUNDARY, and these tests exist because that claim is only worth
  * something if it is checked against a listing that deliberately CANNOT answer most of the
@@ -21,15 +27,15 @@ use Tests\TestCase;
  * present and the test would pass whether or not the boundary worked.
  *
  * TYPED TEXT NEVER REACHES LARAVEL, and the proof is structural rather than behavioural.
- * There is no <form> in the card, so there is nothing for Enter to submit; the input carries
- * no `name`, so a form could not carry it even if one appeared; and no fetch, XHR or endpoint
- * string exists in the card or in the matcher. Nothing has to be remembered at runtime.
+ * There is no <form> in the card or the modal, so there is nothing for Enter to submit; the
+ * one input (the search filter) carries no `name`; every button is type=button; and no
+ * fetch, XHR or endpoint string exists in either region or in question-picker.js.
  */
 class TypedQuestionCardBatch3Test extends TestCase
 {
     use DatabaseTransactions;
 
-    private const MATCHER = 'public/js/ask-ai/deterministic-question-matcher.js';
+    private const PICKER = 'public/js/ask-ai/question-picker.js';
 
     /* ------------------------------------------------------------------ */
 
@@ -111,25 +117,42 @@ class TypedQuestionCardBatch3Test extends TestCase
         return $end === false ? substr($html, $start) : substr($html, $start, $end - $start);
     }
 
+    /** The Ask AI modal body, bounded at its disclaimer. */
+    private function modal(string $html, string $role): string
+    {
+        $start = strpos($html, 'data-ask-ai-picker="' . $role . '"');
+        $this->assertNotFalse($start, "No Ask AI modal for {$role}.");
+        $end = strpos($html, 'ask-ai-picker-disclaimer', $start);
+        $this->assertNotFalse($end);
+
+        return substr($html, $start, $end - $start);
+    }
+
     private function page(string $route, int $id): string
     {
         return $this->get(route($route, $id))->assertOk()->getContent();
     }
 
-    /** id => aliases, exactly as the card shipped them. */
-    private function shippedVocabulary(string $card): array
+    /** id => search terms, exactly as the modal's View-all list ships them. */
+    private function shippedVocabulary(string $modal): array
     {
         preg_match_all(
-            '/data-property-question="([a-z_0-9]+)"\s+data-question-aliases="([^"]*)"/',
-            $card, $m, PREG_SET_ORDER
+            '/data-ask-ai-pick="([a-z_0-9]+)"[^>]*\sdata-ask-ai-search-terms="([^"]*)"/',
+            $modal, $m, PREG_SET_ORDER
         );
 
         $out = [];
-        foreach ($m as [, $id, $aliases]) {
-            $out[$id] = array_filter(explode('|', html_entity_decode($aliases, ENT_QUOTES)));
+        foreach ($m as [, $id, $terms]) {
+            $out[$id] = array_values(array_filter(explode('|', html_entity_decode($terms, ENT_QUOTES))));
         }
 
         return $out;
+    }
+
+    /** The vocabulary of one role's page, read from its modal. */
+    private function vocabularyOn(string $route, int $id, string $role): array
+    {
+        return $this->shippedVocabulary($this->modal($this->page($route, $id), $role));
     }
 
     /* ================================================================== */
@@ -145,7 +168,7 @@ class TypedQuestionCardBatch3Test extends TestCase
             'zoning'          => 'RS-60',
             'flood_zone_code' => 'yes',   // the importer's old boolean; not a designation
         ]);
-        $card  = $this->card($this->page('offer.listing.seller.view', $listing->id), 'seller');
+        $card  = $this->modal($this->page('offer.listing.seller.view', $listing->id), 'seller');
         $vocab = $this->shippedVocabulary($card);
 
         // Zoning is stored but not asked: the Residential seller form does not collect it
@@ -168,7 +191,7 @@ class TypedQuestionCardBatch3Test extends TestCase
     {
         foreach (['yes', 'Unknown', 'N/A', 'Zone AE', ''] as $stored) {
             $listing = $this->seller(['zoning' => 'RS-60', 'flood_zone_code' => $stored]);
-            $card    = $this->card($this->page('offer.listing.seller.view', $listing->id), 'seller');
+            $card    = $this->modal($this->page('offer.listing.seller.view', $listing->id), 'seller');
 
             $this->assertArrayNotHasKey('seller_flood_zone', $this->shippedVocabulary($card));
             $this->assertStringNotContainsString('flood zone|', $card, "flood aliases shipped for stored '{$stored}'.");
@@ -178,12 +201,15 @@ class TypedQuestionCardBatch3Test extends TestCase
     public function test_the_card_ships_ids_display_questions_and_aliases_and_nothing_else(): void
     {
         $listing = $this->seller(['pool_needed' => 'Yes', 'flood_zone_code' => 'AE']);
-        $card    = $this->card($this->page('offer.listing.seller.view', $listing->id), 'seller');
+        $html    = $this->page('offer.listing.seller.view', $listing->id);
 
-        // No catalog metadata leaks into the browser alongside the vocabulary.
-        foreach (['source_path', 'source_kind', 'formatter', 'guards', 'narrower_of',
-                  'category', 'supporting_paths', 'other_companion'] as $internal) {
-            $this->assertStringNotContainsString($internal, $card, "'{$internal}' reached the browser.");
+        // No catalog metadata leaks into the browser alongside the vocabulary — neither on
+        // the card's featured list nor in the modal's complete list.
+        foreach ([$this->card($html, 'seller'), $this->modal($html, 'seller')] as $region) {
+            foreach (['source_path', 'source_kind', 'formatter', 'guards', 'narrower_of',
+                      'category', 'supporting_paths', 'other_companion'] as $internal) {
+                $this->assertStringNotContainsString($internal, $region, "'{$internal}' reached the browser.");
+            }
         }
     }
 
@@ -198,7 +224,7 @@ class TypedQuestionCardBatch3Test extends TestCase
             'annual_property_taxes' => '4200', 'tax_year' => '2025',
             'flood_zone_code' => 'AE', 'pool_needed' => 'Yes',
         ]);
-        $vocab = $this->shippedVocabulary($this->card($this->page('offer.listing.seller.view', $listing->id), 'seller'));
+        $vocab = $this->vocabularyOn('offer.listing.seller.view', $listing->id, 'seller');
         $all   = array_merge(...array_values($vocab));
 
         foreach (['how much is the hoa', 'hoa fees', 'association fees',
@@ -215,9 +241,7 @@ class TypedQuestionCardBatch3Test extends TestCase
             'pets' => 'Yes', 'has_hoa' => 'Yes', 'association_fee_amount' => '175',
             'association_fee_frequency' => 'Quarterly', 'flood_zone_code' => 'VE',
         ]);
-        $all = array_merge(...array_values($this->shippedVocabulary(
-            $this->card($this->page('offer.listing.landlord.view', $listing->id), 'landlord')
-        )));
+        $all = array_merge(...array_values($this->vocabularyOn('offer.listing.landlord.view', $listing->id, 'landlord')));
 
         foreach (['pets', 'are pets allowed', 'pet policy', 'how much is the hoa',
                   'flood zone', 'fema zone'] as $expected) {
@@ -234,8 +258,7 @@ class TypedQuestionCardBatch3Test extends TestCase
             'pre_approval_amount' => '525000', 'cash_budget' => '120000',
             'down_payment_amount' => '90000', 'number_occupant' => '4',
         ]);
-        $card = $this->card($this->page('offer.listing.buyer.view', $listing->id), 'buyer');
-        $all  = array_merge(...array_values($this->shippedVocabulary($card)));
+        $all  = array_merge(...array_values($this->vocabularyOn('offer.listing.buyer.view', $listing->id, 'buyer')));
 
         foreach (['budget', 'buyer budget', 'purchase budget', 'how much does the buyer want to spend',
                   'bedrooms', 'areas', 'cities'] as $expected) {
@@ -256,8 +279,7 @@ class TypedQuestionCardBatch3Test extends TestCase
             'monthly_income' => '7600', 'credit_score_range' => '700-749',
             'service_animal' => 'Yes', 'accessibility_requirements' => 'Ground floor',
         ]);
-        $card = $this->card($this->page('offer.listing.tenant.view', $listing->id), 'tenant');
-        $all  = array_merge(...array_values($this->shippedVocabulary($card)));
+        $all  = array_merge(...array_values($this->vocabularyOn('offer.listing.tenant.view', $listing->id, 'tenant')));
 
         foreach (['rent', 'max rent', 'maximum rent', 'rent budget',
                   'move in', 'move in date', 'when do they want to move',
@@ -277,23 +299,36 @@ class TypedQuestionCardBatch3Test extends TestCase
     /**
      * @dataProvider everyRolePage
      */
-    public function test_the_card_carries_no_way_to_submit_typed_text(string $role, string $routeName, string $factory): void
+    public function test_nothing_typed_can_be_submitted(string $role, string $routeName, string $factory): void
     {
         $listing = $this->{$factory}(['pool_needed' => 'Yes', 'bedrooms' => '3']);
-        $card    = $this->card($this->page($routeName, $listing->id), $role);
+        $html    = $this->page($routeName, $listing->id);
 
-        $this->assertStringContainsString('data-ask-ai-ask-input', $card);
-
-        foreach (['<form', 'action=', 'method=', 'fetch(', 'XMLHttpRequest', 'navigator.sendBeacon',
-                  'ask-ai/listing-question', 'api/ask-ai/ask', 'agent-ai/', 'wire:', '<script'] as $forbidden) {
-            $this->assertStringNotContainsString($forbidden, $card, "{$role} card contains '{$forbidden}'.");
+        foreach (['card' => $this->card($html, $role), 'modal' => $this->modal($html, $role)] as $where => $region) {
+            foreach (['<form', 'action=', 'method=', 'fetch(', 'XMLHttpRequest', 'navigator.sendBeacon', '<textarea',
+                      'ask-ai/listing-question', 'api/ask-ai/ask', 'agent-ai/', 'wire:', '<script'] as $forbidden) {
+                $this->assertStringNotContainsString($forbidden, $region, "{$role} {$where} contains '{$forbidden}'.");
+            }
+            // A nameless input outside a form cannot be submitted by any means.
+            $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $region,
+                "{$role} {$where}: no Ask AI input may carry a name attribute.");
+            // Every button is type=button, so none can ever submit.
+            preg_match_all('/<button\b[^>]*>/', $region, $buttons);
+            foreach ($buttons[0] as $button) {
+                $this->assertStringContainsString('type="button"', $button, "{$role} {$where}: {$button}");
+            }
         }
 
-        // A nameless input outside a form cannot be submitted by any means.
-        $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $card,
-            "{$role}: the typed-question input must carry no name attribute.");
-        $this->assertMatchesRegularExpression('/<button\b[^>]*type="button"[^>]*data-ask-ai-ask-button/', $card,
-            "{$role}: the button must be type=button so it can never submit.");
+        // The card has no input at all; the modal's ONLY input is the search filter.
+        $this->assertDoesNotMatchRegularExpression('/<input\b/', $this->card($html, $role));
+        preg_match_all('/<input\b[^>]*>/', $this->modal($html, $role), $inputs);
+        $this->assertCount(1, $inputs[0], "{$role}: the modal must carry exactly one input.");
+        $this->assertStringContainsString('data-ask-ai-picker-search', $inputs[0][0]);
+        $this->assertStringContainsString('type="search"', $inputs[0][0]);
+
+        // The retired typed box is gone.
+        $this->assertStringNotContainsString('data-ask-ai-ask-input', $html);
+        $this->assertStringNotContainsString('deterministic-question-matcher.js', $html);
     }
 
     public static function everyRolePage(): array
@@ -306,36 +341,36 @@ class TypedQuestionCardBatch3Test extends TestCase
         ];
     }
 
-    public function test_the_matcher_asset_reaches_no_network_and_no_storage(): void
+    public function test_the_picker_asset_reaches_no_network_and_no_storage(): void
     {
-        $source = file_get_contents(base_path(self::MATCHER));
+        $source = file_get_contents(base_path(self::PICKER));
         $this->assertNotFalse($source);
 
         foreach ([
             'fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon', 'EventSource',
             '$.ajax', 'axios', 'import ', 'require(',
             'localStorage', 'sessionStorage', 'document.cookie', 'indexedDB',
-            'location.href', 'location.assign', 'window.open', 'history.pushState',
+            'location.href', 'location.assign', 'window.open', 'history.pushState', '.submit(',
             'console.log', 'dataLayer', 'gtag', 'analytics',
-            // The endpoints themselves, not the card's own `data-ask-ai-*` attribute
-            // namespace, which the matcher must of course be able to select on.
+            // The endpoints themselves, not the modal's own `data-ask-ai-*` attribute
+            // namespace, which the picker must of course be able to select on.
             'ask-ai/listing-question', 'api/ask-ai', 'agent-ai/', 'openai',
         ] as $forbidden) {
             $this->assertStringNotContainsStringIgnoringCase($forbidden, $source,
-                "The matcher contains '{$forbidden}'.");
+                "The picker contains '{$forbidden}'.");
         }
     }
 
-    public function test_no_server_route_or_handler_was_added_for_typed_questions(): void
+    public function test_no_server_route_or_handler_was_added_for_question_search(): void
     {
-        // The feature adds no endpoint at all: nothing in routes/ mentions it, and the
-        // matcher is a static asset rather than anything Laravel dispatches.
+        // Search filters markup the page already holds; it has no endpoint at all.
         $routes = file_get_contents(base_path('routes/web.php'));
-        foreach (['ask-ai-ask', 'deterministic-question', 'typed-question', 'question-match'] as $needle) {
+        foreach (['ask-ai-ask', 'deterministic-question', 'typed-question', 'question-match',
+                  'question-picker', 'question-search'] as $needle) {
             $this->assertStringNotContainsString($needle, $routes, "routes/web.php gained '{$needle}'.");
         }
 
-        $this->assertFileExists(base_path(self::MATCHER));
+        $this->assertFileExists(base_path(self::PICKER));
         $this->assertDirectoryDoesNotExist(base_path('app/Http/Controllers/AskAi/TypedQuestion'));
     }
 
@@ -343,38 +378,46 @@ class TypedQuestionCardBatch3Test extends TestCase
     /* Owner experience                                                    */
     /* ================================================================== */
 
-    public function test_the_owner_keeps_their_existing_ask_ai_modal_alongside_the_typed_box(): void
+    public function test_the_owner_gets_owner_questions_separately_and_shoppers_do_not(): void
     {
         $listing = $this->seller(['pool_needed' => 'Yes']);
         $owner   = User::find($listing->user_id);
 
-        $html = $this->actingAs($owner)->get(route('offer.listing.seller.view', $listing->id))->assertOk()->getContent();
+        $mine = $this->modal(
+            $this->actingAs($owner)->get(route('offer.listing.seller.view', $listing->id))->assertOk()->getContent(),
+            'seller'
+        );
+        auth()->logout();
+        $public = $this->modal($this->page('offer.listing.seller.view', $listing->id), 'seller');
 
-        // Both exist, and they are separate: the typed box lives in the deterministic card
-        // and never routes an unmatched question into the owner's free-text modal.
-        $this->assertStringContainsString('data-ask-ai-ask-input', $html);
-        $this->assertStringContainsString('data-bs-target="#solAiModal"', $html);
+        // The owner's questions are their own group, apart from the public View-all list,
+        // and each is a listed question (no text box).
+        $this->assertStringContainsString('data-ask-ai-owner-picker', $mine);
+        $this->assertMatchesRegularExpression('/<button type="button"[^>]*data-ask-ai-owner-question="[^"]+"/', $mine);
+        $allStart = strpos($mine, 'data-ask-ai-picker-all');
+        $allEnd   = strpos($mine, 'data-ask-ai-picker-answers', $allStart);
+        $this->assertStringNotContainsString('data-ask-ai-owner-question', substr($mine, $allStart, $allEnd - $allStart),
+            'Owner questions must not be mixed into the public View-all list.');
 
-        $card = $this->card($html, 'seller');
-        $this->assertStringNotContainsString('solAiModal', $card,
-            'The typed box must not be wired to the owner AI modal.');
+        $this->assertStringNotContainsString('data-ask-ai-owner-picker', $public);
+        $this->assertStringNotContainsString('owner-question-picker.js', $this->page('offer.listing.seller.view', $listing->id));
+        $this->assertSame(array_keys($this->shippedVocabulary($public)), array_keys($this->shippedVocabulary($mine)));
     }
 
     /* ================================================================== */
     /* Accessibility                                                       */
     /* ================================================================== */
 
-    public function test_the_typed_box_is_labelled_and_reports_status_politely(): void
+    public function test_the_search_filter_is_labelled_and_reports_no_match_politely(): void
     {
         $listing = $this->seller(['pool_needed' => 'Yes']);
-        $card    = $this->card($this->page('offer.listing.seller.view', $listing->id), 'seller');
+        $modal   = $this->modal($this->page('offer.listing.seller.view', $listing->id), 'seller');
 
-        $this->assertMatchesRegularExpression('/<label[^>]*for="sol-ask-ai-ask-input"/', $card);
-        $this->assertMatchesRegularExpression('/<input[^>]*id="sol-ask-ai-ask-input"/', $card);
-        $this->assertMatchesRegularExpression('/role="status"[^>]*aria-live="polite"|aria-live="polite"[^>]*role="status"/', $card);
-
-        // Native disclosure semantics are untouched — still real <details>/<summary>.
-        $this->assertStringContainsString('<details', $card);
-        $this->assertStringContainsString('<summary', $card);
+        $this->assertMatchesRegularExpression('/<label[^>]*for="solAiQuestionSearch"/', $modal);
+        $this->assertMatchesRegularExpression('/<input[^>]*id="solAiQuestionSearch"/', $modal);
+        $this->assertMatchesRegularExpression('/<input[^>]*aria-controls="solAiAllQuestions"/', $modal);
+        $this->assertMatchesRegularExpression('/data-ask-ai-picker-empty[^>]*role="status"/', $modal);
+        $this->assertMatchesRegularExpression('/data-ask-ai-picker-answer[^>]*aria-live="polite"/', $modal);
+        $this->assertMatchesRegularExpression('/data-ask-ai-picker-toggle[^>]*aria-expanded="false"[^>]*aria-controls="solAiAllQuestions"/', $modal);
     }
 }

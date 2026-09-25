@@ -522,13 +522,35 @@ class AskAiPublicPageVisibilityParityTest extends TestCase
         return $out;
     }
 
-    /** @return array<string, string> displayed question => its answer, as the card renders them */
+    /**
+     * Displayed question => its answer, for every question Ask AI lists. Selection-based: the
+     * card shows the featured subset, the modal lists all of them. Both the consumer display
+     * wording and the original question wording are keys (search terms 0 and 1), since a
+     * display rewording is cosmetic and the original stays the deterministic phrase.
+     *
+     * @return array<string, string>
+     */
     private function cardQuestions(string $card): array
     {
         $out = [];
         preg_match_all('/<summary class="ask-ai-pq-question">(.*?)<\/summary>\s*<p class="ask-ai-pq-answer"[^>]*>(.*?)<\/p>/s', $card, $m, PREG_SET_ORDER);
         foreach ($m as [, $q, $a]) {
             $out[html_entity_decode(trim(strip_tags($q)), ENT_QUOTES)] = html_entity_decode(trim(strip_tags($a)), ENT_QUOTES);
+        }
+
+        preg_match_all('/data-ask-ai-answer-for="([^"]+)"[^>]*>(.*?)<\/p>/s', $card, $a, PREG_SET_ORDER);
+        $answers = [];
+        foreach ($a as [, $id, $answer]) {
+            $answers[$id] = html_entity_decode(trim(strip_tags($answer)), ENT_QUOTES);
+        }
+        preg_match_all('/data-ask-ai-pick="([^"]+)"[^>]*data-ask-ai-search-terms="([^"]*)"/', $card, $t, PREG_SET_ORDER);
+        foreach ($t as [, $id, $terms]) {
+            if (!isset($answers[$id])) {
+                continue;
+            }
+            foreach (array_slice(explode('|', html_entity_decode($terms, ENT_QUOTES)), 0, 2) as $wording) {
+                $out[$wording] = $answers[$id];
+            }
         }
 
         return $out;
@@ -556,18 +578,37 @@ class AskAiPublicPageVisibilityParityTest extends TestCase
     }
 
     /**
-     * The Ask AI card region, and the page with that region removed. The card is bounded at
-     * its closing note exactly as the other card tests bound it.
+     * The Ask AI region, and the page with it removed. Selection-based Ask AI has two parts:
+     * the card (the FEATURED subset, bounded at its closing note as the other card tests bound
+     * it) and the modal (EVERY answerable question with its answer, bounded at its
+     * disclaimer). Both are Ask AI, never "the page": a modal answer counted as page text
+     * would make every fact look shown.
      *
      * @return array{0: string, 1: string}
      */
     private function split(string $html, string $role): array
     {
-        $start = strpos($html, 'data-ask-ai-property-questions="' . $role . '"');
-        $this->assertNotFalse($start, "No Ask AI card for {$role}.");
-        $end = strpos($html, 'ask-ai-pq-note', $start);
-        $end = $end === false ? strlen($html) : $end;
+        $cuts = [];
+        foreach ([
+            ['data-ask-ai-property-questions="' . $role . '"', 'ask-ai-pq-note'],
+            ['data-ask-ai-picker="' . $role . '"', 'ask-ai-picker-disclaimer'],
+        ] as [$open, $close]) {
+            $start = strpos($html, $open);
+            $this->assertNotFalse($start, "No Ask AI region '{$open}'.");
+            $end    = strpos($html, $close, $start);
+            $cuts[] = [$start, $end === false ? strlen($html) : $end];
+        }
+        usort($cuts, static fn ($a, $b) => $a[0] <=> $b[0]);
 
-        return [substr($html, $start, $end - $start), substr($html, 0, $start) . substr($html, $end)];
+        $askAi = '';
+        $page  = '';
+        $at    = 0;
+        foreach ($cuts as [$start, $end]) {
+            $page  .= substr($html, $at, max(0, $start - $at));
+            $askAi .= substr($html, $start, $end - $start) . "\n";
+            $at     = max($at, $end);
+        }
+
+        return [$askAi, $page . substr($html, $at)];
     }
 }

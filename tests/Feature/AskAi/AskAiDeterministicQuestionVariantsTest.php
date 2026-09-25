@@ -100,7 +100,7 @@ class AskAiDeterministicQuestionVariantsTest extends TestCase
 
     private function incomeSeller(): SellerAgentAuction
     {
-        return $this->seller(['property_type' => 'Income', 'maximum_budget' => '780000', 'gross_annual_income' => self::PRIVATE_INCOME]);
+        return $this->seller(['property_type' => 'Income', 'maximum_budget' => '780000', 'minimum_annual_net_income' => self::PRIVATE_INCOME /* owner-only: the seller's desired minimum; gross_annual_income became public in the universal coverage audit (2026-09-24) */]);
     }
 
     private function residentialLandlord(): LandlordAgentAuction
@@ -399,7 +399,7 @@ class AskAiDeterministicQuestionVariantsTest extends TestCase
         $stranger = User::factory()->create();
 
         foreach ([null, $stranger] as $viewer) {
-            foreach (['income', 'gross income', 'what is the income', 'what is the gross annual income', 'how much income'] as $asked) {
+            foreach (['income', 'gross income', 'what is the income', 'what is the minimum annual net income', 'how much income'] as $asked) {
                 $this->assertRefused($this->ask($viewer, 'seller', $income->id, $asked), $asked, self::PRIVATE_INCOME);
             }
             foreach (['credit', 'credit score', 'what is the credit score', 'what is the credit score range'] as $asked) {
@@ -427,7 +427,7 @@ class AskAiDeterministicQuestionVariantsTest extends TestCase
         }
 
         // The owner keeps the owner-only fact, exactly as before, by its own question.
-        $owner = $this->ask($this->sellerOwner, 'seller', $income->id, 'What is the gross annual income?');
+        $owner = $this->ask($this->sellerOwner, 'seller', $income->id, 'What is the minimum annual net income?');
         $this->assertSame('ready', $owner->json('status'));
         $this->assertStringContainsString(self::PRIVATE_INCOME, (string) $owner->json('answer'));
     }

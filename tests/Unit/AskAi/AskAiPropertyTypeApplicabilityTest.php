@@ -310,9 +310,11 @@ class AskAiPropertyTypeApplicabilityTest extends TestCase
         }
     }
 
-    public function test_the_browser_matcher_makes_no_network_call(): void
+    public function test_the_browser_question_picker_makes_no_network_call(): void
     {
-        $js = file_get_contents(dirname(__DIR__, 3) . '/public/js/ask-ai/deterministic-question-matcher.js');
+        // Selection-based Ask AI (2026-09-25) replaced the typed-question matcher with the
+        // question picker: search only filters the listed questions, so it needs no request.
+        $js = file_get_contents(dirname(__DIR__, 3) . '/public/js/ask-ai/question-picker.js');
 
         $this->assertNotSame('', trim((string) $js));
 
@@ -320,7 +322,7 @@ class AskAiPropertyTypeApplicabilityTest extends TestCase
             $this->assertStringNotContainsString(
                 $needle,
                 $js,
-                "The typed-question matcher must resolve in the browser without '{$needle}'."
+                "The question picker must resolve in the browser without '{$needle}'."
             );
         }
     }

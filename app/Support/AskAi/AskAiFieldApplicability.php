@@ -37,17 +37,17 @@ use App\Support\AskAi\AskAiPropertyTypeResolver as PT;
  * types: residential, commercial (config/ai_faq_landlord.php gating; the resolver maps
  * 'Residential Property' / 'Commercial Property' to them).
  *
- * MLS QUICK IMPORT DOES NOT WIDEN THIS, DELIBERATELY
- * --------------------------------------------------
- * Import can write facts the form does not render for a type (zoning or bedrooms where the
- * form has no such input), because MlsFactProjection's applicability gate covers only pool,
- * garage and carport. CLAUDE.md names that state "invisible data with the authority of an
- * import behind it": the owner can neither see nor correct it. Widening the gate to follow it
- * would also bring back the defect this class exists to prevent — a Vacant Land listing with a
- * stray bedrooms row being asked "How many bedrooms are there?". So the gate is the FORM.
- * importTypes() reports, and never gates, what import can write, so the MLS coverage audit can
- * name every field import writes for a type whose form does not collect it — an import-side
- * fix, not an Ask AI one.
+ * THIS MAP IS THE FORM; MLS IMPORT IS ADMITTED SEPARATELY (owner decision, 2026-09-24)
+ * -------------------------------------------------------------------------------------
+ * Import can write facts the form does not render for a type (bedrooms, bathrooms and square
+ * footage on an Income listing; square footage on a Commercial Lease), because
+ * MlsFactProjection's applicability gate covers only pool, garage and carport — and the public
+ * page prints them. Until 2026-09-24 Ask AI refused them, which lost facts the page beside it
+ * showed. The owner decided the PAGE governs: AskAiPublicPropertyQuestionService admits a
+ * question for such a field when the listing is MLS-imported AND importTypes() says import
+ * writes that field for the listing's type. That admission lives in the question service, not
+ * here, so this map stays the form's own truth and a MANUAL listing with a stray value on a
+ * type whose form never collected it (Vacant Land with a bedrooms row) is still never asked.
  *
  * Pure: no container, no config, no I/O.
  */
@@ -134,6 +134,145 @@ final class AskAiFieldApplicability
             'flood_zone_code'                => self::ALL_SELLER,                              // :149
             'annual_property_taxes'          => self::ALL_SELLER,                              // :58
             'tax_year'                       => self::ALL_SELLER,                              // :42
+
+            // ── Universal coverage audit (2026-09-24) ──────────────────────────────
+            // SP tax-legal-hoa-disclosures (no type conditional; HOA children under has_hoa).
+            'flood_insurance_required'       => self::ALL_SELLER,                              // :185
+            'flood_zone_panel'               => self::ALL_SELLER,                              // :204
+            'association_type'               => self::ALL_SELLER,                              // :365
+            'association_approval_process'   => self::ALL_SELLER,                              // :491
+            'association_application_fee'    => self::ALL_SELLER,                              // under :482
+            'association_amenities'          => self::ALL_SELLER,                              // :570
+            'min_lease_period'               => self::ALL_SELLER,                              // :620 (leasing_restrictions Yes)
+            'max_leases_per_year'            => self::ALL_SELLER,                              // :651
+            'additional_lease_restrictions'  => self::ALL_SELLER,                              // :677
+            // SP property-preferences
+            'condition_prop'                 => self::SELLER_BUILT,                            // :785 (!= Vacant Land :761)
+            'building_sqft'                  => self::SELLER_BUILT,                            // :916 (!= Vacant Land :908)
+            'pet_types_allowed'              => [PT::RESIDENTIAL, PT::INCOME],                 // :1460 inside :1436 (pets Yes)
+            'business_assets'                => [PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],    // :1538 inside :1528
+            'business_assets_other'          => [PT::INCOME, PT::COMMERCIAL, PT::BUSINESS],    // :1552 (assets Other)
+            'real_estate_purchase'           => [PT::BUSINESS],                                // :1516 inside :1506
+            'total_buildings'                => [PT::INCOME],                                  // :1581 inside :1558
+            'number_water_meters'            => [PT::INCOME],                                  // :2113 inside :2104
+            'number_electric_meters'         => [PT::INCOME],                                  // :2126
+            'ceiling_height'                 => [PT::COMMERCIAL],                              // :2411 inside :2134
+            'road_frontage'                  => [PT::COMMERCIAL, PT::VACANT_LAND],             // :2235 / :2965
+            'road_surface_type'              => [PT::COMMERCIAL, PT::VACANT_LAND],             // :2257 / :2987
+            'electrical_service'             => [PT::COMMERCIAL, PT::BUSINESS],                // :2389 / :2726
+            'business_name'                  => [PT::BUSINESS],                                // :2454 inside :2445
+            'year_established'               => [PT::BUSINESS],                                // :2467
+            'licenses'                       => [PT::BUSINESS],                                // :2480
+            'sale_includes'                  => [PT::BUSINESS],                                // :2502
+            'current_use'                    => [PT::VACANT_LAND],                             // :2752 inside :2743
+            'current_adjacent_use'           => [PT::VACANT_LAND],                             // :2774
+            'water_available'                => [PT::VACANT_LAND],                             // :2809
+            'sewer_available'                => [PT::VACANT_LAND],                             // :2835
+            'electric_available'             => [PT::VACANT_LAND],                             // :2861
+            'gas_available'                  => [PT::VACANT_LAND],                             // :2887
+            'telecom_available'              => [PT::VACANT_LAND],                             // :2913
+            'front_footage'                  => [PT::VACANT_LAND],                             // :2952
+            'number_of_wells'                => [PT::VACANT_LAND],                             // :3075
+            'number_of_septics'              => [PT::VACANT_LAND],                             // :3088
+            'fences'                         => [PT::VACANT_LAND],                             // :3101
+            'vegetation'                     => [PT::VACANT_LAND],                             // :3123
+            'buildable'                      => [PT::VACANT_LAND],                             // :3145
+            'easements'                      => [PT::VACANT_LAND],                             // :3161
+            // The Business Type input sits in a wrapper that is always `d-none` (:741) — no
+            // user can reach it, so only import or a legacy row writes the field.
+            'business_type'                  => self::LEGACY_NO_INPUT,
+            // SP financial-details
+            'gross_annual_income'            => [PT::INCOME],                                  // :59 inside :13
+            'annual_operating_expenses'      => [PT::INCOME],                                  // :76
+            'rent_roll_available'            => [PT::INCOME],                                  // :92
+            'operating_statement_available'  => [PT::INCOME],                                  // :109
+            'price_per_sqft'                 => [PT::COMMERCIAL],                              // :168 inside :122
+            'existing_lease_type'            => [PT::COMMERCIAL],                              // :184
+            'lease_expiration'               => [PT::COMMERCIAL],                              // :218
+            'lease_assignable'               => [PT::COMMERCIAL],                              // :231
+            'annual_revenue'                 => [PT::BUSINESS],                                // :291 inside :245
+            'gross_profit'                   => [PT::BUSINESS],                                // :308
+            'sde_ebitda'                     => [PT::BUSINESS],                                // :325
+            'inventory_value'                => [PT::BUSINESS],                                // :342
+            'ffe_value'                      => [PT::BUSINESS],                                // :359
+            'employee_count'                 => [PT::BUSINESS],                                // :407
+            'financial_statements_available' => [PT::BUSINESS],                                // :421
+            'tax_returns_available'          => [PT::BUSINESS],                                // :438
+            'nda_required'                   => [PT::BUSINESS],                                // :455
+            'business_location_leased'       => [PT::BUSINESS],                                // :477
+            'business_lease_monthly_rent'    => [PT::BUSINESS],                                // :495 (location leased Yes :486)
+            'business_lease_expiration'      => [PT::BUSINESS],                                // :507
+            'business_lease_renewal_options' => [PT::BUSINESS],                                // :518
+            'business_lease_assignable'      => [PT::BUSINESS],                                // :534
+            'business_lease_additional_terms' => [PT::BUSINESS],                               // :551
+            // SP seller-terms: no property-type conditional; financing children open on the
+            // offered_financing selection (ConditionalTerms enforces it at answer time).
+            'occupied_until'                     => self::SELLER_BUILT,                        // under occupant_status (!= Vacant Land)
+            'sale_provision'                     => self::ALL_SELLER,                          // :45
+            'sale_provision_assignment'          => self::ALL_SELLER,                          // under :45 (Assignment Contract)
+            'assignment_fee_type'                => self::ALL_SELLER,                          // under sale_provision_assignment Yes
+            'assignment_fee'                     => self::ALL_SELLER,                          // under a chosen fee structure ($ / %)
+            'unit_mix_summary'                   => [PT::INCOME],                              // unit_type_configurations, inside :1558
+            'cryptocurrency_type'                => self::ALL_SELLER,                          // :662
+            'crypto_percentage'                  => self::ALL_SELLER,                          // :676
+            'cash_percentage_crypto'             => self::ALL_SELLER,                          // :696
+            'crypto_exchange_method'             => self::ALL_SELLER,                          // :714
+            'crypto_custodian_wallet'            => self::ALL_SELLER,                          // :729
+            'crypto_transaction_fees'            => self::ALL_SELLER,                          // :744
+            'crypto_transfer_timing'             => self::ALL_SELLER,                          // :763
+            'exchange_item'                      => self::ALL_SELLER,                          // :804
+            'exchange_item_value'                => self::ALL_SELLER,                          // :834
+            'exchange_item_condition'            => self::ALL_SELLER,                          // :852
+            'exchange_additional_cash'           => self::ALL_SELLER,                          // :877
+            'value_determination'                => self::ALL_SELLER,                          // :895
+            'exchange_transfer_method'           => self::ALL_SELLER,                          // :910
+            'exchange_liens_disclosure'          => self::ALL_SELLER,                          // :925
+            'exchange_liens_details'             => self::ALL_SELLER,                          // :937
+            'exchange_inspection_rights'         => self::ALL_SELLER,                          // :953
+            'lease_option_price'                 => self::ALL_SELLER,                          // :980
+            'lease_option_payment'               => self::ALL_SELLER,                          // :997
+            'lease_option_duration'              => self::ALL_SELLER,                          // :1012
+            'option_fee_offered'                 => self::ALL_SELLER,                          // :1025
+            'option_fee_amount'                  => self::ALL_SELLER,                          // :1038
+            'lease_option_fee_credit'            => self::ALL_SELLER,                          // :1055
+            'lease_option_fee_credit_percentage' => self::ALL_SELLER,                          // :1069
+            'lease_option_conditions'            => self::ALL_SELLER,                          // :1087
+            'lease_option_terms'                 => self::ALL_SELLER,                          // :1101
+            'lease_option_maintenance'           => self::ALL_SELLER,                          // :1116
+            'lease_option_extension_terms'       => self::ALL_SELLER,                          // :1135
+            'lease_purchase_price'               => self::ALL_SELLER,                          // :1166
+            'lease_purchase_payment'             => self::ALL_SELLER,                          // :1185
+            'lease_purchase_duration'            => self::ALL_SELLER,                          // :1200
+            'lease_purchase_rent_credit'         => self::ALL_SELLER,                          // :1214
+            'lease_purchase_rent_credit_amount'  => self::ALL_SELLER,                          // :1228
+            'lease_purchase_conditions'          => self::ALL_SELLER,                          // :1263
+            'lease_purchase_terms'               => self::ALL_SELLER,                          // :1277
+            'lease_purchase_maintenance'         => self::ALL_SELLER,                          // :1291
+            'lease_purchase_extension_terms'     => self::ALL_SELLER,                          // :1310
+            'nft_description'                    => self::ALL_SELLER,                          // :1333
+            'nft_percentage'                     => self::ALL_SELLER,                          // :1348
+            'cash_percentage_nft'                => self::ALL_SELLER,                          // :1364
+            'nft_valuation_method'               => self::ALL_SELLER,                          // :1380
+            'nft_transfer_method'                => self::ALL_SELLER,                          // :1395
+            'nft_gas_fees'                       => self::ALL_SELLER,                          // :1410
+            'escrow_agent_preference'            => self::ALL_SELLER,                          // :1830
+            'inspection_contingency_preference'  => self::ALL_SELLER,                          // :1866
+            'preferred_inspection_period'        => self::ALL_SELLER,                          // :1884
+            'appraisal_contingency_preference'   => self::ALL_SELLER,                          // :1909
+            'appraisal_contingency_period'       => self::ALL_SELLER,                          // :1927
+            'financing_contingency_preference'   => self::ALL_SELLER,                          // :1948
+            'financing_contingency_period'       => self::ALL_SELLER,                          // :1966
+            'sale_of_buyer_property_contingency' => self::ALL_SELLER,                          // :1989
+            'sale_of_buyer_property_period'      => self::ALL_SELLER,                          // :2007
+            'seller_credit_offered'              => self::ALL_SELLER,                          // :2023
+            'seller_credit_amount'               => self::ALL_SELLER,                          // :2038
+            'possession_preference'              => self::ALL_SELLER,                          // :2054
+            'possession_details'                 => self::ALL_SELLER,                          // :2072
+            'included_personal_property'         => self::ALL_SELLER,                          // :2088
+            'excluded_items'                     => self::ALL_SELLER,                          // :2103
+            'home_warranty_details'              => self::ALL_SELLER,                          // :2133
+            'hoa_condo_association_terms'        => self::ALL_SELLER,                          // :2149
+            'additional_seller_sale_terms'       => self::ALL_SELLER,                          // :2164
         ],
         'landlord' => [
             'description'              => self::ALL_LANDLORD,                     // LP additional-details:16
@@ -196,6 +335,78 @@ final class AskAiFieldApplicability
             'pet_species_allowed'      => self::LEGACY_NO_INPUT,
             'pet_max_weight_lbs'       => self::LEGACY_NO_INPUT,
             'pet_deposit_fee_rent'     => self::LEGACY_NO_INPUT,
+            'pet_rent'                 => self::LEGACY_NO_INPUT,
+            'pet_fee'                  => self::LEGACY_NO_INPUT,
+            'pet_monthly_fee'          => self::LEGACY_NO_INPUT,
+            'pet_deposit_amount'       => self::LEGACY_NO_INPUT,
+
+            // ── Universal coverage audit (2026-09-24) ──────────────────────────────
+            // LP lease-terms: leasing-space children are value-gated by leasing_spaces, which
+            // ConditionalTerms enforces at answer time; the type gate is the @if around them.
+            'lease_amount_frequency'            => self::ALL_LANDLORD,              // lease-terms :1129
+            'leasing_space'                     => self::ALL_LANDLORD,              // lease-terms :137
+            'occupant_status'                   => self::ALL_LANDLORD,              // lease-terms :101
+            'occupied_until'                    => self::ALL_LANDLORD,              // lease-terms :120 (occupant_status Tenant/Owner :111)
+            'restrictions'                      => self::ALL_LANDLORD,              // lease-terms :163 / :267
+            'maintenance_by'                    => self::ALL_LANDLORD,              // lease-terms :182 / :299 / :455 / :662
+            'maintenance_response_time'         => self::ALL_LANDLORD,              // lease-terms :201 / :318 / :474 / :681
+            'common_areas_access'               => self::ALL_LANDLORD,              // lease-terms :283 / :646 (Single Room)
+            'common_areas_cleaning'             => self::ALL_LANDLORD,              // lease-terms :351 / :714 (Single Room)
+            'bathroom_facilities'               => self::ALL_LANDLORD,              // lease-terms :398 / :762 (Single Room)
+            'room_size'                         => self::ALL_LANDLORD,              // lease-terms :415 / :779 (Single Room)
+            'included_storage_space_res_both'   => [PT::RESIDENTIAL],               // lease-terms :215 inside :148
+            'storage_space_res_both'            => [PT::RESIDENTIAL],               // lease-terms :233
+            'included_storage_space_res_single' => [PT::RESIDENTIAL],               // lease-terms :366
+            'storage_space_res_single'          => [PT::RESIDENTIAL],               // under :366
+            'included_storage_space_com_entire' => [PT::COMMERCIAL],                // lease-terms :487 inside :423
+            'storage_space_com_entire'          => [PT::COMMERCIAL],                // under :487
+            'included_storage_space_com_single' => [PT::COMMERCIAL],                // lease-terms :729
+            'storage_space_com_single'          => [PT::COMMERCIAL],                // under :729
+            'shared_amenities'                  => [PT::COMMERCIAL],                // lease-terms :519 inside :423
+            'building_hours'                    => [PT::COMMERCIAL],                // lease-terms :534
+            'access_24_7'                       => [PT::COMMERCIAL],                // lease-terms :549
+            'zoning_allows'                     => [PT::COMMERCIAL],                // lease-terms :567
+            'space_features'                    => [PT::COMMERCIAL],                // lease-terms :583
+            'neighboring_tenants'               => [PT::COMMERCIAL],                // lease-terms :599
+            'tenant_pays'                       => [PT::COMMERCIAL],                // lease-terms :936 inside :928
+            'owner_pays'                        => [PT::COMMERCIAL],                // lease-terms :982 inside :928
+            'rent_includes'                     => [PT::RESIDENTIAL],               // lease-terms :1608 inside :1600
+            'll_maintenance_responsibility'     => self::ALL_LANDLORD,              // lease-terms :1344
+            'renewal_option_details'            => self::ALL_LANDLORD,              // lease-terms :1377 (renewal Yes/Negotiable)
+            'commercial_lease_type'             => [PT::COMMERCIAL],                // lease-terms :1412 inside :1403
+            'cam_nnn_additional_rent_charges'   => [PT::COMMERCIAL],                // lease-terms :1440
+            'rent_escalation_terms'             => [PT::COMMERCIAL],                // lease-terms :1454
+            'tenant_improvement_buildout_terms' => [PT::COMMERCIAL],                // lease-terms :1468
+            'permitted_use_restrictions'        => [PT::COMMERCIAL],                // lease-terms :1482
+            'signage_rights'                    => [PT::COMMERCIAL],                // lease-terms :1496
+            // LP property-preferences
+            'minimum_leaseable'                 => [PT::COMMERCIAL],                // :492 inside :482
+            'garage_parking_features'           => [PT::COMMERCIAL],                // :691 inside :682
+            'furnishings'                       => [PT::RESIDENTIAL],               // :602 inside :591
+            'pets_allowed_count'                => [PT::RESIDENTIAL],               // :1788 inside :1757 (pets Yes)
+            'pet_types_allowed'                 => [PT::RESIDENTIAL],               // :1803
+            'pet_weight_limit'                  => [PT::RESIDENTIAL],               // :1855
+            // LP applicant-requirements (no property-type conditional): utility estimates.
+            'est_water_sewer_trash'             => self::ALL_LANDLORD,              // :446
+            'est_electric'                      => self::ALL_LANDLORD,              // :457
+            'est_internet'                      => self::ALL_LANDLORD,              // :468
+            'est_cable'                         => self::ALL_LANDLORD,              // :479
+            // LP tax-legal-hoa-disclosures (no property-type conditional).
+            'additional_parcels'                => self::ALL_LANDLORD,              // :75
+            'total_parcel_count'                => self::ALL_LANDLORD,              // :94
+            'flood_insurance_required'          => self::ALL_LANDLORD,              // :189
+            'flood_zone_panel'                  => self::ALL_LANDLORD,              // :208
+            'flood_zone_date'                   => self::ALL_LANDLORD,              // :223
+            'has_cdd'                           => self::ALL_LANDLORD,              // :248
+            'annual_cdd_fee'                    => self::ALL_LANDLORD,              // :268
+            'has_special_assessments'           => self::ALL_LANDLORD,              // :286
+            'special_assessment_amount'         => self::ALL_LANDLORD,              // :306
+            'special_assessment_description'    => self::ALL_LANDLORD,              // :322
+            'association_type'                  => self::ALL_LANDLORD,              // :369 (has_hoa Yes)
+            'association_approval_required'     => self::ALL_LANDLORD,              // :475
+            'association_approval_process'      => self::ALL_LANDLORD,              // :494
+            'association_application_fee'       => self::ALL_LANDLORD,              // :509
+            'max_leases_per_year'               => self::ALL_LANDLORD,              // :654 (leasing_restrictions Yes)
         ],
     ];
 
@@ -213,8 +424,9 @@ final class AskAiFieldApplicability
     }
 
     /**
-     * Types MLS quick import can write this canonical field for. REPORTING ONLY — never a gate;
-     * see the class docblock.
+     * Types MLS quick import can write this canonical field for. Never gates a MANUAL listing;
+     * for an MLS-imported one it is the import admission the question service applies (see the
+     * class docblock).
      *
      * @return list<string>
      */

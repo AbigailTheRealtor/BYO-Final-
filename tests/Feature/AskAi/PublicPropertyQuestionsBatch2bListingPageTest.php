@@ -106,20 +106,30 @@ class PublicPropertyQuestionsBatch2bListingPageTest extends TestCase
         ];
     }
 
+    /**
+     * The Ask AI surface: the card (FEATURED questions) plus the selection modal (EVERY
+     * answerable question with its precomputed answer, 2026-09-25). Leak assertions run
+     * against both halves; completeness is read from the modal.
+     */
     private function card(string $html, string $role): string
     {
         $start = strpos($html, 'data-ask-ai-property-questions="' . $role . '"');
         $this->assertNotFalse($start);
         $prefix = $role === 'landlord' ? 'lol' : 'sol';
         $next   = strpos($html, 'class="' . $prefix . '-interaction-card"', $start);
+        $card   = substr($html, $start, $next === false ? null : $next - $start);
 
-        return substr($html, $start, $next === false ? null : $next - $start);
+        $mStart = strpos($html, 'data-ask-ai-picker="' . $role . '"');
+        $this->assertNotFalse($mStart, "No Ask AI modal for {$role}.");
+        $mEnd = strpos($html, 'ask-ai-picker-disclaimer', $mStart);
+
+        return $card . substr($html, $mStart, $mEnd === false ? null : $mEnd - $mStart);
     }
 
-    /** @return array<string,string> id => answer (HTML-decoded) */
+    /** @return array<string,string> id => answer (HTML-decoded), every answerable question in display order */
     private function answers(string $card): array
     {
-        preg_match_all('#<details[^>]*data-property-question="([a-z_]+)"[^>]*>\s*<summary[^>]*>.*?</summary>\s*<p[^>]*data-property-answer="\1"[^>]*>(.*?)</p>#s', $card, $m, PREG_SET_ORDER);
+        preg_match_all('#<p[^>]*data-ask-ai-answer-for="([a-z_0-9]+)"[^>]*>(.*?)</p>#s', $card, $m, PREG_SET_ORDER);
         $out = [];
         foreach ($m as [, $id, $answer]) {
             $out[$id] = html_entity_decode(trim($answer), ENT_QUOTES);

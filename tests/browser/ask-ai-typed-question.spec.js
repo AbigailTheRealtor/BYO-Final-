@@ -1,18 +1,18 @@
 /*
  |-----------------------------------------------------------------------------
- | Ask AI typed question — matching happens in the browser, and nothing leaves it
+ | Ask AI question picker — search FILTERS, selection answers, nothing leaves the page
  |-----------------------------------------------------------------------------
  |
- | PHPUnit can read the markup and the matcher's source, but it cannot press Enter.
- | It cannot see a submit handler that navigates, a keystroke listener that fires a
- | request, or an input that silently posts because something wrapped it in a form.
- | This spec types into the real matcher, against a fixture generated from the real
- | service output, and asserts on what the page ATTEMPTED to send.
+ | The file name is historical (Batch 3's typed-question box, now retired). Ask AI is
+ | SELECTION-BASED: the modal lists every verified question with its precomputed answer,
+ | "Search questions..." only filters that list, and the viewer then selects one.
  |
- | Asserting on attempts rather than on outcomes is the whole point, and the guard in
- | support/network.js proves itself in harness.spec.js by contacting a forbidden host
- | on purpose — so "no requests" here is a real absence rather than a recorder that
- | was never wired up.
+ | PHPUnit can read the markup and the picker's source, but it cannot type or press Enter.
+ | It cannot see a keystroke listener that fires a request, an Enter handler that submits,
+ | or a filter that hides the wrong questions. This spec drives the real
+ | public/js/ask-ai/question-picker.js against a fixture that TypedQuestionBrowserFixtureParityTest
+ | requires to be byte-for-byte what the seller and landlord pages render, and asserts on what
+ | the page ATTEMPTED to send — the guard in support/network.js records attempts, not outcomes.
  */
 
 const { test, expect } = require('@playwright/test');
@@ -20,166 +20,154 @@ const { installNetworkGuard } = require('./support/network');
 
 const PAGE = '/ask-ai/typed-question.html';
 
-/** Requests the page made that were not the fixture document or the matcher itself. */
+/** Requests the page made that were not the fixture document or the picker itself. */
 function extraRequests(record) {
     return record.all.filter(
-        (url) => !url.endsWith(PAGE) && !url.includes('/ask-ai-js/deterministic-question-matcher.js')
+        (url) => !url.endsWith(PAGE) && !url.includes('/ask-ai-js/question-picker.js')
     );
 }
 
-async function ask(page, role, text) {
-    const card = page.locator(`[data-ask-ai-property-questions="${role}"]`);
-    await card.locator('[data-ask-ai-ask-input]').fill(text);
-    await card.locator('[data-ask-ai-ask-button]').click();
-    return card;
+function picker(page, role) {
+    return page.locator(`[data-ask-ai-picker="${role}"]`);
 }
 
-/** Which question ids are currently open in a card. */
-function openIds(card) {
-    return card.locator('details[open]').evaluateAll(
-        (els) => els.map((el) => el.getAttribute('data-property-question'))
+/** Ids of the View-all entries currently visible (the list itself must be shown too). */
+async function visibleIds(root) {
+    const list = root.locator('[data-ask-ai-picker-all]');
+    if (!(await list.isVisible())) {
+        return [];
+    }
+    return list.locator('[data-ask-ai-pick]').evaluateAll(
+        (els) => els.filter((el) => !el.hidden).map((el) => el.getAttribute('data-ask-ai-pick'))
     );
 }
 
-test.describe('typed question matching', () => {
-    test('seller: "How much is the HOA?" opens the HOA answer and sends nothing', async ({ page }) => {
+async function allIds(root) {
+    return root.locator('[data-ask-ai-picker-all] [data-ask-ai-pick]').evaluateAll(
+        (els) => els.map((el) => el.getAttribute('data-ask-ai-pick'))
+    );
+}
+
+async function search(root, text) {
+    await root.locator('[data-ask-ai-picker-search]').fill(text);
+    return visibleIds(root);
+}
+
+test.describe('Ask AI question picker', () => {
+    test('starts with recommended questions only; View all reveals every question and Hide all collapses', async ({ page }) => {
         const record = await installNetworkGuard(page);
         await page.goto(PAGE);
+        const root = picker(page, 'seller');
 
-        const card = await ask(page, 'seller', 'How much is the HOA?');
+        const recommended = await root.locator('.ask-ai-picker-recommended [data-ask-ai-pick]').count();
+        expect(recommended).toBeGreaterThanOrEqual(4);
+        expect(recommended).toBeLessThanOrEqual(6);
+        await expect(root.locator('[data-ask-ai-picker-all]')).toBeHidden();
+        await expect(root.locator('[data-ask-ai-picker-answer]')).toBeHidden();
 
-        expect(await openIds(card)).toEqual(['seller_hoa_fee_coverage']);
-        await expect(card.locator('[data-property-answer="seller_hoa_fee_coverage"]')).toBeVisible();
+        const toggle = root.locator('[data-ask-ai-picker-toggle]');
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        await expect(toggle).toHaveText('Hide all questions');
+        expect(await visibleIds(root)).toEqual(await allIds(root));
+        expect((await allIds(root)).length).toBeGreaterThan(recommended);
+
+        // Capped and scrolling rather than growing the modal.
+        const overflow = await root.locator('[data-ask-ai-picker-all]').evaluate((el) => getComputedStyle(el).overflowY);
+        expect(overflow).toBe('auto');
+
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        await expect(root.locator('[data-ask-ai-picker-all]')).toBeHidden();
         expect(extraRequests(record)).toEqual([]);
     });
 
-    test('landlord: "flood zone" opens the flood answer and sends nothing', async ({ page }) => {
+    test('search filters through the deterministic aliases', async ({ page }) => {
         const record = await installNetworkGuard(page);
         await page.goto(PAGE);
+        const root = picker(page, 'seller');
 
-        const card = await ask(page, 'landlord', 'flood zone');
+        const cases = {
+            roof: ['seller_roof_type', 'kb_seller_roof_age_and_condition'],
+            'age of roof': ['kb_seller_roof_age_and_condition'],
+            taxes: ['seller_property_taxes'],
+            utilities: ['seller_utilities'],
+            baths: ['seller_bathrooms'],
+            sqft: ['seller_heated_square_feet'],
+        };
+        for (const [query, expected] of Object.entries(cases)) {
+            const ids = await search(root, query);
+            for (const id of expected) {
+                expect(ids, `"${query}" should surface ${id}`).toContain(id);
+            }
+            expect(ids.length, `"${query}" should narrow the list`).toBeLessThan((await allIds(root)).length);
+        }
 
-        expect(await openIds(card)).toEqual(['landlord_flood_zone']);
-        await expect(card.locator('[data-property-answer="landlord_flood_zone"]'))
-            .toContainText('FEMA Flood Zone VE');
+        // No match says so and shows no list.
+        expect(await search(root, 'zzqx nothing')).toEqual([]);
+        await expect(root.locator('[data-ask-ai-picker-empty]')).toBeVisible();
+
+        // Clearing returns to the collapsed state.
+        expect(await search(root, '')).toEqual([]);
+        await expect(root.locator('[data-ask-ai-picker-empty]')).toBeHidden();
         expect(extraRequests(record)).toEqual([]);
     });
 
-    test('buyer: "budget" opens the budget answer and sends nothing', async ({ page }) => {
+    test('typing and pressing Enter send nothing and answer nothing', async ({ page }) => {
         const record = await installNetworkGuard(page);
         await page.goto(PAGE);
+        const root = picker(page, 'seller');
+        const input = root.locator('[data-ask-ai-picker-search]');
 
-        const card = await ask(page, 'buyer', 'budget');
-
-        expect(await openIds(card)).toEqual(['buyer_budget']);
-        await expect(card.locator('[data-property-answer="buyer_budget"]'))
-            .toContainText('looking for a purchase price up to');
-        expect(extraRequests(record)).toEqual([]);
-    });
-
-    test('tenant: "When do they want to move?" opens the move-in answer and sends nothing', async ({ page }) => {
-        const record = await installNetworkGuard(page);
-        await page.goto(PAGE);
-
-        const card = await ask(page, 'tenant', 'When do they want to move?');
-
-        expect(await openIds(card)).toEqual(['tenant_move_in']);
-        expect(extraRequests(record)).toEqual([]);
-    });
-
-    test('an unknown question says so locally and sends nothing', async ({ page }) => {
-        const record = await installNetworkGuard(page);
-        await page.goto(PAGE);
-
-        const card = await ask(page, 'seller', 'Who is the neighbor?');
-
-        await expect(card.locator('[data-ask-ai-ask-status]'))
-            .toHaveText("I don't have a verified answer for that yet. Choose one of the available questions below.");
-        expect(await openIds(card)).toEqual([]);
-        expect(extraRequests(record)).toEqual([]);
-    });
-
-    test('a question this listing cannot answer is not matchable', async ({ page }) => {
-        const record = await installNetworkGuard(page);
-        await page.goto(PAGE);
-
-        // The buyer card carries no acreage question, so its vocabulary is absent — the
-        // browser has nothing to match against however the words are typed.
-        const card = await ask(page, 'buyer', 'acreage');
-
-        await expect(card.locator('[data-ask-ai-ask-status]')).toContainText("don't have a verified answer");
-        expect(await openIds(card)).toEqual([]);
-        expect(extraRequests(record)).toEqual([]);
-    });
-
-    test('Enter submits, and typing alone does nothing', async ({ page }) => {
-        const record = await installNetworkGuard(page);
-        await page.goto(PAGE);
-
-        const card = page.locator('[data-ask-ai-property-questions="seller"]');
-        const input = card.locator('[data-ask-ai-ask-input]');
-
-        // Typing must not match, submit or navigate — only explicit submission acts.
-        await input.type('taxes');
-        expect(await openIds(card)).toEqual([]);
-        await expect(card.locator('[data-ask-ai-ask-status]')).toHaveText('');
-
+        await input.type('How much are the taxes?');
         await input.press('Enter');
-        expect(await openIds(card)).toEqual(['seller_property_taxes']);
+        await input.type(' roof');
+        await input.press('Enter');
+
+        await expect(root.locator('[data-ask-ai-picker-answer]')).toBeHidden();
+        expect(await root.locator('[aria-pressed="true"]').count()).toBe(0);
         expect(page.url()).toContain(PAGE);
         expect(extraRequests(record)).toEqual([]);
     });
 
-    test('punctuation, case and spacing do not change the result', async ({ page }) => {
+    test('selecting a question — featured or not — shows its precomputed answer', async ({ page }) => {
         const record = await installNetworkGuard(page);
         await page.goto(PAGE);
+        const root = picker(page, 'seller');
+        const featured = await root.locator('.ask-ai-picker-recommended [data-ask-ai-pick]').evaluateAll(
+            (els) => els.map((el) => el.getAttribute('data-ask-ai-pick'))
+        );
 
-        for (const text of ['taxes', '  TAXES  ', 'Taxes?', 'What are the taxes?']) {
-            const card = await ask(page, 'seller', text);
-            expect(await openIds(card), `query: ${text}`).toEqual(['seller_property_taxes']);
+        async function expectAnswerFor(id) {
+            const expected = (await root.locator(`[data-ask-ai-answer-for="${id}"]`).textContent()).trim();
+            const panel = root.locator('[data-ask-ai-picker-answer]');
+            await expect(panel).toBeVisible();
+            await expect(panel).toHaveAttribute('data-ask-ai-selected', id);
+            await expect(root.locator('[data-ask-ai-picker-answer-text]')).toHaveText(expected);
         }
 
+        // A featured question, from the recommended row.
+        await root.locator(`.ask-ai-picker-recommended [data-ask-ai-pick="${featured[0]}"]`).click();
+        await expectAnswerFor(featured[0]);
+
+        // A NON-featured question, found by search and selected from the list.
+        for (const id of ['seller_utilities', 'kb_seller_roof_age_and_condition']) {
+            expect(featured).not.toContain(id);
+            await search(root, id === 'seller_utilities' ? 'utilities' : 'age of roof');
+            await root.locator(`[data-ask-ai-picker-all] [data-ask-ai-pick="${id}"]`).click();
+            await expectAnswerFor(id);
+            await expect(root.locator(`[data-ask-ai-picker-all] [data-ask-ai-pick="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
+        }
         expect(extraRequests(record)).toEqual([]);
     });
 
-    test('a successful match replaces the previous no-match message', async ({ page }) => {
+    test('one modal leaves the other alone', async ({ page }) => {
         await installNetworkGuard(page);
         await page.goto(PAGE);
 
-        const card = await ask(page, 'seller', 'Who is the neighbor?');
-        await expect(card.locator('[data-ask-ai-ask-status]')).toContainText("don't have a verified answer");
-
-        await ask(page, 'seller', 'taxes');
-        await expect(card.locator('[data-ask-ai-ask-status]')).not.toContainText("don't have a verified answer");
-        expect(await openIds(card)).toEqual(['seller_property_taxes']);
-    });
-
-    test('matching one card leaves the other cards alone', async ({ page }) => {
-        await installNetworkGuard(page);
-        await page.goto(PAGE);
-
-        await ask(page, 'seller', 'taxes');
-
-        for (const role of ['landlord', 'buyer', 'tenant']) {
-            expect(await openIds(page.locator(`[data-ask-ai-property-questions="${role}"]`)), role).toEqual([]);
-        }
-    });
-
-    test('the matched summary is focused, and details stay native', async ({ page }) => {
-        await installNetworkGuard(page);
-        await page.goto(PAGE);
-
-        const card = await ask(page, 'seller', 'taxes');
-
-        const focusedId = await page.evaluate(() => {
-            const el = document.activeElement.closest('details');
-            return el ? el.getAttribute('data-property-question') : null;
-        });
-        expect(focusedId).toBe('seller_property_taxes');
-
-        // Still a real disclosure widget: clicking the summary collapses it again.
-        await card.locator('details[data-property-question="seller_property_taxes"] summary').click();
-        expect(await openIds(card)).toEqual([]);
+        await search(picker(page, 'seller'), 'taxes');
+        await expect(picker(page, 'landlord').locator('[data-ask-ai-picker-all]')).toBeHidden();
+        expect(await search(picker(page, 'landlord'), 'flood zone')).toContain('landlord_flood_zone');
     });
 
     test('the page carries no form and no named input', async ({ page }) => {
@@ -188,5 +176,6 @@ test.describe('typed question matching', () => {
 
         expect(await page.locator('form').count()).toBe(0);
         expect(await page.locator('input[name]').count()).toBe(0);
+        expect(await page.locator('textarea').count()).toBe(0);
     });
 });

@@ -301,7 +301,7 @@ class MlsQuickImportService
             'postal_code'   => $candidate->postalCode,
             'price'         => $candidate->listPrice,
             'bedrooms'      => $candidate->bedrooms,
-            'bathrooms'     => $candidate->bathrooms,
+            'bathrooms'     => $candidate->bathroomsTotal,
             'living_area'   => $candidate->livingAreaSqft,
             'year_built'    => $candidate->yearBuilt,
             'property_type' => $candidate->propertyType,
