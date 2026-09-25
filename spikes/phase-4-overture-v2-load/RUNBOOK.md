@@ -186,7 +186,7 @@ A reviewer approves the `preflight` job (the Environment pauses it). It proves, 
 | P02 | not the application database |
 | P03 / P04 | PostgreSQL 16; PostGIS 3.6.x (versions printed, no credential) |
 | P05 / P06 | v1 `overture-2026-06-17.0-fl` is the one active overture-places corpus, 29,434 in the ledger and in `places` |
-| P07 | no `overture_v2_*` table exists |
+| P07 | no `overture_v2_*` table exists (other stages: exactly the three, empty for `import`; plus P07R1–P07R4 for `import-recovery` only, §8a) |
 | P08 | the migration ledger is exactly the eleven applied core migrations — the two August address migrations are still pending |
 | file guard | the repository's spatial migrations are exactly the known sixteen; the only write-phase candidates are the three `2026_09_24` v2 migrations |
 
@@ -238,8 +238,8 @@ substitute**. The roles are:
 - **Abigail — independent human reviewer / approver.** Approves each write phase.
 
 Reaching a ready state authorises nothing: **no production write executes merely because the
-operator is ready.** For EACH write phase — the schema migration (§7) and, separately, the corpus
-import (§8) — the operator:
+operator is ready.** For EACH write phase — the schema migration (§7), separately the corpus
+import (§8), and separately any recovery retry after a failed import (§8a) — the operator:
 
 1. prepares the exact command, the expected pre-state and the expected post-state;
 2. **STOPS**;
@@ -333,6 +333,75 @@ Sequence: `gate` → `preflight` (`v2_state=empty`, approval) → `import` (appr
 The extraction files live only in the runner's temporary directory and are discarded with it:
 never committed, never uploaded.
 
+**If the import fails** (a non-zero exit, `FAILED, rolled back …`): **STOP and report.** Do not
+rerun. Step 5's preflight (`v2_state=empty`) will refuse a rerun anyway — after a failed import
+`overture_v2_corpora` holds the failed attempt's row, so P07 is not "empty". A retry is §8a, which
+is a separate write phase needing its own approval.
+
+**If a step AFTER `IMPORTED` fails** (verify, the second import, sample fidelity, the v1 diff): the
+corpus row is already `ready`, which §8a refuses by design. **STOP for manual review** — this is not
+a failed import and no recovery path in this procedure applies.
+
+## 8a. Stage `import-recovery` — WRITE, only after a failed import, only with separate approval
+
+**What a failed import leaves, from `OvertureV2CorpusImporter`:** the importer marks the corpus
+row `preparing` under a fresh run token, writes every place and membership in **one** transaction,
+and on failure marks the row `failed` with a `failure_reason` (or leaves it `preparing` if that
+update itself could not run — e.g. the connection was gone). The data transaction rolled back, so
+**zero places and zero memberships are committed**, and the imported counts stay NULL. The
+importer's own re-run semantics make the identical command safe from exactly that state: it
+re-arms any **non-`ready`** row under a new run token, locks it, requires `preparing` under its own
+token with the same checksums, and requires zero existing places before inserting anything; a
+`ready` row is never overwritten.
+
+**The flow — none of it automatic:**
+
+1. The normal §8 import fails. The operator **STOPS** and reports the failed state (importer
+   output, the `overture_v2_corpora` row's status and `failure_reason`, place/membership counts,
+   the v1 snapshot).
+2. **Abigail separately approves the recovery retry.** The original import approval does **not**
+   authorise it.
+3. Dispatch `stage: import-recovery` with the pinned `commit_sha`, `confirm_fingerprint`,
+   `confirm_corpus_version`, `confirm_no_activation` (as §8) **and**
+   `confirm_recovery`: `RETRY FAILED IMPORT OF overture-2026-08-19.0-fl-r2`. The gate refuses
+   `confirm_recovery` on any other stage, so a normal import can never carry it.
+4. The preflight runs with `--v2-state=recoverable-failed-import` (both in the `preflight` job and
+   again inside the import job, immediately before the write). It keeps **every** normal check —
+   host guard, TLS, P00–P06 (fingerprint, not helium, PostgreSQL 16, PostGIS 3.6.x, v1 active with
+   29,434 rows), P07 (exactly the three v2 tables) and P08 (ledger = the eleven + the three; both
+   August migrations pending) — and adds:
+   - **P07R1** exactly one `overture_v2_corpora` row: `overture-2026-08-19.0-fl-r2`, status
+     `failed` or `preparing`; no `ready` row anywhere;
+   - **P07R2** that row carries this contract's pins, checksums and expected counts (source,
+     release, recipe, taxonomy, registry version and rule hash, both artifact SHA-256s, base /
+     supplementary / matcher / diagnostic / rescue counts, expected memberships), no imported count,
+     and a consistent status (`failed` with a reason and a finish time, or `preparing` with neither);
+   - **P07R3** zero committed places and zero committed memberships, in any corpus;
+   - **P07R4** no other session holds a lock on any `overture_v2_*` relation (a still-running import
+     is also `preparing` with zero *visible* rows). It also refuses on a transient lock — e.g.
+     autovacuum / analyze on `overture_v2_places` shortly after a large rolled-back insert. That
+     refusal fails safe: wait, confirm no importer is running, and re-run the preflight; never
+     terminate a session to make it pass.
+5. Only if it passes, the **identical** import job runs — the same extraction, the same contract
+   checks, the same dry run and the same
+   `corpus:import-overture-v2 --corpus-version=overture-2026-08-19.0-fl-r2 --extract-dir=… --write --database=pgsql_spatial`.
+6. Full verification afterwards, exactly §8 steps 7–10: `VERIFY OK`, `ALREADY READY` on the second
+   run, `SAMPLE FIDELITY OK`, v1 snapshot byte-identical.
+7. **STOP** again.
+
+Under the §6 fallback the same flow applies by hand: the operator container runs
+`bin/preflight.sh --v2-state=recoverable-failed-import` in place of `--v2-state=empty`, then the
+import job's commands unchanged, after Abigail's separate written approval for the recovery phase.
+
+**Refused — not eligible, STOP for manual review:** any committed place or membership (that is not
+a failed import); a `ready` row; more than one corpus row, or another corpus version; any pin,
+checksum or expected count that differs from the contract; an imported count recorded; a status
+other than `failed` / `preparing`, or one inconsistent with its reason/finish time; another session
+on the v2 tables; a migration ledger other than the eleven + the three; either August migration
+applied; v1 changed or no longer the one active corpus; any identity, TLS or environment guard
+failing. **Unexpected partially committed data is never eligible for this path**, and nothing here
+deletes, edits or "fixes" a row to make it eligible.
+
 ## 9. Stage `verify` — READ-ONLY
 
 `stage: verify` re-runs `preflight` (`v2_state=loaded`), `verify_v2_load.sql`, the sample and the v1
@@ -353,6 +422,7 @@ snapshot against a completed load, at any time.
 | 9 | A second person approves each write job | the Environment's required reviewers; under the §6 fallback, Abigail's explicit approval of each write phase, with the operator stopping before and after it |
 | 10 | The three v2 migrations are one batch = previous maximum + 1 | `migration_ledger.sql` before/after (L01–L05) and the core-row diff |
 | 11 | The URL is never a process argument | `bin/spatial_psql.sh`; `OvertureV2OperatorLoadGuardTest` |
+| 12 | A retry after a failed import is separately approved, and only from the exact failed state | the `import-recovery` stage and typed `confirm_recovery` (refused on every other stage); preflight `recoverable-failed-import` P07R1–P07R4; Abigail's separate approval (§8a) |
 
 ## 11. Recovery
 
@@ -360,10 +430,9 @@ snapshot against a completed load, at any time.
 |---|---|---|---|
 | Artifact count / SHA-256 differs | nothing was written; STOP and investigate the source | yes | relax a contract value to make it match |
 | A v2 migration fails | §7 | diagnose | a plain spatial rollback, `--step` |
-| Import fails before any place row | rerun the identical import (a new run token re-arms the row) | no | hand-edit `overture_v2_corpora` |
-| Import fails after partial inserts | the transaction rolled back; the row is `failed` with a reason; rerun | no | touch any v1 row |
-| Connection drops mid-import | PostgreSQL aborts the transaction; the row may stay `preparing`; rerun | no | set `status` by hand |
-| Corpus stuck `preparing` / `failed` | rerun the identical import — it proves zero places inside its transaction | read `failure_reason` first | insert places by hand (the importer then refuses forever) |
+| Import fails — before any place row, after partial inserts (rolled back), or on a dropped connection | **STOP and report.** The row is `failed` with a reason (or `preparing` if that update could not run), zero places and memberships are committed. A retry is **§8a only**: Abigail's separate approval, `stage: import-recovery`, preflight `recoverable-failed-import`, the identical import, full verification, STOP | **yes — separate approval** | rerun through `stage: import` (its preflight refuses by design); hand-edit `overture_v2_corpora`; set `status` by hand; touch any v1 row |
+| Corpus stuck `preparing` / `failed` | as above: read `failure_reason`, STOP, and only then §8a. P07R4 refuses while another session still holds the v2 tables | **yes — separate approval** | insert places by hand (the importer then refuses forever) |
+| Committed v2 places or memberships exist but no `ready` row, or any other state §8a refuses | **not a failed import — STOP for manual review.** No recovery path in this procedure applies | yes — manual review | force it through §8a; delete or edit rows to make it eligible |
 | Load rerun by accident | `ALREADY READY`, nothing written | no | re-import changed files into the same version (a hard refusal; a new corpus is a new contract entry) |
 | `main` changed between rehearsal and load | the `gate` job refuses if load-relevant code changed | re-rehearse | reuse evidence for different code |
 
