@@ -1,0 +1,498 @@
+name: Overture v2 operator load (manual, protected)
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# Class-2 OPERATOR procedure for loading the Overture v2 corpus into the live spatial cluster.
+# Runbook (read it first): spikes/phase-4-overture-v2-load/RUNBOOK.md
+#
+# WHY A PROTECTED GITHUB ENVIRONMENT. The merged tools (`php artisan migrate`,
+# `corpus:extract-overture-v2`, `corpus:import-overture-v2`) refuse production, and CLAUDE.md
+# forbids adding a production override to anything that writes. The Replit workspace carries the
+# application database's production signals, so they refuse there — correctly. The v2 schema doc
+# (§6) states the answer: "a real load must be run from a shell that carries no production
+# signals". A GitHub runner is such a shell by construction: it has no application database and
+# no helium credential. It also has no APP_ENV of its own — and config/app.php DEFAULTS an unset
+# APP_ENV to `production`, so the jobs that run artisan DECLARE `APP_ENV: operator`. That is a
+# statement of what this process truly is (an operator runner that is not the production
+# application), made in reviewed YAML — not a value changed to get past a guard: nothing is
+# unset, no inherited production signal is masked, and no override is added. With it the
+# unchanged tools run and their guards pass on what is actually true of this runner.
+#
+# WHAT PROTECTS THE CLUSTER.
+#   • `workflow_dispatch` only — never push, never pull_request, never a schedule.
+#   • The only secret, SPATIAL_DATABASE_URL, lives in the protected Environment
+#     `overture-v2-spatial` (required reviewers; deployment branch = main). Every job that can
+#     read it declares that environment, so every such job waits for a reviewer; the `gate` job
+#     holds no secret at all.
+#   • A pinned `commit_sha` that must be on main; every job checks out exactly that commit.
+#   • Every run starts with the read-only preflight (bin/preflight.sh): fingerprinted target,
+#     healthy v1, expected v2 state, exact migration ledger.
+#   • Write stages (`migrate`, `import`) additionally require: REHEARSAL.md = PASSED at the pinned
+#     commit with no load-relevant code changed since the rehearsed commit, and typed
+#     confirmations that match exactly.
+#   • The migrate stage names exactly the three 2026_09_24 v2 migrations. It never runs the
+#     spatial directory as a whole and never rolls anything back (rollback is a manual,
+#     reviewed operator action in the runbook).
+#   • Nothing here activates v2: no OVERTURE_CORPUS_POI_* variable, no provider or pin change, no
+#     corpus_imports write. The v2 schema has no `active` state at all.
+#
+# INPUTS are never interpolated into shell. They reach steps only through `env:`.
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Stage to run. preflight and verify are read-only; migrate and import write."
+        type: choice
+        options: [preflight, migrate, import, verify]
+        default: preflight
+        required: true
+      commit_sha:
+        description: "Full 40-character commit SHA on main to run (every job checks out exactly this)."
+        type: string
+        required: true
+      confirm_fingerprint:
+        description: "Write stages only: the target fingerprint, typed from RUNBOOK §2."
+        type: string
+        required: false
+        default: ""
+      confirm_migrations:
+        description: "migrate only: 2026_09_24_000001,2026_09_24_000002,2026_09_24_000003"
+        type: string
+        required: false
+        default: ""
+      confirm_corpus_version:
+        description: "import only: overture-2026-08-19.0-fl-r2"
+        type: string
+        required: false
+        default: ""
+      confirm_no_activation:
+        description: "Write stages only: THIS DOES NOT ACTIVATE OVERTURE V2"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: overture-v2-operator-load
+  cancel-in-progress: false
+
+env:
+  CORPUS_VERSION: overture-2026-08-19.0-fl-r2
+  LOAD_DIR: spikes/phase-4-overture-v2-load
+  # Every psql in every job: TLS required even if the URL omits sslmode (the URL may strengthen it).
+  PGSSLMODE: require
+
+jobs:
+  # ── 1. Gate: no secret, no environment, no database. Validates the request itself. ─────────────
+  gate:
+    name: Gate (inputs, pinned SHA, rehearsal evidence)
+    runs-on: ubuntu-latest
+    outputs:
+      v2_state: ${{ steps.decide.outputs.v2_state }}
+    steps:
+      - name: Refuse unless dispatched from main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          [ "$REF" = "refs/heads/main" ] || { echo "REFUSING: dispatch from main only (got $REF)"; exit 1; }
+
+      - name: Validate the commit SHA format
+        env:
+          INPUT_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$INPUT_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "REFUSING: commit_sha must be a full 40-hex SHA"; exit 1; }
+
+      - name: Check out the pinned commit (full history)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Pinned commit is exactly the one requested, and is on main
+        env:
+          INPUT_SHA: ${{ inputs.commit_sha }}
+          RUNNING_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [ "$(git rev-parse HEAD)" = "$INPUT_SHA" ] || { echo "REFUSING: checkout does not match commit_sha"; exit 1; }
+          git merge-base --is-ancestor "$INPUT_SHA" origin/main || { echo "REFUSING: commit_sha is not on main"; exit 1; }
+          # The YAML that is RUNNING is main's current copy; the scripts come from commit_sha. They
+          # must be the same procedure, or a later main could run gates the pinned commit never had.
+          git diff --quiet "$RUNNING_SHA" "$INPUT_SHA" -- .github/workflows/overture-v2-operator-load.yml \
+            || { echo "REFUSING: the running workflow differs from the one at commit_sha — dispatch with the current main SHA"; exit 1; }
+
+      - name: Decide the expected v2 state
+        id: decide
+        env:
+          STAGE: ${{ inputs.stage }}
+        run: |
+          set -euo pipefail
+          case "$STAGE" in
+            preflight|migrate) echo "v2_state=absent" >> "$GITHUB_OUTPUT" ;;
+            import)            echo "v2_state=empty"  >> "$GITHUB_OUTPUT" ;;
+            verify)            echo "v2_state=loaded" >> "$GITHUB_OUTPUT" ;;
+            *) echo "REFUSING: unknown stage"; exit 1 ;;
+          esac
+
+      - name: Write stages — typed confirmations must match exactly
+        if: inputs.stage == 'migrate' || inputs.stage == 'import'
+        env:
+          STAGE: ${{ inputs.stage }}
+          CONFIRM_FINGERPRINT: ${{ inputs.confirm_fingerprint }}
+          CONFIRM_MIGRATIONS: ${{ inputs.confirm_migrations }}
+          CONFIRM_CORPUS_VERSION: ${{ inputs.confirm_corpus_version }}
+          CONFIRM_NO_ACTIVATION: ${{ inputs.confirm_no_activation }}
+        run: |
+          set -euo pipefail
+          expected_fp="$(sed -n 's/^EXPECTED_FINGERPRINT="\([0-9a-f]\{64\}\)"$/\1/p' "$LOAD_DIR/bin/preflight.sh")"
+          [ -n "$expected_fp" ] || { echo "REFUSING: cannot read the recorded fingerprint"; exit 1; }
+          [ "$CONFIRM_FINGERPRINT" = "$expected_fp" ] || { echo "REFUSING: confirm_fingerprint does not match RUNBOOK §2"; exit 1; }
+          [ "$CONFIRM_NO_ACTIVATION" = "THIS DOES NOT ACTIVATE OVERTURE V2" ] || { echo "REFUSING: confirm_no_activation must be typed exactly"; exit 1; }
+          if [ "$STAGE" = "migrate" ]; then
+            [ "$CONFIRM_MIGRATIONS" = "2026_09_24_000001,2026_09_24_000002,2026_09_24_000003" ] \
+              || { echo "REFUSING: confirm_migrations must name exactly the three v2 migrations"; exit 1; }
+          fi
+          if [ "$STAGE" = "import" ]; then
+            [ "$CONFIRM_CORPUS_VERSION" = "$CORPUS_VERSION" ] || { echo "REFUSING: confirm_corpus_version mismatch"; exit 1; }
+          fi
+          echo "typed confirmations: OK"
+
+      - name: Write stages — full-size PostGIS 3.6.x rehearsal must be PASSED for this code
+        if: inputs.stage == 'migrate' || inputs.stage == 'import'
+        env:
+          INPUT_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          block="$(sed -n '/<!-- rehearsal-gate:start -->/,/<!-- rehearsal-gate:end -->/p' "$LOAD_DIR/REHEARSAL.md")"
+          field() { printf '%s\n' "$block" | sed -n "s/^$1:[[:space:]]*//p" | head -n1; }
+          [ "$(field rehearsal_status)" = "PASSED" ]            || { echo "REFUSING: REHEARSAL.md is not PASSED"; exit 1; }
+          [[ "$(field postgis_version)" =~ ^3\.6\.[0-9]+$ ]]    || { echo "REFUSING: rehearsal was not on PostGIS 3.6.x"; exit 1; }
+          [[ "$(field postgresql_version)" =~ ^16\. ]]           || { echo "REFUSING: rehearsal was not on PostgreSQL 16"; exit 1; }
+          [ "$(field places_loaded)" = "52716" ]                 || { echo "REFUSING: rehearsal did not load 52,716 places"; exit 1; }
+          [ "$(field memberships_loaded)" = "11082" ]            || { echo "REFUSING: rehearsal did not load 11,082 memberships"; exit 1; }
+          [ "$(field second_import)" = "ALREADY_READY" ]         || { echo "REFUSING: rehearsal second import was not a no-op"; exit 1; }
+          [ "$(field verify_v2_load)" = "VERIFY_OK" ]            || { echo "REFUSING: rehearsal verification did not pass"; exit 1; }
+          [ "$(field sample_fidelity)" = "OK" ]                  || { echo "REFUSING: rehearsal sample fidelity did not pass"; exit 1; }
+          [ "$(field v1_snapshot_unchanged)" = "yes" ]           || { echo "REFUSING: rehearsal did not prove v1 unchanged"; exit 1; }
+          [ "$(field rollback_recovery_exercised)" = "yes" ]     || { echo "REFUSING: rehearsal did not exercise recovery"; exit 1; }
+          rehearsed="$(field rehearsed_commit)"
+          [[ "$rehearsed" =~ ^[0-9a-f]{40}$ ]]                   || { echo "REFUSING: rehearsed_commit is not a full SHA"; exit 1; }
+          git merge-base --is-ancestor "$rehearsed" origin/main  || { echo "REFUSING: rehearsed_commit is not on main"; exit 1; }
+          git diff --quiet "$rehearsed" "$INPUT_SHA" -- app config database/migrations/spatial composer.lock \
+            artisan bootstrap scripts/overture-v2 "$LOAD_DIR/bin" "$LOAD_DIR/sql" \
+            .github/workflows/overture-v2-operator-load.yml \
+            || { echo "REFUSING: load-relevant code changed since the rehearsed commit — rehearse again"; exit 1; }
+          echo "rehearsal evidence: OK"
+
+  # ── 2. Read-only preflight. Runs first on EVERY stage; nothing else starts unless it passes. ───
+  preflight:
+    name: Read-only preflight (connectivity, identity, v1, v2 state, ledger)
+    needs: gate
+    runs-on: ubuntu-latest
+    environment: overture-v2-spatial
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+
+      # FIRST use of the secret in this job. This repository is public, so its logs are
+      # world-readable: register the target's host, addresses, user and password as masks before
+      # any step can print a connection error that names them.
+      - name: Mask the target's identity in this job's log
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/mask_log_identity.sh"
+
+      - name: psql client
+        run: |
+          set -euo pipefail
+          command -v psql >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client; }
+          psql --version
+
+      - name: Preflight (read-only)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+          V2_STATE: ${{ needs.gate.outputs.v2_state }}
+        run: bash "$LOAD_DIR/bin/preflight.sh" --v2-state="$V2_STATE"
+
+  # ── 3a. WRITE: the three v2 migrations, and nothing else. ─────────────────────────────────────
+  migrate:
+    name: WRITE — apply the three v2 spatial migrations
+    needs: [gate, preflight]
+    if: inputs.stage == 'migrate'
+    runs-on: ubuntu-latest
+    environment: overture-v2-spatial
+    env:
+      APP_ENV: operator
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      LOG_CHANNEL: stderr
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+
+      # FIRST use of the secret in this job. This repository is public, so its logs are
+      # world-readable: register the target's host, addresses, user and password as masks before
+      # any step can print a connection error that names them.
+      - name: Mask the target's identity in this job's log
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/mask_log_identity.sh"
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: "8.2"
+          extensions: pdo, pdo_pgsql, pgsql, pdo_sqlite, mbstring, intl, xml, ctype, fileinfo, json, bcmath
+          # Never let a stack trace carry a string argument (a connection string, a password).
+          ini-values: zend.exception_ignore_args=On
+          coverage: none
+
+      - name: Composer install
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Ephemeral application key (never stored)
+        run: echo "APP_KEY=base64:$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
+      - name: psql client
+        run: |
+          set -euo pipefail
+          command -v psql >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client; }
+          psql --version
+
+      - name: Re-run the read-only preflight immediately before the write (approval may have waited)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/preflight.sh" --v2-state=absent
+
+      - name: v1 snapshot (before)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_before.txt"
+
+      - name: Pretend — print the exact SQL of the three v2 migrations
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          php artisan migrate --pretend --no-interaction --database=pgsql_spatial \
+            --path=database/migrations/spatial/2026_09_24_000001_spatial_overture_v2_create_corpora.php \
+            --path=database/migrations/spatial/2026_09_24_000002_spatial_overture_v2_create_places.php \
+            --path=database/migrations/spatial/2026_09_24_000003_spatial_overture_v2_create_chain_memberships.php
+
+      - name: Apply exactly the three v2 migrations (one batch)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          php artisan migrate --no-interaction --database=pgsql_spatial \
+            --path=database/migrations/spatial/2026_09_24_000001_spatial_overture_v2_create_corpora.php \
+            --path=database/migrations/spatial/2026_09_24_000002_spatial_overture_v2_create_places.php \
+            --path=database/migrations/spatial/2026_09_24_000003_spatial_overture_v2_create_chain_memberships.php
+
+      - name: Post-check — three empty v2 tables, exact ledger (read-only)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/preflight.sh" --v2-state=empty
+
+      - name: v1 snapshot (after) — must be byte-identical
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_after.txt"
+          diff -u "$RUNNER_TEMP/v1_before.txt" "$RUNNER_TEMP/v1_after.txt"
+          echo "v1 unchanged"
+
+  # ── 3b. WRITE: extract, validate, import through the UNCHANGED guarded importer. ──────────────
+  import:
+    name: WRITE — import overture-2026-08-19.0-fl-r2 (never activates)
+    needs: [gate, preflight]
+    if: inputs.stage == 'import'
+    runs-on: ubuntu-latest
+    environment: overture-v2-spatial
+    env:
+      APP_ENV: operator
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      LOG_CHANNEL: stderr
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+
+      # FIRST use of the secret in this job. This repository is public, so its logs are
+      # world-readable: register the target's host, addresses, user and password as masks before
+      # any step can print a connection error that names them.
+      - name: Mask the target's identity in this job's log
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/mask_log_identity.sh"
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: "8.2"
+          # intl: ChainNameNormalizer (chain-name-norm-v1) needs Unicode NFKC.
+          extensions: pdo, pdo_pgsql, pgsql, pdo_sqlite, mbstring, intl, xml, ctype, fileinfo, json, bcmath
+          # Never let a stack trace carry a string argument (a connection string, a password).
+          ini-values: zend.exception_ignore_args=On
+          coverage: none
+
+      - name: Composer install
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Ephemeral application key (never stored)
+        run: echo "APP_KEY=base64:$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+
+      - name: DuckDB 1.5.5 (the version the recipe was reproduced with)
+        run: python -m pip install --no-input duckdb==1.5.5
+
+      - name: Extract — release count and FL bounding box (anonymous public bucket)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ov2x/out"
+          cd "$RUNNER_TEMP/ov2x"
+          python "$GITHUB_WORKSPACE/$LOAD_DIR/bin/run_duckdb_sql.py" "$GITHUB_WORKSPACE/scripts/overture-v2/count_release_rows.sql" > release_rows.txt
+          python "$GITHUB_WORKSPACE/$LOAD_DIR/bin/run_duckdb_sql.py" "$GITHUB_WORKSPACE/scripts/overture-v2/extract_bbox_raw.sql"
+          [ "$(tr -d '[:space:]' < release_rows.txt)" = "73631092" ] || { echo "STOP: release row count differs"; exit 1; }
+          [ "$(wc -l < overture_v2_raw_bbox.ndjson)" = "1245925" ]   || { echo "STOP: bbox row count differs"; exit 1; }
+
+      - name: Normalize with the unchanged extractor
+        run: |
+          set -euo pipefail
+          php artisan corpus:extract-overture-v2 --input="$RUNNER_TEMP/ov2x/overture_v2_raw_bbox.ndjson" \
+            --output-dir="$RUNNER_TEMP/ov2x/out" --release-row-count=73631092
+
+      - name: Artifacts must match the contract byte-for-byte
+        run: |
+          set -euo pipefail
+          contract() { php -r '$c = require "config/overture_v2_corpus.php"; echo $c["import_contracts"][getenv("CORPUS_VERSION")][$argv[1]];' "$1"; }
+          [ "$(sha256sum < "$RUNNER_TEMP/ov2x/out/base.ndjson" | cut -d' ' -f1)" = "$(contract base_sha256)" ] \
+            || { echo "STOP: base.ndjson SHA-256 differs from the contract"; exit 1; }
+          [ "$(sha256sum < "$RUNNER_TEMP/ov2x/out/supplementary.ndjson" | cut -d' ' -f1)" = "$(contract supplementary_sha256)" ] \
+            || { echo "STOP: supplementary.ndjson SHA-256 differs from the contract"; exit 1; }
+          echo "artifacts: byte-identical to the contract"
+
+      - name: Dry run — validation gate, opens no connection
+        run: |
+          set -euo pipefail
+          php artisan corpus:import-overture-v2 --corpus-version="$CORPUS_VERSION" \
+            --extract-dir="$RUNNER_TEMP/ov2x/out" | tee "$RUNNER_TEMP/dry_run.txt"
+          grep -q "VALIDATED" "$RUNNER_TEMP/dry_run.txt"
+
+      - name: psql client
+        run: |
+          set -euo pipefail
+          command -v psql >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client; }
+          psql --version
+
+      - name: Re-run the read-only preflight immediately before the write (approval may have waited)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/preflight.sh" --v2-state=empty
+
+      - name: v1 snapshot (before)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_before.txt"
+
+      - name: Import (WRITE) — explicit --database, never a default
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          php artisan corpus:import-overture-v2 --corpus-version="$CORPUS_VERSION" \
+            --extract-dir="$RUNNER_TEMP/ov2x/out" --write --database=pgsql_spatial | tee "$RUNNER_TEMP/import.txt"
+          grep -q "IMPORTED" "$RUNNER_TEMP/import.txt"
+
+      - name: Verify (read-only)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql" | tee "$RUNNER_TEMP/verify_1.txt"
+          grep -q "VERIFY OK" "$RUNNER_TEMP/verify_1.txt"
+
+      - name: Second import — must be an explicit no-op
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          php artisan corpus:import-overture-v2 --corpus-version="$CORPUS_VERSION" \
+            --extract-dir="$RUNNER_TEMP/ov2x/out" --write --database=pgsql_spatial | tee "$RUNNER_TEMP/import_2.txt"
+          grep -q "ALREADY READY" "$RUNNER_TEMP/import_2.txt"
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql" | tee "$RUNNER_TEMP/verify_2.txt"
+          grep -q "VERIFY OK" "$RUNNER_TEMP/verify_2.txt"
+          [ "$(grep -c '^LEDGER ready ' "$RUNNER_TEMP/verify_1.txt")" = "1" ] || { echo "STOP: expected exactly one ready LEDGER line"; exit 1; }
+          diff <(grep '^LEDGER ' "$RUNNER_TEMP/verify_1.txt") <(grep '^LEDGER ' "$RUNNER_TEMP/verify_2.txt")
+          echo "second import changed nothing"
+
+      - name: Sample fidelity against the extraction
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/sample_fidelity.sql" > "$RUNNER_TEMP/sample.jsonl"
+          python "$LOAD_DIR/bin/compare_sample.py" --sample "$RUNNER_TEMP/sample.jsonl" --extract-dir "$RUNNER_TEMP/ov2x/out"
+
+      - name: v1 snapshot (after) — must be byte-identical
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql" > "$RUNNER_TEMP/v1_after.txt"
+          diff -u "$RUNNER_TEMP/v1_before.txt" "$RUNNER_TEMP/v1_after.txt"
+          echo "v1 unchanged"
+
+  # ── 4. Read-only re-verification of a completed load. ────────────────────────────────────────
+  verify:
+    name: Read-only verification of the loaded corpus
+    needs: [gate, preflight]
+    if: inputs.stage == 'verify'
+    runs-on: ubuntu-latest
+    environment: overture-v2-spatial
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+
+      # FIRST use of the secret in this job. This repository is public, so its logs are
+      # world-readable: register the target's host, addresses, user and password as masks before
+      # any step can print a connection error that names them.
+      - name: Mask the target's identity in this job's log
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: bash "$LOAD_DIR/bin/mask_log_identity.sh"
+
+      - name: psql client
+        run: |
+          set -euo pipefail
+          command -v psql >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client; }
+          psql --version
+
+      - name: Verify, sample and v1 snapshot (read-only)
+        env:
+          SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/verify_v2_load.sql"
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/sample_fidelity.sql"
+          psql "$SPATIAL_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -f "$LOAD_DIR/sql/v1_snapshot.sql"

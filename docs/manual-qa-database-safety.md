@@ -80,6 +80,8 @@ and the OFFLINE corpus and gate commands (no database; they already refuse produ
 | `spikes/phase-2-batch-0a-postgis-knn/run_spike.sh` | `psql`; previously `${PGHOST:-172.17.0.2}`, so the ambient `PGHOST=helium` won, and step 00 runs `DROP TABLE IF EXISTS places_spike…` / `CREATE EXTENSION` | **guarded** by `lib/require-isolated-target.sh` (below) |
 | `spikes/…/provider-validation/run_provider_spike.sh` | `psql -h … -d …`; previously the ambient `PG*` satisfied its "required" check | **guarded** by the same helper, before `--dry-run` too |
 | `spikes/…/load_florida_overture_places.sh`, `load_florida_counties.sh` | `SPATIAL_DATABASE_URL` (the spatial cluster, not heliumdb) | unchanged. They require `--i-understand-live` and refuse `APP_ENV=production` |
+| `spikes/phase-4-overture-v2-load/bin/preflight.sh` | `SPATIAL_DATABASE_URL`, read-only (`default_transaction_read_only = on`) | **guarded**: refuses `APP_ENV=production`, `REPLIT_DEPLOYMENT`, any `DATABASE_URL`/`DB_*` naming helium and ANY ambient libpq routing variable (`PGHOST`, `PGHOSTADDR`, `PGSERVICE`, …) — it refuses the shell rather than unsetting them — a URL with no explicit host, a host outside `*.db.postgresbridge.com`, any URL parameter beyond `sslmode`/`connect_timeout`/`application_name`, and a TLS mode weaker than `require`; then proves the target by fingerprint. It never prints `psql`'s raw error text (a connection error names the host and user, and this repository's Actions logs are public); `bin/mask_log_identity.sh` masks the target in every job that reads the secret. `OvertureV2OperatorLoadGuardTest` |
+| `.github/workflows/overture-v2-operator-load.yml` | the live spatial cluster, through the **unchanged** `migrate` / `corpus:*-overture-v2` commands, from a GitHub runner that carries no production signals | `workflow_dispatch` only; the one secret lives in the protected Environment `overture-v2-spatial` (required reviewers); the artisan jobs DECLARE `APP_ENV=operator` (the runner has none, and `config/app.php` defaults to production) — a truthful identity in reviewed YAML, nothing unset or masked; pinned SHA on `main`; actions pinned by commit SHA; read-only preflight first; write stages gated on `REHEARSAL.md` and typed confirmations; exactly the three v2 migration paths; no activation. No production override is added anywhere. Runbook: `spikes/phase-4-overture-v2-load/RUNBOOK.md` |
 
 **Stage 0 runner protection.** These are `psql`-only shell tools, so they do not reuse the PHP
 guard's resolution logic. They use a smaller rule that fails closed, in
@@ -195,6 +197,9 @@ because there would be somewhere else to send people.
 * The spatial loaders `load_florida_overture_places.sh` / `load_florida_counties.sh` pass
   `SPATIAL_DATABASE_URL` to `psql`. They require `--i-understand-live` and refuse
   `APP_ENV=production`, but a URL with no host would still fall back to the ambient `PGHOST`.
+  The Overture v2 operator load (`spikes/phase-4-overture-v2-load/`) closes that gap for itself:
+  `bin/preflight.sh` refuses a URL without an explicit Crunchy host before any `psql`, and its
+  workflow writes only after that preflight, a recorded full-size rehearsal and reviewer approval.
 * `php artisan db:seed` for reference-data seeders (`UsZipCodesSeeder` truncates `us_zip_codes`,
   `FloridaCitySeeder` deletes Florida cities, `DatabaseSeeder` runs 19 seeders). These are
   production data maintenance and were left alone deliberately.

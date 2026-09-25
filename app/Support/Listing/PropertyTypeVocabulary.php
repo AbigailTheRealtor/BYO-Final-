@@ -189,6 +189,24 @@ final class PropertyTypeVocabulary
     ];
 
     /**
+     * The primary spelling of each CACHED / COMPOSED entry above — the answer
+     * {@see recognisedTypeFor()} gives. A list of seven spellings, not a second
+     * table: each resolves through SOURCE_TYPES for its meaning, and a test pins
+     * that together they cover every (category, transaction) pair exactly once.
+     *
+     * @var list<string>
+     */
+    private const PRIMARY_TYPES = [
+        'Residential',
+        'Residential Lease',
+        'Income',
+        'Commercial Sale',
+        'Commercial Lease',
+        'Business Opportunity',
+        'Vacant Land',
+    ];
+
+    /**
      * Translate a source property type into the vocabulary $role's forms use.
      *
      * The recognised table is consulted FIRST. That ordering is the whole fix
@@ -343,6 +361,44 @@ final class PropertyTypeVocabulary
         return $role === 'landlord'
             ? ['Residential Property', 'Commercial Property']
             : ['Residential', 'Income', 'Commercial', 'Business', 'Vacant Land'];
+    }
+
+    /**
+     * The primary recognised property type for a BidYourOffer category and a
+     * transaction — the reverse of {@see roleCategoryFor()} + {@see transactionFor()}
+     * — or null.
+     *
+     * "Primary" means the one spelling this platform already uses for that
+     * meaning everywhere a property type is compared exactly: the Criteria
+     * forms' property_types, the SQL type filter, Explore's allowlist and the
+     * match engine. It is a platform token, not a provider's spelling, and it is
+     * one of this table's own entries, so its meaning is decided by the table
+     * rather than restated here.
+     *
+     * Exactly one entry answers each (category, transaction) pair: the seven
+     * PRIMARY_TYPES above, which are the CACHED and COMPOSED entries. The RESO
+     * aliases (`ResidentialIncome`, `Land`) share a meaning with an entry here
+     * and are never returned; the BYO entries carry no transaction and are
+     * never returned. `$category` is the seller-side category, the one the
+     * canonical listing carries for every role. Anything unrecognised — a
+     * landlord wording, an unknown category, a pair no entry has, a null —
+     * returns null rather than a guessed type.
+     */
+    public static function recognisedTypeFor(?string $category, ?string $transaction): ?string
+    {
+        if ($category === null || $transaction === null) {
+            return null;
+        }
+
+        foreach (self::PRIMARY_TYPES as $type) {
+            $known = self::SOURCE_TYPES[self::lookupKey($type)];
+
+            if ($known['seller'] === $category && $known['transaction'] === $transaction) {
+                return $type;
+            }
+        }
+
+        return null;
     }
 
     /**
