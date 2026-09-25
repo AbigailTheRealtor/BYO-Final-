@@ -56,6 +56,65 @@ final class SmartTagSourceRules
         return array_values((array) (self::raw()['bridge']['rules'] ?? []));
     }
 
+    /**
+     * May this Bridge rule PROVE $tag absent when the rule's field is populated without it?
+     *
+     * Null means no: the pair is not declared under `bridge.negative_evidence`, and that
+     * default is the safety property — a rule that can emit a tag says nothing about its
+     * absence until someone has verified that the provider field can express it. When the
+     * pair is declared, the normalised `uninformative` tokens (a field holding only these
+     * is not evidence) and `masked_by` values (generic values that can stand for this tag,
+     * which leave it unknown on that row) come back with it.
+     *
+     * Read only by seeker checkability; derivation never consults it.
+     *
+     * @param array<string, mixed> $rule
+     * @return array{uninformative: list<string>, masked_by: list<string>}|null
+     */
+    public static function negativeEvidence(array $rule, string $tag): ?array
+    {
+        $spec = self::raw()['bridge']['negative_evidence'][(string) ($rule['id'] ?? '')] ?? null;
+
+        if (! is_array($spec) || ! in_array($tag, (array) ($spec['tags'] ?? []), true)) {
+            return null;
+        }
+
+        $normalize = static fn (array $values): array => array_values(array_map(
+            static fn ($v) => NativeMetaValueReader::normalizeOption((string) $v),
+            $values,
+        ));
+
+        return [
+            'uninformative' => $normalize((array) ($spec['uninformative'] ?? [])),
+            'masked_by'     => $normalize((array) ($spec['masked_by'][$tag] ?? [])),
+        ];
+    }
+
+    /**
+     * Whether a rule RECOGNISES a raw value — maps it to some tag, or matches its values,
+     * negate_values or prefix. Used to keep negative-evidence tokens honest: a value the
+     * rule already reads as a feature can be neither uninformative nor a mask.
+     *
+     * @param array<string, mixed> $rule
+     */
+    private static function recognises(array $rule, string $value): bool
+    {
+        $needle = NativeMetaValueReader::normalizeOption($value);
+
+        if (($rule['kind'] ?? null) === 'vocab') {
+            return array_key_exists($needle, self::vocabulary((string) ($rule['vocab'] ?? '')));
+        }
+
+        foreach (array_merge((array) ($rule['values'] ?? []), (array) ($rule['negate_values'] ?? [])) as $candidate) {
+            if (NativeMetaValueReader::normalizeOption((string) $candidate) === $needle) {
+                return true;
+            }
+        }
+
+        return isset($rule['prefix'])
+            && str_starts_with($needle, NativeMetaValueReader::normalizeOption((string) $rule['prefix']));
+    }
+
     /** @return array<int, array<string, mixed>> */
     public static function nativeRules(SmartTagListingType $type): array
     {
@@ -285,6 +344,48 @@ final class SmartTagSourceRules
                     $resolved = SmartTagContext::tryFrom((string) $ctx);
                     if ($resolved === null || ! $definition->appliesTo($resolved)) {
                         $errors[] = "description.{$tag}[{$i}]: context {$ctx} is not allowed for the tag";
+                    }
+                }
+            }
+        }
+
+        // Negative evidence may only narrow what a real Bridge rule already emits.
+        $bridgeById = [];
+        foreach (self::bridgeRules() as $rule) {
+            $bridgeById[(string) ($rule['id'] ?? '')] = $rule;
+        }
+        foreach ((array) ($raw['bridge']['negative_evidence'] ?? []) as $ruleId => $spec) {
+            $where = "negative_evidence.{$ruleId}";
+            $rule = $bridgeById[(string) $ruleId] ?? null;
+            if ($rule === null) {
+                $errors[] = "{$where}: no such Bridge rule";
+                continue;
+            }
+            $tags = (array) ($spec['tags'] ?? []);
+            if ($tags === []) {
+                $errors[] = "{$where}: declares no tags";
+            }
+            foreach ($tags as $tag) {
+                if (! in_array($tag, self::tagsEmittableBy($rule), true)) {
+                    $errors[] = "{$where}: {$tag} is not a tag this rule can emit";
+                }
+            }
+            $readsValues = in_array($rule['kind'] ?? null, ['vocab', 'any', 'prefix', 'nonempty', 'equals'], true);
+            if (! $readsValues && (isset($spec['uninformative']) || isset($spec['masked_by']))) {
+                $errors[] = "{$where}: uninformative / masked_by apply only to rules that read values";
+            }
+            foreach ((array) ($spec['uninformative'] ?? []) as $token) {
+                if (self::recognises($rule, (string) $token)) {
+                    $errors[] = "{$where}: uninformative token \"{$token}\" is a value the rule reads";
+                }
+            }
+            foreach ((array) ($spec['masked_by'] ?? []) as $tag => $values) {
+                if (! in_array($tag, $tags, true)) {
+                    $errors[] = "{$where}: masked_by names {$tag}, which is not in its tags";
+                }
+                foreach ((array) $values as $value) {
+                    if (self::recognises($rule, (string) $value)) {
+                        $errors[] = "{$where}: mask \"{$value}\" is a value the rule reads";
                     }
                 }
             }

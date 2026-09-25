@@ -79,14 +79,15 @@ class SeekerSmartTagMatchingTest extends TestCase
     /** @test */
     public function one_selected_tag_the_listing_was_checked_for_and_lacks_earns_nothing_and_is_explained(): void
     {
-        // InteriorFeatures populated, and the governed rule that could name Quartz did not.
-        $home = $this->derived(['InteriorFeatures' => ['Granite Counters']]);
+        // Cooling populated with another system type — a field that names THE cooling system,
+        // so it can say "no" to central air — and it did not name it.
+        $home = $this->derived(['Cooling' => ['Wall/Window Unit(s)']]);
 
-        $result = $this->build($home, ['quartz_countertops']);
+        $result = $this->build($home, ['central_air']);
 
         $this->assertSame(0, $result->categoryScores['amenities']);
         $this->assertSame($this->score($home, [])->totalScore - 10, $result->totalScore);
-        $this->assertContains('Does not list: Quartz Countertops', array_column($result->tradeoffs, 'label'));
+        $this->assertContains('Does not list: Central Air', array_column($result->tradeoffs, 'label'));
     }
 
     /** @test */
@@ -110,8 +111,8 @@ class SeekerSmartTagMatchingTest extends TestCase
         $criteria = ['wants_pool' => true, 'wants_garage' => true, 'wants_waterfront' => true, 'wants_any_view' => true];
 
         // Pool 4 + garage 3 + waterfront 2 + view 1 all earned, a CHECKED pick 4 × 0 → 10 × 10/14.
-        $checked = $this->derived(['InteriorFeatures' => ['Walk-In Closet(s)']], $columns);
-        $this->assertSame((int) round(10 * 10 / 14), $this->score($checked, ['quartz_countertops'], $criteria)->categoryScores['amenities']);
+        $checked = $this->derived(['Cooling' => ['Wall/Window Unit(s)']], $columns);
+        $this->assertSame((int) round(10 * 10 / 14), $this->score($checked, ['central_air'], $criteria)->categoryScores['amenities']);
 
         // An UNCHECKABLE pick is not an expressed amenity on this listing: exactly the structured score.
         $unknown = $this->derived([], $columns);
@@ -137,6 +138,7 @@ class SeekerSmartTagMatchingTest extends TestCase
         $nothing    = $this->bridge(['gas_range']);
         $realistic  = $this->derived([
             'InteriorFeatures' => ['Quartz Counters', 'Walk-In Closet(s)'],
+            'Cooling'          => ['Wall/Window Unit(s)'],
             'Appliances'       => ['Range Gas'],
             'Flooring'         => ['Tile'],
             'CommunityFeatures'=> ['Clubhouse'],
@@ -159,7 +161,9 @@ class SeekerSmartTagMatchingTest extends TestCase
         $match = $this->score($realistic, $all)->seekerFeatureMatch;
         $this->assertSame(count($all), count($match->matchedKeys) + count($match->knownAbsentKeys) + count($match->unknownKeys()));
         $this->assertContains('quartz_countertops', $match->matchedKeys);
-        $this->assertContains('granite_countertops', $match->knownAbsentKeys, 'InteriorFeatures was populated');
+        $this->assertContains('central_air', $match->knownAbsentKeys, 'Cooling names the system, so it can say no');
+        $this->assertContains('vaulted_ceilings', $match->unknownKeys(), 'a sparse InteriorFeatures checklist never says no');
+        $this->assertContains('granite_countertops', $match->unknownKeys(), 'Stellar InteriorFeatures cannot say no to granite');
         $this->assertContains('updated_kitchen', $match->unknownKeys(), 'no structured Bridge rule');
         $this->assertContains('natural_light', $match->unknownKeys(), 'never derivable');
         $this->assertSame(
@@ -457,25 +461,25 @@ class SeekerSmartTagMatchingTest extends TestCase
      */
     public function present_known_absent_and_unknown_are_three_explained_states(): void
     {
-        $presentHome = $this->derived(['InteriorFeatures' => ['Quartz Counters']]);
-        $absentHome  = $this->derived(['InteriorFeatures' => ['Walk-In Closet(s)']]);
+        $presentHome = $this->derived(['Cooling' => ['Central Air']]);
+        $absentHome  = $this->derived(['Cooling' => ['Wall/Window Unit(s)']]);
         $unknownHome = $this->derived([]);
 
-        $present = $this->build($presentHome, ['quartz_countertops']);
-        $absent  = $this->build($absentHome, ['quartz_countertops']);
-        $unknown = $this->build($unknownHome, ['quartz_countertops']);
+        $present = $this->build($presentHome, ['central_air']);
+        $absent  = $this->build($absentHome, ['central_air']);
+        $unknown = $this->build($unknownHome, ['central_air']);
 
         $this->assertSame(10, $present->categoryScores['amenities']);
         $this->assertSame(0, $absent->categoryScores['amenities']);
         $this->assertSame($this->score($unknownHome, [])->categoryScores, $unknown->categoryScores, 'unknown is exactly the historical score');
         $this->assertGreaterThan($absent->totalScore, $unknown->totalScore);
 
-        $this->assertSame(['quartz_countertops'], $absent->seekerFeatureMatch->knownAbsentKeys);
+        $this->assertSame(['central_air'], $absent->seekerFeatureMatch->knownAbsentKeys);
         $this->assertFalse($unknown->seekerFeatureMatch->hasCheckablePicks());
 
-        $this->assertContains('Does not list: Quartz Countertops', array_column($absent->tradeoffs, 'label'));
+        $this->assertContains('Does not list: Central Air', array_column($absent->tradeoffs, 'label'));
         $this->assertSame([], array_column($absent->missingData, 'label'));
-        $this->assertNotContains('Does not list: Quartz Countertops', array_column($unknown->tradeoffs, 'label'));
+        $this->assertNotContains('Does not list: Central Air', array_column($unknown->tradeoffs, 'label'));
         $this->assertContains('Feature details not available — your selected features could not be checked for this home',
             array_column($unknown->missingData, 'label'));
     }
@@ -515,20 +519,65 @@ class SeekerSmartTagMatchingTest extends TestCase
         }
     }
 
+    /**
+     * A realistic Stellar row whose populated fields CANNOT say no to these picks: InteriorFeatures
+     * with only "Stone Counters" (no quartz/granite distinction, no fireplace — FireplaceYN is null),
+     * Appliances with a generic "Range", CommunityFeatures (Stellar carries pickleball in
+     * AssociationAmenities), ExteriorFeatures holding only "Other", WindowFeatures holding only
+     * treatments. Every pick is UNKNOWN: out of the denominator, never "Does not list", and the
+     * batch and single paths agree. A pick the same InteriorFeatures CAN rule out still is a miss.
+     *
+     * @test
+     */
+    public function a_field_that_cannot_say_no_leaves_the_pick_unknown_end_to_end(): void
+    {
+        $home = $this->derived([
+            'InteriorFeatures'  => ['Ceiling Fan(s)', 'Stone Counters'],
+            'FireplaceYN'       => null,
+            'Appliances'        => ['Range', 'Dishwasher'],
+            'CommunityFeatures' => ['Clubhouse'],
+            'ExteriorFeatures'  => ['Other'],
+            'WindowFeatures'    => ['Blinds', 'Drapes'],
+            'Cooling'           => ['Wall/Window Unit(s)'],
+        ]);
+        $unknownPicks = ['quartz_countertops', 'granite_countertops', 'fireplace', 'gas_range', 'pickleball_court', 'outdoor_kitchen', 'impact_windows'];
+
+        $result = $this->build($home, $unknownPicks);
+
+        $this->assertSame($this->score($home, [])->categoryScores, $result->categoryScores, 'all unknown is exactly the historical score');
+        $this->assertSame([], $result->seekerFeatureMatch->knownAbsentKeys);
+        $this->assertSame($unknownPicks, $result->seekerFeatureMatch->unknownKeys());
+        $this->assertSame([], preg_grep('/^Does not list/', array_column($result->tradeoffs, 'label')));
+        $this->assertContains('Feature details not available — your selected features could not be checked for this home',
+            array_column($result->missingData, 'label'));
+
+        // Beside them, one pick Cooling CAN rule out: 0 of 1 checked, and only it is named.
+        $mixed = $this->build($home, array_merge($unknownPicks, ['central_air']));
+        $this->assertSame(0, $mixed->categoryScores['amenities'], '0 of 1 checkable, not 0 of 8');
+        $this->assertSame(['central_air'], $mixed->seekerFeatureMatch->knownAbsentKeys);
+        $this->assertSame(['Does not list: Central Air'], array_values(preg_grep('/^Does not list/', array_column($mixed->tradeoffs, 'label'))));
+
+        // Batch and single-listing paths agree on the same facts.
+        $payload = $this->payload(['seeker_smart_tags' => array_merge($unknownPicks, ['central_air'])]);
+        $batch = (new BuyerMatchScorer())->scoreAll([$home, $this->derived(['Cooling' => ['Central Air']])], $payload);
+        $this->assertEquals($batch[0]->seekerFeatureMatch, $this->scoreOne($home, $payload)->seekerFeatureMatch);
+        $this->assertSame($batch[0]->categoryScores, $this->scoreOne($home, $payload)->categoryScores);
+    }
+
     /** @test */
     public function a_populated_field_is_only_evidence_when_the_derivation_is_current(): void
     {
-        $home = $this->derived(['InteriorFeatures' => ['Walk-In Closet(s)']]);
-        $this->assertSame(['quartz_countertops'], $this->score($home, ['quartz_countertops'])->seekerFeatureMatch->knownAbsentKeys);
+        $home = $this->derived(['Cooling' => ['Wall/Window Unit(s)']]);
+        $this->assertSame(['central_air'], $this->score($home, ['central_air'])->seekerFeatureMatch->knownAbsentKeys);
 
         // The MLS row changed after it was tagged: the stored assignments no longer describe it.
-        $home->raw_json = json_encode(array_merge(json_decode($home->raw_json, true), ['InteriorFeatures' => ['Walk-In Closet(s)', 'Wet Bar']]));
+        $home->raw_json = json_encode(array_merge(json_decode($home->raw_json, true), ['Cooling' => ['Wall/Window Unit(s)', 'Humidity Control']]));
         $home->save();
-        $this->assertSame([], $this->score($home->fresh(), ['quartz_countertops'])->seekerFeatureMatch->knownAbsentKeys);
+        $this->assertSame([], $this->score($home->fresh(), ['central_air'])->seekerFeatureMatch->knownAbsentKeys);
 
         // Never derived at all: unknown.
-        $never = $this->bridge([], ['raw_json' => json_encode(['IDXParticipationYN' => true, 'InteriorFeatures' => ['Walk-In Closet(s)']])]);
-        $this->assertFalse($this->score($never, ['quartz_countertops'])->seekerFeatureMatch->hasCheckablePicks());
+        $never = $this->bridge([], ['raw_json' => json_encode(['IDXParticipationYN' => true, 'Cooling' => ['Wall/Window Unit(s)']])]);
+        $this->assertFalse($this->score($never, ['central_air'])->seekerFeatureMatch->hasCheckablePicks());
     }
 
     /** @test */
@@ -548,12 +597,12 @@ class SeekerSmartTagMatchingTest extends TestCase
     /** @test */
     public function one_known_absent_and_one_unknown_pick_score_over_the_absent_one(): void
     {
-        $home = $this->derived(['InteriorFeatures' => ['Walk-In Closet(s)']]);
+        $home = $this->derived(['Cooling' => ['Wall/Window Unit(s)']]);
 
-        $result = $this->build($home, ['quartz_countertops', 'updated_kitchen']);
+        $result = $this->build($home, ['central_air', 'updated_kitchen']);
 
         $this->assertSame(0, $result->categoryScores['amenities'], '0 of 1 checkable');
-        $this->assertContains('Does not list: Quartz Countertops', array_column($result->tradeoffs, 'label'));
+        $this->assertContains('Does not list: Central Air', array_column($result->tradeoffs, 'label'));
         foreach (array_column($result->tradeoffs, 'label') as $label) {
             $this->assertStringNotContainsString(SmartTagTaxonomy::get('updated_kitchen')->label, $label);
         }
@@ -596,16 +645,16 @@ class SeekerSmartTagMatchingTest extends TestCase
     /** @test */
     public function unrelated_picks_still_count_beside_a_deduplicated_one(): void
     {
-        $withQuartz    = $this->derived(['InteriorFeatures' => ['Quartz Counters']], ['pool_private_yn' => true]);
-        $withoutQuartz = $this->derived(['InteriorFeatures' => ['Walk-In Closet(s)']], ['pool_private_yn' => true]);
+        $withCentral    = $this->derived(['Cooling' => ['Central Air']], ['pool_private_yn' => true]);
+        $withoutCentral = $this->derived(['Cooling' => ['Wall/Window Unit(s)']], ['pool_private_yn' => true]);
 
-        // Pool 4 (criterion) + picks 4 × (quartz only) → 8 of 8, and 4 of 8.
-        $a = $this->score($withQuartz, ['private_pool', 'quartz_countertops'], ['wants_pool' => true]);
-        $b = $this->score($withoutQuartz, ['private_pool', 'quartz_countertops'], ['wants_pool' => true]);
+        // Pool 4 (criterion) + picks 4 × (central air only) → 8 of 8, and 4 of 8.
+        $a = $this->score($withCentral, ['private_pool', 'central_air'], ['wants_pool' => true]);
+        $b = $this->score($withoutCentral, ['private_pool', 'central_air'], ['wants_pool' => true]);
 
         $this->assertSame(10, $a->categoryScores['amenities']);
         $this->assertSame(5, $b->categoryScores['amenities']);
-        $this->assertSame(['quartz_countertops'], $b->seekerFeatureMatch->selectedKeys);
+        $this->assertSame(['central_air'], $b->seekerFeatureMatch->selectedKeys);
     }
 
     /** @test */
@@ -778,12 +827,12 @@ class SeekerSmartTagMatchingTest extends TestCase
     /** @test */
     public function membership_is_unchanged_and_the_scores_only_move_within_amenities(): void
     {
-        $a = $this->derived(['InteriorFeatures' => ['Quartz Counters']]);
-        $b = $this->derived(['InteriorFeatures' => ['Granite Counters']]);
+        $a = $this->derived(['Cooling' => ['Central Air']]);
+        $b = $this->derived(['Cooling' => ['Wall/Window Unit(s)']]);
         $c = $this->derived([]);
 
         $without = $this->service()->match($this->payload());
-        $with    = $this->service()->match($this->payload(['seeker_smart_tags' => ['quartz_countertops']]));
+        $with    = $this->service()->match($this->payload(['seeker_smart_tags' => ['central_air']]));
 
         $keys = static fn ($results): array => $results->pluck('listingKey')->sort()->values()->all();
         $this->assertSame($keys($without), $keys($with));
@@ -798,10 +847,11 @@ class SeekerSmartTagMatchingTest extends TestCase
     /** @test */
     public function the_batch_path_and_the_single_listing_path_agree(): void
     {
-        // Present, known absent and unknown on one listing, among other candidates.
-        $home    = $this->derived(['InteriorFeatures' => ['Quartz Counters']], ['pool_private_yn' => false]);
+        // Present, known absent and unknown on one listing, among other candidates. Granite is
+        // unknown although InteriorFeatures is populated: that field cannot say no to it.
+        $home    = $this->derived(['InteriorFeatures' => ['Quartz Counters'], 'Cooling' => ['Wall/Window Unit(s)']], ['pool_private_yn' => false]);
         $others  = [$this->derived(['InteriorFeatures' => ['Walk-In Closet(s)']]), $this->bridge(['natural_light'])];
-        $payload = $this->payload(['seeker_smart_tags' => ['quartz_countertops', 'private_pool', 'natural_light', 'granite_countertops', 'updated_kitchen']]);
+        $payload = $this->payload(['seeker_smart_tags' => ['quartz_countertops', 'private_pool', 'natural_light', 'central_air', 'granite_countertops', 'updated_kitchen']]);
 
         $batchAll = (new BuyerMatchScorer())->scoreAll(array_merge([$home], $others), $payload);
 
@@ -814,8 +864,8 @@ class SeekerSmartTagMatchingTest extends TestCase
 
         $match = $batchAll[0]->seekerFeatureMatch;
         $this->assertSame(['quartz_countertops'], $match->matchedKeys);
-        $this->assertSame(['private_pool', 'granite_countertops'], $match->knownAbsentKeys);
-        $this->assertSame(['natural_light', 'updated_kitchen'], $match->unknownKeys());
+        $this->assertSame(['private_pool', 'central_air'], $match->knownAbsentKeys);
+        $this->assertSame(['natural_light', 'granite_countertops', 'updated_kitchen'], $match->unknownKeys());
     }
 
     /** @test */

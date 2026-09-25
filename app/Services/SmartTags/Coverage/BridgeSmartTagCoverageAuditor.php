@@ -289,7 +289,7 @@ final class BridgeSmartTagCoverageAuditor
      * Decided from the rules alone — never from how often a tag occurs — so a supported tag with
      * zero rows today is still checkable, and a tag with no rule is not, whatever its count.
      *
-     * @return array<string, array{applicable: list<string>, checkable: list<string>, uncheckable: list<string>}>
+     * @return array<string, array{applicable: list<string>, checkable: list<string>, uncheckable: list<string>, presence_only: list<string>}>
      */
     private function structuredCapabilityByContext(): array
     {
@@ -304,6 +304,8 @@ final class BridgeSmartTagCoverageAuditor
                 'applicable'  => $applicable,
                 'checkable'   => $checkable,
                 'uncheckable' => array_values(array_diff($applicable, $checkable)),
+                // Structured, but no governed rule may ever say "no": present or unknown only.
+                'presence_only' => array_values(array_filter($checkable, static fn (string $key) => ! BridgeSmartTagCheckability::hasNegativeCapability($key, $context))),
             ];
         }
 
@@ -321,12 +323,11 @@ final class BridgeSmartTagCoverageAuditor
             $resolved[$key] = $assignment->state;
         }
 
-        $answers = BridgeSmartTagCheckability::classify(
-            $record, $context, $keys, $resolved, array_fill_keys($resolution->droppedForConflict, true), true,
-        );
+        $dropped = array_fill_keys($resolution->droppedForConflict, true);
+        $answers = BridgeSmartTagCheckability::classify($record, $context, $keys, $resolved, $dropped, true);
 
         $checks[$context->value] ??= [
-            'counts'       => ['present' => 0, 'known_non_match' => 0, 'source_field_unavailable' => 0, 'unknown_other' => 0],
+            'counts'       => self::emptyChecks(),
             'present_tags' => [],
         ];
         $bucket = &$checks[$context->value]['counts'];
@@ -337,29 +338,33 @@ final class BridgeSmartTagCoverageAuditor
                 $checks[$context->value]['present_tags'][$key] = true;
             } elseif ($answer === BridgeSmartTagCheckability::KNOWN_ABSENT) {
                 $bucket['known_non_match']++;
-            } elseif (self::anyRulePopulated($record, $key, $context)) {
-                // The field was there, but the answer is still unknown: a conflict-dropped
-                // or contradictory tag. Counted apart so "field unavailable" stays exact.
-                $bucket['unknown_other']++;
             } else {
-                $bucket['source_field_unavailable']++;
+                // WHY it is unknown, from the same decision matching makes — so "field
+                // unavailable" stays exact and a field that cannot say no is not filed as one.
+                $why = BridgeSmartTagCheckability::explain($record, $context, $key, $resolved, $dropped, true);
+                $bucket[self::UNKNOWN_BUCKETS[$why] ?? 'unknown_other']++;
             }
         }
     }
 
-    private static function anyRulePopulated(?BridgeRecordAccessor $record, string $key, SmartTagContext $context): bool
+    /**
+     * Unknown reasons ({@see BridgeSmartTagCheckability::explain()}) → report bucket.
+     * Anything else (a conflict) is `unknown_other`.
+     */
+    private const UNKNOWN_BUCKETS = [
+        BridgeSmartTagCheckability::WHY_FIELD_UNAVAILABLE    => 'source_field_unavailable',
+        BridgeSmartTagCheckability::WHY_NO_NEGATIVE_EVIDENCE => 'field_cannot_say_no',
+        BridgeSmartTagCheckability::WHY_UNINFORMATIVE        => 'uninformative_only',
+        BridgeSmartTagCheckability::WHY_MASKED               => 'masked_by_generic_value',
+    ];
+
+    /** @return array<string, int> */
+    private static function emptyChecks(): array
     {
-        if ($record === null) {
-            return false;
-        }
-
-        foreach (BridgeSmartTagCheckability::rulesFor($key, $context) as $rule) {
-            if ($record->populated($rule)) {
-                return true;
-            }
-        }
-
-        return false;
+        return [
+            'present' => 0, 'known_non_match' => 0, 'source_field_unavailable' => 0,
+            'field_cannot_say_no' => 0, 'uninformative_only' => 0, 'masked_by_generic_value' => 0, 'unknown_other' => 0,
+        ];
     }
 
     /**
@@ -377,6 +382,8 @@ final class BridgeSmartTagCoverageAuditor
                 'seeker_tags_structured'         => count($tags['checkable']),
                 'seeker_tags_not_structured'     => count($tags['uncheckable']),
                 'not_structured_tags'            => $tags['uncheckable'],
+                'seeker_tags_negative_checkable' => count($tags['checkable']) - count($tags['presence_only']),
+                'presence_only_tags'             => $tags['presence_only'],
             ];
 
             if ($simulate) {
@@ -384,8 +391,7 @@ final class BridgeSmartTagCoverageAuditor
                 $present = array_values(array_filter($tags['checkable'], static fn (string $key) => isset($checks[$context]['present_tags'][$key])));
                 $row['structured_with_present']  = count($present);
                 $row['structured_zero_present']  = count($tags['checkable']) - count($present);
-                $row['listing_tag_checks'] = $checks[$context]['counts']
-                    ?? ['present' => 0, 'known_non_match' => 0, 'source_field_unavailable' => 0, 'unknown_other' => 0];
+                $row['listing_tag_checks'] = $checks[$context]['counts'] ?? self::emptyChecks();
             }
 
             $byContext[$context] = $row;

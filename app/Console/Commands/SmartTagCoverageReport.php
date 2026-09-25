@@ -88,7 +88,8 @@ class SmartTagCoverageReport extends Command
 
     /**
      * Seeker-tag checkability by context — from the governed Bridge rules, never from how
-     * often a tag occurs. Per listing × tag counts appear only with --simulate. No MLS value
+     * often a tag occurs. "can say no" counts the structured tags some rule is DECLARED able
+     * to prove absent (`bridge.negative_evidence`); the rest can be present or unknown only. Per listing × tag counts appear only with --simulate. No MLS value
      * is printed: tag keys and counts only.
      *
      * @param array<string, mixed> $checkability
@@ -99,18 +100,20 @@ class SmartTagCoverageReport extends Command
         $this->info('SEEKER TAG CHECKABILITY (governed structured Bridge rules)');
 
         $simulated = (bool) $checkability['simulated'];
-        $headers = ['context', 'seeker tags', 'structured rule', 'no structured rule'];
+        $headers = ['context', 'seeker tags', 'structured rule', 'can say no', 'no structured rule'];
         if ($simulated) {
-            array_push($headers, 'rule + present', 'rule + zero present', 'checks: present', 'known non-match', 'field unavailable', 'unknown (conflict)');
+            array_push($headers, 'rule + present', 'rule + zero present', 'checks: present', 'known non-match',
+                'field unavailable', 'field cannot say no', 'only "Other"', 'masked', 'unknown (conflict)');
         }
 
         $rows = [];
         foreach ($checkability['by_context'] as $context => $row) {
-            $line = [$context, $row['seeker_tags_applicable'], $row['seeker_tags_structured'], $row['seeker_tags_not_structured']];
+            $line = [$context, $row['seeker_tags_applicable'], $row['seeker_tags_structured'], $row['seeker_tags_negative_checkable'], $row['seeker_tags_not_structured']];
             if ($simulated) {
                 $checks = $row['listing_tag_checks'];
                 array_push($line, $row['structured_with_present'], $row['structured_zero_present'],
-                    $checks['present'], $checks['known_non_match'], $checks['source_field_unavailable'], $checks['unknown_other']);
+                    $checks['present'], $checks['known_non_match'], $checks['source_field_unavailable'],
+                    $checks['field_cannot_say_no'], $checks['uninformative_only'], $checks['masked_by_generic_value'], $checks['unknown_other']);
             }
             $rows[] = $line;
         }

@@ -171,10 +171,18 @@ return [
             'Intracoastal Waterway' => 'intracoastal_access',
             'Canal - Freshwater'    => 'canal_frontage',
             'Canal - Saltwater'     => 'canal_frontage',
+            // Stellar members of the same families, confirmed in the live feed
+            // (2026-09-25 vocabulary audit). `Canal - Brackish` is the third canal
+            // water type; the WaterfrontFeatures `Canal` prefix rule already reads the
+            // identical string as canal_frontage.
+            'Canal - Brackish'      => 'canal_frontage',
+            'Freshwater Canal w/Lift to Saltwater Canal' => 'canal_frontage',
             'Lake'                  => 'lake_access',
+            'Lake - Chain of Lakes' => 'lake_access',
             'Bay/Harbor'            => 'bay_or_harbor_access',
             'Bayou'                 => 'bayou_access',
             'Beach'                 => 'beach_access',
+            'Beach - Access Deeded' => 'beach_access',
             'Creek'                 => 'creek_access',
             'Pond'                  => 'pond_access',
             'River'                 => 'river_access',
@@ -233,6 +241,9 @@ return [
             // Bridge PropertyCondition (RESO)
             'Under Construction' => 'under_construction',
             'To Be Built'        => 'under_construction',
+            // Stellar sends it (33 residential sale rows, 2026-09-25); the native
+            // `condition` dictionary above already reads this exact string this way.
+            'Pre-Construction'   => 'under_construction',
         ],
 
         'owner_pays' => [
@@ -320,6 +331,7 @@ return [
         'sewer' => [
             'Public Sewer' => 'public_sewer',
             'Septic Tank'  => 'septic_system',
+            'Aerobic Septic' => 'septic_system', // a septic system of the aerobic type
         ],
 
         'utilities' => [
@@ -435,7 +447,8 @@ return [
             ['id' => 'bridge.existing_lease_yn',    'kind' => 'boolean', 'field' => 'STELLAR_ExistLseTenantYN', 'tag' => 'existing_lease'],
             ['id' => 'bridge.bo_with_real_estate',  'kind' => 'boolean', 'field' => 'STELLAR_BusinessOpportunityWithRealEstateYN', 'tag' => 'sold_with_real_estate'],
 
-            ['id' => 'bridge.pool_features.heated', 'kind' => 'any', 'field' => 'PoolFeatures', 'values' => ['Heated'], 'tag' => 'heated_pool'],
+            // `Solar Heat` is Stellar's pool-heating method value; a solar-heated pool is a heated pool.
+            ['id' => 'bridge.pool_features.heated', 'kind' => 'any', 'field' => 'PoolFeatures', 'values' => ['Heated', 'Solar Heat'], 'tag' => 'heated_pool'],
             ['id' => 'bridge.dock_lift_cap',        'kind' => 'number_gt', 'field' => 'STELLAR_DockLiftCap', 'threshold' => 0, 'tag' => 'boat_lift'],
             ['id' => 'bridge.water_extras.seawall', 'kind' => 'prefix', 'field' => 'STELLAR_WaterExtras', 'prefix' => 'Seawall', 'tag' => 'seawall'],
             ['id' => 'bridge.water_access',         'kind' => 'vocab', 'field' => 'STELLAR_WaterAccess', 'vocab' => 'water_access'],
@@ -472,7 +485,10 @@ return [
 
             ['id' => 'bridge.property_condition',   'kind' => 'vocab', 'field' => 'PropertyCondition', 'vocab' => 'bridge_condition'],
 
-            ['id' => 'bridge.furnished',            'kind' => 'equals', 'field' => 'Furnished', 'values' => ['Furnished'], 'tag' => 'furnished'],
+            // Stellar's `Turnkey` is fully furnished and ready to occupy — the native
+            // landlord.furnished rule and the turnkey_home definition already read it as
+            // furnished. Without it, 185 live lease rows read "Does not list: Furnished".
+            ['id' => 'bridge.furnished',            'kind' => 'equals', 'field' => 'Furnished', 'values' => ['Furnished', 'Turnkey'], 'tag' => 'furnished'],
             ['id' => 'bridge.unfurnished',          'kind' => 'equals', 'field' => 'Furnished', 'values' => ['Unfurnished'], 'tag' => 'unfurnished'],
             ['id' => 'bridge.pets_allowed',         'kind' => 'any', 'field' => 'PetsAllowed',
                 'values' => ['Yes', 'Cats OK', 'Dogs OK', 'Size Limit', 'Breed Restrictions', 'Number Limit'],
@@ -497,6 +513,102 @@ return [
             ['id' => 'bridge.occupant.tenant',      'kind' => 'equals', 'field' => 'OccupantType', 'values' => ['Tenant'], 'tag' => 'tenant_occupied'],
             ['id' => 'bridge.occupant.vacant',      'kind' => 'equals', 'field' => 'OccupantType', 'values' => ['Vacant'], 'tag' => 'vacant'],
             ['id' => 'bridge.special_conditions',   'kind' => 'vocab', 'field' => 'SpecialListingConditions', 'vocab' => 'special_conditions'],
+        ],
+
+        /*
+        |------------------------------------------------------------------
+        | Negative evidence — which rules may PROVE a seeker's tag absent
+        |------------------------------------------------------------------
+        | READ ONLY THROUGH SmartTagSourceRules::negativeEvidence(), and used ONLY by
+        | seeker checkability (BridgeSmartTagCheckability). Derivation never reads it.
+        |
+        | A rule that can EMIT a tag cannot necessarily say "no" to it. Presence and
+        | absence are separate claims and are declared separately.
+        |
+        | FAIL-CLOSED. A rule id missing here, or a tag missing from its `tags`, can
+        | never produce a known miss: when no stored row answers, the tag is UNKNOWN.
+        | Stored `absent` rows (a Y/N No, PetsAllowed "No") are explicit answers from
+        | the rule engine and are unaffected.
+        |
+        | ONLY SOURCES WHOSE ANSWER IS THE QUESTION ARE LISTED:
+        |   • Y/N fields — false is no, null is unknown.
+        |   • Counts where zero means none (offices, conference rooms, bays, separate
+        |     meters). STELLAR_DockLiftCap is a CAPACITY, not a count: not listed.
+        |   • Single-select enums: Furnished, OccupantType.
+        |   • Status / type fields that describe THE one thing from a small set of
+        |     alternatives, with an explicit "None" where Stellar has one:
+        |     SpecialListingConditions ("None" = a standard sale; every specific value
+        |     Stellar sends is a verbatim RESO lookup name, "Auction" among them),
+        |     PropertyCondition, Cooling (the cooling system's type), WaterSource,
+        |     Sewer, RoadSurfaceType (the access road's surface).
+        |   • Fencing — a `nonempty` rule, so the ONLY absence it can prove is an
+        |     explicit "None"; any fence value is already a present.
+        |
+        | PRESENCE-ONLY, DELIBERATELY — every sparse "select all that apply" list. An
+        | agent ticks about 4 of Stellar's 38 InteriorFeatures values and 2.6 of 31
+        | ExteriorFeatures values (2026-09-25 audit), so a value left out is not a "no".
+        | A matching value still derives PRESENT; omission is UNKNOWN. That covers
+        | InteriorFeatures, ExteriorFeatures, CommunityFeatures, AssociationAmenities,
+        | Appliances, LotFeatures, PatioAndPorchFeatures, STELLAR_AdditionalRooms,
+        | OtherStructures, ParkingFeatures, SecurityFeatures, Utilities, Electric,
+        | GreenEnergyGeneration, BuildingFeatures, Vegetation, HorseAmenities,
+        | PoolFeatures, WindowFeatures, Flooring, LaundryFeatures, OwnerPays,
+        | STELLAR_WaterAccess, WaterfrontFeatures, STELLAR_WaterExtras, RoadFrontageType.
+        | Also never listed: government_owned (its only value, "HUD Owned", is a subset
+        | of government ownership), pets_allowed (its explicit "No" is a stored absent),
+        | accessible_features (never seeker-checkable).
+        |
+        | `uninformative`: tokens that say nothing ("Other", WaterSource "See Remarks",
+        | Furnished "Negotiable"). A field holding ONLY these is not evidence; beside a
+        | specific value, the specific value still counts. Declared per rule, so a token
+        | is uninformative only for the decision it is listed under.
+        |
+        | `masked_by`: generic values that can stand for the specific feature. When one
+        | is present, that tag stays unknown on that row. A mask only ever turns a miss
+        | into unknown — it never makes anything present.
+        */
+        'negative_evidence' => [
+            'bridge.pool_private_yn'      => ['tags' => ['private_pool']],
+            'bridge.waterfront_yn'        => ['tags' => ['waterfront']],
+            'bridge.water_view_yn'        => ['tags' => ['water_view']],
+            'bridge.garage_yn'            => ['tags' => ['garage']],
+            'bridge.new_construction_yn'  => ['tags' => ['new_construction']],
+            'bridge.spa_yn'               => ['tags' => ['spa']],
+            'bridge.fireplace_yn'         => ['tags' => ['fireplace']],
+            'bridge.carport_yn'           => ['tags' => ['carport']],
+            'bridge.water_access_yn'      => ['tags' => ['water_access']],
+            'bridge.dock_yn'              => ['tags' => ['dock']],
+            'bridge.building_elevator_yn' => ['tags' => ['elevator']],
+            'bridge.in_law_suite_yn'      => ['tags' => ['guest_suite']],
+            'bridge.freezer_space_yn'     => ['tags' => ['freezer_space']],
+            'bridge.freestanding_yn'      => ['tags' => ['freestanding_building']],
+            'bridge.existing_lease_yn'    => ['tags' => ['existing_lease']],
+            'bridge.bo_with_real_estate'  => ['tags' => ['sold_with_real_estate']],
+
+            'bridge.separate_electric_meters' => ['tags' => ['separate_electric_meters']],
+            'bridge.separate_water_meters'    => ['tags' => ['separate_water_meters']],
+            'bridge.bays_dock_high'           => ['tags' => ['loading_dock']],
+            'bridge.bays_grade_level'         => ['tags' => ['overhead_doors']],
+            'bridge.offices'                  => ['tags' => ['private_offices']],
+            'bridge.conference_rooms'         => ['tags' => ['conference_room']],
+
+            // "Negotiable" affirms neither furnished nor unfurnished, so it can rule
+            // neither out. It maps to nothing either way.
+            'bridge.furnished'          => ['tags' => ['furnished'], 'uninformative' => ['Negotiable']],
+            'bridge.unfurnished'        => ['tags' => ['unfurnished'], 'uninformative' => ['Negotiable']],
+            'bridge.occupant.tenant'    => ['tags' => ['tenant_occupied']],
+            'bridge.occupant.vacant'    => ['tags' => ['vacant']],
+
+            'bridge.special_conditions' => ['tags' => ['short_sale', 'reo_bank_owned', 'probate', 'auction']],
+            'bridge.property_condition' => ['tags' => ['under_construction']],
+            // "Zoned" describes how a (usually ducted, central) system is controlled.
+            'bridge.cooling.central'    => ['tags' => ['central_air'], 'uninformative' => ['Other'], 'masked_by' => ['central_air' => ['Zoned']]],
+            // A "Private" supply is usually a private well.
+            'bridge.water_source'       => ['tags' => ['public_water', 'well_water'], 'uninformative' => ['See Remarks'], 'masked_by' => ['well_water' => ['Private']]],
+            'bridge.sewer'              => ['tags' => ['public_sewer', 'septic_system'], 'uninformative' => ['Other']],
+            'bridge.road_surface'       => ['tags' => ['paved_road_access', 'unpaved_road_access'], 'uninformative' => ['Other']],
+            'bridge.fencing.residential' => ['tags' => ['fenced_yard']],
+            'bridge.fencing.site'        => ['tags' => ['fenced_lot']],
         ],
     ],
 

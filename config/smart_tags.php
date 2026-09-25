@@ -88,7 +88,7 @@ $native = ['native_derivable' => true];
 
 return [
 
-    'version' => '2026-09-25.1',
+    'version' => '2026-09-25.2',
 
     'categories' => [
         'kitchen'        => ['label' => 'Kitchen',                    'display_order' => 10],
