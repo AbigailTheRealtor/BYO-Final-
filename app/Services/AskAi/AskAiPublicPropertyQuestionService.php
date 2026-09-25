@@ -130,6 +130,19 @@ class AskAiPublicPropertyQuestionService
         'closing_date'             => 'Published as "Target Closing Date" from a closed timeframe list.',
         'non_negotiable_amenities' => 'Published as "Non-Negotiable Amenities".',
         'water_view'               => 'Published as "View Preference".',
+        // ── Universal coverage audit (2026-09-24) ──────────────────────────────────
+        // Each describes the property sought or a term the buyer PROPOSES, and is published on
+        // the buyer page. Nothing that qualifies the buyer (pre-approval, down payment, deposits,
+        // rates, amounts brought, purpose, agent status) is added.
+        'carport'                      => 'Published as "Carport Needed" — a Yes/No requirement.',
+        'garage_spaces'                => 'Published as "Garage/Parking Features Needed" (Commercial / Business).',
+        'hoa_acceptable'               => 'Published as "HOA Acceptance".',
+        'max_hoa_fee'                  => 'Published as "Max HOA Fee" — what the buyer will accept, like the budget.',
+        'flood_zone_tolerance'         => 'Published as "Flood Zone Preference".',
+        'minimum_cap_rate'             => 'Published as "Minimum Cap Rate" — the buyer\'s own requirement.',
+        'inspection_contingency_buyer' => 'Published as "Inspection Contingency" in Purchase Terms.',
+        'appraisal_contingency_buyer'  => 'Published as "Appraisal Contingency" in Purchase Terms.',
+        'financing_contingency_buyer'  => 'Published as "Financing Contingency" in Purchase Terms.',
     ];
 
     /**
@@ -187,6 +200,332 @@ class AskAiPublicPropertyQuestionService
                 'keys' => ['tenant_require'],
                 'why'  => 'Published from the form\'s "Furnishings Needed" select.',
             ],
+            // ── Universal coverage audit (2026-09-24) — published, and not in the shared context ──
+            'minimum_leaseable' => [
+                'keys'  => ['minimum_leaseable'],
+                'why'   => 'Published as "Minimum Leaseable Sq Ft".',
+                'label' => 'Minimum Leaseable Sq Ft',
+                'types' => [AskAiPropertyTypeResolver::COMMERCIAL],
+            ],
+            'leasing_space' => [
+                'keys'  => ['leasing_spaces_tenant', 'leasing_spaces'],
+                'why'   => 'Published as "Leasing Space".',
+                'label' => 'Leasing Space',
+            ],
+            'condition_sought' => [
+                'keys'  => ['condition_prop_buyer'],
+                'why'   => 'Published as the acceptable property condition.',
+                'label' => 'Property Condition',
+            ],
+            'parking_options' => [
+                'keys'  => ['garage_parking_spaces_option', 'garage_parking_spaces_option_buyer'],
+                'why'   => 'Published as the parking options needed.',
+                'label' => 'Parking Options',
+                'types' => [AskAiPropertyTypeResolver::COMMERCIAL],
+                'shape' => 'list',
+            ],
+            'rent_includes' => [
+                'keys'  => ['rent_includes'],
+                'why'   => 'Published as "Rent Includes" (legacy lease preference, still stored and shown).',
+                'label' => 'Rent Includes',
+                'shape' => 'list',
+            ],
+            'owner_pays' => [
+                'keys'  => ['owner_pays'],
+                'why'   => 'Published as "Owner Pays" (legacy lease preference, still stored and shown).',
+                'label' => 'Owner Pays',
+                'shape' => 'list',
+            ],
+            'search_state' => [
+                'keys'  => ['state', 'property_state'],
+                'why'   => 'Published under Location Preferences.',
+                'label' => 'State',
+            ],
+            'terms_of_lease' => [
+                'keys'  => ['terms_of_lease'],
+                'why'   => 'Published as "Terms of Lease" (legacy lease preference, still stored and shown).',
+                'label' => 'Terms of Lease',
+                'shape' => 'list',
+            ],
+        ],
+        'buyer' => [
+            // ── Universal coverage audit (2026-09-24) — criteria and PROPOSED terms the buyer page
+            // publishes that the shared context never carried. Nothing that qualifies the buyer.
+            'unit_size' => [
+                'keys'  => ['unit_size'],
+                'why'   => 'Published as "Acceptable Number of Units".',
+                'label' => 'Acceptable Number of Units',
+                'types' => [AskAiPropertyTypeResolver::INCOME],
+            ],
+            'unit_type' => [
+                'keys'  => ['number_of_unit_type'],
+                'why'   => 'Published as "Acceptable Unit Type".',
+                'label' => 'Acceptable Unit Type',
+                'types' => [AskAiPropertyTypeResolver::INCOME],
+            ],
+            'condition_sought' => [
+                'keys'  => ['condition_prop_buyer'],
+                'why'   => 'Published as the acceptable property condition.',
+                'label' => 'Property Condition',
+                'types' => [AskAiPropertyTypeResolver::RESIDENTIAL, AskAiPropertyTypeResolver::INCOME, AskAiPropertyTypeResolver::COMMERCIAL, AskAiPropertyTypeResolver::BUSINESS],
+            ],
+            'property_items' => [
+                'keys'  => ['property_items'],
+                'why'   => 'Published as "Property Items / Features".',
+                'label' => 'Property Items / Features',
+            ],
+            'minimum_annual_net_income' => [
+                'keys'  => ['minimum_annual_net_income'],
+                'why'   => 'Published as the buyer\'s minimum annual net income requirement.',
+                'label' => 'Minimum Annual Net Income',
+                'types' => [AskAiPropertyTypeResolver::INCOME, AskAiPropertyTypeResolver::COMMERCIAL, AskAiPropertyTypeResolver::BUSINESS],
+                'shape' => 'money',
+            ],
+            'search_state' => [
+                'keys'  => ['property_state', 'state'],
+                'why'   => 'Published under "Preferred Locations".',
+                'label' => 'State',
+            ],
+            'property_inclusions' => [
+                'keys'  => ['property_inclusions'],
+                'why'   => 'Published as "Property Inclusions" in Purchase Terms.',
+                'label' => 'Property Inclusions',
+            ],
+            'property_exclusions' => [
+                'keys'  => ['property_exclusions'],
+                'why'   => 'Published as "Property Exclusions" in Purchase Terms.',
+                'label' => 'Property Exclusions',
+            ],
+            'due_diligence_yn' => [
+                'keys'  => ['due_diligence_yn'],
+                'why'   => 'Published as "Due Diligence" in Purchase Terms.',
+                'label' => 'Due Diligence',
+            ],
+            'as_is_purchase' => [
+                'keys'  => ['as_is_purchase'],
+                'why'   => 'Published as "As-Is Purchase".',
+                'label' => 'As-Is Purchase',
+            ],
+            'closing_cost_responsibility' => [
+                'keys'  => ['closing_cost_responsibility'],
+                'why'   => 'Published as "Closing Cost Responsibility".',
+                'label' => 'Closing Cost Responsibility',
+            ],
+            'home_warranty_requested' => [
+                'keys'  => ['home_warranty_requested'],
+                'why'   => 'Published as "Home Warranty Requested".',
+                'label' => 'Home Warranty Requested',
+            ],
+            'home_warranty_details' => [
+                'keys'  => ['home_warranty_details'],
+                'why'   => 'Published as "Home Warranty Amount / Details".',
+                'label' => 'Home Warranty Details',
+            ],
+            'home_sale_contingency' => [
+                'keys'  => ['home_sale_contingency'],
+                'why'   => 'Published as "Home Sale Contingency" — the page shows the block only when Included / Negotiable.',
+                'label' => 'Home Sale Contingency',
+                'shape' => 'buyer_home_sale',
+                'gate'  => ['home_sale_contingency', 'buyer_home_sale'],
+            ],
+            'seller_contribution' => [
+                'keys'  => ['seller_contribution'],
+                'why'   => 'Published as "Seller Contribution / Credit Requested".',
+                'label' => 'Seller Contribution Requested',
+            ],
+            'seller_contribution_details' => [
+                'keys'  => ['seller_contribution_details'],
+                'why'   => 'Published as "Seller Contribution Amount / Details".',
+                'label' => 'Seller Contribution Details',
+            ],
+            'possession_preference' => [
+                'keys'  => ['possession_preference'],
+                'why'   => 'Published as "Possession Preference" (the "Other" text when Other is chosen).',
+                'label' => 'Possession Preference',
+                'shape' => 'with_other:possession_preference_other',
+            ],
+            'possession_details' => [
+                'keys'  => ['possession_details'],
+                'why'   => 'Published as "Possession Details" for a preference other than At Closing / Other.',
+                'label' => 'Possession Details',
+                'gate'  => ['possession_preference', 'possession_details_shown'],
+            ],
+            'inspection_contingency_period' => [
+                'keys'  => ['inspection_contingency_period', 'inspection_period_days'],
+                'why'   => 'Published as "Inspection Contingency Period" while the contingency is Included / Negotiable.',
+                'label' => 'Inspection Contingency Period',
+                'shape' => 'buyer_inspection_period',
+                'gate'  => ['inspection_contingency_buyer', 'buyer_period'],
+            ],
+            'appraisal_contingency_days' => [
+                'keys'  => ['appraisal_contingency_days'],
+                'why'   => 'Published as "Appraisal Contingency Period" while the contingency is Included / Negotiable.',
+                'label' => 'Appraisal Contingency Period',
+                'shape' => 'days',
+                'gate'  => ['appraisal_contingency_buyer', 'buyer_period'],
+            ],
+            'financing_contingency_period' => [
+                'keys'  => ['financing_contingency_period'],
+                'why'   => 'Published as "Financing Contingency Period" while the contingency is Included / Negotiable.',
+                'label' => 'Financing Contingency Period',
+                'shape' => 'days',
+                'gate'  => ['financing_contingency_buyer', 'buyer_period'],
+            ],
+            'home_sale_contingency_period' => [
+                'keys'  => ['home_sale_contingency_period'],
+                'why'   => 'Published as "Home Sale Contingency Period" inside the shown Home Sale block.',
+                'label' => 'Home Sale Contingency Period',
+                'shape' => 'days',
+                'gate'  => ['home_sale_contingency', 'buyer_home_sale'],
+            ],
+            'additional_purchase_terms' => [
+                'keys'  => ['additional_purchase_terms'],
+                'why'   => 'Published as "Additional Purchase Terms / Notes".',
+                'label' => 'Additional Purchase Terms',
+            ],
+            'sale_provision' => [
+                'keys'  => ['sale_provision'],
+                'why'   => 'Published as "Acceptable Special Sale Provisions".',
+                'label' => 'Acceptable Special Sale Provisions',
+                'shape' => 'list',
+            ],
+            'sale_provision_assignment' => [
+                'keys'  => ['sale_provision_assignment'],
+                'why'   => 'Published as "Open to an Assignment Contract".',
+                'label' => 'Open to an Assignment Contract',
+            ],
+            'real_estate_purchase' => [
+                'keys'  => ['real_estate_purchase'],
+                'why'   => 'Published as "Business & Real Estate Purchase Requirements".',
+                'label' => 'Business & Real Estate Purchase Requirements',
+                'types' => [AskAiPropertyTypeResolver::BUSINESS],
+            ],
+            'lease_option_conditions' => [
+                'keys'  => ['lease_option_conditions'],
+                'why'   => 'Published in the buyer\'s Lease Option terms.',
+                'label' => 'Lease Option Conditions / Requirements',
+                'parent' => 'Lease Option',
+            ],
+            'lease_option_duration' => [
+                'keys'  => ['lease_option_duration'],
+                'why'   => 'Published in the buyer\'s Lease Option terms.',
+                'label' => 'Lease Option Duration (Months)',
+                'parent' => 'Lease Option',
+            ],
+            'lease_option_fee_credit' => [
+                'keys'  => ['lease_option_fee_credit'],
+                'why'   => 'Published in the buyer\'s Lease Option terms.',
+                'label' => 'Option Fee Credit Toward Purchase Price',
+                'parent' => 'Lease Option',
+            ],
+            'lease_option_terms' => [
+                'keys'  => ['lease_option_terms'],
+                'why'   => 'Published in the buyer\'s Lease Option terms.',
+                'label' => 'Lease Option Specific Terms',
+                'parent' => 'Lease Option',
+            ],
+            'lease_purchase_conditions' => [
+                'keys'  => ['lease_purchase_conditions'],
+                'why'   => 'Published in the buyer\'s Lease Purchase terms.',
+                'label' => 'Lease Purchase Conditions / Requirements',
+                'parent' => 'Lease Purchase',
+            ],
+            'lease_purchase_duration' => [
+                'keys'  => ['lease_purchase_duration'],
+                'why'   => 'Published in the buyer\'s Lease Purchase terms.',
+                'label' => 'Lease Purchase Duration (Months)',
+                'parent' => 'Lease Purchase',
+            ],
+            'lease_purchase_rent_credit' => [
+                'keys'  => ['lease_purchase_rent_credit'],
+                'why'   => 'Published in the buyer\'s Lease Purchase terms.',
+                'label' => 'Lease Purchase Rent Credit Toward Purchase',
+                'parent' => 'Lease Purchase',
+            ],
+            'lease_purchase_terms' => [
+                'keys'  => ['lease_purchase_terms'],
+                'why'   => 'Published in the buyer\'s Lease Purchase terms.',
+                'label' => 'Lease Purchase Specific Terms',
+                'parent' => 'Lease Purchase',
+            ],
+            'cryptocurrency_type' => [
+                'keys'  => ['cryptocurrency_type'],
+                'why'   => 'Published in the buyer\'s Cryptocurrency terms.',
+                'label' => 'Offered Cryptocurrency',
+                'parent' => 'Cryptocurrency',
+            ],
+            'crypto_exchange_method' => [
+                'keys'  => ['crypto_exchange_method'],
+                'why'   => 'Published in the buyer\'s Cryptocurrency terms.',
+                'label' => 'Crypto Exchange / Conversion Method',
+                'parent' => 'Cryptocurrency',
+            ],
+            'crypto_custodian_wallet' => [
+                'keys'  => ['crypto_custodian_wallet'],
+                'why'   => 'Published in the buyer\'s Cryptocurrency terms.',
+                'label' => 'Crypto Custodian / Wallet',
+                'parent' => 'Cryptocurrency',
+            ],
+            'crypto_transaction_fees' => [
+                'keys'  => ['crypto_transaction_fees'],
+                'why'   => 'Published in the buyer\'s Cryptocurrency terms.',
+                'label' => 'Crypto Transaction Fees Responsibility',
+                'parent' => 'Cryptocurrency',
+            ],
+            'exchange_item_condition' => [
+                'keys'  => ['exchange_item_condition'],
+                'why'   => 'Published in the buyer\'s Exchange/Trade terms.',
+                'label' => 'Condition of Exchange Item',
+                'parent' => 'Exchange/Trade',
+            ],
+            'exchange_liens' => [
+                'keys'  => ['exchange_liens'],
+                'why'   => 'Published in the buyer\'s Exchange/Trade terms.',
+                'label' => 'Exchange Item Liens / Encumbrances',
+                'parent' => 'Exchange/Trade',
+            ],
+            'exchange_liens_details' => [
+                'keys'  => ['exchange_liens_details'],
+                'why'   => 'Published in the buyer\'s Exchange/Trade terms.',
+                'label' => 'Exchange Item Lien Details',
+                'parent' => 'Exchange/Trade',
+            ],
+            'exchange_transfer_method' => [
+                'keys'  => ['exchange_transfer_method'],
+                'why'   => 'Published in the buyer\'s Exchange/Trade terms.',
+                'label' => 'Exchange Transfer Method',
+                'parent' => 'Exchange/Trade',
+            ],
+            'other_exchange_item' => [
+                'keys'  => ['other_exchange_item'],
+                'why'   => 'Published in the buyer\'s Exchange/Trade terms.',
+                'label' => 'Exchange Item (Other)',
+                'parent' => 'Exchange/Trade',
+            ],
+            'nft_description' => [
+                'keys'  => ['nft_description'],
+                'why'   => 'Published in the buyer\'s Non-Fungible Token (NFT) terms.',
+                'label' => 'Offered NFT',
+                'parent' => 'Non-Fungible Token (NFT)',
+            ],
+            'nft_gas_fees' => [
+                'keys'  => ['nft_gas_fees'],
+                'why'   => 'Published in the buyer\'s Non-Fungible Token (NFT) terms.',
+                'label' => 'NFT Gas Fees Responsibility',
+                'parent' => 'Non-Fungible Token (NFT)',
+            ],
+            'nft_transfer_method' => [
+                'keys'  => ['nft_transfer_method'],
+                'why'   => 'Published in the buyer\'s Non-Fungible Token (NFT) terms.',
+                'label' => 'NFT Transfer Method',
+                'parent' => 'Non-Fungible Token (NFT)',
+            ],
+            'nft_valuation_method' => [
+                'keys'  => ['nft_valuation_method'],
+                'why'   => 'Published in the buyer\'s Non-Fungible Token (NFT) terms.',
+                'label' => 'NFT Valuation Method',
+                'parent' => 'Non-Fungible Token (NFT)',
+            ],
         ],
     ];
 
@@ -222,6 +561,24 @@ class AskAiPublicPropertyQuestionService
         'property_items'           => 'Published as "Property Items / Features".',
         'water_view'               => 'Published as "View Preferences".',
         'pool'                     => 'Published as "Pool Needed" — a Yes/No requirement.',
+        // ── Universal coverage audit (2026-09-24) ──────────────────────────────────
+        // What the tenant needs from the space and the lease. Nothing about the applicant
+        // (income, credit, evictions, occupants, pets, smoking, guarantees, purpose, prose).
+        'carport'                             => 'Published as "Carport Needed".',
+        'garage'                              => 'Published as "Garage Needed" (its own row since the parking row was split).',
+        'garage_spaces'                       => 'Published as "Parking Type / Details" (Commercial).',
+        'pool_type'                           => 'Published as "Pool Type".',
+        'utility_preference'                  => 'Published as "Utility Preference".',
+        'maintenance_preference'              => 'Published as "Maintenance Preference".',
+        'renewal_option_requested'            => 'Published as "Renewal Option Requested".',
+        'commercial_lease_type'               => 'Published as "Commercial Lease Type Preference".',
+        'cam_nnn_preference'                  => 'Published as "CAM / NNN Preference".',
+        'rent_escalation_preference'          => 'Published as "Rent Escalation Preference".',
+        'buildout_tenant_improvement_request' => 'Published as "Buildout / Tenant Improvement Request".',
+        'intended_business_use'               => 'Published as "Intended Business Use" — the commercial use, not a person.',
+        'signage_request'                     => 'Published as "Signage Request".',
+        'commercial_parking_access_needs'     => 'Published as "Commercial Parking / Access Needs".',
+        'tenant_pays'                         => 'Published as "Tenant Pays" — the utilities the tenant expects to carry.',
     ];
 
     /**
@@ -489,11 +846,18 @@ class AskAiPublicPropertyQuestionService
         // "How many bedrooms are there?".
         $propertyTypes = AskAiPropertyTypeResolver::forListing($role, $meta, $context);
 
+        // The canonical bathroom total, reconciled with the MLS components the page also shows
+        // (see withCanonicalBathrooms()), before any question reads it.
+        [$context, $meta] = $this->withCanonicalBathrooms($role, $context, $meta, $viewer);
+
+        $imported = $this->importedFieldTypes($role, $meta, $propertyTypes);
+
         $catalog = array_filter(
             AskAiFieldQuestionRegistryService::publicPropertyQuestionRegistry(),
-            static fn ($entry): bool => is_array($entry)
+            fn ($entry): bool => is_array($entry)
                 && ($entry['role'] ?? null) === $role
-                && AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)
+                && (AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)
+                    || $this->admittedByImport($entry, $imported))
         );
 
         // Batch 4 — the curated knowledge-base questions, built from the canonical KB
@@ -517,7 +881,8 @@ class AskAiPublicPropertyQuestionService
             // Held to the same property-type admission as a curated entry: a stray value of a
             // field this type's form never collects is not asked (AskAiFieldApplicability).
             if (!array_key_exists($id, $catalog)
-                && AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)) {
+                && (AskAiPropertyTypeResolver::admits($entry['property_types'] ?? null, $propertyTypes)
+                    || $this->admittedByImport($entry, $imported))) {
                 $catalog[$id] = $entry;
             }
         }
@@ -573,6 +938,89 @@ class AskAiPublicPropertyQuestionService
     }
 
     /**
+     * The listing's bathroom total, read through the SAME projection the listing page uses
+     * (BathroomTotal::projectListingMeta()), so the card and the page state one value.
+     *
+     * When the listing's MLS Details components determine a total that the stored total lacks
+     * or contradicts (the rounded "2" older imports wrote for one full and one half), the
+     * projected component total is used — for a viewer the MLS Details are visible to (the
+     * owner, or anyone when the feed permits displaying the listing), the same permission
+     * mlsDetailsCatalog() applies. For any other viewer the question is not asked at all: this
+     * surface may be stricter than the page, never a stale figure. A listing whose stored total
+     * agrees with its components, or that has no components (every manual listing), is
+     * untouched. Nothing is written.
+     *
+     * @return array{0: array, 1: array} [context, meta]
+     */
+    private function withCanonicalBathrooms(string $role, array $context, array $meta, array $viewer): array
+    {
+        if (!in_array($role, self::PROPERTY_ROLES, true) || !is_array($context['listing'] ?? null)) {
+            return [$context, $meta];
+        }
+        $total = \App\Support\Listing\BathroomTotal::componentTotal($meta);
+        if ($total === null) {
+            return [$context, $meta];
+        }
+        // The same comparison projectListingMeta() makes, against what the context resolved
+        // (meta may already be projected by the page controller; the context never is).
+        if (\App\Support\Listing\BathroomTotal::normalize($context['listing']['bathrooms'] ?? null) === $total) {
+            return [$context, \App\Support\Listing\BathroomTotal::projectListingMeta($meta)];
+        }
+
+        $visible = ($viewer['viewer_is_owner'] ?? false) === true
+            || app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class)->permissionsFrom($meta)->listingDisplayable();
+        if (!$visible) {
+            $context['listing']['bathrooms'] = null;
+
+            return [$context, $meta];
+        }
+        $meta = \App\Support\Listing\BathroomTotal::projectListingMeta($meta);
+        $meta['bathrooms']               = \App\Support\Listing\BathroomTotal::format($total);
+        $context['listing']['bathrooms'] = $meta['bathrooms'];
+
+        return [$context, $meta];
+    }
+
+    /**
+     * For an MLS-imported listing, the context fields MLS import can write for THIS listing's
+     * property type (AskAiFieldApplicability::importTypes()). The listing page renders those
+     * facts whatever the type, so a question over one is admitted even where the manual form
+     * does not collect the field for the type (Income bedrooms, Commercial Lease square
+     * footage) — the owner decision of 2026-09-24. A manual listing gets nothing here: a stray
+     * value on a type whose form never collected it stays unasked.
+     *
+     * @param  list<string>          $propertyTypes the listing's PT tokens
+     * @return array<string, true>
+     */
+    private function importedFieldTypes(string $role, array $meta, array $propertyTypes): array
+    {
+        if (!in_array($role, self::PROPERTY_ROLES, true) || $propertyTypes === []
+            || !app(\App\Services\ListingImport\Mls\MlsListingDetailsReader::class)->isMlsImported($meta)) {
+            return [];
+        }
+
+        $out = [];
+        foreach (array_keys(AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role] ?? []) as $field) {
+            if (array_intersect(\App\Support\AskAi\AskAiFieldApplicability::importTypes($role, $field), $propertyTypes) !== []) {
+                $out[$field] = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /** A listing-sourced entry whose own source field MLS import writes for this listing's type. */
+    private function admittedByImport(array $entry, array $imported): bool
+    {
+        if ($imported === [] || !in_array($entry['source_kind'] ?? 'listing', ['listing', 'admitted_listing'], true)) {
+            return false;
+        }
+
+        return preg_match('/^listing\.([a-z0-9_]+)$/', (string) ($entry['source_path'] ?? ''), $m) === 1
+            && isset($imported[$m[1]]);
+    }
+
+    /**
      * Label fallback, as typed-question vocabulary: every question also answers to the label
      * of each fact it reads — "Pet fee type", "What is the pet fee type?" — so a fact with no
      * hand-written alias is still reachable by deterministic wording, on the card's typed box
@@ -622,6 +1070,64 @@ class AskAiPublicPropertyQuestionService
                     continue;
                 }
                 $questions[$i]['aliases'][] = $variant;
+                $taken[$variant][$q['id']] = true;
+            }
+        }
+
+        return $this->withFallbackAliases($questions, $catalog, $taken);
+    }
+
+    /**
+     * CONCEPT wording a question offers only when nothing else claims it.
+     *
+     * A fact stored under a different name from the words people use — an MLS "Road Frontage"
+     * row for "frontage", the condominium fee for "hoa fee", a generated "Total Square Feet"
+     * for "building size" — declares that wording as 'fallback_aliases'. It is emitted for a
+     * question only when:
+     *   - no available question already owns the phrase (its text, an explicit alias or a label
+     *     variant) — the curated answer always wins; and
+     *   - exactly ONE question offers it at the highest tier that offers it at all. A listing
+     *     field's own entry (tier 1) outranks an MLS Details row (tier 2), so the canonical fact
+     *     answers where both exist; two offers at one tier are ambiguous and NEITHER gets it —
+     *     refused, never guessed. A lower tier never inherits a phrase a higher tier found
+     *     ambiguous.
+     * Exact phrases only, normalised like every other alias: no fuzziness is introduced.
+     *
+     * @param  list<array<string, mixed>>              $questions
+     * @param  array<string, array>                    $catalog
+     * @param  array<string, array<string, bool>>      $taken  phrase => ids already claiming it
+     * @return list<array<string, mixed>>
+     */
+    private function withFallbackAliases(array $questions, array $catalog, array $taken): array
+    {
+        $offers = []; // phrase => tier => ids
+        foreach ($questions as $q) {
+            $entry = $catalog[$q['id']] ?? [];
+            $tier  = ($entry['source_kind'] ?? null) === 'mls_details' ? 2 : 1;
+            foreach ($this->aliases(['aliases' => $entry['fallback_aliases'] ?? []]) as $phrase) {
+                foreach (array_merge([$phrase], self::aliasFramings([$phrase])) as $variant) {
+                    $offers[$variant][$tier][$q['id']] = true;
+                }
+            }
+        }
+
+        $grant = []; // id => phrases
+        foreach ($offers as $phrase => $tiers) {
+            if (($taken[$phrase] ?? []) !== []) {
+                continue;
+            }
+            ksort($tiers);
+            $ids = reset($tiers);
+            if (count($ids) === 1) {
+                $grant[(string) array_key_first($ids)][] = $phrase;
+            }
+        }
+
+        foreach ($questions as $i => $q) {
+            foreach ($grant[$q['id']] ?? [] as $phrase) {
+                if (!in_array($phrase, $questions[$i]['aliases'], true)) {
+                    $questions[$i]['aliases'][] = $phrase;
+                }
             }
         }
 
@@ -708,9 +1214,411 @@ class AskAiPublicPropertyQuestionService
      * fieldLabel().
      */
     private const GENERATED_LABELS = [
+        'buyer' => [
+            'garage_spaces' => 'Garage/Parking Features Needed',
+            'carport'       => 'Carport Needed',
+            'max_hoa_fee'   => 'Max Monthly HOA Fee',
+            'hoa_acceptable'       => 'HOA Acceptance',
+            'flood_zone_tolerance' => 'Flood Zone Preference',
+            'minimum_cap_rate'     => 'Min. Cap Rate',
+        ],
+        'seller' => [
+            'unit_mix_summary'                   => 'Unit Configurations',
+            'number_water_meters'                => 'Number of Water Meters',
+            'number_electric_meters'             => 'Number of Electric Meters',
+            'sale_provision_assignment'          => 'Assignment Contract',
+            'assignment_fee'                     => 'Assignment Fee Amount',
+            'assignment_fee_type'                => 'Assignment Contract Fee to Broker',
+            'building_sqft'                      => 'Total Sq Ft',
+            'total_buildings'                    => 'Total Number of Buildings',
+            'price_per_sqft'                     => 'Price Per Square Foot',
+            'water_available'                    => 'Water Available to Site',
+            'sewer_available'                    => 'Sewer Available to Site',
+            'electric_available'                 => 'Electric Available to Site',
+            'gas_available'                      => 'Gas Available to Site',
+            'telecom_available'                  => 'Telecom / Internet Available',
+            'ffe_value'                          => 'FF&E Value',
+            'sde_ebitda'                         => 'SDE / EBITDA',
+            'nda_required'                       => 'NDA Required to Access Financials',
+            'employee_count'                     => 'Number of Employees',
+            'business_assets'                    => 'Included Property or Business Assets',
+            'business_assets_other'              => 'Included Assets (Other)',
+            'real_estate_purchase'               => 'Business & Real Estate Purchase',
+            'business_location_leased'           => 'Business Location Leased',
+            'business_lease_monthly_rent'        => 'Business Lease Monthly Rent',
+            'business_lease_expiration'          => 'Business Lease Expiration Date',
+            'business_lease_renewal_options'     => 'Business Lease Renewal Options',
+            'business_lease_assignable'          => 'Business Lease Assignable to Buyer',
+            'business_lease_additional_terms'    => 'Business Lease Additional Terms',
+            'lease_expiration'                   => 'Existing Lease Expiration Date',
+            'lease_assignable'                   => 'Existing Lease Assignable to Buyer',
+            'pet_types_allowed'                  => 'Acceptable Pet Types',
+            'occupied_until'                     => 'Occupied Until',
+            'association_approval_process'       => 'Association Approval Process',
+            'association_application_fee'        => 'Association Application Fee',
+            'max_leases_per_year'                => 'Max Leases / Year',
+            'min_lease_period'                   => 'HOA Minimum Lease Period',
+            'hoa_condo_association_terms'        => 'HOA / Condo Association Terms',
+            'seller_credit_offered'              => 'Seller Contribution / Credit Offered',
+            'seller_credit_amount'               => 'Seller Contribution Details',
+            'sale_provision'                     => 'Special Sale Provision',
+            'inspection_contingency_preference'  => 'Inspection Contingency',
+            'preferred_inspection_period'        => 'Preferred Inspection Contingency Period (Days)',
+            'appraisal_contingency_preference'   => 'Appraisal Contingency',
+            'appraisal_contingency_period'       => 'Preferred Appraisal Contingency Period (Days)',
+            'financing_contingency_preference'   => 'Financing Contingency',
+            'financing_contingency_period'       => 'Preferred Financing Contingency Period (Days)',
+            'sale_of_buyer_property_contingency' => 'Sale of Buyer Property Contingency',
+            'sale_of_buyer_property_period'      => 'Preferred Sale of Buyer Property Contingency Period (Days)',
+            'home_warranty_details'              => 'Home Warranty Details',
+            'exchange_item'                      => 'Acceptable Exchange Item',
+            'exchange_item_value'                => 'Estimated Value of Exchange Item',
+            'exchange_item_condition'            => 'Condition of Exchange Item',
+            'exchange_additional_cash'           => 'Additional Cash Required',
+            'exchange_transfer_method'           => 'Exchange Transfer Method',
+            'exchange_liens_disclosure'          => 'Exchange Item Liens / Encumbrances',
+            'exchange_liens_details'             => 'Exchange Item Lien Details',
+            'exchange_inspection_rights'         => 'Exchange Item Inspection / Verification Rights',
+            'crypto_percentage'                  => 'Crypto % of Purchase Price',
+            'cash_percentage_crypto'             => 'Cash % of Purchase Price (Crypto)',
+            'crypto_exchange_method'             => 'Crypto Exchange Method',
+            'crypto_custodian_wallet'            => 'Crypto Custodian / Wallet',
+            'crypto_transaction_fees'            => 'Crypto Transaction Fees Responsibility',
+            'crypto_transfer_timing'             => 'Crypto Timing of Transfer',
+            'nft_percentage'                     => 'NFT % of Purchase Price',
+            'cash_percentage_nft'                => 'Cash % of Purchase Price (NFT)',
+            'nft_gas_fees'                       => 'NFT Gas Fees Responsibility',
+            'lease_option_price'                 => 'Lease Option Purchase Price',
+            'lease_option_payment'               => 'Lease Option Monthly Payment',
+            'lease_option_duration'              => 'Lease Option Duration (Months)',
+            'option_fee_offered'                 => 'Option Fee Offered',
+            'lease_option_fee_credit'            => 'Option Fee Credit',
+            'lease_option_fee_credit_percentage' => 'Option Fee Credit %',
+            'lease_option_conditions'            => 'Lease Option Conditions / Requirements',
+            'lease_option_terms'                 => 'Lease Option Specific Terms',
+            'lease_option_maintenance'           => 'Lease Option Maintenance / Repair Responsibility',
+            'lease_option_extension_terms'       => 'Lease Option Extension Terms',
+            'lease_purchase_price'               => 'Lease Purchase Price',
+            'lease_purchase_payment'             => 'Lease Purchase Monthly Payment',
+            'lease_purchase_duration'            => 'Lease Purchase Duration (Months)',
+            'lease_purchase_rent_credit'         => 'Lease Purchase Rent Credit Toward Purchase',
+            'lease_purchase_rent_credit_amount'  => 'Lease Purchase Rent Credit Amount',
+            'lease_purchase_conditions'          => 'Lease Purchase Conditions / Requirements',
+            'lease_purchase_terms'               => 'Lease Purchase Specific Terms',
+            'lease_purchase_maintenance'         => 'Lease Purchase Maintenance / Repair Responsibility',
+            'lease_purchase_extension_terms'     => 'Lease Purchase Extension Terms',
+        ],
+        'landlord' => [
+            'cam_nnn_additional_rent_charges'   => 'CAM / NNN Additional Rent Charges',
+            'tenant_improvement_buildout_terms' => 'Tenant Improvement / Build-Out Terms',
+            'permitted_use_restrictions'        => 'Permitted Use / Restrictions',
+            'neighboring_tenants'               => 'Neighboring Tenants Include',
+            'access_24_7'                       => '24/7 Access',
+            'll_maintenance_responsibility'     => 'Landlord Maintenance Responsibility',
+            'minimum_leaseable'                 => 'Leaseable Sq Ft',
+            'garage_parking_features'           => 'Parking Features',
+            'owner_pays'                        => 'Owner / Landlord Pays',
+            'included_storage_space_res_both'   => 'Included Storage Space',
+            'included_storage_space_res_single' => 'Included Storage Space',
+            'included_storage_space_com_entire' => 'Included Storage Space',
+            'included_storage_space_com_single' => 'Included Storage Space',
+            'storage_space_res_both'            => 'Storage Space Size',
+            'storage_space_res_single'          => 'Storage Space Size',
+            'storage_space_com_entire'          => 'Storage Space Size',
+            'storage_space_com_single'          => 'Storage Space Size',
+            'est_water_sewer_trash'             => 'Estimated Water / Sewer / Trash',
+            'est_electric'                      => 'Estimated Electric',
+            'est_internet'                      => 'Estimated Internet',
+            'est_cable'                         => 'Estimated Cable',
+            'max_leases_per_year'               => 'Max Leases / Year',
+            'association_approval_required'     => 'Association Approval Required',
+            'association_approval_process'      => 'Association Approval Process',
+            'association_application_fee'       => 'Association Application Fee',
+            'occupied_until'                    => 'Occupied Until',
+            'leasing_space'                     => 'Leasing Space / Property',
+            'pets_allowed_count'                => 'Number of Pets Allowed',
+            'pet_types_allowed'                 => 'Type of Pets',
+            'pet_weight_limit'                  => 'Max Pet Weight (lbs)',
+            'has_cdd'                           => 'Has CDD',
+            'annual_cdd_fee'                    => 'Annual CDD Fee',
+        ],
         'tenant' => [
+            'carport'                             => 'Carport Needed',
+            'garage'                              => 'Garage Needed',
             'property_items'                      => 'Property Items',
             'water_view'                          => 'View Preferences',
+        ],
+    ];
+
+    /**
+     * Generated facts the listing page prints through a FORMATTER rather than as stored text,
+     * and which one. The page's `$fmtMoney` / `$fmtPercent` / `$fmtDate` print nothing for a
+     * value they cannot read, so the answer must refuse the same values and state the rest
+     * exactly as the page does (pageShape()). Everything else is stated as stored.
+     */
+    private const GENERATED_SHAPES = [
+        'tenant' => [
+            'pool_type'   => 'list',
+            'tenant_pays' => 'list',
+            'carport'     => 'with_other:other_carport_needed',
+            'garage'      => 'with_other:other_garage_needed',
+        ],
+        'buyer' => [
+            'inspection_contingency_buyer' => 'buyer_contingency',
+            'appraisal_contingency_buyer'  => 'buyer_contingency',
+            'financing_contingency_buyer'  => 'buyer_contingency',
+            'max_hoa_fee'      => 'money',    // "Max Monthly HOA Fee" through $fmtMoney
+            'minimum_cap_rate' => 'percent',  // "Min. Cap Rate" through $fmtPercent
+        ],
+        'seller' => [
+            'annual_revenue'                     => 'money',
+            'gross_profit'                       => 'money',
+            'sde_ebitda'                         => 'money',
+            'inventory_value'                    => 'money',
+            'ffe_value'                          => 'money',
+            'gross_annual_income'                => 'money',
+            'annual_operating_expenses'          => 'money',
+            'business_lease_monthly_rent'        => 'money',
+            'price_per_sqft'                     => 'money',
+            'association_application_fee'        => 'money',
+            'exchange_item_value'                => 'money',
+            'exchange_additional_cash'           => 'money',
+            'lease_option_price'                 => 'money',
+            'lease_option_payment'               => 'money',
+            'option_fee_amount'                  => 'money',
+            'lease_purchase_price'               => 'money',
+            'lease_purchase_payment'             => 'money',
+            'lease_purchase_rent_credit_amount'  => 'money',
+            'crypto_percentage'                  => 'percent',
+            'cash_percentage_crypto'             => 'percent',
+            'nft_percentage'                     => 'percent',
+            'cash_percentage_nft'                => 'percent',
+            'lease_option_fee_credit_percentage' => 'percent',
+            'assignment_fee'                     => 'unit_amount:assignment_fee_type',
+            'assignment_fee_type'                => 'assignment_fee_type',
+            'inspection_contingency_preference'  => 'contingency',
+            'appraisal_contingency_preference'   => 'contingency',
+            'financing_contingency_preference'   => 'contingency',
+            'sale_of_buyer_property_contingency' => 'contingency',
+            'licenses'                           => 'list',
+            'sale_includes'                      => 'list',
+            'electrical_service'                 => 'list',
+            'business_assets'                    => 'list',
+            'association_amenities'              => 'list',
+            'current_use'                        => 'list',
+            'current_adjacent_use'               => 'list',
+            'easements'                          => 'list',
+            'fences'                             => 'list',
+            'vegetation'                         => 'list',
+            'road_frontage'                      => 'list',
+            'road_surface_type'                  => 'list',
+        ],
+        'landlord' => [
+            'annual_cdd_fee'              => 'money',
+            'special_assessment_amount'   => 'money',
+            'association_application_fee' => 'money',
+            'pet_deposit_amount'          => 'money',
+            'pet_monthly_fee'             => 'money',
+            'pet_rent'                    => 'money',
+            'pet_fee'                     => 'money',
+            'est_water_sewer_trash'       => 'money',
+            'est_electric'                => 'money',
+            'est_internet'                => 'money',
+            'est_cable'                   => 'money',
+            'garage_parking_features'     => 'list',
+            'owner_pays'                  => 'list',
+            'tenant_pays'                 => 'list',
+            'rent_includes'               => 'list',
+        ],
+    ];
+
+    /** @return array<string, array<string, string>> role => field => money|percent|date|list|contingency */
+    public static function generatedShapes(): array
+    {
+        return self::GENERATED_SHAPES;
+    }
+
+    /**
+     * The listing page's own formatters (view.blade.php `$fmtMoney`, `$fmtPercent`, `$fmtDate`),
+     * restated so a generated answer and the row beside it are one reading: digits and a
+     * point are kept, anything unreadable is null (the page prints nothing, so nothing is
+     * said), and zero is stated — an application fee of $0 is a fact.
+     */
+    private function pageShape(string $shape, mixed $value, array $meta = []): ?string
+    {
+        // A figure whose unit is a SIBLING control ($ or %), formatted exactly as the page does
+        // (ConditionalTerms::amount()). The shape names the sibling: "unit_amount:<meta key>".
+        if (str_starts_with($shape, 'unit_amount:')) {
+            $unit = $meta[substr($shape, strlen('unit_amount:'))] ?? null;
+            $out  = \App\Support\OfferListing\ConditionalTerms::amount($value, is_scalar($unit) ? (string) $unit : null);
+
+            return $out === null || trim($out) === '' ? null : $out;
+        }
+        // "Other" folded into its selection, as the page prints it ("with_other:<meta key>").
+        if (str_starts_with($shape, 'with_other:')) {
+            $raw = is_scalar($value) ? trim((string) $value) : '';
+            if (strcasecmp($raw, 'Other') === 0) {
+                $other = $meta[substr($shape, strlen('with_other:'))] ?? null;
+                $raw   = is_scalar($other) && trim((string) $other) !== '' ? trim((string) $other) : $raw;
+            }
+
+            return $raw === '' ? null : $raw;
+        }
+        // The buyer page's inspection period: the numeric field + " days", else the legacy text.
+        if ($shape === 'buyer_inspection_period') {
+            $new = is_scalar($meta['inspection_contingency_period'] ?? null) ? trim((string) $meta['inspection_contingency_period']) : '';
+            if ($new !== '') {
+                return $new . ' days';
+            }
+            $old = is_scalar($meta['inspection_period_days'] ?? null) ? trim((string) $meta['inspection_period_days']) : '';
+
+            return $old === '' ? null : $old;
+        }
+        if ($shape === 'days') {
+            $raw = is_scalar($value) ? trim((string) $value) : '';
+
+            return $raw === '' ? null : $raw . ' days';
+        }
+        if ($shape === 'buyer_contingency' || $shape === 'buyer_home_sale') {
+            $raw = is_scalar($value) ? trim((string) $value) : '';
+            $out = $shape === 'buyer_contingency'
+                ? \App\Helpers\ContingencyOptionHelper::buyerAppraisalFinancingDisplay($raw)
+                : \App\Helpers\ContingencyOptionHelper::buyerHomeSaleDisplay($raw);
+
+            return trim($out) === '' ? null : $out;
+        }
+        // The assignment fee STRUCTURE, worded as the seller page words it.
+        if ($shape === 'assignment_fee_type') {
+            $raw = is_scalar($value) ? trim((string) $value) : '';
+
+            return match ($raw) {
+                '$'     => 'Flat Fee',
+                '%'     => 'Percentage of Contract Assignment Value',
+                ''      => null,
+                default => $raw,
+            };
+        }
+        // A multi-select the page reads through `$arr()` / ConditionalTerms::withOther(): a
+        // stored LIST, never a bare string (which the page prints nothing for).
+        if ($shape === 'list') {
+            $list = is_string($value) ? json_decode($value, true) : $value;
+            if (!is_array($list)) {
+                return null;
+            }
+            $items = [];
+            foreach ($list as $item) {
+                if (is_scalar($item) && !is_bool($item) && trim((string) $item) !== '' && strcasecmp(trim((string) $item), 'other') !== 0) {
+                    $items[] = trim((string) $item);
+                }
+            }
+
+            return $items === [] ? null : implode(', ', array_values(array_unique($items)));
+        }
+        if (!is_scalar($value) || is_bool($value) || trim((string) $value) === '') {
+            return null;
+        }
+        // A seller contingency preference, through the page's own legacy mapping
+        // ("Preferred Waived" is displayed — and therefore stated — as "Negotiable").
+        if ($shape === 'contingency') {
+            $display = trim(\App\Helpers\ContingencyOptionHelper::sellerDisplay(trim((string) $value)));
+
+            return $display === '' ? null : $display;
+        }
+        if ($shape === 'date') {
+            try {
+                return \Carbon\Carbon::parse((string) $value)->format('F j, Y');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+        $raw = preg_replace('/[^0-9.]/', '', (string) $value) ?? '';
+        if ($raw === '' || !is_numeric($raw)) {
+            return null;
+        }
+        $num = (float) $raw;
+
+        return match ($shape) {
+            'money'   => '$' . number_format($num, 0),
+            'percent' => (floor($num) == $num ? (string) (int) $num : (string) $num) . '%',
+            default   => null,
+        };
+    }
+
+    /**
+     * The words people use for a generated fact whose page label is not them ("cam" for "CAM /
+     * NNN Additional Rent Charges"). Tier-1 fallback aliases (withFallbackAliases()): emitted
+     * only when no available question already claims the phrase and no other generated fact
+     * offers it too — so a curated answer always wins and a shared word is refused.
+     */
+    private const GENERATED_FALLBACK_ALIASES = [
+        'buyer' => [
+            'carport'          => ['carport', 'does the buyer need a carport'],
+            'garage_spaces'    => ['parking', 'garage', 'parking features'],
+            'minimum_cap_rate' => ['cap rate', 'minimum cap rate'],
+            'max_hoa_fee'      => ['max hoa fee', 'maximum hoa fee', 'hoa fee limit'],
+            'hoa_acceptable'   => ['hoa', 'is an hoa ok'],
+        ],
+        'tenant' => [
+            'carport'       => ['carport', 'does the tenant need a carport'],
+            'garage'        => ['garage', 'does the tenant need a garage'],
+            'garage_spaces' => ['parking', 'parking needs'],
+        ],
+        'seller' => [
+            'unit_mix_summary'            => ['units', 'how many units', 'number of units', 'unit mix', 'unit configurations', 'rents', 'what are the rents', 'what are the unit rents'],
+            'building_sqft'               => ['building size', 'total square feet', 'total sq ft', 'how big is the building'],
+            'ceiling_height'              => ['ceiling height', 'how high are the ceilings'],
+            'front_footage'               => ['frontage', 'front footage', 'how much frontage'],
+            'road_frontage'               => ['road frontage', 'what road frontage is there'],
+            'total_buildings'             => ['buildings', 'how many buildings', 'number of buildings'],
+            'gross_annual_income'         => ['income', 'gross income', 'annual income', 'how much income does it make'],
+            'annual_operating_expenses'   => ['expenses', 'operating expenses', 'annual expenses'],
+            'annual_revenue'              => ['revenue', 'annual revenue', 'sales', 'how much revenue'],
+            'sde_ebitda'                  => ['sde', 'ebitda', 'cash flow'],
+            'real_estate_purchase'        => ['business and real estate purchase', 'is the real estate included', 'does the sale include the real estate', 'is the building included'],
+            // business_type deliberately has no concept wording here: the manual form never shows
+            // it, and import REDUCES the feed's multi-value BusinessType to one value, so the MLS
+            // Details row (all values) is the fuller answer and takes the words (tier 2).
+            'business_name'               => ['business name', 'name of the business'],
+            'employee_count'              => ['employees', 'how many employees'],
+            'water_available'             => ['is water available'],
+            'sewer_available'             => ['is sewer available'],
+            'electric_available'          => ['is electric available', 'is electricity available'],
+            'buildable'                   => ['is it buildable', 'can i build on it'],
+            'current_use'                 => ['current use', 'what is it used for now'],
+            'included_personal_property'  => ['what personal property is included'],
+            'excluded_items'              => ['what is excluded', 'what is not included', 'exclusions'],
+            'possession_preference'       => ['possession', 'when can i move in'],
+            'occupied_until'              => ['when will it be vacant'],
+            'existing_lease_type'         => ['existing lease', 'is there a tenant', 'is it leased'],
+            'association_type'            => ['association type', 'what type of association'],
+            'min_lease_period'            => ['minimum lease', 'minimum lease period'],
+            'cryptocurrency_type'         => ['what crypto', 'which cryptocurrency', 'crypto'],
+            'lease_option_price'          => ['lease option price'],
+            'lease_purchase_price'        => ['lease purchase price'],
+            'inspection_contingency_preference' => ['inspection contingency'],
+            'appraisal_contingency_preference'  => ['appraisal contingency'],
+            'financing_contingency_preference'  => ['financing contingency'],
+        ],
+        'landlord' => [
+            'lease_amount_frequency'          => ['rent frequency', 'rent period', 'how often is rent paid', 'is the rent monthly'],
+            'commercial_lease_type'           => ['lease type', 'type of lease', 'what type of lease is it'],
+            'cam_nnn_additional_rent_charges' => ['cam', 'nnn', 'cam charges', 'nnn charges', 'cam fees', 'triple net'],
+            'rent_escalation_terms'           => ['rent escalation', 'rent increases', 'how much does the rent go up'],
+            'tenant_improvement_buildout_terms' => ['tenant improvements', 'ti allowance', 'buildout', 'build out'],
+            'permitted_use_restrictions'      => ['permitted use', 'what can the space be used for'],
+            'signage_rights'                  => ['signage', 'can i put up a sign'],
+            'building_hours'                  => ['hours', 'what are the building hours'],
+            'access_24_7'                     => ['24 7 access', '24 hour access', 'is there 24 hour access'],
+            'minimum_leaseable'               => ['square footage', 'square feet', 'sq ft', 'sqft', 'how much space is there', 'leasable square feet', 'leasable area'],
+            'garage_parking_features'         => ['parking', 'what parking is there'],
+            'furnishings'                     => ['furnished', 'is it furnished', 'furnishings'],
+            'pets_allowed_count'              => ['how many pets', 'how many pets are allowed'],
+            'pet_weight_limit'                => ['pet weight limit', 'weight limit for pets'],
+            'pet_types_allowed'               => ['what pets are allowed', 'what kind of pets are allowed'],
+            'occupied_until'                  => ['when will it be vacant', 'when is it available'],
+            'rent_includes'                   => ['what does the rent include', 'what is included in the rent'],
+            'owner_pays'                      => ['what does the landlord pay', 'what utilities does the landlord pay'],
+            'tenant_pays'                     => ['what does the tenant pay', 'what utilities does the tenant pay'],
         ],
     ];
 
@@ -777,7 +1685,9 @@ class AskAiPublicPropertyQuestionService
             // The form decides which types a question may be asked for (AskAiFieldApplicability),
             // exactly as for curated entries. A legacy no-input field is shown by the page on
             // every type, so it is admitted for every type.
-            $types = AskAiPropertyTypeResolver::ALL_TYPES;
+            $types = $criteria
+                ? (self::CRITERIA_TYPES[$role][$field] ?? AskAiPropertyTypeResolver::ALL_TYPES)
+                : AskAiPropertyTypeResolver::ALL_TYPES;
             if (!$criteria) {
                 $app = \App\Support\AskAi\AskAiFieldApplicability::for($role, $field);
                 if (is_array($app)) {
@@ -802,13 +1712,68 @@ class AskAiPublicPropertyQuestionService
                 'category'         => 'details',
                 'order'            => $order++,
                 'aliases'          => $criteria ? [] : array_values(array_filter([$row['sample_question_2'] ?? null], 'is_string')),
+                'fallback_aliases' => self::GENERATED_FALLBACK_ALIASES[$role][$field] ?? [],
+                'shape'            => self::GENERATED_SHAPES[$role][$field] ?? null,
                 'label'            => $label,
+                'generated'        => true,
+            ];
+        }
+
+        // Criteria the page publishes from its OWN meta (PUBLIC_CRITERIA_META_SOURCES) that no
+        // curated question reads — the same admission, the same accessor and its privacy rules,
+        // one question each. Never the shared AI context: see the constant's docblock.
+        foreach (in_array($role, self::CRITERIA_ROLES, true) ? (self::PUBLIC_CRITERIA_META_SOURCES[$role] ?? []) : [] as $name => $spec) {
+            if (isset($covered[$name]) || !is_string($spec['label'] ?? null)) {
+                continue;
+            }
+            $catalog["{$role}_meta_{$name}"] = [
+                'role'             => $role,
+                'property_types'   => $spec['types'] ?? AskAiPropertyTypeResolver::ALL_TYPES,
+                'question'         => 'What does the ' . $role . "'s listing state for " . $spec['label'] . '?',
+                'source_kind'      => 'criteria_meta',
+                'source_path'      => 'criteria_meta.' . $name,
+                'supporting_paths' => [],
+                'covers'           => ['criteria_meta.' . $name],
+                'formatter'        => 'stated_fact',
+                'guards'           => [],
+                'category'         => 'details',
+                'order'            => $order++,
+                'aliases'          => [],
+                'fallback_aliases' => [],
+                'shape'            => $spec['shape'] ?? null,
+                'label'            => $spec['label'],
                 'generated'        => true,
             ];
         }
 
         return $catalog;
     }
+
+    /**
+     * The property types whose criteria form collects a generated criteria field (the buyer and
+     * tenant wizards' own `@if ($property_type …)`); a field absent here is collected for every
+     * type. Tenant tokens are the resolver's, from 'Residential Property' / 'Commercial Property'.
+     */
+    private const CRITERIA_TYPES = [
+        'buyer' => [
+            'carport'          => [AskAiPropertyTypeResolver::RESIDENTIAL, AskAiPropertyTypeResolver::INCOME],     // BP :475
+            'garage_spaces'    => [AskAiPropertyTypeResolver::COMMERCIAL, AskAiPropertyTypeResolver::BUSINESS],    // BP :550
+            'minimum_cap_rate' => [AskAiPropertyTypeResolver::INCOME, AskAiPropertyTypeResolver::COMMERCIAL, AskAiPropertyTypeResolver::BUSINESS], // BP :1183
+        ],
+        'tenant' => [
+            'carport'                             => [AskAiPropertyTypeResolver::RESIDENTIAL],  // TP property-details :480
+            'garage'                              => [AskAiPropertyTypeResolver::RESIDENTIAL],  // :515
+            'garage_spaces'                       => [AskAiPropertyTypeResolver::COMMERCIAL],   // :548
+            'pool_type'                           => [AskAiPropertyTypeResolver::RESIDENTIAL],  // :624
+            'commercial_lease_type'               => [AskAiPropertyTypeResolver::COMMERCIAL],   // TP leasing-terms :442
+            'cam_nnn_preference'                  => [AskAiPropertyTypeResolver::COMMERCIAL],
+            'rent_escalation_preference'          => [AskAiPropertyTypeResolver::COMMERCIAL],
+            'buildout_tenant_improvement_request' => [AskAiPropertyTypeResolver::COMMERCIAL],
+            'intended_business_use'               => [AskAiPropertyTypeResolver::COMMERCIAL],
+            'signage_request'                     => [AskAiPropertyTypeResolver::COMMERCIAL],
+            'commercial_parking_access_needs'     => [AskAiPropertyTypeResolver::COMMERCIAL],
+        ],
+    ];
 
     /**
      * The displayed question for a generated entry that has no curated sample question.
@@ -865,7 +1830,7 @@ class AskAiPublicPropertyQuestionService
                     continue;
                 }
                 $norm = self::normalizeQuery($label);
-                $byLabel[$norm] ??= ['label' => $label, 'key' => $key, 'values' => []];
+                $byLabel[$norm] ??= ['label' => $label, 'key' => $key, 'field' => (string) ($row['key'] ?? ''), 'values' => []];
                 $byLabel[$norm]['values'][$value][] = trim((string) ($section['title'] ?? ''));
             }
         }
@@ -896,6 +1861,10 @@ class AskAiPublicPropertyQuestionService
                 'category'       => 'mls_details',
                 'order'          => $order++,
                 'aliases'        => [],
+                // Concept wording for the fact this Bridge field IS ("frontage" for Road
+                // Frontage). Tier-2 fallback: a canonical question claiming the same words
+                // always wins, and two MLS rows offering them refuse (withFallbackAliases()).
+                'fallback_aliases' => self::MLS_CONCEPT_ALIASES[$group['field']] ?? [],
                 'label'          => $group['label'],
                 'generated'      => true,
             ];
@@ -903,6 +1872,52 @@ class AskAiPublicPropertyQuestionService
 
         return $catalog;
     }
+
+    /**
+     * MLS Details facts → the ordinary words for what they are, by Bridge field name.
+     *
+     * The page prints the feed's label ("Road Frontage", "Monthly Condominium Fee"), which is
+     * already matchable; these are the words people type instead. Only facts whose meaning is
+     * the word are listed — a total the listing's own field answers (bathrooms) is not
+     * aliased to a component. Every phrase is emitted only when no canonical question claims it.
+     */
+    private const MLS_CONCEPT_ALIASES = [
+        'RoadFrontageType'              => ['frontage', 'road frontage', 'what is the frontage', 'what kind of road frontage is there'],
+        'BusinessType'                  => ['business type', 'type of business', 'what type of business is it', 'what kind of business is it'],
+        'BusinessName'                  => ['business name', 'name of the business', 'what is the name of the business'],
+        'YearEstablished'               => ['year established', 'when was the business established'],
+        'STELLAR_MonthlyCondoFeeAmount' => ['hoa fee', 'hoa fees', 'hoa dues', 'association fee', 'association fees', 'condo fee', 'condo fees', 'how much is the hoa', 'how much are the hoa fees'],
+        'STELLAR_TotalMonthlyFees'      => ['monthly fees', 'total monthly fees', 'how much are the monthly fees'],
+        'STELLAR_TotalAnnualFees'       => ['annual fees', 'total annual fees'],
+        'NumberOfUnitsTotal'            => ['units', 'number of units', 'total units', 'how many units', 'how many units are there'],
+        'NumberOfBuildings'             => ['buildings', 'number of buildings', 'how many buildings', 'how many buildings are there'],
+        'GrossScheduledIncome'          => ['gross income', 'gross scheduled income', 'gross rental income'],
+        'NetOperatingIncome'            => ['noi', 'net operating income', 'net income'],
+        'CapRate'                       => ['cap rate', 'capitalization rate', 'what is the cap rate'],
+        'BuildingAreaTotal'             => ['building size', 'building area', 'total building area', 'how big is the building'],
+        'STELLAR_LeasableArea'          => ['leasable area', 'leasable square feet', 'how much leasable space'],
+        'STELLAR_OfficeRetailSpaceSqFt' => ['office space', 'retail space', 'office and retail space'],
+        'STELLAR_CeilingHeight'         => ['ceiling height', 'how high are the ceilings'],
+        'LotSizeArea'                   => ['lot size', 'lot area', 'how big is the lot'],
+        'GarageSpaces'                  => ['garage spaces', 'how many garage spaces'],
+        'CoveredSpaces'                 => ['covered parking', 'covered spaces'],
+        'ParkingFeatures'               => ['parking', 'what parking is there'],
+        'PetsAllowed'                   => ['pets', 'are pets allowed', 'pet policy'],
+        'STELLAR_MinimumLease'          => ['minimum lease', 'minimum lease term'],
+        'LeaseTerm'                     => ['lease term', 'lease length'],
+        'Cooling'                       => ['cooling', 'air conditioning', 'ac'],
+        'Heating'                       => ['heating'],
+        'Utilities'                     => ['utilities'],
+        'WaterSource'                   => ['water', 'water source'],
+        'Sewer'                         => ['sewer'],
+        'StoriesTotal'                  => ['stories', 'how many stories'],
+        'STELLAR_FutureLandUse'         => ['land use', 'future land use'],
+        'PropertyCondition'             => ['condition', 'property condition'],
+        'STELLAR_ApplicationFee'        => ['application fee'],
+        'STELLAR_ApprovalProcess'       => ['approval process', 'association approval process'],
+        'Possession'                    => ['possession'],
+        'View'                          => ['view', 'what is the view'],
+    ];
 
     /**
      * "<Label>: <value>." — the stored fact under its label, and nothing else.
@@ -1185,6 +2200,18 @@ class AskAiPublicPropertyQuestionService
             }
         }
 
+        // A GENERATED question over a follow-up answer is stated only while its PARENT still
+        // selects it — the listing page's own rule (ConditionalTerms), so a value left behind by
+        // a financing type or a leasing space the owner has since deselected is never restated.
+        // Curated questions carry their own hand-written guards and are not re-gated here.
+        if (($entry['generated'] ?? false) === true && (
+            $metaSourced
+                ? !$this->criteriaParentOpen($role, (string) $sourceKey['key'], $meta)
+                : !$this->parentOpen($role, (string) $sourceKey['key'], $meta)
+        )) {
+            return $this->hidden('parent_not_selected');
+        }
+
         // The declared "Other" companion(s): the stored selections and the "Other" text. One
         // field declares 'other_companion'; a composite reading several declares
         // 'other_companions' (name => spec). Declaring both is malformed.
@@ -1213,6 +2240,13 @@ class AskAiPublicPropertyQuestionService
         // 5. A deterministic formatter that accepts this exact value.
         $formatter = (string) ($entry['formatter'] ?? '');
         if ($formatter === 'stated_fact') {
+            $shape = (string) ($entry['shape'] ?? '');
+            if ($shape !== '') {
+                $value = $this->pageShape($shape, $value, $meta);
+                if ($value === null) {
+                    return $this->hidden('formatter_rejected_value');
+                }
+            }
             $answer = $this->statedFactAnswer((string) ($entry['label'] ?? ''), (string) $sourceKey['key'], $value, $role, $viewer);
 
             return $answer === null
@@ -1924,6 +2958,83 @@ class AskAiPublicPropertyQuestionService
     // =========================================================================
 
     /** @return bool|null  null = unknown guard (the caller fails closed) */
+    /**
+     * Value gates the listing PAGE applies inline that ConditionalTerms does not model:
+     * role => meta key => [parent meta key => the answers that open it]. A generated answer
+     * is stated only while every named parent holds one of its answers, as the row is shown.
+     */
+    private const PAGE_VALUE_GATES = [
+        'seller' => [
+            'business_lease_monthly_rent'     => ['business_location_leased' => ['Yes']],
+            'business_lease_expiration'       => ['business_location_leased' => ['Yes']],
+            'business_lease_renewal_options'  => ['business_location_leased' => ['Yes']],
+            'business_lease_assignable'       => ['business_location_leased' => ['Yes']],
+            'business_lease_additional_terms' => ['business_location_leased' => ['Yes']],
+        ],
+    ];
+
+    /**
+     * Is the context field's primary stored value currently applicable under its parent?
+     * A field that is nobody's follow-up is always open.
+     */
+    private function parentOpen(string $role, string $contextKey, array $meta): bool
+    {
+        $metaKey = null;
+        foreach ((array) (AskAiContextBuilderService::CANONICAL_SOURCE_MAP[$role][$contextKey] ?? []) as $source) {
+            if (is_string($source) && !str_starts_with($source, 'native:') && !str_starts_with($source, 'synthetic:')) {
+                $metaKey = $source;
+                break;
+            }
+        }
+        if ($metaKey === null) {
+            return true;
+        }
+
+        foreach (self::PAGE_VALUE_GATES[$role][$metaKey] ?? [] as $parent => $answers) {
+            if (!\App\Support\OfferListing\ConditionalTerms::choseAny($meta[$parent] ?? null, $answers)) {
+                return false;
+            }
+        }
+        if (in_array($role, self::PROPERTY_ROLES, true)) {
+            return \App\Support\OfferListing\ConditionalTerms::applies($role, $metaKey, static fn (string $k) => $meta[$k] ?? null);
+        }
+
+        return true;
+    }
+
+    /**
+     * A buyer criteria term opened by an offered-financing option is stated only while that
+     * option is offered.
+     *
+     * The buyer page still opens a financing block when EITHER the type is selected OR a child
+     * value survives (`$hasSellerFin || $str('interest_rate')`) — the rule ConditionalTerms
+     * retired for the seller and landlord pages because it re-publishes an answer the buyer has
+     * since withdrawn. This surface may be stricter than its page and never looser, so here
+     * the parent alone decides. Option spellings are the buyer form's own.
+     */
+    private function criteriaParentOpen(string $role, string $name, array $meta): bool
+    {
+        $spec   = self::PUBLIC_CRITERIA_META_SOURCES[$role][$name] ?? [];
+        $parent = $spec['parent'] ?? null;
+        if (is_string($parent) && !\App\Support\OfferListing\ConditionalTerms::chose($meta['offered_financing'] ?? null, $parent)) {
+            return false;
+        }
+
+        // A value gate the buyer PAGE applies, through the same helper the page calls.
+        [$gateKey, $rule] = array_pad((array) ($spec['gate'] ?? []), 2, null);
+        if (!is_string($gateKey)) {
+            return true;
+        }
+        $gateValue = is_scalar($meta[$gateKey] ?? null) ? trim((string) $meta[$gateKey]) : '';
+
+        return match ($rule) {
+            'buyer_period'             => \App\Helpers\ContingencyOptionHelper::buyerShowsPeriod($gateValue),
+            'buyer_home_sale'          => \App\Helpers\ContingencyOptionHelper::buyerHomeSaleShown($gateValue),
+            'possession_details_shown' => !in_array($gateValue, ['', 'At Closing', 'Other'], true),
+            default                    => false,   // an unknown rule opens nothing
+        };
+    }
+
     private function guardPasses(string $guard, array $context, array $meta): ?bool
     {
         if (str_starts_with($guard, 'meta_present:')) {

@@ -423,10 +423,18 @@ class PublicPropertyQuestionBatch2cTest extends TestCase
             $this->assertSame([], $this->service->forListing($role, $criteria, $meta), $role);
         }
 
-        // For the real criteria roles, no HOA / CDD / fee question appears — none of those
-        // keys is in either criteria catalog, so none can resolve.
+        // For the real criteria roles, no PROPERTY HOA / CDD / fee question appears — none of
+        // those keys is in either criteria catalog, so none can resolve. The buyer's own
+        // "Max HOA Fee" (the most the BUYER will accept, published like the budget and admitted
+        // by the universal coverage audit) is a criterion, not a property fee, and is exempt by
+        // being named in the buyer allowlist — nothing else is.
+        $ownCriteria = ['buyer' => ['buyer_field_max_hoa_fee', 'buyer_field_hoa_acceptable'], 'tenant' => []];
         foreach (['buyer', 'tenant'] as $role) {
             foreach ($this->service->forListing($role, $criteria, $meta) as $q) {
+                if (in_array($q['id'], $ownCriteria[$role], true)) {
+                    $this->assertContains(substr($q['source_path'], strlen('listing.')), AskAiPublicPropertyQuestionService::publicCriteriaKeys($role));
+                    continue;
+                }
                 foreach (['hoa', 'cdd', 'association', 'fee'] as $forbidden) {
                     $this->assertStringNotContainsStringIgnoringCase($forbidden, $q['source_path'], "{$q['id']} read a property fee source.");
                     $this->assertStringNotContainsStringIgnoringCase($forbidden, $q['answer'], "{$q['id']} published a property fee.");

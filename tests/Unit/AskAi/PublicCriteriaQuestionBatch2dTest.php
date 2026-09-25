@@ -448,7 +448,11 @@ class PublicCriteriaQuestionBatch2dTest extends TestCase
         return array_map(static fn ($k) => [$k], [
             'loan_pre_approved', 'credit_score_range', 'commute_destination_zip',
             'max_commute_minutes', 'commute_mode', 'address', 'number_of_units',
-            'minimum_cap_rate', 'purchase_purpose', 'additional_preferences', 'description',
+            // minimum_cap_rate was listed here; the universal coverage audit (2026-09-24) made it
+            // public — config/offer_listing_private_criteria.php already names it the buyer's
+            // investment criterion (beside the public minimum_annual_net_income), and the buyer
+            // page prints it as "Min. Cap Rate".
+            'purchase_purpose', 'additional_preferences', 'description',
         ]);
     }
 

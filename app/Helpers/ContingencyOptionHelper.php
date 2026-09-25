@@ -55,6 +55,22 @@ class ContingencyOptionHelper
         };
     }
 
+    /**
+     * Does a buyer appraisal / financing / inspection contingency carry a period on the buyer
+     * page? Only when it displays as Included or Negotiable. One rule for the page and for Ask
+     * AI, so a period is never stated where the page would not print it.
+     */
+    public static function buyerShowsPeriod(?string $value): bool
+    {
+        return in_array(self::buyerAppraisalFinancingDisplay((string) $value), ['Included', 'Negotiable'], true);
+    }
+
+    /** Is the buyer page's Home Sale Contingency block shown for this stored value? */
+    public static function buyerHomeSaleShown(?string $value): bool
+    {
+        return in_array(self::buyerHomeSaleDisplay((string) $value), ['Included', 'Negotiable'], true);
+    }
+
     /** Map a stored Buyer home-sale contingency value to its canonical display label. */
     public static function buyerHomeSaleDisplay(?string $value): string
     {

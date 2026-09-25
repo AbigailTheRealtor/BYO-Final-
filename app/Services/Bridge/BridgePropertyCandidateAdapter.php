@@ -4,6 +4,7 @@ namespace App\Services\Bridge;
 
 use App\Models\BridgeProperty;
 use App\Services\Property\PropertyCandidate;
+use App\Support\Listing\BathroomTotal;
 
 /**
  * Maps a persisted BridgeProperty (the local MLS cache row, native columns plus
@@ -196,6 +197,10 @@ class BridgePropertyCandidateAdapter
 
             // The feed's own precision. BathroomsTotalInteger (above) is rounded.
             bathroomsTotalDecimal:   $this->toDecimal($raw['BathroomsTotalDecimal'] ?? null),
+
+            // The canonical total from every component, through the one shared rule. The
+            // typed column stands in for BathroomsTotalInteger when the raw record lacks it.
+            bathroomsTotal:          BathroomTotal::fromRecord($raw + [BathroomTotal::INTEGER => $p->bathrooms_total_integer]),
         );
     }
 

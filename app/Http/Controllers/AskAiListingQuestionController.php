@@ -12,6 +12,7 @@ use App\Services\AskAi\AskAiRateLimitService;
 use App\Services\AskAi\AskAiUsageLoggerService;
 use App\Services\AskAi\AskAiComplianceGuardrailService;
 use App\Services\AskAi\AskAiViewerAuthorizationService;
+use App\Support\AskAi\AskAiOwnerQuestionSelection;
 use App\Support\AskAi\AskAiPublicListingAccess;
 
 class AskAiListingQuestionController extends Controller
@@ -38,15 +39,20 @@ class AskAiListingQuestionController extends Controller
         $validated = $request->validate([
             'listing_type' => ['required', 'string'],
             'listing_id'   => ['required', 'integer'],
-            'question'     => ['required', 'string', 'max:1000'],
+            'question'     => ['required_without:question_key', 'nullable', 'string', 'max:1000'],
+            // A SELECTED question: the canonical key of one suggested-question registry entry.
+            // Sent by the owner question picker so the server answers the registry's own
+            // question for that key instead of re-interpreting display text.
+            'question_key' => ['nullable', 'string', 'max:200'],
             'options'      => ['nullable', 'array'],
         ]);
 
         $startTime    = microtime(true);
         $listingType  = $validated['listing_type'];
         $listingId    = (int) $validated['listing_id'];
-        $question     = $validated['question'];
-        $questionHash = hash('sha256', $question);
+        $question     = (string) ($validated['question'] ?? '');
+        $questionKey  = $validated['question_key'] ?? null;
+        $questionHash = hash('sha256', $questionKey !== null ? 'key:' . $questionKey : $question);
 
         // Authorization is per FACT, not per listing. Everyone who can see a listing's public
         // page may ask about it; what they may learn is decided by the scope the runner is
@@ -111,6 +117,52 @@ class AskAiListingQuestionController extends Controller
             ], 429)->header('Retry-After', $retryAfter);
         }
 
+        // A selected question is resolved by EXACT key against the registry — never fuzzily,
+        // never from the display text sent beside it. A key that names no single entry for
+        // this role is refused here with the runner's own deterministic refusal, before the
+        // runner (and so any model path) is reached at all.
+        $selected = null;
+        if ($questionKey !== null) {
+            $selected = AskAiOwnerQuestionSelection::resolve($listingType, $questionKey);
+            if ($selected === null) {
+                try {
+                    $this->logger->logListingQuestion([
+                        'listing_type'      => $listingType,
+                        'listing_id'        => $listingId,
+                        'user_id'           => auth()->id(),
+                        'ip_address'        => $request->ip(),
+                        'question_hash'     => $questionHash,
+                        'question_type'     => null,
+                        'status'            => 'insufficient_context',
+                        'success'           => false,
+                        'model'             => null,
+                        'response_time_ms'  => (int) round((microtime(true) - $startTime) * 1000),
+                        'error_code'        => null,
+                        'prompt_tokens'     => 0,
+                        'completion_tokens' => 0,
+                        'total_tokens'      => 0,
+                        'api_request_id'    => null,
+                        'outcome_category'  => 'unresolved_question_key',
+                    ]);
+                } catch (\Throwable $logEx) {
+                }
+
+                return response()->json([
+                    'success'             => false,
+                    'status'              => 'insufficient_context',
+                    'answer'              => AskAiRunnerV2Service::DETERMINISTIC_UNANSWERABLE,
+                    'refusal_message'     => null,
+                    'disclosures'         => [AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER],
+                    'disclaimer'          => AskAiComplianceGuardrailService::EDUCATIONAL_DISCLAIMER,
+                    'source_attribution'  => [],
+                    'source'              => ['answer_source' => 'deterministic_refusal', 'snapshot_id' => null, 'canonical_key' => null, 'match_type' => 'unresolved_question_key', 'snapshot_version' => null],
+                    'error'               => null,
+                    'follow_up_questions' => [],
+                ]);
+            }
+            $question = $selected['question'];
+        }
+
         try {
             // The scope resolved above: 'owner' for the listing's owner, 'public' for everyone
             // else. The runner's per-fact redaction (Part J / C-B) applies to 'public'.
@@ -122,6 +174,12 @@ class AskAiListingQuestionController extends Controller
             $options = $scope === AskAiViewerAuthorizationService::SCOPE_OWNER
                 ? ($validated['options'] ?? [])
                 : [];
+            // An owner's selection names its fact: the runner looks that key up directly.
+            // (A non-owner's runner options stay dropped whole; their selection reaches the
+            // runner as the registry's own question text and is answered at public scope.)
+            if ($selected !== null && $scope === AskAiViewerAuthorizationService::SCOPE_OWNER) {
+                $options['normalized_field_key'] = $selected['key'];
+            }
             $options['viewer_scope']      = $scope;
             $options['requester_user_id'] = Auth::id();
 

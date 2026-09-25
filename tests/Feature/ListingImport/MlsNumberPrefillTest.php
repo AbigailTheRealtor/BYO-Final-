@@ -63,6 +63,9 @@ class MlsNumberPrefillTest extends TestCase
     private function seedBridgeProperty(array $overrides = []): BridgeProperty
     {
         $raw = [
+            // Stellar sends the canonical decimal total beside the rounded integer; bathrooms are
+            // imported from it (BathroomTotal), never from the integer alone.
+            'BathroomsTotalDecimal' => 3,
             'ListingKey'           => self::KEY,
             'ListingId'            => self::MLS,
             'PublicRemarks'        => 'RESTRICTED_PUBLIC_REMARKS charming pool home',

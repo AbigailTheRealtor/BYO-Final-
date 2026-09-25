@@ -2,7 +2,8 @@
 
 namespace Tests\Feature\AskAi;
 
-use App\Services\AskAi\AskAiPublicPropertyQuestionService;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Support\AskAi\PageFactCoverageProbe as P;
 use Tests\TestCase;
 
 /**
@@ -10,21 +11,90 @@ use Tests\TestCase;
  *
  * tests/browser/ask-ai-typed-question.spec.js drives a static fixture rather than a booted
  * Laravel page, which is what lets it run with no database and no authentication. The price
- * of that is drift: a fixture that fell behind the catalog would let the spec go on passing
- * against a card the application no longer produces, and the zero-network proof would be
+ * of that is drift: a fixture that fell behind the modal would let the spec go on passing
+ * against markup the application no longer produces, and the zero-network proof would be
  * about a page nobody visits.
  *
- * So this test re-derives the vocabulary from the real service and asserts the fixture still
- * carries it — and, just as importantly, asserts the fixture carries the same STRUCTURE the
- * Blade partial emits, since the matcher selects on those attributes.
+ * HISTORY. The file names still say "typed-question" (Batch 3's retired typed box); the
+ * fixture now carries the SELECTION-BASED Ask AI modal (2026-09-25) that question-picker.js
+ * drives. It is not hand-written: it is the modal body the real seller and landlord pages
+ * render for a guest, cut out verbatim. This test re-renders the same listings and requires
+ * the fixture to match EXACTLY — question ids, display wording, search terms (the service's
+ * real deterministic aliases) and precomputed answers all at once.
  *
- * Follows the pattern main established in VirtualDriveBrowserFixtureParityTest.
+ * To regenerate after an intended change:
+ *   ASK_AI_PICKER_FIXTURE_WRITE=1 vendor/bin/phpunit tests/Feature/AskAi/TypedQuestionBrowserFixtureParityTest.php
  */
 class TypedQuestionBrowserFixtureParityTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private const FIXTURE = 'tests/browser/fixtures/ask-ai/typed-question.html';
-    private const PARTIAL = 'resources/views/offer-listing/partials/_ask-ai-property-card.blade.php';
-    private const MATCHER = 'public/js/ask-ai/deterministic-question-matcher.js';
+    private const PARTIAL = 'resources/views/offer-listing/partials/_ask-ai-question-modal.blade.php';
+    private const PICKER  = 'public/js/ask-ai/question-picker.js';
+    private const OWNER_PICKER = 'public/js/ask-ai/owner-question-picker.js';
+
+    private const ROUTES = [
+        'seller'   => 'offer.listing.seller.view',
+        'landlord' => 'offer.listing.landlord.view',
+    ];
+
+    /** The listings the fixture is cut from. Values are fixed so the render is stable. */
+    private function listings(): array
+    {
+        return [
+            'seller' => P::makeListing('seller', 'Residential', [
+                'bedrooms' => '3', 'bathrooms' => '2', 'heated_square' => '1850', 'year_built' => '1998',
+                'annual_property_taxes' => '4200', 'tax_year' => '2025', 'flood_zone_code' => 'AE',
+                'roof_type' => ['Shingle'], 'utilities' => ['Electricity Connected', 'Sewer Connected'],
+                'pool_needed' => 'Yes',
+                'listing_ai_faq_public_ack' => '1',
+                'listing_ai_faq' => ['roof_age_and_condition' => 'Roof replaced in 2019, architectural shingle.'],
+            ]),
+            'landlord' => P::makeListing('landlord', 'Residential Property', [
+                'bedrooms' => '2', 'bathrooms' => '1', 'pets' => 'Yes', 'flood_zone_code' => 'VE',
+            ]),
+        ];
+    }
+
+    /** The modal body a guest receives, from its opening div to the end of its disclaimer. */
+    private function modalBody(string $html, string $role): string
+    {
+        $open = strpos($html, 'data-ask-ai-picker="' . $role . '"');
+        $this->assertNotFalse($open, "No Ask AI modal for {$role}.");
+        $start = strrpos(substr($html, 0, $open), '<div');
+        $disc  = strpos($html, 'ask-ai-picker-disclaimer', $open);
+        $end   = strpos($html, '</div>', strpos($html, '</p>', $disc)) + strlen('</div>');
+
+        // Indentation is Blade's, not meaning: normalise it so the comparison is about markup.
+        return trim(preg_replace('/^[ \t]+/m', '', substr($html, $start, $end - $start)));
+    }
+
+    /** The modal's own stylesheet, as the layout receives it. */
+    private function style(string $html): string
+    {
+        preg_match('/<style>\s*\.ask-ai-picker-intro.*?<\/style>/s', $html, $m);
+        $this->assertNotEmpty($m, 'The modal stylesheet was not rendered.');
+
+        return trim($m[0]);
+    }
+
+    private function render(): string
+    {
+        $bodies = [];
+        $style  = '';
+        foreach ($this->listings() as $role => $listing) {
+            $html     = $this->get(route(self::ROUTES[$role], $listing->id))->assertOk()->getContent();
+            $style    = $this->style($html);
+            $bodies[] = "<section data-fixture-role=\"{$role}\">\n" . $this->modalBody($html, $role) . "\n</section>";
+        }
+
+        return "<!doctype html>\n<meta charset=\"utf-8\">\n<title>Ask AI question picker — fixture</title>\n"
+            . "<!--\n    GENERATED by TypedQuestionBrowserFixtureParityTest from the real seller and landlord pages\n"
+            . "    (guest view). Do not edit by hand: regenerate with ASK_AI_PICKER_FIXTURE_WRITE=1.\n-->\n"
+            . $style . "\n<body>\n" . implode("\n", $bodies) . "\n"
+            . "<script src=\"/ask-ai-js/question-picker.js\"></script>\n</body>\n";
+    }
 
     private function fixture(): string
     {
@@ -34,120 +104,72 @@ class TypedQuestionBrowserFixtureParityTest extends TestCase
         return (string) file_get_contents($path);
     }
 
-    /** id => aliases, as the fixture carries them. */
-    private function fixtureVocabulary(string $html): array
-    {
-        preg_match_all(
-            '/data-property-question="([a-z_0-9]+)"\s+data-question-aliases="([^"]*)"/',
-            $html, $m, PREG_SET_ORDER
-        );
+    /* ------------------------------------------------------------------ */
 
-        $out = [];
-        foreach ($m as [, $id, $aliases]) {
-            $out[$id] = array_values(array_filter(explode('|', html_entity_decode($aliases, ENT_QUOTES))));
+    public function test_the_fixture_is_exactly_what_the_pages_render(): void
+    {
+        $rendered = $this->render();
+        if (getenv('ASK_AI_PICKER_FIXTURE_WRITE')) {
+            file_put_contents(base_path(self::FIXTURE), $rendered);
         }
 
-        return $out;
+        $this->assertSame($rendered, $this->fixture(),
+            'The browser fixture has drifted from the rendered Ask AI modal. Regenerate it (see the class docblock).');
     }
 
-    /** @test */
-    public function every_fixture_question_carries_the_services_real_aliases(): void
+    public function test_the_fixture_carries_the_questions_the_spec_relies_on(): void
     {
-        $service = new AskAiPublicPropertyQuestionService();
-        $fixture = $this->fixtureVocabulary($this->fixture());
+        $fixture = $this->fixture();
 
-        $this->assertNotEmpty($fixture, 'The fixture carries no questions.');
-
-        // Re-derive each question's vocabulary from the catalog through the real service.
-        //
-        // The meta is PER ROLE, not one shared array. A single array looked tidier and was
-        // wrong: buyer's `maximum_budget` is one of the keys tenant's rent-divergence guard
-        // compares against, so a shared 450000 made the tenant rent question hide and the
-        // fixture look as though it had drifted.
-        $scenarios = [
-            'seller' => [
-                ['hoa_association' => 'Yes', 'hoa_fee' => '250', 'hoa_payment_schedule' => 'Monthly',
-                 'association_fee_includes' => 'Water', 'annual_property_taxes' => '4200',
-                 'tax_year' => '2025', 'flood_zone_code' => 'AE', 'pool' => 'Yes', 'bedrooms' => '3'],
-                ['has_hoa' => 'Yes', 'association_fee_amount' => '250', 'association_fee_frequency' => 'Monthly',
-                 'association_fee_includes' => '["Water","Trash"]', 'bedrooms' => '3'],
-            ],
-            'landlord' => [
-                ['hoa_association' => 'Yes', 'hoa_fee' => '175', 'hoa_payment_schedule' => 'Quarterly',
-                 'flood_zone_code' => 'VE', 'pet_policy' => 'Yes', 'bedrooms' => '2'],
-                ['has_hoa' => 'Yes', 'association_fee_amount' => '175', 'association_fee_frequency' => 'Quarterly',
-                 'bedrooms' => '2'],
-            ],
-            'buyer' => [
-                ['max_price' => '450000', 'bedrooms' => '3', 'cities' => 'Seminole', 'counties' => 'Pinellas'],
-                ['maximum_budget' => '450000', 'bedrooms' => '3'],
-            ],
-            'tenant' => [
-                ['cities' => 'Seminole', 'bedrooms' => '2',
-                 'move_in_date_earliest' => '2027-01-15', 'move_in_date_latest' => '2027-03-01'],
-                ['budget' => '2500', 'bedrooms' => '2', 'pets' => 'Yes', 'tenant_require' => '["Furnished"]'],
-            ],
-        ];
-
-        $real = [];
-        foreach ($scenarios as $role => [$listing, $meta]) {
-            foreach ($service->forListing($role, ['listing' => $listing + ['property_type' => 'Residential']], $meta) as $q) {
-                $real[$q['id']] = $q['aliases'];
-            }
-        }
-
-        foreach ($fixture as $id => $aliases) {
-            $this->assertArrayHasKey($id, $real, "The fixture carries '{$id}', which the service no longer produces.");
-            $this->assertSame($real[$id], $aliases,
-                "The fixture's aliases for '{$id}' have drifted from the catalog. Regenerate the fixture.");
+        // Real service aliases, reached through search: roof, taxes, utilities, bathrooms.
+        foreach ([
+            'data-ask-ai-pick="seller_property_taxes"', 'data-ask-ai-pick="seller_bathrooms"',
+            'data-ask-ai-pick="seller_utilities"', 'data-ask-ai-pick="seller_roof_type"',
+            'data-ask-ai-pick="kb_seller_roof_age_and_condition"', 'data-ask-ai-pick="seller_heated_square_feet"',
+            'data-ask-ai-pick="landlord_flood_zone"',
+            'age of roof', '|taxes|', '|baths|', '|sqft|', 'utilities',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $fixture, "The fixture no longer carries '{$needle}'.");
         }
     }
 
-    /** @test */
-    public function the_fixture_carries_every_hook_the_matcher_selects_on(): void
+    public function test_the_fixture_carries_every_hook_the_picker_selects_on(): void
     {
         $fixture = $this->fixture();
         $partial = (string) file_get_contents(base_path(self::PARTIAL));
-        $matcher = (string) file_get_contents(base_path(self::MATCHER));
+        $picker  = (string) file_get_contents(base_path(self::PICKER));
+        $owner   = (string) file_get_contents(base_path(self::OWNER_PICKER));
 
-        // Every attribute the matcher queries for must exist in BOTH the real partial and
+        // Every attribute the picker QUERIES or READS must exist in BOTH the real partial and
         // the fixture — otherwise the spec exercises hooks the application does not emit.
-        preg_match_all('/\[(data-[a-z-]+)\]/', $matcher, $m);
-        $selectors = array_values(array_unique($m[1]));
-        $this->assertNotEmpty($selectors);
+        // (Attributes a picker only WRITES, like its ready marker or the owner picker's
+        // runtime disclosure/source lines, are created in the browser, not by the partial.)
+        preg_match_all('/\[(data-[a-z-]+)\]/', $picker, $selectors);
+        preg_match_all("/getAttribute\\('(data-[a-z-]+)'\\)/", $picker, $reads);
+        preg_match_all("/setAttribute\\('(data-[a-z-]+)'/", $picker . $owner, $writes);
+        $hooks = array_values(array_diff(array_unique(array_merge($selectors[1], $reads[1])), $writes[1]));
+        $this->assertGreaterThanOrEqual(8, count($hooks));
 
-        foreach ($selectors as $attribute) {
+        foreach ($hooks as $attribute) {
             $this->assertStringContainsString($attribute, $partial, "The partial does not emit {$attribute}.");
             $this->assertStringContainsString($attribute, $fixture, "The fixture does not carry {$attribute}.");
         }
-
-        // And the element shapes the matcher walks.
-        foreach (['details[data-property-question]' => 'data-property-question',
-                  'summary'                          => '<summary'] as $needle) {
-            $this->assertStringContainsString($needle, $fixture);
-        }
     }
 
-    /** @test */
-    public function the_fixture_is_covered_by_all_four_roles(): void
+    public function test_the_fixture_contains_no_form_no_named_input_and_no_submit_button(): void
     {
-        $fixture = $this->fixture();
-
-        foreach (['seller', 'landlord', 'buyer', 'tenant'] as $role) {
-            $this->assertStringContainsString('data-ask-ai-property-questions="' . $role . '"', $fixture,
-                "The fixture has no {$role} card, so the spec cannot cover that role.");
-        }
-    }
-
-    /** @test */
-    public function the_fixture_contains_no_form_and_no_named_input(): void
-    {
-        // The same structural guarantee the real card carries — asserted on the fixture too,
-        // so the browser spec is exercising a page with the production shape.
         $fixture = $this->fixture();
 
         $this->assertStringNotContainsString('<form', $fixture);
+        $this->assertStringNotContainsString('<textarea', $fixture);
         $this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=/', $fixture);
-        $this->assertStringContainsString('type="button"', $fixture);
+        preg_match_all('/<button\b[^>]*>/', $fixture, $buttons);
+        $this->assertNotEmpty($buttons[0]);
+        foreach ($buttons[0] as $button) {
+            $this->assertStringContainsString('type="button"', $button);
+        }
+        // Only the static picker; the owner picker (which can reach an endpoint) is absent.
+        $this->assertStringNotContainsString('owner-question-picker', $fixture);
+        $this->assertStringNotContainsString('data-ask-ai-owner', $fixture);
     }
 }

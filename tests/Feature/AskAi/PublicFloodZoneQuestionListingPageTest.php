@@ -87,7 +87,15 @@ class PublicFloodZoneQuestionListingPageTest extends TestCase
             $end = strpos($html, '-interaction-card-helper', $start);
         }
 
-        return $end === false ? substr($html, $start) : substr($html, $start, $end - $start);
+        $card = $end === false ? substr($html, $start) : substr($html, $start, $end - $start);
+
+        // The selection modal (2026-09-25) is the other half of the same surface: every
+        // answerable question with its precomputed answer. Leak assertions cover both.
+        $mStart = strpos($html, 'data-ask-ai-picker="' . $role . '"');
+        $this->assertNotFalse($mStart, "No Ask AI modal for {$role}.");
+        $mEnd = strpos($html, 'ask-ai-picker-disclaimer', $mStart);
+
+        return $card . "\n" . substr($html, $mStart, $mEnd === false ? null : $mEnd - $mStart);
     }
 
     private function sellerCard(array $meta): string
@@ -118,9 +126,15 @@ class PublicFloodZoneQuestionListingPageTest extends TestCase
             'This property is in FEMA Flood Zone AE, which is within a Special Flood Hazard Area.',
             $text
         );
-        $this->assertSame(1, substr_count($text, 'What flood zone is the property in?'),
-            'The flood question must appear exactly once.');
-        $this->assertSame(1, substr_count($text, 'data-property-question="seller_flood_zone"'));
+        // Exactly one entry per place it may appear: one featured <details> on the card, one
+        // selectable row in the modal's full list, one precomputed answer. (The modal also
+        // recommends it and carries its wording as search terms — those are the same entry.)
+        $this->assertSame(1, substr_count($text, 'data-property-question="seller_flood_zone"'),
+            'The flood question must appear exactly once on the card.');
+        $this->assertSame(1, preg_match_all('/data-ask-ai-pick="seller_flood_zone"[^>]*data-ask-ai-search-terms=/', $text),
+            'The flood question must appear exactly once in View all.');
+        $this->assertSame(1, substr_count($text, 'data-ask-ai-answer-for="seller_flood_zone"'),
+            'The flood answer must be present exactly once in the modal.');
     }
 
     public function test_seller_x_renders_the_lower_risk_wording(): void
@@ -185,9 +199,14 @@ class PublicFloodZoneQuestionListingPageTest extends TestCase
         ]), ENT_QUOTES);
 
         $this->assertStringContainsString('FEMA Flood Zone AE', $text);
-        foreach (['SENTINEL-DESIGNATION', 'SENTINEL-DESCRIPTION', 'SENTINEL-IS-IN-ZONE', 'SENTINEL-INSURANCE'] as $leak) {
+        foreach (['SENTINEL-DESIGNATION', 'SENTINEL-DESCRIPTION', 'SENTINEL-IS-IN-ZONE'] as $leak) {
             $this->assertStringNotContainsString($leak, $text, "'{$leak}' reached the card.");
         }
+        // Flood insurance required left this list in the universal coverage audit (2026-09-24):
+        // the seller page prints it, so the card states it — under its OWN label, never inside
+        // the designation answer, and never as a statement about risk.
+        $this->assertStringContainsString('Flood Insurance Required: SENTINEL-INSURANCE.', $text);
+        $this->assertStringNotContainsString('Zone AE, SENTINEL-INSURANCE', $text);
     }
 
     /* ================================================================== */
@@ -228,14 +247,15 @@ class PublicFloodZoneQuestionListingPageTest extends TestCase
                   'ask-ai/listing-question', 'api/ask-ai/ask', 'agent-ai/'] as $forbidden) {
             $this->assertStringNotContainsString($forbidden, $card, "The card contains '{$forbidden}'.");
         }
-                  // Batch 3 SUPERSEDES the "<input" and "<a" clauses of this list. The card now
-                  // carries a typed-question box, so an <input> is expected — and a <button>
-                  // with it. What still must hold is stronger and is asserted instead: no
-                  // <form> and no action for anything to submit to, the input carries no
-                  // `name` so a form could not carry it even if one existed, and no fetch,
-                  // XHR or endpoint string appears anywhere in the card.
-        $this->assertStringContainsString('data-ask-ai-ask-input', $card);
-        $this->assertDoesNotMatchRegularExpression('/<input\\b[^>]*\\bname=/', $card,
-            'The typed-question input must carry no name attribute.');
+        // SELECTION-BASED (2026-09-25) superseded Batch 3's typed box. The card is inert
+        // markup again — featured <details> plus one button that opens the Ask AI modal — and
+        // the modal's only input is the search FILTER: nameless, in no form, so nothing typed
+        // can be submitted. Every button is type=button, so none can submit anything either.
+        preg_match_all('/<input\\b[^>]*>/i', $card, $inputs);
+        $this->assertCount(1, $inputs[0], 'The only input is the modal search filter.');
+        $this->assertStringContainsString('data-ask-ai-picker-search', $inputs[0][0]);
+        $this->assertDoesNotMatchRegularExpression('/<input\\b[^>]*\\bname=/', $card, 'No Ask AI input carries a name.');
+        $this->assertDoesNotMatchRegularExpression('/<button\\b(?![^>]*type="button")[^>]*>/', $card,
+            'Every Ask AI button is type=button.');
     }
 }

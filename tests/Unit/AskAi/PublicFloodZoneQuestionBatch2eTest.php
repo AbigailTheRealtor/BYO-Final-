@@ -103,32 +103,41 @@ class PublicFloodZoneQuestionBatch2eTest extends TestCase
         ];
     }
 
-    public function test_flood_insurance_required_classification_is_unchanged(): void
+    public function test_flood_insurance_required_is_public_and_never_restricted(): void
     {
-        // Not made public, and not made restricted either — this change says nothing about
-        // it. A lender or insurer requirement is a different claim from a map designation.
+        // Batch 2e made no statement about it. The universal coverage audit (2026-09-24) did:
+        // both public listing pages print "Flood Insurance Required" to a guest, so Ask AI states
+        // it too — as the owner's stated requirement, under that label, never as a claim about
+        // flood risk. It is not restricted.
         foreach (['seller', 'landlord'] as $role) {
             $this->assertSame(
-                SnapshotFactVisibility::OWNER_ONLY,
+                SnapshotFactVisibility::PUBLIC_ALLOWED,
                 SnapshotFactVisibility::classify('flood_insurance_required', $role)
             );
         }
         $this->assertNotContains('flood_insurance_required', SnapshotFactVisibility::restrictedKeys());
     }
 
-    public function test_only_flood_zone_code_became_public(): void
+    public function test_exactly_the_page_printed_flood_fields_are_public(): void
     {
-        // Stated as a property of the whole allow-list rather than of one key: no other
-        // environmental or compliance field slipped in alongside it.
+        // Stated as a property of the whole allow-list rather than of one key. The code (Batch
+        // 2e) and the three rows both public pages print beside it — panel, determination date
+        // and insurance requirement (universal coverage audit, 2026-09-24). The narrative and
+        // boolean designations stay restricted: nothing stored can support "not in a flood zone".
+        // The seller page prints no determination date; the landlord page does.
+        $expected = [
+            'seller'   => ['flood_insurance_required', 'flood_zone_code', 'flood_zone_panel'],
+            'landlord' => ['flood_insurance_required', 'flood_zone_code', 'flood_zone_date', 'flood_zone_panel'],
+        ];
         foreach (['seller', 'landlord'] as $role) {
             $public = SnapshotFactVisibility::publicKeysForRole($role);
             $flood  = array_values(array_filter($public, static fn ($k) => str_contains($k, 'flood')));
+            sort($flood);
 
-            $this->assertSame(['flood_zone_code'], $flood,
-                "{$role} must publish exactly one flood field.");
+            $this->assertSame($expected[$role], $flood,
+                "{$role} must publish exactly the flood fields its page prints.");
 
-            foreach (['is_in_flood_zone', 'flood_zone_designation', 'flood_zone_description',
-                      'flood_insurance_required', 'flood_zone_panel', 'flood_zone_date'] as $key) {
+            foreach (['is_in_flood_zone', 'flood_zone_designation', 'flood_zone_description'] as $key) {
                 $this->assertNotContains($key, $public, "{$key} must not be public for {$role}.");
             }
         }
@@ -317,9 +326,13 @@ class PublicFloodZoneQuestionBatch2eTest extends TestCase
 
     public static function unreadableFloodSources(): array
     {
+        // flood_insurance_required and flood_zone_panel became public seller facts in the
+        // universal coverage audit (2026-09-24) — each answers its OWN generated question under
+        // its own label, never this designation question. flood_zone_date stays owner_only for
+        // the seller (the seller page prints no date), so it still proves the guarantee.
         return array_map(static fn ($k) => [$k], [
             'flood_zone_designation', 'flood_zone_description', 'is_in_flood_zone',
-            'flood_insurance_required', 'flood_zone_panel', 'flood_zone_date',
+            'flood_zone_date',
         ]);
     }
 

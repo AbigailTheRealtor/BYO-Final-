@@ -65,6 +65,7 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
                 'bathrooms'                      => 2,
                 'city'                           => 'Tampa',
                 'current_use'                    => 'residential',
+                'reason_for_sale'                => 'Relocating',
                 'rental_purpose'                 => 'primary residence',
             ],
             'faq_answers' => [],
@@ -97,7 +98,11 @@ class AskAiViewerAuthorizationServiceTest extends TestCase
      */
     private function ownerOnlyKeys(): array
     {
-        return ['current_use', 'rental_purpose'];
+        // current_use was here; the universal coverage audit (2026-09-24) made it a public
+        // seller fact (the vacant-land page prints it). It stays in the context above as the
+        // matcher's false-positive guard. reason_for_sale — the seller's motivation, owner-only
+        // by decision for every role — carries the owner-only assertion instead.
+        return ['reason_for_sale', 'rental_purpose'];
     }
 
     /**

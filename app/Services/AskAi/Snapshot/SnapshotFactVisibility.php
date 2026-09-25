@@ -251,6 +251,62 @@ class SnapshotFactVisibility
         'max_pet_weight',
         'pet_restrictions',
         'rental_restrictions',
+
+        // ── Universal coverage audit (2026-09-24) ─────────────────────────────────────
+        //
+        // OWNER_ONLY by DEFAULT, not by decision: the public seller page prints every one of
+        // these to a guest (AskAiPageFactCoverageTest proves it by rendering the page). Each is a
+        // fact about the property, the business being sold, or the sale terms the seller
+        // PUBLISHED. Still absent: every seller-financing and assumable-loan term (lending
+        // trigger terms; RESTRICTED or dispositioned PROHIBITED), deposits, the reason for sale
+        // (motivation), a seller's desired MINIMUM cap rate / net income (not the property's
+        // figures), `total_units` (the key also holds the address's unit), location identifiers
+        // and anything naming a person. The card asks each only for the property types whose
+        // form collects it and only while its parent selection is open (ConditionalTerms).
+        // Property / site
+        'ceiling_height', 'front_footage', 'building_sqft', 'total_buildings', 'price_per_sqft',
+        'water_available', 'sewer_available', 'electric_available', 'gas_available', 'telecom_available',
+        'number_of_wells', 'number_of_septics', 'buildable', 'current_use', 'current_adjacent_use',
+        'road_frontage', 'road_surface_type', 'fences', 'vegetation', 'easements', 'electrical_service',
+        'number_electric_meters', 'number_water_meters',
+        // flood_zone_date is NOT here: the seller page never prints it (the landlord page does).
+        'flood_zone_panel', 'flood_insurance_required',
+        'included_personal_property', 'excluded_items', 'pet_types_allowed', 'occupied_until',
+        // HOA / association
+        'association_type', 'association_approval_process', 'association_application_fee',
+        'additional_lease_restrictions', 'max_leases_per_year', 'min_lease_period', 'hoa_condo_association_terms',
+        // Income / commercial / business
+        'gross_annual_income', 'annual_operating_expenses', 'rent_roll_available', 'operating_statement_available',
+        'existing_lease_type', 'lease_expiration', 'lease_assignable',
+        'business_type', 'business_name', 'year_established', 'employee_count',
+        'annual_revenue', 'gross_profit', 'sde_ebitda', 'inventory_value', 'ffe_value',
+        'financial_statements_available', 'tax_returns_available', 'nda_required',
+        // real_estate_purchase: printed in the Business branch of Financial Details, the page's
+        // own Business-only gate (it previously sat inside the Seller Financing block).
+        'real_estate_purchase', 'licenses', 'sale_includes', 'business_assets', 'business_assets_other',
+        'business_location_leased', 'business_lease_monthly_rent', 'business_lease_expiration',
+        'business_lease_renewal_options', 'business_lease_assignable', 'business_lease_additional_terms',
+        // Sale terms the seller published (non-lending)
+        'unit_mix_summary', 'sale_provision_assignment', 'assignment_fee', 'assignment_fee_type',
+        'sale_provision', 'seller_credit_offered', 'seller_credit_amount', 'additional_seller_sale_terms',
+        'inspection_contingency_preference', 'preferred_inspection_period',
+        'appraisal_contingency_preference', 'appraisal_contingency_period',
+        'financing_contingency_preference', 'financing_contingency_period',
+        'sale_of_buyer_property_contingency', 'sale_of_buyer_property_period',
+        'escrow_agent_preference', 'possession_preference', 'possession_details', 'home_warranty_details',
+        'exchange_item', 'exchange_item_value', 'exchange_item_condition', 'exchange_additional_cash',
+        'value_determination', 'exchange_transfer_method', 'exchange_liens_disclosure',
+        'exchange_liens_details', 'exchange_inspection_rights',
+        'cryptocurrency_type', 'crypto_percentage', 'cash_percentage_crypto', 'crypto_exchange_method',
+        'crypto_custodian_wallet', 'crypto_transaction_fees', 'crypto_transfer_timing',
+        'nft_description', 'nft_percentage', 'cash_percentage_nft', 'nft_valuation_method',
+        'nft_transfer_method', 'nft_gas_fees',
+        'lease_option_price', 'lease_option_payment', 'lease_option_duration', 'option_fee_offered',
+        'option_fee_amount', 'lease_option_fee_credit', 'lease_option_fee_credit_percentage',
+        'lease_option_conditions', 'lease_option_terms', 'lease_option_maintenance', 'lease_option_extension_terms',
+        'lease_purchase_price', 'lease_purchase_payment', 'lease_purchase_duration', 'lease_purchase_rent_credit',
+        'lease_purchase_rent_credit_amount', 'lease_purchase_conditions', 'lease_purchase_terms',
+        'lease_purchase_maintenance', 'lease_purchase_extension_terms',
     ];
 
     /**
@@ -287,6 +343,81 @@ class SnapshotFactVisibility
         'pet_fee_other',
         'pet_max_weight_lbs',
         'pet_deposit_fee_rent',
+
+        // ── Universal coverage audit (2026-09-24) ─────────────────────────────────────
+        //
+        // Every key below was OWNER_ONLY by DEFAULT, not by decision: the public landlord page
+        // already prints it to a guest (AskAiPageFactCoverageTest renders the page and proves
+        // it), and Ask AI withheld it only because nobody had listed it. Each describes the
+        // PROPERTY or the LEASE ON OFFER. Screening, qualification, occupancy-limit and income
+        // fields remain absent (the D4 note above), as do deposits (RESTRICTED) and anything
+        // naming a person. The public card still asks each one only for the property types
+        // whose form collects it (AskAiFieldApplicability) and only while its parent selection
+        // is open (ConditionalTerms).
+        'lease_amount_frequency',
+        'commercial_lease_type',
+        'cam_nnn_additional_rent_charges',
+        'rent_escalation_terms',
+        'tenant_improvement_buildout_terms',
+        'permitted_use_restrictions',
+        'signage_rights',
+        'zoning_allows',
+        'space_features',
+        'shared_amenities',
+        'neighboring_tenants',
+        'building_hours',
+        'access_24_7',
+        'renewal_option_details',
+        'rent_includes',
+        'tenant_pays',
+        'owner_pays',
+        'll_maintenance_responsibility',
+        'maintenance_by',
+        'maintenance_response_time',
+        'common_areas_access',
+        'common_areas_cleaning',
+        'bathroom_facilities',
+        'room_size',
+        'leasing_space',
+        'occupant_status',
+        'occupied_until',
+        'restrictions',
+        'minimum_leaseable',
+        'garage_parking_features',
+        'furnishings',
+        'included_storage_space_res_both',
+        'storage_space_res_both',
+        'included_storage_space_res_single',
+        'storage_space_res_single',
+        'included_storage_space_com_entire',
+        'storage_space_com_entire',
+        'included_storage_space_com_single',
+        'storage_space_com_single',
+        'est_water_sewer_trash',
+        'est_electric',
+        'est_internet',
+        'est_cable',
+        'max_leases_per_year',
+        'association_type',
+        'association_approval_process',
+        'association_application_fee',
+        'annual_cdd_fee',
+        'has_cdd',
+        'has_special_assessments',
+        'special_assessment_amount',
+        'special_assessment_description',
+        'additional_parcels',
+        'total_parcel_count',
+        'flood_zone_panel',
+        'flood_zone_date',
+        'flood_insurance_required',
+        'pets_allowed_count',
+        'pet_types_allowed',
+        'pet_weight_limit',
+        'pet_rent',
+        'pet_fee',
+        'pet_monthly_fee',
+        'pet_deposit_amount',
     ];
 
     /**

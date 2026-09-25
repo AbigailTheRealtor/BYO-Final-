@@ -135,7 +135,15 @@ final class MlsListingAdapter
         // ── Property ─────────────────────────────────────────────────────────
         $put(V::PROPERTY_TYPE, PropertyTypeVocabulary::roleCategoryFor($candidate->propertyType, 'seller'), 'PropertyType');
         $put(V::PROPERTY_BEDROOMS, $candidate->bedrooms !== null && $candidate->bedrooms > 0 ? $candidate->bedrooms : null, 'BedroomsTotal');
-        $put(V::PROPERTY_BATHROOMS, $this->bathrooms($candidate->bathroomsTotalDecimal), 'BathroomsTotalDecimal');
+        // The decimal when the feed sends one; otherwise the same components-based total import
+        // stores (BathroomTotal), so the canonical listing and the listing's own bathrooms field
+        // are one reading of the record.
+        $bathrooms = $this->bathrooms($candidate->bathroomsTotalDecimal);
+        $put(
+            V::PROPERTY_BATHROOMS,
+            $bathrooms ?? $this->bathrooms($candidate->bathroomsTotal),
+            $bathrooms !== null ? 'BathroomsTotalDecimal' : 'BathroomTotal'
+        );
         $put(V::PROPERTY_LIVING_AREA_SQFT, $this->positive($candidate->livingAreaSqft), 'LivingArea');
         $put(V::PROPERTY_YEAR_BUILT, $this->yearBuilt($candidate->yearBuilt), 'YearBuilt');
         $put(V::PROPERTY_POOL, $this->affirmed($candidate->pool), 'PoolPrivateYN');

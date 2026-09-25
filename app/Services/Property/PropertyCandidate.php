@@ -195,6 +195,12 @@ class PropertyCandidate
         // above is the feed's BathroomsTotalInteger — a ROUNDED count, 2 where
         // this is 1.5 — and keeps its meaning for the consumers that read it.
         public readonly ?float $bathroomsTotalDecimal = null,
+
+        // The CANONICAL bathroom total (halves; 1.5 = one full and one half), resolved from
+        // every bathroom component the record carries by App\Support\Listing\BathroomTotal.
+        // This, not the rounded `$bathrooms`, is what a listing's bathrooms field receives.
+        // Null when the components cannot determine a total — never a guess, never 0.
+        public readonly ?float $bathroomsTotal = null,
     ) {}
 
     /**
@@ -258,6 +264,7 @@ class PropertyCandidate
             'business_type'          => $this->businessType,
             'mls_provider'           => $this->mlsProvider?->value,
             'bathrooms_total_decimal' => $this->bathroomsTotalDecimal,
+            'bathrooms_total'        => $this->bathroomsTotal,
         ];
 
         if ($includeRaw) {

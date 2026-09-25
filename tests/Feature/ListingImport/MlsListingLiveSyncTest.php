@@ -106,6 +106,7 @@ class MlsListingLiveSyncTest extends TestCase
             'ListPrice'                      => 184900,
             'BedroomsTotal'                  => 2,
             'BathroomsTotalInteger'          => 2,
+            'BathroomsTotalDecimal'          => 2,
             'LivingArea'                     => 1100,
             'YearBuilt'                      => 1974,
             'SubdivisionName'                => 'Stones Throw',
@@ -261,6 +262,7 @@ class MlsListingLiveSyncTest extends TestCase
         $this->sourceReturns($this->raw([
             'BedroomsTotal'          => 4,
             'BathroomsTotalInteger'  => 3,
+            'BathroomsTotalDecimal'  => 3,
             'LivingArea'             => 1450,
             'YearBuilt'              => 1975,
             'ModificationTimestamp'  => self::T1,
