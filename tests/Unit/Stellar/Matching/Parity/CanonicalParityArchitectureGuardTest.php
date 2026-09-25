@@ -27,10 +27,29 @@ class CanonicalParityArchitectureGuardTest extends TestCase
     private const REGISTRY   = 'app/Services/Stellar/Matching/Parity/CanonicalParityAllowedDifferences.php';
     private const RUNNER     = 'app/Services/Stellar/Matching/Parity/CanonicalMatchingParityRunner.php';
 
+    /**
+     * Anything that reaches the diagnostic: its classes, its namespace, the command class,
+     * and the command NAME — so `Artisan::call('matching:canonical-parity')` from a
+     * controller, job, listener, service or schedule is caught as surely as a class import.
+     */
     private const PARITY_CLASSES = [
         'CanonicalMatchingParityRunner', 'CanonicalParityAllowedDifferences',
         'CanonicalParityCriteriaMatrix', 'CanonicalParityReport', 'Matching\\Parity',
+        'MatchingCanonicalParity', 'canonical-parity',
     ];
+
+    /** Where application code that could invoke the command lives. */
+    private const LIVE_DIRS = ['app', 'routes', 'config', 'database', 'resources/views', 'bootstrap'];
+
+    /**
+     * The only DB facade entry points parity code may use: registering the query counter
+     * and reading the driver name for the report. Every other one — select(), statement(),
+     * raw(), getPdo(), cursor() — is a way to hand the connection arbitrary SQL.
+     */
+    private const DB_FACADE_ALLOWED = '/\bDB\s*::\s*(?!listen\s*\(|connection\s*\(\s*\)\s*->\s*getDriverName\s*\(\s*\))/';
+
+    /** Write or DDL SQL in any string literal, whatever method it is passed through. */
+    private const WRITE_SQL_LITERAL = '/[\'"]\s*(?:with\b[^\'"]*\b)?(insert|update|delete|replace|merge|upsert|create|drop|alter|truncate|grant|revoke|vacuum|attach|pragma|copy|lock|call|exec)\b/i';
 
     /** @var array<string,string> label => pattern, matched against code with comments removed */
     private const FORBIDDEN = [
@@ -39,6 +58,12 @@ class CanonicalParityArchitectureGuardTest extends TestCase
         'a raw or transactional statement' => '/\bDB\s*::\s*(statement|unprepared|insert|update|delete|transaction|beginTransaction|table)\b/',
         'a schema change'                  => '/\bSchema\s*::/',
         'an HTTP or provider client'       => '/\b(Http|GuzzleHttp|ClientInterface|BridgeApiService|LazyBridgeImportService|BridgeListingLookupService|BridgeRelatedResourceService|refreshByListingKey|importForCriteria)\b|\bcurl_\w+\s*\(/',
+        'a Google client'                  => '/\bGoogle[A-Z]\w*|Support\\\\Google\\\\|\bGoogle\\\\/',
+        'a raw network or stream handle'   => '/\b(fsockopen|pfsockopen|stream_socket_client|stream_context_create|get_headers|socket_create|socket_connect|file_get_contents|readfile|simplexml_load_file)\s*\(|[\'"](https?|ftps?|php|data|phar|zip|expect|ssh2\.\w+):\/\//i',
+        'command or process execution'     => '/\bArtisan\s*::|->\s*(call|callSilent|callSilently)\s*\(|\b(exec|shell_exec|system|passthru|proc_open|popen|pcntl_exec)\s*\(|\bProcess\b|`/',
+        'a raw SQL entry point'            => self::DB_FACADE_ALLOWED,
+        'write SQL in a string literal'    => self::WRITE_SQL_LITERAL,
+        'raw SQL through the builder'      => '/->\s*(select|selectOne|selectRaw|whereRaw|orWhereRaw|havingRaw|orderByRaw|groupByRaw|fromRaw|raw|statement|affectingStatement|unprepared|getPdo|cursor)\s*\(/',
         'a dispatch or event'              => '/\b(dispatch|dispatchSync|dispatchNow|event|broadcast)\s*\(|\b(Queue|Bus|Event|Notification|Mail)\s*::/',
         'a setting change'                 => '/\bconfig\s*\(\s*\[|config\s*\(\s*\)\s*->\s*set|\bConfig\s*::\s*set|\bputenv\s*\(/',
         'a cache, storage or log write'    => '/\b(Cache|Storage|Log|Redis|Session)\s*::/',
@@ -51,7 +76,7 @@ class CanonicalParityArchitectureGuardTest extends TestCase
     {
         $found = [];
 
-        foreach (['app', 'routes', 'config', 'database', 'resources/views'] as $dir) {
+        foreach (self::LIVE_DIRS as $dir) {
             foreach (self::phpFiles($dir) as $relative) {
                 if (str_starts_with($relative, self::PARITY_DIR . '/') || $relative === self::COMMAND) {
                     continue;
@@ -79,6 +104,23 @@ class CanonicalParityArchitectureGuardTest extends TestCase
         }
     }
 
+    public function test_the_command_is_registered_only_by_kernel_discovery_and_refuses_outside_a_console(): void
+    {
+        // Registration: Console\Kernel loads the Commands directory. Nothing names the command
+        // (test_only_the_parity_namespace_and_its_command_reference_parity_classes).
+        $this->assertStringStartsWith('app/Console/Commands/', self::COMMAND);
+        $this->assertMatchesRegularExpression('#\$this->load\(\s*__DIR__\s*\.\s*[\'"]/Commands[\'"]\s*\)#', self::code('app/Console/Kernel.php'));
+
+        // A controller or sync-queued job reaching it inside a web request is refused at run
+        // time, second only to the production refusal and before any option is read.
+        preg_match('/public function handle\(\): int\s*\{(.*?)\n    \}/s', self::code(self::COMMAND), $m);
+        $body = $m[1] ?? '';
+        $this->assertMatchesRegularExpression(
+            '/^\s*if \(\$this->refusesProductionDatabase\(false\)\) \{\s*return self::EXIT_REFUSED;\s*\}\s*if \(!\$this->laravel->runningInConsole\(\)\) \{/s',
+            $body,
+        );
+    }
+
     public function test_the_parity_code_writes_calls_and_dispatches_nothing(): void
     {
         $files = array_merge(self::phpFiles(self::PARITY_DIR), [self::COMMAND]);
@@ -96,6 +138,20 @@ class CanonicalParityArchitectureGuardTest extends TestCase
         }
 
         $this->assertSame(1, preg_match_all('/\bfile_put_contents\s*\(/', self::code(self::COMMAND)), 'the command writes one file: --output');
+    }
+
+    public function test_an_exception_message_reaches_the_report_only_as_a_digest(): void
+    {
+        // A message can carry SQL or a stored value; the report may name the class and a
+        // digest of the message, never the text. (The command prints only its own option
+        // validation messages and the class of an unexpected failure.)
+        foreach (self::phpFiles(self::PARITY_DIR) as $relative) {
+            $code  = self::code($relative);
+            $all   = preg_match_all('/->\s*getMessage\s*\(/', $code);
+            $safe  = preg_match_all('/self::digest\(\s*get_class\(\$e\)\s*\.\s*\'\|\'\s*\.\s*\$e->getMessage\(\)\s*\)/', $code);
+            $this->assertSame($all, $safe, "{$relative}: every exception message is digested before it is kept");
+            $this->assertDoesNotMatchRegularExpression('/->\s*getTraceAsString\s*\(|->\s*getTrace\s*\(|->\s*getFile\s*\(/', $code, "{$relative}: no trace or path");
+        }
     }
 
     public function test_the_runner_resolves_through_the_explicit_mls_resolver_and_the_live_tag_index_only(): void

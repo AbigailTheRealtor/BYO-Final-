@@ -67,6 +67,34 @@ class MatchingCanonicalParityCommandTest extends TestCase
         $this->assertMatchesRegularExpression('/Result digest: [0-9a-f]{64}/', $text);
     }
 
+    public function test_exit_7_when_reached_outside_a_console_process(): void
+    {
+        // What a controller, or a sync-queued job inside a web request, would present: an
+        // Artisan::call() from a process that is not a console. Nothing is read or built.
+        $this->storeAllBaselineFixtures();
+        $this->app->bind(CanonicalMatchingParityRunner::class, function () {
+            throw new RuntimeException('the runner was constructed outside a console');
+        });
+
+        $consoleFlag = new \ReflectionProperty($this->app, 'isRunningInConsole');
+        $consoleFlag->setAccessible(true);
+        $consoleFlag->setValue($this->app, false);
+
+        try {
+            $queries = 0;
+            DB::listen(function () use (&$queries) { $queries++; });
+
+            $out  = new BufferedOutput();
+            $code = $this->parity(['--max-listings' => '999999'], $out);
+
+            $this->assertSame(Cmd::EXIT_NOT_CONSOLE, $code);
+            $this->assertSame(0, $queries, 'nothing is read outside a console');
+            $this->assertStringContainsString('runs only from a console process', $out->fetch());
+        } finally {
+            $consoleFlag->setValue($this->app, true);
+        }
+    }
+
     public function test_exit_1_on_an_unexpected_failure(): void
     {
         $this->app->bind(CanonicalMatchingParityRunner::class, function () {

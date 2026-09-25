@@ -327,6 +327,81 @@ class CanonicalMatchingParityRunnerTest extends TestCase
         $this->assertSame(0, $r['facts']['smart_tags_attached_before_stage']);
     }
 
+    /**
+     * PR #210: a known absence now needs a rule DECLARED able to prove it (`negative_evidence`)
+     * and an informative, unmasked value. The runner neither restates nor bypasses that — it
+     * attaches whatever ListingSmartTagIndex answers, and both paths score it identically.
+     */
+    public function test_current_checkability_is_consumed_as_is_and_invents_no_negative_evidence(): void
+    {
+        config()->set('smart_tags_wiring.seeker_preferences_enabled', true);
+        config()->set('smart_tags_wiring.seeker_matching_enabled', true);
+
+        // A current derivation over a populated InteriorFeatures that does not list quartz.
+        // quartz_countertops has a rule that can EMIT it but no negative evidence (Stellar's
+        // checklist can say "Quartz Counters" but its silence proves nothing), and
+        // updated_kitchen has no rule at all — so both picks are UNKNOWN, never a miss.
+        $row = $this->storeBaselineFixture('residential', ['InteriorFeatures' => ['Ceiling Fans(s)', 'Kitchen/Family Room Combo']] + self::ISOLATE, 'tag_current');
+        app(\App\Services\SmartTags\SmartTagDerivationService::class)->deriveBridge($row);
+        $row = $row->fresh();
+
+        $index = ListingSmartTagIndex::forBridgeRows([$row], Runner::SMART_TAG_PICKS);
+        $facts = $index->factsFor($row);
+        $this->assertSame([], $facts->presentKeys);
+        $this->assertSame([], $facts->knownAbsentKeys, 'no negative evidence without a declared negative rule');
+        foreach (Runner::SMART_TAG_PICKS as $pick) {
+            $this->assertNotNull(
+                \App\Services\SmartTags\Seeker\BridgeSmartTagCheckability::explain(
+                    \App\Services\SmartTags\Derivation\BridgeRecordAccessor::fromModel($row),
+                    (new \App\Services\SmartTags\Derivation\BridgeStructuredTagDeriver())->contextFor(\App\Services\SmartTags\Derivation\BridgeRecordAccessor::fromModel($row)),
+                    $pick, [], [], true,
+                ),
+                "{$pick} is unknown for a stated reason",
+            );
+        }
+
+        $r = $this->run_()->result;
+        $this->assertSame(['exercised_unknown_only' => 1], $r['diagnostics']['Residential']['smart_tags']);
+        $this->assertSame(['unknown' => 2], $r['diagnostics']['Residential']['smart_tag_answers']);
+        $this->assertSame(['EXACT' => 1], $r['smart_tags']['status']);
+        $this->assertSame(0, $r['facts']['smart_tags_attached_before_stage']);
+    }
+
+    /**
+     * The stricter rules move both paths together: a pick PR #210 can rule out (central air
+     * against a window unit), and one it now refuses to (a "Zoned" system masks central air).
+     *
+     * @dataProvider negativeEvidenceShapes
+     */
+    public function test_negative_evidence_under_current_rules_scores_identically_on_both_paths(array $cooling, string $expected): void
+    {
+        $row = $this->storeBaselineFixture('residential', ['Cooling' => $cooling] + self::ISOLATE, 'cool_' . md5(json_encode($cooling)));
+        app(\App\Services\SmartTags\SmartTagDerivationService::class)->deriveBridge($row);
+        $row = $row->fresh();
+
+        $facts = ListingSmartTagIndex::forBridgeRows([$row], ['central_air'])->factsFor($row);
+        $answer = in_array('central_air', $facts->presentKeys, true) ? 'present'
+            : (in_array('central_air', $facts->knownAbsentKeys, true) ? 'known_absent' : 'unknown');
+        $this->assertSame($expected, $answer);
+
+        $a = Runner::legacyFacts($row)->withSmartTags($facts);
+        $b = Runner::canonicalFacts($row)->withSmartTags($facts);
+        $this->assertSame($a->smartTags, $b->smartTags, 'the same answers object on both paths');
+
+        $criteria = $this->baselinePayload(['property_types' => [$a->propertyType], 'preferred_cities' => [$a->city], 'seeker_smart_tags' => ['central_air']]);
+        $this->assertSame([], Runner::outcomeDifferences(Runner::outcome($a, $row, $criteria), Runner::outcome($b, $row, $criteria)));
+    }
+
+    public static function negativeEvidenceShapes(): array
+    {
+        return [
+            'central system'       => [['Central Air'], 'present'],
+            'window unit only'     => [['Wall/Window Unit(s)'], 'known_absent'],
+            'zoned masks central'  => [['Zoned'], 'unknown'],
+            'other is uninformative' => [['Other'], 'unknown'],
+        ];
+    }
+
     public function test_smart_tags_off_is_not_exercised_and_reads_no_tags(): void
     {
         config()->set('smart_tags_wiring.seeker_matching_enabled', false);
@@ -545,7 +620,27 @@ class CanonicalMatchingParityRunnerTest extends TestCase
             // The terminating query returns nothing, so no chunk is processed for it.
             'exactly one full chunk'       => [200, 2, 1],
             'one row past a full chunk'    => [201, 2, 2],
+            // Two FULL chunks: floor(400/200)+1 = 3 listing reads (the last one empty), 2 chunks;
+            // tags on adds 3 per chunk = 6, so 3 off and 9 on.
+            'two full chunks'              => [400, 3, 2],
         ];
+    }
+
+    public function test_targeted_mode_reads_keys_in_batches_of_500(): void
+    {
+        $keys = [];
+        foreach (range(1, 3) as $i) {
+            $keys[] = (string) $this->storeBaselineFixture('residential', self::ISOLATE, "tk_{$i}")->listing_key;
+        }
+        $missing = array_map(static fn (int $i) => "P1B2NOTSTORED{$i}", range(1, 600));
+
+        $report = $this->run_(array_merge($keys, $missing), 5000);
+
+        // 603 keys → ceil(603 / 500) = 2 keyed reads, nothing else.
+        $this->assertSame(['listing' => 2, 'tag_index' => 0, 'other' => 0], $report->cost['queries_by_kind']);
+        $this->assertSame(3, $report->result['selection']['examined']);
+        $this->assertSame(600, $report->result['selection']['not_found']);
+        $this->assertSame('targeted', $report->result['selection']['coverage']);
     }
 
     public function test_cost_is_measured_against_the_legacy_path(): void
