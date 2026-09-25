@@ -120,6 +120,10 @@ class SmartTagArchitectureGuardTest extends TestCase
      */
     private const WIRED_CALL_SITES = [
         'app/Console/Commands/DeriveSmartTags.php',
+        // Read-only coverage report; reaches Smart Tags only via SmartTagLifecycle::bridgeCoverage().
+        'app/Console/Commands/SmartTagCoverageReport.php',
+        // Registers the gated Bridge catch-up schedule; asks SmartTagWiring only.
+        'app/Console/Kernel.php',
         'app/Console/Commands/ImportBridgeProperties.php',
         'app/Http/Livewire/Concerns/BelongsToListingWorkflow.php',
         'app/Http/Livewire/Concerns/HasOwnerSmartTags.php',
@@ -504,7 +508,8 @@ class SmartTagArchitectureGuardTest extends TestCase
         $contract = (string) file_get_contents($this->root() . '/config/required_production_flags.php');
 
         foreach (['SMART_TAGS_DERIVATION_ENABLED', 'SMART_TAGS_BRIDGE_ENABLED', 'SMART_TAGS_SEEKER_PREFERENCES_ENABLED',
-                  'SMART_TAGS_SEEKER_MATCHING_ENABLED', 'smart_tags_wiring'] as $needle) {
+                  'SMART_TAGS_SEEKER_MATCHING_ENABLED', 'SMART_TAGS_SEEKER_MATCHING_CONTEXTS',
+                  'SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED', 'smart_tags_wiring'] as $needle) {
             $this->assertStringNotContainsString($needle, $contract,
                 "The production flag contract must never name the Smart Tag safety switch {$needle}");
         }

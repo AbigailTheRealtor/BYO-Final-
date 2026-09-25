@@ -77,33 +77,52 @@ class SeekerSmartTagMatcherTest extends TestCase
     }
 
     /** @test */
-    public function matched_share_and_labels(): void
+    public function matched_share_and_labels_are_over_checkable_picks_only(): void
     {
-        $match = SeekerSmartTagMatcher::evaluate(['private_pool', 'natural_light', 'updated_kitchen', 'quartz_countertops'], ['updated_kitchen', 'private_pool', 'gas_range']);
+        $match = SeekerSmartTagMatcher::evaluate(
+            ['private_pool', 'natural_light', 'updated_kitchen', 'quartz_countertops'],
+            ['updated_kitchen', 'private_pool', 'gas_range'],
+            ['quartz_countertops'],
+        );
 
         $this->assertSame(['private_pool', 'updated_kitchen'], $match->matchedKeys);
-        $this->assertSame(0.5, $match->share());
-        $this->assertTrue($match->hasListingData);
+        $this->assertSame(['quartz_countertops'], $match->knownAbsentKeys);
+        $this->assertSame(['natural_light'], $match->unknownKeys());
+        $this->assertSame(3, $match->checkableCount());
+        $this->assertEqualsWithDelta(2 / 3, $match->share(), 1e-9, 'natural_light is unknown: in neither numerator nor denominator');
         $this->assertSame(['Private Pool', SmartTagTaxonomy::get('updated_kitchen')->label], $match->matchedLabels());
-        $this->assertSame([SmartTagTaxonomy::get('natural_light')->label, 'Quartz Countertops'], $match->unmatchedLabels());
+        $this->assertSame(['Quartz Countertops'], $match->knownAbsentLabels());
+        $this->assertSame([SmartTagTaxonomy::get('natural_light')->label], $match->unknownLabels());
     }
 
     /** @test */
-    public function a_listing_with_no_resolved_tags_is_not_a_match_and_says_so(): void
+    public function without_listing_facts_every_pick_is_unknown(): void
     {
-        $match = SeekerSmartTagMatcher::evaluate(['private_pool'], null);
+        $match = SeekerSmartTagMatcher::evaluate(['private_pool'], null, ['private_pool']);
 
         $this->assertSame(0, $match->matchedCount());
+        $this->assertSame([], $match->knownAbsentKeys, 'no facts cannot assert absence');
+        $this->assertFalse($match->hasCheckablePicks());
         $this->assertSame(0.0, $match->share());
-        $this->assertFalse($match->hasListingData);
     }
 
     /** @test */
-    public function a_listing_with_tags_but_none_selected_is_a_known_non_match(): void
+    public function a_pick_the_listing_has_no_answer_for_is_unknown_never_a_miss(): void
     {
         $match = SeekerSmartTagMatcher::evaluate(['private_pool'], []);
 
+        $this->assertFalse($match->hasCheckablePicks());
+        $this->assertSame([], $match->knownAbsentLabels());
+        $this->assertSame(['private_pool'], $match->unknownKeys());
+    }
+
+    /** @test */
+    public function a_known_absent_pick_is_a_checkable_miss(): void
+    {
+        $match = SeekerSmartTagMatcher::evaluate(['private_pool'], [], ['private_pool']);
+
+        $this->assertTrue($match->hasCheckablePicks());
         $this->assertSame(0.0, $match->share());
-        $this->assertTrue($match->hasListingData);
+        $this->assertSame(['Private Pool'], $match->knownAbsentLabels());
     }
 }

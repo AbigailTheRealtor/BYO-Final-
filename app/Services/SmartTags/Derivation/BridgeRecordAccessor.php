@@ -173,6 +173,30 @@ final class BridgeRecordAccessor implements StructuredValueAccessor
     ];
 
     /**
+     * Whether this record carries a usable value for what a rule reads — AS THE RULE
+     * ENGINE WOULD READ IT, through the same accessor method for the rule's kind.
+     *
+     * A value the engine cannot interpret (a boolean field holding "Unknown", an
+     * empty list, a blank string) is NOT populated: the rule had nothing to look at,
+     * so its silence says nothing about the listing. This answers "was there
+     * anything to check?" and nothing about what the value means — matching stays in
+     * {@see StructuredRuleEngine}.
+     *
+     * @param array<string, mixed> $rule
+     */
+    public function populated(array $rule): bool
+    {
+        [, $value] = $this->interpret($rule);
+
+        return match (true) {
+            $value === null   => false,
+            is_array($value)  => $value !== [],
+            is_string($value) => trim($value) !== '',
+            default           => true,
+        };
+    }
+
+    /**
      * @param array<string, mixed> $rule
      * @return array{0: string, 1: mixed} the reading used, and the interpreted value
      */

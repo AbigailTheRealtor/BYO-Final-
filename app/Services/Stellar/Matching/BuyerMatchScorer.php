@@ -39,20 +39,22 @@ class BuyerMatchScorer
      *
      * They join the category's own normalisation rather than adding points beside it, so:
      *   • Amenities still tops out at 10 and the total at 100, however many tags are picked;
-     *   • the pick set earns 4 × (matched ÷ selected) before normalisation, so each tag's share
+     *   • the pick set earns 4 × (matched ÷ checkable) before normalisation, so each tag's share
      *     shrinks as more are picked — ten tags cannot outweigh one pool;
-     *   • with no other amenity expressed, the picks ARE the category (10 × matched ÷ selected);
-     *   • with no picks the category is computed exactly as before.
+     *   • with no other amenity expressed, the picks ARE the category (10 × matched ÷ checkable);
+     *   • with no picks — or none checkable on this listing — the category is computed exactly as
+     *     before, with no bonus and no penalty.
      * They never filter.
      *
-     * UNKNOWN EARNS WHAT KNOWN-ABSENT EARNS: nothing. A listing with no resolved tags at all gets
-     * no credit for the picks, exactly as this category already gives no credit for a pool,
-     * garage or waterfront the feed did not report (`=== true` or nothing). Excluding the picks
-     * from an untagged listing's denominator instead would hand it the no-picks score — the full
-     * 10 when nothing else is expressed — above a tagged listing that matches only some picks,
-     * which is positive credit for unknown. The two cases differ only in their explanation.
-     * Inventory-wide missing enrichment is a ROLLOUT question, answered by the separate matching
-     * gate (SMART_TAGS_SEEKER_MATCHING_ENABLED), not by scoring unknown as a match.
+     * CHECKABLE PICKS ONLY. Each pick is present, known absent, or unknown on each listing
+     * ({@see \App\Services\SmartTags\Seeker\BridgeSmartTagCheckability}): known absent means a
+     * governed structured rule for the tag read a populated field on this listing and did not find
+     * it; unknown means nothing could check it — no rule, an empty field, a stale or missing
+     * derivation. Unknown is in neither numerator nor denominator. Scoring it as a miss would
+     * mark a listing down for data the MLS never sent; scoring a known miss as unknown would take
+     * away the picks' ranking power, because most tags are vocabulary tags that never store an
+     * explicit "absent". Inventory-wide missing enrichment remains a ROLLOUT question, answered by
+     * the matching gates, not by scoring.
      */
     public const SEEKER_FEATURES_MAX_PTS = 4.0;
 
@@ -132,8 +134,8 @@ class BuyerMatchScorer
      * The listing's resolved Smart Tags are not in the row, so they arrive as a fact of their own,
      * read by the caller through {@see ListingSmartTagIndex} — in batch by {@see scoreAll()},
      * `ListingSmartTagIndex::forCandidates([$listing], $criteria)->factsFor($listing)` for one row.
-     * Omitted, the listing's feature coverage is unknown: its picks earn nothing and are worded as
-     * "could not be checked", never as a match.
+     * Omitted, every pick is unknown: none is checkable, so the picks leave this listing's Amenities
+     * exactly as though none were selected, and they are worded as "could not be checked".
      */
     public function score(BridgeProperty $listing, BuyerCriteriaPayload $criteria, ?ListingSmartTagFacts $smartTags = null): BuyerMatchResult
     {
@@ -179,7 +181,8 @@ class BuyerMatchScorer
         if ($scoredPicks !== []) {
             $seekerFeatureMatch = SeekerSmartTagMatcher::evaluate(
                 $scoredPicks,
-                $facts->smartTags !== null && $facts->smartTags->hasAnyResolvedTag ? $facts->smartTags->presentKeys : null
+                $facts->smartTags?->presentKeys,
+                $facts->smartTags?->knownAbsentKeys ?? [],
             );
         }
 
@@ -548,8 +551,9 @@ class BuyerMatchScorer
             $expressed['any_view'] = ['max' => 1.0, 'earned' => $viewEarned];
         }
 
-        // Selected Smart Tags — see SEEKER_FEATURES_MAX_PTS. Absent when nothing was picked.
-        if ($seekerFeatures !== null && $seekerFeatures->selectedCount() > 0) {
+        // Selected Smart Tags — see SEEKER_FEATURES_MAX_PTS. Absent when nothing was picked, and
+        // when nothing picked could be checked on this listing: unknown is neither credit nor a miss.
+        if ($seekerFeatures !== null && $seekerFeatures->hasCheckablePicks()) {
             $expressed['seeker_features'] = [
                 'max'    => self::SEEKER_FEATURES_MAX_PTS,
                 'earned' => self::SEEKER_FEATURES_MAX_PTS * $seekerFeatures->share(),

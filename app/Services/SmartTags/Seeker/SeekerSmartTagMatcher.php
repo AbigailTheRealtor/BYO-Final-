@@ -16,13 +16,14 @@ use App\Support\SmartTags\SmartTagTaxonomy;
  * "Optional … we will use them when we look for a match", which is a preference,
  * not a requirement.
  *
- * LISTING SIDE: RESOLVED ASSIGNMENTS ONLY. The listing's keys are the PRESENT rows
- * of `smart_tag_assignments` ({@see ListingSmartTagIndex}) — the one canonical
- * answer per listing × tag. Never evidence, remarks, descriptions or free text,
+ * LISTING SIDE: FACTS BUILT BEFORE SCORING. Present and known-absent keys come from
+ * {@see ListingSmartTagIndex} — resolved `smart_tag_assignments` plus governed
+ * checkability. Never evidence, remarks, descriptions or free text,
  * and nothing is derived here.
  *
- * UNKNOWN IS NOT A MATCH. A listing with no resolved tags earns nothing, the same
- * rule the Amenities category already applies to a pool the feed did not report.
+ * UNKNOWN IS NEITHER A MATCH NOR A MISS. A selected tag the listing's data could not
+ * check ({@see BridgeSmartTagCheckability}) is left out of the comparison entirely;
+ * only matched and known-absent tags are checkable.
  */
 final class SeekerSmartTagMatcher
 {
@@ -60,25 +61,29 @@ final class SeekerSmartTagMatcher
 
     /**
      * @param list<string>      $selectedKeys    already governed ({@see governedKeys()})
-     * @param list<string>|null $listingPresent  the listing's PRESENT keys among the selection; null = no resolved tags at all
+     * @param list<string>|null $listingPresent  the listing's PRESENT keys among the selection; null = no facts (all unknown)
+     * @param list<string>      $listingKnownAbsent the selection's keys the listing's data checked and did not find
      * @return SeekerSmartTagMatch|null          null when the seeker selected nothing
      */
-    public static function evaluate(array $selectedKeys, ?array $listingPresent): ?SeekerSmartTagMatch
+    public static function evaluate(array $selectedKeys, ?array $listingPresent, array $listingKnownAbsent = []): ?SeekerSmartTagMatch
     {
         if ($selectedKeys === []) {
             return null;
         }
 
         $present = $listingPresent ?? [];
-        $matched = array_values(array_filter(
+        $absent = $listingPresent === null ? [] : $listingKnownAbsent;
+
+        $matched = array_values(array_filter($selectedKeys, static fn (string $key): bool => in_array($key, $present, true)));
+        $knownAbsent = array_values(array_filter(
             $selectedKeys,
-            static fn (string $key): bool => in_array($key, $present, true)
+            static fn (string $key): bool => ! in_array($key, $matched, true) && in_array($key, $absent, true),
         ));
 
         return new SeekerSmartTagMatch(
-            selectedKeys:   array_values($selectedKeys),
-            matchedKeys:    $matched,
-            hasListingData: $listingPresent !== null,
+            selectedKeys:    array_values($selectedKeys),
+            matchedKeys:     $matched,
+            knownAbsentKeys: $knownAbsent,
         );
     }
 }

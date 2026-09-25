@@ -158,6 +158,24 @@ class SmartTagLifecycle
     }
 
     /**
+     * How much of the Bridge inventory carries governed Smart Tags. READ ONLY.
+     *
+     * DELIBERATELY UNGATED, unlike every other entry point here: it writes nothing,
+     * and the question it answers — "is there enough coverage to switch anything
+     * on?" — has to be askable while the gates are still closed, which is exactly
+     * when it matters. It is also the one entry point allowed to THROW: its only
+     * caller is an operator command, where a swallowed fault would print a report
+     * of zeros that reads as "no coverage" rather than "the audit failed".
+     *
+     * @param string[] $statuses
+     * @return array<string, mixed>
+     */
+    public static function bridgeCoverage(?string $provider, array $statuses, bool $simulate, int $batchSize): array
+    {
+        return app(Coverage\BridgeSmartTagCoverageAuditor::class)->audit($provider, $statuses, $simulate, $batchSize);
+    }
+
+    /**
      * Last resort. Even telemetry is wrapped: the logger is itself resolved from
      * the container, and a shim that throws while reporting that something threw
      * would defeat the entire point of the shim.

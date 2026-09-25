@@ -107,6 +107,9 @@ class SmartTagSeekerPreferenceReader
      *     picker off a stored pick is one the customer can neither see nor edit;
      *     with matching off, picks are saved but not yet scored. Either way the
      *     answer is no picks, which is exactly the pre-feature score.
+     *   • The record's context must also be activated for matching
+     *     ({@see SmartTagSeekerPreferenceGate::matchingEnabledFor()}), one
+     *     context at a time as its Bridge coverage is verified.
      *   • Every key is re-projected through SmartTagSelectionPolicy on
      *     SURFACE_SEEKER against the record's CURRENT context: the same
      *     intersection the write used, asked again at read time, so a tag that
@@ -130,7 +133,9 @@ class SmartTagSeekerPreferenceReader
 
             $context = $this->contextFor($subject);
 
-            if ($context === null) {
+            // Per-context activation: a context whose Bridge coverage has not been
+            // verified scores no picks — the pre-feature score, never a penalty.
+            if (! SmartTagSeekerPreferenceGate::matchingEnabledFor($context)) {
                 return [];
             }
 

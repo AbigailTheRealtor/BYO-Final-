@@ -62,7 +62,7 @@ class SmartTagDerivationService
         }
 
         $version = SmartTagVersion::taggerVersion();
-        $structuredHash = SmartTagVersion::structuredInputsHash($this->bridgeDeriver->structuredInputs($record));
+        $structuredHash = $this->bridgeDeriver->inputsHash($record);
         $state = $this->state($listing);
 
         $structuredStale = $this->isStale($state, $version, $context, 'structured_inputs_hash', $structuredHash);

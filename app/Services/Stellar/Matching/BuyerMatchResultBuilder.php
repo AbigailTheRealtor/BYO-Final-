@@ -88,12 +88,7 @@ class BuyerMatchResultBuilder
         if ($features !== null && $features->matchedCount() > 0) {
             foreach ($entries as $i => $entry) {
                 if ($entry['dimension'] === 'amenities') {
-                    $entries[$i]['label'] = sprintf(
-                        'Has %d of your %d selected features: %s',
-                        $features->matchedCount(),
-                        $features->selectedCount(),
-                        self::featureList($features->matchedLabels())
-                    );
+                    $entries[$i]['label'] = self::featureMatchLabel($features);
                 }
             }
         }
@@ -101,6 +96,29 @@ class BuyerMatchResultBuilder
         usort($entries, fn($a, $b) => $b['score_contribution'] <=> $a['score_contribution']);
 
         return $entries;
+    }
+
+    /**
+     * The match sentence, over the same denominator the score used: CHECKED picks only.
+     *
+     * With every pick checkable the familiar "Has N of your M selected features" is exact.
+     * When some could not be checked, the ratio is stated over the checked ones — never
+     * "Has 1 of your 124" when 123 were never looked at; the unchecked ones are named
+     * separately under missing data ("Some selected features could not be checked: …").
+     */
+    private static function featureMatchLabel(SeekerSmartTagMatch $features): string
+    {
+        $matched = self::featureList($features->matchedLabels());
+
+        if ($features->unknownKeys() === []) {
+            return sprintf('Has %d of your %d selected features: %s', $features->matchedCount(), $features->selectedCount(), $matched);
+        }
+
+        if ($features->checkableCount() === 1) {
+            return 'Matches 1 checked selected feature: ' . $matched;
+        }
+
+        return sprintf('Matches %d of %d checked selected features: %s', $features->matchedCount(), $features->checkableCount(), $matched);
     }
 
     /**
@@ -252,11 +270,11 @@ class BuyerMatchResultBuilder
             }
         }
 
-        // Selected property features this home does not list. Only when the home HAS resolved
-        // feature data — with none, the gap is missing data (below), not a known absence.
+        // Selected property features this home's data was CHECKED for and does not list. Only
+        // known-absent picks: a pick nothing could check is missing data (below), never absence.
         $features = $result->seekerFeatureMatch;
-        if ($features !== null && $features->hasListingData) {
-            $unmatched = $features->unmatchedLabels();
+        if ($features !== null) {
+            $unmatched = $features->knownAbsentLabels();
             if ($unmatched !== []) {
                 $tradeoffs[] = [
                     'dimension'   => 'amenities',
@@ -443,13 +461,18 @@ class BuyerMatchResultBuilder
             ];
         }
 
-        // Selected property features that could not be checked: this home has no resolved
-        // feature data at all. It earned nothing for them — unknown is never a match — and the
-        // seeker is told why rather than left with an unexplained lower score.
-        if ($seekerFeatures !== null && ! $seekerFeatures->hasListingData) {
+        // Selected property features that could not be checked. They earned nothing and cost
+        // nothing — unknown is left out of the score — and the seeker is told which, rather than
+        // being told a feature is missing. None checkable: the whole selection is unknown here.
+        if ($seekerFeatures !== null && ! $seekerFeatures->hasCheckablePicks()) {
             $missing[] = [
                 'field' => 'selected_features',
                 'label' => 'Feature details not available — your selected features could not be checked for this home',
+            ];
+        } elseif ($seekerFeatures !== null && ($unknown = $seekerFeatures->unknownLabels()) !== []) {
+            $missing[] = [
+                'field' => 'selected_features',
+                'label' => 'Some selected features could not be checked: ' . self::featureList($unknown),
             ];
         }
 

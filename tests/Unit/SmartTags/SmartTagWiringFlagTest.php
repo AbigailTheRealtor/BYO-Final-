@@ -95,6 +95,44 @@ PHP;
     }
 
     /**
+     * The per-context activation list ships EMPTY — matching on alone scores
+     * nothing — and is a plain list of the exact strings the operator typed.
+     * Validation against SmartTagContext is the gate's job, not the parser's.
+     *
+     * @test
+     */
+    public function the_seeker_matching_context_list_ships_empty_and_parses_a_comma_list(): void
+    {
+        $this->assertSame([], $this->evaluate(['SMART_TAGS_SEEKER_MATCHING_CONTEXTS' => null])['seeker_matching_contexts']);
+        $this->assertSame([], $this->evaluate(['SMART_TAGS_SEEKER_MATCHING_CONTEXTS' => ''])['seeker_matching_contexts']);
+        $this->assertSame([], $this->evaluate(['SMART_TAGS_SEEKER_MATCHING_CONTEXTS' => ' , '])['seeker_matching_contexts']);
+        $this->assertSame(
+            ['residential.sale', 'residential.lease'],
+            $this->evaluate(['SMART_TAGS_SEEKER_MATCHING_CONTEXTS' => ' residential.sale , residential.lease '])['seeker_matching_contexts'],
+        );
+
+        $matchingOnly = $this->evaluate(['SMART_TAGS_SEEKER_MATCHING_ENABLED' => 'true', 'SMART_TAGS_SEEKER_MATCHING_CONTEXTS' => null]);
+        $this->assertSame([], $matchingOnly['seeker_matching_contexts'], 'Turning matching on must not activate a context.');
+    }
+
+    /** @test */
+    public function the_bridge_catch_up_schedule_gate_ships_off_and_parses_fail_closed(): void
+    {
+        $this->assertFalse($this->evaluate(['SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED' => null])['bridge_catch_up_schedule_enabled']);
+
+        foreach (self::onValues() as [$on]) {
+            $this->assertTrue($this->evaluate(['SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED' => $on])['bridge_catch_up_schedule_enabled'], $on);
+        }
+
+        foreach (self::offValues() as [$off]) {
+            $this->assertFalse($this->evaluate(['SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED' => $off])['bridge_catch_up_schedule_enabled'], $off);
+        }
+
+        $derivationOnly = $this->evaluate(['SMART_TAGS_DERIVATION_ENABLED' => 'true', 'SMART_TAGS_BRIDGE_ENABLED' => 'true', 'SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED' => null]);
+        $this->assertFalse($derivationOnly['bridge_catch_up_schedule_enabled'], 'Opening derivation must not schedule a catch-up.');
+    }
+
+    /**
      * @test
      * @dataProvider onValues
      */

@@ -344,9 +344,10 @@ stops contributing on the next search. `BuyerCriteriaPayload` governs the keys a
 All four Stellar loaders (Buyer/Tenant × Criteria/Offer Listing) use it, so the results page, the
 property-detail match context and Match Check score alike.
 
-**Listing side.** Present rows of `smart_tag_assignments` only, read in batch by `ListingSmartTagIndex`
-(two queries per 500 candidates, none when nothing is picked) — never evidence, remarks, descriptions,
-free text or photos, and nothing is derived at match time. The read is INPUT CONSTRUCTION: it happens
+**Listing side.** Resolved `smart_tag_assignments` rows plus governed checkability, built in batch by
+`ListingSmartTagIndex` (at most three queries per 500 candidates — assignments, and only when a pick is
+unresolved the derivation states and structured present evidence; none when nothing is picked) — never
+remarks, descriptions, free text or photos, and nothing is derived at match time. The read is INPUT CONSTRUCTION: it happens
 before scoring, and each listing's result reaches the scorer as a fact (`ListingSmartTagFacts` on
 `ListingMatchFacts`), so `BuyerMatchScorer::scoreFacts()` and its category rules stay pure — no query, no
 model, no feed record. `scoreAll()` reads a result set in one batch; the single-listing surfaces read their
@@ -354,13 +355,18 @@ one row the same way before calling `score()`. Identity is `bridge_properties.id
 which is unique only per provider. Stellar candidates are Bridge rows; BYO
 listings have no score, and a Bridge row is never merged with a BYO listing that shares its MLS key.
 
-**Unknown earns what known-absent earns: nothing.** That is the Amenities category's own rule — a pool,
-garage or waterfront the feed did not report scores exactly as a reported "No". Excluding the picks
-from an untagged listing's denominator instead would give it the no-picks score (the full 10 when
-nothing else is expressed), above a tagged listing matching some picks: positive credit for unknown.
-The two states differ only in wording: "Feature details not available — your selected features could
-not be checked" versus "Does not list: …". Inventory-wide missing enrichment is handled by the matching
-gate, not by scoring.
+**Three answers per selected tag, and only two are scored.** PRESENT (a resolved present row) earns;
+KNOWN ABSENT (a resolved absent row, or — with no row — a governed structured Bridge rule for the tag in
+this context whose source field is populated on this listing, under a derivation current for exactly
+these inputs, and no conflict drop or contradiction) earns nothing; UNKNOWN (everything else: no rule,
+empty field, never derived, stale, pending/inactive/retired) is excluded from numerator AND denominator.
+Share = matched ÷ checkable; nothing checkable leaves the listing's historical score untouched — no bonus,
+no penalty. Scoring unknown as a miss would mark a listing down for data the MLS never sent; scoring a
+checked miss as unknown would remove the picks' ranking power, because vocabulary tags never store an
+explicit "absent". Capability is read from the rules, never from observed frequency. Wording: known
+misses only under "Does not list: …"; all unknown is "Feature details not available — your selected
+features could not be checked for this home"; a mix adds "Some selected features could not be checked:
+…". Inventory-wide missing enrichment is handled by the matching gates, not by scoring.
 
 **Deduplication.** `BuyerMatchScorer::STRUCTURED_TAG_EQUIVALENTS` is the one, narrow map between the
 legacy structured criteria and the tag derived from the same column: `private_pool`↔pool,

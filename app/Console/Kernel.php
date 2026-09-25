@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Support\Listing\MlsProvider;
+use App\Support\SmartTags\SmartTagWiring;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -46,6 +48,46 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(5);
 
         $this->scheduleMlsSync($schedule);
+
+        $this->scheduleSmartTagBridgeCatchUp($schedule);
+    }
+
+    /**
+     * Keep Bridge rows tagged after the one-time backfill.
+     *
+     * The high-volume Bridge import paths (criteria search, Explore discovery, the
+     * bulk importer) defer Smart Tag derivation so no request waits on it. Without
+     * a catch-up every new row stays untagged — UNKNOWN to seeker matching — and
+     * coverage decays. This runs the existing backfill in its narrowest form:
+     * Bridge only, the current provider only, --only-stale, bounded per run with a
+     * rotating cursor so no row is starved. Deterministic and local: no AI, no
+     * network — the derivation reads stored rows.
+     *
+     * HOURLY because tags are secondary data: a row imported at :05 is unknown to
+     * matching until at most :00 next hour, which reads as "could not be checked",
+     * never as a wrong answer. The run is cheap when nothing is stale (one state
+     * read per 200 rows), and 500 derivations a run clears ~500 new or re-imported
+     * rows an hour with room to spare against the live corpus of ~1,750.
+     *
+     * SHIPS UNREGISTERED: registered only when the catch-up gate AND both
+     * derivation gates are on, so a disabled schedule never appears in
+     * `schedule:list`. `--scheduled` re-checks the same gate when it runs, so a
+     * hand invocation obeys it too.
+     */
+    private function scheduleSmartTagBridgeCatchUp(Schedule $schedule): void
+    {
+        if (! SmartTagWiring::bridgeCatchUpScheduled()) {
+            return;
+        }
+
+        $provider = MlsProvider::current()->value;
+
+        $schedule->command("smart-tags:derive --scheduled --source=bridge --provider={$provider} --only-stale --batch-size=200 --max-derived=500")
+            ->hourlyAt(17)
+            // A slow run must never have a second one start on top of it; the
+            // per-listing transaction and the unique state row are the fine backstop.
+            ->withoutOverlapping(60)
+            ->runInBackground();
     }
 
     /**

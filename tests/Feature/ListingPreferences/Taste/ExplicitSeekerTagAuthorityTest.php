@@ -51,13 +51,20 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         SmartTagTaxonomy::flush();
         config()->set('smart_tags_wiring.seeker_preferences_enabled', true);
         config()->set('smart_tags_wiring.seeker_matching_enabled', true);
+        // These tests exercise scoring, not per-context activation: activate every
+        // context. BridgeSmartTagCoverageBackfillTest pins the activation list itself.
+        config()->set('smart_tags_wiring.seeker_matching_contexts', array_map(
+            static fn (\App\Support\SmartTags\SmartTagContext $c) => $c->value,
+            \App\Support\SmartTags\SmartTagContext::cases(),
+        ));
     }
 
     /** @test */
     public function a_material_explicit_advantage_is_never_overridden_by_maximum_taste(): void
     {
-        $a = $this->bridge(['quartz_countertops', 'white_cabinets']);
-        $b = $this->bridge(['natural_light', 'updated_kitchen']);
+        // B's InteriorFeatures were read and name no quartz: a checked miss, not unknown.
+        $a = $this->bridge(['white_cabinets'], [], ['InteriorFeatures' => ['Quartz Counters']]);
+        $b = $this->bridge(['natural_light', 'updated_kitchen'], [], ['InteriorFeatures' => ['Walk-In Closet(s)']]);
 
         $payload = $this->payload(['quartz_countertops']);
         [$scoreA, $scoreB] = $this->scores([$a, $b], $payload);
@@ -87,9 +94,17 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         $aTags = ['quartz_countertops', 'white_cabinets', 'gas_range'];
         $bTags = ['natural_light', 'updated_kitchen'];
 
-        [$scoreA, $scoreB] = $this->scores([$this->bridge($aTags), $this->bridge($bTags)], $this->payload($picks));
+        // Checkable picks only. A: quartz, cabinets, gas range present; pool and fireplace a
+        // structured No, walk-in closet not in its populated InteriorFeatures → 3 of 6; natural
+        // light and updated kitchen unknown. B: natural light and updated kitchen present;
+        // quartz, fireplace and walk-in closet checked and not listed → 2 of 5; cabinets, gas
+        // range and pool unknown (no rule / no Appliances / no pool column).
+        $a = $this->bridge(['white_cabinets'], ['pool_private_yn' => false],
+            ['InteriorFeatures' => ['Quartz Counters'], 'Appliances' => ['Range Gas'], 'FireplaceYN' => false]);
+        $b = $this->bridge($bTags, ['pool_private_yn' => null], ['InteriorFeatures' => ['Split Bedroom']]);
+        [$scoreA, $scoreB] = $this->scores([$a, $b], $this->payload($picks));
 
-        // 10 × 3/8 against 10 × 2/8: A leads, by less than three points.
+        // 10 × 3/6 against 10 × 2/5: A leads, by less than three points.
         $this->assertGreaterThan($scoreB, $scoreA);
         $this->assertLessThan(3, $scoreA - $scoreB);
 
@@ -112,8 +127,8 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
     public function one_pick_beside_every_structured_amenity_reaches_the_three_point_floor(): void
     {
         $structured = ['pool_private_yn' => true, 'garage_yn' => true, 'waterfront_yn' => true, 'view_yn' => true];
-        $a = $this->bridge(['quartz_countertops'], $structured);
-        $b = $this->bridge(['gas_range', 'natural_light', 'updated_kitchen'], $structured);
+        $a = $this->bridge([], $structured, ['InteriorFeatures' => ['Quartz Counters']]);
+        $b = $this->bridge(['natural_light', 'updated_kitchen'], $structured, ['InteriorFeatures' => ['Walk-In Closet(s)'], 'Appliances' => ['Range Gas']]);
 
         $payload = $this->payload(['quartz_countertops'], ['wants_pool' => true, 'wants_garage' => true, 'wants_waterfront' => true, 'wants_any_view' => true]);
         [$scoreA, $scoreB] = $this->scores([$a, $b], $payload);
@@ -145,8 +160,8 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         $lazy->method('importForCriteria')->willReturn(LazyImportResult::cached(0));
         $this->app->instance(LazyBridgeImportService::class, $lazy);
 
-        $plain = $this->bridge(['gas_range']);
-        $match = $this->bridge(['quartz_countertops']);
+        $plain = $this->bridge([], [], ['InteriorFeatures' => ['Walk-In Closet(s)'], 'Appliances' => ['Range Gas']]);
+        $match = $this->bridge([], [], ['InteriorFeatures' => ['Quartz Counters']]);
 
         $user = User::factory()->create(['user_type' => 'buyer']);
         $criteriaId = DB::table('buyer_agent_auctions')->insertGetId([
@@ -223,7 +238,13 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
         ]);
     }
 
-    private function bridge(array $tags, array $columns = []): BridgeProperty
+    /**
+     * @param list<string>              $tags    planted present rows (tags no Bridge rule can derive)
+     * @param array<string, mixed>|null $raw     RESO fields; when given, the row goes through the REAL
+     *                                           derivation first, so a populated field the rules read
+     *                                           makes a non-listed pick a CHECKED miss, not unknown
+     */
+    private function bridge(array $tags, array $columns = [], ?array $raw = null): BridgeProperty
     {
         $this->n++;
 
@@ -232,10 +253,14 @@ class ExplicitSeekerTagAuthorityTest extends TestCase
             'standard_status' => 'Active', 'property_type' => 'Residential', 'list_price' => 400000,
             'city' => 'Orlando', 'state_or_province' => 'FL', 'postal_code' => '32801',
             'bedrooms_total' => 3, 'bathrooms_total_integer' => 2, 'living_area' => 1800, 'senior_community_yn' => false,
-            'raw_json' => json_encode(['IDXParticipationYN' => true]),
+            'raw_json' => json_encode(array_merge(['IDXParticipationYN' => true], $raw ?? [])),
         ], $columns));
 
-        foreach ($tags as $tag) {
+        if ($raw !== null) {
+            app(\App\Services\SmartTags\SmartTagDerivationService::class)->deriveBridge($row);
+        }
+
+        foreach (array_diff($tags, SmartTagAssignment::query()->where('listing_type', 'bridge')->where('listing_id', $row->id)->pluck('tag_key')->all()) as $tag) {
             SmartTagAssignment::create([
                 'listing_type' => 'bridge', 'listing_id' => $row->id, 'tag_key' => $tag,
                 'context' => 'residential.sale', 'state' => 'present', 'winning_source' => 'structured_mls',
