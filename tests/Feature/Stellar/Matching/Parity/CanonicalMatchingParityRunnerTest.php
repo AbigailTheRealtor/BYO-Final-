@@ -4,6 +4,7 @@ namespace Tests\Feature\Stellar\Matching\Parity;
 
 use App\Models\BridgeProperty;
 use App\Models\SmartTagAssignment;
+use App\Services\SmartTags\Seeker\ListingSmartTagIndex;
 use App\Services\Stellar\Matching\Parity\CanonicalMatchingParityRunner as Runner;
 use App\Services\Stellar\Matching\ListingMatchFacts;
 use App\Services\Stellar\Matching\Parity\CanonicalParityAllowedDifferences;
@@ -270,23 +271,60 @@ class CanonicalMatchingParityRunnerTest extends TestCase
 
     // ── Smart Tags ────────────────────────────────────────────────────────────
 
-    public function test_smart_tags_on_attaches_the_same_resolved_tags_to_both_paths(): void
+    public function test_smart_tags_on_attaches_the_same_three_state_answers_to_both_paths(): void
     {
         config()->set('smart_tags_wiring.seeker_preferences_enabled', true);
         config()->set('smart_tags_wiring.seeker_matching_enabled', true);
 
-        $tagged   = $this->storeBaselineFixture('residential', self::ISOLATE, 'tagged');
-        $untagged = $this->storeBaselineFixture('residential', self::ISOLATE, 'untagged');
-        $this->assignTag($tagged, 'updated_kitchen');
+        // PRESENT: an assignment says the listing has updated_kitchen (quartz is unknown).
+        $present = $this->storeBaselineFixture('residential', self::ISOLATE, 'tag_present');
+        $this->assignTag($present, 'updated_kitchen');
+        // KNOWN ABSENT: assignments record both picks as checked and absent.
+        $absent = $this->storeBaselineFixture('residential', self::ISOLATE, 'tag_absent');
+        $this->assignTag($absent, 'updated_kitchen', 'absent');
+        $this->assignTag($absent, 'quartz_countertops', 'absent');
+        // UNKNOWN: no assignment and no derivation state — the data could not answer.
+        $this->storeBaselineFixture('residential', self::ISOLATE, 'tag_unknown');
 
         $r = $this->run_()->result;
 
         $this->assertSame('EXERCISED', $r['smart_tags']['state']);
         $this->assertSame(Runner::SMART_TAG_PICKS, $r['smart_tags']['tag_keys']);
-        $this->assertSame(2, $r['smart_tags']['cases']);
-        $this->assertSame(['EXACT' => 2], $r['smart_tags']['status']);
+        $this->assertSame(3, $r['smart_tags']['cases']);
+        $this->assertSame(['EXACT' => 3], $r['smart_tags']['status'], 'the same answers attached to both paths score identically');
         $this->assertSame([], $r['smart_tags']['post_attachment_mismatches']);
-        $this->assertSame(['absent' => 1, 'present' => 1], $r['diagnostics']['Residential']['smart_tags']);
+
+        $this->assertSame(
+            ['exercised_known_absent_only' => 1, 'exercised_present' => 1, 'exercised_unknown_only' => 1],
+            $r['diagnostics']['Residential']['smart_tags'],
+        );
+        // Per pick: 1 present; 2 known absent; unknown = quartz on the present row + both on the unknown row.
+        $this->assertSame(['known_absent' => 2, 'present' => 1, 'unknown' => 3], $r['diagnostics']['Residential']['smart_tag_answers']);
+    }
+
+    public function test_the_attached_answers_are_the_indexs_own_facts_and_both_paths_start_unattached(): void
+    {
+        config()->set('smart_tags_wiring.seeker_preferences_enabled', true);
+        config()->set('smart_tags_wiring.seeker_matching_enabled', true);
+
+        $row = $this->storeBaselineFixture('residential', self::ISOLATE, 'tag_same');
+        $this->assignTag($row, 'updated_kitchen');
+        $this->assignTag($row, 'quartz_countertops', 'absent');
+
+        $a = Runner::legacyFacts($row);
+        $b = Runner::canonicalFacts($row);
+        $this->assertNull($a->smartTags, 'Bridge facts carry no tags before attachment');
+        $this->assertNull($b->smartTags, 'canonical facts carry no tags before attachment');
+
+        $facts = ListingSmartTagIndex::forBridgeRows([$row], Runner::SMART_TAG_PICKS)->factsFor($row);
+        $this->assertSame(['updated_kitchen'], $facts->presentKeys);
+        $this->assertSame(['quartz_countertops'], $facts->knownAbsentKeys);
+        $this->assertSame($a->withSmartTags($facts)->smartTags, $b->withSmartTags($facts)->smartTags, 'one object, attached to both');
+
+        $r = $this->run_()->result;
+        $this->assertSame(['exercised_present' => 1], $r['diagnostics']['Residential']['smart_tags']);
+        $this->assertSame(['known_absent' => 1, 'present' => 1], $r['diagnostics']['Residential']['smart_tag_answers']);
+        $this->assertSame(0, $r['facts']['smart_tags_attached_before_stage']);
     }
 
     public function test_smart_tags_off_is_not_exercised_and_reads_no_tags(): void
@@ -303,7 +341,8 @@ class CanonicalMatchingParityRunnerTest extends TestCase
         $this->assertSame('NOT_EXERCISED', $r['smart_tags']['state']);
         $this->assertSame('seeker_smart_tag_matching_gate_off', $r['smart_tags']['reason']);
         $this->assertSame(0, $r['smart_tags']['cases']);
-        $this->assertSame(['not_read' => 1], $r['diagnostics']['Residential']['smart_tags']);
+        $this->assertSame(['not_exercised' => 1], $r['diagnostics']['Residential']['smart_tags']);
+        $this->assertArrayNotHasKey('smart_tag_answers', $r['diagnostics']['Residential'], 'not exercised is not "exercised with nothing"');
         $this->assertSame([], array_filter($sql, fn ($s) => str_contains($s, 'smart_tag')), 'no tag read with the gate off');
         $this->assertFalse(config('smart_tags_wiring.seeker_matching_enabled'), 'the runner never changes the setting');
     }
@@ -392,7 +431,9 @@ class CanonicalMatchingParityRunnerTest extends TestCase
     {
         $this->storeAllBaselineFixtures();
 
-        $r = $this->run_([self::baselineKey('income'), self::baselineKey('vacant_land'), 'P1A0-NOT-THERE'])->result;
+        $report = $this->run_([self::baselineKey('income'), self::baselineKey('vacant_land'), 'P1A0-NOT-THERE']);
+        $r = $report->result;
+        $this->assertSame(1, $report->cost['queries_by_kind']['listing'], 'targeted mode: one keyed read per 500 keys');
 
         $this->assertSame('targeted', $r['selection']['mode']);
         $this->assertSame('targeted', $r['selection']['coverage']);
@@ -459,35 +500,52 @@ class CanonicalMatchingParityRunnerTest extends TestCase
         $this->assertArrayNotHasKey('generated_at', $one->result);
     }
 
-    public function test_query_count_is_constant_per_chunk(): void
+    /**
+     * THE QUERY INVARIANT (population mode, rows = Active rows scanned):
+     *   fixed setup                 0
+     *   listing reads (chunkById)   floor(rows / CHUNK) + 1 — one per chunk, plus the
+     *                               terminating read, which is empty when the last chunk was full
+     *   chunks processed            ceil(rows / CHUNK)
+     *   Smart Tag reads             0 when the level is not exercised; otherwise ONE
+     *                               ListingSmartTagIndex batch per chunk that selected a row,
+     *                               at most three queries each (PR #209's index)
+     *   anything else               0
+     * It grows with CHUNKS, never with the rows inside one: no N+1.
+     *
+     * @dataProvider chunkSizes
+     */
+    public function test_queries_are_a_fixed_number_per_chunk_never_per_row(int $rows, int $listingQueries, int $chunks): void
     {
-        $this->storeBaselineFixture('residential', self::ISOLATE, 'q_single');
-        $one = $this->run_()->cost['queries'];
-
-        foreach (range(1, 49) as $i) {
+        foreach (range(1, $rows) as $i) {
             $this->storeBaselineFixture('residential', self::ISOLATE, "q_{$i}");
         }
-        $fifty = $this->run_()->cost['queries'];
 
-        $this->assertSame($one, $fifty, 'no per-row query: canonical and residual conversion are pure');
-        $this->assertLessThanOrEqual(2, $fifty);
-    }
+        $off = $this->run_()->cost;
+        $this->assertSame(['listing' => $listingQueries, 'tag_index' => 0, 'other' => 0], $off['queries_by_kind']);
+        $this->assertSame($chunks, $off['chunks']);
+        $this->assertSame(0, $off['tag_index_batches']);
 
-    public function test_smart_tags_add_a_bounded_batch_per_chunk(): void
-    {
         config()->set('smart_tags_wiring.seeker_preferences_enabled', true);
         config()->set('smart_tags_wiring.seeker_matching_enabled', true);
 
-        $this->storeBaselineFixture('residential', self::ISOLATE, 't_single');
-        $one = $this->run_()->cost['queries'];
+        $on = $this->run_()->cost;
+        $batches = $on['tag_index_batches'];
+        $this->assertSame($listingQueries, $on['queries_by_kind']['listing']);
+        $this->assertSame(0, $on['queries_by_kind']['other']);
+        $this->assertSame((int) ceil($rows / Runner::CHUNK), $batches, 'one tag batch per chunk that selected a row');
+        // These rows carry no assignment, so every batch takes the index's full three reads.
+        $this->assertSame(3 * $batches, $on['queries_by_kind']['tag_index']);
+    }
 
-        foreach (range(1, 49) as $i) {
-            $this->storeBaselineFixture('residential', self::ISOLATE, "t_{$i}");
-        }
-        $fifty = $this->run_()->cost['queries'];
-
-        $this->assertSame($one, $fifty);
-        $this->assertLessThanOrEqual(4, $fifty, 'one row query plus the index\'s two batched reads');
+    public static function chunkSizes(): array
+    {
+        return [
+            'one row, one chunk'           => [1, 1, 1],
+            'a partial chunk'              => [50, 1, 1],
+            // The terminating query returns nothing, so no chunk is processed for it.
+            'exactly one full chunk'       => [200, 2, 1],
+            'one row past a full chunk'    => [201, 2, 2],
+        ];
     }
 
     public function test_cost_is_measured_against_the_legacy_path(): void
@@ -549,11 +607,11 @@ class CanonicalMatchingParityRunnerTest extends TestCase
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function assignTag(BridgeProperty $row, string $tag): void
+    private function assignTag(BridgeProperty $row, string $tag, string $state = 'present'): void
     {
         SmartTagAssignment::create([
             'listing_type' => 'bridge', 'listing_id' => $row->id, 'tag_key' => $tag,
-            'context' => 'residential.sale', 'state' => 'present', 'winning_source' => 'structured_mls',
+            'context' => 'residential.sale', 'state' => $state, 'winning_source' => 'structured_mls',
         ]);
     }
 }

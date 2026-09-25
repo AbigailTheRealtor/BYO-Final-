@@ -234,8 +234,9 @@ class MatchingCanonicalParity extends Command
 
         $rank = $r['outcomes']['ranking'];
         $this->line(sprintf('Ranking: %d / %d cohorts in identical order.', $rank['exact_order'] ?? 0, $rank['cohorts'] ?? 0));
-        $this->line(sprintf('Cost: %.1f ms, %d queries, path cost ratio %s (budget %.1f).',
-            $cost['elapsed_ms'], $cost['queries'], $cost['path_cost_ratio'] ?? 'n/a', $cost['budget_ratio']));
+        $this->line(sprintf('Cost: %.1f ms, %d queries (listing %d, tag index %d, other %d) over %d chunks, path cost ratio %s (budget %.1f).',
+            $cost['elapsed_ms'], $cost['queries'], $cost['queries_by_kind']['listing'], $cost['queries_by_kind']['tag_index'],
+            $cost['queries_by_kind']['other'], $cost['chunks'], $cost['path_cost_ratio'] ?? 'n/a', $cost['budget_ratio']));
         $this->line('Result digest: ' . $report->digest());
         $this->line('Verdict: ' . $report->verdict($fail));
         if ($output !== null) {

@@ -17,6 +17,7 @@ use App\Services\Stellar\Matching\DTO\BuyerCriteriaPayload;
 use App\Services\Stellar\Matching\DTO\BuyerMatchResult;
 use App\Services\Stellar\Matching\ListingMatchFacts;
 use App\Services\Stellar\Matching\ListingMatchResidualFacts;
+use App\Services\Stellar\Matching\ListingSmartTagFacts;
 use App\Support\Listing\MlsProvider;
 use App\Support\SmartTags\SmartTagSeekerPreferenceGate;
 use Illuminate\Support\Collection;
@@ -111,6 +112,8 @@ final class CanonicalMatchingParityRunner
     private int $exampleCap = 5;
     private array $tagKeys = [];
     private bool $stoppedAtMax = false;
+    private int $chunks = 0;
+    private int $tagIndexBatches = 0;
 
     public function __construct(
         private readonly ListingVisibilityGate $gate = new ListingVisibilityGate(),
@@ -197,11 +200,18 @@ final class CanonicalMatchingParityRunner
 
         $this->reset($examplesPerBucket);
 
-        $queries  = 0;
+        // Every statement is counted and attributed: the listing read, the batched
+        // ListingSmartTagIndex reads (`tag_index`), or anything else (a test expects zero).
+        $queries  = ['listing' => 0, 'tag_index' => 0, 'other' => 0];
         $counting = true;
-        DB::listen(static function () use (&$queries, &$counting): void {
+        DB::listen(static function ($query) use (&$queries, &$counting): void {
             if ($counting) {
-                $queries++;
+                $sql = (string) $query->sql;
+                $queries[match (true) {
+                    str_contains($sql, 'bridge_properties') => 'listing',
+                    str_contains($sql, 'smart_tag_')         => 'tag_index',
+                    default                                  => 'other',
+                }]++;
             }
         });
 
@@ -312,6 +322,7 @@ final class CanonicalMatchingParityRunner
     /** @return bool false to stop the scan */
     private function processChunk(Collection $rows, int $maxListings, int $perType, int $stride): bool
     {
+        $this->chunks++;
         $selected = [];
         $continue = true;
 
@@ -354,9 +365,11 @@ final class CanonicalMatchingParityRunner
 
         if ($selected !== []) {
             // One batched Smart Tags read per chunk, only when the comparison is exercised.
-            $index = $this->tagKeys === []
-                ? null
-                : ListingSmartTagIndex::forBridgeRows(array_column($selected, 0), $this->tagKeys);
+            $index = null;
+            if ($this->tagKeys !== []) {
+                $this->tagIndexBatches++;
+                $index = ListingSmartTagIndex::forBridgeRows(array_column($selected, 0), $this->tagKeys);
+            }
 
             foreach ($selected as [$row, $stratum]) {
                 $this->examine($row, $stratum, $index);
@@ -770,7 +783,7 @@ final class CanonicalMatchingParityRunner
         $this->bump($this->listings['by_stratum'][$stratum], $status);
     }
 
-    private function recordDiagnostics(string $stratum, ?ListingMatchFacts $a, ?ListingMatchFacts $b, ?ListingMatchResidualFacts $residual, mixed $tags): void
+    private function recordDiagnostics(string $stratum, ?ListingMatchFacts $a, ?ListingMatchFacts $b, ?ListingMatchResidualFacts $residual, ?ListingSmartTagFacts $tags): void
     {
         $d = &$this->diagnostics[$stratum];
 
@@ -811,7 +824,40 @@ final class CanonicalMatchingParityRunner
         $this->bump($d['coordinates'], $lat === null || $lng === null ? 'missing'
             : (CoordinateValidator::isValidPair((float) $lat, (float) $lng) ? 'valid' : 'invalid'));
 
-        $this->bump($d['smart_tags'], $tags === null ? 'not_read' : ($tags->hasAnyResolvedTag ? 'present' : 'absent'));
+        $this->recordSmartTagAnswers($d, $tags);
+    }
+
+    /**
+     * The listing's Smart Tag answers for the comparison's picks, in the index's own three
+     * states: a pick is PRESENT, KNOWN ABSENT (the listing's data was checked and does not
+     * have it), or UNKNOWN (in neither list — never a miss). No facts at all means the level
+     * was not exercised, which is a different fact from "exercised, nothing present".
+     *
+     * `smart_tags` classifies the listing; `smart_tag_answers` counts every pick's answer.
+     */
+    private function recordSmartTagAnswers(?array &$d, ?ListingSmartTagFacts $tags): void
+    {
+        if ($tags === null) {
+            $this->bump($d['smart_tags'], 'not_exercised');
+
+            return;
+        }
+
+        $present = count(array_intersect($tags->presentKeys, $this->tagKeys));
+        $absent  = count(array_intersect($tags->knownAbsentKeys, $this->tagKeys));
+        $unknown = count($this->tagKeys) - $present - $absent;
+
+        $this->bump($d['smart_tags'], match (true) {
+            $present > 0 => 'exercised_present',
+            $absent > 0  => 'exercised_known_absent_only',
+            default      => 'exercised_unknown_only',
+        });
+
+        foreach (['present' => $present, 'known_absent' => $absent, 'unknown' => $unknown] as $answer => $n) {
+            if ($n > 0) {
+                $this->bump($d['smart_tag_answers'], $answer, $n);
+            }
+        }
     }
 
     private function example(string $bucket, array $entry): void
@@ -936,6 +982,8 @@ final class CanonicalMatchingParityRunner
         $this->exampleCap   = $examples;
         $this->tagKeys      = [];
         $this->stoppedAtMax = false;
+        $this->chunks       = 0;
+        $this->tagIndexBatches = 0;
         $this->sel          = ['rows_scanned' => 0, 'eligible' => 0, 'examined' => 0, 'excluded' => [], 'eligible_by_stratum' => [], 'examined_by_stratum' => []];
         $this->resolution   = ['resolved' => 0, 'unresolvable' => 0, 'unresolvable_by_reason' => []];
         $this->facts        = ['listings_compared' => 0, 'status' => [], 'smart_tags_attached_before_stage' => 0, 'by_field' => [], 'by_ad' => [], 'by_stratum' => []];
@@ -992,7 +1040,8 @@ final class CanonicalMatchingParityRunner
         ];
     }
 
-    private function costBlock(float $elapsedMs, int $queries): array
+    /** @param array{listing: int, tag_index: int, other: int} $queries */
+    private function costBlock(float $elapsedMs, array $queries): array
     {
         $ms = static fn (int $ns): float => round($ns / 1e6, 3);
         $legacy    = $this->cost['legacy_facts_ns'] + $this->cost['legacy_outcome_ns'];
@@ -1004,7 +1053,10 @@ final class CanonicalMatchingParityRunner
 
         return [
             'elapsed_ms'              => round($elapsedMs, 3),
-            'queries'                 => $queries,
+            'queries'                 => array_sum($queries),
+            'queries_by_kind'         => $queries,
+            'chunks'                  => $this->chunks,
+            'tag_index_batches'       => $this->tagIndexBatches,
             'rows_per_second'         => $elapsedMs > 0 ? round($this->sel['examined'] / ($elapsedMs / 1000), 1) : null,
             'legacy_facts_ms'         => $ms($this->cost['legacy_facts_ns']),
             'canonical_facts_ms'      => $ms($this->cost['canonical_facts_ns']),
