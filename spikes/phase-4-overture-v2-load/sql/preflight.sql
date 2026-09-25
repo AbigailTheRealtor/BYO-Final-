@@ -11,7 +11,9 @@ SET default_transaction_read_only = on;
 -- and refuses a URL with no host (which libpq would otherwise complete from an ambient PGHOST).
 --
 -- Required psql variables (the script sets all of them):
---   v2_state              absent | empty | loaded
+--   v2_state              absent | empty | loaded | recoverable-failed-import
+--                         (the last is ONLY for a separately approved retry after a failed
+--                         import — RUNBOOK §8a; it never widens absent, empty or loaded)
 --   target_host           lowercase host from SPATIAL_DATABASE_URL
 --   target_port           port from SPATIAL_DATABASE_URL (default 5432)
 --   expected_fingerprint  sha256 hex of  host|port|current_database()|v1 ledger started_at (UTC)
@@ -29,12 +31,13 @@ SET TimeZone = 'UTC';
 SELECT 1 / 0;
 \endif
 -- psql's \if takes a boolean, not a comparison, so the state becomes booleans first.
-SELECT :'v2_state' IN ('absent', 'empty', 'loaded') AS state_known,
+SELECT :'v2_state' IN ('absent', 'empty', 'loaded', 'recoverable-failed-import') AS state_known,
        :'v2_state' = 'absent' AS v2_absent,
-       :'v2_state' = 'empty' AS v2_empty \gset
+       :'v2_state' = 'empty' AS v2_empty,
+       :'v2_state' = 'recoverable-failed-import' AS v2_recovery \gset
 \if :state_known
 \else
-\echo 'FAIL P-- v2_state must be absent, empty or loaded'
+\echo 'FAIL P-- v2_state must be absent, empty, loaded or recoverable-failed-import'
 SELECT 1 / 0;
 \endif
 
@@ -145,6 +148,77 @@ SELECT (SELECT count(*) FROM overture_v2_places) = 0
 \echo 'PASS P07 the v2 tables are empty'
 \else
 \echo 'FAIL P07 the v2 tables are not empty (expected empty)'
+SELECT 1 / 0;
+\endif
+\endif
+\if :v2_recovery
+-- P07R — RECOVERY ONLY (RUNBOOK §8a). The exact state a failed import leaves, and nothing else:
+-- OvertureV2CorpusImporter marks the row `preparing`, writes every place and membership in ONE
+-- transaction, and on failure marks the row `failed` (or leaves it `preparing` if that update
+-- itself could not run). The transaction rolled back, so no place or membership is committed. A
+-- retry re-arms any non-ready row and proves zero places inside its own transaction; a `ready`
+-- row is never overwritten. Every condition below must hold, or the retry is not eligible.
+
+-- P07R1 — exactly one corpus row: this corpus, failed or preparing; no ready row anywhere.
+SELECT count(*) = 1
+   AND count(*) FILTER (WHERE corpus_version = 'overture-2026-08-19.0-fl-r2' AND status IN ('failed', 'preparing')) = 1
+   AND count(*) FILTER (WHERE status = 'ready') = 0 AS ok
+  FROM overture_v2_corpora \gset
+\if :ok
+\echo 'PASS P07R1 exactly one v2 corpus row: overture-2026-08-19.0-fl-r2, failed or preparing; none ready'
+\else
+\echo 'FAIL P07R1 the v2 corpus rows are not exactly one failed/preparing overture-2026-08-19.0-fl-r2 row'
+SELECT 1 / 0;
+\endif
+
+-- P07R2 — it is THIS contract's attempt: every pin, checksum and expected count equals the
+-- contract (the values verify_v2_load.sql V01 requires of a ready row), no imported count is
+-- recorded, and the status is internally consistent.
+SELECT count(*) = 1 AS ok FROM overture_v2_corpora
+ WHERE corpus_version = 'overture-2026-08-19.0-fl-r2'
+   AND source = 'overture' AND source_release = '2026-08-19.0'
+   AND extract_recipe_version = 'overture-extract-v2' AND taxonomy_map_version = 'overture-taxonomy-v2.0'
+   AND registry_version = 'chain-registry-v2'
+   AND registry_rule_hash = 'b5920a1c73199a0d8e030e5281018baa763438eb7ad02aee76f7ba3cbc0b151f'
+   AND base_sha256 = 'bb9e77c13790897155f847fa3a7ed48067930cf08257e227bee60bf96c91a168'
+   AND supplementary_sha256 = 'edeed1435d707912dedd08d642cf1088e669cf4dc329ea3248a289be3e91c8e4'
+   AND base_rows = 52566 AND supplementary_rows = 2962 AND matcher_analysis_rows = 55528
+   AND diagnostic_rows = 2734 AND rescue_admitted_rows = 150 AND rescue_refused_rows = 78
+   AND expected_memberships = 11082
+   AND imported_base_rows IS NULL AND imported_rescued_rows IS NULL AND imported_memberships IS NULL
+   AND ((status = 'failed' AND failure_reason IS NOT NULL AND finished_at IS NOT NULL)
+     OR (status = 'preparing' AND failure_reason IS NULL AND finished_at IS NULL)) \gset
+\if :ok
+\echo 'PASS P07R2 the row carries this contract''s pins, checksums and counts; no imported count; status consistent'
+\else
+\echo 'FAIL P07R2 the row does not match the contract, records an imported count, or has an inconsistent status'
+SELECT 1 / 0;
+\endif
+
+-- P07R3 — nothing committed: zero places and zero memberships, in ANY corpus. Committed data is
+-- not a failed import; it is outside this recovery path and needs manual review.
+SELECT (SELECT count(*) FROM overture_v2_places) = 0
+   AND (SELECT count(*) FROM overture_v2_chain_memberships) = 0 AS ok \gset
+\if :ok
+\echo 'PASS P07R3 zero committed v2 places and memberships'
+\else
+\echo 'FAIL P07R3 committed v2 places or memberships exist — not a recoverable failed import; manual review'
+SELECT 1 / 0;
+\endif
+
+-- P07R4 — no importer is still running: no other session holds any lock on an overture_v2_*
+-- relation in this database. (A running import is also `preparing` with zero VISIBLE rows; its
+-- uncommitted rows are invisible here, which is why this check exists.) IS DISTINCT FROM, not <>,
+-- so a prepared transaction's lock (NULL pid) is counted rather than silently skipped.
+SELECT count(*) = 0 AS ok
+  FROM pg_locks l JOIN pg_class c ON c.oid = l.relation JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = 'public' AND c.relname LIKE 'overture\_v2\_%'
+   AND l.database = (SELECT oid FROM pg_database WHERE datname = current_database())
+   AND l.pid IS DISTINCT FROM pg_backend_pid() \gset
+\if :ok
+\echo 'PASS P07R4 no other session holds a lock on any overture_v2_* relation'
+\else
+\echo 'FAIL P07R4 another session holds a lock on an overture_v2_* relation — an import may still be running'
 SELECT 1 / 0;
 \endif
 \endif

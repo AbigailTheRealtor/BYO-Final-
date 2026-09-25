@@ -209,8 +209,12 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
         $this->assertStringContainsString('bin/preflight.sh', implode("\n", self::runScripts('preflight')));
         foreach (['migrate', 'import', 'verify'] as $job) {
             $this->assertEqualsCanonicalizing(['gate', 'preflight'], (array) $jobs[$job]['needs'], "{$job} must need gate and preflight");
-            $this->assertSame("inputs.stage == '{$job}'", $jobs[$job]['if'], "{$job} must run only for its own stage");
         }
+        $this->assertSame("inputs.stage == 'migrate'", $jobs['migrate']['if']);
+        $this->assertSame("inputs.stage == 'verify'", $jobs['verify']['if']);
+        // The import job also serves the SEPARATE import-recovery stage (the identical command);
+        // it is never reached by any other stage.
+        $this->assertSame("inputs.stage == 'import' || inputs.stage == 'import-recovery'", $jobs['import']['if']);
         $this->assertSame('preflight', self::workflow()['on']['workflow_dispatch']['inputs']['stage']['default']);
     }
 
@@ -220,7 +224,7 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
         $gateSteps = array_filter(self::steps(), static fn (array $s): bool => $s['job'] === 'gate' && isset($s['step']['if']));
         $this->assertCount(2, $gateSteps, 'exactly the confirmation and rehearsal steps are write-stage conditional');
         foreach ($gateSteps as $s) {
-            $this->assertSame("inputs.stage == 'migrate' || inputs.stage == 'import'", $s['step']['if']);
+            $this->assertSame("inputs.stage == 'migrate' || inputs.stage == 'import' || inputs.stage == 'import-recovery'", $s['step']['if']);
         }
 
         $gate = implode("\n", self::runScripts('gate'));
@@ -708,6 +712,167 @@ class OvertureV2OperatorLoadGuardTest extends TestCase
         ] as $needle) {
             $this->assertStringContainsString($needle, $sql, "migration_ledger.sql must check: {$needle}");
         }
+    }
+
+    // ── Failed-import recovery: a separate, narrow, separately approved path ──────────────────
+
+    private const RECOVERY_STATE = 'recoverable-failed-import';
+
+    /** The text of preflight.sql's recovery-only block (`\if :v2_recovery` … its `\endif`). */
+    private static function recoveryBlock(): string
+    {
+        $sql = self::source(self::DIR . '/sql/preflight.sql');
+        $start = strpos($sql, "\\if :v2_recovery\n");
+        $end = strpos($sql, "\\echo 'PASS P07R4", (int) $start);
+        self::assertNotFalse($start, 'preflight.sql must have a recovery-only block');
+        self::assertNotFalse($end);
+
+        return substr($sql, (int) $start, (int) $end - (int) $start);
+    }
+
+    /** @test */
+    public function preflight_accepts_the_recovery_state_by_name_only_and_passes_it_to_psql(): void
+    {
+        $ok = $this->preflight(['--v2-state=' . self::RECOVERY_STATE], ['SPATIAL_DATABASE_URL' => self::GOOD_URL]);
+        $this->assertSame(0, $ok['code'], $ok['out']);
+        $this->assertContains('v2_state=' . self::RECOVERY_STATE, $ok['psql_argv']);
+        foreach (['recoverable', 'recovery', 'failed', 'recoverable-failed', 'RECOVERABLE-FAILED-IMPORT', 'recoverable-failed-import ', 'empty,recoverable-failed-import'] as $bad) {
+            $r = $this->preflight(['--v2-state=' . $bad], ['SPATIAL_DATABASE_URL' => self::GOOD_URL]);
+            $this->assertSame(1, $r['code'], "--v2-state={$bad} must be refused");
+            $this->assertFalse($r['psql_called']);
+        }
+        // The four states, and only they, are known to the SQL too.
+        $this->assertStringContainsString(
+            ":'v2_state' IN ('absent', 'empty', 'loaded', 'recoverable-failed-import') AS state_known",
+            self::source(self::DIR . '/sql/preflight.sql'));
+    }
+
+    /** @test */
+    public function the_recovery_block_refuses_everything_but_the_exact_failed_import_state(): void
+    {
+        $block = self::recoveryBlock();
+        foreach ([
+            // P07R1 — one row, this corpus, failed/preparing, no ready anywhere.
+            "SELECT count(*) = 1\n   AND count(*) FILTER (WHERE corpus_version = 'overture-2026-08-19.0-fl-r2' AND status IN ('failed', 'preparing')) = 1\n   AND count(*) FILTER (WHERE status = 'ready') = 0 AS ok\n  FROM overture_v2_corpora",
+            // P07R2 — no imported count, and a consistent status.
+            'AND imported_base_rows IS NULL AND imported_rescued_rows IS NULL AND imported_memberships IS NULL',
+            "AND ((status = 'failed' AND failure_reason IS NOT NULL AND finished_at IS NOT NULL)\n     OR (status = 'preparing' AND failure_reason IS NULL AND finished_at IS NULL))",
+            // P07R3 — nothing committed, in ANY corpus.
+            "SELECT (SELECT count(*) FROM overture_v2_places) = 0\n   AND (SELECT count(*) FROM overture_v2_chain_memberships) = 0 AS ok",
+            // P07R4 — no other session on the v2 relations.
+            "WHERE n.nspname = 'public' AND c.relname LIKE 'overture\\_v2\\_%'\n   AND l.database = (SELECT oid FROM pg_database WHERE datname = current_database())\n   AND l.pid IS DISTINCT FROM pg_backend_pid()",
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $block, "the recovery block must require: {$needle}");
+        }
+        foreach (['P07R1', 'P07R2', 'P07R3', 'P07R4'] as $id) {
+            $this->assertMatchesRegularExpression("/\\\\echo 'FAIL {$id} [^']*'\\nSELECT 1 \\/ 0;/", self::source(self::DIR . '/sql/preflight.sql'), "{$id} must stop psql on failure");
+        }
+        // 'ready' is admitted by no status list in the block.
+        $this->assertDoesNotMatchRegularExpression("/status IN \\([^)]*'ready'/", $block);
+    }
+
+    /** @test */
+    public function the_recovery_identity_pins_equal_the_contract_and_the_verified_plan(): void
+    {
+        $contract = (require base_path('config/overture_v2_corpus.php'))['import_contracts']['overture-2026-08-19.0-fl-r2'];
+        $block = self::recoveryBlock();
+        foreach (['source_release', 'extract_recipe_version', 'taxonomy_map_version', 'registry_version', 'registry_rule_hash', 'base_sha256', 'supplementary_sha256'] as $key) {
+            $this->assertStringContainsString("{$key} = '{$contract[$key]}'", $block, "P07R2 must pin {$key} to the contract");
+        }
+        foreach (['base_rows', 'supplementary_rows', 'matcher_analysis_rows'] as $key) {
+            $this->assertStringContainsString("{$key} = {$contract[$key]}", $block, "P07R2 must pin {$key} to the contract");
+        }
+        // The plan-derived counts are the ones verify_v2_load.sql V01 already requires of a ready row.
+        $verify = self::source(self::DIR . '/sql/verify_v2_load.sql');
+        foreach (['diagnostic_rows = 2734', 'rescue_admitted_rows = 150', 'rescue_refused_rows = 78', 'expected_memberships = 11082'] as $pin) {
+            $this->assertStringContainsString($pin, $verify, "V01 must pin {$pin}");
+            $this->assertStringContainsString($pin, $block, "P07R2 must pin {$pin}");
+        }
+        $this->assertStringContainsString("source = 'overture'", $block);
+    }
+
+    /** @test */
+    public function the_normal_preflight_states_are_unchanged_by_recovery(): void
+    {
+        $sql = self::source(self::DIR . '/sql/preflight.sql');
+        // absent and empty keep their exact checks; the recovery block sits OUTSIDE both.
+        $this->assertStringContainsString("\\if :v2_absent\nSELECT :v2_relations = 0 AS ok \\gset", $sql);
+        $this->assertStringContainsString("\\if :v2_empty\nSELECT count(*) = 0 AS ok FROM overture_v2_corpora \\gset\n\\if :ok\nSELECT (SELECT count(*) FROM overture_v2_places) = 0\n   AND (SELECT count(*) FROM overture_v2_chain_memberships) = 0 AS ok \\gset", $sql);
+        $emptyEnd = strpos($sql, "\\echo 'FAIL P07 the v2 tables are not empty (expected empty)'");
+        $this->assertLessThan(strpos($sql, "\\if :v2_recovery\n"), $emptyEnd, 'the recovery block follows, and does not live inside, the empty branch');
+        // The recovery block is reached only by the explicit state, and the ledger check still
+        // expects the eleven + the three for it (any non-absent state).
+        $this->assertSame(1, substr_count($sql, '\\if :v2_recovery'));
+        $this->assertStringContainsString(":'v2_state' = 'recoverable-failed-import' AS v2_recovery", $sql);
+        $this->assertStringContainsString("CASE WHEN :'v2_state' = 'absent' THEN ARRAY[]::text[] ELSE ARRAY[", $sql);
+        // The fingerprint, version, v1 and ledger checks run for every state, before P07.
+        foreach (['P01', 'P02', 'P03', 'P04', 'P05', 'P06'] as $id) {
+            $this->assertLessThan(strpos($sql, '-- P07 — v2 table state.'), strpos($sql, "\\echo 'PASS {$id}"), "{$id} must precede P07 for every state");
+        }
+    }
+
+    /** @test */
+    public function recovery_is_a_separate_stage_with_its_own_confirmation_and_never_implied(): void
+    {
+        $wf = self::workflow();
+        $this->assertSame(['preflight', 'migrate', 'import', 'import-recovery', 'verify'], $wf['on']['workflow_dispatch']['inputs']['stage']['options']);
+        $this->assertArrayHasKey('confirm_recovery', $wf['on']['workflow_dispatch']['inputs']);
+        $this->assertSame('', $wf['on']['workflow_dispatch']['inputs']['confirm_recovery']['default']);
+
+        $gate = implode("\n", self::runScripts('gate'));
+        // Stage → state is a fixed map decided by the gate; import stays `empty`.
+        $this->assertStringContainsString('import)            echo "v2_state=empty"  >> "$GITHUB_OUTPUT" ;;', $gate);
+        $this->assertStringContainsString('import-recovery)   echo "v2_state=recoverable-failed-import" >> "$GITHUB_OUTPUT" ;;', $gate);
+        // The recovery confirmation is refused on every other stage, and required exactly on recovery.
+        $this->assertStringContainsString('if [ "$STAGE" != "import-recovery" ] && [ -n "$CONFIRM_RECOVERY" ]; then', $gate);
+        $this->assertStringContainsString('[ "$CONFIRM_RECOVERY" = "RETRY FAILED IMPORT OF $CORPUS_VERSION" ]', $gate);
+        $this->assertStringContainsString('if [ "$STAGE" = "import" ] || [ "$STAGE" = "import-recovery" ]; then', $gate);
+        $never = array_values(array_filter(self::steps(), static fn (array $s): bool => $s['job'] === 'gate'
+            && ($s['step']['name'] ?? '') === 'Recovery is never implied — only import-recovery may carry the recovery confirmation'));
+        $this->assertCount(1, $never);
+        $this->assertArrayNotHasKey('if', $never[0]['step'], 'the refusal must run for EVERY stage');
+
+        // The import job's pre-write preflight takes the gate's state; no step hard-codes recovery
+        // and nothing falls back from one state to the other.
+        $import = implode("\n", self::runScripts('import'));
+        $this->assertStringContainsString('case "$V2_STATE" in empty|recoverable-failed-import) ;; *) echo "REFUSING: unexpected v2 state for an import"; exit 1 ;; esac', $import);
+        $this->assertStringContainsString('bash "$LOAD_DIR/bin/preflight.sh" --v2-state="$V2_STATE"', $import);
+        $this->assertStringNotContainsString('--v2-state=empty', $import, 'the import job must not hard-code a state');
+        $this->assertStringNotContainsString('--v2-state=recoverable', implode("\n", self::runScripts()), 'no step may hard-code the recovery state');
+        foreach (self::runScripts() as $run) {
+            $this->assertDoesNotMatchRegularExpression('/preflight\.sh[^\n]*\|\|/', $run, 'a failed preflight must never fall through to another attempt');
+        }
+        // The migrate stage keeps its fixed states.
+        $migrate = implode("\n", self::runScripts('migrate'));
+        $this->assertStringContainsString('bash "$LOAD_DIR/bin/preflight.sh" --v2-state=absent', $migrate);
+        $this->assertStringContainsString('bash "$LOAD_DIR/bin/preflight.sh" --v2-state=empty', $migrate);
+    }
+
+    /** @test */
+    public function the_runbook_documents_the_recovery_flow_and_its_refusals(): void
+    {
+        $rb = self::source(self::DIR . '/RUNBOOK.md');
+        foreach ([
+            '## 8a. Stage `import-recovery` — WRITE, only after a failed import, only with separate approval',
+            '**Abigail separately approves the recovery retry.** The original import approval does **not**',
+            '`confirm_recovery`: `RETRY FAILED IMPORT OF overture-2026-08-19.0-fl-r2`',
+            '`--v2-state=recoverable-failed-import`',
+            '**P07R1**', '**P07R2**', '**P07R3**', '**P07R4**',
+            '5. Only if it passes, the **identical** import job runs',
+            '7. **STOP** again.',
+            '**Unexpected partially committed data is never eligible for this path**',
+            'separately any recovery retry after a failed import (§8a)',
+            '**not a failed import — STOP for manual review.**',
+            'rerun through `stage: import` (its preflight refuses by design)',
+            '**If a step AFTER `IMPORTED` fails**',
+            'terminate a session to make it pass',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $rb, "RUNBOOK.md must state: {$needle}");
+        }
+        // §11 no longer claims a rerun needs no manual step.
+        $recovery = substr($rb, (int) strpos($rb, '## 11. Recovery'));
+        $this->assertStringNotContainsString('rerun the identical import (a new run token re-arms the row) | no |', $recovery);
+        $this->assertStringNotContainsString('the row is `failed` with a reason; rerun | no |', $recovery);
     }
 
     // ── Fingerprint, rehearsal gate, runbook ───────────────────────────────────────────────────

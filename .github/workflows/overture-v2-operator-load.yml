@@ -26,9 +26,14 @@ name: Overture v2 operator load (manual, protected)
 #   • A pinned `commit_sha` that must be on main; every job checks out exactly that commit.
 #   • Every run starts with the read-only preflight (bin/preflight.sh): fingerprinted target,
 #     healthy v1, expected v2 state, exact migration ledger.
-#   • Write stages (`migrate`, `import`) additionally require: REHEARSAL.md = PASSED at the pinned
-#     commit with no load-relevant code changed since the rehearsed commit, and typed
-#     confirmations that match exactly.
+#   • Write stages (`migrate`, `import`, `import-recovery`) additionally require: REHEARSAL.md =
+#     PASSED at the pinned commit with no load-relevant code changed since the rehearsed commit,
+#     and typed confirmations that match exactly.
+#   • `import-recovery` is a SEPARATE stage, never a mode the import stage falls into: it exists
+#     only to rerun the IDENTICAL import after a failed one, needs its own typed confirmation
+#     (and, under RUNBOOK §6, its own approval), and its preflight state
+#     `recoverable-failed-import` accepts only one failed/preparing row of this corpus with this
+#     contract's identity, zero committed places and memberships, and no other session on v2.
 #   • The migrate stage names exactly the three 2026_09_24 v2 migrations. It never runs the
 #     spatial directory as a whole and never rolls anything back (rollback is a manual,
 #     reviewed operator action in the runbook).
@@ -46,9 +51,9 @@ on:
   workflow_dispatch:
     inputs:
       stage:
-        description: "Stage to run. preflight and verify are read-only; migrate and import write."
+        description: "Stage to run. preflight and verify are read-only; migrate, import and import-recovery write."
         type: choice
-        options: [preflight, migrate, import, verify]
+        options: [preflight, migrate, import, import-recovery, verify]
         default: preflight
         required: true
       commit_sha:
@@ -66,7 +71,12 @@ on:
         required: false
         default: ""
       confirm_corpus_version:
-        description: "import only: overture-2026-08-19.0-fl-r2"
+        description: "import and import-recovery only: overture-2026-08-19.0-fl-r2"
+        type: string
+        required: false
+        default: ""
+      confirm_recovery:
+        description: "import-recovery only (a separately approved retry): RETRY FAILED IMPORT OF overture-2026-08-19.0-fl-r2"
         type: string
         required: false
         default: ""
@@ -140,18 +150,30 @@ jobs:
           case "$STAGE" in
             preflight|migrate) echo "v2_state=absent" >> "$GITHUB_OUTPUT" ;;
             import)            echo "v2_state=empty"  >> "$GITHUB_OUTPUT" ;;
+            import-recovery)   echo "v2_state=recoverable-failed-import" >> "$GITHUB_OUTPUT" ;;
             verify)            echo "v2_state=loaded" >> "$GITHUB_OUTPUT" ;;
             *) echo "REFUSING: unknown stage"; exit 1 ;;
           esac
 
+      - name: Recovery is never implied — only import-recovery may carry the recovery confirmation
+        env:
+          STAGE: ${{ inputs.stage }}
+          CONFIRM_RECOVERY: ${{ inputs.confirm_recovery }}
+        run: |
+          set -euo pipefail
+          if [ "$STAGE" != "import-recovery" ] && [ -n "$CONFIRM_RECOVERY" ]; then
+            echo "REFUSING: confirm_recovery is only for the import-recovery stage"; exit 1
+          fi
+
       - name: Write stages — typed confirmations must match exactly
-        if: inputs.stage == 'migrate' || inputs.stage == 'import'
+        if: inputs.stage == 'migrate' || inputs.stage == 'import' || inputs.stage == 'import-recovery'
         env:
           STAGE: ${{ inputs.stage }}
           CONFIRM_FINGERPRINT: ${{ inputs.confirm_fingerprint }}
           CONFIRM_MIGRATIONS: ${{ inputs.confirm_migrations }}
           CONFIRM_CORPUS_VERSION: ${{ inputs.confirm_corpus_version }}
           CONFIRM_NO_ACTIVATION: ${{ inputs.confirm_no_activation }}
+          CONFIRM_RECOVERY: ${{ inputs.confirm_recovery }}
         run: |
           set -euo pipefail
           expected_fp="$(sed -n 's/^EXPECTED_FINGERPRINT="\([0-9a-f]\{64\}\)"$/\1/p' "$LOAD_DIR/bin/preflight.sh")"
@@ -162,13 +184,17 @@ jobs:
             [ "$CONFIRM_MIGRATIONS" = "2026_09_24_000001,2026_09_24_000002,2026_09_24_000003" ] \
               || { echo "REFUSING: confirm_migrations must name exactly the three v2 migrations"; exit 1; }
           fi
-          if [ "$STAGE" = "import" ]; then
+          if [ "$STAGE" = "import" ] || [ "$STAGE" = "import-recovery" ]; then
             [ "$CONFIRM_CORPUS_VERSION" = "$CORPUS_VERSION" ] || { echo "REFUSING: confirm_corpus_version mismatch"; exit 1; }
+          fi
+          if [ "$STAGE" = "import-recovery" ]; then
+            [ "$CONFIRM_RECOVERY" = "RETRY FAILED IMPORT OF $CORPUS_VERSION" ] \
+              || { echo "REFUSING: confirm_recovery must be typed exactly (a separately approved retry)"; exit 1; }
           fi
           echo "typed confirmations: OK"
 
       - name: Write stages — full-size PostGIS 3.6.x rehearsal must be PASSED for this code
-        if: inputs.stage == 'migrate' || inputs.stage == 'import'
+        if: inputs.stage == 'migrate' || inputs.stage == 'import' || inputs.stage == 'import-recovery'
         env:
           INPUT_SHA: ${{ inputs.commit_sha }}
         run: |
@@ -345,10 +371,12 @@ jobs:
           echo "v1 unchanged"
 
   # ── 3b. WRITE: extract, validate, import through the UNCHANGED guarded importer. ──────────────
+  #     The SAME job serves `import-recovery`: the identical extraction and importer command. The
+  #     only difference is the preflight state the gate decided from the dispatched stage.
   import:
     name: WRITE — import overture-2026-08-19.0-fl-r2 (never activates)
     needs: [gate, preflight]
-    if: inputs.stage == 'import'
+    if: inputs.stage == 'import' || inputs.stage == 'import-recovery'
     runs-on: ubuntu-latest
     environment: overture-v2-spatial
     env:
@@ -437,7 +465,13 @@ jobs:
       - name: Re-run the read-only preflight immediately before the write (approval may have waited)
         env:
           SPATIAL_DATABASE_URL: ${{ secrets.SPATIAL_DATABASE_URL }}
-        run: bash "$LOAD_DIR/bin/preflight.sh" --v2-state=empty
+          # `empty` for import, `recoverable-failed-import` for import-recovery — decided by the gate
+          # from the dispatched stage, never inferred from what the database happens to hold.
+          V2_STATE: ${{ needs.gate.outputs.v2_state }}
+        run: |
+          set -euo pipefail
+          case "$V2_STATE" in empty|recoverable-failed-import) ;; *) echo "REFUSING: unexpected v2 state for an import"; exit 1 ;; esac
+          bash "$LOAD_DIR/bin/preflight.sh" --v2-state="$V2_STATE"
 
       - name: v1 snapshot (before)
         env:

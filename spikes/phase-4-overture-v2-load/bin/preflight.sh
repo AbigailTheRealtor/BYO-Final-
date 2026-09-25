@@ -9,7 +9,11 @@
 # read-only session and writes nothing.
 #
 #   Usage:
-#     preflight.sh --v2-state=absent|empty|loaded
+#     preflight.sh --v2-state=absent|empty|loaded|recoverable-failed-import
+#
+#   `recoverable-failed-import` is ONLY for the separately approved retry after a failed import
+#   (RUNBOOK §8a). It accepts exactly the state a failed import leaves and nothing else; it
+#   never widens `absent`, `empty` or `loaded`, and it is never chosen automatically.
 #
 # Run from the protected GitHub Environment (the primary path) or from the dedicated operator
 # container (the fallback). It REFUSES to run from a shell that carries the application's
@@ -51,8 +55,8 @@ for arg in "$@"; do
   esac
 done
 case "$V2_STATE" in
-  absent|empty|loaded) ;;
-  *) die "--v2-state must be absent, empty or loaded." ;;
+  absent|empty|loaded|recoverable-failed-import) ;;
+  *) die "--v2-state must be absent, empty, loaded or recoverable-failed-import." ;;
 esac
 
 # --- guard 1: not production, not a deployment ------------------------------------
