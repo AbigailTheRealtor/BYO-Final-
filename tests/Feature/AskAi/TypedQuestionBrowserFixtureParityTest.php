@@ -32,6 +32,7 @@ class TypedQuestionBrowserFixtureParityTest extends TestCase
     private const FIXTURE = 'tests/browser/fixtures/ask-ai/typed-question.html';
     private const PARTIAL = 'resources/views/offer-listing/partials/_ask-ai-question-modal.blade.php';
     private const PICKER  = 'public/js/ask-ai/question-picker.js';
+    private const OWNER_PICKER = 'public/js/ask-ai/owner-question-picker.js';
 
     private const ROUTES = [
         'seller'   => 'offer.listing.seller.view',
@@ -137,13 +138,15 @@ class TypedQuestionBrowserFixtureParityTest extends TestCase
         $fixture = $this->fixture();
         $partial = (string) file_get_contents(base_path(self::PARTIAL));
         $picker  = (string) file_get_contents(base_path(self::PICKER));
+        $owner   = (string) file_get_contents(base_path(self::OWNER_PICKER));
 
         // Every attribute the picker QUERIES or READS must exist in BOTH the real partial and
         // the fixture — otherwise the spec exercises hooks the application does not emit.
-        // (Attributes the picker only WRITES, like its ready marker, are its own.)
+        // (Attributes a picker only WRITES, like its ready marker or the owner picker's
+        // runtime disclosure/source lines, are created in the browser, not by the partial.)
         preg_match_all('/\[(data-[a-z-]+)\]/', $picker, $selectors);
         preg_match_all("/getAttribute\\('(data-[a-z-]+)'\\)/", $picker, $reads);
-        preg_match_all("/setAttribute\\('(data-[a-z-]+)'/", $picker, $writes);
+        preg_match_all("/setAttribute\\('(data-[a-z-]+)'/", $picker . $owner, $writes);
         $hooks = array_values(array_diff(array_unique(array_merge($selectors[1], $reads[1])), $writes[1]));
         $this->assertGreaterThanOrEqual(8, count($hooks));
 
