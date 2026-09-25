@@ -243,6 +243,11 @@ class SmartTagArchitectureGuardTest extends TestCase
         'app/Services/Stellar/Matching/ListingMatchScore.php',
         'app/Services/Stellar/Matching/ListingSmartTagFacts.php',
         'app/Services/Stellar/Matching/BuyerMatchResultBuilder.php',
+        // P1-B: the canonical facts builder only NAMES the field — its diagnostic ORIGIN
+        // map classifies `smartTags` as attached beside the row, and it leaves the field
+        // null for the caller to attach. It reads no tag, calls no Smart Tags class, and
+        // CanonicalMatchingInputGuardTest fails if it ever does.
+        'app/Services/Stellar/Matching/CanonicalListingMatchFactsBuilder.php',
         'app/Services/Stellar/PropertyMatchContextService.php',
         'app/Services/Stellar/MatchCheck/MatchCheckScorer.php',
         'app/Services/Stellar/MatchCheck/MatchCheckOrchestrator.php',
