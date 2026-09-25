@@ -15,9 +15,10 @@
     decided there. AskAiQuestionPresentation only orders, subsets and rewords it, so a question
     withheld from the page can appear in neither the recommended row, the full list nor search.
 
-    OWNER QUESTIONS. The listing owner additionally gets this page's existing owner suggestions
-    as selectable questions answered at owner scope by the existing deterministic endpoint.
-    Only the selected question's own text is sent; there is still no text box.
+    OWNER QUESTIONS. The listing owner additionally gets this page's owner suggestions that
+    name a canonical fact, as selectable questions answered at owner scope by the existing
+    deterministic endpoint. Only the selected question's registry KEY is sent, resolved on the
+    server by exact match (AskAiOwnerQuestionSelection); there is still no text box.
 
     @param string $role            'seller' | 'landlord' | 'buyer' | 'tenant'
     @param string $prefix          'sol' | 'lol' | 'bol' | 'tcl'
@@ -34,11 +35,10 @@
     $askAiMSet      = \App\Support\AskAi\AskAiQuestionPresentation::build($role, $questions ?? [], $meta ?? []);
     $askAiMFeatured = $askAiMSet['featured'];
     $askAiMAll      = $askAiMSet['all'];
+    // Only suggestions that name a canonical fact, each with its registry key — see
+    // AskAiOwnerQuestionSelection. The picker sends the key; the server resolves it exactly.
     $askAiMOwner    = ($viewerIsOwner ?? false)
-        ? array_values(array_filter(
-            app(\App\Services\AskAi\AskAiSuggestedQuestionsService::class)->forListing($role, $chipContext ?? [], auth()->check()),
-            static fn ($q) => is_array($q) && is_string($q['question'] ?? null) && trim($q['question']) !== ''
-          ))
+        ? \App\Support\AskAi\AskAiOwnerQuestionSelection::forOwner($role, $chipContext ?? [])
         : [];
     $askAiMSubject  = in_array($role, ['buyer', 'tenant'], true) ? 'listing' : 'property';
 @endphp
@@ -144,7 +144,7 @@
                     <div class="ask-ai-picker-owner" role="group" aria-labelledby="{{ $prefix }}AiOwnerLabel"
                          data-ask-ai-owner-picker data-listing-type="{{ $role }}" data-listing-id="{{ (int) ($listingId ?? 0) }}">
                         @foreach($askAiMOwner as $q)
-                        <button type="button" class="ask-ai-picker-q" data-ask-ai-owner-question="{{ $q['question'] }}" aria-pressed="false">{{ $q['question'] }}</button>
+                        <button type="button" class="ask-ai-picker-q" data-ask-ai-owner-question="{{ $q['question'] }}" data-ask-ai-owner-key="{{ $q['key'] }}" aria-pressed="false">{{ $q['question'] }}</button>
                         @endforeach
                     </div>
                     @endif

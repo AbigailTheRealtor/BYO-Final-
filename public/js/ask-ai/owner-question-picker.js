@@ -74,6 +74,7 @@
             event.preventDefault();
             busy = true;
             var question = btn.getAttribute('data-ask-ai-owner-question');
+            var questionKey = btn.getAttribute('data-ask-ai-owner-key');
             Array.prototype.forEach.call(root.querySelectorAll('[data-ask-ai-pick],[data-ask-ai-owner-question]'), function (b) {
                 b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
             });
@@ -89,7 +90,7 @@
                 body: JSON.stringify({
                     listing_type: group.getAttribute('data-listing-type'),
                     listing_id: parseInt(group.getAttribute('data-listing-id'), 10),
-                    question: question
+                    question_key: questionKey
                 })
             })
                 .then(function (r) { return r.json(); })

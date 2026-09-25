@@ -103,7 +103,12 @@ class AskAiAndExpiryGatingTest extends TestCase
 
     // ── C1: every viewer gets the same working Ask AI modal ─────────────────
 
-    public function test_owner_view_carries_the_ask_ai_modal_with_the_owner_examples(): void
+    /**
+     * The modal is selection-based (no free-text box): the owner additionally gets their
+     * owner questions, each carrying the registry key the owner picker sends to
+     * /ask-ai/listing-question — the one Ask AI surface on the page that makes a request.
+     */
+    public function test_owner_view_carries_the_ask_ai_modal_with_the_owner_questions(): void
     {
         $owner   = User::factory()->create();
         $listing = $this->makeSellerOfferListing($owner);
@@ -114,15 +119,18 @@ class AskAiAndExpiryGatingTest extends TestCase
         $response->assertStatus(200);
         $html = $response->getContent();
         $this->assertStringContainsString('id="solAiModal"', $html);
-        $this->assertStringContainsString('/ask-ai/listing-question', $html);
-        $this->assertStringContainsString(json_encode('"What financing options does the seller accept?"', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), $html);
+        $this->assertStringContainsString('data-ask-ai-picker="seller"', $html);
+        $this->assertStringContainsString('data-ask-ai-owner-picker', $html);
+        $this->assertStringContainsString('data-ask-ai-owner-key="listing.address"', $html);
+        $this->assertStringContainsString('js/ask-ai/owner-question-picker.js', $html);
+        $this->assertStringNotContainsString('data-ask-ai-ask-input', $html);
     }
 
     /**
      * Batch 2a hid the modal from non-owners because its endpoint was owner-only and every
      * question they typed ended in "available to the listing owner". The endpoint now
-     * authorizes per fact, so a non-owner gets the same modal — and no owner-only notice,
-     * no client-side owner gate, and none of the owner's generic example questions.
+     * authorizes per fact, so a non-owner gets the same selection modal — and no owner-only
+     * notice, no client-side owner gate, and none of the owner's questions.
      */
     public function test_non_owner_view_carries_the_public_ask_ai_modal_and_no_owner_gate(): void
     {
@@ -136,7 +144,9 @@ class AskAiAndExpiryGatingTest extends TestCase
         $response->assertStatus(200);
         $html = $response->getContent();
         $this->assertStringContainsString('id="solAiModal"', $html);
-        $this->assertStringContainsString('/ask-ai/listing-question', $html);
+        $this->assertStringContainsString('data-ask-ai-picker="seller"', $html);
+        $this->assertStringNotContainsString('data-ask-ai-owner-picker', $html);
+        $this->assertStringNotContainsString('owner-question-picker.js', $html);
         $this->assertStringNotContainsString('isOwner       =', $html);
         $this->assertStringNotContainsString('Ask AI for this listing is available to the listing owner.', $html);
         $this->assertStringNotContainsString('What financing options does the seller accept?', $html);
