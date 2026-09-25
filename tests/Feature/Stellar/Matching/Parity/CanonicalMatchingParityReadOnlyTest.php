@@ -63,7 +63,15 @@ class CanonicalMatchingParityReadOnlyTest extends TestCase
 
         $this->assertNotEmpty($sql);
         foreach ($sql as $statement) {
+            // A read, and only a read: no write or DDL smuggled through a select() call, no
+            // CTE-wrapped write, no second statement.
             $this->assertMatchesRegularExpression('/^\s*select\b/i', $statement, "a non-read statement ran: {$statement}");
+            $this->assertDoesNotMatchRegularExpression(
+                '/\b(insert|update|delete|replace|merge|upsert|create|drop|alter|truncate|attach|detach|pragma|vacuum|reindex)\b/i',
+                $statement,
+                "a write keyword ran inside a read: {$statement}",
+            );
+            $this->assertStringNotContainsString(';', rtrim($statement, "; \t\n"), "more than one statement ran: {$statement}");
         }
 
         Http::assertNothingSent();

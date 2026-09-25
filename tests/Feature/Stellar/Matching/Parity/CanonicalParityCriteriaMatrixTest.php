@@ -82,6 +82,92 @@ class CanonicalParityCriteriaMatrixTest extends TestCase
         $this->assertSame(['Residential'], $cases['edge_type_other']['property_types'], 'a rental is also asked as a sale');
     }
 
+    /**
+     * No rent-derived (or price-derived) case for a rental without a usable rent. A missing,
+     * zero or negative rent must never become a budget — and never a substituted 0.
+     *
+     * @dataProvider unusableRents
+     */
+    public function test_an_unusable_rent_produces_no_price_derived_case(string $slug, ?float $rent): void
+    {
+        $matrix = new CanonicalParityCriteriaMatrix();
+        $row    = $this->storeBaselineFixture($slug, [], 'rent_' . ($rent === null ? 'null' : (string) $rent), ['list_price' => $rent]);
+        $facts  = Runner::legacyFacts($row);
+        $cases  = $matrix->casesFor($facts, $row, Runner::stratumFor($facts->propertyType));
+
+        $this->assertNotSame([], $cases, 'the listing still gets its non-price cases');
+        $this->assertArrayHasKey('lease_terms_1_year', $cases, 'lease-term cases do not depend on the rent');
+        $this->assertArrayNotHasKey('lease_rent_with_terms', $cases);
+        foreach ($cases as $name => $overrides) {
+            foreach (['ideal_price', 'max_price', 'min_price'] as $key) {
+                $this->assertArrayNotHasKey($key, $overrides, "{$slug} rent " . var_export($rent, true) . ": {$name} carries {$key}");
+            }
+        }
+    }
+
+    public static function unusableRents(): array
+    {
+        return [
+            'residential lease, null rent'     => ['residential_lease', null],
+            'residential lease, zero rent'     => ['residential_lease', 0.0],
+            'residential lease, negative rent' => ['residential_lease', -1500.0],
+            'residential lease, sub-dollar rent (rounds to 0)' => ['residential_lease', 0.4],
+            'commercial lease, null rent'      => ['commercial_lease', null],
+            'commercial lease, zero rent'      => ['commercial_lease', 0.0],
+            'commercial lease, negative rent'  => ['commercial_lease', -12.5],
+        ];
+    }
+
+    /** @dataProvider rentalSlugs */
+    public function test_a_valid_rent_keeps_the_rent_derived_cases(string $slug): void
+    {
+        $matrix = new CanonicalParityCriteriaMatrix();
+        $row    = $this->storeBaselineFixture($slug, [], 'rent_valid', ['list_price' => 2400]);
+        $facts  = Runner::legacyFacts($row);
+        $cases  = $matrix->casesFor($facts, $row, Runner::stratumFor($facts->propertyType));
+
+        $this->assertSame((int) ceil(2400 * 1.05), $cases['lease_rent_with_terms']['max_price']);
+        $this->assertSame(['1 Year'], $cases['lease_rent_with_terms']['preferred_lease_terms']);
+        $this->assertSame((int) round(2400), $cases['price_ideal_at_list']['ideal_price']);
+        $this->assertArrayHasKey('edge_rent_budget_raw_price', $cases);
+    }
+
+    public static function rentalSlugs(): array
+    {
+        return ['residential lease' => ['residential_lease'], 'commercial lease' => ['commercial_lease']];
+    }
+
+    public function test_no_ideal_price_of_zero_is_ever_synthesised(): void
+    {
+        $matrix = new CanonicalParityCriteriaMatrix();
+        $rows   = $this->storeAllBaselineFixtures();
+        foreach ([null, 0, -5, 0.4] as $i => $price) {
+            $rows["p{$i}"] = $this->storeBaselineFixture('residential', [], "ideal_{$i}", ['list_price' => $price]);
+            $rows["l{$i}"] = $this->storeBaselineFixture('residential_lease', [], "ideal_{$i}", ['list_price' => $price]);
+        }
+
+        $facts = [];
+        foreach ($rows as $label => $row) {
+            $f = Runner::legacyFacts($row);
+            $facts[$f->propertyType][] = $f;
+            foreach ($matrix->casesFor($f, $row, Runner::stratumFor($f->propertyType)) as $name => $o) {
+                if (array_key_exists('ideal_price', $o)) {
+                    $this->assertGreaterThan(0, $o['ideal_price'], "{$label}: {$name}");
+                }
+            }
+        }
+        // A cohort whose only prices are below a dollar gets no price band at all.
+        $tiny = array_values(array_filter($facts['Residential'], static fn ($f) => $f->listPrice !== null && (float) $f->listPrice > 0 && (float) $f->listPrice < 1));
+        $this->assertArrayNotHasKey('cohort_type_price_band', $matrix->cohortsFor('Residential', $tiny));
+        foreach ($facts as $type => $list) {
+            foreach ($matrix->cohortsFor((string) $type, $list) as $name => $o) {
+                if (array_key_exists('ideal_price', $o)) {
+                    $this->assertGreaterThan(0, $o['ideal_price'], "{$type}: {$name}");
+                }
+            }
+        }
+    }
+
     public function test_no_persisted_criteria_is_read(): void
     {
         $source = (string) file_get_contents(app_path('Services/Stellar/Matching/Parity/CanonicalParityCriteriaMatrix.php'));

@@ -34,6 +34,12 @@ use Throwable;
  *   4  completed with at least one UNDECLARED_DIFFERENCE
  *   5  completed with at least one ERROR_MISMATCH (takes precedence over 4)
  *   6  completed with CANONICAL_UNRESOLVABLE rows and --fail-on-unresolvable was given
+ *   7  not invoked from a console process (nothing was read)
+ *
+ * OFFLINE ONLY, STRUCTURALLY. Registration is Console\Kernel's directory discovery; no
+ * application code may name the command or its class (CanonicalParityArchitectureGuardTest),
+ * and a run reached from outside a console process — a controller or a sync-queued job
+ * calling Artisan::call() inside a web request — is refused before any option is read.
  */
 class MatchingCanonicalParity extends Command
 {
@@ -46,6 +52,7 @@ class MatchingCanonicalParity extends Command
     public const EXIT_UNDECLARED     = 4;
     public const EXIT_ERROR_MISMATCH = 5;
     public const EXIT_UNRESOLVABLE   = 6;
+    public const EXIT_NOT_CONSOLE    = 7;
 
     protected $signature = 'matching:canonical-parity
         {--listing-key=* : Compare exactly these ListingKeys (current provider) instead of the stored population}
@@ -66,6 +73,13 @@ class MatchingCanonicalParity extends Command
         // FIRST: nothing — not even the runner — is constructed before the production check.
         if ($this->refusesProductionDatabase(false)) {
             return self::EXIT_REFUSED;
+        }
+
+        // SECOND: an operator's console only — never a web request that reached Artisan::call().
+        if (!$this->laravel->runningInConsole()) {
+            $this->getOutput()->getErrorStyle()->writeln('<error>matching:canonical-parity runs only from a console process.</error>');
+
+            return self::EXIT_NOT_CONSOLE;
         }
 
         try {

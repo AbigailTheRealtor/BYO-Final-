@@ -92,9 +92,10 @@ class CanonicalParityCriteriaMatrix
         ];
 
         // Price families need a price to anchor on, exactly as the size families below need
-        // an area: a zero or missing price would synthesise an `ideal_price` of 0, a budget no
-        // buyer states. (The payload budget is monthly on a lease search.)
-        if ($price > 0) {
+        // an area: a missing, zero, negative or sub-dollar price would synthesise an
+        // `ideal_price` of 0, a budget no buyer states. (The payload budget is monthly on a
+        // lease search.)
+        if (self::usablePrice($price)) {
             $cases += [
                 'price_ideal_at_list'   => $base + ['ideal_price' => (int) round($price)],
                 'price_ideal_20pct_off' => $base + ['ideal_price' => (int) round($price * 1.2)],
@@ -169,8 +170,13 @@ class CanonicalParityCriteriaMatrix
                 'lease_terms_mtm'         => $base + ['preferred_lease_terms' => ['Month-to-Month']],
                 'lease_terms_3_5_years'   => $base + ['preferred_lease_terms' => ['3-5 Years']],
                 'lease_terms_6_months'    => $base + ['preferred_lease_terms' => ['6 Months']],
-                'lease_rent_with_terms'   => $base + ['max_price' => (int) ceil($price * 1.05), 'preferred_lease_terms' => ['1 Year']],
             ];
+
+            // A rent-derived budget needs a usable rent, exactly as the price families above
+            // need a price: a missing, zero or negative rent would synthesise a budget of 0.
+            if (self::usablePrice($price)) {
+                $cases['lease_rent_with_terms'] = $base + ['max_price' => (int) ceil($price * 1.05), 'preferred_lease_terms' => ['1 Year']];
+            }
         }
 
         if (in_array($stratum, self::BUILDING_AREA, true)) {
@@ -201,7 +207,7 @@ class CanonicalParityCriteriaMatrix
 
         $price = (float) ($a->listPrice ?? 0);
 
-        if (in_array($stratum, self::RENTAL, true) && $price > 0) {
+        if (in_array($stratum, self::RENTAL, true) && self::usablePrice($price)) {
             // The lease budget is monthly: one case at the listing's monthly equivalent (its own
             // frequency), one at the raw price — the pair exposes any rent-period divergence.
             $factor = MonthlyEquivalent::leaseFactor(is_string($a->leaseFrequency) ? $a->leaseFrequency : null);
@@ -238,15 +244,30 @@ class CanonicalParityCriteriaMatrix
         if ($prices !== []) {
             sort($prices);
             $median = $prices[intdiv(count($prices), 2)];
-            $cohorts['cohort_type_price_band'] = [
-                'property_types' => [$type],
-                'min_price'      => (int) floor($median * 0.8),
-                'max_price'      => (int) ceil($median * 1.2),
-                'ideal_price'    => (int) round($median),
-            ];
+
+            // The band anchors on the median exactly as a listing's families anchor on its price.
+            if (self::usablePrice($median)) {
+                $cohorts['cohort_type_price_band'] = [
+                    'property_types' => [$type],
+                    'min_price'      => (int) floor($median * 0.8),
+                    'max_price'      => (int) ceil($median * 1.2),
+                    'ideal_price'    => (int) round($median),
+                ];
+            }
         }
 
         return $cohorts;
+    }
+
+    /**
+     * Whether a list price (or rent) can anchor a price- or rent-derived case. Missing, zero,
+     * negative and sub-dollar values cannot: each would synthesise a budget of 0 once rounded
+     * — a budget no buyer states, and the divide-by-zero input BuyerMatchResultBuilder is
+     * known not to guard (a follow-up outside this diagnostic).
+     */
+    public static function usablePrice(?float $price): bool
+    {
+        return $price !== null && $price >= 1.0;
     }
 
     /** A deterministic different primary type, so the type mismatch path is exercised. */
