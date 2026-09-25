@@ -232,7 +232,7 @@
                                     @foreach($card['tradeoffs'] as $tradeoff)
                                         <li class="d-flex align-items-start gap-2 mb-1">
                                             <i class="fas fa-arrow-right-arrow-left text-warning mt-1 flex-shrink-0" style="font-size:.75rem;"></i>
-                                            <span>{{ $tradeoff['label'] }}</span>
+                                            <span>{{ $tradeoff['label'] }}@include('partials.stellar.compliance-notices', ['notices' => $tradeoff['notices'] ?? []])</span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -267,7 +267,7 @@
                                         @endphp
                                         <li class="d-flex align-items-start gap-2 mb-1">
                                             <i class="{{ $flagIcon }} mt-1 flex-shrink-0" style="font-size:.75rem;"></i>
-                                            <span>{{ $flag['label'] }}</span>
+                                            <span>{{ $flag['label'] }}@include('partials.stellar.compliance-notices', ['notices' => $flag['notices'] ?? []])</span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -295,7 +295,7 @@
                                     @foreach($card['missing_data'] as $item)
                                         <li class="d-flex align-items-start gap-2 mb-1">
                                             <i class="fas fa-dash text-muted mt-1 flex-shrink-0" style="font-size:.75rem;"></i>
-                                            <span class="text-muted">{{ $item['label'] }}</span>
+                                            <span class="text-muted">{{ $item['label'] }}@include('partials.stellar.compliance-notices', ['notices' => $item['notices'] ?? []])</span>
                                         </li>
                                     @endforeach
                                 </ul>

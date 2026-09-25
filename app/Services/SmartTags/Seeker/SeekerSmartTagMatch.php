@@ -88,6 +88,24 @@ final class SeekerSmartTagMatch
     }
 
     /**
+     * The governed compliance notices that must accompany the known-absent labels
+     * (config `compliance.notice` — e.g. the assistance-animal notice on
+     * `pets_allowed`). Only tags that declare one contribute; deduplicated.
+     *
+     * @return list<string>
+     */
+    public function knownAbsentNotices(): array
+    {
+        return self::notices($this->knownAbsentKeys);
+    }
+
+    /** @return list<string> the notices that must accompany the unknown labels */
+    public function unknownNotices(): array
+    {
+        return self::notices($this->unknownKeys());
+    }
+
+    /**
      * @param  list<string> $keys
      * @return list<string>
      */
@@ -100,6 +118,25 @@ final class SeekerSmartTagMatch
 
             if ($definition !== null && trim($definition->label) !== '') {
                 $out[] = $definition->label;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  list<string> $keys
+     * @return list<string>
+     */
+    private static function notices(array $keys): array
+    {
+        $out = [];
+
+        foreach ($keys as $key) {
+            $notice = SmartTagTaxonomy::get($key)?->complianceNotice;
+
+            if ($notice !== null && trim($notice) !== '' && ! in_array($notice, $out, true)) {
+                $out[] = $notice;
             }
         }
 
