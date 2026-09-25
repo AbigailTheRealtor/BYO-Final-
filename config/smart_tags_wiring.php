@@ -115,4 +115,53 @@ return [
 
     'seeker_matching_enabled' => filter_var(env('SMART_TAGS_SEEKER_MATCHING_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Which seeker CONTEXTS may be scored — the per-property-type activation list
+    |--------------------------------------------------------------------------
+    |
+    | A third, additional condition on scoring picks: the seeker's own context
+    | (from their criteria's property type) must be named here. Comma-separated
+    | SmartTagContext values, e.g. "residential.sale,residential.lease".
+    |
+    | WHY PER CONTEXT. Bridge tag coverage differs sharply by property type — the
+    | live corpus predicts ~99–100% for Residential and Residential Lease, ~56%
+    | for Business Opportunity. A pick is scored as "the listing has it" or as
+    | earning nothing, so switching matching on for a poorly covered context
+    | would lower every listing there for want of data we do not hold. Each
+    | context is activated when its own coverage is verified.
+    |
+    | EMPTY BY DEFAULT, AND EMPTY MEANS NONE. Turning SMART_TAGS_SEEKER_MATCHING_ENABLED
+    | on without naming a context scores nothing. An unrecognised value is
+    | dropped, never guessed at. Read only through SmartTagSeekerPreferenceGate.
+    | A safety switch: excluded from the production flag contract.
+    |
+    */
+
+    'seeker_matching_contexts' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('SMART_TAGS_SEEKER_MATCHING_CONTEXTS', '')),
+    ), static fn (string $value) => $value !== '')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduled Bridge catch-up — unattended `smart-tags:derive --only-stale`
+    |--------------------------------------------------------------------------
+    |
+    | The high-volume Bridge import paths defer derivation, so without a
+    | catch-up every newly imported row stays untagged — UNKNOWN to seeker
+    | matching — and coverage decays after any one-time backfill.
+    |
+    | An ADDITIONAL gate on top of both derivation gates above, never a
+    | replacement: the schedule is registered only when all three are on
+    | (SmartTagWiring::bridgeCatchUpScheduled()). It is also the one thing that
+    | authorises `smart-tags:derive --scheduled` to write without a person at a
+    | terminal — the narrowest possible run: Bridge only, one provider,
+    | --only-stale, bounded. Default OFF, parsed fail-closed. A safety switch:
+    | excluded from the production flag contract.
+    |
+    */
+
+    'bridge_catch_up_schedule_enabled' => filter_var(env('SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true,
+
 ];

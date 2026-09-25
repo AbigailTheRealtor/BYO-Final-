@@ -10,10 +10,12 @@ use App\Services\SmartTags\SmartTagLifecycle;
 use App\Services\SmartTags\SmartTagTelemetry;
 use App\Support\SmartTags\SmartTagContext;
 use App\Support\SmartTags\SmartTagListingType;
+use App\Support\SmartTags\SmartTagVersion;
 use App\Support\SmartTags\SmartTagWiring;
 use App\Support\Safeguards\ProductionDatabaseGuard;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
@@ -50,12 +52,15 @@ class DeriveSmartTags extends Command
                             {--source=all : bridge|native|all}
                             {--listing-type=* : bridge|seller_agent|landlord_agent (repeatable; narrows within --source)}
                             {--context= : Only listings resolving to this context (e.g. residential.sale)}
+                            {--provider= : Only Bridge rows from this provider (bridge_properties.provider; requires --source=bridge)}
                             {--id=* : Exact listing ids (repeatable; requires exactly one --listing-type)}
                             {--from-id= : Resume cursor — process ids greater than this}
                             {--only-stale : Skip listings whose derivation state is already current}
                             {--limit=0 : Maximum listings to process this run (0 = no limit)}
                             {--batch-size=200 : Rows fetched per chunk}
-                            {--dry-run : Report what would change and write nothing}';
+                            {--max-derived=0 : Stop after this many listings reached derivation (0 = no limit; skipped-current rows do not count)}
+                            {--scheduled : The unattended Bridge catch-up (requires the catch-up gate, --source=bridge, --provider and --only-stale)}
+                            {--dry-run : Report which listings would be derived, from derivation state alone, and write nothing}';
 
     protected $description = 'Derive Smart Tags for existing Bridge properties and native Offer Listings';
 
@@ -73,8 +78,34 @@ class DeriveSmartTags extends Command
 
     private ?int $lastId = null;
 
+    /** The current batch's derivation states, keyed by listing id — loaded once per chunk. */
+    private array $states = [];
+
+    /**
+     * Printed on every dry run, because its numbers are easy to misread.
+     *
+     * A dry run answers from `smart_tag_derivation_states` alone — it never runs a
+     * deriver — so `tagged` there means "would be sent to derivation", not "would
+     * receive a tag". A never-derived corpus reports every row as `tagged`. The
+     * prediction of what a write would actually STORE is the coverage report's
+     * simulation, which runs the same deriver and resolver in memory.
+     */
+    public const DRY_RUN_NOTICE = 'This dry run reads derivation STATE only: "tagged" means "would be derived", NOT "would receive a tag". '
+        . 'For an authoritative pre-write coverage prediction run: php artisan smart-tags:coverage --simulate';
+
+    /** Cache key prefix for the scheduled run's rotating cursor (one per provider). */
+    public const SCHEDULED_CURSOR_KEY = 'smart_tags:bridge_catch_up:cursor:';
+
+    private int $derivedThisRun = 0;
+
     public function handle(SmartTagLifecycle $lifecycle): int
     {
+        // Per-run state. Artisan reuses one command instance for every call in a
+        // process, so a second in-process run must not inherit the first's tallies.
+        $this->lastId = null;
+        $this->states = [];
+        $this->derivedThisRun = 0;
+
         $types = $this->resolveTypes();
 
         if ($types === null) {
@@ -87,6 +118,12 @@ class DeriveSmartTags extends Command
             return self::FAILURE;
         }
 
+        $provider = $this->resolveProvider($types);
+
+        if ($provider === false) {
+            return self::FAILURE;
+        }
+
         $ids = array_values(array_filter(array_map('intval', (array) $this->option('id')), static fn (int $id) => $id > 0));
 
         if ($ids !== [] && count($types) !== 1) {
@@ -96,16 +133,30 @@ class DeriveSmartTags extends Command
         }
 
         $dryRun = (bool) $this->option('dry-run');
+        $scheduled = (bool) $this->option('scheduled');
 
-        if (! $this->confirmWrites($dryRun)) {
+        if ($scheduled && ! $this->scheduledRunIsAllowed($types, $provider, $ids, $context, $dryRun)) {
             return self::FAILURE;
         }
 
-        $this->reportPosture($types, $dryRun);
+        if (! $scheduled && ! $this->confirmWrites($dryRun)) {
+            return self::FAILURE;
+        }
+
+        $this->reportPosture($types, $dryRun, $provider);
+
+        $started = microtime(true);
 
         $limit = max(0, (int) $this->option('limit'));
+        $maxDerived = max(0, (int) $this->option('max-derived'));
         $batchSize = max(1, (int) $this->option('batch-size'));
         $fromId = $this->option('from-id') === null ? null : (int) $this->option('from-id');
+
+        // The scheduled run resumes where the previous one stopped, so a bounded run
+        // can never be starved by the same low-id rows every hour.
+        if ($scheduled) {
+            $fromId = $this->scheduledCursor($provider);
+        }
 
         // Two groups, and the split matters when reading a run.
         //
@@ -119,14 +170,19 @@ class DeriveSmartTags extends Command
         $onlyStale = (bool) $this->option('only-stale');
 
         foreach ($types as $type) {
-            $this->processType($lifecycle, $type, $ids, $fromId, $limit, $batchSize, $context, $dryRun, $onlyStale);
+            $this->processType($lifecycle, $type, $ids, $fromId, $limit, $batchSize, $context, $dryRun, $onlyStale, $provider, $maxDerived);
 
-            if ($limit > 0 && $this->counts['considered'] >= $limit) {
+            if ($this->reachedABound($limit, $maxDerived)) {
                 break;
             }
         }
 
-        $this->summarise($dryRun);
+        if ($scheduled) {
+            // Bounded: continue from here next time. Finished: wrap to the start.
+            $this->saveScheduledCursor($provider, $this->reachedABound($limit, $maxDerived) ? $this->lastId : null);
+        }
+
+        $this->summarise($dryRun, microtime(true) - $started);
 
         return self::SUCCESS;
     }
@@ -145,6 +201,8 @@ class DeriveSmartTags extends Command
         ?SmartTagContext $context,
         bool $dryRun,
         bool $onlyStale,
+        ?string $provider = null,
+        int $maxDerived = 0,
     ): void {
         /** @var class-string<Model> $modelClass */
         $modelClass = $type->modelClass();
@@ -159,15 +217,30 @@ class DeriveSmartTags extends Command
             $query->where('id', '>', $fromId);
         }
 
+        // Provider-scoped Bridge identity: a row is (provider, listing_key), and a
+        // run scoped to one provider must never touch another's rows.
+        if ($provider !== null && $type === SmartTagListingType::Bridge) {
+            $query->where('provider', $provider);
+        }
+
         $stopped = false;
 
         $query->orderBy('id')->chunkById($batchSize, function ($rows) use (
-            $lifecycle, $type, $limit, $context, $dryRun, $onlyStale, &$stopped
+            $lifecycle, $type, $limit, $maxDerived, $context, $dryRun, $onlyStale, &$stopped
         ) {
             $batch = array_fill_keys(array_keys($this->counts), 0);
 
+            // One state read per BATCH, not per row: --only-stale, --context and the
+            // dry-run plan all ask the state row, and asking it per listing was N+1.
+            $this->states = SmartTagDerivationState::query()
+                ->where('listing_type', $type->value)
+                ->whereIn('listing_id', $rows->modelKeys())
+                ->get(['listing_id', 'context', 'tagger_version', 'derived_at'])
+                ->keyBy('listing_id')
+                ->all();
+
             foreach ($rows as $row) {
-                if ($limit > 0 && $this->counts['considered'] >= $limit) {
+                if ($this->reachedABound($limit, $maxDerived)) {
                     $stopped = true;
 
                     break;
@@ -182,12 +255,14 @@ class DeriveSmartTags extends Command
                 // point of the option: a current listing costs one indexed
                 // lookup rather than a full derivation that would conclude
                 // nothing changed.
-                if ($onlyStale && $this->isCurrent($type, (int) $row->getKey())) {
+                if ($onlyStale && $this->isCurrent($row)) {
                     $this->counts['skipped_unchanged']++;
                     $batch['skipped_unchanged']++;
 
                     continue;
                 }
+
+                $this->derivedThisRun++;
 
                 [$outcome, $notes] = $dryRun
                     ? $this->planFor($type, $row, $context)
@@ -302,35 +377,96 @@ class DeriveSmartTags extends Command
 
         $notes = $type === SmartTagListingType::Bridge ? ['remarks_blocked'] : [];
 
-        return [$this->isCurrent($type, (int) $row->getKey()) ? 'skipped_unchanged' : 'tagged', $notes];
+        return [$this->isCurrent($row) ? 'skipped_unchanged' : 'tagged', $notes];
     }
 
     /**
-     * True when this listing's recorded tagger version matches the current one.
+     * True when this listing's derivation state is current, from the batch's state
+     * rows and the listing row alone — no deriver runs.
      *
-     * Deliberately coarse: it does NOT recompute the per-source hashes, because
-     * doing so would mean running the derivers, and the point of --only-stale is
-     * to avoid that work for rows nothing has changed. A row that passes this
-     * check still goes through the service's own exact hash comparison, which is
-     * what actually decides whether anything is rewritten.
+     * Current means: a state exists, it was written by the current tagger, and the
+     * listing row has not been updated since. The last clause is what lets an
+     * unattended catch-up notice a Bridge row whose MLS facts changed after it was
+     * first derived — every import rewrites `imported_at`, so `updated_at` moves on
+     * every upsert. It is a "maybe changed" signal, deliberately generous (a row
+     * updated in the same second as its derivation reads as stale): a listing that
+     * fails this check still goes through the service's exact per-source hash
+     * comparison, which is what decides whether anything is actually rewritten.
      */
-    private function isCurrent(SmartTagListingType $type, int $id): bool
+    private function isCurrent(Model $row): bool
     {
-        $state = SmartTagDerivationState::query()
-            ->where('listing_type', $type->value)
-            ->where('listing_id', $id)
-            ->first();
+        $state = $this->states[(int) $row->getKey()] ?? null;
 
-        return $state !== null
-            && $state->tagger_version === \App\Support\SmartTags\SmartTagVersion::taggerVersion();
+        if ($state === null || $state->tagger_version !== SmartTagVersion::taggerVersion()) {
+            return false;
+        }
+
+        $updatedAt = $row->getAttribute('updated_at');
+
+        return $updatedAt === null || $state->derived_at === null || $updatedAt < $state->derived_at;
+    }
+
+    private function reachedABound(int $limit, int $maxDerived): bool
+    {
+        return ($limit > 0 && $this->counts['considered'] >= $limit)
+            || ($maxDerived > 0 && $this->derivedThisRun >= $maxDerived);
+    }
+
+    /**
+     * The unattended catch-up may write without a person at a terminal — ONLY in
+     * its narrowest form, and only while its own gate is on.
+     *
+     * Interactivity is the authorisation for an operator's backfill. A scheduler
+     * has no terminal, so for this one run shape the authorisation is instead an
+     * operator having switched on SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED, on
+     * top of both derivation gates — the same gates that already authorise the
+     * inline lifecycle to write unattended on every Bridge lookup. Everything that
+     * could widen the run is refused rather than ignored.
+     *
+     * @param SmartTagListingType[] $types
+     * @param int[]                 $ids
+     */
+    private function scheduledRunIsAllowed(array $types, ?string $provider, array $ids, ?SmartTagContext $context, bool $dryRun): bool
+    {
+        $problem = match (true) {
+            ! SmartTagWiring::bridgeCatchUpScheduled()   => 'the catch-up gate is closed (SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED plus both derivation gates)',
+            $types !== [SmartTagListingType::Bridge]     => '--scheduled requires --source=bridge',
+            $provider === null                           => '--scheduled requires --provider',
+            ! (bool) $this->option('only-stale')         => '--scheduled requires --only-stale',
+            $ids !== [] || $context !== null
+                || $this->option('from-id') !== null     => '--scheduled does not accept --id, --context or --from-id',
+            $dryRun                                      => '--scheduled cannot be a dry run',
+            default                                      => null,
+        };
+
+        if ($problem !== null) {
+            $this->error("Refusing the scheduled catch-up: {$problem}. Nothing was written.");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function scheduledCursor(?string $provider): ?int
+    {
+        $cursor = Cache::get(self::SCHEDULED_CURSOR_KEY . $provider);
+
+        return is_int($cursor) && $cursor > 0 ? $cursor : null;
+    }
+
+    private function saveScheduledCursor(?string $provider, ?int $cursor): void
+    {
+        $key = self::SCHEDULED_CURSOR_KEY . $provider;
+
+        $cursor === null
+            ? Cache::forget($key)
+            : Cache::forever($key, $cursor);
     }
 
     private function matchesStoredContext(SmartTagListingType $type, Model $row, SmartTagContext $context): bool
     {
-        $state = SmartTagDerivationState::query()
-            ->where('listing_type', $type->value)
-            ->where('listing_id', (int) $row->getKey())
-            ->first();
+        $state = $this->states[(int) $row->getKey()] ?? null;
 
         if ($state !== null) {
             return $state->context === $context->value;
@@ -389,6 +525,32 @@ class DeriveSmartTags extends Command
         }
 
         return array_values($resolved);
+    }
+
+    /**
+     * `--provider` narrows Bridge rows to one provider's feed. Bridge identity is
+     * (provider, listing_key), so a scoped run must be unable to reach another
+     * provider's rows — and a provider means nothing to a native listing, so
+     * combining it with a native type is refused rather than silently ignored.
+     *
+     * @param SmartTagListingType[] $types
+     * @return string|null|false false on a bad option
+     */
+    private function resolveProvider(array $types): string|null|false
+    {
+        $raw = $this->option('provider');
+
+        if ($raw === null || trim((string) $raw) === '') {
+            return null;
+        }
+
+        if ($types !== [SmartTagListingType::Bridge]) {
+            $this->error('--provider applies only to Bridge rows; use it with --source=bridge.');
+
+            return false;
+        }
+
+        return trim((string) $raw);
     }
 
     /**
@@ -512,14 +674,19 @@ class DeriveSmartTags extends Command
     /**
      * @param SmartTagListingType[] $types
      */
-    private function reportPosture(array $types, bool $dryRun): void
+    private function reportPosture(array $types, bool $dryRun, ?string $provider = null): void
     {
         $this->info('Smart Tags derivation');
         $this->line('  mode           : ' . ($dryRun ? 'DRY RUN — nothing is written' : 'write'));
         $this->line('  listing types  : ' . implode(', ', array_map(static fn (SmartTagListingType $t) => $t->value, $types)));
+        $this->line('  provider       : ' . ($provider ?? 'all'));
         $this->line('  master gate    : ' . (SmartTagWiring::enabled() ? 'ON' : 'OFF'));
         $this->line('  bridge gate    : ' . (SmartTagWiring::bridgeEnabled() ? 'ON' : 'OFF'));
         $this->line('  MLS remarks    : NOT PROCESSED (hard-disabled in code)');
+
+        if ($dryRun) {
+            $this->warn('  ' . self::DRY_RUN_NOTICE);
+        }
 
         foreach ($types as $type) {
             if (! SmartTagWiring::enabledFor($type)) {
@@ -530,10 +697,14 @@ class DeriveSmartTags extends Command
         $this->line('');
     }
 
-    private function summarise(bool $dryRun): void
+    private function summarise(bool $dryRun, float $seconds = 0.0): void
     {
         $this->line('');
         $this->info($dryRun ? 'Dry run complete — no writes were performed.' : 'Run complete.');
+
+        if ($dryRun) {
+            $this->warn('  ' . self::DRY_RUN_NOTICE);
+        }
 
         $this->line(sprintf('  %-26s %d', 'considered', $this->counts['considered']));
 
@@ -546,6 +717,14 @@ class DeriveSmartTags extends Command
         foreach (self::NOTES as $key) {
             $this->line(sprintf('  %-26s %d', '  ' . $key, $this->counts[$key]));
         }
+
+        $this->line('');
+        $this->line(sprintf(
+            '  %.2fs, %s listings/s, peak memory %d MiB',
+            $seconds,
+            $seconds > 0 ? number_format($this->counts['considered'] / $seconds, 1) : 'n/a',
+            intdiv(memory_get_peak_usage(true), 1048576),
+        ));
 
         if ($this->lastId !== null) {
             $this->line('');

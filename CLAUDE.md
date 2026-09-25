@@ -1053,7 +1053,38 @@ with no state has simply never been derived. The command is idempotent, resumabl
 ordered by primary key, `chunkById`), batch-oriented, and `--dry-run` reaches no writer at all rather
 than checking a flag inside one. **A production write requires an interactive human confirmation**;
 a non-interactive invocation ABORTS rather than proceeding, so a cron, CI job or agent cannot write.
-There is no `--i-know-this-is-production` and no override token.
+There is no `--i-know-this-is-production` and no override token. `--provider` scopes a Bridge run to
+one provider's rows (refused with native types), and derivation state is read once per batch.
+
+**`smart-tags:coverage` measures Bridge coverage, READ ONLY** — ungated, reached through
+`SmartTagLifecycle::bridgeCoverage()`, run inside a `SET TRANSACTION READ ONLY` on PostgreSQL. STORED
+is what seeker matching reads today; `--simulate` runs the same deriver and resolver in memory to
+predict what `smart-tags:derive` would store (verified equal on the live corpus). It reports why a
+listing has no tag (`never_derived`, `unsupported_property_type`, `only_absent_evidence`, …) rather
+than reading zero as failure, and which seeker-selectable tags a Bridge row can ever carry.
+`smart-tags:derive --dry-run` reads derivation STATE only — its `tagged` means "would be derived",
+not "would receive a tag" — and says so, pointing at `smart-tags:coverage --simulate`.
+
+**Bridge rows stay tagged through a scheduled catch-up, which ships unregistered.**
+`SMART_TAGS_BRIDGE_CATCHUP_SCHEDULE_ENABLED` (default off, fail-closed, an ADDITIONAL gate on top of
+both derivation gates) registers `smart-tags:derive --scheduled --source=bridge --provider=<current>
+--only-stale --max-derived=500` hourly at :17, `withoutOverlapping`. `--scheduled` is the only
+unattended write the command allows, and it refuses any wider shape; a cache cursor rotates bounded
+runs so no row is starved. A row is stale when its tagger version moved or the Bridge row was updated
+at or after its derivation — generous on purpose; the per-source hash decides what is rewritten.
+
+**Seeker matching is activated per CONTEXT.** `SMART_TAGS_SEEKER_MATCHING_CONTEXTS` (comma-separated
+`SmartTagContext` values, default EMPTY = none) is a third condition read only by
+`SmartTagSeekerPreferenceGate::matchingEnabledFor()`: Bridge coverage differs sharply by property type
+(simulated 2026-09-25: Residential 99.2%, Residential Lease 100%, Commercial Sale 98.4%, Business
+Opportunity 55.6%, Commercial Lease / Income / Land near zero), and a context whose listings are mostly
+untagged must not have its seekers' picks scored. Unlisted or unrecognised contexts score no picks.
+
+**Assignment storage is policy-neutral; every consumer re-checks governance.** A `pending_review`
+tag is resolved and stored like any other (governance: "may be derived as evidence"). Seeker picks
+(`SmartTagSelectionPolicy`), Taste learning and reranking (`isSeekerSelectable()`), the owner panel and
+coverage each filter it, and `BridgeSmartTagCheckability` treats a pending, inactive or retired tag as
+unknown for a seeker even with a present row.
 
 **Deletion is explicit, because the purge fires no model events.**
 `BelongsToListingWorkflow::purgeListingRows()` is the single physical deletion point for native
@@ -1334,20 +1365,32 @@ for everything beyond this rerank. Never in `config/required_production_flags.ph
 
 A Buyer/Tenant's "Property Features You Want" picks are **one expressed amenity inside
 `BuyerMatchScorer`'s existing 10-pt Amenities category** (weight `SEEKER_FEATURES_MAX_PTS` = 4, earning
-`4 × matched ÷ selected`, then the category's own normalisation). Amenities stays ≤ 10 and the total ≤ 100
+`4 × matched ÷ checkable`, then the category's own normalisation). Amenities stays ≤ 10 and the total ≤ 100
 however many are picked; no picks is exactly the pre-feature score; nothing is filtered, because the picker
 promises a preference, not a requirement. Governance: `SMART_TAGS_GOVERNANCE.md` §14.
 
 **One read per side.** Seeker: `SmartTagSeekerPreferenceReader::matchingKeysFor()` from all four Stellar
 loaders — both gates on, re-projected through `SmartTagSelectionPolicy` against the CURRENT context, never
-throws. Listing: present `smart_tag_assignments` rows via `ListingSmartTagIndex`, read **before scoring**
+throws. Listing: per selected tag, present / known absent / unknown via `ListingSmartTagIndex`, built **before scoring**
 and handed in as a FACT (`ListingSmartTagFacts` on `ListingMatchFacts`) — batched in `scoreAll()`, and by the
 three single-listing surfaces (`PropertyMatchContextService`, `MatchCheckScorer`, the Match Check report)
 through `ListingSmartTagIndex::forCandidates([$listing], $criteria)->factsFor($listing)`. `scoreFacts()` and
 the category rules stay pure (PR #201's guard, unchanged); `score()` only adapts, and without tag facts the
 picks are unknown. Tags are keyed by `bridge_properties.id`, never `listing_key` (unique only per provider).
-Unknown earns nothing and is worded as "could not be checked"; cards carry labels only. Stellar candidates
-are Bridge rows; BYO listings have no score.
+**Per-tag checkability, with no new stored state.** A resolved present row is a match and a resolved
+absent row a known miss. With no row, `BridgeSmartTagCheckability` makes the pick a KNOWN MISS only when a
+governed structured `bridge.rules` entry can emit the tag in the listing's context, that rule's source
+field is populated on the row (`BridgeRecordAccessor::populated()`, the engine's own reading), the stored
+derivation is current for exactly this row (tagger version, context, `structured_inputs_hash` —
+`BridgeStructuredTagDeriver::inputsHash()`, the service's own formula), and the tag was neither
+conflict-dropped (evidence without an assignment) nor cancellable by contradictory rules. Everything else
+is UNKNOWN: no rule (`updated_kitchen`, `move_in_ready`, …), an empty field, never derived, stale.
+Capability comes from the rules, never from frequency — `quartz_countertops` has a rule and zero live rows.
+**Unknown is in neither numerator nor denominator**; with nothing checkable the listing keeps its exact
+historical Amenities score. Wording: "Does not list: …" is known misses only; all unknown is "Feature
+details not available — your selected features could not be checked for this home"; a mix adds "Some
+selected features could not be checked: …". Cards carry labels only. Stellar candidates are Bridge rows;
+BYO listings have no score.
 
 **Two gates.** The picker (`SMART_TAGS_SEEKER_PREFERENCES_ENABLED`) saves picks; scoring them also needs
 `SMART_TAGS_SEEKER_MATCHING_ENABLED` (default off, fail-closed, additional), read only through

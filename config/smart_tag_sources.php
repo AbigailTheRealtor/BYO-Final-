@@ -61,6 +61,12 @@ return [
             'Walk-In Closet(s)'          => 'walk_in_closet',
             'Primary Bedroom Main Floor' => 'primary_bedroom_main_floor',
             'Eat-in Kitchen'             => 'eat_in_kitchen',
+            // Stellar's own picklist value for the same slot: the feed sends
+            // "Eating Space In Kitchen" and never "Eat-in Kitchen" (0 of 1,753 live
+            // rows; 200 carry this one, never both), and every repo picklist
+            // offers exactly one of the two beside separate Breakfast Room /
+            // L Dining / Kitchen-Family Room Combo options.
+            'Eating Space In Kitchen'    => 'eat_in_kitchen',
             'Wet Bar'                    => 'wet_bar',
             'Fireplace'                  => 'fireplace',
             'Quartz Counters'            => 'quartz_countertops',

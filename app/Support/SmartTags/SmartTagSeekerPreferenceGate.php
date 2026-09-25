@@ -67,6 +67,27 @@ final class SmartTagSeekerPreferenceGate
     }
 
     /**
+     * May picks be scored for a seeker in THIS context?
+     *
+     * {@see matchingEnabled()} AND the context named in `seeker_matching_contexts`.
+     * The per-context list exists because Bridge tag coverage differs by property
+     * type, and scoring a context whose listings are mostly untagged would lower
+     * every card there alike. Empty or absent means NO context; an unrecognised
+     * entry never matches. Callers that resolve a seeker's context — the
+     * preference reader — ask this, never matchingEnabled() alone.
+     */
+    public static function matchingEnabledFor(?SmartTagContext $context): bool
+    {
+        if ($context === null || ! self::matchingEnabled()) {
+            return false;
+        }
+
+        $allowed = SmartTagConfig::wiring()['seeker_matching_contexts'] ?? [];
+
+        return is_array($allowed) && in_array($context->value, $allowed, true);
+    }
+
+    /**
      * Deletion cleanup is NOT gated, and never should be.
      *
      * Present as a named constant-returning method rather than as an absent

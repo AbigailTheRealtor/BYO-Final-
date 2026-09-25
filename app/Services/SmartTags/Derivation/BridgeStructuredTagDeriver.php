@@ -6,6 +6,7 @@ use App\Support\SmartTags\SmartTagContext;
 use App\Support\SmartTags\SmartTagContextResolver;
 use App\Support\SmartTags\SmartTagListingType;
 use App\Support\SmartTags\SmartTagSource;
+use App\Support\SmartTags\SmartTagVersion;
 
 /**
  * Bridge/MLS structured fields → structured_mls evidence.
@@ -45,5 +46,15 @@ final class BridgeStructuredTagDeriver
     public function structuredInputs(BridgeRecordAccessor $record): array
     {
         return $record->inputsFor(SmartTagSourceRules::bridgeRules());
+    }
+
+    /**
+     * The change-detection hash recorded as `structured_inputs_hash` — one definition,
+     * shared by the derivation service that writes it and every reader that asks
+     * "were the stored assignments derived from THIS record's values?".
+     */
+    public function inputsHash(BridgeRecordAccessor $record): string
+    {
+        return SmartTagVersion::structuredInputsHash($this->structuredInputs($record));
     }
 }

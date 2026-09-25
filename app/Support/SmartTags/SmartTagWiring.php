@@ -58,6 +58,17 @@ final class SmartTagWiring
             : true;
     }
 
+    /**
+     * May the unattended Bridge catch-up run?
+     *
+     * Its own switch AND both derivation gates. Asked by the scheduler before it
+     * registers the entry, and by `smart-tags:derive --scheduled` before it writes.
+     */
+    public static function bridgeCatchUpScheduled(): bool
+    {
+        return self::enabledFor(SmartTagListingType::Bridge) && self::flag('bridge_catch_up_schedule_enabled');
+    }
+
     private static function flag(string $key): bool
     {
         return (SmartTagConfig::wiring()[$key] ?? null) === true;
