@@ -252,6 +252,12 @@ class SmartTagArchitectureGuardTest extends TestCase
         // null for the caller to attach. It reads no tag, calls no Smart Tags class, and
         // CanonicalMatchingInputGuardTest fails if it ever does.
         'app/Services/Stellar/Matching/CanonicalListingMatchFactsBuilder.php',
+        // P1-B2: the offline parity runner reads a chunk's RESOLVED tags through
+        // ListingSmartTagIndex (the same batched read scoreAll() makes) and attaches the
+        // SAME facts to both paths — only when seeker matching is already on. It derives,
+        // resolves and writes nothing; CanonicalParityArchitectureGuardTest fails if it
+        // ever names a derivation, evidence, resolver or writer class.
+        'app/Services/Stellar/Matching/Parity/CanonicalMatchingParityRunner.php',
         'app/Services/Stellar/PropertyMatchContextService.php',
         'app/Services/Stellar/MatchCheck/MatchCheckScorer.php',
         'app/Services/Stellar/MatchCheck/MatchCheckOrchestrator.php',

@@ -84,6 +84,12 @@ class CanonicalListingArchitectureGuardTest extends TestCase
         $allowed = [
             'Services/Canonical/Adapters/MlsListingAdapter.php',
             'Services/Bridge/MlsCanonicalListingResolver.php',
+            // P1-B2: the OFFLINE parity runner — invoked only by the production-refusing
+            // `matching:canonical-parity` command, never by a request. It calls the explicit
+            // MLS resolver directly and leaves CanonicalListingResolver::supports() alone
+            // (asserted below). CanonicalParityArchitectureGuardTest pins that nothing live
+            // reaches the runner.
+            'Services/Stellar/Matching/Parity/CanonicalMatchingParityRunner.php',
         ];
 
         $root = realpath(__DIR__ . '/../../../app');
