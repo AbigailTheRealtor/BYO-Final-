@@ -219,10 +219,79 @@ class CanonicalMatchingParityRunnerTest extends TestCase
 
     public function test_a_one_sided_exception_is_error_mismatch(): void
     {
-        // A zero list price (AD-3: canonical reads it as unknown) scored against an ideal price
-        // of 0. BuyerMatchResultBuilder divides by the ideal price whenever the listing HAS a
-        // price, so the legacy side raises DivisionByZeroError and the canonical side, with no
-        // price, does not. One side failing is ERROR_MISMATCH, even behind a declared difference.
+        // This used to be driven end-to-end by the ideal_price = 0 DivisionByZeroError on the
+        // legacy side only (see the next test). With that fixed, no stored fixture makes exactly
+        // one path raise, so the rule is pinned where it lives: the runner's own attempt() and
+        // errorStatus(), fed one real exception. (The report-level ERROR_MISMATCH verdict and
+        // exit code are pinned by MatchingCanonicalParityCommandTest.)
+        $attempt     = new \ReflectionMethod(Runner::class, 'attempt');
+        $errorStatus = new \ReflectionMethod(Runner::class, 'errorStatus');
+        $attempt->setAccessible(true);
+        $errorStatus->setAccessible(true);
+
+        [, $raised] = $attempt->invoke(null, static fn () => throw new \DivisionByZeroError('Division by zero'));
+        [, $clean]  = $attempt->invoke(null, static fn () => 'facts');
+        [, $other]  = $attempt->invoke(null, static fn () => throw new \TypeError('Division by zero'));
+
+        $this->assertNotNull($raised);
+        $this->assertNull($clean);
+        $this->assertSame(Runner::STATUS_ERROR_MISMATCH, $errorStatus->invoke(null, $raised, $clean), 'legacy raises, canonical does not');
+        $this->assertSame(Runner::STATUS_ERROR_MISMATCH, $errorStatus->invoke(null, $clean, $raised), 'canonical raises, legacy does not');
+        $this->assertSame(Runner::STATUS_ERROR_MISMATCH, $errorStatus->invoke(null, $raised, $other), 'different exception classes');
+        $this->assertSame(Runner::STATUS_ERROR_PARITY, $errorStatus->invoke(null, $raised, $raised), 'identical failures');
+    }
+
+    public function test_a_one_sided_outcome_exception_is_aggregated_as_error_mismatch(): void
+    {
+        // No real fixture makes exactly one path raise (both facts objects are final and the row
+        // is shared), so this drives the runner's own recording tail — the calls compareCase()
+        // makes on an outcome-level error — with one real exception captured by attempt(), and
+        // assembles the report with the runner's own result(). A real run over nothing first
+        // leaves the runner in its post-run state; nothing here is a copy of runner logic.
+        $runner = new Runner();
+        $empty  = $runner->run();
+        $call   = static function (string $method, mixed ...$args) use ($runner): mixed {
+            $m = new \ReflectionMethod(Runner::class, $method);
+            $m->setAccessible(true);
+
+            return $m->invoke($m->isStatic() ? null : $runner, ...$args);
+        };
+
+        [, $legacy] = $call('attempt', static fn () => intdiv(1, 0));
+        $canonical  = null;
+        $status     = $call('errorStatus', $legacy, $canonical);
+        $id         = ['provider' => 'stellar', 'listing_key' => 'ONE-SIDED-1', 'property_type' => 'Residential', 'stratum' => 'Residential'];
+
+        $call('recordError', 'outcome', $status, $legacy, $canonical);
+        $call('example', 'error_mismatch', $id + ['level' => 'outcome', 'case' => 'one_sided_case'] + $call('errorShape', $legacy, $canonical));
+        $call('recordListing', 'Residential', $status);
+
+        $report = new CanonicalParityReport($call('result'), $empty->cost, $empty->run);
+        $r = $report->result;
+
+        $this->assertSame(Runner::STATUS_ERROR_MISMATCH, $status);
+        $this->assertSame(['ERROR_MISMATCH' => 1], $r['listings']['status']);
+        $this->assertSame(['ERROR_MISMATCH' => 1], $r['listings']['by_stratum']['Residential']);
+        $this->assertSame(['DivisionByZeroError | none' => 1], $r['outcomes']['errors']['mismatch']['outcome']);
+        $this->assertSame([], $r['outcomes']['errors']['parity']);
+        $this->assertSame(1, $r['examples']['error_mismatch']['count']);
+        $shown = $r['examples']['error_mismatch']['shown'][0];
+        $this->assertSame('outcome', $shown['level']);
+        $this->assertSame('one_sided_case', $shown['case']);
+        $this->assertSame('DivisionByZeroError', $shown['legacy_exception']);
+        $this->assertNull($shown['canonical_exception']);
+        $this->assertSame($legacy[1], $shown['message_digests'][0]);
+        $this->assertNull($shown['message_digests'][1]);
+        $this->assertSame(1, $report->errorMismatchCount());
+        $this->assertSame(CanonicalParityReport::VERDICT_ERROR_MISMATCH, $report->verdict());
+    }
+
+    public function test_a_zero_ideal_price_against_a_zero_list_price_raises_on_neither_path(): void
+    {
+        // Formerly the one-sided case: a zero list price (AD-3: canonical reads it as unknown)
+        // scored against an ideal price of 0 made BuyerMatchResultBuilder divide by zero on the
+        // legacy side only. The builder no longer divides by a zero ideal price, so both paths
+        // complete and the only difference is the declared AD-3 one.
         $this->storeBaselineFixture('residential', self::ISOLATE, 'one_sided', ['list_price' => 0]);
 
         $matrix = new class extends CanonicalParityCriteriaMatrix {
@@ -235,14 +304,32 @@ class CanonicalMatchingParityRunnerTest extends TestCase
         $report = (new Runner(matrix: $matrix))->run();
         $r = $report->result;
 
-        $this->assertSame(['ERROR_MISMATCH' => 1], $r['listings']['status']);
-        $shown = $r['examples']['error_mismatch']['shown'][0];
-        $this->assertSame('outcome', $shown['level']);
-        $this->assertSame('ideal_price_zero', $shown['case']);
-        $this->assertSame('DivisionByZeroError', $shown['legacy_exception']);
-        $this->assertNull($shown['canonical_exception']);
-        $this->assertSame(['DivisionByZeroError | none' => 1], $r['outcomes']['errors']['mismatch']['outcome']);
-        $this->assertSame(CanonicalParityReport::VERDICT_ERROR_MISMATCH, $report->verdict());
+        $this->assertSame(['ALLOWED_DIFFERENCE' => 1], $r['listings']['status']);
+        $this->assertArrayNotHasKey('ERROR_MISMATCH', $r['outcomes']['status']);
+        $this->assertArrayNotHasKey('ERROR_PARITY', $r['outcomes']['status']);
+        $this->assertArrayNotHasKey('UNDECLARED_DIFFERENCE', $r['outcomes']['status']);
+        $this->assertSame(CanonicalParityReport::VERDICT_PASS, $report->verdict());
+    }
+
+    public function test_matrix_zero_size_bounds_no_longer_raise_on_either_path(): void
+    {
+        // P1-B2's five ERROR_PARITY cases, as the default matrix builds them: with no
+        // BuildingAreaTotal, building_area_in_range derives max_sqft = (int) (0 × 1.1) = 0 while
+        // the scorer falls back to living area; a 1 sqft living area makes size_sqft_over_max
+        // derive max_sqft = (int) (1 × 0.5) = 0. Both paths used to raise DivisionByZeroError.
+        $this->storeBaselineFixture('commercial_sale', ['BuildingAreaTotal' => null, 'LivingArea' => 1200], 'no_bat');
+        $this->storeBaselineFixture('income', ['BuildingAreaTotal' => null, 'LivingArea' => 1], 'tiny_area');
+
+        $report = $this->run_();
+        $r = $report->result;
+
+        $this->assertContains('building_area_in_range', $r['criteria']['case_names_by_stratum']['Commercial Sale']);
+        $this->assertContains('size_sqft_over_max', $r['criteria']['case_names_by_stratum']['Income']);
+        foreach (['ERROR_PARITY', 'ERROR_MISMATCH', 'UNDECLARED_DIFFERENCE'] as $status) {
+            $this->assertArrayNotHasKey($status, $r['outcomes']['status'], $status);
+            $this->assertArrayNotHasKey($status, $r['listings']['status'], $status);
+        }
+        $this->assertSame(CanonicalParityReport::VERDICT_PASS, $report->verdict());
     }
 
     public function test_price_families_are_not_synthesised_for_a_listing_without_a_price(): void

@@ -222,14 +222,19 @@ class BuyerMatchResultBuilder
             if (($scores['price'] ?? 0) < $priceMax) {
                 $listPrice = $facts->listPrice !== null ? (float) $facts->listPrice : null;
                 if ($listPrice !== null && $criteria->idealPrice !== null) {
-                    $diffPct = round(abs($listPrice - $criteria->idealPrice) / $criteria->idealPrice * 100, 0);
-                    $dir     = $listPrice > $criteria->idealPrice ? 'above' : 'below';
-                    $tradeoffs[] = [
-                        'dimension'   => 'price',
-                        'label'       => "Price is {$diffPct}% {$dir} your ideal — at the upper end of your range",
-                        'fields_used' => ['list_price'],
-                        'deviation'   => "{$diffPct}%_{$dir}_ideal",
-                    ];
+                    // An ideal price of zero has no percentage to state. As in the scorer's
+                    // price proximity, it still claims the ideal branch (no fall-through to
+                    // max price) and simply produces nothing.
+                    if ($criteria->idealPrice > 0) {
+                        $diffPct = round(abs($listPrice - $criteria->idealPrice) / $criteria->idealPrice * 100, 0);
+                        $dir     = $listPrice > $criteria->idealPrice ? 'above' : 'below';
+                        $tradeoffs[] = [
+                            'dimension'   => 'price',
+                            'label'       => "Price is {$diffPct}% {$dir} your ideal — at the upper end of your range",
+                            'fields_used' => ['list_price'],
+                            'deviation'   => "{$diffPct}%_{$dir}_ideal",
+                        ];
+                    }
                 } elseif ($listPrice !== null && $criteria->maxPrice !== null) {
                     $tradeoffs[] = [
                         'dimension'   => 'price',
