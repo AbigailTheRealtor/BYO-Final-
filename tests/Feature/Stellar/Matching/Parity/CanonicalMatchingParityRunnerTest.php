@@ -241,6 +241,51 @@ class CanonicalMatchingParityRunnerTest extends TestCase
         $this->assertSame(Runner::STATUS_ERROR_PARITY, $errorStatus->invoke(null, $raised, $raised), 'identical failures');
     }
 
+    public function test_a_one_sided_outcome_exception_is_aggregated_as_error_mismatch(): void
+    {
+        // No real fixture makes exactly one path raise (both facts objects are final and the row
+        // is shared), so this drives the runner's own recording tail — the calls compareCase()
+        // makes on an outcome-level error — with one real exception captured by attempt(), and
+        // assembles the report with the runner's own result(). A real run over nothing first
+        // leaves the runner in its post-run state; nothing here is a copy of runner logic.
+        $runner = new Runner();
+        $empty  = $runner->run();
+        $call   = static function (string $method, mixed ...$args) use ($runner): mixed {
+            $m = new \ReflectionMethod(Runner::class, $method);
+            $m->setAccessible(true);
+
+            return $m->invoke($m->isStatic() ? null : $runner, ...$args);
+        };
+
+        [, $legacy] = $call('attempt', static fn () => intdiv(1, 0));
+        $canonical  = null;
+        $status     = $call('errorStatus', $legacy, $canonical);
+        $id         = ['provider' => 'stellar', 'listing_key' => 'ONE-SIDED-1', 'property_type' => 'Residential', 'stratum' => 'Residential'];
+
+        $call('recordError', 'outcome', $status, $legacy, $canonical);
+        $call('example', 'error_mismatch', $id + ['level' => 'outcome', 'case' => 'one_sided_case'] + $call('errorShape', $legacy, $canonical));
+        $call('recordListing', 'Residential', $status);
+
+        $report = new CanonicalParityReport($call('result'), $empty->cost, $empty->run);
+        $r = $report->result;
+
+        $this->assertSame(Runner::STATUS_ERROR_MISMATCH, $status);
+        $this->assertSame(['ERROR_MISMATCH' => 1], $r['listings']['status']);
+        $this->assertSame(['ERROR_MISMATCH' => 1], $r['listings']['by_stratum']['Residential']);
+        $this->assertSame(['DivisionByZeroError | none' => 1], $r['outcomes']['errors']['mismatch']['outcome']);
+        $this->assertSame([], $r['outcomes']['errors']['parity']);
+        $this->assertSame(1, $r['examples']['error_mismatch']['count']);
+        $shown = $r['examples']['error_mismatch']['shown'][0];
+        $this->assertSame('outcome', $shown['level']);
+        $this->assertSame('one_sided_case', $shown['case']);
+        $this->assertSame('DivisionByZeroError', $shown['legacy_exception']);
+        $this->assertNull($shown['canonical_exception']);
+        $this->assertSame($legacy[1], $shown['message_digests'][0]);
+        $this->assertNull($shown['message_digests'][1]);
+        $this->assertSame(1, $report->errorMismatchCount());
+        $this->assertSame(CanonicalParityReport::VERDICT_ERROR_MISMATCH, $report->verdict());
+    }
+
     public function test_a_zero_ideal_price_against_a_zero_list_price_raises_on_neither_path(): void
     {
         // Formerly the one-sided case: a zero list price (AD-3: canonical reads it as unknown)
