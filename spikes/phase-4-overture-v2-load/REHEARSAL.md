@@ -36,7 +36,11 @@ rollback_recovery_exercised: yes
 Rehearsal of RUNBOOK §4, performed 2026-09-29 (UTC) on a **throwaway** scratch instance. The live
 spatial cluster was never contacted and no live credential was present in any rehearsal container.
 It also exercises the §8a guarded recovery path added by PR #214, which no earlier record covers.
-Reviewed by an independent read-only reviewer before this record was written (verdict: CLEAN).
+
+**The figures below are from the durable-evidence rerun of `843021042`**, performed the same day
+with every checkpoint written to the operator audit store as it completed (see *Evidence outside
+Git*). An independent read-only reviewer checked that durable evidence, its raw outputs and this
+commit (verdict: CLEAN).
 
 ### Why this commit was re-rehearsed
 
@@ -55,8 +59,18 @@ Reviewed by an independent read-only reviewer before this record was written (ve
   and none of it is counted as evidence.
   - Its host-side files (scratch credential, extraction, evidence) did not survive.
   - Its killed container and network were left untouched.
-- Before this record was written, `origin/main` was re-checked. It still equalled `843021042`,
-  and the gate's exact pathspec diff was empty.
+- A complete run then passed, but its raw evidence was held only in session scratch storage and
+  was lost when that storage was wiped, before a durable copy existed. It is not counted as
+  evidence either.
+- **The durable-evidence rerun is the evidence for this record.** It started again from a fresh
+  worktree at `origin/main` = `843021042`:
+  - a fresh source export and a fresh extraction;
+  - a new scratch container, network and scratch-only credential;
+  - every §4 exercise, the §8a recovery flow and its refusal matrix.
+
+  Nothing from the lost runs was reused, and their stopped containers were not used.
+- Before the review and again before this record was updated, `origin/main` was re-checked. It
+  still equalled `843021042`, and the gate's exact pathspec diff was empty.
 
 ### Where, and on what
 
@@ -147,10 +161,10 @@ The extraction files were kept in scratch only and not committed.
 - `v1_before.txt`:
   ```
   v1_places_rows=29434
-  v1_places_md5=02f1933856ab96858132789662faeb43
+  v1_places_md5=444bd80b95dbc367c3fa915ea8f2ad2e
   places_partitions=places_p_overture_2026_06_17_0_fl
   corpus_imports_rows=1
-  corpus_imports_md5=da71277f98bb4e33dbef292b0a4ea8ae
+  corpus_imports_md5=ce39a8cde7c6f295cb66edcfa2dceca4
   place_categories_md5=cd4c9593da925e87ece2f39b9cd0501e
   place_category_mappings_md5=c736f9cfe28685ce67b09fb0ce7627ba
   place_authority_links_rows=0
@@ -191,7 +205,7 @@ PASS V09 memberships per chain:format match the plan (31 pairs, 20 chains)
 PASS V10 rescued memberships 150 CVS (147 store, 3 store_in_target)
 PASS V11 no duplicate membership, no orphan, registry hash equals the ledger
 PASS V12 v2 is NOT active; v1 remains the one active overture-places corpus
-LEDGER ready 5d922f34a6c9de40f385640c77728705 2026-09-29T01:50:32.130094Z 2026-09-29T01:50:32.135539Z
+LEDGER ready 58fab8ce4f852cae22214da6e8a8442a 2026-09-29T03:13:23.052876Z 2026-09-29T03:13:23.200385Z
 VERIFY OK
 ```
 (The two `LEDGER` timestamps are the importer's `started_at` and `finished_at`, the latter written
@@ -224,14 +238,14 @@ as `now()`. They are not a measure of how long the import took.)
   - A real full `--write` import was started.
   - A server-side watcher (a separate superuser session) waited for the importer's backend to be
     executing `INSERT INTO overture_v2_places …` with an assigned transaction id and ≥ 2 MB of
-    heap. Observed: 2,158,592 bytes. It then called `pg_terminate_backend` on it, which returned
+    heap. Observed: 2,138,112 bytes. It then called `pg_terminate_backend` on it, which returned
     `t`.
   - The importer printed `FAILED, rolled back: … no connection to the server` and exited 1.
   - State read immediately afterwards, before any retry:
     - the corpus row was `failed`, with `finished_at` and `failure_reason` recorded and every
       imported count NULL;
     - 0 places, 0 memberships, 0 `ready` rows;
-    - 5,735 place inserts rolled back;
+    - 5,664 place inserts rolled back;
     - v1 byte-identical.
 - **§8a eligibility, on that real failed state:**
   - the normal import preflight `--v2-state=empty` **REFUSED** at P07 (the v2 tables are not
@@ -267,12 +281,12 @@ as `now()`. They are not a measure of how long the import took.)
 - **c. Recovery retry and re-verify.**
   - The recovery preflight was re-run immediately before the write: PASSED.
   - The identical import printed `IMPORTED` under a new run token
-    (`LEDGER ready 2776602399cf4959d74017d3b72057d4`).
+    (`LEDGER ready c1a613174657c4d034764d9ffc5497be`).
   - Verify V01–V12 all PASS, `VERIFY OK`.
   - Second import `ALREADY READY`, then `VERIFY OK`, with one unchanged `LEDGER ready` line.
   - `SAMPLE FIDELITY OK`.
   - The final `v1_snapshot` was byte-identical to the pre-v2 `v1_before.txt`.
-  - The write counters reconcile: 58,451 place inserts = 5,735 written by the terminated attempt
+  - The write counters reconcile: 58,380 place inserts = 5,664 written by the terminated attempt
     and rolled back, plus 52,716 committed by the retry.
   - Recovery mode against the now-`ready` corpus then **REFUSED** at P07R1, and
     `--v2-state=loaded` PASSED.
@@ -302,10 +316,11 @@ as `now()`. They are not a measure of how long the import took.)
   - Every preflight above ran from a scratch-only copy of `bin/`, `sql/` and the spatial
     migrations. It differs from the commit in one line only: `preflight.sh:47`,
     `EXPECTED_FINGERPRINT` = the scratch server's own
-    `e1010fac1b59db6c2e953037cefdc5b7e35147fdae7e3e547425f7737fb5d460`.
-  - That value was computed with P01's exact expression. The owner approved this approach, and the
-    copy was made by the owner's own command. A recursive diff proving the one-line difference is
-    in the evidence.
+    `851bbd0c3551e96698f72ffd880498f51f8767a3f9e8acd7209832823358c295`.
+  - That value was computed with P01's exact expression. The owner approved this approach. In the
+    durable rerun the copy was made by the assistant, using the same approved one-line method; in
+    the lost run the owner's own command had made it. A recursive diff proving the one-line
+    difference, and that the export and worktree stayed unchanged, is in the evidence.
   - Consequently P01's fixed message ("matches the recorded Crunchy spatial cluster") is printed
     on scratch. It is literal text, not a claim about which cluster was reached.
 - **Route, differently from RUNBOOK §4.1's wording.** §4.1 says the scratch server is reached with
@@ -316,7 +331,8 @@ as `now()`. They are not a measure of how long the import took.)
 - **Networking.** The same as the earlier records:
   - database-phase operator containers ran with `--network host` to reach the internal-only
     scratch server, because this Docker sandbox refuses container-to-container TCP and `docker exec`;
-  - extraction and `composer install` ran on the default bridge with no database credential.
+  - extraction and `composer install` ran on the default bridge with no database credential;
+  - tests ran with `--network none`.
 - **Watcher and matrix privileges.** Both used the scratch superuser, which a live operator role
   would not be:
   - the watcher was a superuser psql session from an operator container;
@@ -329,23 +345,54 @@ as `now()`. They are not a measure of how long the import took.)
 - **Vendor boot side effect.** The same as the earlier records: the export was writable, and
   afterwards every exported file was byte-identical to the commit. Composer's post-install
   `git config core.hooksPath` printed `not in a git directory`, which is harmless.
-- **Cosmetic errors, no rehearsal step affected.**
-  - Three read-only helper queries had quoting errors; their values were re-read correctly.
-  - A first attempt at computing the fingerprint used `-c`, which does not interpolate psql
-    variables; it wrote nothing and was redone from a file.
-  - A first rollback invocation stopped on a helper-query type error before the rollback ran; it was
-    rerun in full.
-  - One `pgrep: command not found`.
-- **First argv scan.** It reported one "connection URL" hit. It was run from an inline script whose
-  own argv contained the fake test URLs of the refusal checks, and that script was not preserved.
-  The rescan from a script file with no URL literal found 0 / 0 / 0 while psql was running, and
-  that rescan is the evidence.
+- **Scratch credential and host mapping, by the operator's command.** The session's permission
+  layer refused the assistant's writes of the scratch env-file and hosts file. The operator ran a
+  no-secret helper (`mkcred.sh`) that wrote them, mode 600, in a mode-700 scratch directory.
+  - The scratch password itself was generated for this run and never printed.
+  - `SPATIAL_DATABASE_URL` carried no password.
+- **Extraction.** The first attempt failed at its first DuckDB statement, before any count:
+  - the hardened container's `/tmp` tmpfs is `noexec`, and DuckDB could not load its `httpfs`
+    extension from there.
+  - The assistant's retry with an executable tmpfs was refused by the permission layer.
+  - The successful extraction was launched through the approved manual helper (`run_extract.sh`),
+    with the same hardening except an executable scratch `/tmp`, which DuckDB `httpfs` requires.
+    Its counts and hashes are the ones above.
+- **Tests.** The operator guard reads `.github/workflows/overture-v2-operator-load.yml`, which
+  `git archive` omits (`export-ignore`).
+  - The tests therefore ran on a copy of the export plus `.github/`, taken from the clean worktree
+    at `843021042`; its 11 files are hash-identical to the commit.
+  - Guard tests that execute a stub `psql` from the temp directory needed `TMPDIR` on a scratch
+    bind mount, as this sandbox requires; `/tmp` stayed `noexec`.
+  - Result: operator guard 37/37, `tests/Unit/Spatial` 748, and `tests/Feature/Spatial` 175 with
+    14 existing skips.
+  - The verified export itself was not modified.
+- **One retry, no rehearsal step affected.** The first rollback-phase invocation stopped on its
+  first read-only helper query (a `relkind` type cast), before the rollback ran. It was fixed and
+  rerun in full.
+- **Run-to-run generated values.** These differ from the lost run because the durable rerun was a
+  fresh run, and none is a contract value:
+  - the scratch fingerprint (lost run `e1010fac…`);
+  - the LEDGER run tokens (lost run `5d922f34…` / `27766023…`);
+  - the regenerated fixture's md5s (lost run `02f19338…` / `da71277f…`);
+  - the watcher byte count (lost run 2,158,592);
+  - the interrupted-insert counts (lost run 5,735 rolled back, 58,451 total);
+  - timestamps.
 
-**Evidence outside Git:** the raw outputs (no credential, URL or host name) are in the rehearsal
-session's scratch evidence directory (`reh843/evidence`, 00–14 plus `migrate/`, `import/`,
-`recovery/`, `matrix/`, `helpers/`). That directory is **not durable**, and no sanitized copy had
-been placed in the operator audit store when this record was written. The figures above are
-transcribed from it, and the independent reviewer checked them against it.
+  Every gate field and every contract number is identical.
+
+**Evidence outside Git:** a durable, sanitized evidence set is kept in the operator audit store
+at `/mnt/a99b2047-01f4-4eee-bcad-a84dd6910ecc/byo-operator-audit/rehearsal-843021042-durable-rerun/`.
+- It holds files 00–23 plus `FINAL-SUMMARY.txt`: one per checkpoint, the rehearsal scripts, the
+  deviations (20) and the independent review (22). Each was written as its checkpoint completed.
+- `MANIFEST.sha256` covers the whole evidence set. Its SHA-256 is
+  `2a16b1d9e3b79555999beaac6fd58a43dceaf1acee57650a78b8603148a7ddb0`.
+- `FINAL-SUMMARY.txt` SHA-256 is
+  `3e303bf28f8a324aea6af3247017c08d1cfb0ad07eff91ea0fe60dac9d44ddc2`.
+- A mechanical leak scan of the set was CLEAN: no password, connection URL, scratch host name or
+  address. The only IP strings are the generic `0.0.0.0` and `127.0.0.1`.
+- The figures above are transcribed from it. The independent reviewer checked it against the raw
+  outputs and this commit (OVERALL: CLEAN).
+- The lost run's scratch evidence (`reh843/evidence`) no longer exists and is not relied on.
 
 **Validity.** This evidence covers `843021042` only. If anything under the gate's diffed paths lands
 on `main` before the load (`app config database/migrations/spatial composer.lock artisan bootstrap
