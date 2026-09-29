@@ -829,10 +829,12 @@ class BuyerMatchScorer
             return ['score' => 10.0];
         }
 
+        // A bound of zero (or below) is not a usable denominator — the min side has always
+        // skipped it, and the max side now does the same, as rangeScore() does.
         $deviationRatio = 0.0;
         if ($min > 0.0 && $buildingArea < $min) {
             $deviationRatio = ($min - $buildingArea) / $min;
-        } elseif ($max < PHP_FLOAT_MAX && $buildingArea > $max) {
+        } elseif ($max > 0.0 && $max < PHP_FLOAT_MAX && $buildingArea > $max) {
             $deviationRatio = ($buildingArea - $max) / $max;
         }
         return $deviationRatio <= 0.20
@@ -866,10 +868,11 @@ class BuyerMatchScorer
             if ($buildingArea >= $min && $buildingArea <= $max) {
                 $score += 5.0;
             } else {
+                // Zero bound: see scoreIncomeProperty().
                 $deviationRatio = 0.0;
                 if ($min > 0.0 && $buildingArea < $min) {
                     $deviationRatio = ($min - $buildingArea) / $min;
-                } elseif ($max < PHP_FLOAT_MAX && $buildingArea > $max) {
+                } elseif ($max > 0.0 && $max < PHP_FLOAT_MAX && $buildingArea > $max) {
                     $deviationRatio = ($buildingArea - $max) / $max;
                 }
                 if ($deviationRatio <= 0.20) {
@@ -941,10 +944,11 @@ class BuyerMatchScorer
             return ['score' => 10.0];
         }
 
+        // Zero bound: see scoreIncomeProperty().
         $deviationRatio = 0.0;
         if ($min > 0.0 && $lotSqft < $min) {
             $deviationRatio = ($min - $lotSqft) / $min;
-        } elseif ($max < PHP_FLOAT_MAX && $lotSqft > $max) {
+        } elseif ($max > 0.0 && $max < PHP_FLOAT_MAX && $lotSqft > $max) {
             $deviationRatio = ($lotSqft - $max) / $max;
         }
         return $deviationRatio <= 0.20
