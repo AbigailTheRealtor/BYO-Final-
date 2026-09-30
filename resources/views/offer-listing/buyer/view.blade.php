@@ -733,7 +733,7 @@
                     {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms') ?: $str('custom_bathrooms'))) !!}
                     {!! $row('Min. Heated Sq Ft', $str('minimum_heated_square') ?: $str('minimum_heated_sqft')) !!}
                     {!! $row('Min. Leaseable Sq Ft', $str('minimum_leaseable')) !!}
-                    {!! $row('Min. Acreage', $str('min_acreage') ?: $str('total_acreage')) !!}
+                    {!! $row('Min. Acreage', \App\Support\Listing\LotAcreage::displayStored($str('min_acreage') ?: $str('total_acreage'))) !!}
                     {!! $row('Max Purchase Budget', $fmtMoney($str('maximum_budget') ?: $str('buyer_budget'))) !!}
                     {!! $row('Max Purchase Price', $fmtMoney($str('max_purchase_price') ?: $str('purchase_price'))) !!}
                 </div>

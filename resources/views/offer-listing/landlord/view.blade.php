@@ -1248,8 +1248,8 @@
                     {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms'))) !!}
                     {!! $row('Heated Sq Ft', $str('minimum_heated_square')) !!}
                     {!! $row('Leaseable Sq Ft', $str('minimum_leaseable')) !!}
-                    {!! $row('Min Acreage', $str('min_acreage')) !!}
-                    {!! $row('Total Acreage', $str('total_acreage')) !!}
+                    {!! $row('Min Acreage', \App\Support\Listing\LotAcreage::displayStored($str('min_acreage'))) !!}
+                    {!! $row('Total Acreage', \App\Support\Listing\LotAcreage::displayStored($str('total_acreage'))) !!}
                     {!! $row('Number of Units', $orOther($str('number_of_unit'), $str('number_of_unit_other'))) !!}
                     {!! $row('Property Condition', $orOther($str('condition_prop'), $str('other_property_condition'))) !!}
                 </div>

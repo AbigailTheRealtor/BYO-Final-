@@ -172,8 +172,8 @@
     @php $ofv::row('Total Sq Ft', $d['total_square_feet'] ? number_format((float)$d['total_square_feet']) . ' sq ft' : null); @endphp
     @php $ofv::row('Sq Ft Source', $fmt($d['sqft_heated_source'])); @endphp
     @php $ofv::row('Min. Leaseable Sq Ft', $d['minimum_leaseable'] ? number_format((float)$d['minimum_leaseable']) . ' sq ft' : null); @endphp
-    @php $ofv::row('Min. Acreage', $fmt($d['min_acreage'])); @endphp
-    @php $ofv::row('Total Acreage', $fmt($d['total_acreage'])); @endphp
+    @php $ofv::row('Min. Acreage', $fmt(\App\Support\Listing\LotAcreage::displayStored($d['min_acreage']))); @endphp
+    @php $ofv::row('Total Acreage', $fmt(\App\Support\Listing\LotAcreage::displayStored($d['total_acreage']))); @endphp
     @php $ofv::row('Lot Dimensions', $fmt($d['lot_dimensions'])); @endphp
     @php $ofv::row('Front Footage', $fmt($d['front_footage'])); @endphp
     @php $ofv::row('Year Built', $fmt($d['year_built'])); @endphp

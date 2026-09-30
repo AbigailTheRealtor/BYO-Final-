@@ -1008,7 +1008,7 @@
                             @endif
 
                             @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != '' && @$auction->get->total_acreage != 'null')
-                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Acreage" :value="@$auction->get->total_acreage" />
+                                <x-hire-agent.field :redesign="$hsaDetailRedesign" label="Total Acreage" :value="\App\Support\Listing\LotAcreage::displayStored(@$auction->get->total_acreage)" />
                             @endif
 
                             @php

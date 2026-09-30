@@ -1166,7 +1166,7 @@
 
                                     <!-- Square Footage and Acreage -->
                                     <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Heated SqFt Needed" :value="@$auction->get->minimum_heated_square" />
-                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Total Acreage Needed" :value="@$auction->get->total_acreage" />
+                                    <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Minimum Total Acreage Needed" :value="\App\Support\Listing\LotAcreage::displayStored(@$auction->get->total_acreage)" />
 
                                     <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Carport Needed" :value="@$auction->get->carport_needed != null ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') : null" />
                                     <x-hire-agent.field :redesign="$byaDetailRedesign ?? false" label="Garage Needed" :value="@$auction->get->garage_needed != null ? \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') : null" />

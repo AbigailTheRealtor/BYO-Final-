@@ -113,7 +113,9 @@ class AskAiContextBuilderService
             // water_view: 'water_view' holds specific water-body types (MLS/Livewire path);
             // 'view_preference' holds scenic/legacy selections. Read water_view first.
             'water_view'                     => ['water_view', 'view_preference'],
-            'lot_size'                       => ['total_acreage', 'min_acreage'],
+            // The seller page prints `min_acreage ?: total_acreage`; the same order here keeps
+            // the lot-size answer on the value the page shows (units: LotAcreage).
+            'lot_size'                       => ['min_acreage', 'total_acreage'],
             'total_acreage'                  => 'total_acreage',
             'lot_dimensions'                 => 'lot_dimensions',
             'zoning'                         => 'zoning',
