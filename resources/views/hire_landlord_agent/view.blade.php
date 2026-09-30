@@ -1068,7 +1068,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Net Leasable SqFt" :value="$hlaStripThousands(@$auction->get->minimum_leaseable)" />
             <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Total SqFt" :value="$hlaStripThousands(@$auction->get->total_square_feet)" />
             <x-hire-agent.field :redesign="$hlaDetailRedesign" label="SqFt Heated Source" :value="$hlaStripThousands(@$auction->get->sqft_heated_source)" />
-            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Total Acreage" :value="@$auction->get->total_acreage" />
+            <x-hire-agent.field :redesign="$hlaDetailRedesign" label="Total Acreage" :value="\App\Support\Listing\LotAcreage::displayStored(@$auction->get->total_acreage)" />
             @if (!empty($auction->get->appliances) && is_array($auction->get->appliances) && count($auction->get->appliances) > 0)
             @php
             $appliancesToShow = [];

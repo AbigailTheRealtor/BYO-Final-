@@ -1647,7 +1647,7 @@
                     {!! $row('Heated Sq Ft', $str('minimum_heated_square') ?: null) !!}
                     {!! $row('Sq Ft Heated Source', $str('sqft_heated_source')) !!}
                     {!! $row('Total Sq Ft', $str('total_square_feet')) !!}
-                    {!! $row('Acreage', $str('min_acreage') ?: $str('total_acreage')) !!}
+                    {!! $row('Acreage', \App\Support\Listing\LotAcreage::displayStored($str('min_acreage') ?: $str('total_acreage'))) !!}
                     {!! $row('Year Built', $str('year_built')) !!}
                     {!! $row('Zoning', $str('zoning')) !!}
                     @php

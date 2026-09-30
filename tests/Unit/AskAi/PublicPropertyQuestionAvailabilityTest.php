@@ -752,7 +752,11 @@ class PublicPropertyQuestionAvailabilityTest extends TestCase
             ['seller_hoa_fee', ['hoa_association' => 'Unknown'], [], null],
             ['seller_hoa_fee', ['hoa_association' => null], [], null],
             ['seller_total_acreage', ['total_acreage' => 'Non-Applicable'], [], null],
-            ['seller_total_acreage', ['total_acreage' => '0.23'], [], null],
+            // A bare number in the ACREAGE field is that many acres (LotAcreage) — the page prints
+            // it, so Ask AI states it with its unit rather than refusing or guessing another.
+            ['seller_total_acreage', ['total_acreage' => '0.23'], [], 'The total acreage is 0.23 acres.'],
+            ['seller_total_acreage', ['total_acreage' => '0'], [], null],
+            ['seller_total_acreage', ['total_acreage' => 'about a quarter acre'], [], null],
             ['seller_appliances', ['appliances' => '["Dishwasher"]'], [], null],
             ['landlord_pets_allowed', ['pet_policy' => 'Yes'], [], 'Pets are allowed at this property.'],
             ['landlord_pets_allowed', ['pet_policy' => 'Cats only'], [], null],

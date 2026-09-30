@@ -7,6 +7,7 @@ use App\Services\Pets\PetFeeNormalizer;
 use App\Services\AskAi\Snapshot\SnapshotFactVisibility;
 use App\Support\Listing\ListingPriceDisplay;
 use App\Support\Listing\FloodZoneCode;
+use App\Support\Listing\LotAcreage;
 use App\Support\OfferListing\CriteriaPrivacyPolicy;
 use App\Support\OfferListing\PublicProviderTextPolicy;
 use App\Support\AskAi\PublicAnswerPiiScreen;
@@ -903,6 +904,7 @@ class AskAiPublicPropertyQuestionService
                 $available[$id] = $result['answer'];
             }
         }
+        $available = $this->withExactLotMeasurement($role, $ids, $catalog, $available, $context);
 
         $questions = [];
         foreach ($available as $id => $answer) {
@@ -935,6 +937,73 @@ class AskAiPublicPropertyQuestionService
         }
 
         return $this->withLabelAliases($questions, $catalog, $role);
+    }
+
+    /**
+     * "What is the lot size / acreage?" states the most precise measurement the listing has.
+     *
+     * The generic question reads the acreage field, which an MLS import fills with the BAND of
+     * LotSizeAcres ("5 to less than 10 acres") — while the same page also shows the feed's exact
+     * Lot Size Area in its own unit ("7.25 acres"). So when that MLS row is available and states
+     * ONE value WITH its unit, it leads the answer; the MLS acreage range and the listing's own
+     * acreage follow as separate facts whenever they add something. Nothing is converted
+     * between units, and nothing here is read that did not already pass every screen: only
+     * answers in $available are used, so the MLS display permissions, the property-type
+     * admission and the acreage guards all still govern.
+     *
+     * No stated measurement (no MLS row, an unknown unit, or the feed carrying two differing
+     * values) leaves the answer exactly as evaluated. A listing whose own acreage is present but
+     * was withheld (a guard or the formatter refused it) is left alone rather than answered
+     * around. Buyer and Tenant have no MLS rows, so their criteria semantics cannot change.
+     *
+     * @param  list<string>          $ids       catalog ids in display order
+     * @param  array<string, string> $available id => answer
+     * @return array<string, string>
+     */
+    private function withExactLotMeasurement(string $role, array $ids, array $catalog, array $available, array $context): array
+    {
+        $generic = "{$role}_total_acreage";
+        $areaId  = "mls_{$role}_lotsizearea";
+        if (!isset($catalog[$generic], $available[$areaId])) {
+            return $available;
+        }
+        if (!isset($available[$generic]) && !$this->isEmpty($this->listingValue($context, 'total_acreage'))) {
+            return $available;
+        }
+
+        // Stated with its unit by MlsSupplementalDetails (from the feed's Lot Size Units); a
+        // bare number means the unit was unknown, and a bare number must never imply one.
+        $area = trim((string) ($catalog[$areaId]['mls_value'] ?? ''));
+        if (preg_match('/^\d[\d,]*(?:\.\d+)?\s(?:acres?|square f(?:ee|oo)t|hectares?|square meters?)$/', $area) !== 1) {
+            return $available;
+        }
+        $sentences = ["The lot size is {$area}."];
+
+        $rangeId  = "mls_{$role}_stellar_totalacreage";
+        $mlsRange = isset($available[$rangeId]) ? LotAcreage::fromStored($catalog[$rangeId]['mls_value'] ?? null) : null;
+        if ($mlsRange !== null && $mlsRange->kind === LotAcreage::KIND_BAND) {
+            $sentences[] = 'The MLS acreage range is ' . $mlsRange->display() . '.';
+        } else {
+            $mlsRange = null;
+        }
+
+        // The listing's own acreage field, when it states something the sentences above do not.
+        $own = isset($available[$generic]) ? LotAcreage::fromStored($this->listingValue($context, 'total_acreage')) : null;
+        if ($own !== null && $own->display() !== $area && $own->display() !== $mlsRange?->display()) {
+            $sentences[] = $own->kind === LotAcreage::KIND_BAND
+                ? 'The acreage range is ' . $own->display() . '.'
+                : $available[$generic];
+        }
+        $available[$generic] = implode(' ', $sentences);
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (array_key_exists($id, $available)) {
+                $ordered[$id] = $available[$id];
+            }
+        }
+
+        return $ordered;
     }
 
     /**
@@ -3448,16 +3517,18 @@ class AskAiPublicPropertyQuestionService
         return "The {$subject} is looking for at least " . $this->groupedNumber($raw, false) . ' heated square feet.';
     }
 
-    /** Only an exact band from the form's own option list; 'Non-Applicable' is not a size. */
+    /**
+     * Only a band from the form's own option list; 'Non-Applicable' is not a size. A bare
+     * number here is refused: on a search the field means "at least" or "about" depending on
+     * which form wrote it, and a sentence would have to pick one (LotAcreage reads the unit;
+     * this rule is about the meaning).
+     */
     private function criteriaAcreageBand(string $subject, string $text): ?string
     {
-        $bands = array_values(array_diff(
-            (array) config('property_types.acreage_options', []),
-            ['Non-Applicable']
-        ));
+        $acreage = LotAcreage::fromStored($text);
 
-        return in_array($text, $bands, true)
-            ? "The {$subject} is looking for a lot of {$text}."
+        return $acreage !== null && $acreage->kind === LotAcreage::KIND_BAND
+            ? "The {$subject} is looking for a lot of {$acreage->display()}."
             : null;
     }
 
@@ -3886,15 +3957,21 @@ class AskAiPublicPropertyQuestionService
             . implode(', ', $items) . ' and ' . $last . '.';
     }
 
-    /** Only an exact band from the form's own option list; 'Non-Applicable' is not a size. */
+    /**
+     * The listing's acreage with its unit preserved (LotAcreage): a form band verbatim, a bare
+     * number as that many ACRES ("5.2 acres", never rounded, never square feet), an explicit
+     * square-foot value as square feet. 'Non-Applicable' and anything unreadable state nothing.
+     */
     private function acreageBand(string $text): ?string
     {
-        $bands = array_values(array_diff(
-            (array) config('property_types.acreage_options', []),
-            ['Non-Applicable']
-        ));
+        $acreage = LotAcreage::fromStored($text);
+        if ($acreage === null) {
+            return null;
+        }
 
-        return in_array($text, $bands, true) ? "The total acreage is {$text}." : null;
+        return $acreage->kind === LotAcreage::KIND_SQUARE_FEET
+            ? 'The lot size is ' . $acreage->display() . '.'
+            : 'The total acreage is ' . $acreage->display() . '.';
     }
 
     private function list(string $text, string $lead): ?string
@@ -4166,11 +4243,17 @@ class AskAiPublicPropertyQuestionService
 
         $parts = [];
 
+        // listing.lot_size is read from the ACREAGE fields (min_acreage ?: total_acreage), so
+        // its unit comes from LotAcreage and never from the value merely being a number: 5.2
+        // is 5.2 acres. Unreadable text is quoted as stored with no unit claimed; an
+        // unreadable number (zero, a malformed figure) states nothing.
         if ($size !== null) {
-            $numeric = str_replace([',', ' '], '', $size);
-            $parts[] = is_numeric($numeric)
-                ? 'The lot is ' . number_format((float) $numeric) . ' square feet.'
-                : 'Lot size: ' . $size . '.';
+            $acreage = LotAcreage::fromStored($size);
+            if ($acreage !== null) {
+                $parts[] = 'The lot is ' . $acreage->display() . '.';
+            } elseif (preg_match('/^[\d.,\s]*$/', $size) !== 1 && strcasecmp($size, 'Non-Applicable') !== 0) {
+                $parts[] = 'Lot size: ' . $size . '.';
+            }
         }
 
         if ($dims !== null) {

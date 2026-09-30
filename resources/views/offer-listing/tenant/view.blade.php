@@ -822,7 +822,7 @@
                     {!! $row('Bathrooms', $resolveOtherField($str('bathrooms'), $str('other_bathrooms') ?: $str('custom_bathrooms') ?: 'Other')) !!}
                     {!! $row('Minimum Heated Sq Ft', $str('minimum_heated_square')) !!}
                     {!! $row('Minimum Leaseable Sq Ft', $str('minimum_leaseable')) !!}
-                    {!! $row('Min Acreage', $str('min_acreage')) !!}
+                    {!! $row('Min Acreage', \App\Support\Listing\LotAcreage::displayStored($str('min_acreage'))) !!}
                     {!! $row('Total Sq Ft', $str('total_square_feet')) !!}
                     {!! $row('Sq Ft Source', $str('sqft_heated_source')) !!}
                 </div>
@@ -1331,7 +1331,8 @@
             <div class="row">
                 @foreach($remainingFields as $rmKey => $rmVal)
                 <div class="col-md-12">
-                    {!! $row($labelizeKey($rmKey), $rmVal) !!}
+                    {{-- An acreage value keeps its unit here too (LotAcreage), as in the named rows above. --}}
+                    {!! $row($labelizeKey($rmKey), in_array($rmKey, ['total_acreage', 'min_acreage'], true) ? \App\Support\Listing\LotAcreage::displayStored($rmVal) : $rmVal) !!}
                 </div>
                 @endforeach
             </div>

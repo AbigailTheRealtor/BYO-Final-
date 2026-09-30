@@ -1587,6 +1587,9 @@ class OfferWorkflowReadinessTest extends TestCase
             'app/Support/OfferListing/PublicProviderTextPolicy.php',
             'resources/views/livewire/offer-listing/shared/ai-questions-input.blade.php',
             'resources/views/livewire/offer-listing/shared/partials/ai-question-field.blade.php',
+
+            // ── Ask AI lot size / acreage units — the one unit-preserving reading of acreage ──
+            'app/Support/Listing/LotAcreage.php',
         ];
 
         $unexpected = $guard->unexpected($collected['entries'], $taskAllowlist);

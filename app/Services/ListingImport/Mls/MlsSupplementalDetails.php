@@ -2,6 +2,7 @@
 
 namespace App\Services\ListingImport\Mls;
 
+use App\Support\Listing\LotAcreage;
 use App\Services\ListingImport\MlsPropertyDetailsPresenter;
 use App\Support\OfferListing\LandlordProviderTextPolicy;
 
@@ -140,6 +141,7 @@ final class MlsSupplementalDetails
         }
 
         $sections = [];
+        $lotUnits = self::storedLotSizeUnits($stored['sections'] ?? []);
 
         foreach ($stored['sections'] ?? [] as $section) {
             if (! is_array($section) || ! is_array($section['rows'] ?? null) || $section['rows'] === []) {
@@ -182,6 +184,15 @@ final class MlsSupplementalDetails
                     $value = (string) (LandlordProviderTextPolicy::mlsDisplayValue($key, $value) ?? '');
                 }
 
+                if ($key === 'LotSizeArea') {
+                    $value = self::lotSizeAreaWithUnit($value, $lotUnits);
+                } elseif ($key === 'STELLAR_TotalAcreage') {
+                    // Stellar's band drops our unit suffix ("10 to less than 20"); read it as
+                    // the band it is. A value that is not a band is left exactly as stored.
+                    $band  = LotAcreage::fromStored($value);
+                    $value = $band !== null && $band->kind === LotAcreage::KIND_BAND ? $band->display() : $value;
+                }
+
                 // A stored row with no value is dropped rather than rendered.
                 // Blobs written before a bug fix, or hand-edited ones, must not
                 // be able to put an empty row on a page. A row suppressed just
@@ -215,6 +226,48 @@ final class MlsSupplementalDetails
             mlsNumber:   self::text($stored['mls_number'] ?? null),
             generatedAt: self::text($stored['generated_at'] ?? null),
         );
+    }
+
+    /**
+     * `LotSizeArea` is a bare number whose unit is a SEPARATE field, `LotSizeUnits` — 544500
+     * is square feet on one record and 1.9765 is acres on the next. Printed or answered alone
+     * it claims no unit, and a reader supplies the wrong one. So the area is stated in the
+     * feed's own unit, at read time (the stored bytes are untouched, and every blob already
+     * written reads correctly on the next page load). Nothing is converted: an unrecognised
+     * or absent unit leaves the value exactly as stored, and the Lot Size Units row stays.
+     *
+     * @param array<mixed> $sections the stored sections
+     */
+    private static function storedLotSizeUnits(mixed $sections): ?string
+    {
+        foreach (is_array($sections) ? $sections : [] as $section) {
+            foreach ((array) (is_array($section) ? ($section['rows'] ?? []) : []) as $row) {
+                if (is_array($row) && ($row['key'] ?? null) === 'LotSizeUnits' && is_scalar($row['value'] ?? null)) {
+                    $units = trim((string) $row['value']);
+
+                    return $units === '' ? null : $units;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private const LOT_SIZE_UNITS = [
+        'square feet'   => ['square foot', 'square feet'],
+        'acres'         => ['acre', 'acres'],
+        'hectares'      => ['hectare', 'hectares'],
+        'square meters' => ['square meter', 'square meters'],
+    ];
+
+    private static function lotSizeAreaWithUnit(string $value, ?string $units): string
+    {
+        $phrase = self::LOT_SIZE_UNITS[strtolower((string) $units)] ?? null;
+        if ($phrase === null || preg_match('/^\d[\d,]*(\.\d+)?$/', $value) !== 1) {
+            return $value;
+        }
+
+        return $value . ' ' . ((float) str_replace(',', '', $value) === 1.0 ? $phrase[0] : $phrase[1]);
     }
 
     public static function empty(): self
