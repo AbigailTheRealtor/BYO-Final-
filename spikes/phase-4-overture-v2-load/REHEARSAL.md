@@ -18,8 +18,8 @@ VERIFY_OK, `sample_fidelity` OK, `v1_snapshot_unchanged` yes, `rollback_recovery
 
 <!-- rehearsal-gate:start -->
 rehearsal_status: PASSED
-rehearsed_commit: 843021042f209fa185a6ac6973b48556a8e2642a
-performed_on: 2026-09-29
+rehearsed_commit: 31786fcb834cd5caa8f5420aea9b92a3139dbe98
+performed_on: 2026-09-30
 postgresql_version: 16.14
 postgis_version: 3.6.3
 places_loaded: 52716
@@ -31,7 +31,330 @@ v1_snapshot_unchanged: yes
 rollback_recovery_exercised: yes
 <!-- rehearsal-gate:end -->
 
-## Evidence — current rehearsal of `843021042`
+## Evidence — current rehearsal of `31786fcb8`
+
+Rehearsal of RUNBOOK §4, performed 2026-09-30 (UTC) on a **throwaway** scratch instance. The live
+spatial cluster was never contacted and no live credential was present in any rehearsal container.
+It exercises the §4 procedure and the §8a guarded recovery path, as the `843021042` record did.
+
+Every checkpoint was written to the operator audit store **as it completed, from checkpoint 0**
+(see *Evidence outside Git*). The run was paused after checkpoint 16 on the owner's instruction and
+resumed at 17 the same day; no checkpoint was repeated and the progress manifest verified 21/21 on
+resume. An independent read-only reviewer checked the complete evidence set (verdict: **CLEAN WITH
+WEAKNESSES**, no blocker; see *Deviations*).
+
+### Why this commit was re-rehearsed
+
+- `843021042` passed the previous full-size rehearsal. That record is kept below as history.
+- PR #217 (`merge/matching-zero-criteria-bounds`) then moved `main` to `31786fcb8`. It changed two
+  files under the gate's diffed paths:
+  - `app/Services/Stellar/Matching/BuyerMatchResultBuilder.php`;
+  - `app/Services/Stellar/Matching/BuyerMatchScorer.php`.
+- Neither touches Overture, spatial code or the operator `bin/` / `sql/`, but the gate compares
+  paths and does not judge relevance, so it refuses. Nobody waived it: `31786fcb8` was fully
+  re-rehearsed from scratch.
+  - A new worktree at `origin/main` = `31786fcb8`, a fresh source export and a fresh extraction.
+  - A new scratch container, network and scratch-only credential.
+  - Every §4 exercise, the §8a recovery flow and its refusal matrix.
+- **PR #133** (open, CONFLICTING/DIRTY, head `3c5eb7ef1`, last updated 2026-09-09) changes gated
+  `app/` files. The owner explicitly treated it as **dormant/frozen** for this rehearsal. It was
+  re-checked unchanged at the start, before the review, at the pause and at the resume. If it is
+  ever merged, the gate refuses and the rehearsal must be repeated.
+- Before the review and again before this record was updated, `origin/main` was re-checked. It
+  still equalled `31786fcb8`, and the gate's exact pathspec diff was empty.
+
+### Where, and on what
+
+- **Code:** `git archive 31786fcb834cd5caa8f5420aea9b92a3139dbe98` (origin/main) into a disposable
+  directory. Before the first run and again after the last one, all 24,419 exported files were
+  byte-identical to the commit (blob SHA-1), with 0 mismatched. (24,419 = `843021042`'s 24,418 plus
+  the one test file PR #217 added.)
+  - Not exported: the commit's own `export-ignore` paths (`.github/**` and one vendored
+    `CHANGELOG.md`), plus `.claude/`.
+  - The rehearsal worktree had no local changes throughout.
+- **Scratch server:** the validated image, not rebuilt, image id
+  `sha256:4f10dd85218b12841b801bd809f5f31f70b3aa23d31598330a05185d7f380a45`. Provenance was
+  re-verified offline before use, identical to the `843021042` record:
+  - root layer identical to `ubuntu:24.04@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3`;
+  - PGDG `noble-pgdg-archive`, key fingerprint `B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8`;
+  - `postgresql-16=16.14-1.pgdg24.04+1`, `postgresql-16-postgis-3=3.6.3+dfsg-1.pgdg24.04+1`,
+    `postgresql-16-postgis-3-scripts=3.6.3+dfsg-1.pgdg24.04+1`, `libpq5=18.6-1.pgdg24.04+2`,
+    GEOS `3.14.1-2.pgdg24.04+1`.
+
+  It ran as a **new** container (`ov2-reh31786-db`) on a **new** Docker `--internal` network
+  (`ov2-reh31786-net`), both removed after the run.
+  - Fresh `initdb`, TLS only (`hostnossl … reject`), no published port, no mount.
+  - A fresh scratch-only random password, generated for this run and passed only by `--env-file`.
+    It never appeared in argv, output or evidence.
+  - Measured in this run on `ov2_rehearsal`: `SELECT version()` →
+    `PostgreSQL 16.14 (Ubuntu 16.14-1.pgdg24.04+1)`, `server_version_num` 160014.
+  - `postgis_full_version()` → `POSTGIS="3.6.3 3d12666" [EXTENSION] PGSQL="160"
+    GEOS="3.14.1-CAPI-1.20.5" PROJ="9.8.1"`. Connection `TLSv1.3`.
+- **Operator client:** the validated operator image, image id
+  `sha256:21366cde728196a66e77448cd0cc1313a99b62b1c27c0a087a3cc3ea1f958ea0`, re-verified:
+  - PHP 8.2.34, Composer 2.10.3, duckdb 1.5.5, psql 15.19;
+  - `zend.exception_ignore_args=On`, `memory_limit=2G`.
+
+  The image contains no code; the code came from the `31786fcb8` export, and
+  `composer install --prefer-dist` ran inside it.
+  - Container hardening: non-root, `--cap-drop ALL`, `no-new-privileges`, read-only root
+    filesystem, tmpfs `/tmp`, no Docker socket, no home mount, no `.env`.
+- **Environment, route and commands:** as in the `843021042` record below. The import job's
+  declared env; `SPATIAL_DATABASE_URL` carried no password; every psql through the committed
+  `bin/spatial_psql.sh` and every preflight through `bin/preflight.sh`; the fake
+  `ov2-scratch-<random>.db.postgresbridge.com` name pinned by a read-only mounted `/etc/hosts`.
+  The database-phase scripts are the `843021042` rerun's own, recovered byte-exact from its
+  evidence (each SHA-256 matched) with only paths, container names and labels changed.
+
+### Extraction (§4.2) — byte-identical to the contract
+
+```
+release rows           : 73631092
+bbox input rows        : 1245925
+BASE corpus rows       : 52566
+supplementary rows     : 2962        (rescue_candidate 228, diagnostic 2734)
+matcher-analysis rows  : 55528  (base + supplementary; not a corpus count)
+rejected rows          : 1190397     (confidence_below_floor 489699, status_permanently_closed 12451,
+                                      taxonomy_null_not_supplementary 17078,
+                                      taxonomy_not_allowlisted_not_supplementary 671169, all others 0)
+fully accounted        : yes
+matcher memberships    : 11082 (ambiguous rows 0, co-branded 0)
+rescue verdicts        : 150 admitted, 78 refused
+base.ndjson          sha256 bb9e77c13790897155f847fa3a7ed48067930cf08257e227bee60bf96c91a168  = contract
+supplementary.ndjson sha256 edeed1435d707912dedd08d642cf1088e669cf4dc329ea3248a289be3e91c8e4  = contract
+```
+
+The extraction succeeded on its first attempt and the dry run was `VALIDATED`. The files were kept
+in scratch only and not committed.
+
+### Schema and v1 fixture (§4.1), migration stage (§7)
+
+- The eleven core migrations went in as batch 1, each named by `--path`, followed by the two v1
+  seeders (7 categories, 8 mappings).
+- **v1 fixture: SYNTHETIC** (§4.1's second option), built by the same script as the earlier
+  records: 29,434 deterministic rows, the batch-2c acceptance gate (0 failures), a `staging` ledger
+  row, then `CHECK` + `ATTACH PARTITION` + activation in one transaction. Result:
+  `overture-2026-06-17.0-fl` is the one `active` overture-places corpus, with 29,434 rows. No
+  production row or dump was used.
+- `v1_before.txt`:
+  ```
+  v1_places_rows=29434
+  v1_places_md5=444bd80b95dbc367c3fa915ea8f2ad2e
+  places_partitions=places_p_overture_2026_06_17_0_fl
+  corpus_imports_rows=1
+  corpus_imports_md5=89f550fb9362bd2717681c8f31bdc817
+  place_categories_md5=cd4c9593da925e87ece2f39b9cd0501e
+  place_category_mappings_md5=c736f9cfe28685ce67b09fb0ce7627ba
+  place_authority_links_rows=0
+  v1_partition_counters=29434/0/0/0
+  active_overture_places=overture-2026-06-17.0-fl
+  ```
+  The places and taxonomy hashes equal the `843021042` record's. `corpus_imports_md5` differs
+  because the ledger row carries this run's timestamps. What §4.6 requires is before-vs-after
+  identity within this rehearsal.
+- The §7 sequence, exactly as the `migrate` job runs it:
+  - preflight `--v2-state=absent`: `PREFLIGHT PASSED`, P00–P08.
+  - `migration_ledger.sql` before: 11 core rows, `PREVIOUS_MAX_BATCH=1`, `LEDGER OK`.
+  - `--pretend`: exactly three `CREATE TABLE` and three `CREATE INDEX` statements.
+  - The migrate itself put exactly the three `2026_09_24_00000{1,2,3}` migrations in batch 2.
+  - preflight `--v2-state=empty`: `PREFLIGHT PASSED`.
+  - `migration_ledger.sql` after: L01, L03, L04, L05 PASS, `LEDGER OK`. The eleven core
+    `LEDGER_ROW` lines were byte-identical before and after.
+  - v1 was byte-identical.
+- The two August address migrations were never applied (L01, P08).
+
+### Import, reconciliation, idempotency, fidelity, v1 (§4.2–§4.6, §8)
+
+Dry run `VALIDATED`, preflight `--v2-state=empty` PASSED, then `IMPORTED —
+overture-2026-08-19.0-fl-r2 is ready (not active; nothing was activated).` Registry
+`chain-registry-v2 b5920a1c73199a0d8e030e5281018baa763438eb7ad02aee76f7ba3cbc0b151f`.
+
+`verify_v2_load.sql` (first import):
+```
+PASS V01 ledger: one ready row with the contract pins, checksums and counts
+PASS V02 exactly one v2 corpus row exists
+PASS V03 places 52,716 (base 52,566 + rescued 150)
+PASS V04 no diagnostic, matcher_only or refused row was stored
+PASS V05 operating status 47,639 open / 5,077 unknown
+PASS V06 base per-category counts match the plan (16 categories)
+PASS V07 no duplicate source_ref, no invalid geometry, no out-of-bbox coordinate
+PASS V08 memberships 11,082 (storefront 10,533 / fuel 239 / department 310 unconfirmed)
+PASS V09 memberships per chain:format match the plan (31 pairs, 20 chains)
+PASS V10 rescued memberships 150 CVS (147 store, 3 store_in_target)
+PASS V11 no duplicate membership, no orphan, registry hash equals the ledger
+PASS V12 v2 is NOT active; v1 remains the one active overture-places corpus
+LEDGER ready e4a1780a796e5494f1201bd776cc8865 2026-09-30T17:37:27.925185Z 2026-09-30T17:37:27.933959Z
+VERIFY OK
+```
+(The two `LEDGER` timestamps are the importer's `started_at` and `finished_at`, the latter written
+as `now()`. They are not a measure of how long the import took.)
+
+**Idempotency:**
+- The second import printed `ALREADY READY — overture-2026-08-19.0-fl-r2 was imported from these
+  exact files before; nothing written.`
+- The second verify was `VERIFY OK`, with exactly one `LEDGER ready` line, identical in both
+  outputs.
+- **Additional consistency check:** a third identical import was also `ALREADY READY`. The v2
+  content hashes (md5 over every row of all three tables) and the `pg_stat_user_tables` write
+  counters were identical before and after it (places ins 52,716, memberships ins 11,082).
+
+`compare_sample.py`: 12/12 `PASS` (the same twelve sampled ids as the earlier records), then
+`SAMPLE FIDELITY OK`.
+
+`diff -u v1_before.txt v1_after.txt` was empty.
+
+### Recovery (§4.7, §8a), same scratch database, order b → re-apply → a → §8a → c
+
+- **b. Rollback.** The three-`--path` rollback rolled back `000003`, `000002` and `000001`. A
+  relation diff showed exactly the three `overture_v2_*` tables (with their own indexes and
+  sequences) dropped, and nothing else. The ledger was back to the 11 batch-1 rows, August
+  untouched, and `v1_snapshot` was byte-identical. It passed on its first attempt.
+- **Re-apply.** The same three-`--path` migrate produced a new batch 2 of 3, with empty tables.
+  Preflight `--v2-state=empty` PASSED.
+- **a. Interrupted import.** A real full `--write` import was started. A server-side watcher (a
+  separate superuser session) terminated the importer's backend while it was executing
+  `INSERT INTO overture_v2_places …` with an assigned transaction id and ≥ 2 MB of heap (observed:
+  2,097,152 bytes); `pg_terminate_backend` returned `t`. The importer printed `FAILED, rolled back:
+  … no connection to the server` and exited 1. State read immediately afterwards, before any retry:
+  the corpus row was `failed` with `finished_at` and `failure_reason` recorded and every imported
+  count NULL; 0 places, 0 memberships, 0 `ready` rows; 5,567 place inserts rolled back; v1
+  byte-identical.
+- **§8a eligibility, on that real failed state:** the normal import preflight `--v2-state=empty`
+  **REFUSED** at P07; `--v2-state=absent` **REFUSED** at P07; `--v2-state=recoverable-failed-import`
+  **ACCEPTED**, with P00–P08 and P07R1, P07R2, P07R3, P07R4 all PASS.
+- **§8a refusal matrix: 33 cases, 0 unexpected**, by the same method and the same case list as the
+  `843021042` record (the real failed database renamed aside and untouched; each case on a fresh
+  `TEMPLATE` clone under the same name; every mutation applied; each refused case failed at exactly
+  its expected check). Afterwards the real failed state was restored and was byte-identical.
+- **c. Recovery retry and re-verify.** The recovery preflight re-run immediately before the write
+  PASSED. The identical import printed `IMPORTED` under a new run token
+  (`LEDGER ready 419022cabfc684fa01493174ce9e3584`); V01–V12 all PASS, `VERIFY OK`; a second
+  import `ALREADY READY`, then `VERIFY OK` with one unchanged `LEDGER ready` line; `SAMPLE FIDELITY
+  OK` 12/12; the final `v1_snapshot` byte-identical to the pre-v2 `v1_before.txt`. The write
+  counters reconcile: 58,283 place inserts = 5,567 written by the terminated attempt and rolled
+  back, plus 52,716 committed by the retry. Recovery mode against the now-`ready` corpus then
+  **REFUSED** at P07R1, and `--v2-state=loaded` PASSED.
+- v1 was byte-identical at all ten checkpoints after the baseline.
+
+### Hardened psql route and process safety
+
+- `bin/spatial_psql.sh` refused all 15 cases of the `843021042` record before psql started (rc 1),
+  and `bin/preflight.sh` refused an ambient `PGHOST`: 16/16.
+- While a helper psql was running (187 process samples): its service directory was mode 700 and
+  its file mode 600, with no password line, and neither existed before or after; the password,
+  a connection URL, the target host and its address appeared in no process argv and no helper
+  output; psql's argv held only options and SQL.
+- A non-TLS connection attempt was rejected by the server (`hostnossl … reject`).
+- A mechanical scan of every evidence file found no password, no connection URL with credentials,
+  no scratch host name and no scratch address.
+
+### Tests (checkpoint 17)
+
+Run in the operator image with `--network none`, no database variables, on a copy of the export
+plus `.github/` (11 files, hash-identical to the commit), `TMPDIR` on a scratch bind mount:
+
+- operator guard `OvertureV2OperatorLoadGuardTest` (the test RUNBOOK names): 37/37;
+- `tests/Unit/Spatial`: 748; `tests/Feature/Spatial`: 175 with 14 existing skips;
+- the CI database-identity safeguards (the spatial workflow's hard gate and its manifest entries):
+  `TestDatabaseIdentityTest` 12, `SpatialDatabaseIdentityTest` 6, `DatabaseGuardPoisoningTest` 6,
+  `GooglePlacesTestEnvGuardTest` 6 — all OK;
+- `git diff --check`: clean.
+
+Four additional suites were attempted in this run and **do not pass in the operator image**:
+`tests/Feature/Deployment`, `tests/Feature/Safeguards/InMemorySchemaReuseTest.php`,
+`OvertureActivationReadinessTest` and `LocationDnaNoticeComplianceTest`. They are recorded as
+**OUT OF SCOPE FOR OPERATOR REHEARSAL — environment/runtime-specific; not part of the
+runbook-required operator test or the current CI spatial manifest** (owner decision). 50 of the 52
+non-passing cases fail in test setup, before the test body, because the operator image's SQLite is
+3.40.1 and migration `2026_06_13_000002` calls `jsonb_set` (SQLite 3.45+); the other two are
+host-platform controls (`PhpIniScanDirTest`, `ServeWorkerRuntimeEnvironmentTest`). They are **not**
+reported as passing. GitHub CI on `31786fcb8` was green for Spatial / Location DNA, Security,
+Migration and Incremental Migration.
+
+### Deviations, recorded so a reader can judge them
+
+- **Carried over unchanged from the `843021042` record** (see it below for the detail): the
+  one-line scratch preflight copy (here `EXPECTED_FINGERPRINT` = the scratch server's own
+  `a93dcdb291973d576b3528f0994c343d58d4e074fbc746850ff4219387a18944`, computed with P01's exact
+  expression; the unmodified committed script refused the scratch server at P01, exit 5); the route
+  through both committed tools rather than plain psql; `--network host` for database phases; the
+  superuser watcher and matrix; the operator-image differences (psql 15.19, `memory_limit=2G`,
+  extra PHP extensions, uid 1000); the vendor boot side effect; the exec `/tmp` for DuckDB
+  `httpfs`; the `.github/` + `TMPDIR` test arrangement.
+- **Scratch credential and host mapping, by the operator's commands.** The permission layer refused
+  the assistant's writes of the scratch credential files. The operator ran two no-secret helpers:
+  `scratch_up.sh` (generated the password and host tag, created the network, started the server)
+  stopped at its readiness probe because this sandbox refuses `docker exec`, with the server up and
+  ready; `scratch_wire.sh` then read readiness from the server log, reused the same password and
+  wrote the host mapping and env-file. The server, network and password were each created once.
+- **Extraction** was launched by the assistant and succeeded on its first attempt (no manual helper
+  was needed this time).
+- **03b / 03c.** The first manifest-tally file printed the supplementary role breakdown as `null`
+  (a wrong manifest key in the assistant's reader) while its result line asserted 228 / 2,734. It
+  was left as written; 03c records the correct tallies from the manifest and an independent
+  recount of `supplementary.ndjson`.
+- **Evidence writer.** The assistant's own leak guard was narrowed once (to exempt the leak
+  report's `password=no` verdict token) and its generic URL-pattern check was skipped for the file
+  holding the scripts and for the review, which legitimately quote the password-free URL template
+  and fake test URLs. The checks against the actual scratch password, host and address always ran.
+- **Pause and resume** after checkpoint 16, recorded in a non-evidence stop handoff; nothing was
+  repeated.
+- **Tests** as described above, including the owner's scope decision.
+- **Run-to-run generated values** (none is a contract value): the scratch fingerprint, the LEDGER
+  run tokens, `corpus_imports_md5`, the watcher byte count (2,097,152), the interrupted-insert
+  counts (5,567 rolled back, 58,283 total) and timestamps. Every gate field and every contract
+  number is identical to the `843021042` record.
+- **Reviewer verdict:** OVERALL CLEAN WITH WEAKNESSES, no blocker. The weaknesses it named are the
+  03b line, the four out-of-scope suites (the scope decision itself it found CONSISTENT with the
+  runbook and the CI manifest), the evidence-writer adjustments, and two files not yet written at
+  review time (`FINAL-SUMMARY.txt`, `MANIFEST.sha256`), which were then written. Its requested
+  supplements were provided.
+
+**Evidence outside Git:** a durable, sanitized evidence set is kept in the operator audit store in
+`byo-operator-audit/rehearsal-31786fcb8-durable/`. The mount path's uuid changes between sessions,
+so locate it with `ls -d /mnt/*/byo-operator-audit/rehearsal-31786fcb8-durable` (at the time of
+writing, `/mnt/d5b5e964-6598-4639-a41f-22946b80afa7/…`).
+- It holds files 00–23 (including 03b, 03c, 14b, 15a, 15b and 17a) plus `FINAL-SUMMARY.txt`:
+  30 evidence files, each written as its checkpoint completed, including the rehearsal scripts
+  (21), the deviations (20) and the independent review (22).
+- `MANIFEST.sha256` covers all 30. Its SHA-256 is
+  `4c5fe8cfcf72423b80d356368f93e7c5e8bdf21b776e7c55a359840a6f78d403`.
+- `FINAL-SUMMARY.txt` SHA-256 is
+  `9f2187bbd711547cdab6699aea83e2ad615cf3006014218e3d3c5a2697a22e76`.
+- The directory also holds two pause/handoff notes, which are not evidence and not in the manifest.
+- A mechanical leak scan of the set was CLEAN. The only IP strings are the generic `0.0.0.0` and
+  `127.0.0.1`.
+- The figures above are transcribed from it.
+
+**Validity.** This evidence covers `31786fcb8` only. If anything under the gate's diffed paths lands
+on `main` before the load (`app config database/migrations/spatial composer.lock artisan bootstrap
+scripts/overture-v2`, this directory's `bin/` and `sql/`, or the workflow file) — including PR #133
+— the `gate` job refuses and the rehearsal must be repeated.
+
+## History — rehearsal of `843021042` (passed; no longer satisfies the gate)
+
+Its gate block, retained verbatim as history. The markers are removed so that the gate reads only
+the current block above:
+
+```
+rehearsal_status: PASSED
+rehearsed_commit: 843021042f209fa185a6ac6973b48556a8e2642a
+performed_on: 2026-09-29
+postgresql_version: 16.14
+postgis_version: 3.6.3
+places_loaded: 52716
+memberships_loaded: 11082
+second_import: ALREADY_READY
+verify_v2_load: VERIFY_OK
+sample_fidelity: OK
+v1_snapshot_unchanged: yes
+rollback_recovery_exercised: yes
+```
+
+It was a valid full-size pass of `843021042`. It stopped satisfying the gate only because PR #217
+changed two gated `app/` files. Its evidence follows unchanged. "The commit" and "origin/main at
+the time" in it mean `843021042`. Its audit-store path below names the mount uuid of that day; the
+directory now lives under a different uuid (`ls -d /mnt/*/byo-operator-audit/rehearsal-843021042-durable-rerun`).
 
 Rehearsal of RUNBOOK §4, performed 2026-09-29 (UTC) on a **throwaway** scratch instance. The live
 spatial cluster was never contacted and no live credential was present in any rehearsal container.
